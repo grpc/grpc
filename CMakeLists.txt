@@ -4829,6 +4829,154 @@ target_link_libraries(ares
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_library(absl
+  third_party/abseil-cpp/absl/algorithm/algorithm_test.cc
+  third_party/abseil-cpp/absl/algorithm/container_test.cc
+  third_party/abseil-cpp/absl/base/bit_cast_test.cc
+  third_party/abseil-cpp/absl/base/call_once_test.cc
+  third_party/abseil-cpp/absl/base/config_test.cc
+  third_party/abseil-cpp/absl/base/dynamic_annotations.cc
+  third_party/abseil-cpp/absl/base/internal/cycleclock.cc
+  third_party/abseil-cpp/absl/base/internal/endian_test.cc
+  third_party/abseil-cpp/absl/base/internal/log_severity.cc
+  third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc
+  third_party/abseil-cpp/absl/base/internal/low_level_alloc_test.cc
+  third_party/abseil-cpp/absl/base/internal/malloc_extension.cc
+  third_party/abseil-cpp/absl/base/internal/malloc_extension_test.cc
+  third_party/abseil-cpp/absl/base/internal/malloc_hook.cc
+  third_party/abseil-cpp/absl/base/internal/raw_logging.cc
+  third_party/abseil-cpp/absl/base/internal/spinlock.cc
+  third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc
+  third_party/abseil-cpp/absl/base/internal/sysinfo.cc
+  third_party/abseil-cpp/absl/base/internal/sysinfo_test.cc
+  third_party/abseil-cpp/absl/base/internal/thread_identity.cc
+  third_party/abseil-cpp/absl/base/internal/thread_identity_test.cc
+  third_party/abseil-cpp/absl/base/internal/throw_delegate.cc
+  third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc
+  third_party/abseil-cpp/absl/base/invoke_test.cc
+  third_party/abseil-cpp/absl/base/raw_logging_test.cc
+  third_party/abseil-cpp/absl/base/spinlock_test_common.cc
+  third_party/abseil-cpp/absl/base/throw_delegate_test.cc
+  third_party/abseil-cpp/absl/container/fixed_array_test.cc
+  third_party/abseil-cpp/absl/container/inlined_vector_test.cc
+  third_party/abseil-cpp/absl/container/internal/test_instance_tracker.cc
+  third_party/abseil-cpp/absl/container/internal/test_instance_tracker_test.cc
+  third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc
+  third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc
+  third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc
+  third_party/abseil-cpp/absl/debugging/leak_check.cc
+  third_party/abseil-cpp/absl/debugging/leak_check_disable.cc
+  third_party/abseil-cpp/absl/debugging/leak_check_fail_test.cc
+  third_party/abseil-cpp/absl/debugging/leak_check_test.cc
+  third_party/abseil-cpp/absl/debugging/stacktrace.cc
+  third_party/abseil-cpp/absl/memory/memory_test.cc
+  third_party/abseil-cpp/absl/meta/type_traits_test.cc
+  third_party/abseil-cpp/absl/numeric/int128.cc
+  third_party/abseil-cpp/absl/numeric/int128_test.cc
+  third_party/abseil-cpp/absl/strings/ascii.cc
+  third_party/abseil-cpp/absl/strings/ascii_test.cc
+  third_party/abseil-cpp/absl/strings/escaping.cc
+  third_party/abseil-cpp/absl/strings/escaping_test.cc
+  third_party/abseil-cpp/absl/strings/internal/char_map_test.cc
+  third_party/abseil-cpp/absl/strings/internal/memutil.cc
+  third_party/abseil-cpp/absl/strings/internal/memutil_test.cc
+  third_party/abseil-cpp/absl/strings/internal/ostringstream_test.cc
+  third_party/abseil-cpp/absl/strings/internal/resize_uninitialized_test.cc
+  third_party/abseil-cpp/absl/strings/internal/utf8.cc
+  third_party/abseil-cpp/absl/strings/internal/utf8_test.cc
+  third_party/abseil-cpp/absl/strings/match.cc
+  third_party/abseil-cpp/absl/strings/match_test.cc
+  third_party/abseil-cpp/absl/strings/numbers.cc
+  third_party/abseil-cpp/absl/strings/numbers_test.cc
+  third_party/abseil-cpp/absl/strings/str_cat.cc
+  third_party/abseil-cpp/absl/strings/str_cat_test.cc
+  third_party/abseil-cpp/absl/strings/str_join_test.cc
+  third_party/abseil-cpp/absl/strings/str_replace.cc
+  third_party/abseil-cpp/absl/strings/str_replace_test.cc
+  third_party/abseil-cpp/absl/strings/str_split.cc
+  third_party/abseil-cpp/absl/strings/str_split_test.cc
+  third_party/abseil-cpp/absl/strings/string_view.cc
+  third_party/abseil-cpp/absl/strings/string_view_test.cc
+  third_party/abseil-cpp/absl/strings/strip_test.cc
+  third_party/abseil-cpp/absl/strings/substitute.cc
+  third_party/abseil-cpp/absl/strings/substitute_test.cc
+  third_party/abseil-cpp/absl/synchronization/barrier.cc
+  third_party/abseil-cpp/absl/synchronization/barrier_test.cc
+  third_party/abseil-cpp/absl/synchronization/blocking_counter.cc
+  third_party/abseil-cpp/absl/synchronization/blocking_counter_test.cc
+  third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc
+  third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc
+  third_party/abseil-cpp/absl/synchronization/internal/graphcycles_test.cc
+  third_party/abseil-cpp/absl/synchronization/internal/mutex_nonprod.cc
+  third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc
+  third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem_test.cc
+  third_party/abseil-cpp/absl/synchronization/internal/waiter.cc
+  third_party/abseil-cpp/absl/synchronization/mutex.cc
+  third_party/abseil-cpp/absl/synchronization/mutex_test.cc
+  third_party/abseil-cpp/absl/synchronization/notification.cc
+  third_party/abseil-cpp/absl/synchronization/notification_test.cc
+  third_party/abseil-cpp/absl/time/clock.cc
+  third_party/abseil-cpp/absl/time/clock_test.cc
+  third_party/abseil-cpp/absl/time/duration.cc
+  third_party/abseil-cpp/absl/time/duration_test.cc
+  third_party/abseil-cpp/absl/time/format.cc
+  third_party/abseil-cpp/absl/time/format_test.cc
+  third_party/abseil-cpp/absl/time/internal/test_util.cc
+  third_party/abseil-cpp/absl/time/time.cc
+  third_party/abseil-cpp/absl/time/time_norm_test.cc
+  third_party/abseil-cpp/absl/time/time_test.cc
+  third_party/abseil-cpp/absl/time/time_zone_test.cc
+  third_party/abseil-cpp/absl/types/any_test.cc
+  third_party/abseil-cpp/absl/types/bad_any_cast.cc
+  third_party/abseil-cpp/absl/types/bad_optional_access.cc
+  third_party/abseil-cpp/absl/types/optional.cc
+  third_party/abseil-cpp/absl/types/optional_test.cc
+  third_party/abseil-cpp/absl/types/span_test.cc
+  third_party/abseil-cpp/absl/utility/utility.cc
+  third_party/abseil-cpp/absl/utility/utility_test.cc
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(absl PROPERTIES COMPILE_PDB_NAME "absl"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/absl.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+
+target_include_directories(absl
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(absl
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_library(bad_client_test
   test/core/bad_client/bad_client.c
 )

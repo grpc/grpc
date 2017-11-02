@@ -5045,6 +5045,8 @@ configs:
     test_environ:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
 defaults:
+  absl:
+    CPPFLAGS: -Ithird_party/abseil-cpp
   ares:
     CFLAGS: -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),,-Wno-shorten-64-to-32)
       $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
