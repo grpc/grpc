@@ -17,7 +17,9 @@ def _compilation_database_aspect_impl(target, ctx):
 def _compilation_database_impl(ctx):
     all_infos = []
     for t in ctx.attr.targets:
-        all_infos += t.compilation_infos
+        for infos in t.compilation_infos:
+            if infos not in all_infos:
+                all_infos.append(infos)
 
     entries = [e.to_json() for e in all_infos]
     ctx.file_action(output=ctx.outputs.filename, content="[\n " + ", \n ".join(entries) + "\n]")
