@@ -21,6 +21,8 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
+#include <grpc/support/sync.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
