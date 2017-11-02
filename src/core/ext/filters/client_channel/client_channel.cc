@@ -2378,6 +2378,12 @@ static void apply_service_config_to_call_locked(grpc_exec_ctx *exec_ctx,
       }
     }
   }
+  // If no retry policy, disable retries.
+  // TODO(roth): Remove this when adding support for transparent retries.
+  if (calld->method_params == NULL ||
+      calld->method_params->retry_policy == NULL) {
+    calld->enable_retries = false;
+  }
 }
 
 static void create_subchannel_call(grpc_exec_ctx *exec_ctx,
@@ -2431,7 +2437,7 @@ static void pick_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_status_code status = GRPC_STATUS_OK;
     grpc_error_get_status(exec_ctx, error, calld->deadline, &status, NULL,
                           NULL);
-    if (error == GRPC_ERROR_NONE || calld->method_params == NULL ||
+    if (error == GRPC_ERROR_NONE || !calld->enable_retries ||
         !maybe_retry(exec_ctx, elem, NULL /* batch_data */, status,
                      NULL /* server_pushback_md */)) {
       grpc_error *new_error =
