@@ -2691,7 +2691,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   gpr_timespec retry_delay = gpr_time_sub(after_retry, before_retry);
   // Configured back-off was 1 second, server push-back said 2 seconds.
   // To avoid flakiness, we allow some fudge factor here.
-  gpr_log(GPR_INFO, "retry delay was {.tv_sec=%ld, .tv_nsec=%d}",
+  gpr_log(GPR_INFO, "retry delay was {.tv_sec=%" PRIdPTR ", .tv_nsec=%d}",
           retry_delay.tv_sec, retry_delay.tv_nsec);
   GPR_ASSERT(retry_delay.tv_sec >= 1);
   if (retry_delay.tv_sec == 1) {
