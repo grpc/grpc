@@ -65,7 +65,7 @@ typedef struct {
   grpc_auth_context *auth_context;
 } channel_data;
 
-static void reset_auth_metadata_context(
+void grpc_auth_metadata_context_reset(
     grpc_auth_metadata_context *auth_md_context) {
   if (auth_md_context->service_url != NULL) {
     gpr_free((char *)auth_md_context->service_url);
@@ -96,7 +96,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_element *elem =
       (grpc_call_element *)batch->handler_private.extra_arg;
   call_data *calld = (call_data *)elem->call_data;
-  reset_auth_metadata_context(&calld->auth_md_context);
+  grpc_auth_metadata_context_reset(&calld->auth_md_context);
   grpc_error *error = GRPC_ERROR_REF(input_error);
   if (error == GRPC_ERROR_NONE) {
     GPR_ASSERT(calld->md_array.size <= MAX_CREDENTIALS_METADATA_COUNT);
@@ -119,34 +119,41 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *arg,
   }
 }
 
-void build_auth_metadata_context(grpc_security_connector *sc,
-                                 grpc_auth_context *auth_context,
-                                 call_data *calld) {
-  char *service = grpc_slice_to_c_string(calld->method);
+void grpc_auth_metadata_context_build(
+    const char *url_scheme, grpc_slice call_host, grpc_slice call_method,
+    grpc_auth_context *auth_context,
+    grpc_auth_metadata_context *auth_md_context) {
+  char *service = grpc_slice_to_c_string(call_method);
   char *last_slash = strrchr(service, '/');
   char *method_name = NULL;
   char *service_url = NULL;
-  reset_auth_metadata_context(&calld->auth_md_context);
+  grpc_auth_metadata_context_reset(auth_md_context);
   if (last_slash == NULL) {
     gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
     service[0] = '\0';
+    method_name = gpr_strdup("");
   } else if (last_slash == service) {
-    /* No service part in fully qualified method name: will just be "/". */
-    service[1] = '\0';
+    method_name = gpr_strdup("");
   } else {
     *last_slash = '\0';
     method_name = gpr_strdup(last_slash + 1);
   }
-  if (method_name == NULL) method_name = gpr_strdup("");
-  char *host = grpc_slice_to_c_string(calld->host);
-  gpr_asprintf(&service_url, "%s://%s%s",
-               sc->url_scheme == NULL ? "" : sc->url_scheme, host, service);
-  calld->auth_md_context.service_url = service_url;
-  calld->auth_md_context.method_name = method_name;
-  calld->auth_md_context.channel_auth_context =
+  char *host_and_port = grpc_slice_to_c_string(call_host);
+  if (strcmp(url_scheme, GRPC_SSL_URL_SCHEME) == 0) {
+    /* Remove the port if it is 443. */
+    char *port_delimiter = strrchr(host_and_port, ':');
+    if (port_delimiter != NULL && strcmp(port_delimiter + 1, "443") == 0) {
+      *port_delimiter = '\0';
+    }
+  }
+  gpr_asprintf(&service_url, "%s://%s%s", url_scheme == NULL ? "" : url_scheme,
+               host_and_port, service);
+  auth_md_context->service_url = service_url;
+  auth_md_context->method_name = method_name;
+  auth_md_context->channel_auth_context =
       GRPC_AUTH_CONTEXT_REF(auth_context, "grpc_auth_metadata_context");
   gpr_free(service);
-  gpr_free(host);
+  gpr_free(host_and_port);
 }
 
 static void cancel_get_request_metadata(grpc_exec_ctx *exec_ctx, void *arg,
@@ -198,8 +205,9 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
         call_creds_has_md ? ctx->creds : channel_call_creds);
   }
 
-  build_auth_metadata_context(&chand->security_connector->base,
-                              chand->auth_context, calld);
+  grpc_auth_metadata_context_build(
+      chand->security_connector->base.url_scheme, calld->host, calld->method,
+      chand->auth_context, &calld->auth_md_context);
 
   GPR_ASSERT(calld->pollent != NULL);
 
@@ -369,7 +377,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (calld->have_method) {
     grpc_slice_unref_internal(exec_ctx, calld->method);
   }
-  reset_auth_metadata_context(&calld->auth_md_context);
+  grpc_auth_metadata_context_reset(&calld->auth_md_context);
 }
 
 /* Constructor for channel_data */
