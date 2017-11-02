@@ -36,7 +36,10 @@ void grpc_stats_init(void) {
       (grpc_stats_data *)gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores);
 }
 
-void grpc_stats_shutdown(void) { gpr_free(grpc_stats_per_cpu_storage); }
+void grpc_stats_shutdown(void) {
+  gpr_free(grpc_stats_per_cpu_storage);
+  grpc_stats_per_cpu_storage = NULL;
+}
 
 void grpc_stats_collect(grpc_stats_data *output) {
   memset(output, 0, sizeof(*output));
