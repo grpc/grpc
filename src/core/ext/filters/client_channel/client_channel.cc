@@ -837,8 +837,7 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   const grpc_arg *arg = grpc_channel_args_find(
       args->channel_args, GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE);
   chand->per_rpc_retry_buffer_size = (size_t)grpc_channel_arg_get_integer(
-      arg,
-      (grpc_integer_options){DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0, INT_MAX});
+      arg, {DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0, INT_MAX});
   // Record enable_retries.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_ENABLE_RETRIES);
   chand->enable_retries = grpc_channel_arg_get_bool(arg, true);
