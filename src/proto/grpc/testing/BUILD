@@ -84,6 +84,9 @@ grpc_proto_library(
     name = "stats_proto",
     srcs = ["stats.proto"],
     has_services = False,
+    deps = [
+        "//src/proto/grpc/core:stats_proto",
+    ]
 )
 
 grpc_proto_library(

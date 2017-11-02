@@ -21,6 +21,10 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Timer Manager tries to keep one thread waiting for the next timeout at all
    times */
 
@@ -33,5 +37,9 @@ void grpc_timer_manager_set_threading(bool enabled);
 /* explicitly perform one tick of the timer system - for when threading is
  * disabled */
 void grpc_timer_manager_tick(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H */

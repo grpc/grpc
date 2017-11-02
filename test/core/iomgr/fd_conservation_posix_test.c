@@ -30,9 +30,8 @@ int main(int argc, char **argv) {
   grpc_endpoint_pair p;
 
   grpc_test_init(argc, argv);
+  grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_iomgr_init(&exec_ctx);
-  grpc_iomgr_start(&exec_ctx);
 
   /* set max # of file descriptors to a low value, and
      verify we can create and destroy many more than this number
@@ -51,7 +50,7 @@ int main(int argc, char **argv) {
 
   grpc_resource_quota_unref(resource_quota);
 
-  grpc_iomgr_shutdown(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
   return 0;
 }

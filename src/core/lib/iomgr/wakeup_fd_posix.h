@@ -49,6 +49,10 @@
 
 #include "src/core/lib/iomgr/error.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void grpc_wakeup_fd_global_init(void);
 void grpc_wakeup_fd_global_destroy(void);
 
@@ -90,5 +94,9 @@ void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info);
 /* Defined in some specialized implementation's .c file, or by
  * wakeup_fd_nospecial.c if no such implementation exists. */
 extern const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H */

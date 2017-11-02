@@ -40,7 +40,6 @@ namespace grpc {
 class AsyncGenericService;
 class ResourceQuota;
 class CompletionQueue;
-class RpcService;
 class Server;
 class ServerCompletionQueue;
 class ServerCredentials;
@@ -136,9 +135,11 @@ class ServerBuilder {
   /// It can be invoked multiple times.
   ///
   /// \param addr_uri The address to try to bind to the server in URI form. If
-  /// the scheme name is omitted, "dns:///" is assumed. Valid values include
-  /// dns:///localhost:1234, / 192.168.1.1:31416, dns:///[::1]:27182, etc.).
-  /// \params creds The credentials associated with the server.
+  /// the scheme name is omitted, "dns:///" is assumed. To bind to any address,
+  /// please use IPv6 any, i.e., [::]:<port>, which also accepts IPv4
+  /// connections.  Valid values include dns:///localhost:1234, /
+  /// 192.168.1.1:31416, dns:///[::1]:27182, etc.).
+  /// \param creds The credentials associated with the server.
   /// \param selected_port[out] If not `nullptr`, gets populated with the port
   /// number bound to the \a grpc::Server for the corresponding endpoint after
   /// it is successfully bound, 0 otherwise.
@@ -151,7 +152,8 @@ class ServerBuilder {
   /// Add a completion queue for handling asynchronous services.
   ///
   /// Caller is required to shutdown the server prior to shutting down the
-  /// returned completion queue. A typical usage scenario:
+  /// returned completion queue. Caller is also required to drain the
+  /// completion queue after shutting it down. A typical usage scenario:
   ///
   /// // While building the server:
   /// ServerBuilder builder;
@@ -162,6 +164,10 @@ class ServerBuilder {
   /// // While shutting down the server;
   /// server_->Shutdown();
   /// cq_->Shutdown();  // Always *after* the associated server's Shutdown()!
+  /// // Drain the cq_ that was created
+  /// void* ignored_tag;
+  /// bool ignored_ok;
+  /// while (cq_->Next(&ignored_tag, &ignored_ok)) { }
   ///
   /// \param is_frequently_polled This is an optional parameter to inform gRPC
   /// library about whether this completion queue would be frequently polled

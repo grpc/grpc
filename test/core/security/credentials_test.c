@@ -194,14 +194,13 @@ static void test_add_abunch_to_md_array(void) {
 static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &exec_ctx, &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_OK);
-  GPR_ASSERT(token_lifetime.tv_sec == 3599);
-  GPR_ASSERT(token_lifetime.tv_nsec == 0);
+  GPR_ASSERT(token_lifetime == 3599 * GPR_MS_PER_SEC);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(token_md), "authorization") == 0);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(token_md),
                                 "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
@@ -214,7 +213,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
 static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(401, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -227,7 +226,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
 static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response = http_response(200, "");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &exec_ctx, &response, &token_md, &token_lifetime) ==
@@ -239,7 +238,7 @@ static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
 static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -255,7 +254,7 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
 static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response = http_response(200,
                                                  "{"
                                                  " \"expires_in\":3599, "
@@ -270,7 +269,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -287,7 +286,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
     void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -555,7 +554,7 @@ static void validate_compute_engine_http_request(
 
 static int compute_engine_httpcli_get_success_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(200, valid_oauth2_json_response);
@@ -565,7 +564,7 @@ static int compute_engine_httpcli_get_success_override(
 
 static int compute_engine_httpcli_get_failure_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(403, "Not Authorized.");
@@ -575,7 +574,7 @@ static int compute_engine_httpcli_get_failure_override(
 
 static int httpcli_post_should_not_be_called(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body_bytes, size_t body_size, gpr_timespec deadline,
+    const char *body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure *on_done, grpc_httpcli_response *response) {
   GPR_ASSERT("HTTP POST should not be called" == NULL);
   return 1;
@@ -583,7 +582,7 @@ static int httpcli_post_should_not_be_called(
 
 static int httpcli_get_should_not_be_called(grpc_exec_ctx *exec_ctx,
                                             const grpc_httpcli_request *request,
-                                            gpr_timespec deadline,
+                                            grpc_millis deadline,
                                             grpc_closure *on_done,
                                             grpc_httpcli_response *response) {
   GPR_ASSERT("HTTP GET should not be called" == NULL);
@@ -663,7 +662,7 @@ static void validate_refresh_token_http_request(
 
 static int refresh_token_httpcli_post_success(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body, size_t body_size, gpr_timespec deadline,
+    const char *body, size_t body_size, grpc_millis deadline,
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(200, valid_oauth2_json_response);
@@ -673,7 +672,7 @@ static int refresh_token_httpcli_post_success(
 
 static int refresh_token_httpcli_post_failure(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body, size_t body_size, gpr_timespec deadline,
+    const char *body, size_t body_size, grpc_millis deadline,
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(403, "Not Authorized.");
@@ -932,7 +931,7 @@ static void test_google_default_creds_refresh_token(void) {
 
 static int default_creds_gce_detection_httpcli_get_success_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   *response = http_response(200, "");
   grpc_http_header *headers = gpr_malloc(sizeof(*headers) * 1);
@@ -996,7 +995,7 @@ static void test_google_default_creds_gce(void) {
 
 static int default_creds_gce_detection_httpcli_get_failure_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   /* No magic header. */
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
@@ -1036,39 +1035,46 @@ typedef enum {
 
 static const expected_md plugin_md[] = {{"foo", "bar"}, {"hi", "there"}};
 
-static void plugin_get_metadata_success(void *state,
-                                        grpc_auth_metadata_context context,
-                                        grpc_credentials_plugin_metadata_cb cb,
-                                        void *user_data) {
-  size_t i;
-  grpc_metadata md[GPR_ARRAY_SIZE(plugin_md)];
-  plugin_state *s = (plugin_state *)state;
+static int plugin_get_metadata_success(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
   GPR_ASSERT(strcmp(context.service_url, test_service_url) == 0);
   GPR_ASSERT(strcmp(context.method_name, test_method) == 0);
   GPR_ASSERT(context.channel_auth_context == NULL);
   GPR_ASSERT(context.reserved == NULL);
+  GPR_ASSERT(GPR_ARRAY_SIZE(plugin_md) <
+             GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
+  plugin_state *s = (plugin_state *)state;
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
-  for (i = 0; i < GPR_ARRAY_SIZE(plugin_md); i++) {
-    memset(&md[i], 0, sizeof(grpc_metadata));
-    md[i].key = grpc_slice_from_copied_string(plugin_md[i].key);
-    md[i].value = grpc_slice_from_copied_string(plugin_md[i].value);
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(plugin_md); ++i) {
+    memset(&creds_md[i], 0, sizeof(grpc_metadata));
+    creds_md[i].key = grpc_slice_from_copied_string(plugin_md[i].key);
+    creds_md[i].value = grpc_slice_from_copied_string(plugin_md[i].value);
   }
-  cb(user_data, md, GPR_ARRAY_SIZE(md), GRPC_STATUS_OK, NULL);
+  *num_creds_md = GPR_ARRAY_SIZE(plugin_md);
+  return true;  // Synchronous return.
 }
 
 static const char *plugin_error_details = "Could not get metadata for plugin.";
 
-static void plugin_get_metadata_failure(void *state,
-                                        grpc_auth_metadata_context context,
-                                        grpc_credentials_plugin_metadata_cb cb,
-                                        void *user_data) {
-  plugin_state *s = (plugin_state *)state;
+static int plugin_get_metadata_failure(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
   GPR_ASSERT(strcmp(context.service_url, test_service_url) == 0);
   GPR_ASSERT(strcmp(context.method_name, test_method) == 0);
   GPR_ASSERT(context.channel_auth_context == NULL);
   GPR_ASSERT(context.reserved == NULL);
+  plugin_state *s = (plugin_state *)state;
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
-  cb(user_data, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, plugin_error_details);
+  *status = GRPC_STATUS_UNAUTHENTICATED;
+  *error_details = gpr_strdup(plugin_error_details);
+  return true;  // Synchronous return.
 }
 
 static void plugin_destroy(void *state) {

@@ -9,8 +9,6 @@
     <OutputType>Exe</OutputType>
     <PackageId>Grpc.IntegrationTesting.QpsWorker</PackageId>
     <ServerGarbageCollection>true</ServerGarbageCollection>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">$(PackageTargetFallback);portable-net45</PackageTargetFallback>
-    <RuntimeFrameworkVersion Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">1.0.4</RuntimeFrameworkVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 

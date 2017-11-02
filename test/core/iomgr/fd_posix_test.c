@@ -178,8 +178,8 @@ static void listen_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg /*server */,
 
   gpr_mu_lock(g_mu);
   sv->done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -252,10 +252,8 @@ static void server_wait_and_shutdown(server *sv) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC),
-                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+        "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                                          GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -297,8 +295,8 @@ static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
   grpc_fd_orphan(exec_ctx, cl->em_fd, NULL, NULL, false /* already_closed */,
                  "c");
   cl->done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
 }
 
 /* Write as much as possible, then register notify_on_write. */
@@ -371,10 +369,8 @@ static void client_wait_and_shutdown(client *cl) {
     grpc_pollset_worker *worker = NULL;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC),
-                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+        "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                                          GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -417,8 +413,8 @@ static void first_read_callback(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(g_mu);
   fdc->cb_that_ran = first_read_callback;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -429,8 +425,8 @@ static void second_read_callback(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(g_mu);
   fdc->cb_that_ran = second_read_callback;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -477,10 +473,8 @@ static void test_grpc_fd_change(void) {
   while (a.cb_that_ran == NULL) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC),
-                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+        "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                                          GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -503,10 +497,8 @@ static void test_grpc_fd_change(void) {
   while (b.cb_that_ran == NULL) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC),
-                          gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+        "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                                          GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);

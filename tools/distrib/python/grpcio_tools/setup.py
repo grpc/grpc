@@ -47,7 +47,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: Apache Software License',
-],
+]
 
 PY3 = sys.version_info.major == 3
 

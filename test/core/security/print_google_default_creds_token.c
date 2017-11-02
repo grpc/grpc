@@ -57,7 +57,8 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *arg,
   sync->is_done = true;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), NULL));
+      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&sync->pops),
+                        NULL));
   gpr_mu_unlock(sync->mu);
 }
 
@@ -109,8 +110,7 @@ int main(int argc, char **argv) {
             "pollset_work",
             grpc_pollset_work(&exec_ctx,
                               grpc_polling_entity_pollset(&sync.pops), &worker,
-                              gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_inf_future(GPR_CLOCK_MONOTONIC))))
+                              GRPC_MILLIS_INF_FUTURE)))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
     grpc_exec_ctx_flush(&exec_ctx);

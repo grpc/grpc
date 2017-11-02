@@ -268,9 +268,6 @@ class CallData {
   virtual void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
                                       grpc_polling_entity *pollent);
-
-  /// Gets the peer name.
-  virtual char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 };
 
 namespace internal {
@@ -349,11 +346,6 @@ class ChannelFilter final {
     CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
     call_data->SetPollsetOrPollsetSet(exec_ctx, elem, pollent);
   }
-
-  static char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
-    return call_data->GetPeer(exec_ctx, elem);
-  }
 };
 
 struct FilterRecord {
@@ -396,8 +388,7 @@ void RegisterChannelFilter(
        FilterType::call_data_size, FilterType::InitCallElement,
        FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
        FilterType::channel_data_size, FilterType::InitChannelElement,
-       FilterType::DestroyChannelElement, FilterType::GetPeer,
-       FilterType::GetChannelInfo, name}};
+       FilterType::DestroyChannelElement, FilterType::GetChannelInfo, name}};
   internal::channel_filters->push_back(filter_record);
 }
 

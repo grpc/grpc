@@ -94,7 +94,7 @@ def diagnose_attribute_error(build_ext, error):
 
 _ERROR_DIAGNOSES = {
     errors.CompileError: diagnose_compile_error,
-    AttributeError: diagnose_attribute_error
+    AttributeError: diagnose_attribute_error,
 }
 
 
@@ -102,8 +102,10 @@ def diagnose_build_ext_error(build_ext, error, formatted):
     diagnostic = _ERROR_DIAGNOSES.get(type(error))
     if diagnostic is None:
         raise commands.CommandError(
-            "\n\nWe could not diagnose your build failure. Please file an issue at "
-            "http://www.github.com/grpc/grpc with `[Python install]` in the title."
-            "\n\n{}".format(formatted))
+            "\n\nWe could not diagnose your build failure. If you are unable to "
+            "proceed, please file an issue at http://www.github.com/grpc/grpc "
+            "with `[Python install]` in the title; please attach the whole log "
+            "(including everything that may have appeared above the Python "
+            "backtrace).\n\n{}".format(formatted))
     else:
         diagnostic(build_ext, error)

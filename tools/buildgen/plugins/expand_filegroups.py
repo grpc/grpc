@@ -146,7 +146,7 @@ def mako_plugin(dictionary):
         lib[lst] = vals
       lib['plugins'] = plugins
     if lib.get('generate_plugin_registry', False):
-      lib['src'].append('src/core/plugin_registry/%s_plugin_registry.c' %
+      lib['src'].append('src/core/plugin_registry/%s_plugin_registry.cc' %
                         lib['name'])
     for lst in FILEGROUP_LISTS:
       lib[lst] = uniquify(lib.get(lst, []))

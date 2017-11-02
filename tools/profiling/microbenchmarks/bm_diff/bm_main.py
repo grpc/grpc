@@ -23,6 +23,7 @@ import bm_diff
 
 import sys
 import os
+import random
 import argparse
 import multiprocessing
 import subprocess
@@ -31,6 +32,12 @@ sys.path.append(
   os.path.join(
     os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
 import comment_on_pr
+
+sys.path.append(
+  os.path.join(
+    os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
+    'python_utils'))
+import jobset
 
 
 def _args():
@@ -125,8 +132,13 @@ def main(args):
       subprocess.check_call(['git', 'checkout', where_am_i])
       subprocess.check_call(['git', 'submodule', 'update'])
 
-  bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.regex, args.counters)
-  bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.regex, args.counters)
+  jobs_list = []
+  jobs_list += bm_run.create_jobs('new', args.benchmarks, args.loops, args.regex, args.counters)
+  jobs_list += bm_run.create_jobs(old, args.benchmarks, args.loops, args.regex, args.counters)
+
+  # shuffle all jobs to eliminate noise from GCE CPU drift
+  random.shuffle(jobs_list, random.SystemRandom().random)
+  jobset.run(jobs_list, maxjobs=args.jobs)
 
   diff, note = bm_diff.diff(args.benchmarks, args.loops, args.regex, args.track, old,
                 'new', args.counters)

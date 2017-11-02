@@ -26,6 +26,10 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Channel arg containing a grpc_resolved_address to connect to.
 #define GRPC_ARG_SUBCHANNEL_ADDRESS "grpc.subchannel_address"
 
@@ -103,9 +107,10 @@ typedef struct {
   grpc_polling_entity *pollent;
   grpc_slice path;
   gpr_timespec start_time;
-  gpr_timespec deadline;
+  grpc_millis deadline;
   gpr_arena *arena;
   grpc_call_context_element *context;
+  grpc_call_combiner *call_combiner;
 } grpc_connected_subchannel_call_args;
 
 grpc_error *grpc_connected_subchannel_create_call(
@@ -122,8 +127,8 @@ void grpc_connected_subchannel_process_transport_op(
 grpc_connectivity_state grpc_subchannel_check_connectivity(
     grpc_subchannel *channel, grpc_error **error);
 
-/** call notify when the connectivity state of a channel changes from *state.
-    Updates *state with the new state of the channel */
+/** Calls notify when the connectivity state of a channel becomes different
+    from *state.  Updates *state with the new state of the channel. */
 void grpc_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_subchannel *channel,
     grpc_pollset_set *interested_parties, grpc_connectivity_state *state,
@@ -149,10 +154,6 @@ const grpc_subchannel_key *grpc_subchannel_get_key(
 void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel_call *subchannel_call,
                                      grpc_transport_stream_op_batch *op);
-
-/** continue querying for peer */
-char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
-                                    grpc_subchannel_call *subchannel_call);
 
 /** Must be called once per call. Sets the 'then_schedule_closure' argument for
     call stack destruction. */
@@ -190,5 +191,9 @@ const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args);
 /// Returns a new channel arg encoding the subchannel address as a string.
 /// Caller is responsible for freeing the string.
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H */

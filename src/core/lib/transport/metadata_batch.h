@@ -51,9 +51,9 @@ typedef struct grpc_metadata_batch {
   grpc_mdelem_list list;
   grpc_metadata_batch_callouts idx;
   /** Used to calculate grpc-timeout at the point of sending,
-      or gpr_inf_future if this batch does not need to send a
+      or GRPC_MILLIS_INF_FUTURE if this batch does not need to send a
       grpc-timeout */
-  gpr_timespec deadline;
+  grpc_millis deadline;
 } grpc_metadata_batch;
 
 void grpc_metadata_batch_init(grpc_metadata_batch *batch);
@@ -125,10 +125,11 @@ typedef struct {
 } grpc_filtered_mdelem;
 
 #define GRPC_FILTERED_ERROR(error) \
-  ((grpc_filtered_mdelem){(error), GRPC_MDNULL})
-#define GRPC_FILTERED_MDELEM(md) ((grpc_filtered_mdelem){GRPC_ERROR_NONE, (md)})
+  { (error), GRPC_MDNULL }
+#define GRPC_FILTERED_MDELEM(md) \
+  { GRPC_ERROR_NONE, (md) }
 #define GRPC_FILTERED_REMOVE() \
-  ((grpc_filtered_mdelem){GRPC_ERROR_NONE, GRPC_MDNULL})
+  { GRPC_ERROR_NONE, GRPC_MDNULL }
 
 typedef grpc_filtered_mdelem (*grpc_metadata_batch_filter_func)(
     grpc_exec_ctx *exec_ctx, void *user_data, grpc_mdelem elem);

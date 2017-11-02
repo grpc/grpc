@@ -37,7 +37,7 @@ namespace grpc {
 
 // CompletionOp
 
-class ServerContext::CompletionOp final : public CallOpSetInterface {
+class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
   CompletionOp()
@@ -146,7 +146,7 @@ ServerContext::~ServerContext() {
   }
 }
 
-void ServerContext::BeginCompletionOp(Call* call) {
+void ServerContext::BeginCompletionOp(internal::Call* call) {
   GPR_ASSERT(!completion_op_);
   completion_op_ = new CompletionOp();
   if (has_notify_when_done_tag_) {
@@ -155,8 +155,8 @@ void ServerContext::BeginCompletionOp(Call* call) {
   call->PerformOps(completion_op_);
 }
 
-CompletionQueueTag* ServerContext::GetCompletionOpTag() {
-  return static_cast<CompletionQueueTag*>(completion_op_);
+internal::CompletionQueueTag* ServerContext::GetCompletionOpTag() {
+  return static_cast<internal::CompletionQueueTag*>(completion_op_);
 }
 
 void ServerContext::AddInitialMetadata(const grpc::string& key,
@@ -190,7 +190,7 @@ bool ServerContext::IsCancelled() const {
 
 void ServerContext::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
-  char* algorithm_name = NULL;
+  const char* algorithm_name = NULL;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
             algorithm);

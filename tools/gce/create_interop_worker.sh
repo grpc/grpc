@@ -33,7 +33,8 @@ gcloud compute instances create $INSTANCE_NAME \
     --machine-type n1-standard-16 \
     --image ubuntu-15-10 \
     --boot-disk-size 1000 \
-    --scopes https://www.googleapis.com/auth/xapi.zoo
+    --scopes https://www.googleapis.com/auth/xapi.zoo \
+    --tags=allow-ssh
 
 echo 'Created GCE instance, waiting 60 seconds for it to come online.'
 sleep 60

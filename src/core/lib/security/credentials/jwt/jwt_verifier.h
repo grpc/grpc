@@ -32,6 +32,10 @@
 #define GRPC_GOOGLE_SERVICE_ACCOUNTS_KEY_URL_PREFIX \
   "www.googleapis.com/robot/v1/metadata/x509"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* --- grpc_jwt_verifier_status. --- */
 
 typedef enum {
@@ -81,7 +85,7 @@ typedef struct {
 
 /* Globals to control the verifier. Not thread-safe. */
 extern gpr_timespec grpc_jwt_verifier_clock_skew;
-extern gpr_timespec grpc_jwt_verifier_max_delay;
+extern grpc_millis grpc_jwt_verifier_max_delay;
 
 /* The verifier can be created with some custom mappings to help with key
    discovery in the case where the issuer is an email address.
@@ -121,5 +125,9 @@ grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_exec_ctx *exec_ctx,
 grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
                                                const char *audience);
 const char *grpc_jwt_issuer_email_domain(const char *issuer);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H */

@@ -62,8 +62,6 @@
 #define HTTP2_DETAIL_MSG(STATUS_CODE) \
   "Received http2 header with status: " #STATUS_CODE
 
-#define UNPARSEABLE_DETAIL_MSG "Failed parsing HTTP/2"
-
 #define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
 
 /* TODO(zyc) Check the content of incomming data instead of using this length */
@@ -136,7 +134,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
   gpr_free(acceptor);
-  test_tcp_server *server = arg;
+  test_tcp_server *server = (test_tcp_server *)arg;
   GRPC_CLOSURE_INIT(&on_read, handle_read, NULL, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_write, done_write, NULL, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
@@ -208,8 +206,10 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cq_verify(cqv);
 
   GPR_ASSERT(status == expected_status);
-  GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
-                                                 expected_detail)));
+  if (expected_detail != NULL) {
+    GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
+                                                   expected_detail)));
+  }
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -237,7 +237,7 @@ typedef struct {
 } poll_args;
 
 static void actually_poll_server(void *arg) {
-  poll_args *pa = arg;
+  poll_args *pa = (poll_args *)arg;
   gpr_timespec deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
@@ -259,7 +259,7 @@ static void poll_server_until_read_done(test_tcp_server *server,
   gpr_atm_rel_store(&state.done_atm, 0);
   state.write_done = 0;
   gpr_thd_id id;
-  poll_args *pa = gpr_malloc(sizeof(*pa));
+  poll_args *pa = (poll_args *)gpr_malloc(sizeof(*pa));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
   gpr_thd_new(&id, actually_poll_server, pa, NULL);
@@ -330,8 +330,8 @@ int main(int argc, char **argv) {
            HTTP2_DETAIL_MSG(502));
 
   /* unparseable response */
-  run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
-           GRPC_STATUS_UNAVAILABLE, UNPARSEABLE_DETAIL_MSG);
+  run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1, GRPC_STATUS_UNKNOWN,
+           NULL);
 
   /* http1 response */
   run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,

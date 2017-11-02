@@ -36,6 +36,7 @@ sys.path.append(python_util_dir)
 import dockerjob
 import jobset
 import report_utils
+import upload_test_results
 
 _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
@@ -48,9 +49,8 @@ argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('--gcr_path',
                   default='gcr.io/grpc-testing',
                   help='Path of docker images in Google Container Registry')
-
 argp.add_argument('--release',
-                  default='master',
+                  default='all',
                   choices=['all', 'master'] + _RELEASES,
                   help='Release tags to test.  When testing all '
                   'releases defined in client_matrix.py, use "all".')
@@ -68,6 +68,18 @@ argp.add_argument('--keep',
 argp.add_argument('--report_file',
                   default='report.xml',
                   help='The result file to create.')
+
+argp.add_argument('--allow_flakes',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help=('Allow flaky tests to show as passing (re-runs failed '
+                        'tests up to five times)'))
+argp.add_argument('--bq_result_table',
+                  default='',
+                  type=str,
+                  nargs='?',
+                  help='Upload test results to a specified BQ table.')
 
 args = argp.parse_args()
 
@@ -94,14 +106,15 @@ def find_all_images_for_lang(lang):
   for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:
     image_path = '%s/grpc_interop_%s' % (args.gcr_path, runtime)
     output = subprocess.check_output(['gcloud', 'beta', 'container', 'images',
-                                        'list-tags', '--format=json', image_path])
+                                      'list-tags', '--format=json', image_path])
     docker_image_list = json.loads(output)
     # All images should have a single tag or no tag.
+    # TODO(adelez): Remove tagless images.
     tags = [i['tags'][0] for i in docker_image_list if i['tags']]
     jobset.message('START', 'Found images for %s: %s' % (image_path, tags),
                    do_newline=True)
     skipped = len(docker_image_list) - len(tags)
-    jobset.message('START', 'Skipped images (no-tag/unknown-tag): %d' % skipped,
+    jobset.message('SKIPPED', 'Skipped images (no-tag/unknown-tag): %d' % skipped,
                    do_newline=True)
     # Filter tags based on the releases.
     images[runtime] = [(tag,'%s:%s' % (image_path,tag)) for tag in tags if
@@ -109,15 +122,13 @@ def find_all_images_for_lang(lang):
   return images
 
 # caches test cases (list of JobSpec) loaded from file.  Keyed by lang and runtime.
-_loaded_testcases = {}
-def find_test_cases(lang, release):
+def find_test_cases(lang, release, suite_name):
   """Returns the list of test cases from testcase files per lang/release."""
   file_tmpl = os.path.join(os.path.dirname(__file__), 'testcases/%s__%s')
+  testcase_release = release
   if not os.path.exists(file_tmpl % (lang, release)):
-    release = 'master'
-  testcases = file_tmpl % (lang, release)
-  if lang in _loaded_testcases.keys() and release in _loaded_testcases[lang].keys():
-    return _loaded_testcases[lang][release]
+    testcase_release = 'master'
+  testcases = file_tmpl % (lang, testcase_release)
 
   job_spec_list=[]
   try:
@@ -127,19 +138,21 @@ def find_test_cases(lang, release):
         if line.startswith('docker run'):
           m = re.search('--test_case=(.*)"', line)
           shortname = m.group(1) if m else 'unknown_test'
+          m = re.search('--server_host_override=(.*).sandbox.googleapis.com', 
+                        line)
+          server = m.group(1) if m else 'unknown_server'
           spec = jobset.JobSpec(cmdline=line,
-                                shortname=shortname,
+                                shortname='%s:%s:%s:%s' % (suite_name, lang, 
+                                                           server, shortname),
                                 timeout_seconds=_TEST_TIMEOUT,
-                                shell=True)
+                                shell=True,
+                                flake_retries=5 if args.allow_flakes else 0)
           job_spec_list.append(spec)
       jobset.message('START',
                      'Loaded %s tests from %s' % (len(job_spec_list), testcases),
                      do_newline=True)
   except IOError as err:
     jobset.message('FAILED', err, do_newline=True)
-  if lang not in _loaded_testcases.keys():
-    _loaded_testcases[lang] = {}
-  _loaded_testcases[lang][release]=job_spec_list
   return job_spec_list
 
 _xml_report_tree = report_utils.new_junit_xml_tree()
@@ -148,19 +161,25 @@ def run_tests_for_lang(lang, runtime, images):
 
   images is a list of (<release-tag>, <image-full-path>) tuple.
   """
+  total_num_failures = 0
   for image_tuple in images:
     release, image = image_tuple
     jobset.message('START', 'Testing %s' % image, do_newline=True)
     # Download the docker image before running each test case.
     subprocess.check_call(['gcloud', 'docker', '--', 'pull', image])
     _docker_images_cleanup.append(image)
-    job_spec_list = find_test_cases(lang,release)
+    suite_name = '%s__%s_%s' % (lang, runtime, release)
+    job_spec_list = find_test_cases(lang, release, suite_name)
     num_failures, resultset = jobset.run(job_spec_list,
                                          newline_on_success=True,
                                          add_env={'docker_image':image},
                                          maxjobs=args.jobs)
+    if args.bq_result_table and resultset:
+      upload_test_results.upload_interop_results_to_bq(
+          resultset, args.bq_result_table, args)
     if num_failures:
       jobset.message('FAILED', 'Some tests failed', do_newline=True)
+      total_num_failures += num_failures
     else:
       jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
@@ -168,8 +187,11 @@ def run_tests_for_lang(lang, runtime, images):
         _xml_report_tree,
         resultset,
         'grpc_interop_matrix',
-        '%s__%s %s'%(lang,runtime,release),
+        suite_name,
         str(uuid.uuid4()))
+  
+  return total_num_failures
+
 
 _docker_images_cleanup = []
 def cleanup():
@@ -180,9 +202,14 @@ def cleanup():
 atexit.register(cleanup)
 
 languages = args.language if args.language != ['all'] else _LANGUAGES
+total_num_failures = 0
 for lang in languages:
   docker_images = find_all_images_for_lang(lang)
   for runtime in sorted(docker_images.keys()):
-    run_tests_for_lang(lang, runtime, docker_images[runtime])
+    total_num_failures += run_tests_for_lang(lang, runtime, docker_images[runtime])
 
 report_utils.create_xml_report_file(_xml_report_tree, args.report_file)
+
+if total_num_failures:
+  sys.exit(1)
+sys.exit(0)

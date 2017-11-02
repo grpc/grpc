@@ -89,6 +89,13 @@ static void te_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_endpoint_add_to_pollset_set(exec_ctx, te->wrapped, pollset_set);
 }
 
+static void te_delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_endpoint *ep,
+                                       grpc_pollset_set *pollset_set) {
+  trickle_endpoint *te = (trickle_endpoint *)ep;
+  grpc_endpoint_delete_from_pollset_set(exec_ctx, te->wrapped, pollset_set);
+}
+
 static void te_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                         grpc_error *why) {
   trickle_endpoint *te = (trickle_endpoint *)ep;
@@ -128,21 +135,27 @@ static int te_get_fd(grpc_endpoint *ep) {
 
 static void te_finish_write(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
-  trickle_endpoint *te = arg;
+  trickle_endpoint *te = (trickle_endpoint *)arg;
   gpr_mu_lock(&te->mu);
   te->writing = false;
   grpc_slice_buffer_reset_and_unref(&te->writing_buffer);
   gpr_mu_unlock(&te->mu);
 }
 
-static const grpc_endpoint_vtable vtable = {
-    te_read,     te_write,   te_add_to_pollset,    te_add_to_pollset_set,
-    te_shutdown, te_destroy, te_get_resource_user, te_get_peer,
-    te_get_fd};
+static const grpc_endpoint_vtable vtable = {te_read,
+                                            te_write,
+                                            te_add_to_pollset,
+                                            te_add_to_pollset_set,
+                                            te_delete_from_pollset_set,
+                                            te_shutdown,
+                                            te_destroy,
+                                            te_get_resource_user,
+                                            te_get_peer,
+                                            te_get_fd};
 
 grpc_endpoint *grpc_trickle_endpoint_create(grpc_endpoint *wrap,
                                             double bytes_per_second) {
-  trickle_endpoint *te = gpr_malloc(sizeof(*te));
+  trickle_endpoint *te = (trickle_endpoint *)gpr_malloc(sizeof(*te));
   te->base.vtable = &vtable;
   te->wrapped = wrap;
   te->bytes_per_second = bytes_per_second;

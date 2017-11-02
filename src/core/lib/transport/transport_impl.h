@@ -21,6 +21,10 @@
 
 #include "src/core/lib/transport/transport.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_transport_vtable {
   /* Memory required for a single stream element - this is allocated by upper
      layers and initialized by the transport */
@@ -59,9 +63,6 @@ typedef struct grpc_transport_vtable {
   /* implementation of grpc_transport_destroy */
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_transport *self);
 
-  /* implementation of grpc_transport_get_peer */
-  char *(*get_peer)(grpc_exec_ctx *exec_ctx, grpc_transport *self);
-
   /* implementation of grpc_transport_get_endpoint */
   grpc_endpoint *(*get_endpoint)(grpc_exec_ctx *exec_ctx, grpc_transport *self);
 } grpc_transport_vtable;
@@ -71,5 +72,9 @@ struct grpc_transport {
   /* pointer to a vtable defining operations on this transport */
   const grpc_transport_vtable *vtable;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H */

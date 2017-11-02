@@ -25,6 +25,7 @@
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
 extern "C" {
@@ -41,6 +42,7 @@ extern "C" {
 #include "test/core/util/port.h"
 }
 
+#include "src/cpp/client/create_channel_internal.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
@@ -84,7 +86,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   virtual ~FullstackFixture() {
-    server_->Shutdown();
+    server_->Shutdown(gpr_inf_past(GPR_CLOCK_MONOTONIC));
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -211,7 +213,7 @@ class EndpointPairFixture : public BaseFixture {
   }
 
   virtual ~EndpointPairFixture() {
-    server_->Shutdown();
+    server_->Shutdown(gpr_inf_past(GPR_CLOCK_MONOTONIC));
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -258,7 +260,8 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << (double)stats_.num_writes / (double)state.iterations();
+        << static_cast<double>(gpr_atm_no_barrier_load(&stats_.num_writes)) /
+               static_cast<double>(state.iterations());
   }
 
  private:

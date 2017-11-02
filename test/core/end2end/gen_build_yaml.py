@@ -24,15 +24,15 @@ import hashlib
 
 FixtureOptions = collections.namedtuple(
     'FixtureOptions',
-    'fullstack includes_proxy dns_resolver name_resolution secure platforms ci_mac tracing exclude_configs exclude_iomgrs large_writes enables_compression supports_compression is_inproc is_http2 supports_proxy_auth')
+    'fullstack includes_proxy dns_resolver name_resolution secure platforms ci_mac tracing exclude_configs exclude_iomgrs large_writes enables_compression supports_compression is_inproc is_http2 supports_proxy_auth supports_write_buffering')
 default_unsecure_fixture_options = FixtureOptions(
-    True, False, True, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [], True, False, True, False, True, False)
+    True, False, True, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [], True, False, True, False, True, False, True)
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'], exclude_iomgrs=['uv'])
 fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
     dns_resolver=False, fullstack=False, platforms=['linux', 'mac', 'posix'], exclude_iomgrs=['uv'])
-inproc_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, fullstack=False, name_resolution=False, supports_compression=False, is_inproc=True, is_http2=False)
+inproc_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, fullstack=False, name_resolution=False, supports_compression=False, is_inproc=True, is_http2=False, supports_write_buffering=False)
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
@@ -60,7 +60,6 @@ END2END_FIXTURES = {
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
         ci_mac=False, tracing=True, large_writes=False, exclude_iomgrs=['uv']),
     'h2_ssl': default_secure_fixture_options,
-    'h2_ssl_cert': default_secure_fixture_options,
     'h2_ssl_proxy': default_secure_fixture_options._replace(
         includes_proxy=True, ci_mac=False, exclude_iomgrs=['uv']),
     'h2_uds': uds_fixture_options,
@@ -69,8 +68,8 @@ END2END_FIXTURES = {
 
 TestOptions = collections.namedtuple(
     'TestOptions',
-    'needs_fullstack needs_dns needs_names proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allows_compression needs_compression exclude_inproc needs_http2 needs_proxy_auth')
-default_test_options = TestOptions(False, False, False, True, False, True, 1.0, [], False, False, True, False, False, False, False)
+    'needs_fullstack needs_dns needs_names proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allows_compression needs_compression exclude_inproc needs_http2 needs_proxy_auth needs_write_buffering')
+default_test_options = TestOptions(False, False, False, True, False, True, 1.0, [], False, False, True, False, False, False, False, False)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -147,8 +146,10 @@ END2END_TESTS = {
     'streaming_error_response': default_test_options._replace(cpu_cost=LOWCPU),
     'trailing_metadata': default_test_options,
     'workaround_cronet_compression': default_test_options,
-    'write_buffering': default_test_options._replace(cpu_cost=LOWCPU),
-    'write_buffering_at_end': default_test_options._replace(cpu_cost=LOWCPU),
+    'write_buffering': default_test_options._replace(cpu_cost=LOWCPU,
+                                                     needs_write_buffering=True),
+    'write_buffering_at_end': default_test_options._replace(cpu_cost=LOWCPU,
+                                                     needs_write_buffering=True),
 }
 
 
@@ -185,6 +186,9 @@ def compatible(f, t):
       return False
   if END2END_TESTS[t].needs_proxy_auth:
     if not END2END_FIXTURES[f].supports_proxy_auth:
+      return False
+  if END2END_TESTS[t].needs_write_buffering:
+    if not END2END_FIXTURES[f].supports_write_buffering:
       return False
   return True
 

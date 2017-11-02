@@ -95,6 +95,11 @@ bool grpc_channel_stack_builder_move_next(
 bool grpc_channel_stack_builder_move_prev(
     grpc_channel_stack_builder_iterator *iterator);
 
+/// Return an iterator at \a filter_name, or at the end of the list if not
+/// found.
+grpc_channel_stack_builder_iterator *grpc_channel_stack_builder_iterator_find(
+    grpc_channel_stack_builder *builder, const char *filter_name);
+
 typedef void (*grpc_post_filter_create_init_func)(
     grpc_channel_stack *channel_stack, grpc_channel_element *elem, void *arg);
 
@@ -131,6 +136,11 @@ bool grpc_channel_stack_builder_append_filter(
     grpc_channel_stack_builder *builder, const grpc_channel_filter *filter,
     grpc_post_filter_create_init_func post_init_func,
     void *user_data) GRPC_MUST_USE_RESULT;
+
+/// Remove any filter whose name is \a filter_name from \a builder. Returns true
+/// if \a filter_name was not found.
+bool grpc_channel_stack_builder_remove_filter(
+    grpc_channel_stack_builder *builder, const char *filter_name);
 
 /// Terminate iteration and destroy \a iterator
 void grpc_channel_stack_builder_iterator_destroy(

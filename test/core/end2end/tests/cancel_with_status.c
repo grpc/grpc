@@ -35,10 +35,12 @@ static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
+                                            size_t num_ops,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s [%" PRIdPTR " ops]", test_name,
+          config.name, num_ops);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -165,7 +167,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config,
                                        size_t num_ops) {
   grpc_end2end_test_fixture f;
 
-  f = begin_test(config, "test_invoke_simple_request", NULL, NULL);
+  f = begin_test(config, "test_invoke_simple_request", num_ops, NULL, NULL);
   simple_request_body(config, f, num_ops);
   end_test(&f);
   config.tear_down_data(&f);

@@ -36,6 +36,7 @@
 extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
+#include "src/core/lib/support/env.h"
 }
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -86,7 +87,11 @@ class MyTestServiceImpl : public TestServiceImpl {
 class ClientLbEnd2endTest : public ::testing::Test {
  protected:
   ClientLbEnd2endTest()
-      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {}
+      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {
+    // Make the backup poller poll very frequently in order to pick up
+    // updates from all the subchannels's FDs.
+    gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
+  }
 
   void SetUp() override {
     response_generator_ = grpc_fake_resolver_response_generator_create();
@@ -180,16 +185,18 @@ class ClientLbEnd2endTest : public ::testing::Test {
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     std::unique_ptr<std::thread> thread_;
+    bool server_ready_ = false;
 
     explicit ServerData(const grpc::string& server_host, int port = 0) {
       port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
+      std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
       thread_.reset(new std::thread(
           std::bind(&ServerData::Start, this, server_host, &mu, &cond)));
-      std::unique_lock<std::mutex> lock(mu);
-      cond.wait(lock);
+      cond.wait(lock, [this] { return server_ready_; });
+      server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
     }
 
@@ -203,6 +210,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
       std::lock_guard<std::mutex> lock(*mu);
+      server_ready_ = true;
       cond->notify_one();
     }
 
@@ -221,6 +229,31 @@ class ClientLbEnd2endTest : public ::testing::Test {
       CheckRpcSendOk();
     } while (servers_[server_idx]->service_.request_count() == 0);
     ResetCounters();
+  }
+
+  bool SeenAllServers() {
+    for (const auto& server : servers_) {
+      if (server->service_.request_count() == 0) return false;
+    }
+    return true;
+  }
+
+  // Updates \a connection_order by appending to it the index of the newly
+  // connected server. Must be called after every single RPC.
+  void UpdateConnectionOrder(
+      const std::vector<std::unique_ptr<ServerData>>& servers,
+      std::vector<int>* connection_order) {
+    for (size_t i = 0; i < servers.size(); ++i) {
+      if (servers[i]->service_.request_count() == 1) {
+        // Was the server index known? If not, update connection_order.
+        const auto it =
+            std::find(connection_order->begin(), connection_order->end(), i);
+        if (it == connection_order->end()) {
+          connection_order->push_back(i);
+          return;
+        }
+      }
+    }
   }
 
   const grpc::string server_host_;
@@ -277,7 +310,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   ports.clear();
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET none *******");
-  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  grpc_connectivity_state channel_state;
   do {
     channel_state = channel_->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);
@@ -367,13 +400,23 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
     ports.emplace_back(server->port_);
   }
   SetNextResolution(ports);
+  // Wait until all backends are ready.
+  do {
+    CheckRpcSendOk();
+  } while (!SeenAllServers());
+  ResetCounters();
+  // "Sync" to the end of the list. Next sequence of picks will start at the
+  // first server (index 0).
+  WaitForServer(servers_.size() - 1);
+  std::vector<int> connection_order;
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk();
+    UpdateConnectionOrder(servers_, &connection_order);
   }
-  // One request should have gone to each server.
-  for (size_t i = 0; i < servers_.size(); ++i) {
-    EXPECT_EQ(1, servers_[i]->service_.request_count());
-  }
+  // Backends should be iterated over in the order in which the addresses were
+  // given.
+  const auto expected = std::vector<int>{0, 1, 2};
+  EXPECT_EQ(expected, connection_order);
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
 }
@@ -443,7 +486,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
   ports.clear();
   SetNextResolution(ports);
-  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  grpc_connectivity_state channel_state;
   do {
     channel_state = channel_->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);
@@ -526,13 +569,9 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   StartServers(kNumServers, ports);
   ResetStub("round_robin");
   SetNextResolution(ports);
-  // Send one RPC per backend and make sure they are used in order.
-  // Note: This relies on the fact that the subchannels are reported in
-  // state READY in the order in which the addresses are specified,
-  // which is only true because the backends are all local.
-  for (size_t i = 0; i < servers_.size(); ++i) {
+  // Send a number of RPCs, which succeed.
+  for (size_t i = 0; i < 100; ++i) {
     CheckRpcSendOk();
-    EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
   }
   // Kill all servers
   for (size_t i = 0; i < servers_.size(); ++i) {

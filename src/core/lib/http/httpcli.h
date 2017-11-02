@@ -32,6 +32,10 @@
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Tracks in-progress http requests
    TODO(ctiller): allow caching and capturing multiple requests for the
                   same content and combining them */
@@ -42,7 +46,7 @@ typedef struct grpc_httpcli_context {
 typedef struct {
   const char *default_port;
   void (*handshake)(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *endpoint,
-                    const char *host, gpr_timespec deadline,
+                    const char *host, grpc_millis deadline,
                     void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_endpoint *endpoint));
 } grpc_httpcli_handshaker;
@@ -83,8 +87,8 @@ void grpc_httpcli_context_destroy(grpc_exec_ctx *exec_ctx,
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                       grpc_polling_entity *pollent,
                       grpc_resource_quota *resource_quota,
-                      const grpc_httpcli_request *request,
-                      gpr_timespec deadline, grpc_closure *on_complete,
+                      const grpc_httpcli_request *request, grpc_millis deadline,
+                      grpc_closure *on_complete,
                       grpc_httpcli_response *response);
 
 /* Asynchronously perform a HTTP POST.
@@ -106,21 +110,25 @@ void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                        grpc_resource_quota *resource_quota,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
-                       gpr_timespec deadline, grpc_closure *on_complete,
+                       grpc_millis deadline, grpc_closure *on_complete,
                        grpc_httpcli_response *response);
 
 /* override functions return 1 if they handled the request, 0 otherwise */
 typedef int (*grpc_httpcli_get_override)(grpc_exec_ctx *exec_ctx,
                                          const grpc_httpcli_request *request,
-                                         gpr_timespec deadline,
+                                         grpc_millis deadline,
                                          grpc_closure *on_complete,
                                          grpc_httpcli_response *response);
 typedef int (*grpc_httpcli_post_override)(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body_bytes, size_t body_size, gpr_timespec deadline,
+    const char *body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure *on_complete, grpc_httpcli_response *response);
 
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_HTTP_HTTPCLI_H */
