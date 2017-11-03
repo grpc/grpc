@@ -278,7 +278,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
 
       void* t;
       bool ok;
-      int expect_tags;
+      int expect_tags = 0;
 
       // Send 'max_ping_pongs' number of ping pong messages
       int ping_pong_cnt = 0;
