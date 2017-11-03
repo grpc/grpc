@@ -137,7 +137,6 @@ GPRAPI int grpc_slice_eq(grpc_slice a, grpc_slice b);
    versions of the API. */
 GPRAPI int grpc_slice_cmp(grpc_slice a, grpc_slice b);
 GPRAPI int grpc_slice_str_cmp(grpc_slice a, const char *b);
-GPRAPI int grpc_slice_buf_cmp(grpc_slice a, const void *b, size_t blen);
 
 /** return non-zero if the first blen bytes of a are equal to b */
 GPRAPI int grpc_slice_buf_start_eq(grpc_slice a, const void *b, size_t blen);
