@@ -2364,14 +2364,6 @@
       ],
     },
     {
-      'target_name': 'absl',
-      'type': 'static_library',
-      'dependencies': [
-      ],
-      'sources': [
-      ],
-    },
-    {
       'target_name': 'bad_client_test',
       'type': 'static_library',
       'dependencies': [

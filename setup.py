@@ -35,7 +35,6 @@ egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 PY3 = sys.version_info.major == 3
 PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
-ABSL_INCLUDE = (os.path.join('third_party', 'abseil-cpp'),)
 BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 CARES_INCLUDE = (
@@ -148,8 +147,8 @@ if "win32" in sys.platform:
   CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
-    (PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE + BORINGSSL_INCLUDE +
-    ZLIB_INCLUDE + CARES_INCLUDE)
+    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE +
+    CARES_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
