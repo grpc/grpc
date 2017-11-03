@@ -1181,10 +1181,8 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                 (void *)glb_policy, (void *)glb_policy->rr_policy,
                 grpc_connectivity_state_name(rr_connectivity_state));
       }
-      // Attempt to switch over to a pending update.
       add_pending_pick(&glb_policy->pending_picks, pick_args, target, context,
                        on_complete);
-      rr_handover_locked(exec_ctx, glb_policy);
       pick_done = false;
     } else {  // RR not in shutdown
       if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
