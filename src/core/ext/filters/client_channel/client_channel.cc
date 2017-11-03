@@ -124,7 +124,12 @@ static void method_parameters_unref(method_parameters *method_params) {
   }
 }
 
-static void method_parameters_free(grpc_exec_ctx *exec_ctx, void *value) {
+// Wrappers to pass to grpc_service_config_create_method_config_table().
+static void *method_parameters_ref_wrapper(void *value) {
+  return method_parameters_ref((method_parameters *)value);
+}
+static void method_parameters_unref_wrapper(grpc_exec_ctx *exec_ctx,
+                                            void *value) {
   method_parameters_unref((method_parameters *)value);
 }
 
@@ -153,24 +158,16 @@ static bool parse_duration(grpc_json *field, grpc_millis *duration) {
       gpr_free(buf);
       return false;
     }
-    // There should always be exactly 3, 6, or 9 fractional digits.
-    int multiplier = 1;
-    switch (strlen(decimal_point + 1)) {
-      case 9:
-        break;
-      case 6:
-        multiplier *= 1000;
-        break;
-      case 3:
-        multiplier *= 1000000;
-        break;
-      default:  // Unsupported number of digits.
-        gpr_free(buf);
-        return false;
+    int num_digits = (int)strlen(decimal_point + 1);
+    if (num_digits > 9) {  // We don't accept greater precision than nanos.
+      gpr_free(buf);
+      return false;
     }
-    nanos *= multiplier;
+    for (int i = 0; i < (9 - num_digits); ++i) {
+      nanos *= 10;
+    }
   }
-  int seconds = gpr_parse_nonnegative_int(buf);
+  int seconds = decimal_point == buf ? 0 : gpr_parse_nonnegative_int(buf);
   gpr_free(buf);
   if (seconds == -1) return false;
   *duration = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
@@ -592,7 +589,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         }
         method_params_table = grpc_service_config_create_method_config_table(
             exec_ctx, service_config, method_parameters_create_from_json,
-            (void *)chand->enable_retries, method_parameters_free);
+            (void *)chand->enable_retries,
+            method_parameters_ref_wrapper, method_parameters_unref_wrapper);
         grpc_service_config_destroy(service_config);
       }
     }

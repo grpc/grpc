@@ -47,13 +47,14 @@ const char* grpc_service_config_get_lb_policy_name(
 /// The table's keys are request paths.  The table's value type is
 /// returned by \a create_value(), based on data parsed from the JSON tree.
 /// \a user_data is passed to \a create_value().
-/// \a destroy_value is used to clean up values.
+/// \a ref_value() and \a unref_value() are used to ref and unref values.
 /// Returns NULL on error.
 grpc_slice_hash_table* grpc_service_config_create_method_config_table(
     grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json, void* user_data),
     void* user_data,
-    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value));
+    void* (*ref_value)(void* value),
+    void (*unref_value)(grpc_exec_ctx* exec_ctx, void* value));
 
 /// A helper function for looking up values in the table returned by
 /// \a grpc_service_config_create_method_config_table().
