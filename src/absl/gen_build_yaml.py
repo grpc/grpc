@@ -1,5 +1,6 @@
-#!/bin/sh
-# Copyright 2015 gRPC authors.
+#!/usr/bin/env python2.7
+
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,24 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+import glob
+import os
+import sys
+import yaml
 
-gen_build_yaml_dirs="  \
-  src/boringssl        \
-  src/benchmark        \
-  src/proto            \
-  src/zlib             \
-  src/c-ares           \
-  src/absl             \
-  test/core/bad_client \
-  test/core/bad_ssl    \
-  test/core/end2end    \
-  test/cpp/naming      \
-  test/cpp/qps"
-gen_build_files=""
-for gen_build_yaml in $gen_build_yaml_dirs
-do
-  output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
-  gen_build_files="$gen_build_files $output_file"
-done
+os.chdir(os.path.dirname(sys.argv[0])+'/../..')
+
+out = {}
+
+out['libs'] = [{
+    'name': 'absl',
+    'build': 'private',
+    'language': 'c++',
+    'secure': 'no',
+    'defaults': 'absl',
+    'src': [],
+    'headers': sorted(
+        glob.glob('third_party/abseil-cpp/absl/*/*.h') +
+        glob.glob('third_party/abseil-cpp/absl/*/*/*.h')),
+}]
+
+print yaml.dump(out)
