@@ -31,6 +31,7 @@ LANG_RUNTIME_MATRIX = {
     'node': ['node'],
     'ruby': ['ruby'],
     'php': ['php', 'php7'],
+    'csharp': ['csharp', 'csharpcoreclr'],
 }
 
 # Dictionary of releases per language.  For each language, we need to provide
@@ -92,6 +93,15 @@ LANG_RELEASE_MATRIX = {
         'v1.1.4',
         'v1.2.5',
         'v1.3.9',
+        'v1.4.2',
+        'v1.6.6',
+    ],
+   'csharp': [
+        # Fail to build docker image with v1.3.9 and earlier.
+        #'v1.0.1',
+        #'v1.1.4',
+        #'v1.2.5',
+        #'v1.3.9',
         'v1.4.2',
         'v1.6.6',
     ],
