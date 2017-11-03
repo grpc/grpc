@@ -20,5 +20,6 @@ RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
 ENV PATH=clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin:$PATH
 ENV CLANG_FORMAT=clang-format
 
+
 ADD clang_format_all_the_things.sh /
 CMD ["echo 'Run with tools/distrib/clang_format_code.sh'"]
