@@ -161,8 +161,10 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     while (!worker.kicked) {
       if (gpr_cv_wait(&worker.cv, &grpc_polling_mu,
                       grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME))) {
+        grpc_exec_ctx_invalidate_now(exec_ctx);
         break;
       }
+      grpc_exec_ctx_invalidate_now(exec_ctx);
     }
   } else {
     pollset->kicked_without_pollers = 0;

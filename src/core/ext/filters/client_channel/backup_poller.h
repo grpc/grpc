@@ -16,22 +16,19 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CENSUS_GRPC_FILTER_H
-#define GRPC_CORE_EXT_CENSUS_GRPC_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
 
+#include <grpc/grpc.h>
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* Start polling \a interested_parties periodically in the timer thread  */
+void grpc_client_channel_start_backup_polling(
+    grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties);
 
-/* Census filters: provides tracing and stats collection functionalities. It
-   needs to reside right below the surface filter in the channel stack. */
-extern const grpc_channel_filter grpc_client_census_filter;
-extern const grpc_channel_filter grpc_server_census_filter;
+/* Stop polling \a interested_parties */
+void grpc_client_channel_stop_backup_polling(
+    grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* GRPC_CORE_EXT_CENSUS_GRPC_FILTER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H */
