@@ -50,6 +50,7 @@ gcloud compute instances create $INSTANCE_NAME \
     --machine-type $MACHINE_TYPE \
     --image-project google.com:kokoro \
     --image kokoro-win7build-v9-prod-debug \
+    --boot-disk-size 500 \
     --boot-disk-type pd-ssd \
     --tags=allow-ssh \
     --disk auto-delete=yes,boot=no,name=$TMP_DISK_NAME
