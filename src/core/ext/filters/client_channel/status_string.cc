@@ -58,10 +58,24 @@ bool grpc_status_from_string(const char* status_str, grpc_status_code* status) {
 }
 
 const char* grpc_status_string(grpc_status_code status) {
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_status_string_entries); ++i) {
-    if (g_status_string_entries[i].status == status) {
-      return g_status_string_entries[i].str;
-    }
+  switch (status) {
+    case GRPC_STATUS_OK: return "OK";
+    case GRPC_STATUS_CANCELLED: return "CANCELLED";
+    case GRPC_STATUS_UNKNOWN: return "UNKNOWN";
+    case GRPC_STATUS_INVALID_ARGUMENT: return "INVALID_ARGUMENT";
+    case GRPC_STATUS_DEADLINE_EXCEEDED: return "DEADLINE_EXCEEDED";
+    case GRPC_STATUS_NOT_FOUND: return "NOT_FOUND";
+    case GRPC_STATUS_ALREADY_EXISTS: return "ALREADY_EXISTS";
+    case GRPC_STATUS_PERMISSION_DENIED: return "PERMISSION_DENIED";
+    case GRPC_STATUS_UNAUTHENTICATED: return "UNAUTHENTICATED";
+    case GRPC_STATUS_RESOURCE_EXHAUSTED: return "RESOURCE_EXHAUSTED";
+    case GRPC_STATUS_FAILED_PRECONDITION: return "FAILED_PRECONDITION";
+    case GRPC_STATUS_ABORTED: return "ABORTED";
+    case GRPC_STATUS_OUT_OF_RANGE: return "OUT_OF_RANGE";
+    case GRPC_STATUS_UNIMPLEMENTED: return "UNIMPLEMENTED";
+    case GRPC_STATUS_INTERNAL: return "INTERNAL";
+    case GRPC_STATUS_UNAVAILABLE: return "UNAVAILABLE";
+    case GRPC_STATUS_DATA_LOSS: return "DATA_LOSS";
+    default: return "UNKNOWN";
   }
-  return "UNKNOWN";
 }
