@@ -1591,10 +1591,12 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
         retry_policy->backoff_multiplier, RETRY_BACKOFF_JITTER,
         GPR_MIN(retry_policy->initial_backoff, retry_policy->max_backoff),
         retry_policy->max_backoff);
-    next_attempt_time = grpc_backoff_begin(exec_ctx, &calld->retry_backoff);
+    next_attempt_time = grpc_backoff_begin(exec_ctx, &calld->retry_backoff)
+        .next_attempt_start_time;
     calld->last_attempt_got_server_pushback = false;
   } else {
-    next_attempt_time = grpc_backoff_step(exec_ctx, &calld->retry_backoff);
+    next_attempt_time = grpc_backoff_step(exec_ctx, &calld->retry_backoff)
+        .next_attempt_start_time;
   }
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG,
