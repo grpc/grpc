@@ -170,7 +170,8 @@ static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_resolved_addresses_destroy(r->addresses);
     grpc_lb_addresses_destroy(exec_ctx, addresses);
   } else {
-    grpc_millis next_try = grpc_backoff_step(exec_ctx, &r->backoff_state);
+    grpc_millis next_try =
+        grpc_backoff_step(exec_ctx, &r->backoff_state).next_attempt_start_time;
     grpc_millis timeout = next_try - grpc_exec_ctx_now(exec_ctx);
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
@@ -256,11 +257,11 @@ static grpc_resolver *dns_create(grpc_exec_ctx *exec_ctx,
     grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,
                                      args->pollset_set);
   }
-  grpc_backoff_init(&r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS,
-                    GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER,
-                    GRPC_DNS_RECONNECT_JITTER,
-                    GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
-                    GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
+  grpc_backoff_init(
+      &r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000,
+      GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER, GRPC_DNS_RECONNECT_JITTER,
+      GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
+      GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   return &r->base;
 }
 

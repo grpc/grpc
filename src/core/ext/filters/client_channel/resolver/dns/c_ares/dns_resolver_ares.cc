@@ -271,7 +271,8 @@ static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
-    grpc_millis next_try = grpc_backoff_step(exec_ctx, &r->backoff_state);
+    grpc_millis next_try =
+        grpc_backoff_step(exec_ctx, &r->backoff_state).next_attempt_start_time;
     grpc_millis timeout = next_try - grpc_exec_ctx_now(exec_ctx);
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
@@ -379,11 +380,11 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
     grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,
                                      args->pollset_set);
   }
-  grpc_backoff_init(&r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS,
-                    GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER,
-                    GRPC_DNS_RECONNECT_JITTER,
-                    GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
-                    GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
+  grpc_backoff_init(
+      &r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000,
+      GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER, GRPC_DNS_RECONNECT_JITTER,
+      GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
+      GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   GRPC_CLOSURE_INIT(&r->dns_ares_on_retry_timer_locked,
                     dns_ares_on_retry_timer_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
