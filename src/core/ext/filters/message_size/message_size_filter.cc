@@ -30,16 +30,34 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/service_config.h"
 
-typedef struct message_size_limits {
+typedef struct {
   int max_send_size;
   int max_recv_size;
 } message_size_limits;
 
-static void message_size_limits_free(grpc_exec_ctx* exec_ctx, void* value) {
-  gpr_free(value);
+typedef struct {
+  gpr_refcount refs;
+  message_size_limits limits;
+} refcounted_message_size_limits;
+
+static void* refcounted_message_size_limits_ref(void* value) {
+  refcounted_message_size_limits* limits =
+      (refcounted_message_size_limits*)value;
+  gpr_ref(&limits->refs);
+  return value;
 }
 
-static void* message_size_limits_create_from_json(const grpc_json* json) {
+static void refcounted_message_size_limits_unref(grpc_exec_ctx* exec_ctx,
+                                                 void* value) {
+  refcounted_message_size_limits* limits =
+      (refcounted_message_size_limits*)value;
+  if (gpr_unref(&limits->refs)) {
+    gpr_free(value);
+  }
+}
+
+static void* refcounted_message_size_limits_create_from_json(
+    const grpc_json* json) {
   int max_request_message_bytes = -1;
   int max_response_message_bytes = -1;
   for (grpc_json* field = json->child; field != NULL; field = field->next) {
@@ -60,10 +78,12 @@ static void* message_size_limits_create_from_json(const grpc_json* json) {
       if (max_response_message_bytes == -1) return NULL;
     }
   }
-  message_size_limits* value =
-      (message_size_limits*)gpr_malloc(sizeof(message_size_limits));
-  value->max_send_size = max_request_message_bytes;
-  value->max_recv_size = max_response_message_bytes;
+  refcounted_message_size_limits* value =
+      (refcounted_message_size_limits*)gpr_malloc(
+          sizeof(refcounted_message_size_limits));
+  gpr_ref_init(&value->refs, 1);
+  value->limits.max_send_size = max_request_message_bytes;
+  value->limits.max_recv_size = max_response_message_bytes;
   return value;
 }
 
@@ -82,7 +102,7 @@ typedef struct call_data {
 
 typedef struct channel_data {
   message_size_limits limits;
-  // Maps path names to message_size_limits structs.
+  // Maps path names to refcounted_message_size_limits structs.
   grpc_slice_hash_table* method_limit_table;
 } channel_data;
 
@@ -164,19 +184,19 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
   // size to the receive limit.
   calld->limits = chand->limits;
   if (chand->method_limit_table != NULL) {
-    message_size_limits* limits =
-        (message_size_limits*)grpc_method_config_table_get(
+    refcounted_message_size_limits* limits =
+        (refcounted_message_size_limits*)grpc_method_config_table_get(
             exec_ctx, chand->method_limit_table, args->path);
     if (limits != NULL) {
-      if (limits->max_send_size >= 0 &&
-          (limits->max_send_size < calld->limits.max_send_size ||
+      if (limits->limits.max_send_size >= 0 &&
+          (limits->limits.max_send_size < calld->limits.max_send_size ||
            calld->limits.max_send_size < 0)) {
-        calld->limits.max_send_size = limits->max_send_size;
+        calld->limits.max_send_size = limits->limits.max_send_size;
       }
-      if (limits->max_recv_size >= 0 &&
-          (limits->max_recv_size < calld->limits.max_recv_size ||
+      if (limits->limits.max_recv_size >= 0 &&
+          (limits->limits.max_recv_size < calld->limits.max_recv_size ||
            calld->limits.max_recv_size < 0)) {
-        calld->limits.max_recv_size = limits->max_recv_size;
+        calld->limits.max_recv_size = limits->limits.max_recv_size;
       }
     }
   }
@@ -237,8 +257,10 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     if (service_config != NULL) {
       chand->method_limit_table =
           grpc_service_config_create_method_config_table(
-              exec_ctx, service_config, message_size_limits_create_from_json,
-              message_size_limits_free);
+              exec_ctx, service_config,
+              refcounted_message_size_limits_create_from_json,
+              refcounted_message_size_limits_ref,
+              refcounted_message_size_limits_unref);
       grpc_service_config_destroy(service_config);
     }
   }
