@@ -33,26 +33,28 @@ extern "C" {
 
 // List node (include this in a data structure at the top, and add application
 // fields after it - to simulate inheritance)
-typedef struct gpr_mpscq_node { gpr_atm next; } gpr_mpscq_node;
+typedef struct gpr_mpscq_node {
+  gpr_atm next;
+} gpr_mpscq_node;
 
 // Actual queue type
 typedef struct gpr_mpscq {
   gpr_atm head;
   // make sure head & tail don't share a cacheline
   char padding[GPR_CACHELINE_SIZE];
-  gpr_mpscq_node *tail;
+  gpr_mpscq_node* tail;
   gpr_mpscq_node stub;
 } gpr_mpscq;
 
-void gpr_mpscq_init(gpr_mpscq *q);
-void gpr_mpscq_destroy(gpr_mpscq *q);
+void gpr_mpscq_init(gpr_mpscq* q);
+void gpr_mpscq_destroy(gpr_mpscq* q);
 // Push a node
-void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
+void gpr_mpscq_push(gpr_mpscq* q, gpr_mpscq_node* n);
 // Pop a node (returns NULL if no node is ready - which doesn't indicate that
 // the queue is empty!!)
-gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q);
+gpr_mpscq_node* gpr_mpscq_pop(gpr_mpscq* q);
 // Pop a node; sets *empty to true if the queue is empty, or false if it is not
-gpr_mpscq_node *gpr_mpscq_pop_and_check_end(gpr_mpscq *q, bool *empty);
+gpr_mpscq_node* gpr_mpscq_pop_and_check_end(gpr_mpscq* q, bool* empty);
 
 #ifdef __cplusplus
 }

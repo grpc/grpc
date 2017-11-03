@@ -114,7 +114,7 @@ static void test_create_many_ephemeral_metadata(bool intern_keys,
 static void test_create_many_persistant_metadata(void) {
   char buffer[GPR_LTOA_MIN_BUFSIZE];
   long i;
-  grpc_mdelem *created = gpr_malloc(sizeof(grpc_mdelem) * MANY);
+  grpc_mdelem* created = gpr_malloc(sizeof(grpc_mdelem) * MANY);
   grpc_mdelem md;
 
   gpr_log(GPR_INFO, "test_create_many_persistant_metadata");
@@ -224,10 +224,10 @@ static void test_identity_laws(bool intern_keys, bool intern_values) {
 
 static void test_things_stick_around(void) {
   size_t i, j;
-  char *buffer;
+  char* buffer;
   size_t nstrs = 1000;
-  grpc_slice *strs = gpr_malloc(sizeof(grpc_slice) * nstrs);
-  size_t *shuf = gpr_malloc(sizeof(size_t) * nstrs);
+  grpc_slice* strs = gpr_malloc(sizeof(grpc_slice) * nstrs);
+  size_t* shuf = gpr_malloc(sizeof(size_t) * nstrs);
   grpc_slice test;
 
   gpr_log(GPR_INFO, "test_things_stick_around");
@@ -274,8 +274,8 @@ static void test_things_stick_around(void) {
 }
 
 static void test_user_data_works(void) {
-  int *ud1;
-  int *ud2;
+  int* ud1;
+  int* ud2;
   grpc_mdelem md;
   gpr_log(GPR_INFO, "test_user_data_works");
 
@@ -296,8 +296,8 @@ static void test_user_data_works(void) {
   grpc_shutdown();
 }
 
-static void verify_ascii_header_size(grpc_exec_ctx *exec_ctx, const char *key,
-                                     const char *value, bool intern_key,
+static void verify_ascii_header_size(grpc_exec_ctx* exec_ctx, const char* key,
+                                     const char* value, bool intern_key,
                                      bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
       exec_ctx, maybe_intern(grpc_slice_from_static_string(key), intern_key),
@@ -308,8 +308,8 @@ static void verify_ascii_header_size(grpc_exec_ctx *exec_ctx, const char *key,
   GRPC_MDELEM_UNREF(exec_ctx, elem);
 }
 
-static void verify_binary_header_size(grpc_exec_ctx *exec_ctx, const char *key,
-                                      const uint8_t *value, size_t value_len,
+static void verify_binary_header_size(grpc_exec_ctx* exec_ctx, const char* key,
+                                      const uint8_t* value, size_t value_len,
                                       bool intern_key, bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
       exec_ctx, maybe_intern(grpc_slice_from_static_string(key), intern_key),
@@ -318,7 +318,7 @@ static void verify_binary_header_size(grpc_exec_ctx *exec_ctx, const char *key,
   GPR_ASSERT(grpc_is_binary_header(GRPC_MDKEY(elem)));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, false);
   grpc_slice value_slice =
-      grpc_slice_from_copied_buffer((const char *)value, value_len);
+      grpc_slice_from_copied_buffer((const char*)value, value_len);
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
   size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
   GPR_ASSERT(expected_size == elem_size);
@@ -382,7 +382,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   grpc_shutdown();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_no_op();
   for (int k = 0; k <= 1; k++) {

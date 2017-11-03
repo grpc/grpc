@@ -28,13 +28,13 @@
 #define GRPC_BAD_CLIENT_REGISTERED_METHOD "/registered/bar"
 #define GRPC_BAD_CLIENT_REGISTERED_HOST "localhost"
 
-typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server,
-                                                      grpc_completion_queue *cq,
-                                                      void *registered_method);
+typedef void (*grpc_bad_client_server_side_validator)(grpc_server* server,
+                                                      grpc_completion_queue* cq,
+                                                      void* registered_method);
 
 // Returns false if we need to read more data.
 typedef bool (*grpc_bad_client_client_stream_validator)(
-    grpc_slice_buffer *incoming);
+    grpc_slice_buffer* incoming);
 
 #define GRPC_BAD_CLIENT_DISCONNECT 1
 #define GRPC_BAD_CLIENT_LARGE_REQUEST 2
@@ -47,7 +47,7 @@ typedef bool (*grpc_bad_client_client_stream_validator)(
 void grpc_run_bad_client_test(
     grpc_bad_client_server_side_validator server_validator,
     grpc_bad_client_client_stream_validator client_validator,
-    const char *client_payload, size_t client_payload_length, uint32_t flags);
+    const char* client_payload, size_t client_payload_length, uint32_t flags);
 
 #define GRPC_RUN_BAD_CLIENT_TEST(server_validator, client_validator, payload, \
                                  flags)                                       \

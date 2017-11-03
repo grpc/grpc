@@ -63,4 +63,4 @@
 #include <grpc/support/useful.h>
 #include <grpc/support/workaround_list.h>
 
-int main(int argc, char **argv) { return 0; }
+int main(int argc, char** argv) { return 0; }

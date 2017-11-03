@@ -20,7 +20,7 @@
 
 #include <grpc/support/useful.h>
 
-void grpc_backoff_init(grpc_backoff *backoff, grpc_millis initial_backoff,
+void grpc_backoff_init(grpc_backoff* backoff, grpc_millis initial_backoff,
                        double multiplier, double jitter,
                        grpc_millis min_connect_timeout,
                        grpc_millis max_backoff) {
@@ -32,8 +32,8 @@ void grpc_backoff_init(grpc_backoff *backoff, grpc_millis initial_backoff,
   backoff->rng_state = (uint32_t)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
 }
 
-grpc_backoff_result grpc_backoff_begin(grpc_exec_ctx *exec_ctx,
-                                       grpc_backoff *backoff) {
+grpc_backoff_result grpc_backoff_begin(grpc_exec_ctx* exec_ctx,
+                                       grpc_backoff* backoff) {
   backoff->current_backoff = backoff->initial_backoff;
   const grpc_millis initial_timeout =
       GPR_MAX(backoff->initial_backoff, backoff->min_connect_timeout);
@@ -44,12 +44,12 @@ grpc_backoff_result grpc_backoff_begin(grpc_exec_ctx *exec_ctx,
 }
 
 /* Generate a random number between 0 and 1. */
-static double generate_uniform_random_number(uint32_t *rng_state) {
+static double generate_uniform_random_number(uint32_t* rng_state) {
   *rng_state = (1103515245 * *rng_state + 12345) % ((uint32_t)1 << 31);
   return *rng_state / (double)((uint32_t)1 << 31);
 }
 
-static double generate_uniform_random_number_between(uint32_t *rng_state,
+static double generate_uniform_random_number_between(uint32_t* rng_state,
                                                      double a, double b) {
   if (a == b) return a;
   if (a > b) GPR_SWAP(double, a, b);  // make sure a < b
@@ -57,8 +57,8 @@ static double generate_uniform_random_number_between(uint32_t *rng_state,
   return a + generate_uniform_random_number(rng_state) * range;
 }
 
-grpc_backoff_result grpc_backoff_step(grpc_exec_ctx *exec_ctx,
-                                      grpc_backoff *backoff) {
+grpc_backoff_result grpc_backoff_step(grpc_exec_ctx* exec_ctx,
+                                      grpc_backoff* backoff) {
   backoff->current_backoff = (grpc_millis)(GPR_MIN(
       backoff->current_backoff * backoff->multiplier, backoff->max_backoff));
   const double jitter = generate_uniform_random_number_between(
@@ -75,6 +75,6 @@ grpc_backoff_result grpc_backoff_step(grpc_exec_ctx *exec_ctx,
   return result;
 }
 
-void grpc_backoff_reset(grpc_backoff *backoff) {
+void grpc_backoff_reset(grpc_backoff* backoff) {
   backoff->current_backoff = backoff->initial_backoff;
 }

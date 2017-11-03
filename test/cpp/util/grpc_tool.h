@@ -28,9 +28,9 @@
 namespace grpc {
 namespace testing {
 
-typedef std::function<bool(const grpc::string &)> GrpcToolOutputCallback;
+typedef std::function<bool(const grpc::string&)> GrpcToolOutputCallback;
 
-int GrpcToolMainLib(int argc, const char **argv, const CliCredentials &cred,
+int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
                     GrpcToolOutputCallback callback);
 
 }  // namespace testing

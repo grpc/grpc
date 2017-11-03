@@ -27,8 +27,8 @@ extern "C" {
 void grpc_network_status_init(void);
 void grpc_network_status_shutdown(void);
 
-void grpc_network_status_register_endpoint(grpc_endpoint *ep);
-void grpc_network_status_unregister_endpoint(grpc_endpoint *ep);
+void grpc_network_status_register_endpoint(grpc_endpoint* ep);
+void grpc_network_status_unregister_endpoint(grpc_endpoint* ep);
 void grpc_network_status_shutdown_all_endpoints();
 
 #ifdef __cplusplus

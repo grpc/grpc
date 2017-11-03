@@ -38,23 +38,23 @@
 #include <string.h>
 
 typedef struct request {
-  grpc_closure *on_done;
-  grpc_resolved_addresses **addresses;
-  struct addrinfo *hints;
-  char *host;
-  char *port;
+  grpc_closure* on_done;
+  grpc_resolved_addresses** addresses;
+  struct addrinfo* hints;
+  char* host;
+  char* port;
 } request;
 
-static int retry_named_port_failure(int status, request *r,
+static int retry_named_port_failure(int status, request* r,
                                     uv_getaddrinfo_cb getaddrinfo_cb) {
   if (status != 0) {
     // This loop is copied from resolve_address_posix.c
-    const char *svc[][2] = {{"http", "80"}, {"https", "443"}};
+    const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
     for (size_t i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
       if (strcmp(r->port, svc[i][0]) == 0) {
         int retry_status;
-        uv_getaddrinfo_t *req =
-            (uv_getaddrinfo_t *)gpr_malloc(sizeof(uv_getaddrinfo_t));
+        uv_getaddrinfo_t* req =
+            (uv_getaddrinfo_t*)gpr_malloc(sizeof(uv_getaddrinfo_t));
         req->data = r;
         r->port = gpr_strdup(svc[i][1]);
         retry_status = uv_getaddrinfo(uv_default_loop(), req, getaddrinfo_cb,
@@ -73,12 +73,12 @@ static int retry_named_port_failure(int status, request *r,
   return 1;
 }
 
-static grpc_error *handle_addrinfo_result(int status, struct addrinfo *result,
-                                          grpc_resolved_addresses **addresses) {
-  struct addrinfo *resp;
+static grpc_error* handle_addrinfo_result(int status, struct addrinfo* result,
+                                          grpc_resolved_addresses** addresses) {
+  struct addrinfo* resp;
   size_t i;
   if (status != 0) {
-    grpc_error *error;
+    grpc_error* error;
     *addresses = NULL;
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("getaddrinfo failed");
     error =
@@ -87,12 +87,12 @@ static grpc_error *handle_addrinfo_result(int status, struct addrinfo *result,
     return error;
   }
   (*addresses) =
-      (grpc_resolved_addresses *)gpr_malloc(sizeof(grpc_resolved_addresses));
+      (grpc_resolved_addresses*)gpr_malloc(sizeof(grpc_resolved_addresses));
   (*addresses)->naddrs = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     (*addresses)->naddrs++;
   }
-  (*addresses)->addrs = (grpc_resolved_address *)gpr_malloc(
+  (*addresses)->addrs = (grpc_resolved_address*)gpr_malloc(
       sizeof(grpc_resolved_address) * (*addresses)->naddrs);
   i = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
@@ -103,7 +103,7 @@ static grpc_error *handle_addrinfo_result(int status, struct addrinfo *result,
 
   {
     for (i = 0; i < (*addresses)->naddrs; i++) {
-      char *buf;
+      char* buf;
       grpc_sockaddr_to_string(&buf, &(*addresses)->addrs[i], 0);
       gpr_free(buf);
     }
@@ -111,13 +111,13 @@ static grpc_error *handle_addrinfo_result(int status, struct addrinfo *result,
   return GRPC_ERROR_NONE;
 }
 
-static void getaddrinfo_callback(uv_getaddrinfo_t *req, int status,
-                                 struct addrinfo *res) {
-  request *r = (request *)req->data;
+static void getaddrinfo_callback(uv_getaddrinfo_t* req, int status,
+                                 struct addrinfo* res) {
+  request* r = (request*)req->data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_error *error;
+  grpc_error* error;
   int retry_status;
-  char *port = r->port;
+  char* port = r->port;
 
   gpr_free(req);
   retry_status = retry_named_port_failure(status, r, getaddrinfo_callback);
@@ -139,14 +139,14 @@ static void getaddrinfo_callback(uv_getaddrinfo_t *req, int status,
   uv_freeaddrinfo(res);
 }
 
-static grpc_error *try_split_host_port(const char *name,
-                                       const char *default_port, char **host,
-                                       char **port) {
+static grpc_error* try_split_host_port(const char* name,
+                                       const char* default_port, char** host,
+                                       char** port) {
   /* parse name, splitting it into host and port parts */
-  grpc_error *error;
+  grpc_error* error;
   gpr_split_host_port(name, host, port);
   if (*host == NULL) {
-    char *msg;
+    char* msg;
     gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
@@ -155,7 +155,7 @@ static grpc_error *try_split_host_port(const char *name,
   if (*port == NULL) {
     // TODO(murgatroid99): add tests for this case
     if (default_port == NULL) {
-      char *msg;
+      char* msg;
       gpr_asprintf(&msg, "no port in name '%s'", name);
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
@@ -166,15 +166,15 @@ static grpc_error *try_split_host_port(const char *name,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error *blocking_resolve_address_impl(
-    const char *name, const char *default_port,
-    grpc_resolved_addresses **addresses) {
-  char *host;
-  char *port;
+static grpc_error* blocking_resolve_address_impl(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
+  char* host;
+  char* port;
   struct addrinfo hints;
   uv_getaddrinfo_t req;
   int s;
-  grpc_error *err;
+  grpc_error* err;
   int retry_status;
   request r;
 
@@ -213,28 +213,28 @@ done:
   return err;
 }
 
-grpc_error *(*grpc_blocking_resolve_address)(
-    const char *name, const char *default_port,
-    grpc_resolved_addresses **addresses) = blocking_resolve_address_impl;
+grpc_error* (*grpc_blocking_resolve_address)(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) = blocking_resolve_address_impl;
 
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addrs) {
   if (addrs != NULL) {
     gpr_free(addrs->addrs);
   }
   gpr_free(addrs);
 }
 
-static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
-                                 const char *default_port,
-                                 grpc_pollset_set *interested_parties,
-                                 grpc_closure *on_done,
-                                 grpc_resolved_addresses **addrs) {
-  uv_getaddrinfo_t *req = NULL;
-  request *r = NULL;
-  struct addrinfo *hints = NULL;
-  char *host = NULL;
-  char *port = NULL;
-  grpc_error *err;
+static void resolve_address_impl(grpc_exec_ctx* exec_ctx, const char* name,
+                                 const char* default_port,
+                                 grpc_pollset_set* interested_parties,
+                                 grpc_closure* on_done,
+                                 grpc_resolved_addresses** addrs) {
+  uv_getaddrinfo_t* req = NULL;
+  request* r = NULL;
+  struct addrinfo* hints = NULL;
+  char* host = NULL;
+  char* port = NULL;
+  grpc_error* err;
   int s;
   GRPC_UV_ASSERT_SAME_THREAD();
   err = try_split_host_port(name, default_port, &host, &port);
@@ -244,16 +244,16 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
     gpr_free(port);
     return;
   }
-  r = (request *)gpr_malloc(sizeof(request));
+  r = (request*)gpr_malloc(sizeof(request));
   r->on_done = on_done;
   r->addresses = addrs;
   r->host = host;
   r->port = port;
-  req = (uv_getaddrinfo_t *)gpr_malloc(sizeof(uv_getaddrinfo_t));
+  req = (uv_getaddrinfo_t*)gpr_malloc(sizeof(uv_getaddrinfo_t));
   req->data = r;
 
   /* Call getaddrinfo */
-  hints = (addrinfo *)gpr_malloc(sizeof(struct addrinfo));
+  hints = (addrinfo*)gpr_malloc(sizeof(struct addrinfo));
   memset(hints, 0, sizeof(struct addrinfo));
   hints->ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints->ai_socktype = SOCK_STREAM; /* stream socket */
@@ -278,8 +278,8 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
 }
 
 void (*grpc_resolve_address)(
-    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
-    grpc_pollset_set *interested_parties, grpc_closure *on_done,
-    grpc_resolved_addresses **addrs) = resolve_address_impl;
+    grpc_exec_ctx* exec_ctx, const char* name, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_resolved_addresses** addrs) = resolve_address_impl;
 
 #endif /* GRPC_UV */

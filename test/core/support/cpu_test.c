@@ -57,12 +57,12 @@ struct cpu_test {
   uint32_t ncores;
   int is_done;
   gpr_cv done_cv;
-  int *used;  /* is this core used? */
+  int* used;  /* is this core used? */
   unsigned r; /* random number */
 };
 
-static void worker_thread(void *arg) {
-  struct cpu_test *ct = (struct cpu_test *)arg;
+static void worker_thread(void* arg) {
+  struct cpu_test* ct = (struct cpu_test*)arg;
   uint32_t cpu;
   unsigned r = 12345678;
   unsigned i, j;
@@ -128,7 +128,7 @@ static void cpu_test(void) {
   gpr_free(ct.used);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   grpc_test_init(argc, argv);
   cpu_test();
   return 0;

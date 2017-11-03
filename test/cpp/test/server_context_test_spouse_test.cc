@@ -87,7 +87,7 @@ TEST(ServerContextTestSpouseTest, TrailingMetadata) {
   ASSERT_EQ(metadata, spouse.GetTrailingMetadata());
 }
 
-}  // namespace
+}  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {

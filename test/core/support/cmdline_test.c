@@ -29,8 +29,8 @@
 
 static void test_simple_int(void) {
   int x = 1;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "-foo", "3"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "-foo", "3"};
 
   LOG_TEST();
 
@@ -44,8 +44,8 @@ static void test_simple_int(void) {
 
 static void test_eq_int(void) {
   int x = 1;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "-foo=3"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "-foo=3"};
 
   LOG_TEST();
 
@@ -59,8 +59,8 @@ static void test_eq_int(void) {
 
 static void test_2dash_int(void) {
   int x = 1;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--foo", "3"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--foo", "3"};
 
   LOG_TEST();
 
@@ -74,8 +74,8 @@ static void test_2dash_int(void) {
 
 static void test_2dash_eq_int(void) {
   int x = 1;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--foo=3"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--foo=3"};
 
   LOG_TEST();
 
@@ -88,9 +88,9 @@ static void test_2dash_eq_int(void) {
 }
 
 static void test_simple_string(void) {
-  char *x = NULL;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "-foo", "3"};
+  char* x = NULL;
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "-foo", "3"};
 
   LOG_TEST();
 
@@ -103,9 +103,9 @@ static void test_simple_string(void) {
 }
 
 static void test_eq_string(void) {
-  char *x = NULL;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "-foo=3"};
+  char* x = NULL;
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "-foo=3"};
 
   LOG_TEST();
 
@@ -118,9 +118,9 @@ static void test_eq_string(void) {
 }
 
 static void test_2dash_string(void) {
-  char *x = NULL;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--foo", "3"};
+  char* x = NULL;
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--foo", "3"};
 
   LOG_TEST();
 
@@ -133,9 +133,9 @@ static void test_2dash_string(void) {
 }
 
 static void test_2dash_eq_string(void) {
-  char *x = NULL;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--foo=3"};
+  char* x = NULL;
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--foo=3"};
 
   LOG_TEST();
 
@@ -149,8 +149,8 @@ static void test_2dash_eq_string(void) {
 
 static void test_flag_on(void) {
   int x = 2;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--foo"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--foo"};
 
   LOG_TEST();
 
@@ -164,8 +164,8 @@ static void test_flag_on(void) {
 
 static void test_flag_no(void) {
   int x = 2;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--no-foo"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--no-foo"};
 
   LOG_TEST();
 
@@ -179,8 +179,8 @@ static void test_flag_no(void) {
 
 static void test_flag_val_1(void) {
   int x = 2;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--foo=1"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--foo=1"};
 
   LOG_TEST();
 
@@ -194,8 +194,8 @@ static void test_flag_val_1(void) {
 
 static void test_flag_val_0(void) {
   int x = 2;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--foo=0"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--foo=0"};
 
   LOG_TEST();
 
@@ -209,8 +209,8 @@ static void test_flag_val_0(void) {
 
 static void test_flag_val_true(void) {
   int x = 2;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--foo=true"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--foo=true"};
 
   LOG_TEST();
 
@@ -224,8 +224,8 @@ static void test_flag_val_true(void) {
 
 static void test_flag_val_false(void) {
   int x = 2;
-  gpr_cmdline *cl;
-  char *args[] = {(char *)__FILE__, "--foo=false"};
+  gpr_cmdline* cl;
+  char* args[] = {(char*)__FILE__, "--foo=false"};
 
   LOG_TEST();
 
@@ -238,12 +238,12 @@ static void test_flag_val_false(void) {
 }
 
 static void test_many(void) {
-  char *str = NULL;
+  char* str = NULL;
   int x = 0;
   int flag = 2;
-  gpr_cmdline *cl;
+  gpr_cmdline* cl;
 
-  char *args[] = {(char *)__FILE__, "--str", "hello", "-x=4", "-no-flag"};
+  char* args[] = {(char*)__FILE__, "--str", "hello", "-x=4", "-no-flag"};
 
   LOG_TEST();
 
@@ -258,8 +258,8 @@ static void test_many(void) {
   gpr_cmdline_destroy(cl);
 }
 
-static void extra_arg_cb(void *user_data, const char *arg) {
-  int *count = user_data;
+static void extra_arg_cb(void* user_data, const char* arg) {
+  int* count = user_data;
   GPR_ASSERT(arg != NULL);
   GPR_ASSERT(strlen(arg) == 1);
   GPR_ASSERT(arg[0] == 'a' + *count);
@@ -267,9 +267,9 @@ static void extra_arg_cb(void *user_data, const char *arg) {
 }
 
 static void test_extra(void) {
-  gpr_cmdline *cl;
+  gpr_cmdline* cl;
   int count = 0;
-  char *args[] = {(char *)__FILE__, "a", "b", "c"};
+  char* args[] = {(char*)__FILE__, "a", "b", "c"};
 
   LOG_TEST();
 
@@ -282,9 +282,9 @@ static void test_extra(void) {
 }
 
 static void test_extra_dashdash(void) {
-  gpr_cmdline *cl;
+  gpr_cmdline* cl;
   int count = 0;
-  char *args[] = {(char *)__FILE__, "--", "a", "b", "c"};
+  char* args[] = {(char*)__FILE__, "--", "a", "b", "c"};
 
   LOG_TEST();
 
@@ -297,10 +297,10 @@ static void test_extra_dashdash(void) {
 }
 
 static void test_usage(void) {
-  gpr_cmdline *cl;
-  char *usage;
+  gpr_cmdline* cl;
+  char* usage;
 
-  char *str = NULL;
+  char* str = NULL;
   int x = 0;
   int flag = 2;
 
@@ -329,13 +329,13 @@ static void test_usage(void) {
 }
 
 static void test_help(void) {
-  gpr_cmdline *cl;
+  gpr_cmdline* cl;
 
-  char *str = NULL;
+  char* str = NULL;
   int x = 0;
   int flag = 2;
 
-  char *help[] = {(char *)__FILE__, "-h"};
+  char* help[] = {(char*)__FILE__, "-h"};
 
   LOG_TEST();
 
@@ -353,13 +353,13 @@ static void test_help(void) {
 }
 
 static void test_badargs1(void) {
-  gpr_cmdline *cl;
+  gpr_cmdline* cl;
 
-  char *str = NULL;
+  char* str = NULL;
   int x = 0;
   int flag = 2;
 
-  char *bad_arg_name[] = {(char *)__FILE__, "--y"};
+  char* bad_arg_name[] = {(char*)__FILE__, "--y"};
 
   LOG_TEST();
 
@@ -378,13 +378,13 @@ static void test_badargs1(void) {
 }
 
 static void test_badargs2(void) {
-  gpr_cmdline *cl;
+  gpr_cmdline* cl;
 
-  char *str = NULL;
+  char* str = NULL;
   int x = 0;
   int flag = 2;
 
-  char *bad_int_value[] = {(char *)__FILE__, "--x", "henry"};
+  char* bad_int_value[] = {(char*)__FILE__, "--x", "henry"};
 
   LOG_TEST();
 
@@ -403,13 +403,13 @@ static void test_badargs2(void) {
 }
 
 static void test_badargs3(void) {
-  gpr_cmdline *cl;
+  gpr_cmdline* cl;
 
-  char *str = NULL;
+  char* str = NULL;
   int x = 0;
   int flag = 2;
 
-  char *bad_bool_value[] = {(char *)__FILE__, "--flag=henry"};
+  char* bad_bool_value[] = {(char*)__FILE__, "--flag=henry"};
 
   LOG_TEST();
 
@@ -428,13 +428,13 @@ static void test_badargs3(void) {
 }
 
 static void test_badargs4(void) {
-  gpr_cmdline *cl;
+  gpr_cmdline* cl;
 
-  char *str = NULL;
+  char* str = NULL;
   int x = 0;
   int flag = 2;
 
-  char *bad_bool_value[] = {(char *)__FILE__, "--no-str"};
+  char* bad_bool_value[] = {(char*)__FILE__, "--no-str"};
 
   LOG_TEST();
 
@@ -452,7 +452,7 @@ static void test_badargs4(void) {
   gpr_cmdline_destroy(cl);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_simple_int();
   test_eq_int();

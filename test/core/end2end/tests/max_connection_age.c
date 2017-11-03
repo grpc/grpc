@@ -45,9 +45,9 @@
 /* The grace period for the test to observe the channel shutdown process */
 #define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 3000
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
@@ -55,19 +55,19 @@ static void drain_cq(grpc_completion_queue *cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
+static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture *f) {
+static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = NULL;
 }
 
-static void end_test(grpc_end2end_test_fixture *f) {
+static void end_test(grpc_end2end_test_fixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -79,7 +79,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_arg server_a[] = {{.type = GRPC_ARG_INTEGER,
                           .key = GRPC_ARG_MAX_CONNECTION_AGE_MS,
                           .value.integer = MAX_CONNECTION_AGE_MS},
@@ -95,11 +95,11 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   config.init_client(&f, NULL);
   config.init_server(&f, &server_args);
 
-  grpc_call *c;
-  grpc_call *s;
+  grpc_call* c;
+  grpc_call* s;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(CALL_DEADLINE_S);
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -222,7 +222,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
 
 static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_arg server_a[] = {{.type = GRPC_ARG_INTEGER,
                           .key = GRPC_ARG_MAX_CONNECTION_AGE_MS,
                           .value.integer = MAX_CONNECTION_AGE_MS},
@@ -238,11 +238,11 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   config.init_client(&f, NULL);
   config.init_server(&f, &server_args);
 
-  grpc_call *c;
-  grpc_call *s;
+  grpc_call* c;
+  grpc_call* s;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(CALL_DEADLINE_S);
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;

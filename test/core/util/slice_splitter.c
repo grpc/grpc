@@ -23,7 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/useful.h>
 
-const char *grpc_slice_split_mode_name(grpc_slice_split_mode mode) {
+const char* grpc_slice_split_mode_name(grpc_slice_split_mode mode) {
   switch (mode) {
     case GRPC_SLICE_SPLIT_IDENTITY:
       return "identity";
@@ -35,9 +35,9 @@ const char *grpc_slice_split_mode_name(grpc_slice_split_mode mode) {
   return "error";
 }
 
-void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice *src_slices,
-                       size_t src_slice_count, grpc_slice **dst_slices,
-                       size_t *dst_slice_count) {
+void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice* src_slices,
+                       size_t src_slice_count, grpc_slice** dst_slices,
+                       size_t* dst_slice_count) {
   size_t i, j;
   size_t length;
 
@@ -45,7 +45,7 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice *src_slices,
     case GRPC_SLICE_SPLIT_IDENTITY:
       *dst_slice_count = src_slice_count;
       *dst_slices =
-          (grpc_slice *)gpr_malloc(sizeof(grpc_slice) * src_slice_count);
+          (grpc_slice*)gpr_malloc(sizeof(grpc_slice) * src_slice_count);
       for (i = 0; i < src_slice_count; i++) {
         (*dst_slices)[i] = src_slices[i];
         grpc_slice_ref((*dst_slices)[i]);
@@ -57,7 +57,7 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice *src_slices,
       for (i = 0; i < src_slice_count; i++) {
         length += GRPC_SLICE_LENGTH(src_slices[i]);
       }
-      *dst_slices = (grpc_slice *)gpr_malloc(sizeof(grpc_slice));
+      *dst_slices = (grpc_slice*)gpr_malloc(sizeof(grpc_slice));
       **dst_slices = grpc_slice_malloc(length);
       length = 0;
       for (i = 0; i < src_slice_count; i++) {
@@ -73,7 +73,7 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice *src_slices,
         length += GRPC_SLICE_LENGTH(src_slices[i]);
       }
       *dst_slice_count = length;
-      *dst_slices = (grpc_slice *)gpr_malloc(sizeof(grpc_slice) * length);
+      *dst_slices = (grpc_slice*)gpr_malloc(sizeof(grpc_slice) * length);
       length = 0;
       for (i = 0; i < src_slice_count; i++) {
         for (j = 0; j < GRPC_SLICE_LENGTH(src_slices[i]); j++) {
@@ -86,9 +86,9 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice *src_slices,
 }
 
 void grpc_split_slices_to_buffer(grpc_slice_split_mode mode,
-                                 grpc_slice *src_slices, size_t src_slice_count,
-                                 grpc_slice_buffer *dst) {
-  grpc_slice *slices;
+                                 grpc_slice* src_slices, size_t src_slice_count,
+                                 grpc_slice_buffer* dst) {
+  grpc_slice* slices;
   size_t nslices;
   size_t i;
   grpc_split_slices(mode, src_slices, src_slice_count, &slices, &nslices);
@@ -99,13 +99,13 @@ void grpc_split_slices_to_buffer(grpc_slice_split_mode mode,
   gpr_free(slices);
 }
 
-void grpc_split_slice_buffer(grpc_slice_split_mode mode, grpc_slice_buffer *src,
-                             grpc_slice_buffer *dst) {
+void grpc_split_slice_buffer(grpc_slice_split_mode mode, grpc_slice_buffer* src,
+                             grpc_slice_buffer* dst) {
   grpc_split_slices_to_buffer(mode, src->slices, src->count, dst);
 }
 
-grpc_slice grpc_slice_merge(grpc_slice *slices, size_t nslices) {
-  uint8_t *out = NULL;
+grpc_slice grpc_slice_merge(grpc_slice* slices, size_t nslices) {
+  uint8_t* out = NULL;
   size_t length = 0;
   size_t capacity = 0;
   size_t i;
@@ -113,7 +113,7 @@ grpc_slice grpc_slice_merge(grpc_slice *slices, size_t nslices) {
   for (i = 0; i < nslices; i++) {
     if (GRPC_SLICE_LENGTH(slices[i]) + length > capacity) {
       capacity = GPR_MAX(capacity * 2, GRPC_SLICE_LENGTH(slices[i]) + length);
-      out = (uint8_t *)gpr_realloc(out, capacity);
+      out = (uint8_t*)gpr_realloc(out, capacity);
     }
     memcpy(out + length, GRPC_SLICE_START_PTR(slices[i]),
            GRPC_SLICE_LENGTH(slices[i]));

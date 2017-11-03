@@ -25,7 +25,7 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/support/string.h"
 
-int gpr_join_host_port(char **out, const char *host, int port) {
+int gpr_join_host_port(char** out, const char* host, int port) {
   if (host[0] != '[' && strchr(host, ':') != NULL) {
     /* IPv6 literals must be enclosed in brackets. */
     return gpr_asprintf(out, "[%s]:%d", host, port);
@@ -35,17 +35,17 @@ int gpr_join_host_port(char **out, const char *host, int port) {
   }
 }
 
-int gpr_split_host_port(const char *name, char **host, char **port) {
-  const char *host_start;
+int gpr_split_host_port(const char* name, char** host, char** port) {
+  const char* host_start;
   size_t host_len;
-  const char *port_start;
+  const char* port_start;
 
   *host = NULL;
   *port = NULL;
 
   if (name[0] == '[') {
     /* Parse a bracketed host, typically an IPv6 literal. */
-    const char *rbracket = strchr(name, ']');
+    const char* rbracket = strchr(name, ']');
     if (rbracket == NULL) {
       /* Unmatched [ */
       return 0;
@@ -68,7 +68,7 @@ int gpr_split_host_port(const char *name, char **host, char **port) {
       return 0;
     }
   } else {
-    const char *colon = strchr(name, ':');
+    const char* colon = strchr(name, ':');
     if (colon != NULL && strchr(colon + 1, ':') == NULL) {
       /* Exactly 1 colon.  Split into host:port. */
       host_start = name;
@@ -83,7 +83,7 @@ int gpr_split_host_port(const char *name, char **host, char **port) {
   }
 
   /* Allocate return values. */
-  *host = (char *)gpr_malloc(host_len + 1);
+  *host = (char*)gpr_malloc(host_len + 1);
   memcpy(*host, host_start, host_len);
   (*host)[host_len] = '\0';
 

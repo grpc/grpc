@@ -25,7 +25,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/profiling/timers.h"
 
-bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx) {
+bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx* exec_ctx) {
   if ((exec_ctx->flags & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
     if (exec_ctx->check_ready_to_finish(exec_ctx,
                                         exec_ctx->check_ready_to_finish_arg)) {
@@ -38,26 +38,26 @@ bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx) {
   }
 }
 
-bool grpc_never_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
+bool grpc_never_ready_to_finish(grpc_exec_ctx* exec_ctx, void* arg_ignored) {
   return false;
 }
 
-bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
+bool grpc_always_ready_to_finish(grpc_exec_ctx* exec_ctx, void* arg_ignored) {
   return true;
 }
 
-bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx) {
+bool grpc_exec_ctx_has_work(grpc_exec_ctx* exec_ctx) {
   return exec_ctx->active_combiner != NULL ||
          !grpc_closure_list_empty(exec_ctx->closure_list);
 }
 
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
+void grpc_exec_ctx_finish(grpc_exec_ctx* exec_ctx) {
   exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
   grpc_exec_ctx_flush(exec_ctx);
 }
 
-static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                         grpc_error *error) {
+static void exec_ctx_run(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
+                         grpc_error* error) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (GRPC_TRACER_ON(grpc_trace_closure)) {
@@ -76,16 +76,16 @@ static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   GRPC_ERROR_UNREF(error);
 }
 
-bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
+bool grpc_exec_ctx_flush(grpc_exec_ctx* exec_ctx) {
   bool did_something = 0;
   GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
   for (;;) {
     if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
-      grpc_closure *c = exec_ctx->closure_list.head;
+      grpc_closure* c = exec_ctx->closure_list.head;
       exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
       while (c != NULL) {
-        grpc_closure *next = c->next_data.next;
-        grpc_error *error = c->error_data.error;
+        grpc_closure* next = c->next_data.next;
+        grpc_error* error = c->error_data.error;
         did_something = true;
         exec_ctx_run(exec_ctx, c, error);
         c = next;
@@ -99,8 +99,8 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   return did_something;
 }
 
-static void exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                           grpc_error *error) {
+static void exec_ctx_sched(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
+                           grpc_error* error) {
   grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }
 
@@ -138,7 +138,7 @@ static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
   return (gpr_atm)x;
 }
 
-grpc_millis grpc_exec_ctx_now(grpc_exec_ctx *exec_ctx) {
+grpc_millis grpc_exec_ctx_now(grpc_exec_ctx* exec_ctx) {
   if (!exec_ctx->now_is_valid) {
     exec_ctx->now = timespec_to_atm_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
     exec_ctx->now_is_valid = true;
@@ -146,7 +146,7 @@ grpc_millis grpc_exec_ctx_now(grpc_exec_ctx *exec_ctx) {
   return exec_ctx->now;
 }
 
-void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx) {
+void grpc_exec_ctx_invalidate_now(grpc_exec_ctx* exec_ctx) {
   exec_ctx->now_is_valid = false;
 }
 
@@ -179,4 +179,4 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
     exec_ctx_run, exec_ctx_sched, "exec_ctx"};
 static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
-grpc_closure_scheduler *grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
+grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;

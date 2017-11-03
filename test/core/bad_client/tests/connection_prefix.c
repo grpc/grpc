@@ -19,8 +19,8 @@
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq,
-                     void *registered_method) {
+static void verifier(grpc_server* server, grpc_completion_queue* cq,
+                     void* registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), NULL)
@@ -28,7 +28,7 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq,
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
 
   GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, "X", 0);

@@ -35,27 +35,27 @@ using Nan::MaybeLocal;
 
 using v8::Function;
 using v8::Local;
-using v8::Object;
 using v8::Number;
+using v8::Object;
 using v8::Value;
 
-grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
+grpc_byte_buffer* BufferToByteBuffer(Local<Value> buffer) {
   Nan::HandleScope scope;
   grpc_slice slice = CreateSliceFromBuffer(buffer);
-  grpc_byte_buffer *byte_buffer(grpc_raw_byte_buffer_create(&slice, 1));
+  grpc_byte_buffer* byte_buffer(grpc_raw_byte_buffer_create(&slice, 1));
   grpc_slice_unref(slice);
   return byte_buffer;
 }
 
 namespace {
-void delete_buffer(char *data, void *hint) {
-  grpc_slice *slice = static_cast<grpc_slice *>(hint);
+void delete_buffer(char* data, void* hint) {
+  grpc_slice* slice = static_cast<grpc_slice*>(hint);
   grpc_slice_unref(*slice);
   delete slice;
 }
-}
+}  // namespace
 
-Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
+Local<Value> ByteBufferToBuffer(grpc_byte_buffer* buffer) {
   Nan::EscapableHandleScope scope;
   if (buffer == NULL) {
     return scope.Escape(Nan::Null());
@@ -65,10 +65,10 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     Nan::ThrowError("Error initializing byte buffer reader.");
     return scope.Escape(Nan::Undefined());
   }
-  grpc_slice *slice = new grpc_slice;
+  grpc_slice* slice = new grpc_slice;
   *slice = grpc_byte_buffer_reader_readall(&reader);
   grpc_byte_buffer_reader_destroy(&reader);
-  char *result = reinterpret_cast<char *>(GRPC_SLICE_START_PTR(*slice));
+  char* result = reinterpret_cast<char*>(GRPC_SLICE_START_PTR(*slice));
   size_t length = GRPC_SLICE_LENGTH(*slice);
   Local<Value> buf =
       Nan::NewBuffer(result, length, delete_buffer, slice).ToLocalChecked();
