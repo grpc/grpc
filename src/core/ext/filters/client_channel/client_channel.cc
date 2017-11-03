@@ -1611,6 +1611,9 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   return true;
 }
 
+static void start_internal_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
+                                                  grpc_call_element *elem);
+
 static void invoke_recv_initial_metadata_callback(grpc_exec_ctx *exec_ctx,
                                                   void *arg,
                                                   grpc_error *error) {
@@ -1667,40 +1670,36 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
             "chand=%p calld=%p: got recv_initial_metadata_ready, error=%s",
             chand, calld, grpc_error_string(error));
   }
-  // If we got an error, attempt to retry the call.
-  if (error != GRPC_ERROR_NONE) {
-    grpc_status_code status;
-    grpc_error_get_status(exec_ctx, error, calld->deadline, &status, NULL,
-                          NULL);
-    if (maybe_retry(exec_ctx, batch_data->elem, batch_data, status,
-                    NULL /* server_pushback_md */)) {
-      batch_data_unref(exec_ctx, batch_data);
-      return;
+  subchannel_call_retry_state *retry_state = (subchannel_call_retry_state *)
+      grpc_connected_subchannel_call_get_parent_data(
+          batch_data->subchannel_call);
+  // If we got an error or a Trailers-Only response and have not yet gotten
+  // the recv_trailing_metadata on_complete callback, then defer
+  // propagating this callback back to the surface.  We can evaluate whether
+  // to retry when recv_trailing_metadata comes back.
+  if ((batch_data->trailing_metadata_available || error != GRPC_ERROR_NONE) &&
+      !retry_state->completed_recv_trailing_metadata) {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG,
+              "chand=%p calld=%p: deferring recv_initial_metadata_ready "
+              "(Trailers-Only)",
+              chand, calld);
     }
-  } else {
-    // If we got a Trailers-Only response and have not yet gotten the
-    // recv_trailing_metadata on_complete callback, do nothing.  We can
-    // evaluate whether to retry when recv_trailing_metadata comes back.
-    subchannel_call_retry_state *retry_state = (subchannel_call_retry_state *)
-        grpc_connected_subchannel_call_get_parent_data(
-            batch_data->subchannel_call);
-    if (batch_data->trailing_metadata_available &&
-        !retry_state->completed_recv_trailing_metadata) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-        gpr_log(GPR_DEBUG,
-                "chand=%p calld=%p: deferring recv_initial_metadata_ready "
-                "(Trailers-Only)",
-                chand, calld);
-      }
-      retry_state->recv_initial_metadata_ready_deferred = true;
-      retry_state->recv_initial_metadata_error = GRPC_ERROR_REF(error);
-      GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
-                              "recv_initial_metadata_ready trailers-only");
-      return;
+    retry_state->recv_initial_metadata_ready_deferred = true;
+    retry_state->recv_initial_metadata_error = GRPC_ERROR_REF(error);
+    if (!retry_state->started_recv_trailing_metadata) {
+      // recv_trailing_metadata not yet started by application; start it
+      // ourselves to get status.
+      start_internal_recv_trailing_metadata(exec_ctx, elem);
+    } else {
+      GRPC_CALL_COMBINER_STOP(
+          exec_ctx, calld->call_combiner,
+          "recv_initial_metadata_ready trailers-only or error");
     }
-    // No error, so commit the call.
-    retry_commit(exec_ctx, elem, retry_state);
+    return;
   }
+  // Received valid initial metadata, so commit the call.
+  retry_commit(exec_ctx, elem, retry_state);
   // Manually invoking a callback function; it does not take ownership of error.
   invoke_recv_initial_metadata_callback(exec_ctx, batch_data, error);
   GRPC_ERROR_UNREF(error);
@@ -1758,18 +1757,12 @@ static void recv_message_ready(grpc_exec_ctx *exec_ctx, void *arg,
   subchannel_call_retry_state *retry_state = (subchannel_call_retry_state *)
       grpc_connected_subchannel_call_get_parent_data(
           batch_data->subchannel_call);
-  // If we got an error, attempt to retry the call.
-  if (error != GRPC_ERROR_NONE) {
-    grpc_status_code status;
-    grpc_error_get_status(exec_ctx, error, calld->deadline, &status, NULL,
-                          NULL);
-    if (maybe_retry(exec_ctx, batch_data->elem, batch_data, status,
-                    NULL /* server_pushback_md */)) {
-      batch_data_unref(exec_ctx, batch_data);
-      return;
-    }
-  } else if (batch_data->recv_message == NULL &&
-             !retry_state->completed_recv_trailing_metadata) {
+  // If we got an error or the payload was NULL and we have not yet gotten
+  // the recv_trailing_metadata on_complete callback, then defer
+  // propagating this callback back to the surface.  We can evaluate whether
+  // to retry when recv_trailing_metadata comes back.
+  if ((batch_data->recv_message == NULL || error != GRPC_ERROR_NONE) &&
+      !retry_state->completed_recv_trailing_metadata) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: deferring recv_message_ready (NULL "
@@ -1778,13 +1771,18 @@ static void recv_message_ready(grpc_exec_ctx *exec_ctx, void *arg,
     }
     retry_state->recv_message_ready_deferred = true;
     retry_state->recv_message_error = GRPC_ERROR_REF(error);
-    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
-                            "recv_message_ready null");
+    if (!retry_state->started_recv_trailing_metadata) {
+      // recv_trailing_metadata not yet started by application; start it
+      // ourselves to get status.
+      start_internal_recv_trailing_metadata(exec_ctx, elem);
+    } else {
+      GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
+                              "recv_message_ready null");
+    }
     return;
-  } else {
-    // No error, so commit the call.
-    retry_commit(exec_ctx, elem, retry_state);
   }
+  // Received a valid message, so commit the call.
+  retry_commit(exec_ctx, elem, retry_state);
   // Manually invoking a callback function; it does not take ownership of error.
   invoke_recv_message_callback(exec_ctx, batch_data, error);
   GRPC_ERROR_UNREF(error);
@@ -2158,6 +2156,24 @@ static void add_retriable_recv_trailing_metadata_op(
   batch_data->batch.collect_stats = true;
   batch_data->batch.payload->collect_stats.collect_stats =
       &batch_data->collect_stats;
+}
+
+static void start_internal_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
+                                                  grpc_call_element *elem) {
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
+  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    gpr_log(GPR_DEBUG,
+            "chand=%p calld=%p: call failed but recv_trailing_metadata not "
+            "started; starting it internally", chand, calld);
+  }
+  subchannel_call_retry_state *retry_state = (subchannel_call_retry_state *)
+      grpc_connected_subchannel_call_get_parent_data(calld->subchannel_call);
+  subchannel_batch_data *batch_data = batch_data_create(elem, 1);
+  add_retriable_recv_trailing_metadata_op(exec_ctx, calld, retry_state,
+                                          batch_data);
+  grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
+                                  &batch_data->batch);
 }
 
 static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
