@@ -38,10 +38,12 @@ extern grpc_stats_data *grpc_stats_per_cpu_storage;
   (&grpc_stats_per_cpu_storage[(exec_ctx)->starting_cpu])
 
 #define GRPC_STATS_INC_COUNTER(exec_ctx, ctr) \
+  if (grpc_stats_per_cpu_storage != NULL)     \
   (gpr_atm_no_barrier_fetch_add(              \
       &GRPC_THREAD_STATS_DATA((exec_ctx))->counters[(ctr)], 1))
 
 #define GRPC_STATS_INC_HISTOGRAM(exec_ctx, histogram, index) \
+  if (grpc_stats_per_cpu_storage != NULL)                    \
   (gpr_atm_no_barrier_fetch_add(                             \
       &GRPC_THREAD_STATS_DATA((exec_ctx))                    \
            ->histograms[histogram##_FIRST_SLOT + (index)],   \
