@@ -67,7 +67,8 @@ END2END_FIXTURES = {
                               platforms=['linux', 'mac', 'posix']),
     'inproc': fixture_options(fullstack=False, dns_resolver=False,
                               name_resolution=False, is_inproc=True,
-                              is_http2=False, supports_write_buffering=False),
+                              is_http2=False, supports_write_buffering=False,
+                              client_channel=False),
 }
 
 

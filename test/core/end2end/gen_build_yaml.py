@@ -41,7 +41,7 @@ fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
 inproc_fixture_options = default_unsecure_fixture_options._replace(
     dns_resolver=False, fullstack=False, name_resolution=False,
     supports_compression=False, is_inproc=True, is_http2=False,
-    supports_write_buffering=False)
+    supports_write_buffering=False, client_channel=False)
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
