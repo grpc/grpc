@@ -1,32 +1,4 @@
 EXPORTS
-    census_initialize
-    census_shutdown
-    census_supported
-    census_enabled
-    census_context_create
-    census_context_destroy
-    census_context_get_status
-    census_context_initialize_iterator
-    census_context_next_tag
-    census_context_get_tag
-    census_context_encode
-    census_context_decode
-    census_trace_mask
-    census_set_trace_mask
-    census_start_rpc_op_timestamp
-    census_start_client_rpc_op
-    census_set_rpc_client_peer
-    census_start_server_rpc_op
-    census_start_op
-    census_end_op
-    census_trace_print
-    census_trace_scan_start
-    census_get_trace_record
-    census_trace_scan_end
-    census_define_resource
-    census_delete_resource
-    census_resource_id
-    census_record_values
     grpc_compression_algorithm_parse
     grpc_compression_algorithm_name
     grpc_stream_compression_algorithm_name
