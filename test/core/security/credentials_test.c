@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/slice.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -35,6 +37,7 @@
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
@@ -1178,6 +1181,77 @@ static void test_channel_creds_duplicate_without_call_creds(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+typedef struct {
+  const char *url_scheme;
+  const char *call_host;
+  const char *call_method;
+  const char *desired_service_url;
+  const char *desired_method_name;
+} auth_metadata_context_test_case;
+
+static void test_auth_metadata_context(void) {
+  auth_metadata_context_test_case test_cases[] = {
+      // No service nor method.
+      {"https", "www.foo.com", "", "https://www.foo.com", ""},
+      // No method.
+      {"https", "www.foo.com", "/Service", "https://www.foo.com/Service", ""},
+      // Empty service and method.
+      {"https", "www.foo.com", "//", "https://www.foo.com/", ""},
+      // Empty method.
+      {"https", "www.foo.com", "/Service/", "https://www.foo.com/Service", ""},
+      // Malformed url.
+      {"https", "www.foo.com:", "/Service/", "https://www.foo.com:/Service",
+       ""},
+      // https, default explicit port.
+      {"https", "www.foo.com:443", "/Service/FooMethod",
+       "https://www.foo.com/Service", "FooMethod"},
+      // https, default implicit port.
+      {"https", "www.foo.com", "/Service/FooMethod",
+       "https://www.foo.com/Service", "FooMethod"},
+      // https with ipv6 literal, default explicit port.
+      {"https", "[1080:0:0:0:8:800:200C:417A]:443", "/Service/FooMethod",
+       "https://[1080:0:0:0:8:800:200C:417A]/Service", "FooMethod"},
+      // https with ipv6 literal, default implicit port.
+      {"https", "[1080:0:0:0:8:800:200C:443]", "/Service/FooMethod",
+       "https://[1080:0:0:0:8:800:200C:443]/Service", "FooMethod"},
+      // https, custom port.
+      {"https", "www.foo.com:8888", "/Service/FooMethod",
+       "https://www.foo.com:8888/Service", "FooMethod"},
+      // https with ipv6 literal, custom port.
+      {"https", "[1080:0:0:0:8:800:200C:417A]:8888", "/Service/FooMethod",
+       "https://[1080:0:0:0:8:800:200C:417A]:8888/Service", "FooMethod"},
+      // custom url scheme, https default port.
+      {"blah", "www.foo.com:443", "/Service/FooMethod",
+       "blah://www.foo.com:443/Service", "FooMethod"}};
+  for (uint32_t i = 0; i < GPR_ARRAY_SIZE(test_cases); i++) {
+    const char *url_scheme = test_cases[i].url_scheme;
+    grpc_slice call_host =
+        grpc_slice_from_copied_string(test_cases[i].call_host);
+    grpc_slice call_method =
+        grpc_slice_from_copied_string(test_cases[i].call_method);
+    grpc_auth_metadata_context auth_md_context;
+    memset(&auth_md_context, 0, sizeof(auth_md_context));
+    grpc_auth_metadata_context_build(url_scheme, call_host, call_method, NULL,
+                                     &auth_md_context);
+    if (strcmp(auth_md_context.service_url,
+               test_cases[i].desired_service_url) != 0) {
+      gpr_log(GPR_ERROR, "Invalid service url, want: %s, got %s.",
+              test_cases[i].desired_service_url, auth_md_context.service_url);
+      GPR_ASSERT(false);
+    }
+    if (strcmp(auth_md_context.method_name,
+               test_cases[i].desired_method_name) != 0) {
+      gpr_log(GPR_ERROR, "Invalid method name, want: %s, got %s.",
+              test_cases[i].desired_method_name, auth_md_context.method_name);
+      GPR_ASSERT(false);
+    }
+    GPR_ASSERT(auth_md_context.channel_auth_context == NULL);
+    grpc_slice_unref(call_host);
+    grpc_slice_unref(call_method);
+    grpc_auth_metadata_context_reset(&auth_md_context);
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -1211,6 +1285,7 @@ int main(int argc, char **argv) {
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();
   test_channel_creds_duplicate_without_call_creds();
+  test_auth_metadata_context();
   grpc_shutdown();
   return 0;
 }
