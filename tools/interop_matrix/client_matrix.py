@@ -97,7 +97,7 @@ LANG_RELEASE_MATRIX = {
         'v1.6.6',
     ],
    'csharp': [
-        # Fail to build docker image with v1.3.9 and earlier.
+        # Fail to build images due to #13278.
         #'v1.0.1',
         #'v1.1.4',
         #'v1.2.5',

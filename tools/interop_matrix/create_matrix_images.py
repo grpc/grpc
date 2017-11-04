@@ -227,7 +227,6 @@ def checkout_grpc_stack(lang, release):
   repo_dir = os.path.splitext(os.path.basename(repo))[0]
   stack_base = os.path.join(args.git_checkout_root, repo_dir)
 
-  # Assume the directory is reusable for git checkout.
   if not os.path.exists(stack_base):
     subprocess.check_call(['git', 'clone', '--recursive', repo],
                           cwd=os.path.dirname(stack_base))
@@ -240,7 +239,9 @@ def checkout_grpc_stack(lang, release):
   output = subprocess.check_output(
       ['git', 'checkout', release], cwd=stack_base, stderr=subprocess.STDOUT)
   commit_log = subprocess.check_output(['git', 'log', '-1'], cwd=stack_base)
-  jobset.message('SUCCESS', 'git checkout', output + commit_log, do_newline=True)
+  jobset.message('SUCCESS', 'git checkout', 
+                 '%s: %s' % (str(output), commit_log), 
+                 do_newline=True)
 
   # Write git log to commit_log so it can be packaged with the docker image.
   with open(os.path.join(stack_base, 'commit_log'), 'w') as f:
