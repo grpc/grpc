@@ -310,6 +310,9 @@ struct grpc_chttp2_transport {
   bool seen_goaway;
   /** have we sent a goaway */
   grpc_chttp2_sent_goaway_state sent_goaway_state;
+  /** http2 error code received in the GOAWAY frame. Only relevant if
+   * seen_goaway is true */
+  uint32_t goaway_error;
 
   /** are the local settings dirty and need to be sent? */
   bool dirtied_local_settings;
@@ -375,11 +378,6 @@ struct grpc_chttp2_transport {
   grpc_error *(*parser)(grpc_exec_ctx *exec_ctx, void *parser_user_data,
                         grpc_chttp2_transport *t, grpc_chttp2_stream *s,
                         grpc_slice slice, int is_last);
-
-  /* goaway data */
-  grpc_status_code goaway_error;
-  uint32_t goaway_last_stream_index;
-  grpc_slice goaway_text;
 
   grpc_chttp2_write_cb *write_cb_pool;
 

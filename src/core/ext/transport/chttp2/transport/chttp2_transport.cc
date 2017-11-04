@@ -1121,6 +1121,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
   // GRPC_CHTTP2_IF_TRACING(
   //     gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
   t->seen_goaway = 1;
+  t->goaway_error = goaway_error;
 
   /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
    * data equal to "too_many_pings", it should log the occurrence at a log level
@@ -2074,7 +2075,6 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_status_code status;
   grpc_slice slice;
   grpc_error_get_status(exec_ctx, error, s->deadline, &status, &slice, NULL);
-
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
   }
@@ -2542,6 +2542,15 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
         "Transport closed", &t->closed_with_error, 1);
   }
   if (error != GRPC_ERROR_NONE) {
+    /* If a goaway frame was received, this might be the reason why the read
+     * failed. Add this info to the error */
+    if (t->seen_goaway) {
+      error = grpc_error_add_child(
+          error, grpc_error_set_int(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
+                     GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)t->goaway_error));
+    }
+
     close_transport_locked(exec_ctx, t, GRPC_ERROR_REF(error));
     t->endpoint_reading = 0;
   } else if (t->closed_with_error == GRPC_ERROR_NONE) {
