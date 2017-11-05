@@ -339,7 +339,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       arena, sizeof(grpc_call) + channel_stack->call_stack_size);
   gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
-  grpc_call_combiner_init(&call->call_combiner);
+  grpc_call_combiner_init(exec_ctx, &call->call_combiner);
   *out_call = call;
   call->channel = args->channel;
   call->cq = args->cq;
@@ -511,7 +511,7 @@ static void release_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
   grpc_call *c = (grpc_call *)call;
   grpc_channel *channel = c->channel;
-  grpc_call_combiner_destroy(&c->call_combiner);
+  grpc_call_combiner_destroy(exec_ctx, &c->call_combiner);
   gpr_free((char *)c->peer_string);
   grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");

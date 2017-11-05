@@ -41,6 +41,7 @@ extern "C" {
 // callback.
 
 extern grpc_tracer_flag grpc_call_combiner_trace;
+extern grpc_tracer_flag grpc_call_combiner_thread_switch_trace;
 
 typedef struct {
   gpr_atm size;  // size_t, num closures in queue or currently executing
@@ -49,12 +50,16 @@ typedef struct {
   // a grpc_closure* (if the lowest bit is 0),
   // or a grpc_error* (if the lowest bit is 1).
   gpr_atm cancel_state;
+  gpr_atm prev_tid;
+  gpr_atm num_thread_switch;
 } grpc_call_combiner;
 
 // Assumes memory was initialized to zero.
-void grpc_call_combiner_init(grpc_call_combiner* call_combiner);
+void grpc_call_combiner_init(grpc_exec_ctx* exec_ctx,
+                             grpc_call_combiner* call_combiner);
 
-void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner);
+void grpc_call_combiner_destroy(grpc_exec_ctx* exec_ctx,
+                                grpc_call_combiner* call_combiner);
 
 #ifndef NDEBUG
 #define GRPC_CALL_COMBINER_START(exec_ctx, call_combiner, closure, error,   \

@@ -25,6 +25,14 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/profiling/timers.h"
 
+#ifdef GPR_LINUX
+#include <sys/syscall.h>
+#include <unistd.h>
+static gpr_atm get_tid(void) { return (gpr_atm)syscall(__NR_gettid); }
+#else
+static gpr_atm get_tid(void) { return 0; }
+#endif
+
 bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx) {
   if ((exec_ctx->flags & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
     if (exec_ctx->check_ready_to_finish(exec_ctx,
@@ -148,6 +156,13 @@ grpc_millis grpc_exec_ctx_now(grpc_exec_ctx *exec_ctx) {
 
 void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx) {
   exec_ctx->now_is_valid = false;
+}
+
+gpr_atm grpc_exec_ctx_tid(grpc_exec_ctx *exec_ctx) {
+  if (exec_ctx->tid == -1) {
+    exec_ctx->tid = get_tid();
+  }
+  return exec_ctx->tid;
 }
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,

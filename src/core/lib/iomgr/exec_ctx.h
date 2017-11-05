@@ -78,6 +78,7 @@ struct grpc_exec_ctx {
 
   bool now_is_valid;
   grpc_millis now;
+  gpr_atm tid;
 };
 
 /* initializer for grpc_exec_ctx:
@@ -85,7 +86,7 @@ struct grpc_exec_ctx {
 #define GRPC_EXEC_CTX_INITIALIZER(flags, finish_check, finish_check_arg) \
   {                                                                      \
     GRPC_CLOSURE_LIST_INIT, NULL, NULL, flags, gpr_cpu_current_cpu(),    \
-        finish_check_arg, finish_check, false, 0                         \
+        finish_check_arg, finish_check, false, 0, -1                     \
   }
 
 /* initialize an execution context at the top level of an API call into grpc
@@ -119,6 +120,7 @@ void grpc_exec_ctx_global_init(void);
 void grpc_exec_ctx_global_shutdown(void);
 
 grpc_millis grpc_exec_ctx_now(grpc_exec_ctx *exec_ctx);
+gpr_atm grpc_exec_ctx_tid(grpc_exec_ctx *exec_ctx);
 void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx);
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
