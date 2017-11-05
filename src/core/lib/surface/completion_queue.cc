@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/support/spinlock.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -56,6 +57,7 @@ grpc_tracer_flag grpc_trace_cq_refcount =
 // NOTE: Only one event will ever be cached.
 GPR_TLS_DECL(g_cached_event);
 GPR_TLS_DECL(g_cached_cq);
+bool g_cache_enabled;
 
 typedef struct {
   grpc_pollset_worker **worker;
@@ -357,10 +359,19 @@ static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cq,
 void grpc_cq_global_init() {
   gpr_tls_init(&g_cached_event);
   gpr_tls_init(&g_cached_cq);
+  char *env_var = gpr_getenv("GRPC_DISABLE_CQ_CACHE");
+  g_cache_enabled = true;
+  if (env_var != NULL) {
+    if (strcmp(env_var, "1") == 0) {
+      g_cache_enabled = false;
+    }
+    gpr_free(env_var);
+  }
 }
 
 void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue *cq) {
-  if ((grpc_completion_queue *)gpr_tls_get(&g_cached_cq) == nullptr) {
+  if ((grpc_completion_queue *)gpr_tls_get(&g_cached_cq) == nullptr &&
+      g_cache_enabled) {
     gpr_tls_set(&g_cached_event, (intptr_t)0);
     gpr_tls_set(&g_cached_cq, (intptr_t)cq);
   }
