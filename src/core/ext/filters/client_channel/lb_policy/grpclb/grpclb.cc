@@ -629,7 +629,7 @@ static void update_lb_connectivity_status_locked(
 
 /* Perform a pick over \a glb_policy->rr_policy. Given that a pick can return
  * immediately (ignoring its completion callback), we need to perform the
- * cleanups this callback would otherwise be resposible for.
+ * cleanups this callback would otherwise be responsible for.
  * If \a force_async is true, then we will manually schedule the
  * completion callback even if the pick is available immediately. */
 static bool pick_from_internal_rr_locked(
@@ -756,6 +756,9 @@ static void create_rr_locked(grpc_exec_ctx* exec_ctx, glb_lb_policy* glb_policy,
             (void*)glb_policy->rr_policy);
     return;
   }
+  grpc_lb_policy_set_reresolve_closure_locked(
+      exec_ctx, new_rr_policy, glb_policy->base.request_reresolution);
+  glb_policy->base.request_reresolution = NULL;
   glb_policy->rr_policy = new_rr_policy;
   grpc_error* rr_state_error = NULL;
   const grpc_connectivity_state rr_state =
@@ -1010,6 +1013,9 @@ static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   glb_policy->pending_pings = NULL;
   if (glb_policy->rr_policy != NULL) {
     GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
+  } else {
+    grpc_lb_policy_try_reresolve(exec_ctx, pol, &grpc_lb_glb_trace,
+                                 GRPC_ERROR_CANCELLED);
   }
   // We destroy the LB channel here because
   // glb_lb_channel_on_connectivity_changed_cb needs a valid glb_policy
@@ -1847,6 +1853,20 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx* exec_ctx,
   }
 }
 
+static void glb_set_reresolve_closure_locked(
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+    grpc_closure *request_reresolution) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
+  GPR_ASSERT(!glb_policy->shutting_down);
+  GPR_ASSERT(glb_policy->base.request_reresolution == NULL);
+  if (glb_policy->rr_policy != NULL) {
+    grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, glb_policy->rr_policy,
+                                                request_reresolution);
+  } else {
+    glb_policy->base.request_reresolution = request_reresolution;
+  }
+}
+
 /* Code wiring the policy with the rest of the core */
 static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_destroy,
@@ -1858,7 +1878,8 @@ static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_exit_idle_locked,
     glb_check_connectivity_locked,
     glb_notify_on_state_change_locked,
-    glb_update_locked};
+    glb_update_locked,
+    glb_set_reresolve_closure_locked};
 
 static grpc_lb_policy* glb_create(grpc_exec_ctx* exec_ctx,
                                   grpc_lb_policy_factory* factory,

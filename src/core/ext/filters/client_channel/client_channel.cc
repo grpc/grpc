@@ -211,6 +211,14 @@ typedef struct client_channel_channel_data {
   char* info_service_config_json;
 } channel_data;
 
+typedef struct {
+  channel_data *chand;
+  /** used as an identifier, don't dereference it because the LB policy may be
+   * non-existing when the callback is run */
+  grpc_lb_policy *lb_policy;
+  grpc_closure closure;
+} reresolution_request_args;
+
 /** We create one watcher for each new lb_policy that is returned from a
     resolver, to watch for state changes from the lb_policy. When a state
     change is seen, we update the channel, and create a new watcher. */
@@ -259,20 +267,13 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx* exec_ctx,
 static void on_lb_policy_state_changed_locked(grpc_exec_ctx* exec_ctx,
                                               void* arg, grpc_error* error) {
   lb_policy_connectivity_watcher* w = (lb_policy_connectivity_watcher*)arg;
-  grpc_connectivity_state publish_state = w->state;
   /* check if the notification is for the latest policy */
   if (w->lb_policy == w->chand->lb_policy) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p: lb_policy=%p state changed to %s", w->chand,
               w->lb_policy, grpc_connectivity_state_name(w->state));
     }
-    if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != NULL) {
-      publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
-      grpc_resolver_channel_saw_error_locked(exec_ctx, w->chand->resolver);
-      GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
-      w->chand->lb_policy = NULL;
-    }
-    set_channel_connectivity_state_locked(exec_ctx, w->chand, publish_state,
+    set_channel_connectivity_state_locked(exec_ctx, w->chand, w->state,
                                           GRPC_ERROR_REF(error), "lb_changed");
     if (w->state != GRPC_CHANNEL_SHUTDOWN) {
       watch_lb_policy_locked(exec_ctx, w->chand, w->lb_policy, w->state);
@@ -369,6 +370,27 @@ static void parse_retry_throttle_params(const grpc_json* field, void* arg) {
   }
 }
 
+static void request_reresolution_locked(grpc_exec_ctx* exec_ctx, void* arg,
+                                        grpc_error* error) {
+  reresolution_request_args* args = (reresolution_request_args*)arg;
+  channel_data* chand = args->chand;
+  // If this invocation is for a stale LB policy, treat it as an LB shutdown
+  // signal.
+  if (args->lb_policy != chand->lb_policy || error != GRPC_ERROR_NONE ||
+      chand->resolver == NULL) {
+    GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->owning_stack, "re-resolution");
+    gpr_free(args);
+    return;
+  }
+  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    gpr_log(GPR_DEBUG, "chand=%p: started name re-resolving", chand);
+  }
+  grpc_resolver_channel_saw_error_locked(exec_ctx, chand->resolver);
+  // Give back the closure to the LB policy.
+  grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, chand->lb_policy,
+                                              &args->closure);
+}
+
 static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
                                               void* arg, grpc_error* error) {
   channel_data* chand = (channel_data*)arg;
@@ -442,6 +464,16 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
           grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
       if (new_lb_policy == NULL) {
         gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
+      } else {
+        reresolution_request_args *args =
+            (reresolution_request_args *)gpr_zalloc(sizeof(*args));
+        args->chand = chand;
+        args->lb_policy = new_lb_policy;
+        GRPC_CLOSURE_INIT(&args->closure, request_reresolution_locked, args,
+                          grpc_combiner_scheduler(chand->combiner));
+        GRPC_CHANNEL_STACK_REF(chand->owning_stack, "re-resolution");
+        grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, new_lb_policy,
+                                                    &args->closure);
       }
     }
     // Find service config.
@@ -514,11 +546,11 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
   }
   chand->method_params_table = method_params_table;
   // If we have a new LB policy or are shutting down (in which case
-  // new_lb_policy will be NULL), swap out the LB policy, unreffing the
-  // old one and removing its fds from chand->interested_parties.
-  // Note that we do NOT do this if either (a) we updated the existing
-  // LB policy above or (b) we failed to create the new LB policy (in
-  // which case we want to continue using the most recent one we had).
+  // new_lb_policy will be NULL), swap out the LB policy, unreffing the old one
+  // and removing its fds from chand->interested_parties. Note that we do NOT do
+  // this if either (a) we updated the existing LB policy above or (b) we failed
+  // to create the new LB policy (in which case we want to continue using the
+  // most recent one we had).
   if (new_lb_policy != NULL || error != GRPC_ERROR_NONE ||
       chand->resolver == NULL) {
     if (chand->lb_policy != NULL) {
