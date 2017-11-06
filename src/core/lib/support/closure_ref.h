@@ -96,7 +96,8 @@ class ClosureRef {
 
 template <typename... Args>
 const typename ClosureRef<Args...>::VTable ClosureRef<Args...>::null_vtable_ = {
-    ClosureRef<Args...>::null_exec, ClosureRef<Args...>::null_exec,
+    ClosureRef<Args...>::null_exec,
+    ClosureRef<Args...>::null_exec,
 };
 
 //
@@ -332,9 +333,9 @@ const typename ClosureRef<Args...>::VTable
 template <class Scheduler, class... Args>
 template <class C, void (C::*F)(Args...), class BarrierType,
           BarrierType(C::*Barrier)>
-const typename ClosureRef<Args...>::VTable
-    ClosureImpl<Scheduler, Args...>::RefCountedMemberWithBarrier<
-        C, F, BarrierType, Barrier>::vtable = {Schedule, Run};
+const typename ClosureRef<Args...>::VTable ClosureImpl<Scheduler, Args...>::
+    RefCountedMemberWithBarrier<C, F, BarrierType, Barrier>::vtable = {Schedule,
+                                                                       Run};
 
 template <class Scheduler, class... Args>
 template <class F>

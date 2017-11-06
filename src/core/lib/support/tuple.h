@@ -189,8 +189,7 @@ auto TupleCallMember(C* p, R (C::*f)(Args...), Tuple<Types...>& args)
 template <typename F, typename... Types>
 auto TupleCall(F&& f, const Tuple<Types...>& args)
     -> decltype(f(tuple_impl::Example<Types>()...)) {
-  return tuple_impl::TupleCallImpl(std::forward<F>(f),
-                                   args,
+  return tuple_impl::TupleCallImpl(std::forward<F>(f), args,
                                    tuple_impl::MakeIntSeq<sizeof...(Types)>());
 }
 
@@ -198,8 +197,7 @@ template <class C, typename R, typename... Args, typename... Types>
 auto TupleCallMember(C* p, R (C::*f)(Args...), const Tuple<Types...>& args)
     -> decltype((p->*f)(tuple_impl::Example<Types>()...)) {
   return tuple_impl::TupleCallMemberImpl(
-      p, f, args,
-      tuple_impl::MakeIntSeq<sizeof...(Types)>());
+      p, f, args, tuple_impl::MakeIntSeq<sizeof...(Types)>());
 }
 
 }  // namespace grpc_core
