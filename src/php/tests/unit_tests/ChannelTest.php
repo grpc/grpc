@@ -81,8 +81,12 @@ class ChannelTest extends PHPUnit_Framework_TestCase
     {
         $this->channel = new Grpc\Channel('localhost:0',
              ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
-        $time = new Grpc\Timeval(1000);
-        $state = $this->channel->watchConnectivityState(1, $time);
+        // 'true' will attempt connecting the channel.
+        $lastState = $this->channel->getConnectivityState(true);
+
+        $now = Grpc\Timeval::now();
+        $deadline = $now->add(new Grpc\Timeval(5000000));
+        $state = $this->channel->watchConnectivityState($lastState, $deadline);
         $this->assertTrue($state);
         unset($time);
     }
