@@ -27,16 +27,16 @@ typedef struct test_stat {
   int value2;
 } test_stat;
 
-void add_test_stat(void *base, const void *addme) {
-  test_stat *b = (test_stat *)base;
-  const test_stat *a = (const test_stat *)addme;
+void add_test_stat(void* base, const void* addme) {
+  test_stat* b = (test_stat*)base;
+  const test_stat* a = (const test_stat*)addme;
   b->value1 += a->value1;
   b->value2 += a->value2;
 }
 
-void add_proportion_test_stat(double p, void *base, const void *addme) {
-  test_stat *b = (test_stat *)base;
-  const test_stat *a = (const test_stat *)addme;
+void add_proportion_test_stat(double p, void* base, const void* addme) {
+  test_stat* b = (test_stat*)base;
+  const test_stat* a = (const test_stat*)addme;
   b->value1 += p * a->value1;
   b->value2 += p * a->value2 + 0.5; /* +0.5 is poor mans (no c99) round() */
 }
@@ -62,7 +62,7 @@ void empty_test(void) {
   census_window_stats_sums result;
   const gpr_timespec zero = {0, 0};
   test_stat sum;
-  struct census_window_stats *stats =
+  struct census_window_stats* stats =
       census_window_stats_create(1, &kMinInterval, 5, &kMyStatInfo);
   GPR_ASSERT(stats != NULL);
   result.statistic = &sum;
@@ -80,7 +80,7 @@ void one_interval_test(void) {
   census_window_stats_sums result;
   test_stat sum;
   /* granularity == 5 so width of internal windows should be 12s */
-  struct census_window_stats *stats =
+  struct census_window_stats* stats =
       census_window_stats_create(1, &kMinInterval, 5, &kMyStatInfo);
   GPR_ASSERT(stats != NULL);
   /* phase 1: insert a single value at t=0s, and check that various measurement
@@ -190,7 +190,7 @@ void many_interval_test(void) {
   census_window_stats_sums result[4];
   test_stat sums[4];
   int i;
-  struct census_window_stats *stats;
+  struct census_window_stats* stats;
   intervals[0] = kMilliSecInterval;
   intervals[1] = kSecInterval;
   intervals[2] = kMinInterval;
@@ -250,7 +250,7 @@ void rolling_time_test(void) {
   test_stat sum;
   int i;
   gpr_timespec increment = {0, 0};
-  struct census_window_stats *stats =
+  struct census_window_stats* stats =
       census_window_stats_create(1, &kMinInterval, 7, &kMyStatInfo);
   GPR_ASSERT(stats != NULL);
   srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
@@ -276,7 +276,7 @@ void infinite_interval_test(void) {
   int i;
   const int count = 100000;
   gpr_timespec increment = {0, 0};
-  struct census_window_stats *stats = census_window_stats_create(
+  struct census_window_stats* stats = census_window_stats_create(
       1, &gpr_inf_future(GPR_CLOCK_REALTIME), 10, &kMyStatInfo);
   srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
   for (i = 0; i < count; i++) {
@@ -292,7 +292,7 @@ void infinite_interval_test(void) {
   census_window_stats_destroy(stats);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   grpc_test_init(argc, argv);
   empty_test();
   one_interval_test();

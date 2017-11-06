@@ -21,12 +21,12 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/iomgr/load_file.h"
 
-extern int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
+extern int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 
 extern bool squelch;
 extern bool leak_check;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_slice buffer;
   squelch = false;
   leak_check = false;

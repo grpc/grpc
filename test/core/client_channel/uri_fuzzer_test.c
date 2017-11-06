@@ -28,13 +28,13 @@
 bool squelch = true;
 bool leak_check = true;
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  char *s = gpr_malloc(size + 1);
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+  char* s = gpr_malloc(size + 1);
   memcpy(s, data, size);
   s[size] = 0;
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *x;
+  grpc_uri* x;
   if ((x = grpc_uri_parse(&exec_ctx, s, 1))) {
     grpc_uri_destroy(x);
   }

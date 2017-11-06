@@ -25,20 +25,20 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
 
-grpc_channel *grpc_lb_policy_grpclb_create_lb_channel(
-    grpc_exec_ctx *exec_ctx, const char *lb_service_target_addresses,
-    grpc_client_channel_factory *client_channel_factory,
-    grpc_channel_args *args) {
-  grpc_channel *lb_channel = grpc_client_channel_factory_create_channel(
+grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
+    grpc_exec_ctx* exec_ctx, const char* lb_service_target_addresses,
+    grpc_client_channel_factory* client_channel_factory,
+    grpc_channel_args* args) {
+  grpc_channel* lb_channel = grpc_client_channel_factory_create_channel(
       exec_ctx, client_channel_factory, lb_service_target_addresses,
       GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, args);
   return lb_channel;
 }
 
-grpc_channel_args *grpc_lb_policy_grpclb_build_lb_channel_args(
-    grpc_exec_ctx *exec_ctx, grpc_slice_hash_table *targets_info,
-    grpc_fake_resolver_response_generator *response_generator,
-    const grpc_channel_args *args) {
+grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
+    grpc_exec_ctx* exec_ctx, grpc_slice_hash_table* targets_info,
+    grpc_fake_resolver_response_generator* response_generator,
+    const grpc_channel_args* args) {
   const grpc_arg to_add[] = {
       grpc_fake_resolver_response_generator_arg(response_generator)};
   /* We remove:
@@ -62,7 +62,7 @@ grpc_channel_args *grpc_lb_policy_grpclb_build_lb_channel_args(
    *
    * - The fake resolver generator, because we are replacing it with the one
    *   from the grpclb policy, used to propagate updates to the LB channel. */
-  static const char *keys_to_remove[] = {
+  static const char* keys_to_remove[] = {
       GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES, GRPC_ARG_SERVER_URI,
       GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR};
   return grpc_channel_args_copy_and_add_and_remove(

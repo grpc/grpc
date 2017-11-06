@@ -68,16 +68,16 @@ static void do_basic_init(void) {
   g_initializations = 0;
 }
 
-static bool append_filter(grpc_exec_ctx *exec_ctx,
-                          grpc_channel_stack_builder *builder, void *arg) {
+static bool append_filter(grpc_exec_ctx* exec_ctx,
+                          grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter *)arg, NULL, NULL);
+      builder, (const grpc_channel_filter*)arg, NULL, NULL);
 }
 
-static bool prepend_filter(grpc_exec_ctx *exec_ctx,
-                           grpc_channel_stack_builder *builder, void *arg) {
+static bool prepend_filter(grpc_exec_ctx* exec_ctx,
+                           grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, (const grpc_channel_filter *)arg, NULL, NULL);
+      builder, (const grpc_channel_filter*)arg, NULL, NULL);
 }
 
 static void register_builtin_channel_init() {
@@ -92,9 +92,9 @@ static void register_builtin_channel_init() {
                                    grpc_add_connected_filter, NULL);
   grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   append_filter, (void *)&grpc_lame_filter);
+                                   append_filter, (void*)&grpc_lame_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-                                   (void *)&grpc_server_top_filter);
+                                   (void*)&grpc_server_top_filter);
 }
 
 typedef struct grpc_plugin {
@@ -107,7 +107,7 @@ static int g_number_of_plugins = 0;
 
 void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
   GRPC_API_TRACE("grpc_register_plugin(init=%p, destroy=%p)", 2,
-                 ((void *)(intptr_t)init, (void *)(intptr_t)destroy));
+                 ((void*)(intptr_t)init, (void*)(intptr_t)destroy));
   GPR_ASSERT(g_number_of_plugins != MAX_PLUGINS);
   g_all_of_the_plugins[g_number_of_plugins].init = init;
   g_all_of_the_plugins[g_number_of_plugins].destroy = destroy;

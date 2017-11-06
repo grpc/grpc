@@ -30,13 +30,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-const char *gpr_getenv_silent(const char *name, char **dst) {
+const char* gpr_getenv_silent(const char* name, char** dst) {
   *dst = gpr_getenv(name);
   return NULL;
 }
 
-char *gpr_getenv(const char *name) {
-  char *result = NULL;
+char* gpr_getenv(const char* name) {
+  char* result = NULL;
   DWORD size;
   LPTSTR tresult = NULL;
   LPTSTR tname = gpr_char_to_tchar(name);
@@ -60,7 +60,7 @@ char *gpr_getenv(const char *name) {
   return result;
 }
 
-void gpr_setenv(const char *name, const char *value) {
+void gpr_setenv(const char* name, const char* value) {
   LPTSTR tname = gpr_char_to_tchar(name);
   LPTSTR tvalue = gpr_char_to_tchar(value);
   BOOL res = SetEnvironmentVariable(tname, tvalue);

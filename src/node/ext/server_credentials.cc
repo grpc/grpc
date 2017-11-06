@@ -47,10 +47,10 @@ using v8::ObjectTemplate;
 using v8::String;
 using v8::Value;
 
-Nan::Callback *ServerCredentials::constructor;
+Nan::Callback* ServerCredentials::constructor;
 Persistent<FunctionTemplate> ServerCredentials::fun_tpl;
 
-ServerCredentials::ServerCredentials(grpc_server_credentials *credentials)
+ServerCredentials::ServerCredentials(grpc_server_credentials* credentials)
     : wrapped_credentials(credentials) {}
 
 ServerCredentials::~ServerCredentials() {
@@ -80,11 +80,11 @@ bool ServerCredentials::HasInstance(Local<Value> val) {
 }
 
 Local<Value> ServerCredentials::WrapStruct(
-    grpc_server_credentials *credentials) {
+    grpc_server_credentials* credentials) {
   Nan::EscapableHandleScope scope;
   const int argc = 1;
   Local<Value> argv[argc] = {
-      Nan::New<External>(reinterpret_cast<void *>(credentials))};
+      Nan::New<External>(reinterpret_cast<void*>(credentials))};
   MaybeLocal<Object> maybe_instance =
       Nan::NewInstance(constructor->GetFunction(), argc, argv);
   if (maybe_instance.IsEmpty()) {
@@ -94,7 +94,7 @@ Local<Value> ServerCredentials::WrapStruct(
   }
 }
 
-grpc_server_credentials *ServerCredentials::GetWrappedServerCredentials() {
+grpc_server_credentials* ServerCredentials::GetWrappedServerCredentials() {
   return wrapped_credentials;
 }
 
@@ -105,9 +105,9 @@ NAN_METHOD(ServerCredentials::New) {
           "ServerCredentials can only be created with the provided functions");
     }
     Local<External> ext = info[0].As<External>();
-    grpc_server_credentials *creds_value =
-        reinterpret_cast<grpc_server_credentials *>(ext->Value());
-    ServerCredentials *credentials = new ServerCredentials(creds_value);
+    grpc_server_credentials* creds_value =
+        reinterpret_cast<grpc_server_credentials*>(ext->Value());
+    ServerCredentials* credentials = new ServerCredentials(creds_value);
     credentials->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
   } else {
@@ -119,7 +119,7 @@ NAN_METHOD(ServerCredentials::New) {
 
 NAN_METHOD(ServerCredentials::CreateSsl) {
   Nan::HandleScope scope;
-  char *root_certs = NULL;
+  char* root_certs = NULL;
   if (::node::Buffer::HasInstance(info[0])) {
     root_certs = ::node::Buffer::Data(info[0]);
   } else if (!(info[0]->IsNull() || info[0]->IsUndefined())) {
@@ -145,7 +145,7 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   }
   Local<Array> pair_list = Local<Array>::Cast(info[1]);
   uint32_t key_cert_pair_count = pair_list->Length();
-  grpc_ssl_pem_key_cert_pair *key_cert_pairs =
+  grpc_ssl_pem_key_cert_pair* key_cert_pairs =
       new grpc_ssl_pem_key_cert_pair[key_cert_pair_count];
 
   Local<String> key_key = Nan::New("private_key").ToLocalChecked();
@@ -171,7 +171,7 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
     key_cert_pairs[i].private_key = ::node::Buffer::Data(maybe_key);
     key_cert_pairs[i].cert_chain = ::node::Buffer::Data(maybe_cert);
   }
-  grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
+  grpc_server_credentials* creds = grpc_ssl_server_credentials_create_ex(
       root_certs, key_cert_pairs, key_cert_pair_count,
       client_certificate_request, NULL);
   delete[] key_cert_pairs;

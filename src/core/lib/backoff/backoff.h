@@ -57,24 +57,24 @@ typedef struct {
 } grpc_backoff_result;
 
 /// Initialize backoff machinery - does not need to be destroyed
-void grpc_backoff_init(grpc_backoff *backoff, grpc_millis initial_backoff,
+void grpc_backoff_init(grpc_backoff* backoff, grpc_millis initial_backoff,
                        double multiplier, double jitter,
                        grpc_millis min_connect_timeout,
                        grpc_millis max_backoff);
 
 /// Begin retry loop: returns the deadlines to be used for the current attempt
 /// and the subsequent retry, if any.
-grpc_backoff_result grpc_backoff_begin(grpc_exec_ctx *exec_ctx,
-                                       grpc_backoff *backoff);
+grpc_backoff_result grpc_backoff_begin(grpc_exec_ctx* exec_ctx,
+                                       grpc_backoff* backoff);
 
 /// Step a retry loop: returns the deadlines to be used for the current attempt
 /// and the subsequent retry, if any.
-grpc_backoff_result grpc_backoff_step(grpc_exec_ctx *exec_ctx,
-                                      grpc_backoff *backoff);
+grpc_backoff_result grpc_backoff_step(grpc_exec_ctx* exec_ctx,
+                                      grpc_backoff* backoff);
 
 /// Reset the backoff, so the next grpc_backoff_step will be a
 /// grpc_backoff_begin.
-void grpc_backoff_reset(grpc_backoff *backoff);
+void grpc_backoff_reset(grpc_backoff* backoff);
 
 #ifdef __cplusplus
 }

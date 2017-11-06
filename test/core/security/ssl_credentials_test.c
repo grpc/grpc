@@ -34,13 +34,13 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
   const size_t num_pairs = 3;
 
   {
-    tsi_ssl_pem_key_cert_pair *tsi_pairs =
+    tsi_ssl_pem_key_cert_pair* tsi_pairs =
         grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, 0);
     GPR_ASSERT(tsi_pairs == NULL);
   }
 
   {
-    tsi_ssl_pem_key_cert_pair *tsi_pairs =
+    tsi_ssl_pem_key_cert_pair* tsi_pairs =
         grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, num_pairs);
 
     GPR_ASSERT(tsi_pairs != NULL);
@@ -55,7 +55,7 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
 

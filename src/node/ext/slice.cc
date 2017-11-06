@@ -33,24 +33,24 @@ using v8::String;
 using v8::Value;
 
 namespace {
-void SliceFreeCallback(char *data, void *hint) {
-  grpc_slice *slice = reinterpret_cast<grpc_slice *>(hint);
+void SliceFreeCallback(char* data, void* hint) {
+  grpc_slice* slice = reinterpret_cast<grpc_slice*>(hint);
   grpc_slice_unref(*slice);
   delete slice;
 }
 
-void string_destroy_func(void *user_data) {
-  delete reinterpret_cast<Nan::Utf8String *>(user_data);
+void string_destroy_func(void* user_data) {
+  delete reinterpret_cast<Nan::Utf8String*>(user_data);
 }
 
-void buffer_destroy_func(void *user_data) {
-  delete reinterpret_cast<PersistentValue *>(user_data);
+void buffer_destroy_func(void* user_data) {
+  delete reinterpret_cast<PersistentValue*>(user_data);
 }
 }  // namespace
 
 grpc_slice CreateSliceFromString(const Local<String> source) {
   Nan::HandleScope scope;
-  Nan::Utf8String *utf8_value = new Nan::Utf8String(source);
+  Nan::Utf8String* utf8_value = new Nan::Utf8String(source);
   return grpc_slice_new_with_user_data(**utf8_value, source->Length(),
                                        string_destroy_func, utf8_value);
 }
@@ -68,7 +68,7 @@ Local<String> CopyStringFromSlice(const grpc_slice slice) {
     return scope.Escape(Nan::EmptyString());
   }
   return scope.Escape(
-      Nan::New<String>(const_cast<char *>(reinterpret_cast<const char *>(
+      Nan::New<String>(const_cast<char*>(reinterpret_cast<const char*>(
                            GRPC_SLICE_START_PTR(slice))),
                        GRPC_SLICE_LENGTH(slice))
           .ToLocalChecked());
@@ -76,12 +76,12 @@ Local<String> CopyStringFromSlice(const grpc_slice slice) {
 
 Local<Value> CreateBufferFromSlice(const grpc_slice slice) {
   Nan::EscapableHandleScope scope;
-  grpc_slice *slice_ptr = new grpc_slice;
+  grpc_slice* slice_ptr = new grpc_slice;
   *slice_ptr = grpc_slice_ref(slice);
   return scope.Escape(
       Nan::NewBuffer(
-          const_cast<char *>(
-              reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(*slice_ptr))),
+          const_cast<char*>(
+              reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(*slice_ptr))),
           GRPC_SLICE_LENGTH(*slice_ptr), SliceFreeCallback, slice_ptr)
           .ToLocalChecked());
 }
