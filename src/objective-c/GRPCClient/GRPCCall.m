@@ -112,10 +112,11 @@ static NSString * const kBearerPrefix = @"Bearer ";
 
 @synthesize state = _state;
 
-// TODO(jcanizales): If grpc_init is idempotent, this should be changed from load to initialize.
-+ (void)load {
-  grpc_init();
-  callFlags = [NSMutableDictionary dictionary];
++ (void)initialize {
+  if (self == [GRPCCall self]) {
+    grpc_init();
+    callFlags = [NSMutableDictionary dictionary];
+  }
 }
 
 + (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path {
