@@ -26,8 +26,8 @@
 extern "C" {
 #endif
 
-grpc_error *grpc_validate_header_key_is_legal(grpc_slice slice);
-grpc_error *grpc_validate_header_nonbin_value_is_legal(grpc_slice slice);
+grpc_error* grpc_validate_header_key_is_legal(grpc_slice slice);
+grpc_error* grpc_validate_header_nonbin_value_is_legal(grpc_slice slice);
 
 #ifdef __cplusplus
 }

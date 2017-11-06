@@ -51,6 +51,7 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+        "protobuf",
     ],
 )
 

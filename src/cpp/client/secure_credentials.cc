@@ -56,14 +56,16 @@ bool SecureCallCredentials::ApplyToCall(grpc_call* call) {
 namespace {
 std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds) {
-  return creds == nullptr ? nullptr : std::shared_ptr<ChannelCredentials>(
-                                          new SecureChannelCredentials(creds));
+  return creds == nullptr ? nullptr
+                          : std::shared_ptr<ChannelCredentials>(
+                                new SecureChannelCredentials(creds));
 }
 
 std::shared_ptr<CallCredentials> WrapCallCredentials(
     grpc_call_credentials* creds) {
-  return creds == nullptr ? nullptr : std::shared_ptr<CallCredentials>(
-                                          new SecureCallCredentials(creds));
+  return creds == nullptr ? nullptr
+                          : std::shared_ptr<CallCredentials>(
+                                new SecureCallCredentials(creds));
 }
 }  // namespace
 

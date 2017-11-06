@@ -41,39 +41,39 @@
 
 typedef struct servers_fixture {
   size_t num_servers;
-  grpc_server **servers;
-  grpc_call **server_calls;
-  grpc_completion_queue *cq;
-  grpc_completion_queue *shutdown_cq;
-  char **servers_hostports;
-  grpc_metadata_array *request_metadata_recv;
+  grpc_server** servers;
+  grpc_call** server_calls;
+  grpc_completion_queue* cq;
+  grpc_completion_queue* shutdown_cq;
+  char** servers_hostports;
+  grpc_metadata_array* request_metadata_recv;
 } servers_fixture;
 
 typedef struct request_sequences {
   size_t n;         /* number of iterations */
-  int *connections; /* indexed by the interation number, value is the index of
+  int* connections; /* indexed by the interation number, value is the index of
                        the server it connected to or -1 if none */
   /* indexed by the interation number, value is the client connectivity state */
-  grpc_connectivity_state *connectivity_states;
+  grpc_connectivity_state* connectivity_states;
 } request_sequences;
 
-typedef void (*verifier_fn)(const servers_fixture *, grpc_channel *,
-                            const request_sequences *, const size_t);
+typedef void (*verifier_fn)(const servers_fixture*, grpc_channel*,
+                            const request_sequences*, const size_t);
 
 typedef struct test_spec {
   size_t num_iters;
   size_t num_servers;
 
-  int **kill_at;
-  int **revive_at;
+  int** kill_at;
+  int** revive_at;
 
-  const char *description;
+  const char* description;
 
   verifier_fn verifier;
 
 } test_spec;
 
-static void test_spec_reset(test_spec *spec) {
+static void test_spec_reset(test_spec* spec) {
   size_t i, j;
 
   for (i = 0; i < spec->num_iters; i++) {
@@ -84,15 +84,15 @@ static void test_spec_reset(test_spec *spec) {
   }
 }
 
-static test_spec *test_spec_create(size_t num_iters, size_t num_servers) {
-  test_spec *spec;
+static test_spec* test_spec_create(size_t num_iters, size_t num_servers) {
+  test_spec* spec;
   size_t i;
 
   spec = gpr_malloc(sizeof(test_spec));
   spec->num_iters = num_iters;
   spec->num_servers = num_servers;
-  spec->kill_at = gpr_malloc(sizeof(int *) * num_iters);
-  spec->revive_at = gpr_malloc(sizeof(int *) * num_iters);
+  spec->kill_at = gpr_malloc(sizeof(int*) * num_iters);
+  spec->revive_at = gpr_malloc(sizeof(int*) * num_iters);
   for (i = 0; i < num_iters; i++) {
     spec->kill_at[i] = gpr_malloc(sizeof(int) * num_servers);
     spec->revive_at[i] = gpr_malloc(sizeof(int) * num_servers);
@@ -102,7 +102,7 @@ static test_spec *test_spec_create(size_t num_iters, size_t num_servers) {
   return spec;
 }
 
-static void test_spec_destroy(test_spec *spec) {
+static void test_spec_destroy(test_spec* spec) {
   size_t i;
   for (i = 0; i < spec->num_iters; i++) {
     gpr_free(spec->kill_at[i]);
@@ -115,21 +115,21 @@ static void test_spec_destroy(test_spec *spec) {
   gpr_free(spec);
 }
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
 static gpr_timespec n_millis_time(int n) {
   return gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                       gpr_time_from_millis(n, GPR_TIMESPAN));
 }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, n_millis_time(5000), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void kill_server(const servers_fixture *f, size_t i) {
+static void kill_server(const servers_fixture* f, size_t i) {
   gpr_log(GPR_INFO, "KILLING SERVER %" PRIuPTR, i);
   GPR_ASSERT(f->servers[i] != NULL);
   grpc_server_shutdown_and_notify(f->servers[i], f->shutdown_cq, tag(10000));
@@ -145,10 +145,10 @@ typedef struct request_data {
   grpc_metadata_array trailing_metadata_recv;
   grpc_slice details;
   grpc_status_code status;
-  grpc_call_details *call_details;
+  grpc_call_details* call_details;
 } request_data;
 
-static void revive_server(const servers_fixture *f, request_data *rdata,
+static void revive_server(const servers_fixture* f, request_data* rdata,
                           size_t i) {
   int got_port;
   gpr_log(GPR_INFO, "RAISE AGAIN SERVER %" PRIuPTR, i);
@@ -169,19 +169,19 @@ static void revive_server(const servers_fixture *f, request_data *rdata,
                                       f->cq, tag(1000 + (int)i)));
 }
 
-static servers_fixture *setup_servers(const char *server_host,
-                                      request_data *rdata,
+static servers_fixture* setup_servers(const char* server_host,
+                                      request_data* rdata,
                                       const size_t num_servers) {
-  servers_fixture *f = gpr_malloc(sizeof(servers_fixture));
+  servers_fixture* f = gpr_malloc(sizeof(servers_fixture));
   size_t i;
 
   f->num_servers = num_servers;
-  f->server_calls = gpr_malloc(sizeof(grpc_call *) * num_servers);
+  f->server_calls = gpr_malloc(sizeof(grpc_call*) * num_servers);
   f->request_metadata_recv =
       gpr_malloc(sizeof(grpc_metadata_array) * num_servers);
   /* Create servers. */
-  f->servers = gpr_malloc(sizeof(grpc_server *) * num_servers);
-  f->servers_hostports = gpr_malloc(sizeof(char *) * num_servers);
+  f->servers = gpr_malloc(sizeof(grpc_server*) * num_servers);
+  f->servers_hostports = gpr_malloc(sizeof(char*) * num_servers);
   f->cq = grpc_completion_queue_create_for_next(NULL);
   f->shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
   for (i = 0; i < num_servers; i++) {
@@ -194,7 +194,7 @@ static servers_fixture *setup_servers(const char *server_host,
   return f;
 }
 
-static void teardown_servers(servers_fixture *f) {
+static void teardown_servers(servers_fixture* f) {
   size_t i;
   /* Destroy server. */
   for (i = 0; i < f->num_servers; i++) {
@@ -233,21 +233,21 @@ static request_sequences request_sequences_create(size_t n) {
   return res;
 }
 
-static void request_sequences_destroy(const request_sequences *rseqs) {
+static void request_sequences_destroy(const request_sequences* rseqs) {
   gpr_free(rseqs->connections);
   gpr_free(rseqs->connectivity_states);
 }
 
 /** Returns connection sequence (server indices), which must be freed */
-static request_sequences perform_request(servers_fixture *f,
-                                         grpc_channel *client,
-                                         request_data *rdata,
-                                         const test_spec *spec) {
-  grpc_call *c;
+static request_sequences perform_request(servers_fixture* f,
+                                         grpc_channel* client,
+                                         request_data* rdata,
+                                         const test_spec* spec) {
+  grpc_call* c;
   int s_idx;
-  int *s_valid;
+  int* s_valid;
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   int was_cancelled;
   size_t i, iter_num;
   grpc_event ev;
@@ -258,7 +258,7 @@ static request_sequences perform_request(servers_fixture *f,
   s_valid = gpr_malloc(sizeof(int) * f->num_servers);
 
   for (iter_num = 0; iter_num < spec->num_iters; iter_num++) {
-    cq_verifier *cqv = cq_verifier_create(f->cq);
+    cq_verifier* cqv = cq_verifier_create(f->cq);
     was_cancelled = 2;
 
     for (i = 0; i < f->num_servers; i++) {
@@ -418,15 +418,15 @@ static request_sequences perform_request(servers_fixture *f,
   return sequences;
 }
 
-static grpc_call **perform_multirequest(servers_fixture *f,
-                                        grpc_channel *client,
+static grpc_call** perform_multirequest(servers_fixture* f,
+                                        grpc_channel* client,
                                         size_t concurrent_calls) {
-  grpc_call **calls;
+  grpc_call** calls;
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   size_t i;
 
-  calls = gpr_malloc(sizeof(grpc_call *) * concurrent_calls);
+  calls = gpr_malloc(sizeof(grpc_call*) * concurrent_calls);
   for (i = 0; i < f->num_servers; i++) {
     kill_server(f, i);
   }
@@ -457,12 +457,12 @@ static grpc_call **perform_multirequest(servers_fixture *f,
   return calls;
 }
 
-void run_spec(const test_spec *spec) {
-  grpc_channel *client;
-  char *client_hostport;
-  char *servers_hostports_str;
+void run_spec(const test_spec* spec) {
+  grpc_channel* client;
+  char* client_hostport;
+  char* servers_hostports_str;
   request_data rdata;
-  servers_fixture *f;
+  servers_fixture* f;
   grpc_channel_args args;
   grpc_arg arg_array[2];
   rdata.call_details =
@@ -470,7 +470,7 @@ void run_spec(const test_spec *spec) {
   f = setup_servers("127.0.0.1", &rdata, spec->num_servers);
 
   /* Create client. */
-  servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
+  servers_hostports_str = gpr_strjoin_sep((const char**)f->servers_hostports,
                                           f->num_servers, ",", NULL);
   gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
@@ -501,14 +501,14 @@ void run_spec(const test_spec *spec) {
   teardown_servers(f);
 }
 
-static grpc_channel *create_client(const servers_fixture *f) {
-  grpc_channel *client;
-  char *client_hostport;
-  char *servers_hostports_str;
+static grpc_channel* create_client(const servers_fixture* f) {
+  grpc_channel* client;
+  char* client_hostport;
+  char* servers_hostports_str;
   grpc_arg arg_array[3];
   grpc_channel_args args;
 
-  servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
+  servers_hostports_str = gpr_strjoin_sep((const char**)f->servers_hostports,
                                           f->num_servers, ",", NULL);
   gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
@@ -532,10 +532,10 @@ static grpc_channel *create_client(const servers_fixture *f) {
 }
 
 static void test_ping() {
-  grpc_channel *client;
+  grpc_channel* client;
   request_data rdata;
-  servers_fixture *f;
-  cq_verifier *cqv;
+  servers_fixture* f;
+  cq_verifier* cqv;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   const size_t num_servers = 1;
   int i;
@@ -580,11 +580,11 @@ static void test_ping() {
 
 static void test_pending_calls(size_t concurrent_calls) {
   size_t i;
-  grpc_call **calls;
-  grpc_channel *client;
+  grpc_call** calls;
+  grpc_channel* client;
   request_data rdata;
-  servers_fixture *f;
-  test_spec *spec = test_spec_create(0, 4);
+  servers_fixture* f;
+  test_spec* spec = test_spec_create(0, 4);
   rdata.call_details =
       gpr_malloc(sizeof(grpc_call_details) * spec->num_servers);
   f = setup_servers("127.0.0.1", &rdata, spec->num_servers);
@@ -609,7 +609,7 @@ static void test_pending_calls(size_t concurrent_calls) {
 }
 
 static void test_get_channel_info() {
-  grpc_channel *channel =
+  grpc_channel* channel =
       grpc_insecure_channel_create("ipv4:127.0.0.1:1234", NULL, NULL);
   // Ensures that resolver returns.
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
@@ -618,7 +618,7 @@ static void test_get_channel_info() {
   memset(&channel_info, 0, sizeof(channel_info));
   grpc_channel_get_info(channel, &channel_info);
   // Request LB policy name.
-  char *lb_policy_name = NULL;
+  char* lb_policy_name = NULL;
   channel_info.lb_policy_name = &lb_policy_name;
   grpc_channel_get_info(channel, &channel_info);
   GPR_ASSERT(lb_policy_name != NULL);
@@ -626,7 +626,7 @@ static void test_get_channel_info() {
   gpr_free(lb_policy_name);
   // Request service config, which does not exist, so we'll get nothing back.
   memset(&channel_info, 0, sizeof(channel_info));
-  char *service_config_json = "dummy_string";
+  char* service_config_json = "dummy_string";
   channel_info.service_config_json = &service_config_json;
   grpc_channel_get_info(channel, &channel_info);
   GPR_ASSERT(service_config_json == NULL);
@@ -636,7 +636,7 @@ static void test_get_channel_info() {
   arg.type = GRPC_ARG_STRING;
   arg.key = GRPC_ARG_SERVICE_CONFIG;
   arg.value.string = "{\"loadBalancingPolicy\": \"ROUND_ROBIN\"}";
-  grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   channel = grpc_insecure_channel_create("ipv4:127.0.0.1:1234", args, NULL);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -654,8 +654,8 @@ static void test_get_channel_info() {
   grpc_channel_destroy(channel);
 }
 
-static void print_failed_expectations(const int *expected_connection_sequence,
-                                      const int *actual_connection_sequence,
+static void print_failed_expectations(const int* expected_connection_sequence,
+                                      const int* actual_connection_sequence,
                                       const size_t expected_seq_length,
                                       const size_t num_iters) {
   size_t i;
@@ -667,15 +667,15 @@ static void print_failed_expectations(const int *expected_connection_sequence,
   }
 }
 
-static void verify_vanilla_round_robin(const servers_fixture *f,
-                                       grpc_channel *client,
-                                       const request_sequences *sequences,
+static void verify_vanilla_round_robin(const servers_fixture* f,
+                                       grpc_channel* client,
+                                       const request_sequences* sequences,
                                        const size_t num_iters) {
   const size_t expected_seq_length = f->num_servers;
 
   /* verify conn. seq. expectation */
   /* get the first sequence of "num_servers" elements */
-  int *expected_connection_sequence =
+  int* expected_connection_sequence =
       gpr_malloc(sizeof(int) * expected_seq_length);
   memcpy(expected_connection_sequence, sequences->connections,
          sizeof(int) * expected_seq_length);
@@ -713,9 +713,9 @@ static void verify_vanilla_round_robin(const servers_fixture *f,
 /* At the start of the second iteration, all but the first and last servers (as
  * given in "f") are killed */
 static void verify_vanishing_floor_round_robin(
-    const servers_fixture *f, grpc_channel *client,
-    const request_sequences *sequences, const size_t num_iters) {
-  int *expected_connection_sequence;
+    const servers_fixture* f, grpc_channel* client,
+    const request_sequences* sequences, const size_t num_iters) {
+  int* expected_connection_sequence;
   const size_t expected_seq_length = 2;
   size_t i;
 
@@ -765,9 +765,9 @@ static void verify_vanishing_floor_round_robin(
   gpr_free(expected_connection_sequence);
 }
 
-static void verify_total_carnage_round_robin(const servers_fixture *f,
-                                             grpc_channel *client,
-                                             const request_sequences *sequences,
+static void verify_total_carnage_round_robin(const servers_fixture* f,
+                                             grpc_channel* client,
+                                             const request_sequences* sequences,
                                              const size_t num_iters) {
   for (size_t i = 0; i < num_iters; i++) {
     const int actual = sequences->connections[i];
@@ -797,9 +797,9 @@ static void verify_total_carnage_round_robin(const servers_fixture *f,
 }
 
 static void verify_partial_carnage_round_robin(
-    const servers_fixture *f, grpc_channel *client,
-    const request_sequences *sequences, const size_t num_iters) {
-  int *expected_connection_sequence;
+    const servers_fixture* f, grpc_channel* client,
+    const request_sequences* sequences, const size_t num_iters) {
+  int* expected_connection_sequence;
   size_t i;
   const size_t expected_seq_length = f->num_servers;
 
@@ -854,9 +854,9 @@ static void verify_partial_carnage_round_robin(
   gpr_free(expected_connection_sequence);
 }
 
-static void dump_array(const char *desc, const int *data, const size_t count) {
+static void dump_array(const char* desc, const int* data, const size_t count) {
   gpr_strvec s;
-  char *tmp;
+  char* tmp;
   size_t i;
   gpr_strvec_init(&s);
   gpr_strvec_add(&s, gpr_strdup(desc));
@@ -871,9 +871,9 @@ static void dump_array(const char *desc, const int *data, const size_t count) {
   gpr_free(tmp);
 }
 
-static void verify_rebirth_round_robin(const servers_fixture *f,
-                                       grpc_channel *client,
-                                       const request_sequences *sequences,
+static void verify_rebirth_round_robin(const servers_fixture* f,
+                                       grpc_channel* client,
+                                       const request_sequences* sequences,
                                        const size_t num_iters) {
   dump_array("actual_connection_sequence", sequences->connections, num_iters);
 
@@ -936,9 +936,9 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  test_spec *spec;
+  test_spec* spec;
   size_t i;
   const size_t NUM_ITERS = 10;
   const size_t NUM_SERVERS = 4;

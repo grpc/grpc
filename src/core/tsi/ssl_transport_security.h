@@ -49,11 +49,11 @@ typedef struct tsi_ssl_client_handshaker_factory
 typedef struct {
   /* private_key is the NULL-terminated string containing the PEM encoding of
      the client's private key. */
-  const char *private_key;
+  const char* private_key;
 
   /* cert_chain is the NULL-terminated string containing the PEM encoding of
      the client's certificate chain. */
-  const char *cert_chain;
+  const char* cert_chain;
 } tsi_ssl_pem_key_cert_pair;
 
 /* Creates a client handshaker factory.
@@ -78,10 +78,10 @@ typedef struct {
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_client_handshaker_factory(
-    const tsi_ssl_pem_key_cert_pair *pem_key_cert_pair,
-    const char *pem_root_certs, const char *cipher_suites,
-    const char **alpn_protocols, uint16_t num_alpn_protocols,
-    tsi_ssl_client_handshaker_factory **factory);
+    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    const char* pem_root_certs, const char* cipher_suites,
+    const char** alpn_protocols, uint16_t num_alpn_protocols,
+    tsi_ssl_client_handshaker_factory** factory);
 
 /* Creates a client handshaker.
   - self is the factory from which the handshaker will be created.
@@ -93,13 +93,13 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_client_handshaker_factory *self, const char *server_name_indication,
-    tsi_handshaker **handshaker);
+    tsi_ssl_client_handshaker_factory* self, const char* server_name_indication,
+    tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
 void tsi_ssl_client_handshaker_factory_unref(
-    tsi_ssl_client_handshaker_factory *factory);
+    tsi_ssl_client_handshaker_factory* factory);
 
 /* --- tsi_ssl_server_handshaker_factory object ---
 
@@ -130,11 +130,11 @@ typedef struct tsi_ssl_server_handshaker_factory
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    const tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs, const char *pem_client_root_certs,
-    int force_client_auth, const char *cipher_suites,
-    const char **alpn_protocols, uint16_t num_alpn_protocols,
-    tsi_ssl_server_handshaker_factory **factory);
+    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
+    size_t num_key_cert_pairs, const char* pem_client_root_certs,
+    int force_client_auth, const char* cipher_suites,
+    const char** alpn_protocols, uint16_t num_alpn_protocols,
+    tsi_ssl_server_handshaker_factory** factory);
 
 /* Same as tsi_create_ssl_server_handshaker_factory method except uses
    tsi_client_certificate_request_type to support more ways to handle client
@@ -143,11 +143,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
      authenticate with an SSL cert. Note that this option is ignored if
      pem_client_root_certs is NULL or pem_client_roots_certs_size is 0 */
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    const tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs, const char *pem_client_root_certs,
+    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
+    size_t num_key_cert_pairs, const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
-    const char *cipher_suites, const char **alpn_protocols,
-    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory **factory);
+    const char* cipher_suites, const char** alpn_protocols,
+    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
 
 /* Creates a server handshaker.
   - self is the factory from which the handshaker will be created.
@@ -156,19 +156,19 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
-    tsi_ssl_server_handshaker_factory *self, tsi_handshaker **handshaker);
+    tsi_ssl_server_handshaker_factory* self, tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
 void tsi_ssl_server_handshaker_factory_unref(
-    tsi_ssl_server_handshaker_factory *self);
+    tsi_ssl_server_handshaker_factory* self);
 
 /* Util that checks that an ssl peer matches a specific name.
    Still TODO(jboeuf):
    - handle mixed case.
    - handle %encoded chars.
    - handle public suffix wildchar more strictly (e.g. *.co.uk) */
-int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name);
+int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name);
 
 /* --- Testing support. ---
 
@@ -180,7 +180,7 @@ typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
 
 /* Function pointer to handshaker_factory destructor. */
 typedef void (*tsi_ssl_handshaker_factory_destructor)(
-    tsi_ssl_handshaker_factory *factory);
+    tsi_ssl_handshaker_factory* factory);
 
 /* Virtual table for tsi_ssl_handshaker_factory. */
 typedef struct {
@@ -189,9 +189,9 @@ typedef struct {
 
 /* Set destructor of handshaker_factory to new_destructor, returns previous
    destructor. */
-const tsi_ssl_handshaker_factory_vtable *tsi_ssl_handshaker_factory_swap_vtable(
-    tsi_ssl_handshaker_factory *factory,
-    tsi_ssl_handshaker_factory_vtable *new_vtable);
+const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
+    tsi_ssl_handshaker_factory* factory,
+    tsi_ssl_handshaker_factory_vtable* new_vtable);
 
 #ifdef __cplusplus
 }

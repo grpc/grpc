@@ -26,17 +26,17 @@
 
 static bool log_func_reached = false;
 
-static void test_callback(gpr_log_func_args *args) {
+static void test_callback(gpr_log_func_args* args) {
   GPR_ASSERT(0 == strcmp(__FILE__, args->file));
   GPR_ASSERT(args->severity == GPR_LOG_SEVERITY_INFO);
   GPR_ASSERT(0 == strcmp(args->message, "hello 1 2 3"));
 }
 
-static void test_should_log(gpr_log_func_args *args) {
+static void test_should_log(gpr_log_func_args* args) {
   log_func_reached = true;
 }
 
-static void test_should_not_log(gpr_log_func_args *args) { GPR_ASSERT(false); }
+static void test_should_not_log(gpr_log_func_args* args) { GPR_ASSERT(false); }
 
 #define test_log_function_reached(SEVERITY)     \
   gpr_set_log_function(test_should_log);        \
@@ -52,7 +52,7 @@ static void test_should_not_log(gpr_log_func_args *args) { GPR_ASSERT(false); }
   gpr_log_message(SEVERITY, "hello 1 2 3");   \
   gpr_log(SEVERITY, "hello %d %d %d", 1, 2, 3);
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   /* test logging at various verbosity levels */
   gpr_log(GPR_DEBUG, "%s", "hello world");

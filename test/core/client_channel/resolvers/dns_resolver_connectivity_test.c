@@ -33,16 +33,16 @@
 
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
-static grpc_combiner *g_combiner;
+static grpc_combiner* g_combiner;
 
-static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
-                               const char *default_port,
-                               grpc_pollset_set *interested_parties,
-                               grpc_closure *on_done,
-                               grpc_resolved_addresses **addrs) {
+static void my_resolve_address(grpc_exec_ctx* exec_ctx, const char* addr,
+                               const char* default_port,
+                               grpc_pollset_set* interested_parties,
+                               grpc_closure* on_done,
+                               grpc_resolved_addresses** addrs) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
-  grpc_error *error = GRPC_ERROR_NONE;
+  grpc_error* error = GRPC_ERROR_NONE;
   if (g_fail_resolution) {
     g_fail_resolution = false;
     gpr_mu_unlock(&g_mu);
@@ -57,14 +57,14 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
 }
 
-static grpc_ares_request *my_dns_lookup_ares(
-    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
-    const char *default_port, grpc_pollset_set *interested_parties,
-    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb,
-    char **service_config_json) {
+static grpc_ares_request* my_dns_lookup_ares(
+    grpc_exec_ctx* exec_ctx, const char* dns_server, const char* addr,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    grpc_closure* on_done, grpc_lb_addresses** lb_addrs, bool check_grpclb,
+    char** service_config_json) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
-  grpc_error *error = GRPC_ERROR_NONE;
+  grpc_error* error = GRPC_ERROR_NONE;
   if (g_fail_resolution) {
     g_fail_resolution = false;
     gpr_mu_unlock(&g_mu);
@@ -78,28 +78,28 @@ static grpc_ares_request *my_dns_lookup_ares(
   return NULL;
 }
 
-static grpc_resolver *create_resolver(grpc_exec_ctx *exec_ctx,
-                                      const char *name) {
-  grpc_resolver_factory *factory = grpc_resolver_factory_lookup("dns");
-  grpc_uri *uri = grpc_uri_parse(exec_ctx, name, 0);
+static grpc_resolver* create_resolver(grpc_exec_ctx* exec_ctx,
+                                      const char* name) {
+  grpc_resolver_factory* factory = grpc_resolver_factory_lookup("dns");
+  grpc_uri* uri = grpc_uri_parse(exec_ctx, name, 0);
   GPR_ASSERT(uri);
   grpc_resolver_args args;
   memset(&args, 0, sizeof(args));
   args.uri = uri;
   args.combiner = g_combiner;
-  grpc_resolver *resolver =
+  grpc_resolver* resolver =
       grpc_resolver_factory_create_resolver(exec_ctx, factory, &args);
   grpc_resolver_factory_unref(factory);
   grpc_uri_destroy(uri);
   return resolver;
 }
 
-static void on_done(grpc_exec_ctx *exec_ctx, void *ev, grpc_error *error) {
-  gpr_event_set(ev, (void *)1);
+static void on_done(grpc_exec_ctx* exec_ctx, void* ev, grpc_error* error) {
+  gpr_event_set(ev, (void*)1);
 }
 
 // interleave waiting for an event with a timer check
-static bool wait_loop(int deadline_seconds, gpr_event *ev) {
+static bool wait_loop(int deadline_seconds, gpr_event* ev) {
   while (deadline_seconds) {
     gpr_log(GPR_DEBUG, "Test: waiting for %d more seconds", deadline_seconds);
     if (gpr_event_wait(ev, grpc_timeout_seconds_to_deadline(1))) return true;
@@ -113,34 +113,35 @@ static bool wait_loop(int deadline_seconds, gpr_event *ev) {
 }
 
 typedef struct next_args {
-  grpc_resolver *resolver;
-  grpc_channel_args **result;
-  grpc_closure *on_complete;
+  grpc_resolver* resolver;
+  grpc_channel_args** result;
+  grpc_closure* on_complete;
 } next_args;
 
-static void call_resolver_next_now_lock_taken(grpc_exec_ctx *exec_ctx,
-                                              void *arg,
-                                              grpc_error *error_unused) {
-  next_args *a = arg;
+static void call_resolver_next_now_lock_taken(grpc_exec_ctx* exec_ctx,
+                                              void* arg,
+                                              grpc_error* error_unused) {
+  next_args* a = arg;
   grpc_resolver_next_locked(exec_ctx, a->resolver, a->result, a->on_complete);
   gpr_free(a);
 }
 
-static void call_resolver_next_after_locking(grpc_exec_ctx *exec_ctx,
-                                             grpc_resolver *resolver,
-                                             grpc_channel_args **result,
-                                             grpc_closure *on_complete) {
-  next_args *a = gpr_malloc(sizeof(*a));
+static void call_resolver_next_after_locking(grpc_exec_ctx* exec_ctx,
+                                             grpc_resolver* resolver,
+                                             grpc_channel_args** result,
+                                             grpc_closure* on_complete) {
+  next_args* a = gpr_malloc(sizeof(*a));
   a->resolver = resolver;
   a->result = result;
   a->on_complete = on_complete;
-  GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(
-                                   call_resolver_next_now_lock_taken, a,
-                                   grpc_combiner_scheduler(resolver->combiner)),
-                     GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(
+      exec_ctx,
+      GRPC_CLOSURE_CREATE(call_resolver_next_now_lock_taken, a,
+                          grpc_combiner_scheduler(resolver->combiner)),
+      GRPC_ERROR_NONE);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
 
   grpc_init();
@@ -148,10 +149,10 @@ int main(int argc, char **argv) {
   g_combiner = grpc_combiner_create();
   grpc_resolve_address = my_resolve_address;
   grpc_dns_lookup_ares = my_dns_lookup_ares;
-  grpc_channel_args *result = (grpc_channel_args *)1;
+  grpc_channel_args* result = (grpc_channel_args*)1;
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_resolver *resolver = create_resolver(&exec_ctx, "dns:test");
+  grpc_resolver* resolver = create_resolver(&exec_ctx, "dns:test");
   gpr_event ev1;
   gpr_event_init(&ev1);
   call_resolver_next_after_locking(

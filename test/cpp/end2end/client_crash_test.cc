@@ -56,7 +56,8 @@ class CrashTest : public ::testing::Test {
     addr_stream << "localhost:" << port;
     auto addr = addr_stream.str();
     server_.reset(new SubProcess({
-        g_root + "/client_crash_test_server", "--address=" + addr,
+        g_root + "/client_crash_test_server",
+        "--address=" + addr,
     }));
     GPR_ASSERT(server_);
     return grpc::testing::EchoTestService::NewStub(

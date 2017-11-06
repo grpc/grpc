@@ -59,20 +59,20 @@ using v8::Object;
 using v8::String;
 using v8::Value;
 
-Nan::Callback *Server::constructor;
+Nan::Callback* Server::constructor;
 Persistent<FunctionTemplate> Server::fun_tpl;
 
-static Callback *shutdown_callback = NULL;
+static Callback* shutdown_callback = NULL;
 
 class ServerShutdownOp : public Op {
  public:
-  ServerShutdownOp(grpc_server *server) : server(server) {}
+  ServerShutdownOp(grpc_server* server) : server(server) {}
 
   ~ServerShutdownOp() {}
 
   Local<Value> GetNodeValue() const { return Nan::Null(); }
 
-  bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
+  bool ParseOp(Local<Value> value, grpc_op* out) { return true; }
   bool IsFinalOp() { return false; }
   void OnComplete(bool success) {
     /* Because cancel_all_calls was called, we assume that shutdown_and_notify
@@ -80,7 +80,7 @@ class ServerShutdownOp : public Op {
     grpc_server_destroy(server);
   }
 
-  grpc_server *server;
+  grpc_server* server;
 
  protected:
   std::string GetTypeString() const { return "shutdown"; }
@@ -119,11 +119,11 @@ class NewCallOp : public Op {
     return scope.Escape(obj);
   }
 
-  bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
+  bool ParseOp(Local<Value> value, grpc_op* out) { return true; }
   bool IsFinalOp() { return false; }
   void OnComplete(bool success) {}
 
-  grpc_call *call;
+  grpc_call* call;
   grpc_call_details details;
   grpc_metadata_array request_metadata;
 
@@ -133,14 +133,14 @@ class NewCallOp : public Op {
 
 class TryShutdownOp : public Op {
  public:
-  TryShutdownOp(Server *server, Local<Value> server_value) : server(server) {
+  TryShutdownOp(Server* server, Local<Value> server_value) : server(server) {
     server_persist.Reset(server_value);
   }
   Local<Value> GetNodeValue() const {
     EscapableHandleScope scope;
     return scope.Escape(Nan::New(server_persist));
   }
-  bool ParseOp(Local<Value> value, grpc_op *out) { return true; }
+  bool ParseOp(Local<Value> value, grpc_op* out) { return true; }
   bool IsFinalOp() { return false; }
   void OnComplete(bool success) {
     if (success) {
@@ -152,12 +152,12 @@ class TryShutdownOp : public Op {
   std::string GetTypeString() const { return "try_shutdown"; }
 
  private:
-  Server *server;
+  Server* server;
   Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>>
       server_persist;
 };
 
-Server::Server(grpc_server *server) : wrapped_server(server) {}
+Server::Server(grpc_server* server) : wrapped_server(server) {}
 
 Server::~Server() { this->ShutdownServer(); }
 
@@ -205,7 +205,7 @@ void Server::ShutdownServer() {
           new Callback(Nan::GetFunction(callback_tpl).ToLocalChecked());
     }
 
-    ServerShutdownOp *op = new ServerShutdownOp(this->wrapped_server);
+    ServerShutdownOp* op = new ServerShutdownOp(this->wrapped_server);
     unique_ptr<OpVec> ops(new OpVec());
     ops->push_back(unique_ptr<Op>(op));
 
@@ -235,9 +235,9 @@ NAN_METHOD(Server::New) {
       return;
     }
   }
-  grpc_server *wrapped_server;
-  grpc_completion_queue *queue = GetCompletionQueue();
-  grpc_channel_args *channel_args;
+  grpc_server* wrapped_server;
+  grpc_completion_queue* queue = GetCompletionQueue();
+  grpc_channel_args* channel_args;
   if (!ParseChannelArgs(info[0], &channel_args)) {
     DeallocateChannelArgs(channel_args);
     return Nan::ThrowTypeError(
@@ -247,7 +247,7 @@ NAN_METHOD(Server::New) {
   wrapped_server = grpc_server_create(channel_args, NULL);
   DeallocateChannelArgs(channel_args);
   grpc_server_register_completion_queue(wrapped_server, queue, NULL);
-  Server *server = new Server(wrapped_server);
+  Server* server = new Server(wrapped_server);
   server->Wrap(info.This());
   info.GetReturnValue().Set(info.This());
 }
@@ -256,8 +256,8 @@ NAN_METHOD(Server::RequestCall) {
   if (!HasInstance(info.This())) {
     return Nan::ThrowTypeError("requestCall can only be called on a Server");
   }
-  Server *server = ObjectWrap::Unwrap<Server>(info.This());
-  NewCallOp *op = new NewCallOp();
+  Server* server = ObjectWrap::Unwrap<Server>(info.This());
+  NewCallOp* op = new NewCallOp();
   unique_ptr<OpVec> ops(new OpVec());
   ops->push_back(unique_ptr<Op>(op));
   grpc_call_error error = grpc_server_request_call(
@@ -283,10 +283,10 @@ NAN_METHOD(Server::AddHttp2Port) {
     return Nan::ThrowTypeError(
         "addHttp2Port's second argument must be ServerCredentials");
   }
-  Server *server = ObjectWrap::Unwrap<Server>(info.This());
-  ServerCredentials *creds_object = ObjectWrap::Unwrap<ServerCredentials>(
+  Server* server = ObjectWrap::Unwrap<Server>(info.This());
+  ServerCredentials* creds_object = ObjectWrap::Unwrap<ServerCredentials>(
       Nan::To<Object>(info[1]).ToLocalChecked());
-  grpc_server_credentials *creds = creds_object->GetWrappedServerCredentials();
+  grpc_server_credentials* creds = creds_object->GetWrappedServerCredentials();
   int port;
   if (creds == NULL) {
     port = grpc_server_add_insecure_http2_port(server->wrapped_server,
@@ -303,7 +303,7 @@ NAN_METHOD(Server::Start) {
   if (!HasInstance(info.This())) {
     return Nan::ThrowTypeError("start can only be called on a Server");
   }
-  Server *server = ObjectWrap::Unwrap<Server>(info.This());
+  Server* server = ObjectWrap::Unwrap<Server>(info.This());
   grpc_server_start(server->wrapped_server);
 }
 
@@ -312,14 +312,14 @@ NAN_METHOD(Server::TryShutdown) {
   if (!HasInstance(info.This())) {
     return Nan::ThrowTypeError("tryShutdown can only be called on a Server");
   }
-  Server *server = ObjectWrap::Unwrap<Server>(info.This());
+  Server* server = ObjectWrap::Unwrap<Server>(info.This());
   if (server->wrapped_server == NULL) {
     // Server is already shut down. Call callback immediately.
     Nan::Callback callback(info[0].As<Function>());
     callback.Call(0, {});
     return;
   }
-  TryShutdownOp *op = new TryShutdownOp(server, info.This());
+  TryShutdownOp* op = new TryShutdownOp(server, info.This());
   unique_ptr<OpVec> ops(new OpVec());
   ops->push_back(unique_ptr<Op>(op));
   grpc_server_shutdown_and_notify(
@@ -334,7 +334,7 @@ NAN_METHOD(Server::ForceShutdown) {
   if (!HasInstance(info.This())) {
     return Nan::ThrowTypeError("forceShutdown can only be called on a Server");
   }
-  Server *server = ObjectWrap::Unwrap<Server>(info.This());
+  Server* server = ObjectWrap::Unwrap<Server>(info.This());
   server->ShutdownServer();
 }
 

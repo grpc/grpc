@@ -28,7 +28,7 @@ grpc_tracer_flag grpc_bdp_estimator_trace =
 
 namespace grpc_core {
 
-BdpEstimator::BdpEstimator(const char *name)
+BdpEstimator::BdpEstimator(const char* name)
     : ping_state_(PingState::UNSCHEDULED),
       accumulator_(0),
       estimate_(65536),
@@ -38,15 +38,16 @@ BdpEstimator::BdpEstimator(const char *name)
       bw_est_(0),
       name_(name) {}
 
-grpc_millis BdpEstimator::CompletePing(grpc_exec_ctx *exec_ctx) {
+grpc_millis BdpEstimator::CompletePing(grpc_exec_ctx* exec_ctx) {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec dt_ts = gpr_time_sub(now, ping_start_time_);
   double dt = (double)dt_ts.tv_sec + 1e-9 * (double)dt_ts.tv_nsec;
   double bw = dt > 0 ? ((double)accumulator_ / dt) : 0;
   int start_inter_ping_delay = inter_ping_delay_;
   if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
-    gpr_log(GPR_DEBUG, "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
-                       " dt=%lf bw=%lfMbs bw_est=%lfMbs",
+    gpr_log(GPR_DEBUG,
+            "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
+            " dt=%lf bw=%lfMbs bw_est=%lfMbs",
             name_, accumulator_, estimate_, dt, bw / 125000.0,
             bw_est_ / 125000.0);
   }

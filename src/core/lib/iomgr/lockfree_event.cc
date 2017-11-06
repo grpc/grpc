@@ -60,18 +60,18 @@ namespace grpc_core {
 LockfreeEvent::~LockfreeEvent() {
   gpr_atm curr = gpr_atm_no_barrier_load(&state_);
   if (curr & kShutdownBit) {
-    GRPC_ERROR_UNREF((grpc_error *)(curr & ~kShutdownBit));
+    GRPC_ERROR_UNREF((grpc_error*)(curr & ~kShutdownBit));
   } else {
     GPR_ASSERT(curr == kClosureNotReady || curr == kClosureReady);
   }
 }
 
-void LockfreeEvent::NotifyOn(grpc_exec_ctx *exec_ctx, grpc_closure *closure) {
+void LockfreeEvent::NotifyOn(grpc_exec_ctx* exec_ctx, grpc_closure* closure) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_ERROR, "LockfreeEvent::NotifyOn: %p curr=%p closure=%p", this,
-              (void *)curr, closure);
+              (void*)curr, closure);
     }
     switch (curr) {
       case kClosureNotReady: {
@@ -111,7 +111,7 @@ void LockfreeEvent::NotifyOn(grpc_exec_ctx *exec_ctx, grpc_closure *closure) {
            contains a pointer to the shutdown-error). If the fd is shutdown,
            schedule the closure with the shutdown error */
         if ((curr & kShutdownBit) > 0) {
-          grpc_error *shutdown_err = (grpc_error *)(curr & ~kShutdownBit);
+          grpc_error* shutdown_err = (grpc_error*)(curr & ~kShutdownBit);
           GRPC_CLOSURE_SCHED(exec_ctx, closure,
                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "FD Shutdown", &shutdown_err, 1));
@@ -130,15 +130,15 @@ void LockfreeEvent::NotifyOn(grpc_exec_ctx *exec_ctx, grpc_closure *closure) {
   GPR_UNREACHABLE_CODE(return );
 }
 
-bool LockfreeEvent::SetShutdown(grpc_exec_ctx *exec_ctx,
-                                grpc_error *shutdown_err) {
+bool LockfreeEvent::SetShutdown(grpc_exec_ctx* exec_ctx,
+                                grpc_error* shutdown_err) {
   gpr_atm new_state = (gpr_atm)shutdown_err | kShutdownBit;
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_ERROR, "LockfreeEvent::SetShutdown: %p curr=%p err=%s",
-              &state_, (void *)curr, grpc_error_string(shutdown_err));
+              &state_, (void*)curr, grpc_error_string(shutdown_err));
     }
     switch (curr) {
       case kClosureReady:
@@ -165,7 +165,7 @@ bool LockfreeEvent::SetShutdown(grpc_exec_ctx *exec_ctx,
            happens-after on that edge), and a release to pair with anything
            loading the shutdown state. */
         if (gpr_atm_full_cas(&state_, curr, new_state)) {
-          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure *)curr,
+          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure*)curr,
                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "FD Shutdown", &shutdown_err, 1));
           return true;
@@ -181,13 +181,13 @@ bool LockfreeEvent::SetShutdown(grpc_exec_ctx *exec_ctx,
   GPR_UNREACHABLE_CODE(return false);
 }
 
-void LockfreeEvent::SetReady(grpc_exec_ctx *exec_ctx) {
+void LockfreeEvent::SetReady(grpc_exec_ctx* exec_ctx) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
 
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_ERROR, "LockfreeEvent::SetReady: %p curr=%p", &state_,
-              (void *)curr);
+              (void*)curr);
     }
 
     switch (curr) {
@@ -215,7 +215,7 @@ void LockfreeEvent::SetReady(grpc_exec_ctx *exec_ctx) {
            spurious set_ready; release pairs with this or the acquire in
            notify_on (or set_shutdown) */
         else if (gpr_atm_full_cas(&state_, curr, kClosureNotReady)) {
-          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure*)curr, GRPC_ERROR_NONE);
           return;
         }
         /* else the state changed again (only possible by either a racing

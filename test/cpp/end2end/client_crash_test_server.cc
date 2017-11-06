@@ -68,8 +68,8 @@ void RunServer() {
   std::cout << "Server listening on " << FLAGS_address << std::endl;
   server->Wait();
 }
-}
-}
+}  // namespace testing
+}  // namespace grpc
 
 int main(int argc, char** argv) {
   ParseCommandLineFlags(&argc, &argv, true);

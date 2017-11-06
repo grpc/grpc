@@ -25,7 +25,7 @@
 
 #include "src/core/lib/compression/stream_compression.h"
 
-static void generate_random_payload(char *payload, size_t size) {
+static void generate_random_payload(char* payload, size_t size) {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   for (i = 0; i < size - 1; ++i) {
@@ -34,8 +34,8 @@ static void generate_random_payload(char *payload, size_t size) {
   payload[size - 1] = '\0';
 }
 
-static bool slice_buffer_equals_string(grpc_slice_buffer *buf,
-                                       const char *str) {
+static bool slice_buffer_equals_string(grpc_slice_buffer* buf,
+                                       const char* str) {
   size_t i;
   if (buf->length != strlen(str)) {
     return false;
@@ -43,8 +43,8 @@ static bool slice_buffer_equals_string(grpc_slice_buffer *buf,
   size_t pointer = 0;
   for (i = 0; i < buf->count; i++) {
     size_t slice_len = GRPC_SLICE_LENGTH(buf->slices[i]);
-    if (0 != strncmp(str + pointer,
-                     (char *)GRPC_SLICE_START_PTR(buf->slices[i]), slice_len)) {
+    if (0 != strncmp(str + pointer, (char*)GRPC_SLICE_START_PTR(buf->slices[i]),
+                     slice_len)) {
       return false;
     }
     pointer += slice_len;
@@ -58,10 +58,10 @@ static void test_stream_compression_simple_compress_decompress() {
   grpc_slice_buffer_init(&source);
   grpc_slice_buffer_init(&relay);
   grpc_slice_buffer_init(&sink);
-  grpc_stream_compression_context *compress_ctx =
+  grpc_stream_compression_context* compress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
-  grpc_stream_compression_context *decompress_ctx =
+  grpc_stream_compression_context* decompress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
@@ -91,10 +91,10 @@ test_stream_compression_simple_compress_decompress_with_output_size_constraint()
   grpc_slice_buffer_init(&source);
   grpc_slice_buffer_init(&relay);
   grpc_slice_buffer_init(&sink);
-  grpc_stream_compression_context *compress_ctx =
+  grpc_stream_compression_context* compress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
-  grpc_stream_compression_context *decompress_ctx =
+  grpc_stream_compression_context* decompress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
@@ -112,7 +112,7 @@ test_stream_compression_simple_compress_decompress_with_output_size_constraint()
   GPR_ASSERT(output_size == max_output_size);
   GPR_ASSERT(end_of_context == false);
   grpc_slice slice_recv = grpc_slice_buffer_take_first(&sink);
-  char *str_recv = (char *)GRPC_SLICE_START_PTR(slice_recv);
+  char* str_recv = (char*)GRPC_SLICE_START_PTR(slice_recv);
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_recv) == max_output_size);
   GPR_ASSERT(0 == strncmp(test_str, str_recv, max_output_size));
   grpc_slice_unref(slice_recv);
@@ -134,16 +134,16 @@ test_stream_compression_simple_compress_decompress_with_output_size_constraint()
 #define LARGE_DATA_SIZE (1024 * 1024)
 static void
 test_stream_compression_simple_compress_decompress_with_large_data() {
-  char *test_str = gpr_malloc(LARGE_DATA_SIZE * sizeof(char));
+  char* test_str = gpr_malloc(LARGE_DATA_SIZE * sizeof(char));
   generate_random_payload(test_str, LARGE_DATA_SIZE);
   grpc_slice_buffer source, relay, sink;
   grpc_slice_buffer_init(&source);
   grpc_slice_buffer_init(&relay);
   grpc_slice_buffer_init(&sink);
-  grpc_stream_compression_context *compress_ctx =
+  grpc_stream_compression_context* compress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
-  grpc_stream_compression_context *decompress_ctx =
+  grpc_stream_compression_context* decompress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
@@ -174,7 +174,7 @@ static void test_stream_compression_drop_context() {
   grpc_slice_buffer_init(&source);
   grpc_slice_buffer_init(&relay);
   grpc_slice_buffer_init(&sink);
-  grpc_stream_compression_context *compress_ctx =
+  grpc_stream_compression_context* compress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
@@ -207,7 +207,7 @@ static void test_stream_compression_drop_context() {
   grpc_slice_unref(slice2);
   grpc_slice_buffer_add(&relay, slice3);
 
-  grpc_stream_compression_context *decompress_ctx =
+  grpc_stream_compression_context* decompress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   bool end_of_context;
@@ -243,7 +243,7 @@ static void test_stream_compression_sync_flush() {
   grpc_slice_buffer_init(&source);
   grpc_slice_buffer_init(&relay);
   grpc_slice_buffer_init(&sink);
-  grpc_stream_compression_context *compress_ctx =
+  grpc_stream_compression_context* compress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
@@ -252,7 +252,7 @@ static void test_stream_compression_sync_flush() {
                                   ~(size_t)0,
                                   GRPC_STREAM_COMPRESSION_FLUSH_SYNC));
 
-  grpc_stream_compression_context *decompress_ctx =
+  grpc_stream_compression_context* decompress_ctx =
       grpc_stream_compression_context_create(
           GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   bool end_of_context;
@@ -284,7 +284,7 @@ static void test_stream_compression_sync_flush() {
   grpc_slice_buffer_destroy(&sink);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_init();
   test_stream_compression_simple_compress_decompress();
   test_stream_compression_simple_compress_decompress_with_output_size_constraint();

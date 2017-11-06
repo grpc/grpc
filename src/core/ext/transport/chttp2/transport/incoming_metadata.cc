@@ -26,31 +26,32 @@
 #include <grpc/support/log.h>
 
 void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena) {
+    grpc_chttp2_incoming_metadata_buffer* buffer, gpr_arena* arena) {
   buffer->arena = arena;
   grpc_metadata_batch_init(&buffer->batch);
   buffer->batch.deadline = GRPC_MILLIS_INF_FUTURE;
 }
 
 void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer) {
+    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer) {
   grpc_metadata_batch_destroy(exec_ctx, &buffer->batch);
 }
 
-grpc_error *grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
+    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
     grpc_mdelem elem) {
   buffer->size += GRPC_MDELEM_LENGTH(elem);
   return grpc_metadata_batch_add_tail(
-      exec_ctx, &buffer->batch, (grpc_linked_mdelem *)gpr_arena_alloc(
-                                    buffer->arena, sizeof(grpc_linked_mdelem)),
+      exec_ctx, &buffer->batch,
+      (grpc_linked_mdelem*)gpr_arena_alloc(buffer->arena,
+                                           sizeof(grpc_linked_mdelem)),
       elem);
 }
 
-grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
     grpc_mdelem elem) {
-  for (grpc_linked_mdelem *l = buffer->batch.list.head; l != NULL;
+  for (grpc_linked_mdelem* l = buffer->batch.list.head; l != NULL;
        l = l->next) {
     if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDKEY(elem))) {
       GRPC_MDELEM_UNREF(exec_ctx, l->md);
@@ -62,13 +63,13 @@ grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
 }
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_millis deadline) {
+    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_millis deadline) {
   buffer->batch.deadline = deadline;
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
-    grpc_metadata_batch *batch) {
+    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
+    grpc_metadata_batch* batch) {
   *batch = buffer->batch;
   grpc_metadata_batch_init(&buffer->batch);
 }

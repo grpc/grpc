@@ -30,20 +30,20 @@
 #include "test/core/util/test_config.h"
 
 typedef struct test_fixture {
-  const char *name;
-  void (*add_server_port)(grpc_server *server, const char *addr);
-  grpc_channel *(*create_channel)(const char *addr);
+  const char* name;
+  void (*add_server_port)(grpc_server* server, const char* addr);
+  grpc_channel* (*create_channel)(const char* addr);
 } test_fixture;
 
 #define NUM_CONNECTIONS 1000
 
 typedef struct {
-  grpc_server *server;
-  grpc_completion_queue *cq;
+  grpc_server* server;
+  grpc_completion_queue* cq;
 } server_thread_args;
 
-static void server_thread_func(void *args) {
-  server_thread_args *a = args;
+static void server_thread_func(void* args) {
+  server_thread_args* a = args;
   grpc_event ev = grpc_completion_queue_next(
       a->cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
@@ -51,17 +51,17 @@ static void server_thread_func(void *args) {
   GPR_ASSERT(ev.success == true);
 }
 
-static void run_test(const test_fixture *fixture) {
+static void run_test(const test_fixture* fixture) {
   gpr_log(GPR_INFO, "TEST: %s", fixture->name);
 
   grpc_init();
 
-  char *addr;
+  char* addr;
   gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
 
-  grpc_server *server = grpc_server_create(NULL, NULL);
+  grpc_server* server = grpc_server_create(NULL, NULL);
   fixture->add_server_port(server, addr);
-  grpc_completion_queue *server_cq =
+  grpc_completion_queue* server_cq =
       grpc_completion_queue_create_for_next(NULL);
   grpc_server_register_completion_queue(server, server_cq, NULL);
   grpc_server_start(server);
@@ -72,8 +72,8 @@ static void run_test(const test_fixture *fixture) {
   gpr_thd_options_set_joinable(&thdopt);
   gpr_thd_new(&server_thread, server_thread_func, &sta, &thdopt);
 
-  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
-  grpc_channel *channels[NUM_CONNECTIONS];
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_channel* channels[NUM_CONNECTIONS];
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
     channels[i] = fixture->create_channel(addr);
 
@@ -121,36 +121,38 @@ static void run_test(const test_fixture *fixture) {
   gpr_free(addr);
 }
 
-static void insecure_test_add_port(grpc_server *server, const char *addr) {
+static void insecure_test_add_port(grpc_server* server, const char* addr) {
   grpc_server_add_insecure_http2_port(server, addr);
 }
 
-static grpc_channel *insecure_test_create_channel(const char *addr) {
+static grpc_channel* insecure_test_create_channel(const char* addr) {
   return grpc_insecure_channel_create(addr, NULL, NULL);
 }
 
 static const test_fixture insecure_test = {
-    "insecure", insecure_test_add_port, insecure_test_create_channel,
+    "insecure",
+    insecure_test_add_port,
+    insecure_test_create_channel,
 };
 
-static void secure_test_add_port(grpc_server *server, const char *addr) {
+static void secure_test_add_port(grpc_server* server, const char* addr) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
-  grpc_server_credentials *ssl_creds =
+  grpc_server_credentials* ssl_creds =
       grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0, NULL);
   grpc_server_add_secure_http2_port(server, addr, ssl_creds);
   grpc_server_credentials_release(ssl_creds);
 }
 
-static grpc_channel *secure_test_create_channel(const char *addr) {
-  grpc_channel_credentials *ssl_creds =
+static grpc_channel* secure_test_create_channel(const char* addr) {
+  grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL, NULL);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                 {"foo.test.google.fr"}};
-  grpc_channel_args *new_client_args =
+  grpc_channel_args* new_client_args =
       grpc_channel_args_copy_and_add(NULL, &ssl_name_override, 1);
-  grpc_channel *channel =
+  grpc_channel* channel =
       grpc_secure_channel_create(ssl_creds, addr, new_client_args, NULL);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -162,10 +164,12 @@ static grpc_channel *secure_test_create_channel(const char *addr) {
 }
 
 static const test_fixture secure_test = {
-    "secure", secure_test_add_port, secure_test_create_channel,
+    "secure",
+    secure_test_add_port,
+    secure_test_create_channel,
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
 
   run_test(&insecure_test);

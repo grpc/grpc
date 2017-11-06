@@ -32,9 +32,9 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
-const char *hobbits[][2] = {
+const char* hobbits[][2] = {
     {"Adaldrida", "Brandybuck"}, {"Adamanta", "Took"},
     {"Adalgrim", "Took"},        {"Adelard", "Took"},
     {"Amaranth", "Brandybuck"},  {"Andwise", "Roper"},
@@ -171,13 +171,13 @@ const char *hobbits[][2] = {
     {"Wiseman", "Gamwich"}*/
 };
 
-const char *dragons[] = {"Ancalagon", "Glaurung", "Scatha",
+const char* dragons[] = {"Ancalagon", "Glaurung", "Scatha",
                          "Smaug the Magnificent"};
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char *test_name,
-                                            grpc_channel_args *client_args,
-                                            grpc_channel_args *server_args) {
+                                            const char* test_name,
+                                            grpc_channel_args* client_args,
+                                            grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -194,14 +194,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
+static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
@@ -212,13 +212,13 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   f->server = NULL;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture *f) {
+static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = NULL;
 }
 
-static void end_test(grpc_end2end_test_fixture *f) {
+static void end_test(grpc_end2end_test_fixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -230,11 +230,11 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 static void simple_request_body(grpc_end2end_test_config config,
                                 grpc_end2end_test_fixture f, size_t index) {
-  grpc_call *c;
-  grpc_call *s;
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  grpc_call* c;
+  grpc_call* s;
+  cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -357,7 +357,7 @@ static void test_size(grpc_end2end_test_config config, int encode_size,
   grpc_channel_args server_args;
   grpc_arg client_arg;
   grpc_channel_args client_args;
-  char *name;
+  char* name;
 
   server_arg.type = GRPC_ARG_INTEGER;
   server_arg.key = GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER;

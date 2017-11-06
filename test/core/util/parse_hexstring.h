@@ -21,6 +21,6 @@
 
 #include <grpc/slice.h>
 
-grpc_slice parse_hexstring(const char *hexstring);
+grpc_slice parse_hexstring(const char* hexstring);
 
 #endif /* GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H */
