@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_POLLER_H
-#define GRPC_CORE_LIB_IOMGR_POLLER_H
+#ifndef GRPC_CORE_LIB_IOMGR_POLLING_INTERFACE_H
+#define GRPC_CORE_LIB_IOMGR_POLLING_INTERFACE_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -55,7 +55,6 @@ class PollableCollection {
  private:
   friend class PollingJoin;
   virtual void AddToPollingJoin(PollingJoin* join) = 0;
-  virtual void RemoveFromPollingJoin(PollingJoin* join) = 0;
 };
 
 // A Poller is a set of file descriptors that a higher level item is
@@ -115,7 +114,6 @@ class Poller : public PollableCollection {
 
  private:
   void AddToPollingJoin(PollingJoin* polling_join) override final;
-  void RemoveFromPollingJoin(PollingJoin* polling_join) override final;
 };
 
 // A PollingJoin serves to join multiple pollers and pollables.
@@ -154,7 +152,6 @@ class PollingJoin : public PollableCollection {
 
  private:
   void AddToPollingJoin(PollingJoin* other_polling_join) override final;
-  void RemoveFromPollingJoin(PollingJoin* polling_join) override final;
 };
 
 inline void Poller::AddToPollingJoin(PollingJoin* polling_join) {
@@ -167,4 +164,4 @@ inline void PollingJoin::AddToPollingJoin(PollingJoin* other_polling_join) {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_POLLER_H */
+#endif /* GRPC_CORE_LIB_IOMGR_POLLING_INTERFACE_H */
