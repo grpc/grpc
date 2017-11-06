@@ -277,10 +277,11 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                           grpc_call_context_element *context, void **user_data,
                           grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
-  GPR_ASSERT(!p->shutdown);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO, "[RR %p] Trying to pick", (void *)pol);
+    gpr_log(GPR_INFO, "[RR %p] Trying to pick (shutdown: %d)", (void *)pol,
+            p->shutdown);
   }
+  GPR_ASSERT(!p->shutdown);
   if (p->subchannel_list != NULL) {
     const size_t next_ready_index = get_next_ready_subchannel_index_locked(p);
     if (next_ready_index < p->subchannel_list->num_subchannels) {
@@ -393,6 +394,11 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
                                 "rr_shutdown");
     p->shutdown = true;
     new_state = GRPC_CHANNEL_SHUTDOWN;
+    if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
+      gpr_log(GPR_INFO,
+              "[RR %p] Shutting down: all subchannels have gone into shutdown",
+              (void *)p);
+    }
   } else if (subchannel_list->num_transient_failures ==
              p->subchannel_list->num_subchannels) { /* 4) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
