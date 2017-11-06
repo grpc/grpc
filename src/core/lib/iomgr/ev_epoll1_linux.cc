@@ -1230,6 +1230,7 @@ static const grpc_event_engine_vtable vtable = {
  * support is available */
 const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
   if (!grpc_has_wakeup_fd()) {
+    gpr_log(GPR_ERROR, "Skipping epoll1 because of no wakeup fd.");
     return NULL;
   }
 
@@ -1254,6 +1255,8 @@ const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
 const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
+  gpr_log(GPR_ERROR,
+          "Skipping epollsig becuase GRPC_LINUX_EPOLL is not defined.");
   return NULL;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */

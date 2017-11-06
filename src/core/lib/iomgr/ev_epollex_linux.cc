@@ -1447,10 +1447,12 @@ const grpc_event_engine_vtable *grpc_init_epollex_linux(
   }
 
   if (!grpc_has_wakeup_fd()) {
+    gpr_log(GPR_ERROR, "Skipping epollex because of no wakeup fd.");
     return NULL;
   }
 
   if (!grpc_is_epollexclusive_available()) {
+    gpr_log(GPR_INFO, "Skipping epollex because it is not supported.");
     return NULL;
   }
 
@@ -1476,6 +1478,8 @@ const grpc_event_engine_vtable *grpc_init_epollex_linux(
  * NULL */
 const grpc_event_engine_vtable *grpc_init_epollex_linux(
     bool explicitly_requested) {
+  gpr_log(GPR_ERROR,
+          "Skipping epollex becuase GRPC_LINUX_EPOLL is not defined.");
   return NULL;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
