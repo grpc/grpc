@@ -25,8 +25,8 @@
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
 
-static gpr_mu *g_mu;
-static grpc_pollset *g_pollset;
+static gpr_mu* g_mu;
+static grpc_pollset* g_pollset;
 
 static void clean_up(void) {}
 
@@ -53,12 +53,12 @@ static grpc_endpoint_test_config configs[] = {
     {"tcp/tcp_socketpair", create_fixture_endpoint_pair, clean_up},
 };
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
-                            grpc_error *error) {
+static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* p,
+                            grpc_error* error) {
   grpc_pollset_destroy(exec_ctx, p);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);

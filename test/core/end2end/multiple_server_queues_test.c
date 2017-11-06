@@ -19,13 +19,13 @@
 #include <grpc/grpc.h>
 #include "test/core/util/test_config.h"
 
-int main(int argc, char **argv) {
-  grpc_completion_queue *cq1;
-  grpc_completion_queue *cq2;
-  grpc_completion_queue *cq3;
+int main(int argc, char** argv) {
+  grpc_completion_queue* cq1;
+  grpc_completion_queue* cq2;
+  grpc_completion_queue* cq3;
   grpc_completion_queue_attributes attr;
 
-  grpc_server *server;
+  grpc_server* server;
 
   grpc_test_init(argc, argv);
   grpc_init();

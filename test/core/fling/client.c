@@ -30,20 +30,20 @@
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/test_config.h"
 
-static gpr_histogram *histogram;
-static grpc_byte_buffer *the_buffer;
-static grpc_channel *channel;
-static grpc_completion_queue *cq;
-static grpc_call *call;
+static gpr_histogram* histogram;
+static grpc_byte_buffer* the_buffer;
+static grpc_channel* channel;
+static grpc_completion_queue* cq;
+static grpc_call* call;
 static grpc_op ops[6];
 static grpc_op stream_init_ops[2];
 static grpc_op stream_step_ops[2];
 static grpc_metadata_array initial_metadata_recv;
 static grpc_metadata_array trailing_metadata_recv;
-static grpc_byte_buffer *response_payload_recv = NULL;
+static grpc_byte_buffer* response_payload_recv = NULL;
 static grpc_status_code status;
 static grpc_slice details;
-static grpc_op *op;
+static grpc_op* op;
 
 static void init_ping_pong_request(void) {
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -81,8 +81,8 @@ static void step_ping_pong_request(void) {
       grpc_slice_from_static_string("/Reflector/reflectUnary"), &host,
       gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops),
-                                                   (void *)1, NULL));
+                                                   (size_t)(op - ops), (void*)1,
+                                                   NULL));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   grpc_call_unref(call);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -104,7 +104,7 @@ static void init_ping_pong_stream(void) {
   stream_init_ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
   stream_init_ops[1].data.recv_initial_metadata.recv_initial_metadata =
       &initial_metadata_recv;
-  error = grpc_call_start_batch(call, stream_init_ops, 2, (void *)1, NULL);
+  error = grpc_call_start_batch(call, stream_init_ops, 2, (void*)1, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
@@ -119,7 +119,7 @@ static void init_ping_pong_stream(void) {
 static void step_ping_pong_stream(void) {
   grpc_call_error error;
   GPR_TIMER_BEGIN("ping_pong", 1);
-  error = grpc_call_start_batch(call, stream_step_ops, 2, (void *)1, NULL);
+  error = grpc_call_start_batch(call, stream_step_ops, 2, (void*)1, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -132,7 +132,7 @@ static double now(void) {
 }
 
 typedef struct {
-  const char *name;
+  const char* name;
   void (*init)();
   void (*do_one_step)();
 } scenario;
@@ -142,19 +142,19 @@ static const scenario scenarios[] = {
     {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream},
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_slice slice = grpc_slice_from_copied_string("x");
   double start, stop;
   unsigned i;
 
-  char *fake_argv[1];
+  char* fake_argv[1];
 
   int payload_size = 1;
   int secure = 0;
-  char *target = "localhost:443";
-  gpr_cmdline *cl;
+  char* target = "localhost:443";
+  gpr_cmdline* cl;
   grpc_event event;
-  char *scenario_name = "ping-pong-request";
+  char* scenario_name = "ping-pong-request";
   scenario sc = {NULL, NULL, NULL};
 
   gpr_timers_set_log_filename("latency_trace.fling_client.txt");

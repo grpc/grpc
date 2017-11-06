@@ -27,9 +27,9 @@ namespace grpc {
 namespace node {
 
 bool ParseChannelArgs(v8::Local<v8::Value> args_val,
-                      grpc_channel_args **channel_args_ptr);
+                      grpc_channel_args** channel_args_ptr);
 
-void DeallocateChannelArgs(grpc_channel_args *channel_args);
+void DeallocateChannelArgs(grpc_channel_args* channel_args);
 
 /* Wrapper class for grpc_channel structs */
 class Channel : public Nan::ObjectWrap {
@@ -41,25 +41,25 @@ class Channel : public Nan::ObjectWrap {
   static v8::Persistent<v8::Value> prototype;
 
   /* Returns the grpc_channel struct that this object wraps */
-  grpc_channel *GetWrappedChannel();
+  grpc_channel* GetWrappedChannel();
 
  private:
-  explicit Channel(grpc_channel *channel);
+  explicit Channel(grpc_channel* channel);
   ~Channel();
 
   // Prevent copying
-  Channel(const Channel &);
-  Channel &operator=(const Channel &);
+  Channel(const Channel&);
+  Channel& operator=(const Channel&);
 
   static NAN_METHOD(New);
   static NAN_METHOD(Close);
   static NAN_METHOD(GetTarget);
   static NAN_METHOD(GetConnectivityState);
   static NAN_METHOD(WatchConnectivityState);
-  static Nan::Callback *constructor;
+  static Nan::Callback* constructor;
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
-  grpc_channel *wrapped_channel;
+  grpc_channel* wrapped_channel;
 };
 
 }  // namespace node

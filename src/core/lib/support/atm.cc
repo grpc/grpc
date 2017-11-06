@@ -19,7 +19,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/useful.h>
 
-gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta,
+gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm* value, gpr_atm delta,
                                        gpr_atm min, gpr_atm max) {
   gpr_atm current_value;
   gpr_atm new_value;

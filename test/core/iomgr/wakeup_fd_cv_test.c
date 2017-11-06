@@ -32,7 +32,7 @@
 #include "src/core/lib/support/env.h"
 
 typedef struct poll_args {
-  struct pollfd *fds;
+  struct pollfd* fds;
   nfds_t nfds;
   int timeout;
   int result;
@@ -57,7 +57,7 @@ void reset_socket_event() {
 }
 
 // Mocks posix poll() function
-int mock_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
+int mock_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
   int res = 0;
   gpr_timespec poll_time;
   gpr_mu_lock(&poll_mu);
@@ -84,8 +84,8 @@ int mock_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   return res;
 }
 
-void background_poll(void *args) {
-  poll_args *pargs = (poll_args *)args;
+void background_poll(void* args) {
+  poll_args* pargs = (poll_args*)args;
   pargs->result = grpc_poll_function(pargs->fds, pargs->nfds, pargs->timeout);
 }
 
@@ -211,7 +211,7 @@ void test_poll_cv_trigger(void) {
   GPR_ASSERT(pfds[5].revents == 0);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   gpr_setenv("GRPC_POLL_STRATEGY", "poll-cv");
   grpc_poll_function = &mock_poll;
   gpr_mu_init(&poll_mu);
@@ -229,6 +229,6 @@ int main(int argc, char **argv) {
 
 #else /* GRPC_POSIX_SOCKET */
 
-int main(int argc, char **argv) { return 1; }
+int main(int argc, char** argv) { return 1; }
 
 #endif /* GRPC_POSIX_SOCKET */

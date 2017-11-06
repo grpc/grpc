@@ -19,10 +19,10 @@
 #include "test/core/util/parse_hexstring.h"
 #include <grpc/support/log.h>
 
-grpc_slice parse_hexstring(const char *hexstring) {
+grpc_slice parse_hexstring(const char* hexstring) {
   size_t nibbles = 0;
-  const char *p = 0;
-  uint8_t *out;
+  const char* p = 0;
+  uint8_t* out;
   uint8_t temp;
   grpc_slice slice;
 

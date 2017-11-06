@@ -31,7 +31,7 @@ void ParseJson(const grpc::string& json, const grpc::string& type,
 grpc::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
                            const grpc::string& type);
 
-}  // testing
-}  // grpc
+}  // namespace testing
+}  // namespace grpc
 
 #endif  // TEST_QPS_PARSE_JSON_H

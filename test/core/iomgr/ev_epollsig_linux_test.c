@@ -36,17 +36,17 @@
 #include "test/core/util/test_config.h"
 
 typedef struct test_pollset {
-  grpc_pollset *pollset;
-  gpr_mu *mu;
+  grpc_pollset* pollset;
+  gpr_mu* mu;
 } test_pollset;
 
 typedef struct test_fd {
   int inner_fd;
-  grpc_fd *fd;
+  grpc_fd* fd;
 } test_fd;
 
 /* num_fds should be an even number */
-static void test_fd_init(test_fd *tfds, int *fds, int num_fds) {
+static void test_fd_init(test_fd* tfds, int* fds, int num_fds) {
   int i;
   int r;
 
@@ -70,7 +70,7 @@ static void test_fd_init(test_fd *tfds, int *fds, int num_fds) {
   }
 }
 
-static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
+static void test_fd_cleanup(grpc_exec_ctx* exec_ctx, test_fd* tfds,
                             int num_fds) {
   int release_fd;
   int i;
@@ -89,7 +89,7 @@ static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
   }
 }
 
-static void test_pollset_init(test_pollset *pollsets, int num_pollsets) {
+static void test_pollset_init(test_pollset* pollsets, int num_pollsets) {
   int i;
   for (i = 0; i < num_pollsets; i++) {
     pollsets[i].pollset = gpr_zalloc(grpc_pollset_size());
@@ -97,13 +97,13 @@ static void test_pollset_init(test_pollset *pollsets, int num_pollsets) {
   }
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
-                            grpc_error *error) {
+static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* p,
+                            grpc_error* error) {
   grpc_pollset_destroy(exec_ctx, p);
 }
 
-static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
-                                 test_pollset *pollsets, int num_pollsets) {
+static void test_pollset_cleanup(grpc_exec_ctx* exec_ctx,
+                                 test_pollset* pollsets, int num_pollsets) {
   grpc_closure destroyed;
   int i;
 
@@ -117,16 +117,16 @@ static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
   }
 }
 
-/*
- * Cases to test:
- *  case 1) Polling islands of both fd and pollset are NULL
- *  case 2) Polling island of fd is NULL but that of pollset is not-NULL
- *  case 3) Polling island of fd is not-NULL but that of pollset is NULL
- *  case 4) Polling islands of both fd and pollset are not-NULL and:
- *     case 4.1) Polling islands of fd and pollset are equal
- *     case 4.2) Polling islands of fd and pollset are NOT-equal (This results
- *     in a merge)
- * */
+  /*
+   * Cases to test:
+   *  case 1) Polling islands of both fd and pollset are NULL
+   *  case 2) Polling island of fd is NULL but that of pollset is not-NULL
+   *  case 3) Polling island of fd is not-NULL but that of pollset is NULL
+   *  case 4) Polling islands of both fd and pollset are not-NULL and:
+   *     case 4.1) Polling islands of fd and pollset are equal
+   *     case 4.2) Polling islands of fd and pollset are NOT-equal (This results
+   *     in a merge)
+   * */
 
 #define NUM_FDS 8
 #define NUM_POLLSETS 4
@@ -136,7 +136,7 @@ static void test_add_fd_to_pollset() {
   test_fd tfds[NUM_FDS];
   int fds[NUM_FDS];
   test_pollset pollsets[NUM_POLLSETS];
-  void *expected_pi = NULL;
+  void* expected_pi = NULL;
   int i;
 
   test_fd_init(tfds, fds, NUM_FDS);
@@ -221,21 +221,21 @@ static void test_add_fd_to_pollset() {
 #undef NUM_POLLSETS
 
 typedef struct threading_shared {
-  gpr_mu *mu;
-  grpc_pollset *pollset;
-  grpc_wakeup_fd *wakeup_fd;
-  grpc_fd *wakeup_desc;
+  gpr_mu* mu;
+  grpc_pollset* pollset;
+  grpc_wakeup_fd* wakeup_fd;
+  grpc_fd* wakeup_desc;
   grpc_closure on_wakeup;
   int wakeups;
 } threading_shared;
 
 static __thread int thread_wakeups = 0;
 
-static void test_threading_loop(void *arg) {
-  threading_shared *shared = arg;
+static void test_threading_loop(void* arg) {
+  threading_shared* shared = arg;
   while (thread_wakeups < 1000000) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_pollset_worker *worker;
+    grpc_pollset_worker* worker;
     gpr_mu_lock(shared->mu);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(&exec_ctx, shared->pollset, &worker,
@@ -245,9 +245,9 @@ static void test_threading_loop(void *arg) {
   }
 }
 
-static void test_threading_wakeup(grpc_exec_ctx *exec_ctx, void *arg,
-                                  grpc_error *error) {
-  threading_shared *shared = arg;
+static void test_threading_wakeup(grpc_exec_ctx* exec_ctx, void* arg,
+                                  grpc_error* error) {
+  threading_shared* shared = arg;
   ++shared->wakeups;
   ++thread_wakeups;
   if (error == GRPC_ERROR_NONE) {
@@ -304,8 +304,8 @@ static void test_threading(void) {
   gpr_free(shared.pollset);
 }
 
-int main(int argc, char **argv) {
-  const char *poll_strategy = NULL;
+int main(int argc, char** argv) {
+  const char* poll_strategy = NULL;
   grpc_test_init(argc, argv);
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -325,6 +325,6 @@ int main(int argc, char **argv) {
   grpc_shutdown();
   return 0;
 }
-#else /* defined(GRPC_LINUX_EPOLL) */
-int main(int argc, char **argv) { return 0; }
+#else  /* defined(GRPC_LINUX_EPOLL) */
+int main(int argc, char** argv) { return 0; }
 #endif /* !defined(GRPC_LINUX_EPOLL) */

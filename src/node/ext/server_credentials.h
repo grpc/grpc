@@ -33,27 +33,27 @@ class ServerCredentials : public Nan::ObjectWrap {
   static void Init(v8::Local<v8::Object> exports);
   static bool HasInstance(v8::Local<v8::Value> val);
   /* Wrap a grpc_server_credentials struct in a javascript object */
-  static v8::Local<v8::Value> WrapStruct(grpc_server_credentials *credentials);
+  static v8::Local<v8::Value> WrapStruct(grpc_server_credentials* credentials);
 
   /* Returns the grpc_server_credentials struct that this object wraps */
-  grpc_server_credentials *GetWrappedServerCredentials();
+  grpc_server_credentials* GetWrappedServerCredentials();
 
  private:
-  explicit ServerCredentials(grpc_server_credentials *credentials);
+  explicit ServerCredentials(grpc_server_credentials* credentials);
   ~ServerCredentials();
 
   // Prevent copying
-  ServerCredentials(const ServerCredentials &);
-  ServerCredentials &operator=(const ServerCredentials &);
+  ServerCredentials(const ServerCredentials&);
+  ServerCredentials& operator=(const ServerCredentials&);
 
   static NAN_METHOD(New);
   static NAN_METHOD(CreateSsl);
   static NAN_METHOD(CreateInsecure);
-  static Nan::Callback *constructor;
+  static Nan::Callback* constructor;
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
-  grpc_server_credentials *wrapped_credentials;
+  grpc_server_credentials* wrapped_credentials;
 };
 
 }  // namespace node

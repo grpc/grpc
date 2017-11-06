@@ -44,19 +44,19 @@ static void create_sockets(SOCKET sv[2]) {
   memset(&addr, 0, sizeof(addr));
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_family = AF_INET;
-  GPR_ASSERT(bind(lst_sock, (struct sockaddr *)&addr, sizeof(addr)) !=
+  GPR_ASSERT(bind(lst_sock, (struct sockaddr*)&addr, sizeof(addr)) !=
              SOCKET_ERROR);
   GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
-  GPR_ASSERT(getsockname(lst_sock, (struct sockaddr *)&addr, &addr_len) !=
+  GPR_ASSERT(getsockname(lst_sock, (struct sockaddr*)&addr, &addr_len) !=
              SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                        WSA_FLAG_OVERLAPPED);
   GPR_ASSERT(cli_sock != INVALID_SOCKET);
 
-  GPR_ASSERT(WSAConnect(cli_sock, (struct sockaddr *)&addr, addr_len, NULL,
-                        NULL, NULL, NULL) == 0);
-  svr_sock = accept(lst_sock, (struct sockaddr *)&addr, &addr_len);
+  GPR_ASSERT(WSAConnect(cli_sock, (struct sockaddr*)&addr, addr_len, NULL, NULL,
+                        NULL, NULL) == 0);
+  svr_sock = accept(lst_sock, (struct sockaddr*)&addr, &addr_len);
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
   closesocket(lst_sock);
@@ -68,7 +68,7 @@ static void create_sockets(SOCKET sv[2]) {
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char *name, grpc_channel_args *channel_args) {
+    const char* name, grpc_channel_args* channel_args) {
   SOCKET sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);

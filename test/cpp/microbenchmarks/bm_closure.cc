@@ -100,9 +100,10 @@ static void BM_ClosureCreateAndRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (state.KeepRunning()) {
-    GRPC_CLOSURE_RUN(&exec_ctx, GRPC_CLOSURE_CREATE(DoNothing, NULL,
-                                                    grpc_schedule_on_exec_ctx),
-                     GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(
+        &exec_ctx,
+        GRPC_CLOSURE_CREATE(DoNothing, NULL, grpc_schedule_on_exec_ctx),
+        GRPC_ERROR_NONE);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);
@@ -114,9 +115,10 @@ static void BM_ClosureInitAndRun(benchmark::State& state) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure c;
   while (state.KeepRunning()) {
-    GRPC_CLOSURE_RUN(&exec_ctx, GRPC_CLOSURE_INIT(&c, DoNothing, NULL,
-                                                  grpc_schedule_on_exec_ctx),
-                     GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(
+        &exec_ctx,
+        GRPC_CLOSURE_INIT(&c, DoNothing, NULL, grpc_schedule_on_exec_ctx),
+        GRPC_ERROR_NONE);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);

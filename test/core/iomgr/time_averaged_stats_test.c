@@ -179,7 +179,7 @@ static void some_regress_some_persist_test(void) {
   EXPECT_DOUBLE_EQ(2.8304, tas.aggregate_total_weight);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   no_regress_no_persist_test_1();
   no_regress_no_persist_test_2();
