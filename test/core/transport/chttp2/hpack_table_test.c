@@ -31,13 +31,13 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
-static void assert_str(const grpc_chttp2_hptbl *tbl, grpc_slice mdstr,
-                       const char *str) {
+static void assert_str(const grpc_chttp2_hptbl* tbl, grpc_slice mdstr,
+                       const char* str) {
   GPR_ASSERT(grpc_slice_str_cmp(mdstr, str) == 0);
 }
 
-static void assert_index(const grpc_chttp2_hptbl *tbl, uint32_t idx,
-                         const char *key, const char *value) {
+static void assert_index(const grpc_chttp2_hptbl* tbl, uint32_t idx,
+                         const char* key, const char* value) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(tbl, idx);
   assert_str(tbl, GRPC_MDKEY(md), key);
   assert_str(tbl, GRPC_MDVALUE(md), value);
@@ -119,8 +119,8 @@ static void test_static_lookup(void) {
 static void test_many_additions(void) {
   grpc_chttp2_hptbl tbl;
   int i;
-  char *key;
-  char *value;
+  char* key;
+  char* value;
 
   LOG_TEST("test_many_additions");
 
@@ -152,9 +152,9 @@ static void test_many_additions(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl *tbl,
-                                                 const char *key,
-                                                 const char *value) {
+static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl* tbl,
+                                                 const char* key,
+                                                 const char* value) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem md =
       grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_copied_string(key),
@@ -274,7 +274,7 @@ static void test_find(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_static_lookup();

@@ -46,15 +46,15 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args *args) {}
+static void dont_log(gpr_log_func_args* args) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // global state
 
 static gpr_timespec g_now;
-static grpc_server *g_server;
-static grpc_channel *g_channel;
-static grpc_resource_quota *g_resource_quota;
+static grpc_server* g_server;
+static grpc_channel* g_channel;
+static grpc_resource_quota* g_resource_quota;
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
@@ -70,21 +70,21 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
 //               past the end (avoiding needing to check everywhere)
 
 typedef struct {
-  const uint8_t *cur;
-  const uint8_t *end;
+  const uint8_t* cur;
+  const uint8_t* end;
 } input_stream;
 
-static uint8_t next_byte(input_stream *inp) {
+static uint8_t next_byte(input_stream* inp) {
   if (inp->cur == inp->end) {
     return 0;
   }
   return *inp->cur++;
 }
 
-static void end(input_stream *inp) { inp->cur = inp->end; }
+static void end(input_stream* inp) { inp->cur = inp->end; }
 
-static char *read_string(input_stream *inp, bool *special) {
-  char *str = NULL;
+static char* read_string(input_stream* inp, bool* special) {
+  char* str = NULL;
   size_t cap = 0;
   size_t sz = 0;
   char c;
@@ -105,8 +105,8 @@ static char *read_string(input_stream *inp, bool *special) {
   return str;
 }
 
-static void read_buffer(input_stream *inp, char **buffer, size_t *length,
-                        bool *special) {
+static void read_buffer(input_stream* inp, char** buffer, size_t* length,
+                        bool* special) {
   *length = next_byte(inp);
   if (*length == 255) {
     if (special != NULL) *special = true;
@@ -126,16 +126,16 @@ static grpc_slice maybe_intern(grpc_slice s, bool intern) {
   return r;
 }
 
-static grpc_slice read_string_like_slice(input_stream *inp) {
+static grpc_slice read_string_like_slice(input_stream* inp) {
   bool special;
-  char *s = read_string(inp, &special);
+  char* s = read_string(inp, &special);
   grpc_slice r = maybe_intern(grpc_slice_from_copied_string(s), special);
   gpr_free(s);
   return r;
 }
 
-static grpc_slice read_buffer_like_slice(input_stream *inp) {
-  char *buffer;
+static grpc_slice read_buffer_like_slice(input_stream* inp) {
+  char* buffer;
   size_t length;
   bool special;
   read_buffer(inp, &buffer, &length, &special);
@@ -145,7 +145,7 @@ static grpc_slice read_buffer_like_slice(input_stream *inp) {
   return r;
 }
 
-static uint32_t read_uint22(input_stream *inp) {
+static uint32_t read_uint22(input_stream* inp) {
   uint8_t b = next_byte(inp);
   uint32_t x = b & 0x7f;
   if (b & 0x80) {
@@ -160,7 +160,7 @@ static uint32_t read_uint22(input_stream *inp) {
   return x;
 }
 
-static uint32_t read_uint32(input_stream *inp) {
+static uint32_t read_uint32(input_stream* inp) {
   uint8_t b = next_byte(inp);
   uint32_t x = b & 0x7f;
   if (b & 0x80) {
@@ -184,19 +184,19 @@ static uint32_t read_uint32(input_stream *inp) {
   return x;
 }
 
-static grpc_byte_buffer *read_message(input_stream *inp) {
+static grpc_byte_buffer* read_message(input_stream* inp) {
   grpc_slice slice = grpc_slice_malloc(read_uint22(inp));
   memset(GRPC_SLICE_START_PTR(slice), 0, GRPC_SLICE_LENGTH(slice));
-  grpc_byte_buffer *out = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_byte_buffer* out = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_slice_unref(slice);
   return out;
 }
 
-static int read_int(input_stream *inp) { return (int)read_uint32(inp); }
+static int read_int(input_stream* inp) { return (int)read_uint32(inp); }
 
-static grpc_channel_args *read_args(input_stream *inp) {
+static grpc_channel_args* read_args(input_stream* inp) {
   size_t n = next_byte(inp);
-  grpc_arg *args = gpr_malloc(sizeof(*args) * n);
+  grpc_arg* args = gpr_malloc(sizeof(*args) * n);
   for (size_t i = 0; i < n; i++) {
     switch (next_byte(inp)) {
       case 1:
@@ -222,7 +222,7 @@ static grpc_channel_args *read_args(input_stream *inp) {
         break;
     }
   }
-  grpc_channel_args *a = gpr_malloc(sizeof(*a));
+  grpc_channel_args* a = gpr_malloc(sizeof(*a));
   a->args = args;
   a->num_args = n;
   return a;
@@ -230,21 +230,21 @@ static grpc_channel_args *read_args(input_stream *inp) {
 
 typedef struct cred_artifact_ctx {
   int num_release;
-  char *release[3];
+  char* release[3];
 } cred_artifact_ctx;
 #define CRED_ARTIFACT_CTX_INIT \
   {                            \
     0, { 0 }                   \
   }
 
-static void cred_artifact_ctx_finish(cred_artifact_ctx *ctx) {
+static void cred_artifact_ctx_finish(cred_artifact_ctx* ctx) {
   for (int i = 0; i < ctx->num_release; i++) {
     gpr_free(ctx->release[i]);
   }
 }
 
-static const char *read_cred_artifact(cred_artifact_ctx *ctx, input_stream *inp,
-                                      const char **builtins,
+static const char* read_cred_artifact(cred_artifact_ctx* ctx, input_stream* inp,
+                                      const char** builtins,
                                       size_t num_builtins) {
   uint8_t b = next_byte(inp);
   if (b == 0) return NULL;
@@ -256,28 +256,28 @@ static const char *read_cred_artifact(cred_artifact_ctx *ctx, input_stream *inp,
   return builtins[b - 1];
 }
 
-static grpc_channel_credentials *read_ssl_channel_creds(input_stream *inp) {
+static grpc_channel_credentials* read_ssl_channel_creds(input_stream* inp) {
   cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
-  static const char *builtin_root_certs[] = {test_root_cert};
-  static const char *builtin_private_keys[] = {
+  static const char* builtin_root_certs[] = {test_root_cert};
+  static const char* builtin_private_keys[] = {
       test_server1_key, test_self_signed_client_key, test_signed_client_key};
-  static const char *builtin_cert_chains[] = {
+  static const char* builtin_cert_chains[] = {
       test_server1_cert, test_self_signed_client_cert, test_signed_client_cert};
-  const char *root_certs = read_cred_artifact(
+  const char* root_certs = read_cred_artifact(
       &ctx, inp, builtin_root_certs, GPR_ARRAY_SIZE(builtin_root_certs));
-  const char *private_key = read_cred_artifact(
+  const char* private_key = read_cred_artifact(
       &ctx, inp, builtin_private_keys, GPR_ARRAY_SIZE(builtin_private_keys));
-  const char *certs = read_cred_artifact(&ctx, inp, builtin_cert_chains,
+  const char* certs = read_cred_artifact(&ctx, inp, builtin_cert_chains,
                                          GPR_ARRAY_SIZE(builtin_cert_chains));
   grpc_ssl_pem_key_cert_pair key_cert_pair = {private_key, certs};
-  grpc_channel_credentials *creds = grpc_ssl_credentials_create(
+  grpc_channel_credentials* creds = grpc_ssl_credentials_create(
       root_certs, private_key != NULL && certs != NULL ? &key_cert_pair : NULL,
       NULL);
   cred_artifact_ctx_finish(&ctx);
   return creds;
 }
 
-static grpc_call_credentials *read_call_creds(input_stream *inp) {
+static grpc_call_credentials* read_call_creds(input_stream* inp) {
   switch (next_byte(inp)) {
     default:
       end(inp);
@@ -285,10 +285,10 @@ static grpc_call_credentials *read_call_creds(input_stream *inp) {
     case 0:
       return NULL;
     case 1: {
-      grpc_call_credentials *c1 = read_call_creds(inp);
-      grpc_call_credentials *c2 = read_call_creds(inp);
+      grpc_call_credentials* c1 = read_call_creds(inp);
+      grpc_call_credentials* c2 = read_call_creds(inp);
       if (c1 != NULL && c2 != NULL) {
-        grpc_call_credentials *out =
+        grpc_call_credentials* out =
             grpc_composite_call_credentials_create(c1, c2, NULL);
         grpc_call_credentials_release(c1);
         grpc_call_credentials_release(c2);
@@ -304,18 +304,19 @@ static grpc_call_credentials *read_call_creds(input_stream *inp) {
     }
     case 2: {
       cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
-      const char *access_token = read_cred_artifact(&ctx, inp, NULL, 0);
-      grpc_call_credentials *out =
-          access_token == NULL ? NULL : grpc_access_token_credentials_create(
-                                            access_token, NULL);
+      const char* access_token = read_cred_artifact(&ctx, inp, NULL, 0);
+      grpc_call_credentials* out =
+          access_token == NULL
+              ? NULL
+              : grpc_access_token_credentials_create(access_token, NULL);
       cred_artifact_ctx_finish(&ctx);
       return out;
     }
     case 3: {
       cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
-      const char *auth_token = read_cred_artifact(&ctx, inp, NULL, 0);
-      const char *auth_selector = read_cred_artifact(&ctx, inp, NULL, 0);
-      grpc_call_credentials *out = auth_token == NULL || auth_selector == NULL
+      const char* auth_token = read_cred_artifact(&ctx, inp, NULL, 0);
+      const char* auth_selector = read_cred_artifact(&ctx, inp, NULL, 0);
+      grpc_call_credentials* out = auth_token == NULL || auth_selector == NULL
                                        ? NULL
                                        : grpc_google_iam_credentials_create(
                                              auth_token, auth_selector, NULL);
@@ -326,16 +327,16 @@ static grpc_call_credentials *read_call_creds(input_stream *inp) {
   }
 }
 
-static grpc_channel_credentials *read_channel_creds(input_stream *inp) {
+static grpc_channel_credentials* read_channel_creds(input_stream* inp) {
   switch (next_byte(inp)) {
     case 0:
       return read_ssl_channel_creds(inp);
       break;
     case 1: {
-      grpc_channel_credentials *c1 = read_channel_creds(inp);
-      grpc_call_credentials *c2 = read_call_creds(inp);
+      grpc_channel_credentials* c1 = read_channel_creds(inp);
+      grpc_call_credentials* c2 = read_call_creds(inp);
       if (c1 != NULL && c2 != NULL) {
-        grpc_channel_credentials *out =
+        grpc_channel_credentials* out =
             grpc_composite_channel_credentials_create(c1, c2, NULL);
         grpc_channel_credentials_release(c1);
         grpc_call_credentials_release(c2);
@@ -358,32 +359,32 @@ static grpc_channel_credentials *read_channel_creds(input_stream *inp) {
   }
 }
 
-static bool is_eof(input_stream *inp) { return inp->cur == inp->end; }
+static bool is_eof(input_stream* inp) { return inp->cur == inp->end; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
 
 typedef struct addr_req {
   grpc_timer timer;
-  char *addr;
-  grpc_closure *on_done;
-  grpc_resolved_addresses **addrs;
-  grpc_lb_addresses **lb_addrs;
+  char* addr;
+  grpc_closure* on_done;
+  grpc_resolved_addresses** addrs;
+  grpc_lb_addresses** lb_addrs;
 } addr_req;
 
-static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
-                           grpc_error *error) {
-  addr_req *r = arg;
+static void finish_resolve(grpc_exec_ctx* exec_ctx, void* arg,
+                           grpc_error* error) {
+  addr_req* r = arg;
 
   if (error == GRPC_ERROR_NONE && 0 == strcmp(r->addr, "server")) {
     if (r->addrs != NULL) {
-      grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
+      grpc_resolved_addresses* addrs = gpr_malloc(sizeof(*addrs));
       addrs->naddrs = 1;
       addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
       addrs->addrs[0].len = 0;
       *r->addrs = addrs;
     } else if (r->lb_addrs != NULL) {
-      grpc_lb_addresses *lb_addrs = grpc_lb_addresses_create(1, NULL);
+      grpc_lb_addresses* lb_addrs = grpc_lb_addresses_create(1, NULL);
       grpc_lb_addresses_set_address(lb_addrs, 0, NULL, 0, NULL, NULL, NULL);
       *r->lb_addrs = lb_addrs;
     }
@@ -398,12 +399,12 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(r);
 }
 
-void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
-                        const char *default_port,
-                        grpc_pollset_set *interested_parties,
-                        grpc_closure *on_done,
-                        grpc_resolved_addresses **addresses) {
-  addr_req *r = gpr_malloc(sizeof(*r));
+void my_resolve_address(grpc_exec_ctx* exec_ctx, const char* addr,
+                        const char* default_port,
+                        grpc_pollset_set* interested_parties,
+                        grpc_closure* on_done,
+                        grpc_resolved_addresses** addresses) {
+  addr_req* r = gpr_malloc(sizeof(*r));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = addresses;
@@ -413,12 +414,12 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
 }
 
-grpc_ares_request *my_dns_lookup_ares(
-    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
-    const char *default_port, grpc_pollset_set *interested_parties,
-    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb,
-    char **service_config_json) {
-  addr_req *r = gpr_malloc(sizeof(*r));
+grpc_ares_request* my_dns_lookup_ares(
+    grpc_exec_ctx* exec_ctx, const char* dns_server, const char* addr,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    grpc_closure* on_done, grpc_lb_addresses** lb_addrs, bool check_grpclb,
+    char** service_config_json) {
+  addr_req* r = gpr_malloc(sizeof(*r));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = NULL;
@@ -434,32 +435,32 @@ grpc_ares_request *my_dns_lookup_ares(
 
 // defined in tcp_client_posix.c
 extern void (*grpc_tcp_client_connect_impl)(
-    grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
-    grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
-    const grpc_resolved_address *addr, gpr_timespec deadline);
+    grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    const grpc_resolved_address* addr, gpr_timespec deadline);
 
-static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                          grpc_endpoint **ep, gpr_timespec deadline);
+static void sched_connect(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
+                          grpc_endpoint** ep, gpr_timespec deadline);
 
 typedef struct {
   grpc_timer timer;
-  grpc_closure *closure;
-  grpc_endpoint **ep;
+  grpc_closure* closure;
+  grpc_endpoint** ep;
   gpr_timespec deadline;
 } future_connect;
 
-static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  future_connect *fc = arg;
+static void do_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+  future_connect* fc = arg;
   if (error != GRPC_ERROR_NONE) {
     *fc->ep = NULL;
     GRPC_CLOSURE_SCHED(exec_ctx, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != NULL) {
-    grpc_endpoint *client;
-    grpc_endpoint *server;
+    grpc_endpoint* client;
+    grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, g_resource_quota, NULL);
     *fc->ep = client;
 
-    grpc_transport *transport =
+    grpc_transport* transport =
         grpc_create_chttp2_transport(exec_ctx, NULL, server, 0);
     grpc_server_setup_transport(exec_ctx, g_server, transport, NULL, NULL);
     grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
@@ -471,16 +472,17 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   gpr_free(fc);
 }
 
-static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                          grpc_endpoint **ep, gpr_timespec deadline) {
+static void sched_connect(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
+                          grpc_endpoint** ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
-    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                              "Connect deadline exceeded"));
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, closure,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connect deadline exceeded"));
     return;
   }
 
-  future_connect *fc = gpr_malloc(sizeof(*fc));
+  future_connect* fc = gpr_malloc(sizeof(*fc));
   fc->closure = closure;
   fc->ep = ep;
   fc->deadline = deadline;
@@ -489,11 +491,11 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
-static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
-                                  grpc_closure *closure, grpc_endpoint **ep,
-                                  grpc_pollset_set *interested_parties,
-                                  const grpc_channel_args *channel_args,
-                                  const grpc_resolved_address *addr,
+static void my_tcp_client_connect(grpc_exec_ctx* exec_ctx,
+                                  grpc_closure* closure, grpc_endpoint** ep,
+                                  grpc_pollset_set* interested_parties,
+                                  const grpc_channel_args* channel_args,
+                                  const grpc_resolved_address* addr,
                                   gpr_timespec deadline) {
   sched_connect(exec_ctx, closure, ep, deadline);
 }
@@ -502,40 +504,40 @@ static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
 // test driver
 
 typedef struct validator {
-  void (*validate)(void *arg, bool success);
-  void *arg;
+  void (*validate)(void* arg, bool success);
+  void* arg;
 } validator;
 
-static validator *create_validator(void (*validate)(void *arg, bool success),
-                                   void *arg) {
-  validator *v = gpr_malloc(sizeof(*v));
+static validator* create_validator(void (*validate)(void* arg, bool success),
+                                   void* arg) {
+  validator* v = gpr_malloc(sizeof(*v));
   v->validate = validate;
   v->arg = arg;
   return v;
 }
 
-static void assert_success_and_decrement(void *counter, bool success) {
+static void assert_success_and_decrement(void* counter, bool success) {
   GPR_ASSERT(success);
-  --*(int *)counter;
+  --*(int*)counter;
 }
 
-static void decrement(void *counter, bool success) { --*(int *)counter; }
+static void decrement(void* counter, bool success) { --*(int*)counter; }
 
 typedef struct connectivity_watch {
-  int *counter;
+  int* counter;
   gpr_timespec deadline;
 } connectivity_watch;
 
-static connectivity_watch *make_connectivity_watch(gpr_timespec s,
-                                                   int *counter) {
-  connectivity_watch *o = gpr_malloc(sizeof(*o));
+static connectivity_watch* make_connectivity_watch(gpr_timespec s,
+                                                   int* counter) {
+  connectivity_watch* o = gpr_malloc(sizeof(*o));
   o->deadline = s;
   o->counter = counter;
   return o;
 }
 
-static void validate_connectivity_watch(void *p, bool success) {
-  connectivity_watch *w = p;
+static void validate_connectivity_watch(void* p, bool success) {
+  connectivity_watch* w = p;
   if (!success) {
     GPR_ASSERT(gpr_time_cmp(gpr_now(w->deadline.clock_type), w->deadline) >= 0);
   }
@@ -543,7 +545,7 @@ static void validate_connectivity_watch(void *p, bool success) {
   gpr_free(w);
 }
 
-static void free_non_null(void *p) {
+static void free_non_null(void* p) {
   GPR_ASSERT(p != NULL);
   gpr_free(p);
 }
@@ -554,8 +556,8 @@ typedef enum { ROOT, CLIENT, SERVER, PENDING_SERVER } call_state_type;
 
 typedef struct call_state {
   call_state_type type;
-  grpc_call *call;
-  grpc_byte_buffer *recv_message;
+  grpc_call* call;
+  grpc_byte_buffer* recv_message;
   grpc_status_code status;
   grpc_metadata_array recv_initial_metadata;
   grpc_metadata_array recv_trailing_metadata;
@@ -563,7 +565,7 @@ typedef struct call_state {
   int cancelled;
   int pending_ops;
   grpc_call_details call_details;
-  grpc_byte_buffer *send_message;
+  grpc_byte_buffer* send_message;
   // starts at 0, individual flags from DONE_FLAG_xxx are set
   // as different operations are completed
   uint64_t done_flags;
@@ -571,21 +573,21 @@ typedef struct call_state {
   // array of pointers to free later
   size_t num_to_free;
   size_t cap_to_free;
-  void **to_free;
+  void** to_free;
 
   // array of slices to unref
   size_t num_slices_to_unref;
   size_t cap_slices_to_unref;
-  grpc_slice **slices_to_unref;
+  grpc_slice** slices_to_unref;
 
-  struct call_state *next;
-  struct call_state *prev;
+  struct call_state* next;
+  struct call_state* prev;
 } call_state;
 
-static call_state *g_active_call;
+static call_state* g_active_call;
 
-static call_state *new_call(call_state *sibling, call_state_type type) {
-  call_state *c = gpr_malloc(sizeof(*c));
+static call_state* new_call(call_state* sibling, call_state_type type) {
+  call_state* c = gpr_malloc(sizeof(*c));
   memset(c, 0, sizeof(*c));
   if (sibling != NULL) {
     c->next = sibling;
@@ -598,8 +600,8 @@ static call_state *new_call(call_state *sibling, call_state_type type) {
   return c;
 }
 
-static call_state *maybe_delete_call_state(call_state *call) {
-  call_state *next = call->next;
+static call_state* maybe_delete_call_state(call_state* call) {
+  call_state* next = call->next;
 
   if (call->call != NULL) return next;
   if (call->pending_ops != 0) return next;
@@ -631,7 +633,7 @@ static call_state *maybe_delete_call_state(call_state *call) {
   return next;
 }
 
-static void add_to_free(call_state *call, void *p) {
+static void add_to_free(call_state* call, void* p) {
   if (call->num_to_free == call->cap_to_free) {
     call->cap_to_free = GPR_MAX(8, 2 * call->cap_to_free);
     call->to_free =
@@ -640,7 +642,7 @@ static void add_to_free(call_state *call, void *p) {
   call->to_free[call->num_to_free++] = p;
 }
 
-static grpc_slice *add_slice_to_unref(call_state *call, grpc_slice s) {
+static grpc_slice* add_slice_to_unref(call_state* call, grpc_slice s) {
   if (call->num_slices_to_unref == call->cap_slices_to_unref) {
     call->cap_slices_to_unref = GPR_MAX(8, 2 * call->cap_slices_to_unref);
     call->slices_to_unref =
@@ -653,8 +655,8 @@ static grpc_slice *add_slice_to_unref(call_state *call, grpc_slice s) {
   return call->slices_to_unref[call->num_slices_to_unref - 1];
 }
 
-static void read_metadata(input_stream *inp, size_t *count,
-                          grpc_metadata **metadata, call_state *cs) {
+static void read_metadata(input_stream* inp, size_t* count,
+                          grpc_metadata** metadata, call_state* cs) {
   *count = next_byte(inp);
   if (*count) {
     *metadata = gpr_malloc(*count * sizeof(**metadata));
@@ -672,14 +674,14 @@ static void read_metadata(input_stream *inp, size_t *count,
   add_to_free(cs, *metadata);
 }
 
-static call_state *destroy_call(call_state *call) {
+static call_state* destroy_call(call_state* call) {
   grpc_call_unref(call->call);
   call->call = NULL;
   return maybe_delete_call_state(call);
 }
 
-static void finished_request_call(void *csp, bool success) {
-  call_state *cs = csp;
+static void finished_request_call(void* csp, bool success) {
+  call_state* cs = csp;
   GPR_ASSERT(cs->pending_ops > 0);
   --cs->pending_ops;
   if (success) {
@@ -691,12 +693,12 @@ static void finished_request_call(void *csp, bool success) {
 }
 
 typedef struct {
-  call_state *cs;
+  call_state* cs;
   uint8_t has_ops;
 } batch_info;
 
-static void finished_batch(void *p, bool success) {
-  batch_info *bi = p;
+static void finished_batch(void* p, bool success) {
+  batch_info* bi = p;
   --bi->cs->pending_ops;
   if ((bi->has_ops & (1u << GRPC_OP_RECV_MESSAGE)) &&
       (bi->cs->done_flags & DONE_FLAG_CALL_CLOSED)) {
@@ -719,17 +721,17 @@ static void finished_batch(void *p, bool success) {
   gpr_free(bi);
 }
 
-static validator *make_finished_batch_validator(call_state *cs,
+static validator* make_finished_batch_validator(call_state* cs,
                                                 uint8_t has_ops) {
-  batch_info *bi = gpr_malloc(sizeof(*bi));
+  batch_info* bi = gpr_malloc(sizeof(*bi));
   bi->cs = cs;
   bi->has_ops = has_ops;
   return create_validator(finished_batch, bi);
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
-  char *grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
+  char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == NULL) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
   input_stream inp = {data, data + size};
@@ -756,7 +758,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   g_active_call = new_call(NULL, ROOT);
   g_resource_quota = grpc_resource_quota_create("api_fuzzer");
 
-  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
          pending_channel_watches > 0 || pending_pings > 0 ||
@@ -769,8 +771,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       if (g_server != NULL) {
         if (!server_shutdown) {
           grpc_server_shutdown_and_notify(
-              g_server, cq, create_validator(assert_success_and_decrement,
-                                             &pending_server_shutdowns));
+              g_server, cq,
+              create_validator(assert_success_and_decrement,
+                               &pending_server_shutdowns));
           server_shutdown = true;
           pending_server_shutdowns++;
         } else if (pending_server_shutdowns == 0) {
@@ -778,7 +781,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           g_server = NULL;
         }
       }
-      call_state *s = g_active_call;
+      call_state* s = g_active_call;
       do {
         if (s->type != PENDING_SERVER && s->call != NULL) {
           s = destroy_call(s);
@@ -803,7 +806,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
         switch (ev.type) {
           case GRPC_OP_COMPLETE: {
-            validator *v = ev.tag;
+            validator* v = ev.tag;
             v->validate(v->arg, ev.success);
             gpr_free(v);
             break;
@@ -825,10 +828,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // create an insecure channel
       case 2: {
         if (g_channel == NULL) {
-          char *target = read_string(&inp, NULL);
-          char *target_uri;
+          char* target = read_string(&inp, NULL);
+          char* target_uri;
           gpr_asprintf(&target_uri, "dns:%s", target);
-          grpc_channel_args *args = read_args(&inp);
+          grpc_channel_args* args = read_args(&inp);
           g_channel = grpc_insecure_channel_create(target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
           {
@@ -856,7 +859,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // bring up a server
       case 4: {
         if (g_server == NULL) {
-          grpc_channel_args *args = read_args(&inp);
+          grpc_channel_args* args = read_args(&inp);
           g_server = grpc_server_create(args, NULL);
           GPR_ASSERT(g_server != NULL);
           {
@@ -877,8 +880,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       case 5: {
         if (g_server != NULL) {
           grpc_server_shutdown_and_notify(
-              g_server, cq, create_validator(assert_success_and_decrement,
-                                             &pending_server_shutdowns));
+              g_server, cq,
+              create_validator(assert_success_and_decrement,
+                               &pending_server_shutdowns));
           pending_server_shutdowns++;
           server_shutdown = true;
         } else {
@@ -945,7 +949,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       case 10: {
         bool ok = true;
         if (g_channel == NULL) ok = false;
-        grpc_call *parent_call = NULL;
+        grpc_call* parent_call = NULL;
         if (g_active_call->type != ROOT) {
           if (g_active_call->call == NULL || g_active_call->type == CLIENT) {
             end(&inp);
@@ -964,7 +968,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                          gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
 
         if (ok) {
-          call_state *cs = new_call(g_active_call, CLIENT);
+          call_state* cs = new_call(g_active_call, CLIENT);
           cs->call =
               grpc_channel_create_call(g_channel, parent_call, propagation_mask,
                                        cq, method, &host, deadline, NULL);
@@ -992,11 +996,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           end(&inp);
           break;
         }
-        grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
+        grpc_op* ops = gpr_malloc(sizeof(grpc_op) * num_ops);
         if (num_ops > 0) memset(ops, 0, sizeof(grpc_op) * num_ops);
         bool ok = true;
         size_t i;
-        grpc_op *op;
+        grpc_op* op;
         uint8_t has_ops = 0;
         for (i = 0; i < num_ops; i++) {
           op = &ops[i];
@@ -1070,7 +1074,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           op->flags = read_uint32(&inp);
         }
         if (ok) {
-          validator *v = make_finished_batch_validator(g_active_call, has_ops);
+          validator* v = make_finished_batch_validator(g_active_call, has_ops);
           g_active_call->pending_ops++;
           grpc_call_error error =
               grpc_call_start_batch(g_active_call->call, ops, num_ops, v, NULL);
@@ -1129,14 +1133,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // enable a tracer
       case 17: {
-        char *tracer = read_string(&inp, NULL);
+        char* tracer = read_string(&inp, NULL);
         grpc_tracer_set_enabled(tracer, 1);
         gpr_free(tracer);
         break;
       }
       // disable a tracer
       case 18: {
-        char *tracer = read_string(&inp, NULL);
+        char* tracer = read_string(&inp, NULL);
         grpc_tracer_set_enabled(tracer, 0);
         gpr_free(tracer);
         break;
@@ -1147,9 +1151,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           end(&inp);
           break;
         }
-        call_state *cs = new_call(g_active_call, PENDING_SERVER);
+        call_state* cs = new_call(g_active_call, PENDING_SERVER);
         cs->pending_ops++;
-        validator *v = create_validator(finished_request_call, cs);
+        validator* v = create_validator(finished_request_call, cs);
         grpc_call_error error =
             grpc_server_request_call(g_server, &cs->call, &cs->call_details,
                                      &cs->recv_initial_metadata, cq, cq, v);
@@ -1178,11 +1182,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // create a secure channel
       case 22: {
         if (g_channel == NULL) {
-          char *target = read_string(&inp, NULL);
-          char *target_uri;
+          char* target = read_string(&inp, NULL);
+          char* target_uri;
           gpr_asprintf(&target_uri, "dns:%s", target);
-          grpc_channel_args *args = read_args(&inp);
-          grpc_channel_credentials *creds = read_channel_creds(&inp);
+          grpc_channel_args* args = read_args(&inp);
+          grpc_channel_credentials* creds = read_channel_creds(&inp);
           g_channel = grpc_secure_channel_create(creds, target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
           {

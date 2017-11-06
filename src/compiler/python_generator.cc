@@ -45,9 +45,9 @@ using std::make_pair;
 using std::map;
 using std::pair;
 using std::replace;
+using std::set;
 using std::tuple;
 using std::vector;
-using std::set;
 
 namespace grpc_python_generator {
 

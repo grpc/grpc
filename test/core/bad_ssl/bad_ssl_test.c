@@ -32,13 +32,13 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
-static void run_test(const char *target, size_t nops) {
-  grpc_channel_credentials *ssl_creds =
+static void run_test(const char* target, size_t nops) {
+  grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(NULL, NULL, NULL);
-  grpc_channel *channel;
-  grpc_call *c;
+  grpc_channel* channel;
+  grpc_call* c;
 
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -46,11 +46,11 @@ static void run_test(const char *target, size_t nops) {
   grpc_status_code status;
   grpc_call_error error;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
-  cq_verifier *cqv = cq_verifier_create(cq);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  cq_verifier* cqv = cq_verifier_create(cq);
 
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
 
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
@@ -111,18 +111,18 @@ static void run_test(const char *target, size_t nops) {
   grpc_channel_credentials_release(ssl_creds);
 }
 
-int main(int argc, char **argv) {
-  char *me = argv[0];
-  char *lslash = strrchr(me, '/');
-  char *lunder = strrchr(me, '_');
-  char *tmp;
+int main(int argc, char** argv) {
+  char* me = argv[0];
+  char* lslash = strrchr(me, '/');
+  char* lunder = strrchr(me, '_');
+  char* tmp;
   char root[1024];
   char test[64];
   int port = grpc_pick_unused_port_or_die();
-  char *args[10];
+  char* args[10];
   int status;
   size_t i;
-  gpr_subprocess *svr;
+  gpr_subprocess* svr;
   /* figure out where we are */
   if (lslash) {
     memcpy(root, me, (size_t)(lslash - me));
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
                gpr_subprocess_binary_extension());
   args[1] = "--bind";
   gpr_join_host_port(&args[2], "::", port);
-  svr = gpr_subprocess_create(4, (const char **)args);
+  svr = gpr_subprocess_create(4, (const char**)args);
   gpr_free(args[0]);
 
   for (i = 3; i <= 4; i++) {

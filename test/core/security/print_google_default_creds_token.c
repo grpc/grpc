@@ -33,7 +33,7 @@
 #include "src/core/lib/support/string.h"
 
 typedef struct {
-  gpr_mu *mu;
+  gpr_mu* mu;
   grpc_polling_entity pops;
   bool is_done;
 
@@ -41,13 +41,13 @@ typedef struct {
   grpc_closure on_request_metadata;
 } synchronizer;
 
-static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *arg,
-                                 grpc_error *error) {
-  synchronizer *sync = arg;
+static void on_metadata_response(grpc_exec_ctx* exec_ctx, void* arg,
+                                 grpc_error* error) {
+  synchronizer* sync = arg;
   if (error != GRPC_ERROR_NONE) {
     fprintf(stderr, "Fetching token failed: %s\n", grpc_error_string(error));
   } else {
-    char *token;
+    char* token;
     GPR_ASSERT(sync->md_array.size == 1);
     token = grpc_slice_to_c_string(GRPC_MDVALUE(sync->md_array.md[0]));
     printf("\nGot token: %s\n\n", token);
@@ -62,14 +62,14 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(sync->mu);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   int result = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   synchronizer sync;
-  grpc_channel_credentials *creds = NULL;
-  char *service_url = "https://test.foo.google.com/Foo";
+  grpc_channel_credentials* creds = NULL;
+  char* service_url = "https://test.foo.google.com/Foo";
   grpc_auth_metadata_context context;
-  gpr_cmdline *cl = gpr_cmdline_create("print_google_default_creds_token");
+  gpr_cmdline* cl = gpr_cmdline_create("print_google_default_creds_token");
   gpr_cmdline_add_string(cl, "service_url",
                          "Service URL for the token request.", &service_url);
   gpr_cmdline_parse(cl, argc, argv);
@@ -86,16 +86,16 @@ int main(int argc, char **argv) {
   }
 
   memset(&sync, 0, sizeof(sync));
-  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
+  grpc_pollset* pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &sync.mu);
   sync.pops = grpc_polling_entity_create_from_pollset(pollset);
   sync.is_done = false;
   GRPC_CLOSURE_INIT(&sync.on_request_metadata, on_metadata_response, &sync,
                     grpc_schedule_on_exec_ctx);
 
-  grpc_error *error = GRPC_ERROR_NONE;
+  grpc_error* error = GRPC_ERROR_NONE;
   if (grpc_call_credentials_get_request_metadata(
-          &exec_ctx, ((grpc_composite_channel_credentials *)creds)->call_creds,
+          &exec_ctx, ((grpc_composite_channel_credentials*)creds)->call_creds,
           &sync.pops, context, &sync.md_array, &sync.on_request_metadata,
           &error)) {
     // Synchronous response.  Invoke callback directly.
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
-    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_worker* worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(&exec_ctx,

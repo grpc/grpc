@@ -39,17 +39,17 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static grpc_completion_queue *cq;
-static grpc_server *server;
+static grpc_completion_queue* cq;
+static grpc_server* server;
 static grpc_op metadata_ops[2];
 static grpc_op snapshot_ops[5];
 static grpc_op status_op;
 static int got_sigint = 0;
-static grpc_byte_buffer *payload_buffer = NULL;
-static grpc_byte_buffer *terminal_buffer = NULL;
+static grpc_byte_buffer* payload_buffer = NULL;
+static grpc_byte_buffer* terminal_buffer = NULL;
 static int was_cancelled = 2;
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,
@@ -62,7 +62,7 @@ typedef enum {
 
 typedef struct {
   fling_server_tags state;
-  grpc_call *call;
+  grpc_call* call;
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
   grpc_metadata_array initial_metadata_send;
@@ -82,33 +82,33 @@ static void request_call_unary(int call_idx) {
       &calls[call_idx].request_metadata_recv, cq, cq, &calls[call_idx]);
 }
 
-static void send_initial_metadata_unary(void *tag) {
-  grpc_metadata_array_init(&(*(fling_call *)tag).initial_metadata_send);
+static void send_initial_metadata_unary(void* tag) {
+  grpc_metadata_array_init(&(*(fling_call*)tag).initial_metadata_send);
   metadata_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_ops[0].data.send_initial_metadata.count = 0;
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call *)tag).call,
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
                                                    metadata_ops, 1, tag, NULL));
 }
 
-static void send_status(void *tag) {
+static void send_status(void* tag) {
   status_op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   status_op.data.send_status_from_server.status = GRPC_STATUS_OK;
   status_op.data.send_status_from_server.trailing_metadata_count = 0;
   grpc_slice details = grpc_slice_from_static_string("");
   status_op.data.send_status_from_server.status_details = &details;
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call *)tag).call,
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
                                                    &status_op, 1, tag, NULL));
 }
 
-static void send_snapshot(void *tag, struct grpc_memory_counters *snapshot) {
-  grpc_op *op;
+static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
+  grpc_op* op;
 
   grpc_slice snapshot_slice =
       grpc_slice_new(snapshot, sizeof(*snapshot), gpr_free);
   payload_buffer = grpc_raw_byte_buffer_create(&snapshot_slice, 1);
-  grpc_metadata_array_init(&(*(fling_call *)tag).initial_metadata_send);
+  grpc_metadata_array_init(&(*(fling_call*)tag).initial_metadata_send);
 
   op = snapshot_ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -134,26 +134,26 @@ static void send_snapshot(void *tag, struct grpc_memory_counters *snapshot) {
   op++;
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch((*(fling_call *)tag).call, snapshot_ops,
+             grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
                                    (size_t)(op - snapshot_ops), tag, NULL));
 }
 /* We have some sort of deadlock, so let's not exit gracefully for now.
    When that is resolved, please remove the #include <unistd.h> above. */
 static void sigint_handler(int x) { _exit(0); }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_memory_counters_init();
   grpc_event ev;
-  char *addr_buf = NULL;
-  gpr_cmdline *cl;
-  grpc_completion_queue *shutdown_cq;
+  char* addr_buf = NULL;
+  gpr_cmdline* cl;
+  grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
   int shutdown_finished = 0;
 
   int secure = 0;
-  char *addr = NULL;
+  char* addr = NULL;
 
-  char *fake_argv[1];
+  char* fake_argv[1];
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
   if (secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
-    grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
+    grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         NULL, &pem_key_cert_pair, 1, 0, NULL);
     server = grpc_server_create(NULL, NULL);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
@@ -228,10 +228,11 @@ int main(int argc, char **argv) {
       shutdown_started = 1;
     }
     ev = grpc_completion_queue_next(
-        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(1000000, GPR_TIMESPAN)),
+        cq,
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_micros(1000000, GPR_TIMESPAN)),
         NULL);
-    fling_call *s = ev.tag;
+    fling_call* s = ev.tag;
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
         switch (s->state) {

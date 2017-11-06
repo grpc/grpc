@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port_server_client.h"
 
-static int *chosen_ports = NULL;
+static int* chosen_ports = NULL;
 static size_t num_chosen_ports = 0;
 
 static int free_chosen_port(int port) {
@@ -76,7 +76,7 @@ static void chose_port(int port) {
   }
   num_chosen_ports++;
   chosen_ports =
-      (int *)gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
+      (int*)gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
   chosen_ports[num_chosen_ports - 1] = port;
 }
 

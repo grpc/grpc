@@ -28,25 +28,27 @@
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 
-typedef struct { va_list args; } test_checker;
+typedef struct {
+  va_list args;
+} test_checker;
 
-static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem md) {
+static void onhdr(grpc_exec_ctx* exec_ctx, void* ud, grpc_mdelem md) {
   const char *ekey, *evalue;
-  test_checker *chk = ud;
-  ekey = va_arg(chk->args, char *);
+  test_checker* chk = ud;
+  ekey = va_arg(chk->args, char*);
   GPR_ASSERT(ekey);
-  evalue = va_arg(chk->args, char *);
+  evalue = va_arg(chk->args, char*);
   GPR_ASSERT(evalue);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(md), ekey) == 0);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md), evalue) == 0);
   GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 
-static void test_vector(grpc_chttp2_hpack_parser *parser,
-                        grpc_slice_split_mode mode, const char *hexstring,
+static void test_vector(grpc_chttp2_hpack_parser* parser,
+                        grpc_slice_split_mode mode, const char* hexstring,
                         ... /* char *key, char *value */) {
   grpc_slice input = parse_hexstring(hexstring);
-  grpc_slice *slices;
+  grpc_slice* slices;
   size_t nslices;
   size_t i;
   test_checker chk;
@@ -71,7 +73,7 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
   }
   gpr_free(slices);
 
-  GPR_ASSERT(NULL == va_arg(chk.args, char *));
+  GPR_ASSERT(NULL == va_arg(chk.args, char*));
 
   va_end(chk.args);
 }
@@ -206,7 +208,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_vectors(GRPC_SLICE_SPLIT_MERGE_ALL);

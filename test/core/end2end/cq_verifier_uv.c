@@ -36,51 +36,51 @@ typedef enum timer_state {
 /* the verifier itself */
 struct cq_verifier {
   /* bound completion queue */
-  grpc_completion_queue *cq;
+  grpc_completion_queue* cq;
   /* start of expectation list */
-  expectation *first_expectation;
+  expectation* first_expectation;
   uv_timer_t timer;
 };
 
-cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
-  cq_verifier *v = gpr_malloc(sizeof(cq_verifier));
+cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
+  cq_verifier* v = gpr_malloc(sizeof(cq_verifier));
   v->cq = cq;
   v->first_expectation = NULL;
   uv_timer_init(uv_default_loop(), &v->timer);
-  v->timer.data = (void *)TIMER_STARTED;
+  v->timer.data = (void*)TIMER_STARTED;
   return v;
 }
 
-static void timer_close_cb(uv_handle_t *handle) {
-  handle->data = (void *)TIMER_CLOSED;
+static void timer_close_cb(uv_handle_t* handle) {
+  handle->data = (void*)TIMER_CLOSED;
 }
 
-void cq_verifier_destroy(cq_verifier *v) {
+void cq_verifier_destroy(cq_verifier* v) {
   cq_verify(v);
-  uv_close((uv_handle_t *)&v->timer, timer_close_cb);
+  uv_close((uv_handle_t*)&v->timer, timer_close_cb);
   while ((timer_state)v->timer.data != TIMER_CLOSED) {
     uv_run(uv_default_loop(), UV_RUN_NOWAIT);
   }
   gpr_free(v);
 }
 
-expectation *cq_verifier_get_first_expectation(cq_verifier *v) {
+expectation* cq_verifier_get_first_expectation(cq_verifier* v) {
   return v->first_expectation;
 }
 
-void cq_verifier_set_first_expectation(cq_verifier *v, expectation *e) {
+void cq_verifier_set_first_expectation(cq_verifier* v, expectation* e) {
   v->first_expectation = e;
 }
 
-static void timer_run_cb(uv_timer_t *timer) {
-  timer->data = (void *)TIMER_TRIGGERED;
+static void timer_run_cb(uv_timer_t* timer) {
+  timer->data = (void*)TIMER_TRIGGERED;
 }
 
-grpc_event cq_verifier_next_event(cq_verifier *v, int timeout_seconds) {
+grpc_event cq_verifier_next_event(cq_verifier* v, int timeout_seconds) {
   uint64_t timeout_ms =
       timeout_seconds < 0 ? 0 : (uint64_t)timeout_seconds * 1000;
   grpc_event ev;
-  v->timer.data = (void *)TIMER_STARTED;
+  v->timer.data = (void*)TIMER_STARTED;
   uv_timer_start(&v->timer, timer_run_cb, timeout_ms, 0);
   ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC),
                                   NULL);

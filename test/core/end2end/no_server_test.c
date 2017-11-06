@@ -25,16 +25,16 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
-static void *tag(intptr_t i) { return (void *)i; }
+static void* tag(intptr_t i) { return (void*)i; }
 
-int main(int argc, char **argv) {
-  grpc_channel *chan;
-  grpc_call *call;
+int main(int argc, char** argv) {
+  grpc_channel* chan;
+  grpc_call* call;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
-  grpc_completion_queue *cq;
-  cq_verifier *cqv;
+  grpc_completion_queue* cq;
+  cq_verifier* cqv;
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_slice details;
