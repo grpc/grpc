@@ -27,13 +27,13 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
-static void *create_test_tag(void) {
+static void* create_test_tag(void) {
   static intptr_t i = 0;
-  return (void *)(++i);
+  return (void*)(++i);
 }
 
 /* helper for tests to shutdown correctly and tersely */
-static void shutdown_and_destroy(grpc_completion_queue *cc) {
+static void shutdown_and_destroy(grpc_completion_queue* cc) {
   grpc_event ev;
   grpc_completion_queue_shutdown(cc);
 
@@ -81,7 +81,7 @@ static void test_pollset_conversion(void) {
   grpc_cq_completion_type completion_types[] = {GRPC_CQ_NEXT, GRPC_CQ_PLUCK};
   grpc_cq_polling_type polling_types[] = {GRPC_CQ_DEFAULT_POLLING,
                                           GRPC_CQ_NON_LISTENING};
-  grpc_completion_queue *cq;
+  grpc_completion_queue* cq;
   grpc_completion_queue_attributes attr;
 
   LOG_TEST("test_pollset_conversion");
@@ -102,7 +102,7 @@ static void test_pollset_conversion(void) {
 static void test_wait_empty(void) {
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
-  grpc_completion_queue *cc;
+  grpc_completion_queue* cc;
   grpc_completion_queue_attributes attr;
   grpc_event event;
 
@@ -120,19 +120,19 @@ static void test_wait_empty(void) {
   }
 }
 
-static void do_nothing_end_completion(grpc_exec_ctx *exec_ctx, void *arg,
-                                      grpc_cq_completion *c) {}
+static void do_nothing_end_completion(grpc_exec_ctx* exec_ctx, void* arg,
+                                      grpc_cq_completion* c) {}
 
 static void test_cq_end_op(void) {
   grpc_event ev;
-  grpc_completion_queue *cc;
+  grpc_completion_queue* cc;
   grpc_cq_completion completion;
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
   grpc_completion_queue_attributes attr;
   grpc_exec_ctx init_exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_exec_ctx exec_ctx;
-  void *tag = create_test_tag();
+  void* tag = create_test_tag();
 
   LOG_TEST("test_cq_end_op");
 
@@ -160,15 +160,15 @@ static void test_cq_end_op(void) {
 
 static void test_cq_tls_cache_full(void) {
   grpc_event ev;
-  grpc_completion_queue *cc;
+  grpc_completion_queue* cc;
   grpc_cq_completion completion;
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
   grpc_completion_queue_attributes attr;
   grpc_exec_ctx init_exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_exec_ctx exec_ctx;
-  void *tag = create_test_tag();
-  void *res_tag;
+  void* tag = create_test_tag();
+  void* res_tag;
   int ok;
 
   LOG_TEST("test_cq_tls_cache_full");
@@ -203,13 +203,13 @@ static void test_cq_tls_cache_full(void) {
 }
 
 static void test_cq_tls_cache_empty(void) {
-  grpc_completion_queue *cc;
+  grpc_completion_queue* cc;
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
   grpc_completion_queue_attributes attr;
   grpc_exec_ctx init_exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_exec_ctx exec_ctx;
-  void *res_tag;
+  void* res_tag;
   int ok;
 
   LOG_TEST("test_cq_tls_cache_empty");
@@ -235,7 +235,7 @@ static void test_cq_tls_cache_empty(void) {
 static void test_shutdown_then_next_polling(void) {
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
-  grpc_completion_queue *cc;
+  grpc_completion_queue* cc;
   grpc_completion_queue_attributes attr;
   grpc_event event;
   LOG_TEST("test_shutdown_then_next_polling");
@@ -257,7 +257,7 @@ static void test_shutdown_then_next_polling(void) {
 static void test_shutdown_then_next_with_timeout(void) {
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
-  grpc_completion_queue *cc;
+  grpc_completion_queue* cc;
   grpc_completion_queue_attributes attr;
   grpc_event event;
   LOG_TEST("test_shutdown_then_next_with_timeout");
@@ -279,8 +279,8 @@ static void test_shutdown_then_next_with_timeout(void) {
 
 static void test_pluck(void) {
   grpc_event ev;
-  grpc_completion_queue *cc;
-  void *tags[128];
+  grpc_completion_queue* cc;
+  void* tags[128];
   grpc_cq_completion completions[GPR_ARRAY_SIZE(tags)];
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
@@ -339,7 +339,7 @@ static void test_pluck_after_shutdown(void) {
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
   grpc_event ev;
-  grpc_completion_queue *cc;
+  grpc_completion_queue* cc;
   grpc_completion_queue_attributes attr;
 
   LOG_TEST("test_pluck_after_shutdown");
@@ -359,11 +359,11 @@ static void test_pluck_after_shutdown(void) {
 }
 
 struct thread_state {
-  grpc_completion_queue *cc;
-  void *tag;
+  grpc_completion_queue* cc;
+  void* tag;
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_no_op();

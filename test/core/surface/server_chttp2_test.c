@@ -30,7 +30,7 @@
 
 void test_unparsable_target(void) {
   grpc_channel_args args = {0, NULL};
-  grpc_server *server = grpc_server_create(&args, NULL);
+  grpc_server* server = grpc_server_create(&args, NULL);
   int port = grpc_server_add_insecure_http2_port(server, "[");
   GPR_ASSERT(port == 0);
   grpc_server_destroy(server);
@@ -44,10 +44,10 @@ void test_add_same_port_twice() {
   grpc_channel_args args = {1, &a};
 
   int port = grpc_pick_unused_port_or_die();
-  char *addr = NULL;
-  grpc_completion_queue *cq = grpc_completion_queue_create_for_pluck(NULL);
-  grpc_server *server = grpc_server_create(&args, NULL);
-  grpc_server_credentials *fake_creds =
+  char* addr = NULL;
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(NULL);
+  grpc_server* server = grpc_server_create(&args, NULL);
+  grpc_server_credentials* fake_creds =
       grpc_fake_transport_security_server_credentials_create();
   gpr_join_host_port(&addr, "localhost", port);
   GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, fake_creds));
@@ -62,7 +62,7 @@ void test_add_same_port_twice() {
   grpc_completion_queue_destroy(cq);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_unparsable_target();

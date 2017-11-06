@@ -42,8 +42,8 @@
 #include "test/core/util/test_config.h"
 
 // use CHECK_STACK instead
-static int check_stack(const char *file, int line, const char *transport_name,
-                       grpc_channel_args *init_args,
+static int check_stack(const char* file, int line, const char* transport_name,
+                       grpc_channel_args* init_args,
                        unsigned channel_stack_type, ...);
 
 // arguments: const char *transport_name   - the name of the transport type to
@@ -55,7 +55,7 @@ static int check_stack(const char *file, int line, const char *transport_name,
 //                                 filters to instantiate, terminated with NULL
 #define CHECK_STACK(...) check_stack(__FILE__, __LINE__, __VA_ARGS__)
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   int errors = 0;
@@ -109,15 +109,15 @@ int main(int argc, char **argv) {
  * End of tests definitions, start of test infrastructure
  */
 
-static int check_stack(const char *file, int line, const char *transport_name,
-                       grpc_channel_args *init_args,
+static int check_stack(const char* file, int line, const char* transport_name,
+                       grpc_channel_args* init_args,
                        unsigned channel_stack_type, ...) {
   // create dummy channel stack
-  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
   grpc_transport_vtable fake_transport_vtable = {.name = transport_name};
   grpc_transport fake_transport = {.vtable = &fake_transport_vtable};
   grpc_channel_stack_builder_set_target(builder, "foo.test.google.fr");
-  grpc_channel_args *channel_args = grpc_channel_args_copy(init_args);
+  grpc_channel_args* channel_args = grpc_channel_args_copy(init_args);
   if (transport_name != NULL) {
     grpc_channel_stack_builder_set_transport(builder, &fake_transport);
   }
@@ -136,26 +136,26 @@ static int check_stack(const char *file, int line, const char *transport_name,
   va_list args;
   va_start(args, channel_stack_type);
   for (;;) {
-    char *a = va_arg(args, char *);
+    char* a = va_arg(args, char*);
     if (a == NULL) break;
     if (v.count != 0) gpr_strvec_add(&v, gpr_strdup(", "));
     gpr_strvec_add(&v, gpr_strdup(a));
   }
   va_end(args);
-  char *expect = gpr_strvec_flatten(&v, NULL);
+  char* expect = gpr_strvec_flatten(&v, NULL);
   gpr_strvec_destroy(&v);
 
   // build up our "got" list
   gpr_strvec_init(&v);
-  grpc_channel_stack_builder_iterator *it =
+  grpc_channel_stack_builder_iterator* it =
       grpc_channel_stack_builder_create_iterator_at_first(builder);
   while (grpc_channel_stack_builder_move_next(it)) {
-    const char *name = grpc_channel_stack_builder_iterator_filter_name(it);
+    const char* name = grpc_channel_stack_builder_iterator_filter_name(it);
     if (name == NULL) continue;
     if (v.count != 0) gpr_strvec_add(&v, gpr_strdup(", "));
     gpr_strvec_add(&v, gpr_strdup(name));
   }
-  char *got = gpr_strvec_flatten(&v, NULL);
+  char* got = gpr_strvec_flatten(&v, NULL);
   gpr_strvec_destroy(&v);
   grpc_channel_stack_builder_iterator_destroy(it);
 
@@ -170,7 +170,7 @@ static int check_stack(const char *file, int line, const char *transport_name,
       gpr_strvec_add(&v, gpr_strdup("="));
       switch (channel_args->args[i].type) {
         case GRPC_ARG_INTEGER: {
-          char *tmp;
+          char* tmp;
           gpr_asprintf(&tmp, "%d", channel_args->args[i].value.integer);
           gpr_strvec_add(&v, tmp);
           break;
@@ -179,7 +179,7 @@ static int check_stack(const char *file, int line, const char *transport_name,
           gpr_strvec_add(&v, gpr_strdup(channel_args->args[i].value.string));
           break;
         case GRPC_ARG_POINTER: {
-          char *tmp;
+          char* tmp;
           gpr_asprintf(&tmp, "%p", channel_args->args[i].value.pointer.p);
           gpr_strvec_add(&v, tmp);
           break;
@@ -187,15 +187,15 @@ static int check_stack(const char *file, int line, const char *transport_name,
       }
     }
     gpr_strvec_add(&v, gpr_strdup("}"));
-    char *args_str = gpr_strvec_flatten(&v, NULL);
+    char* args_str = gpr_strvec_flatten(&v, NULL);
     gpr_strvec_destroy(&v);
 
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR,
             "**************************************************");
-    gpr_log(file, line, GPR_LOG_SEVERITY_ERROR,
-            "FAILED transport=%s; stack_type=%s; channel_args=%s:",
-            transport_name, grpc_channel_stack_type_string(channel_stack_type),
-            args_str);
+    gpr_log(
+        file, line, GPR_LOG_SEVERITY_ERROR,
+        "FAILED transport=%s; stack_type=%s; channel_args=%s:", transport_name,
+        grpc_channel_stack_type_string(channel_stack_type), args_str);
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "EXPECTED: %s", expect);
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "GOT:      %s", got);
     result = 1;

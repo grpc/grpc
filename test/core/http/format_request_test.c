@@ -137,7 +137,7 @@ static void test_format_post_request_content_type_override(void) {
   grpc_slice_unref(slice);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
 
   test_format_get_request();

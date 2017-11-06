@@ -135,8 +135,9 @@ class TrickledCHTTP2 : public EndpointPairFixture {
             ? static_cast<grpc_chttp2_stream*>(server->stream_map.values[0])
             : nullptr;
     write_csv(
-        log_.get(), static_cast<double>(now.tv_sec) +
-                        1e-9 * static_cast<double>(now.tv_nsec),
+        log_.get(),
+        static_cast<double>(now.tv_sec) +
+            1e-9 * static_cast<double>(now.tv_nsec),
         iteration, grpc_trickle_get_backlog(endpoint_pair_.client),
         grpc_trickle_get_backlog(endpoint_pair_.server),
         client->lists[GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT].head != nullptr,
@@ -441,8 +442,8 @@ static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
   }
 }
 BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
-}
-}
+}  // namespace testing
+}  // namespace grpc
 
 extern "C" gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 

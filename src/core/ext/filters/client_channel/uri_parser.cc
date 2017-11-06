@@ -34,9 +34,9 @@
 /** a size_t default value... maps to all 1's */
 #define NOT_SET (~(size_t)0)
 
-static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
+static grpc_uri* bad_uri(const char* uri_text, size_t pos, const char* section,
                          bool suppress_errors) {
-  char *line_prefix;
+  char* line_prefix;
   size_t pfx_len;
 
   if (!suppress_errors) {
@@ -45,7 +45,7 @@ static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
     gpr_log(GPR_ERROR, "%s%s'", line_prefix, uri_text);
     gpr_free(line_prefix);
 
-    line_prefix = (char *)gpr_malloc(pfx_len + 1);
+    line_prefix = (char*)gpr_malloc(pfx_len + 1);
     memset(line_prefix, ' ', pfx_len);
     line_prefix[pfx_len] = 0;
     gpr_log(GPR_ERROR, "%s^ here", line_prefix);
@@ -56,13 +56,13 @@ static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
 }
 
 /** Returns a copy of percent decoded \a src[begin, end) */
-static char *decode_and_copy_component(grpc_exec_ctx *exec_ctx, const char *src,
+static char* decode_and_copy_component(grpc_exec_ctx* exec_ctx, const char* src,
                                        size_t begin, size_t end) {
   grpc_slice component =
       grpc_slice_from_copied_buffer(src + begin, end - begin);
   grpc_slice decoded_component =
       grpc_permissive_percent_decode_slice(component);
-  char *out = grpc_dump_slice(decoded_component, GPR_DUMP_ASCII);
+  char* out = grpc_dump_slice(decoded_component, GPR_DUMP_ASCII);
   grpc_slice_unref_internal(exec_ctx, component);
   grpc_slice_unref_internal(exec_ctx, decoded_component);
   return out;
@@ -76,7 +76,7 @@ static bool valid_hex(char c) {
 /** Returns how many chars to advance if \a uri_text[i] begins a valid \a pchar
  * production. If \a uri_text[i] introduces an invalid \a pchar (such as percent
  * sign not followed by two hex digits), NOT_SET is returned. */
-static size_t parse_pchar(const char *uri_text, size_t i) {
+static size_t parse_pchar(const char* uri_text, size_t i) {
   /* pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
    * unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
    * pct-encoded = "%" HEXDIG HEXDIG
@@ -118,7 +118,7 @@ static size_t parse_pchar(const char *uri_text, size_t i) {
 }
 
 /* *( pchar / "?" / "/" ) */
-static int parse_fragment_or_query(const char *uri_text, size_t *i) {
+static int parse_fragment_or_query(const char* uri_text, size_t* i) {
   char c;
   while ((c = uri_text[*i]) != 0) {
     const size_t advance = parse_pchar(uri_text, *i); /* pchar */
@@ -143,9 +143,9 @@ static int parse_fragment_or_query(const char *uri_text, size_t *i) {
   return 1;
 }
 
-static void parse_query_parts(grpc_uri *uri) {
-  static const char *QUERY_PARTS_SEPARATOR = "&";
-  static const char *QUERY_PARTS_VALUE_SEPARATOR = "=";
+static void parse_query_parts(grpc_uri* uri) {
+  static const char* QUERY_PARTS_SEPARATOR = "&";
+  static const char* QUERY_PARTS_VALUE_SEPARATOR = "=";
   GPR_ASSERT(uri->query != NULL);
   if (uri->query[0] == '\0') {
     uri->query_parts = NULL;
@@ -157,11 +157,11 @@ static void parse_query_parts(grpc_uri *uri) {
   gpr_string_split(uri->query, QUERY_PARTS_SEPARATOR, &uri->query_parts,
                    &uri->num_query_parts);
   uri->query_parts_values =
-      (char **)gpr_malloc(uri->num_query_parts * sizeof(char **));
+      (char**)gpr_malloc(uri->num_query_parts * sizeof(char**));
   for (size_t i = 0; i < uri->num_query_parts; i++) {
-    char **query_param_parts;
+    char** query_param_parts;
     size_t num_query_param_parts;
-    char *full = uri->query_parts[i];
+    char* full = uri->query_parts[i];
     gpr_string_split(full, QUERY_PARTS_VALUE_SEPARATOR, &query_param_parts,
                      &num_query_param_parts);
     GPR_ASSERT(num_query_param_parts > 0);
@@ -182,9 +182,9 @@ static void parse_query_parts(grpc_uri *uri) {
   }
 }
 
-grpc_uri *grpc_uri_parse(grpc_exec_ctx *exec_ctx, const char *uri_text,
+grpc_uri* grpc_uri_parse(grpc_exec_ctx* exec_ctx, const char* uri_text,
                          bool suppress_errors) {
-  grpc_uri *uri;
+  grpc_uri* uri;
   size_t scheme_begin = 0;
   size_t scheme_end = NOT_SET;
   size_t authority_begin = NOT_SET;
@@ -270,7 +270,7 @@ grpc_uri *grpc_uri_parse(grpc_exec_ctx *exec_ctx, const char *uri_text,
     fragment_end = i;
   }
 
-  uri = (grpc_uri *)gpr_zalloc(sizeof(*uri));
+  uri = (grpc_uri*)gpr_zalloc(sizeof(*uri));
   uri->scheme =
       decode_and_copy_component(exec_ctx, uri_text, scheme_begin, scheme_end);
   uri->authority = decode_and_copy_component(exec_ctx, uri_text,
@@ -286,7 +286,7 @@ grpc_uri *grpc_uri_parse(grpc_exec_ctx *exec_ctx, const char *uri_text,
   return uri;
 }
 
-const char *grpc_uri_get_query_arg(const grpc_uri *uri, const char *key) {
+const char* grpc_uri_get_query_arg(const grpc_uri* uri, const char* key) {
   GPR_ASSERT(key != NULL);
   if (key[0] == '\0') return NULL;
 
@@ -298,7 +298,7 @@ const char *grpc_uri_get_query_arg(const grpc_uri *uri, const char *key) {
   return NULL;
 }
 
-void grpc_uri_destroy(grpc_uri *uri) {
+void grpc_uri_destroy(grpc_uri* uri) {
   if (!uri) return;
   gpr_free(uri->scheme);
   gpr_free(uri->authority);

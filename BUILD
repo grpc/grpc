@@ -1545,7 +1545,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_config_proto",
     external_deps = [
-        "protobuf",
+        "protobuf_headers",
     ],
     language = "c++",
     public_hdrs = [

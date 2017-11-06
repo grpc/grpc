@@ -72,7 +72,7 @@ grpc_socket_mutator_vtable test_mutator_vtable = {
 TestSocketMutator::TestSocketMutator() {
   grpc_socket_mutator_init(this, &test_mutator_vtable);
 }
-}
+}  // namespace
 
 class ChannelArgumentsTest : public ::testing::Test {
  protected:

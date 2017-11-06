@@ -28,12 +28,12 @@
 
 #define PING_NUM 5
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
 static void test_ping(grpc_end2end_test_config config,
                       int min_time_between_pings_ms) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 

@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-grpc_error *grpc_set_tsi_error_result(grpc_error *error, tsi_result result);
+grpc_error* grpc_set_tsi_error_result(grpc_error* error, tsi_result result);
 
 #ifdef __cplusplus
 }

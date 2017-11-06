@@ -27,12 +27,12 @@
 bool squelch = true;
 bool leak_check = true;
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_http_parser parser;
   grpc_http_request request;
   memset(&request, 0, sizeof(request));
   grpc_http_parser_init(&parser, GRPC_HTTP_REQUEST, &request);
-  grpc_slice slice = grpc_slice_from_copied_buffer((const char *)data, size);
+  grpc_slice slice = grpc_slice_from_copied_buffer((const char*)data, size);
   GRPC_ERROR_UNREF(grpc_http_parser_parse(&parser, slice, NULL));
   GRPC_ERROR_UNREF(grpc_http_parser_eof(&parser));
   grpc_slice_unref(slice);
