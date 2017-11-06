@@ -113,6 +113,8 @@ static NSString * const kBearerPrefix = @"Bearer ";
 @synthesize state = _state;
 
 + (void)initialize {
+  // Guarantees the code in {} block is invoked only once. See ref at:
+  // https://developer.apple.com/documentation/objectivec/nsobject/1418639-initialize?language=objc
   if (self == [GRPCCall self]) {
     grpc_init();
     callFlags = [NSMutableDictionary dictionary];
