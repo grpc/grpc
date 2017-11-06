@@ -101,8 +101,6 @@ static received_status unpack_received_status(gpr_atm atm) {
   }
 }
 
-#define MAX_ERRORS_PER_BATCH 4
-
 typedef struct batch_control {
   grpc_call *call;
   /* Share memory for cq_completion and notify_tag as they are never needed
@@ -128,8 +126,7 @@ typedef struct batch_control {
   grpc_closure finish_batch;
   gpr_refcount steps_to_complete;
 
-  grpc_error *errors[MAX_ERRORS_PER_BATCH];
-  gpr_atm num_errors;
+  grpc_error *error;
 
   grpc_transport_stream_op_batch op;
 } batch_control;
@@ -1251,6 +1248,7 @@ static batch_control *allocate_batch_control(grpc_call *call,
   }
   memset(bctl, 0, sizeof(*bctl));
   bctl->call = call;
+  bctl->error = GRPC_ERROR_NONE;
   bctl->op.payload = &call->stream_op_payload;
   return bctl;
 }
@@ -1263,32 +1261,11 @@ static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
 }
 
-static grpc_error *consolidate_batch_errors(batch_control *bctl) {
-  size_t n = (size_t)gpr_atm_acq_load(&bctl->num_errors);
-  if (n == 0) {
-    return GRPC_ERROR_NONE;
-  } else if (n == 1) {
-    /* Skip creating a composite error in the case that only one error was
-       logged */
-    grpc_error *e = bctl->errors[0];
-    bctl->errors[0] = NULL;
-    return e;
-  } else {
-    grpc_error *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Call batch failed", bctl->errors, n);
-    for (size_t i = 0; i < n; i++) {
-      GRPC_ERROR_UNREF(bctl->errors[i]);
-      bctl->errors[i] = NULL;
-    }
-    return error;
-  }
-}
-
 static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                                   batch_control *bctl) {
   grpc_call *next_child_call;
   grpc_call *call = bctl->call;
-  grpc_error *error = consolidate_batch_errors(bctl);
+  grpc_error *error = bctl->error;
 
   if (bctl->op.send_initial_metadata) {
     grpc_metadata_batch_destroy(
@@ -1472,7 +1449,6 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
       grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
       call->receiving_stream = NULL;
     }
-    add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), true);
     cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
                       GRPC_ERROR_REF(error));
   }
@@ -1493,6 +1469,7 @@ static void receiving_stream_ready_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                     grpc_error *error) {
   batch_control *bctl = (batch_control *)bctlp;
   grpc_call *call = bctl->call;
+  add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), true);
   GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "recv_message_ready");
   receiving_stream_ready(exec_ctx, bctlp, error);
 }
@@ -1590,23 +1567,26 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
 static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
                             grpc_error *error, bool has_cancelled) {
   if (error == GRPC_ERROR_NONE) return;
-  int idx = (int)gpr_atm_full_fetch_add(&bctl->num_errors, 1);
-  if (idx == 0 && !has_cancelled) {
+  bool first = false;
+  if (bctl->error == GRPC_ERROR_NONE) {
+    bctl->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Call batch failed");
+    first = true;
+  }
+  bctl->error = grpc_error_add_child(bctl->error, error);
+  if (first && !has_cancelled) {
     cancel_with_error(exec_ctx, bctl->call, STATUS_FROM_CORE,
                       GRPC_ERROR_REF(error));
   }
-  bctl->errors[idx] = error;
 }
 
 static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
                                              void *bctlp, grpc_error *error) {
   batch_control *bctl = (batch_control *)bctlp;
   grpc_call *call = bctl->call;
-
+  add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), false);
   GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner,
                           "recv_initial_metadata_ready");
 
-  add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), false);
   if (error == GRPC_ERROR_NONE) {
     grpc_metadata_batch *md =
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
@@ -1657,8 +1637,8 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
                          grpc_error *error) {
   batch_control *bctl = (batch_control *)bctlp;
   grpc_call *call = bctl->call;
-  GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "on_complete");
   add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), false);
+  GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "on_complete");
   finish_batch_step(exec_ctx, bctl);
 }
 
