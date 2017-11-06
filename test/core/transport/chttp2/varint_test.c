@@ -24,7 +24,7 @@
 #include "test/core/util/test_config.h"
 
 static void test_varint(uint32_t value, uint32_t prefix_bits, uint8_t prefix_or,
-                        const char *expect_bytes, size_t expect_length) {
+                        const char* expect_bytes, size_t expect_length) {
   uint32_t nbytes = GRPC_CHTTP2_VARINT_LENGTH(value, prefix_bits);
   grpc_slice expect =
       grpc_slice_from_copied_buffer(expect_bytes, expect_length);
@@ -42,7 +42,7 @@ static void test_varint(uint32_t value, uint32_t prefix_bits, uint8_t prefix_or,
 #define TEST_VARINT(value, prefix_bits, prefix_or, expect) \
   test_varint(value, prefix_bits, prefix_or, expect, sizeof(expect) - 1)
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   TEST_VARINT(0, 1, 0, "\x00");
   TEST_VARINT(128, 1, 0, "\x7f\x01");

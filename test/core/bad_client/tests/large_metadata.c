@@ -93,14 +93,14 @@
   "\x10\x02te\x08trailers"                                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
-static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
-                            void *registered_method) {
+static void server_verifier(grpc_server* server, grpc_completion_queue* cq,
+                            void* registered_method) {
   grpc_call_error error;
-  grpc_call *s;
+  grpc_call* s;
   grpc_call_details call_details;
-  cq_verifier *cqv = cq_verifier_create(cq);
+  cq_verifier* cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
 
   grpc_call_details_init(&call_details);
@@ -121,13 +121,13 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
   cq_verifier_destroy(cqv);
 }
 
-static void server_verifier_sends_too_much_metadata(grpc_server *server,
-                                                    grpc_completion_queue *cq,
-                                                    void *registered_method) {
+static void server_verifier_sends_too_much_metadata(grpc_server* server,
+                                                    grpc_completion_queue* cq,
+                                                    void* registered_method) {
   grpc_call_error error;
-  grpc_call *s;
+  grpc_call* s;
   grpc_call_details call_details;
-  cq_verifier *cqv = cq_verifier_create(cq);
+  cq_verifier* cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
 
   grpc_call_details_init(&call_details);
@@ -167,10 +167,10 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   cq_verifier_destroy(cqv);
 }
 
-static bool client_validator(grpc_slice_buffer *incoming) {
+static bool client_validator(grpc_slice_buffer* incoming) {
   for (size_t i = 0; i < incoming->count; ++i) {
-    const char *s = (const char *)GRPC_SLICE_START_PTR(incoming->slices[i]);
-    char *hex = gpr_dump(s, GRPC_SLICE_LENGTH(incoming->slices[i]),
+    const char* s = (const char*)GRPC_SLICE_START_PTR(incoming->slices[i]);
+    char* hex = gpr_dump(s, GRPC_SLICE_LENGTH(incoming->slices[i]),
                          GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_INFO, "RESPONSE SLICE %" PRIdPTR ": %s", i, hex);
     gpr_free(hex);
@@ -183,7 +183,7 @@ static bool client_validator(grpc_slice_buffer *incoming) {
   GPR_ASSERT(last_frame_buffer.count == 1);
   grpc_slice last_frame = last_frame_buffer.slices[0];
 
-  const uint8_t *p = GRPC_SLICE_START_PTR(last_frame);
+  const uint8_t* p = GRPC_SLICE_START_PTR(last_frame);
   bool success =
       // Length == 4
       *p++ != 0 || *p++ != 0 || *p++ != 4 ||
@@ -204,7 +204,7 @@ static bool client_validator(grpc_slice_buffer *incoming) {
   return success;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   int i;
 
   grpc_test_init(argc, argv);
@@ -213,14 +213,14 @@ int main(int argc, char **argv) {
   gpr_strvec headers;
   gpr_strvec_init(&headers);
   for (i = 0; i < NUM_HEADERS; ++i) {
-    char *str;
+    char* str;
     gpr_asprintf(&str, "%s%02d%s",
                  PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,
                  PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR);
     gpr_strvec_add(&headers, str);
   }
   size_t headers_len;
-  const char *client_headers = gpr_strvec_flatten(&headers, &headers_len);
+  const char* client_headers = gpr_strvec_flatten(&headers, &headers_len);
   gpr_strvec_destroy(&headers);
   char client_payload[PFX_TOO_MUCH_METADATA_FROM_CLIENT_PAYLOAD_SIZE] =
       PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR;
@@ -229,7 +229,7 @@ int main(int argc, char **argv) {
       client_headers, headers_len);
   GRPC_RUN_BAD_CLIENT_TEST(server_verifier, client_validator, client_payload,
                            0);
-  gpr_free((void *)client_headers);
+  gpr_free((void*)client_headers);
 
   // Test sending more metadata than the client will accept.
   GRPC_RUN_BAD_CLIENT_TEST(server_verifier_sends_too_much_metadata,

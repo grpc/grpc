@@ -25,11 +25,11 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
-static void test_succeeds(const char *uri_text, const char *scheme,
-                          const char *authority, const char *path,
-                          const char *query, const char *fragment) {
+static void test_succeeds(const char* uri_text, const char* scheme,
+                          const char* authority, const char* path,
+                          const char* query, const char* fragment) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
+  grpc_uri* uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
   GPR_ASSERT(uri);
   GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
   GPR_ASSERT(0 == strcmp(authority, uri->authority));
@@ -40,7 +40,7 @@ static void test_succeeds(const char *uri_text, const char *scheme,
   grpc_uri_destroy(uri);
 }
 
-static void test_fails(const char *uri_text) {
+static void test_fails(const char* uri_text) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GPR_ASSERT(NULL == grpc_uri_parse(&exec_ctx, uri_text, 0));
   grpc_exec_ctx_finish(&exec_ctx);
@@ -49,8 +49,8 @@ static void test_fails(const char *uri_text) {
 static void test_query_parts() {
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    const char *uri_text = "http://foo/path?a&b=B&c=&#frag";
-    grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
+    const char* uri_text = "http://foo/path?a&b=B&c=&#frag";
+    grpc_uri* uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
     GPR_ASSERT(uri);
 
     GPR_ASSERT(0 == strcmp("http", uri->scheme));
@@ -83,8 +83,8 @@ static void test_query_parts() {
   {
     /* test the current behavior of multiple query part values */
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    const char *uri_text = "http://auth/path?foo=bar=baz&foobar==";
-    grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
+    const char* uri_text = "http://auth/path?foo=bar=baz&foobar==";
+    grpc_uri* uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
     GPR_ASSERT(uri);
 
     GPR_ASSERT(0 == strcmp("http", uri->scheme));
@@ -102,8 +102,8 @@ static void test_query_parts() {
   {
     /* empty query */
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    const char *uri_text = "http://foo/path";
-    grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
+    const char* uri_text = "http://foo/path";
+    grpc_uri* uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
     GPR_ASSERT(uri);
 
     GPR_ASSERT(0 == strcmp("http", uri->scheme));
@@ -119,7 +119,7 @@ static void test_query_parts() {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_succeeds("http://www.google.com", "http", "www.google.com", "", "", "");
   test_succeeds("dns:///foo", "dns", "", "/foo", "", "");

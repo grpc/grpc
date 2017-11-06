@@ -112,11 +112,9 @@ TEST_P(HistogramTest, IncHistogram) {
   };
   std::vector<int> test_values;
   for (int j = -1000;
-       j <
-       grpc_stats_histo_bucket_boundaries[kHistogram]
-                                         [grpc_stats_histo_buckets[kHistogram] -
-                                          1] +
-           1000;
+       j < grpc_stats_histo_bucket_boundaries
+                   [kHistogram][grpc_stats_histo_buckets[kHistogram] - 1] +
+               1000;
        j++) {
     int expected_bucket = FindExpectedBucket(kHistogram, j);
     if (cur_bucket != expected_bucket) {

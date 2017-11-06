@@ -34,11 +34,11 @@ extern "C" {
 typedef struct gpr_arena gpr_arena;
 
 // Create an arena, with \a initial_size bytes in the first allocated buffer
-gpr_arena *gpr_arena_create(size_t initial_size);
+gpr_arena* gpr_arena_create(size_t initial_size);
 // Allocate \a size bytes from the arena
-void *gpr_arena_alloc(gpr_arena *arena, size_t size);
+void* gpr_arena_alloc(gpr_arena* arena, size_t size);
 // Destroy an arena, returning the total number of bytes allocated
-size_t gpr_arena_destroy(gpr_arena *arena);
+size_t gpr_arena_destroy(gpr_arena* arena);
 
 #ifdef __cplusplus
 }

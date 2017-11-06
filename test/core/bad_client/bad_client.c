@@ -36,53 +36,53 @@
 #include "src/core/lib/surface/server.h"
 
 typedef struct {
-  grpc_server *server;
-  grpc_completion_queue *cq;
+  grpc_server* server;
+  grpc_completion_queue* cq;
   grpc_bad_client_server_side_validator validator;
-  void *registered_method;
+  void* registered_method;
   gpr_event done_thd;
   gpr_event done_write;
 } thd_args;
 
-static void thd_func(void *arg) {
-  thd_args *a = (thd_args *)arg;
+static void thd_func(void* arg) {
+  thd_args* a = (thd_args*)arg;
   a->validator(a->server, a->cq, a->registered_method);
-  gpr_event_set(&a->done_thd, (void *)1);
+  gpr_event_set(&a->done_thd, (void*)1);
 }
 
-static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  thd_args *a = (thd_args *)arg;
-  gpr_event_set(&a->done_write, (void *)1);
+static void done_write(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+  thd_args* a = (thd_args*)arg;
+  gpr_event_set(&a->done_write, (void*)1);
 }
 
-static void server_setup_transport(void *ts, grpc_transport *transport) {
-  thd_args *a = (thd_args *)ts;
+static void server_setup_transport(void* ts, grpc_transport* transport) {
+  thd_args* a = (thd_args*)ts;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_server_setup_transport(&exec_ctx, a->server, transport, NULL,
                               grpc_server_get_channel_args(a->server));
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void read_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  gpr_event *read_done = (gpr_event *)arg;
-  gpr_event_set(read_done, (void *)1);
+static void read_done(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+  gpr_event* read_done = (gpr_event*)arg;
+  gpr_event_set(read_done, (void*)1);
 }
 
 void grpc_run_bad_client_test(
     grpc_bad_client_server_side_validator server_validator,
     grpc_bad_client_client_stream_validator client_validator,
-    const char *client_payload, size_t client_payload_length, uint32_t flags) {
+    const char* client_payload, size_t client_payload_length, uint32_t flags) {
   grpc_endpoint_pair sfd;
   thd_args a;
   gpr_thd_id id;
-  char *hex;
-  grpc_transport *transport;
+  char* hex;
+  grpc_transport* transport;
   grpc_slice slice =
       grpc_slice_from_copied_buffer(client_payload, client_payload_length);
   grpc_slice_buffer outgoing;
   grpc_closure done_write_closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_completion_queue *shutdown_cq;
+  grpc_completion_queue* shutdown_cq;
 
   if (client_payload_length < 4 * 1024) {
     hex = gpr_dump(client_payload, client_payload_length,

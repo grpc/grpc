@@ -24,7 +24,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   int i;
   struct rlimit rlim;
   grpc_endpoint_pair p;
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
      of descriptors */
   rlim.rlim_cur = rlim.rlim_max = 10;
   GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
-  grpc_resource_quota *resource_quota =
+  grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("fd_conservation_posix_test");
 
   for (i = 0; i < 100; i++) {

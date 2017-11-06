@@ -34,7 +34,7 @@
 #define HTTP2_STATUS_TO_GRPC_STATUS(a, b) \
   GPR_ASSERT(grpc_http2_status_to_grpc_status(a) == (b))
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   int i;
 
   grpc_test_init(argc, argv);

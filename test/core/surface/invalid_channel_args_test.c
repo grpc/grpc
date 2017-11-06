@@ -24,10 +24,10 @@
 #include <grpc/support/string_util.h>
 #include "test/core/util/test_config.h"
 
-static char *g_last_log_error_message = NULL;
-static const char *g_file_name = "channel.cc";
+static char* g_last_log_error_message = NULL;
+static const char* g_file_name = "channel.cc";
 
-static int ends_with(const char *src, const char *suffix) {
+static int ends_with(const char* src, const char* suffix) {
   size_t src_len = strlen(src);
   size_t suffix_len = strlen(suffix);
   if (src_len < suffix_len) {
@@ -36,14 +36,14 @@ static int ends_with(const char *src, const char *suffix) {
   return strcmp(src + src_len - suffix_len, suffix) == 0;
 }
 
-static void log_error_sink(gpr_log_func_args *args) {
+static void log_error_sink(gpr_log_func_args* args) {
   if (args->severity == GPR_LOG_SEVERITY_ERROR &&
       ends_with(args->file, g_file_name)) {
     g_last_log_error_message = gpr_strdup(args->message);
   }
 }
 
-static void verify_last_error(const char *message) {
+static void verify_last_error(const char* message) {
   if (message == NULL) {
     GPR_ASSERT(g_last_log_error_message == NULL);
     return;
@@ -53,14 +53,14 @@ static void verify_last_error(const char *message) {
   g_last_log_error_message = NULL;
 }
 
-static char *compose_error_string(const char *key, const char *message) {
-  char *ret;
+static char* compose_error_string(const char* key, const char* message) {
+  char* ret;
   gpr_asprintf(&ret, "%s%s", key, message);
   return ret;
 }
 
-static void one_test(grpc_channel_args *args, char *expected_error_message) {
-  grpc_channel *chan =
+static void one_test(grpc_channel_args* args, char* expected_error_message) {
+  grpc_channel* chan =
       grpc_insecure_channel_create("nonexistant:54321", args, NULL);
   verify_last_error(expected_error_message);
   gpr_free(expected_error_message);
@@ -72,7 +72,7 @@ static void test_no_error_message(void) { one_test(NULL, NULL); }
 static void test_default_authority_type(void) {
   grpc_arg client_arg;
   grpc_channel_args client_args;
-  char *expected_error_message;
+  char* expected_error_message;
 
   client_arg.type = GRPC_ARG_INTEGER;
   client_arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
@@ -88,7 +88,7 @@ static void test_default_authority_type(void) {
 static void test_ssl_name_override_type(void) {
   grpc_arg client_arg;
   grpc_channel_args client_args;
-  char *expected_error_message;
+  char* expected_error_message;
 
   client_arg.type = GRPC_ARG_INTEGER;
   client_arg.key = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
@@ -104,7 +104,7 @@ static void test_ssl_name_override_type(void) {
 static void test_ssl_name_override_failed(void) {
   grpc_arg client_arg[2];
   grpc_channel_args client_args;
-  char *expected_error_message;
+  char* expected_error_message;
 
   client_arg[0].type = GRPC_ARG_STRING;
   client_arg[0].key = GRPC_ARG_DEFAULT_AUTHORITY;
@@ -121,7 +121,7 @@ static void test_ssl_name_override_failed(void) {
   one_test(&client_args, expected_error_message);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   gpr_set_log_function(log_error_sink);

@@ -59,7 +59,7 @@ static void test_repeatedly() {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test(1);
   test(2);

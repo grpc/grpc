@@ -34,16 +34,16 @@
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/surface/channel_init.h"
 
-static bool append_filter(grpc_exec_ctx *exec_ctx,
-                          grpc_channel_stack_builder *builder, void *arg) {
+static bool append_filter(grpc_exec_ctx* exec_ctx,
+                          grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter *)arg, NULL, NULL);
+      builder, (const grpc_channel_filter*)arg, NULL, NULL);
 }
 
-static bool set_default_host_if_unset(grpc_exec_ctx *exec_ctx,
-                                      grpc_channel_stack_builder *builder,
-                                      void *unused) {
-  const grpc_channel_args *args =
+static bool set_default_host_if_unset(grpc_exec_ctx* exec_ctx,
+                                      grpc_channel_stack_builder* builder,
+                                      void* unused) {
+  const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   for (size_t i = 0; i < args->num_args; i++) {
     if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY) ||
@@ -51,12 +51,12 @@ static bool set_default_host_if_unset(grpc_exec_ctx *exec_ctx,
       return true;
     }
   }
-  char *default_authority = grpc_get_default_authority(
+  char* default_authority = grpc_get_default_authority(
       exec_ctx, grpc_channel_stack_builder_get_target(builder));
   if (default_authority != NULL) {
     grpc_arg arg = grpc_channel_arg_string_create(
-        (char *)GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
-    grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+        (char*)GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
+    grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
     grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
                                                      new_args);
     gpr_free(default_authority);
@@ -76,7 +76,7 @@ extern "C" void grpc_client_channel_init(void) {
                                    set_default_host_if_unset, NULL);
   grpc_channel_init_register_stage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
-      (void *)&grpc_client_channel_filter);
+      (void*)&grpc_client_channel_filter);
   grpc_http_connect_register_handshaker_factory();
   grpc_register_tracer(&grpc_client_channel_trace);
 #ifndef NDEBUG
