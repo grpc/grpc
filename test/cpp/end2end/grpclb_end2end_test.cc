@@ -36,6 +36,7 @@
 extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/support/env.h"
 }
 
 #include "test/core/util/port.h"
@@ -74,9 +75,9 @@ extern "C" {
 
 using std::chrono::system_clock;
 
+using grpc::lb::v1::LoadBalancer;
 using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;
-using grpc::lb::v1::LoadBalancer;
 
 namespace grpc {
 namespace testing {
@@ -332,8 +333,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
         num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds),
-        kRequestMessage_("Live long and prosper.") {}
+            client_load_reporting_interval_seconds) {
+    // Make the backup poller poll very frequently in order to pick up
+    // updates from all the subchannels's FDs.
+    gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
+  }
 
   void SetUp() override {
     response_generator_ = grpc_fake_resolver_response_generator_create();
@@ -559,7 +563,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     std::unique_ptr<std::thread> thread_;
   };
 
-  const grpc::string kMessage_ = "Live long and prosper.";
   const grpc::string server_host_;
   const size_t num_backends_;
   const size_t num_balancers_;
@@ -571,7 +574,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   std::vector<ServerThread<BackendService>> backend_servers_;
   std::vector<ServerThread<BalancerService>> balancer_servers_;
   grpc_fake_resolver_response_generator* response_generator_;
-  const grpc::string kRequestMessage_;
+  const grpc::string kRequestMessage_ = "Live long and prosper.";
 };
 
 class SingleBalancerTest : public GrpclbEnd2endTest {
@@ -1086,7 +1089,7 @@ TEST_F(SingleBalancerTest, Drop) {
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                << " message=" << status.error_message();
-      EXPECT_EQ(response.message(), kMessage_);
+      EXPECT_EQ(response.message(), kRequestMessage_);
     }
   }
   EXPECT_EQ(kNumRpcsPerAddress * num_of_drop_addresses, num_drops);
@@ -1210,7 +1213,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                << " message=" << status.error_message();
-      EXPECT_EQ(response.message(), kMessage_);
+      EXPECT_EQ(response.message(), kRequestMessage_);
     }
   }
   EXPECT_EQ(kNumRpcsPerAddress * num_of_drop_addresses, num_drops);

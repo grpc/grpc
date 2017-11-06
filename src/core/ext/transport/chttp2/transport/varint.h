@@ -21,6 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Helpers for hpack varint encoding */
 
 /* length of a value that needs varint tail encoding (it's bigger than can be
@@ -56,5 +60,9 @@ void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
           (n)-GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits), (tgt) + 1, (length)-1); \
     }                                                                         \
   } while (0)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_VARINT_H */

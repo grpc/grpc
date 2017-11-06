@@ -101,6 +101,7 @@ static void grpc_rb_call_destroy(void *p) {
     return;
   }
   destroy_call((grpc_rb_call *)p);
+  xfree(p);
 }
 
 static size_t md_ary_datasize(const void *p) {
@@ -220,6 +221,7 @@ static VALUE grpc_rb_call_close(VALUE self) {
   TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
   if (call != NULL) {
     destroy_call(call);
+    xfree(RTYPEDDATA_DATA(self));
     RTYPEDDATA_DATA(self) = NULL;
   }
   return Qnil;

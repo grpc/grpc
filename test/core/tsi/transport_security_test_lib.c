@@ -350,25 +350,28 @@ static void do_handshaker_next(handshaker_args *args) {
   tsi_handshaker_result *handshaker_result = NULL;
   unsigned char *bytes_to_send = NULL;
   size_t bytes_to_send_size = 0;
+  tsi_result result = TSI_OK;
   /* Receive data from peer, if available. */
-  size_t buf_size = args->handshake_buffer_size;
-  receive_bytes_from_peer(args->fixture, &args->handshake_buffer, &buf_size,
-                          args->is_client);
-  if (buf_size > 0) {
-    args->transferred_data = true;
-  }
-  /* Peform handshaker next. */
-  tsi_result result = tsi_handshaker_next(
-      handshaker, args->handshake_buffer, buf_size,
-      (const unsigned char **)&bytes_to_send, &bytes_to_send_size,
-      &handshaker_result, &on_handshake_next_done_wrapper, args);
-  if (result != TSI_ASYNC) {
-    args->error = on_handshake_next_done(result, args, bytes_to_send,
-                                         bytes_to_send_size, handshaker_result);
-    if (args->error != GRPC_ERROR_NONE) {
-      return;
+  do {
+    size_t buf_size = args->handshake_buffer_size;
+    receive_bytes_from_peer(args->fixture, &args->handshake_buffer, &buf_size,
+                            args->is_client);
+    if (buf_size > 0) {
+      args->transferred_data = true;
     }
-  }
+    /* Peform handshaker next. */
+    result = tsi_handshaker_next(handshaker, args->handshake_buffer, buf_size,
+                                 (const unsigned char **)&bytes_to_send,
+                                 &bytes_to_send_size, &handshaker_result,
+                                 &on_handshake_next_done_wrapper, args);
+    if (result != TSI_ASYNC) {
+      args->error = on_handshake_next_done(
+          result, args, bytes_to_send, bytes_to_send_size, handshaker_result);
+      if (args->error != GRPC_ERROR_NONE) {
+        return;
+      }
+    }
+  } while (result == TSI_INCOMPLETE_DATA);
   notification_wait(fixture);
 }
 

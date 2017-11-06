@@ -25,6 +25,8 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
 
 tools/run_tests/start_port_server.py
+tools/jenkins/run_c_cpp_test.sh tools/profiling/bloat/bloat_diff.py \
+  -d origin/$ghprbTargetBranch || FAILED="true"
 tools/jenkins/run_c_cpp_test.sh tools/profiling/microbenchmarks/bm_diff/bm_main.py \
   -d origin/$ghprbTargetBranch \
   -b $BENCHMARKS_TO_RUN || FAILED="true"

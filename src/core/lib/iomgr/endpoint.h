@@ -26,6 +26,10 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* An endpoint caps a streaming channel between two communicating processes.
    Examples may be: a tcp socket, <stdin+stdout>, or some shared memory. */
 
@@ -41,6 +45,8 @@ struct grpc_endpoint_vtable {
                          grpc_pollset *pollset);
   void (*add_to_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                              grpc_pollset_set *pollset);
+  void (*delete_from_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                                  grpc_pollset_set *pollset);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep, grpc_error *why);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
   grpc_resource_user *(*get_resource_user)(grpc_endpoint *ep);
@@ -81,18 +87,27 @@ void grpc_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                             grpc_error *why);
 void grpc_endpoint_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
 
-/* Add an endpoint to a pollset, so that when the pollset is polled, events from
-   this endpoint are considered */
+/* Add an endpoint to a pollset or pollset_set, so that when the pollset is
+   polled, events from this endpoint are considered */
 void grpc_endpoint_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset *pollset);
 void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
                                       grpc_endpoint *ep,
                                       grpc_pollset_set *pollset_set);
 
+/* Delete an endpoint from a pollset_set */
+void grpc_endpoint_delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
+                                           grpc_endpoint *ep,
+                                           grpc_pollset_set *pollset_set);
+
 grpc_resource_user *grpc_endpoint_get_resource_user(grpc_endpoint *endpoint);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_H */

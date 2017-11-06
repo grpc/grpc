@@ -102,8 +102,13 @@ struct grpc_mdelem {
   ((grpc_mdelem_data *)((md).payload & ~(uintptr_t)3))
 #define GRPC_MDELEM_STORAGE(md) \
   ((grpc_mdelem_data_storage)((md).payload & (uintptr_t)3))
+#ifdef __cplusplus
+#define GRPC_MAKE_MDELEM(data, storage) \
+  (grpc_mdelem{((uintptr_t)(data)) | ((uintptr_t)storage)})
+#else
 #define GRPC_MAKE_MDELEM(data, storage) \
   ((grpc_mdelem){((uintptr_t)(data)) | ((uintptr_t)storage)})
+#endif
 #define GRPC_MDELEM_IS_INTERNED(md)          \
   ((grpc_mdelem_data_storage)((md).payload & \
                               (uintptr_t)GRPC_MDELEM_STORAGE_INTERNED_BIT))
@@ -127,7 +132,8 @@ grpc_mdelem grpc_mdelem_create(
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
 
-size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem);
+size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem,
+                                           bool use_true_binary_metadata);
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */

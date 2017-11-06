@@ -16,13 +16,8 @@
 source ~/.rvm/scripts/rvm
 set -ex
 
-repo=$(dirname $0)/../../..
+cd $(dirname $0)/../../..
 
-# First set up all dependences needed for PHP QPS test
-cd $repo
-cd src/php/tests/qps
-composer install
 # The proxy worker for PHP is implemented in Ruby
-cd ../../../..
 ruby src/ruby/qps/proxy-worker.rb $@
 

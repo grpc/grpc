@@ -48,6 +48,14 @@ else
   echo "WARNING: grpc-go not found, it won't be mounted to the docker container."
 fi
 
+echo "GRPC_NODE_ROOT: ${GRPC_NODE_ROOT:=$(cd ../grpc-node && pwd)}"
+if [ -n "$GRPC_NODE_ROOT" ]
+then
+  MOUNT_ARGS+=" -v $GRPC_NODE_ROOT:/var/local/jenkins/grpc-node:ro"
+else
+  echo "WARNING: grpc-node not found, it won't be mounted to the docker container."
+fi
+
 mkdir -p /tmp/ccache
 
 # Mount service account dir if available.
@@ -70,7 +78,7 @@ fi
 if [ "$DOCKERHUB_ORGANIZATION" != "" ]
 then
   BASE_IMAGE=$DOCKERHUB_ORGANIZATION/$BASE_IMAGE
-  docker pull $BASE_IMAGE
+  time docker pull $BASE_IMAGE
 else
   # Make sure docker image has been built. Should be instantaneous if so.
   docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/interoptest/$BASE_NAME || exit $?

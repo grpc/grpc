@@ -32,9 +32,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_debugger_macros",
+    srcs = [
+        "debugger_macros.cc",
+    ],
+    hdrs = [
+        "debugger_macros.h",
+    ],
+    deps = [
+        ":gpr_test_util",
+        "//:grpc_common",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
-        "debugger_macros.c",
         "grpc_profiler.c",
         "mock_endpoint.c",
         "parse_hexstring.c",
@@ -48,7 +61,6 @@ grpc_cc_library(
         "trickle_endpoint.c",
     ],
     hdrs = [
-        "debugger_macros.h",
         "grpc_profiler.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
@@ -67,6 +79,7 @@ grpc_cc_library(
     deps = [
         ":gpr_test_util",
         "//:grpc_common",
+        ":grpc_debugger_macros"
     ],
 )
 
@@ -93,11 +106,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "one_corpus_entry_fuzzer",
-    srcs = ["one_corpus_entry_fuzzer.c"],
+    name = "fuzzer_corpus_test",
+    srcs = ["fuzzer_corpus_test.cc"],
     deps = [
         ":gpr_test_util",
         "//:grpc",
+    ],
+    external_deps = [
+        "gtest",
+        "gflags",
     ],
 )
 

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.7.0-dev
+PROJECT_NUMBER         = 1.8.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -933,6 +933,7 @@ include/grpc/support/tls_pthread.h \
 include/grpc/support/useful.h \
 include/grpc/support/workaround_list.h \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/lib/backoff/backoff.h \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.h \
@@ -952,6 +953,7 @@ src/core/lib/debug/trace.h \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.h \
 src/core/lib/http/parser.h \
+src/core/lib/iomgr/block_annotate.h \
 src/core/lib/iomgr/call_combiner.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.h \
@@ -1028,9 +1030,8 @@ src/core/lib/support/arena.h \
 src/core/lib/support/atomic.h \
 src/core/lib/support/atomic_with_atm.h \
 src/core/lib/support/atomic_with_std.h \
-src/core/lib/support/backoff.h \
-src/core/lib/support/block_annotate.h \
 src/core/lib/support/env.h \
+src/core/lib/support/manual_constructor.h \
 src/core/lib/support/memory.h \
 src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.h \
@@ -1040,6 +1041,7 @@ src/core/lib/support/string.h \
 src/core/lib/support/string_windows.h \
 src/core/lib/support/time_precise.h \
 src/core/lib/support/tmpfile.h \
+src/core/lib/support/vector.h \
 src/core/lib/surface/alarm_internal.h \
 src/core/lib/surface/api_trace.h \
 src/core/lib/surface/call.h \

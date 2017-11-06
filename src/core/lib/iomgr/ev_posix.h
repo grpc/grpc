@@ -27,6 +27,10 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
 
 typedef struct grpc_fd grpc_fd;
@@ -52,8 +56,8 @@ typedef struct grpc_event_engine_vtable {
                            grpc_closure *closure);
   void (*pollset_destroy)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
   grpc_error *(*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                              grpc_pollset_worker **worker, gpr_timespec now,
-                              gpr_timespec deadline);
+                              grpc_pollset_worker **worker,
+                              grpc_millis deadline);
   grpc_error *(*pollset_kick)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker);
   void (*pollset_add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -157,5 +161,9 @@ extern grpc_poll_function_type grpc_poll_function;
  * ONLY */
 void grpc_set_event_engine_test_only(const grpc_event_engine_vtable *);
 const grpc_event_engine_vtable *grpc_get_event_engine_test_only();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

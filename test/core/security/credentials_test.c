@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/slice.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -35,6 +37,7 @@
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
@@ -194,14 +197,13 @@ static void test_add_abunch_to_md_array(void) {
 static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &exec_ctx, &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_OK);
-  GPR_ASSERT(token_lifetime.tv_sec == 3599);
-  GPR_ASSERT(token_lifetime.tv_nsec == 0);
+  GPR_ASSERT(token_lifetime == 3599 * GPR_MS_PER_SEC);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(token_md), "authorization") == 0);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(token_md),
                                 "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
@@ -214,7 +216,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
 static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(401, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -227,7 +229,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
 static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response = http_response(200, "");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &exec_ctx, &response, &token_md, &token_lifetime) ==
@@ -239,7 +241,7 @@ static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
 static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -255,7 +257,7 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
 static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response = http_response(200,
                                                  "{"
                                                  " \"expires_in\":3599, "
@@ -270,7 +272,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -287,7 +289,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
     void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem token_md = GRPC_MDNULL;
-  gpr_timespec token_lifetime;
+  grpc_millis token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -555,7 +557,7 @@ static void validate_compute_engine_http_request(
 
 static int compute_engine_httpcli_get_success_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(200, valid_oauth2_json_response);
@@ -565,7 +567,7 @@ static int compute_engine_httpcli_get_success_override(
 
 static int compute_engine_httpcli_get_failure_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
   *response = http_response(403, "Not Authorized.");
@@ -575,7 +577,7 @@ static int compute_engine_httpcli_get_failure_override(
 
 static int httpcli_post_should_not_be_called(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body_bytes, size_t body_size, gpr_timespec deadline,
+    const char *body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure *on_done, grpc_httpcli_response *response) {
   GPR_ASSERT("HTTP POST should not be called" == NULL);
   return 1;
@@ -583,7 +585,7 @@ static int httpcli_post_should_not_be_called(
 
 static int httpcli_get_should_not_be_called(grpc_exec_ctx *exec_ctx,
                                             const grpc_httpcli_request *request,
-                                            gpr_timespec deadline,
+                                            grpc_millis deadline,
                                             grpc_closure *on_done,
                                             grpc_httpcli_response *response) {
   GPR_ASSERT("HTTP GET should not be called" == NULL);
@@ -663,7 +665,7 @@ static void validate_refresh_token_http_request(
 
 static int refresh_token_httpcli_post_success(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body, size_t body_size, gpr_timespec deadline,
+    const char *body, size_t body_size, grpc_millis deadline,
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(200, valid_oauth2_json_response);
@@ -673,7 +675,7 @@ static int refresh_token_httpcli_post_success(
 
 static int refresh_token_httpcli_post_failure(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    const char *body, size_t body_size, gpr_timespec deadline,
+    const char *body, size_t body_size, grpc_millis deadline,
     grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(403, "Not Authorized.");
@@ -932,7 +934,7 @@ static void test_google_default_creds_refresh_token(void) {
 
 static int default_creds_gce_detection_httpcli_get_success_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   *response = http_response(200, "");
   grpc_http_header *headers = gpr_malloc(sizeof(*headers) * 1);
@@ -996,7 +998,7 @@ static void test_google_default_creds_gce(void) {
 
 static int default_creds_gce_detection_httpcli_get_failure_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_millis deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   /* No magic header. */
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
@@ -1179,6 +1181,77 @@ static void test_channel_creds_duplicate_without_call_creds(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+typedef struct {
+  const char *url_scheme;
+  const char *call_host;
+  const char *call_method;
+  const char *desired_service_url;
+  const char *desired_method_name;
+} auth_metadata_context_test_case;
+
+static void test_auth_metadata_context(void) {
+  auth_metadata_context_test_case test_cases[] = {
+      // No service nor method.
+      {"https", "www.foo.com", "", "https://www.foo.com", ""},
+      // No method.
+      {"https", "www.foo.com", "/Service", "https://www.foo.com/Service", ""},
+      // Empty service and method.
+      {"https", "www.foo.com", "//", "https://www.foo.com/", ""},
+      // Empty method.
+      {"https", "www.foo.com", "/Service/", "https://www.foo.com/Service", ""},
+      // Malformed url.
+      {"https", "www.foo.com:", "/Service/", "https://www.foo.com:/Service",
+       ""},
+      // https, default explicit port.
+      {"https", "www.foo.com:443", "/Service/FooMethod",
+       "https://www.foo.com/Service", "FooMethod"},
+      // https, default implicit port.
+      {"https", "www.foo.com", "/Service/FooMethod",
+       "https://www.foo.com/Service", "FooMethod"},
+      // https with ipv6 literal, default explicit port.
+      {"https", "[1080:0:0:0:8:800:200C:417A]:443", "/Service/FooMethod",
+       "https://[1080:0:0:0:8:800:200C:417A]/Service", "FooMethod"},
+      // https with ipv6 literal, default implicit port.
+      {"https", "[1080:0:0:0:8:800:200C:443]", "/Service/FooMethod",
+       "https://[1080:0:0:0:8:800:200C:443]/Service", "FooMethod"},
+      // https, custom port.
+      {"https", "www.foo.com:8888", "/Service/FooMethod",
+       "https://www.foo.com:8888/Service", "FooMethod"},
+      // https with ipv6 literal, custom port.
+      {"https", "[1080:0:0:0:8:800:200C:417A]:8888", "/Service/FooMethod",
+       "https://[1080:0:0:0:8:800:200C:417A]:8888/Service", "FooMethod"},
+      // custom url scheme, https default port.
+      {"blah", "www.foo.com:443", "/Service/FooMethod",
+       "blah://www.foo.com:443/Service", "FooMethod"}};
+  for (uint32_t i = 0; i < GPR_ARRAY_SIZE(test_cases); i++) {
+    const char *url_scheme = test_cases[i].url_scheme;
+    grpc_slice call_host =
+        grpc_slice_from_copied_string(test_cases[i].call_host);
+    grpc_slice call_method =
+        grpc_slice_from_copied_string(test_cases[i].call_method);
+    grpc_auth_metadata_context auth_md_context;
+    memset(&auth_md_context, 0, sizeof(auth_md_context));
+    grpc_auth_metadata_context_build(url_scheme, call_host, call_method, NULL,
+                                     &auth_md_context);
+    if (strcmp(auth_md_context.service_url,
+               test_cases[i].desired_service_url) != 0) {
+      gpr_log(GPR_ERROR, "Invalid service url, want: %s, got %s.",
+              test_cases[i].desired_service_url, auth_md_context.service_url);
+      GPR_ASSERT(false);
+    }
+    if (strcmp(auth_md_context.method_name,
+               test_cases[i].desired_method_name) != 0) {
+      gpr_log(GPR_ERROR, "Invalid method name, want: %s, got %s.",
+              test_cases[i].desired_method_name, auth_md_context.method_name);
+      GPR_ASSERT(false);
+    }
+    GPR_ASSERT(auth_md_context.channel_auth_context == NULL);
+    grpc_slice_unref(call_host);
+    grpc_slice_unref(call_method);
+    grpc_auth_metadata_context_reset(&auth_md_context);
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -1212,6 +1285,7 @@ int main(int argc, char **argv) {
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();
   test_channel_creds_duplicate_without_call_creds();
+  test_auth_metadata_context();
   grpc_shutdown();
   return 0;
 }
