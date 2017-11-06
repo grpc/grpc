@@ -19,6 +19,7 @@
 #ifndef GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
 #define GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
 
+#include <condition_variable>
 #include <memory>
 
 #include <grpc/compression.h>
@@ -50,7 +51,21 @@ class InteropServerContextInspector {
 namespace interop {
 
 extern gpr_atm g_got_sigint;
+
+/// Run gRPC interop server using port FLAGS_port.
+///
+/// \param creds The credentials associated with the server.
 void RunServer(std::shared_ptr<ServerCredentials> creds);
+
+/// Run gRPC interop server.
+///
+/// \param creds The credentials associated with the server.
+/// \param port Port to use for the server.
+/// \param server_started_condition (optional) Condition variable to used to
+///     notify when the server has started.
+void RunServer(std::shared_ptr<ServerCredentials> creds,
+               int port,
+               std::condition_variable *server_started_condition);
 
 }  // namespace interop
 }  // namespace testing
