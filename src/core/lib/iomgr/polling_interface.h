@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_POLLER_H
-#define GRPC_CORE_LIB_IOMGR_POLLER_H
+#ifndef GRPC_CORE_LIB_IOMGR_POLLING_INTERFACE_H
+#define GRPC_CORE_LIB_IOMGR_POLLING_INTERFACE_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -164,4 +164,4 @@ inline void PollingJoin::AddToPollingJoin(PollingJoin* other_polling_join) {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_POLLER_H */
+#endif /* GRPC_CORE_LIB_IOMGR_POLLING_INTERFACE_H */
