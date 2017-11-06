@@ -25,8 +25,8 @@
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
 
-static gpr_mu *g_mu;
-static grpc_pollset *g_pollset;
+static gpr_mu* g_mu;
+static grpc_pollset* g_pollset;
 
 static void clean_up(void) {}
 
@@ -35,7 +35,7 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_test_fixture f;
   grpc_arg a[1];
-  a[0].key = const_cast<char *>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
+  a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = (int)slice_size;
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
@@ -54,17 +54,17 @@ static grpc_endpoint_test_config configs[] = {
     {"tcp/tcp_socketpair", create_fixture_endpoint_pair, clean_up},
 };
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
-                            grpc_error *error) {
-  grpc_pollset_destroy(exec_ctx, static_cast<grpc_pollset *>(p));
+static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* p,
+                            grpc_error* error) {
+  grpc_pollset_destroy(exec_ctx, static_cast<grpc_pollset*>(p));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = static_cast<grpc_pollset *>(gpr_zalloc(grpc_pollset_size()));
+  g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,

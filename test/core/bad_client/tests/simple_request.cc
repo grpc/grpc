@@ -83,14 +83,14 @@
   "\x10\x0cgrpc-timeout\x02"                                                \
   "5S"
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq,
-                     void *registered_method) {
+static void verifier(grpc_server* server, grpc_completion_queue* cq,
+                     void* registered_method) {
   grpc_call_error error;
-  grpc_call *s;
+  grpc_call* s;
   grpc_call_details call_details;
-  cq_verifier *cqv = cq_verifier_create(cq);
+  cq_verifier* cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
 
   grpc_call_details_init(&call_details);
@@ -111,8 +111,8 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq,
   cq_verifier_destroy(cqv);
 }
 
-static void failure_verifier(grpc_server *server, grpc_completion_queue *cq,
-                             void *registered_method) {
+static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
+                             void* registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), NULL)
@@ -120,7 +120,7 @@ static void failure_verifier(grpc_server *server, grpc_completion_queue *cq,
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
 
   /* basic request: check that things are working */
@@ -129,7 +129,8 @@ int main(int argc, char **argv) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR_UNUSUAL2, 0);
 
   /* push an illegal data frame */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL,
+                           PFX_STR
                            "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
                            "\x34\x00\x00\x00\x00",
                            0);
@@ -144,7 +145,8 @@ int main(int argc, char **argv) {
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL,
                            PFX_STR "\x00\x00\x00\x08\x10\x00\x00\x00\x01", 0);
   /* push a window update with bad data */
-  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL, PFX_STR
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL,
+                           PFX_STR
                            "\x00\x00\x04\x08\x00\x00\x00\x00\x01"
                            "\xff\xff\xff\xff",
                            0);

@@ -32,9 +32,9 @@
 #define MAX_CONNECTION_IDLE_MS 500
 #define MAX_CONNECTION_AGE_MS 9999
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
@@ -43,12 +43,12 @@ static void drain_cq(grpc_completion_queue *cq) {
 }
 
 static void simple_request_body(grpc_end2end_test_config config,
-                                grpc_end2end_test_fixture *f) {
-  grpc_call *c;
-  grpc_call *s;
-  cq_verifier *cqv = cq_verifier_create(f->cq);
+                                grpc_end2end_test_fixture* f) {
+  grpc_call* c;
+  grpc_call* s;
+  cq_verifier* cqv = cq_verifier_create(f->cq);
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -57,7 +57,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  char *peer;
+  char* peer;
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   c = grpc_channel_create_call(
@@ -169,19 +169,19 @@ static void simple_request_body(grpc_end2end_test_config config,
 static void test_max_connection_idle(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  cq_verifier* cqv = cq_verifier_create(f.cq);
 
   grpc_arg client_a[1];
   client_a[0].type = GRPC_ARG_INTEGER;
   client_a[0].key =
-      const_cast<char *>("grpc.testing.fixed_reconnect_backoff_ms");
+      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
   client_a[0].value.integer = 1000;
   grpc_arg server_a[2];
   server_a[0].type = GRPC_ARG_INTEGER;
-  server_a[0].key = const_cast<char *>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
+  server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
   server_a[0].value.integer = MAX_CONNECTION_IDLE_MS;
   server_a[1].type = GRPC_ARG_INTEGER;
-  server_a[1].key = const_cast<char *>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
+  server_a[1].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
   server_a[1].value.integer = MAX_CONNECTION_AGE_MS;
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};

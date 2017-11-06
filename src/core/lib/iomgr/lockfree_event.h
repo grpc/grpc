@@ -29,17 +29,17 @@
 extern "C" {
 #endif
 
-void grpc_lfev_init(gpr_atm *state);
-void grpc_lfev_destroy(gpr_atm *state);
-bool grpc_lfev_is_shutdown(gpr_atm *state);
+void grpc_lfev_init(gpr_atm* state);
+void grpc_lfev_destroy(gpr_atm* state);
+bool grpc_lfev_is_shutdown(gpr_atm* state);
 
-void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                         grpc_closure *closure, const char *variable);
+void grpc_lfev_notify_on(grpc_exec_ctx* exec_ctx, gpr_atm* state,
+                         grpc_closure* closure, const char* variable);
 /* Returns true on first successful shutdown */
-bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                            grpc_error *shutdown_err);
-void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                         const char *variable);
+bool grpc_lfev_set_shutdown(grpc_exec_ctx* exec_ctx, gpr_atm* state,
+                            grpc_error* shutdown_err);
+void grpc_lfev_set_ready(grpc_exec_ctx* exec_ctx, gpr_atm* state,
+                         const char* variable);
 
 #ifdef __cplusplus
 }

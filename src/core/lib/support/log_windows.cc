@@ -32,9 +32,9 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/string_windows.h"
 
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...) {
-  char *message = NULL;
+void gpr_log(const char* file, int line, gpr_log_severity severity,
+             const char* format, ...) {
+  char* message = NULL;
   va_list args;
   int ret;
 
@@ -47,7 +47,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   } else {
     /* Allocate a new buffer, with space for the NUL terminator. */
     size_t strp_buflen = (size_t)ret + 1;
-    message = (char *)gpr_malloc(strp_buflen);
+    message = (char*)gpr_malloc(strp_buflen);
 
     /* Print to the buffer. */
     va_start(args, format);
@@ -65,9 +65,9 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
 }
 
 /* Simple starter implementation */
-extern "C" void gpr_default_log(gpr_log_func_args *args) {
-  const char *final_slash;
-  const char *display_file;
+extern "C" void gpr_default_log(gpr_log_func_args* args) {
+  const char* final_slash;
+  const char* display_file;
   char time_buffer[64];
   time_t timer;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);

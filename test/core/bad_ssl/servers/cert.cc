@@ -31,11 +31,11 @@
 /* This server will present an untrusted cert to the connecting client,
  * causing the SSL handshake to fail */
 
-int main(int argc, char **argv) {
-  const char *addr = bad_ssl_addr(argc, argv);
+int main(int argc, char** argv) {
+  const char* addr = bad_ssl_addr(argc, argv);
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-  grpc_server_credentials *ssl_creds;
-  grpc_server *server;
+  grpc_server_credentials* ssl_creds;
+  grpc_server* server;
   grpc_slice cert_slice, key_slice;
 
   grpc_init();
@@ -46,8 +46,8 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file",
       grpc_load_file("src/core/tsi/test_creds/badserver.key", 1, &key_slice)));
-  pem_key_cert_pair.private_key = (const char *)GRPC_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain = (const char *)GRPC_SLICE_START_PTR(cert_slice);
+  pem_key_cert_pair.private_key = (const char*)GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain = (const char*)GRPC_SLICE_START_PTR(cert_slice);
 
   ssl_creds =
       grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0, NULL);

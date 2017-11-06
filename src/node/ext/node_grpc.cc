@@ -46,11 +46,11 @@ using grpc::node::CreateSliceFromString;
 
 using v8::FunctionTemplate;
 using v8::Local;
-using v8::Value;
 using v8::Number;
 using v8::Object;
-using v8::Uint32;
 using v8::String;
+using v8::Uint32;
+using v8::Value;
 
 typedef struct log_args {
   gpr_log_func_args core_args;
@@ -58,8 +58,8 @@ typedef struct log_args {
 } log_args;
 
 typedef struct logger_state {
-  Nan::Callback *callback;
-  std::queue<log_args *> *pending_args;
+  Nan::Callback* callback;
+  std::queue<log_args*>* pending_args;
   uv_mutex_t mutex;
   uv_async_t async;
   // Indicates that a logger has been set
@@ -68,7 +68,7 @@ typedef struct logger_state {
 
 logger_state grpc_logger_state;
 
-static char *pem_root_certs = NULL;
+static char* pem_root_certs = NULL;
 
 void InitOpTypeConstants(Local<Object> exports) {
   Nan::HandleScope scope;
@@ -158,7 +158,7 @@ NAN_METHOD(MetadataKeyIsBinary) {
 }
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(
-    char **pem_root_certs_ptr) {
+    char** pem_root_certs_ptr) {
   *pem_root_certs_ptr = pem_root_certs;
   if (pem_root_certs == NULL) {
     return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
@@ -177,21 +177,21 @@ NAN_METHOD(SetDefaultRootsPem) {
   Nan::Utf8String utf8_roots(info[0]);
   size_t length = static_cast<size_t>(utf8_roots.length());
   if (length > 0) {
-    const char *data = *utf8_roots;
-    pem_root_certs = (char *)gpr_malloc((length + 1) * sizeof(char));
+    const char* data = *utf8_roots;
+    pem_root_certs = (char*)gpr_malloc((length + 1) * sizeof(char));
     memcpy(pem_root_certs, data, length + 1);
   }
 }
 
 NAUV_WORK_CB(LogMessagesCallback) {
   Nan::HandleScope scope;
-  std::queue<log_args *> args;
+  std::queue<log_args*> args;
   uv_mutex_lock(&grpc_logger_state.mutex);
   grpc_logger_state.pending_args->swap(args);
   uv_mutex_unlock(&grpc_logger_state.mutex);
   /* Call the callback with each log message */
   while (!args.empty()) {
-    log_args *arg = args.front();
+    log_args* arg = args.front();
     args.pop();
     Local<Value> file = Nan::New(arg->core_args.file).ToLocalChecked();
     Local<Value> line = Nan::New<Uint32, uint32_t>(arg->core_args.line);
@@ -210,11 +210,11 @@ NAUV_WORK_CB(LogMessagesCallback) {
   }
 }
 
-void node_log_func(gpr_log_func_args *args) {
+void node_log_func(gpr_log_func_args* args) {
   // TODO(mlumish): Use the core's log formatter when it becomes available
-  log_args *args_copy = new log_args;
+  log_args* args_copy = new log_args;
   size_t message_len = strlen(args->message) + 1;
-  char *message = new char[message_len];
+  char* message = new char[message_len];
   memcpy(message, args->message, message_len);
   memcpy(&args_copy->core_args, args, sizeof(gpr_log_func_args));
   args_copy->core_args.message = message;
@@ -229,11 +229,11 @@ void node_log_func(gpr_log_func_args *args) {
 
 void init_logger() {
   memset(&grpc_logger_state, 0, sizeof(logger_state));
-  grpc_logger_state.pending_args = new std::queue<log_args *>();
+  grpc_logger_state.pending_args = new std::queue<log_args*>();
   uv_mutex_init(&grpc_logger_state.mutex);
   uv_async_init(uv_default_loop(), &grpc_logger_state.async,
                 LogMessagesCallback);
-  uv_unref((uv_handle_t *)&grpc_logger_state.async);
+  uv_unref((uv_handle_t*)&grpc_logger_state.async);
   grpc_logger_state.logger_set = false;
 
   gpr_log_verbosity_init();

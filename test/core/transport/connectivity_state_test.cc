@@ -24,18 +24,18 @@
 
 #include "test/core/util/test_config.h"
 
-#define THE_ARG ((void *)(size_t)0xcafebabe)
+#define THE_ARG ((void*)(size_t)0xcafebabe)
 
 int g_counter;
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg,
-                         grpc_error *error) {
+static void must_succeed(grpc_exec_ctx* exec_ctx, void* arg,
+                         grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+static void must_fail(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;
@@ -59,7 +59,7 @@ static void test_connectivity_state_name(void) {
 static void test_check(void) {
   grpc_connectivity_state_tracker tracker;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_error *error;
+  grpc_error* error;
   gpr_log(GPR_DEBUG, "test_check");
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
   GPR_ASSERT(grpc_connectivity_state_get(&tracker, &error) ==
@@ -72,7 +72,7 @@ static void test_check(void) {
 
 static void test_subscribe_then_unsubscribe(void) {
   grpc_connectivity_state_tracker tracker;
-  grpc_closure *closure =
+  grpc_closure* closure =
       GRPC_CLOSURE_CREATE(must_fail, THE_ARG, grpc_schedule_on_exec_ctx);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -96,7 +96,7 @@ static void test_subscribe_then_unsubscribe(void) {
 
 static void test_subscribe_then_destroy(void) {
   grpc_connectivity_state_tracker tracker;
-  grpc_closure *closure =
+  grpc_closure* closure =
       GRPC_CLOSURE_CREATE(must_succeed, THE_ARG, grpc_schedule_on_exec_ctx);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -116,7 +116,7 @@ static void test_subscribe_then_destroy(void) {
 
 static void test_subscribe_with_failure_then_destroy(void) {
   grpc_connectivity_state_tracker tracker;
-  grpc_closure *closure =
+  grpc_closure* closure =
       GRPC_CLOSURE_CREATE(must_fail, THE_ARG, grpc_schedule_on_exec_ctx);
   grpc_connectivity_state state = GRPC_CHANNEL_SHUTDOWN;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -134,7 +134,7 @@ static void test_subscribe_with_failure_then_destroy(void) {
   GPR_ASSERT(g_counter == 1);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_connectivity_state_trace.value = 1;
   test_connectivity_state_name();

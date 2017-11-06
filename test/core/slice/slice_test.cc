@@ -64,7 +64,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
   }
 }
 
-static void do_nothing(void *ignored) {}
+static void do_nothing(void* ignored) {}
 
 static void test_slice_new_returns_something_sensible(void) {
   uint8_t x;
@@ -77,7 +77,7 @@ static void test_slice_new_returns_something_sensible(void) {
 }
 
 /* destroy function that sets a mark to indicate it was called. */
-static void set_mark(void *p) { *((int *)p) = 1; }
+static void set_mark(void* p) { *((int*)p) = 1; }
 
 static void test_slice_new_with_user_data(void) {
   int marker = 0;
@@ -99,7 +99,7 @@ static void test_slice_new_with_user_data(void) {
 
 static int do_nothing_with_len_1_calls = 0;
 
-static void do_nothing_with_len_1(void *ignored, size_t len) {
+static void do_nothing_with_len_1(void* ignored, size_t len) {
   GPR_ASSERT(len == 1);
   do_nothing_with_len_1_calls++;
 }
@@ -228,7 +228,7 @@ static void test_slice_split_tail_works(size_t length) {
 }
 
 static void test_slice_from_copied_string_works(void) {
-  static const char *text = "HELLO WORLD!";
+  static const char* text = "HELLO WORLD!";
   grpc_slice slice;
 
   LOG_TEST_NAME("test_slice_from_copied_string_works");
@@ -289,7 +289,7 @@ static void test_static_slice_copy_interning(void) {
   grpc_shutdown();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   unsigned length;
   grpc_test_init(argc, argv);
   test_slice_malloc_returns_something_sensible();

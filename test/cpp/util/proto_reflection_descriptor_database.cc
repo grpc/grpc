@@ -22,11 +22,11 @@
 
 #include <grpc/support/log.h>
 
+using grpc::reflection::v1alpha::ErrorResponse;
+using grpc::reflection::v1alpha::ListServiceResponse;
 using grpc::reflection::v1alpha::ServerReflection;
 using grpc::reflection::v1alpha::ServerReflectionRequest;
 using grpc::reflection::v1alpha::ServerReflectionResponse;
-using grpc::reflection::v1alpha::ListServiceResponse;
-using grpc::reflection::v1alpha::ErrorResponse;
 
 namespace grpc {
 

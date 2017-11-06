@@ -42,7 +42,7 @@ static gpr_atm g_custom_events = 0;
 
 static HANDLE g_iocp;
 
-static DWORD deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
+static DWORD deadline_to_millis_timeout(grpc_exec_ctx* exec_ctx,
                                         grpc_millis deadline) {
   if (deadline == GRPC_MILLIS_INF_FUTURE) {
     return INFINITE;
@@ -54,15 +54,15 @@ static DWORD deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
   return static_cast<DWORD>(deadline - now);
 }
 
-grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
+grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx* exec_ctx,
                                      grpc_millis deadline) {
   BOOL success;
   DWORD bytes = 0;
   DWORD flags = 0;
   ULONG_PTR completion_key;
   LPOVERLAPPED overlapped;
-  grpc_winsocket *socket;
-  grpc_winsocket_callback_info *info;
+  grpc_winsocket* socket;
+  grpc_winsocket_callback_info* info;
   GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
   success =
       GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key, &overlapped,
@@ -82,7 +82,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
     abort();
   }
 
-  socket = (grpc_winsocket *)completion_key;
+  socket = (grpc_winsocket*)completion_key;
   if (overlapped == &socket->write_info.overlapped) {
     info = &socket->write_info;
   } else if (overlapped == &socket->read_info.overlapped) {
@@ -134,13 +134,13 @@ void grpc_iocp_shutdown(void) {
   GPR_ASSERT(CloseHandle(g_iocp));
 }
 
-void grpc_iocp_add_socket(grpc_winsocket *socket) {
+void grpc_iocp_add_socket(grpc_winsocket* socket) {
   HANDLE ret;
   if (socket->added_to_iocp) return;
   ret = CreateIoCompletionPort((HANDLE)socket->socket, g_iocp,
                                (uintptr_t)socket, 0);
   if (!ret) {
-    char *utf8_message = gpr_format_message(WSAGetLastError());
+    char* utf8_message = gpr_format_message(WSAGetLastError());
     gpr_log(GPR_ERROR, "Unable to add socket to iocp: %s", utf8_message);
     gpr_free(utf8_message);
     __debugbreak();

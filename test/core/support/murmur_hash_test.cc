@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-typedef uint32_t (*hash_func)(const void *key, size_t len, uint32_t seed);
+typedef uint32_t (*hash_func)(const void* key, size_t len, uint32_t seed);
 
 /* From smhasher:
    This should hopefully be a thorough and uambiguous test of whether a hash
@@ -63,7 +63,7 @@ static void verification_test(hash_func hash, uint32_t expected) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   /* basic tests to verify that things don't crash */
   gpr_murmur_hash3("", 0, 0);

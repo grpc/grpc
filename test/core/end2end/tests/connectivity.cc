@@ -25,18 +25,18 @@
 
 #include "test/core/end2end/cq_verifier.h"
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
 typedef struct {
   gpr_event started;
-  grpc_channel *channel;
-  grpc_completion_queue *cq;
+  grpc_channel* channel;
+  grpc_completion_queue* cq;
 } child_events;
 
-static void child_thread(void *arg) {
-  child_events *ce = (child_events *)arg;
+static void child_thread(void* arg) {
+  child_events* ce = (child_events*)arg;
   grpc_event ev;
-  gpr_event_set(&ce->started, (void *)1);
+  gpr_event_set(&ce->started, (void*)1);
   gpr_log(GPR_DEBUG, "verifying");
   ev = grpc_completion_queue_next(ce->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC),
                                   NULL);
@@ -48,7 +48,7 @@ static void child_thread(void *arg) {
 static void test_connectivity(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
   grpc_connectivity_state state;
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  cq_verifier* cqv = cq_verifier_create(f.cq);
   child_events ce;
   gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_id thdid;
@@ -57,7 +57,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_arg arg_array[1];
   arg_array[0].type = GRPC_ARG_INTEGER;
   arg_array[0].key =
-      const_cast<char *>("grpc.testing.fixed_reconnect_backoff_ms");
+      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
   arg_array[0].value.integer = 1000;
   client_args.args = arg_array;
   client_args.num_args = 1;

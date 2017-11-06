@@ -32,8 +32,8 @@
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
 static void test_strdup(void) {
-  static const char *src1 = "hello world";
-  char *dst1;
+  static const char* src1 = "hello world";
+  char* dst1;
 
   LOG_TEST_NAME("test_strdup");
 
@@ -44,9 +44,9 @@ static void test_strdup(void) {
   GPR_ASSERT(NULL == gpr_strdup(NULL));
 }
 
-static void expect_dump(const char *buf, size_t len, uint32_t flags,
-                        const char *result) {
-  char *got = gpr_dump(buf, len, flags);
+static void expect_dump(const char* buf, size_t len, uint32_t flags,
+                        const char* result) {
+  char* got = gpr_dump(buf, len, flags);
   GPR_ASSERT(0 == strcmp(got, result));
   gpr_free(got);
 }
@@ -61,12 +61,12 @@ static void test_dump(void) {
   expect_dump("ab", 2, GPR_DUMP_HEX | GPR_DUMP_ASCII, "61 62 'ab'");
 }
 
-static void test_pu32_fail(const char *s) {
+static void test_pu32_fail(const char* s) {
   uint32_t out;
   GPR_ASSERT(!gpr_parse_bytes_to_uint32(s, strlen(s), &out));
 }
 
-static void test_pu32_succeed(const char *s, uint32_t want) {
+static void test_pu32_succeed(const char* s, uint32_t want) {
   uint32_t out;
   GPR_ASSERT(gpr_parse_bytes_to_uint32(s, strlen(s), &out));
   GPR_ASSERT(out == want);
@@ -107,7 +107,7 @@ static void test_parse_uint32(void) {
 }
 
 static void test_asprintf(void) {
-  char *buf;
+  char* buf;
   int i, j;
 
   LOG_TEST_NAME("test_asprintf");
@@ -132,9 +132,9 @@ static void test_asprintf(void) {
 }
 
 static void test_strjoin(void) {
-  const char *parts[4] = {"one", "two", "three", "four"};
+  const char* parts[4] = {"one", "two", "three", "four"};
   size_t joined_len;
-  char *joined;
+  char* joined;
 
   LOG_TEST_NAME("test_strjoin");
 
@@ -152,9 +152,9 @@ static void test_strjoin(void) {
 }
 
 static void test_strjoin_sep(void) {
-  const char *parts[4] = {"one", "two", "three", "four"};
+  const char* parts[4] = {"one", "two", "three", "four"};
   size_t joined_len;
-  char *joined;
+  char* joined;
 
   LOG_TEST_NAME("test_strjoin_sep");
 
@@ -179,7 +179,7 @@ static void test_strjoin_sep(void) {
 }
 
 static void test_ltoa() {
-  char *str;
+  char* str;
   char buf[GPR_LTOA_MIN_BUFSIZE];
 
   LOG_TEST_NAME("test_ltoa");
@@ -226,7 +226,7 @@ static void test_int64toa() {
 }
 
 static void test_leftpad() {
-  char *padded;
+  char* padded;
 
   LOG_TEST_NAME("test_leftpad");
 
@@ -274,9 +274,9 @@ static void test_memrchr(void) {
   GPR_ASSERT(NULL == gpr_memrchr(NULL, 'a', 0));
   GPR_ASSERT(NULL == gpr_memrchr("", 'a', 0));
   GPR_ASSERT(NULL == gpr_memrchr("hello", 'b', 5));
-  GPR_ASSERT(0 == strcmp((const char *)gpr_memrchr("hello", 'h', 5), "hello"));
-  GPR_ASSERT(0 == strcmp((const char *)gpr_memrchr("hello", 'o', 5), "o"));
-  GPR_ASSERT(0 == strcmp((const char *)gpr_memrchr("hello", 'l', 5), "lo"));
+  GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'h', 5), "hello"));
+  GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'o', 5), "o"));
+  GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'l', 5), "lo"));
 }
 
 static void test_is_true(void) {
@@ -294,7 +294,7 @@ static void test_is_true(void) {
   GPR_ASSERT(false == gpr_is_true("0"));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_strdup();
   test_dump();

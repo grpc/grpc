@@ -26,12 +26,12 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 
-int main(int argc, const char **argv) {
-  const char *me = argv[0];
-  const char *lslash = strrchr(me, '/');
+int main(int argc, const char** argv) {
+  const char* me = argv[0];
+  const char* lslash = strrchr(me, '/');
   char root[1024];
   int port = grpc_pick_unused_port_or_die();
-  char *args[10];
+  char* args[10];
   int status;
   gpr_subprocess *svr, *cli;
   /* figure out where we are */
@@ -44,22 +44,22 @@ int main(int argc, const char **argv) {
   /* start the server */
   gpr_asprintf(&args[0], "%s/fling_server%s", root,
                gpr_subprocess_binary_extension());
-  args[1] = const_cast<char *>("--bind");
+  args[1] = const_cast<char*>("--bind");
   gpr_join_host_port(&args[2], "::", port);
-  args[3] = const_cast<char *>("--no-secure");
-  svr = gpr_subprocess_create(4, (const char **)args);
+  args[3] = const_cast<char*>("--no-secure");
+  svr = gpr_subprocess_create(4, (const char**)args);
   gpr_free(args[0]);
   gpr_free(args[2]);
 
   /* start the client */
   gpr_asprintf(&args[0], "%s/fling_client%s", root,
                gpr_subprocess_binary_extension());
-  args[1] = const_cast<char *>("--target");
+  args[1] = const_cast<char*>("--target");
   gpr_join_host_port(&args[2], "127.0.0.1", port);
-  args[3] = const_cast<char *>("--scenario=ping-pong-request");
-  args[4] = const_cast<char *>("--no-secure");
+  args[3] = const_cast<char*>("--scenario=ping-pong-request");
+  args[4] = const_cast<char*>("--no-secure");
   args[5] = 0;
-  cli = gpr_subprocess_create(6, (const char **)args);
+  cli = gpr_subprocess_create(6, (const char**)args);
   gpr_free(args[0]);
   gpr_free(args[2]);
 

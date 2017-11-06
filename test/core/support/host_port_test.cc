@@ -23,9 +23,9 @@
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
-static void join_host_port_expect(const char *host, int port,
-                                  const char *expected) {
-  char *buf;
+static void join_host_port_expect(const char* host, int port,
+                                  const char* expected) {
+  char* buf;
   int len;
   len = gpr_join_host_port(&buf, host, port);
   GPR_ASSERT(len >= 0);
@@ -48,7 +48,7 @@ static void test_join_host_port_garbage(void) {
   join_host_port_expect("::]", 107, "[::]]:107");
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
 
   test_join_host_port();

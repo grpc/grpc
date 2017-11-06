@@ -29,16 +29,16 @@
 #include "test/core/util/test_config.h"
 
 static void test_request_succeeds(grpc_slice_split_mode split_mode,
-                                  const char *request_text,
-                                  const char *expect_method,
+                                  const char* request_text,
+                                  const char* expect_method,
                                   grpc_http_version expect_version,
-                                  const char *expect_path,
-                                  const char *expect_body, ...) {
+                                  const char* expect_path,
+                                  const char* expect_body, ...) {
   grpc_http_parser parser;
   grpc_slice input_slice = grpc_slice_from_copied_string(request_text);
   size_t num_slices;
   size_t i;
-  grpc_slice *slices;
+  grpc_slice* slices;
   va_list args;
   grpc_http_request request;
   memset(&request, 0, sizeof(request));
@@ -70,12 +70,12 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
   va_start(args, expect_body);
   i = 0;
   for (;;) {
-    char *expect_key;
-    char *expect_value;
-    expect_key = va_arg(args, char *);
+    char* expect_key;
+    char* expect_value;
+    expect_key = va_arg(args, char*);
     if (!expect_key) break;
     GPR_ASSERT(i < request.hdr_count);
-    expect_value = va_arg(args, char *);
+    expect_value = va_arg(args, char*);
     GPR_ASSERT(expect_value);
     GPR_ASSERT(0 == strcmp(expect_key, request.hdrs[i].key));
     GPR_ASSERT(0 == strcmp(expect_value, request.hdrs[i].value));
@@ -90,13 +90,13 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
 }
 
 static void test_succeeds(grpc_slice_split_mode split_mode,
-                          const char *response_text, int expect_status,
-                          const char *expect_body, ...) {
+                          const char* response_text, int expect_status,
+                          const char* expect_body, ...) {
   grpc_http_parser parser;
   grpc_slice input_slice = grpc_slice_from_copied_string(response_text);
   size_t num_slices;
   size_t i;
-  grpc_slice *slices;
+  grpc_slice* slices;
   va_list args;
   grpc_http_response response;
   memset(&response, 0, sizeof(response));
@@ -125,12 +125,12 @@ static void test_succeeds(grpc_slice_split_mode split_mode,
   va_start(args, expect_body);
   i = 0;
   for (;;) {
-    char *expect_key;
-    char *expect_value;
-    expect_key = va_arg(args, char *);
+    char* expect_key;
+    char* expect_value;
+    expect_key = va_arg(args, char*);
     if (!expect_key) break;
     GPR_ASSERT(i < response.hdr_count);
-    expect_value = va_arg(args, char *);
+    expect_value = va_arg(args, char*);
     GPR_ASSERT(expect_value);
     GPR_ASSERT(0 == strcmp(expect_key, response.hdrs[i].key));
     GPR_ASSERT(0 == strcmp(expect_value, response.hdrs[i].value));
@@ -145,13 +145,13 @@ static void test_succeeds(grpc_slice_split_mode split_mode,
 }
 
 static void test_fails(grpc_slice_split_mode split_mode,
-                       const char *response_text) {
+                       const char* response_text) {
   grpc_http_parser parser;
   grpc_slice input_slice = grpc_slice_from_copied_string(response_text);
   size_t num_slices;
   size_t i;
-  grpc_slice *slices;
-  grpc_error *error = GRPC_ERROR_NONE;
+  grpc_slice* slices;
+  grpc_error* error = GRPC_ERROR_NONE;
   grpc_http_response response;
   memset(&response, 0, sizeof(response));
 
@@ -178,13 +178,13 @@ static void test_fails(grpc_slice_split_mode split_mode,
 }
 
 static void test_request_fails(grpc_slice_split_mode split_mode,
-                               const char *request_text) {
+                               const char* request_text) {
   grpc_http_parser parser;
   grpc_slice input_slice = grpc_slice_from_copied_string(request_text);
   size_t num_slices;
   size_t i;
-  grpc_slice *slices;
-  grpc_error *error = GRPC_ERROR_NONE;
+  grpc_slice* slices;
+  grpc_error* error = GRPC_ERROR_NONE;
   grpc_http_request request;
   memset(&request, 0, sizeof(request));
 
@@ -210,7 +210,7 @@ static void test_request_fails(grpc_slice_split_mode split_mode,
   gpr_free(slices);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   size_t i;
   const grpc_slice_split_mode split_modes[] = {GRPC_SLICE_SPLIT_IDENTITY,
                                                GRPC_SLICE_SPLIT_ONE_BYTE};
@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
     test_request_fails(split_modes[i], "GET / HTTP/1.0\n");
 
     tmp1 =
-        static_cast<char *>(gpr_malloc(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH));
+        static_cast<char*>(gpr_malloc(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH));
     memset(tmp1, 'a', 2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1);
     tmp1[2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1] = 0;
     gpr_asprintf(&tmp2, "HTTP/1.0 200 OK\r\nxyz: %s\r\n\r\n", tmp1);

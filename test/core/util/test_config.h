@@ -41,7 +41,7 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 #define GRPC_TEST_PICK_PORT
 #endif
 
-void grpc_test_init(int argc, char **argv);
+void grpc_test_init(int argc, char** argv);
 
 #ifdef __cplusplus
 }

@@ -30,8 +30,8 @@
 // grpc_slice_buffer_stream tests
 //
 
-static void not_called_closure(grpc_exec_ctx *exec_ctx, void *arg,
-                               grpc_error *error) {
+static void not_called_closure(grpc_exec_ctx* exec_ctx, void* arg,
+                               grpc_error* error) {
   GPR_ASSERT(false);
 }
 
@@ -60,7 +60,7 @@ static void test_slice_buffer_stream_basic(void) {
     GPR_ASSERT(
         grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
     grpc_slice output;
-    grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+    grpc_error* error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     GPR_ASSERT(grpc_slice_eq(input[i], output));
     grpc_slice_unref_internal(&exec_ctx, output);
@@ -95,12 +95,12 @@ static void test_slice_buffer_stream_shutdown(void) {
   GPR_ASSERT(
       grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+  grpc_error* error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(&exec_ctx, output);
   // Now shutdown.
-  grpc_error *shutdown_error =
+  grpc_error* shutdown_error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown error");
   grpc_byte_stream_shutdown(&exec_ctx, &stream.base,
                             GRPC_ERROR_REF(shutdown_error));
@@ -150,7 +150,7 @@ static void test_caching_byte_stream_basic(void) {
     GPR_ASSERT(
         grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
     grpc_slice output;
-    grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+    grpc_error* error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     GPR_ASSERT(grpc_slice_eq(input[i], output));
     grpc_slice_unref_internal(&exec_ctx, output);
@@ -189,7 +189,7 @@ static void test_caching_byte_stream_reset(void) {
   GPR_ASSERT(
       grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+  grpc_error* error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(&exec_ctx, output);
@@ -240,7 +240,7 @@ static void test_caching_byte_stream_shared_cache(void) {
   GPR_ASSERT(
       grpc_byte_stream_next(&exec_ctx, &stream1.base, ~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream1.base, &output);
+  grpc_error* error = grpc_byte_stream_pull(&exec_ctx, &stream1.base, &output);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(&exec_ctx, output);
@@ -268,7 +268,7 @@ static void test_caching_byte_stream_shared_cache(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_slice_buffer_stream_basic();
   test_slice_buffer_stream_shutdown();

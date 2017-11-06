@@ -59,7 +59,7 @@ static unsigned seed(void) { return (unsigned)_getpid(); }
 
 static void print_current_stack() {
   typedef USHORT(WINAPI * CaptureStackBackTraceType)(
-      __in ULONG, __in ULONG, __out PVOID *, __out_opt PULONG);
+      __in ULONG, __in ULONG, __out PVOID*, __out_opt PULONG);
   CaptureStackBackTraceType func = (CaptureStackBackTraceType)(GetProcAddress(
       LoadLibrary(_T("kernel32.dll")), "RtlCaptureStackBackTrace"));
 
@@ -71,15 +71,15 @@ static void print_current_stack() {
 // than 63.
 #define MAX_CALLERS 62
 
-  void *callers_stack[MAX_CALLERS];
+  void* callers_stack[MAX_CALLERS];
   unsigned short frames;
-  SYMBOL_INFOW *symbol;
+  SYMBOL_INFOW* symbol;
   HANDLE process;
   process = GetCurrentProcess();
   SymInitialize(process, NULL, TRUE);
   frames = (func)(0, MAX_CALLERS, callers_stack, NULL);
   symbol =
-      (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
+      (SYMBOL_INFOW*)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
 
@@ -133,8 +133,8 @@ static void print_stack_from_context(CONTEXT c) {
   HANDLE process = GetCurrentProcess();
   HANDLE thread = GetCurrentThread();
 
-  SYMBOL_INFOW *symbol =
-      (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
+  SYMBOL_INFOW* symbol =
+      (SYMBOL_INFOW*)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
 
@@ -151,7 +151,7 @@ static void print_stack_from_context(CONTEXT c) {
   free(symbol);
 }
 
-static LONG crash_handler(struct _EXCEPTION_POINTERS *ex_info) {
+static LONG crash_handler(struct _EXCEPTION_POINTERS* ex_info) {
   fprintf(stderr, "Exception handler called, dumping information\n");
   bool try_to_print_stack = true;
   PEXCEPTION_RECORD exrec = ex_info->ExceptionRecord;
@@ -202,7 +202,7 @@ static void install_crash_handler() {
 
 #define SIGNAL_NAMES_LENGTH 32
 
-static const char *const signal_names[] = {
+static const char* const signal_names[] = {
     NULL,      "SIGHUP",  "SIGINT",    "SIGQUIT", "SIGILL",    "SIGTRAP",
     "SIGABRT", "SIGBUS",  "SIGFPE",    "SIGKILL", "SIGUSR1",   "SIGSEGV",
     "SIGUSR2", "SIGPIPE", "SIGALRM",   "SIGTERM", "SIGSTKFLT", "SIGCHLD",
@@ -215,7 +215,7 @@ static char g_alt_stack[GPR_MAX(MINSIGSTKSZ, 65536)];
 #define MAX_FRAMES 32
 
 /* signal safe output */
-static void output_string(const char *string) {
+static void output_string(const char* string) {
   size_t len = strlen(string);
   ssize_t r;
 
@@ -230,8 +230,8 @@ static void output_num(long num) {
   output_string(buf);
 }
 
-static void crash_handler(int signum, siginfo_t *info, void *data) {
-  void *addrlist[MAX_FRAMES + 1];
+static void crash_handler(int signum, siginfo_t* info, void* data) {
+  void* addrlist[MAX_FRAMES + 1];
   int addrlen;
 
   output_string("\n\n\n*******************************\nCaught signal ");
@@ -376,10 +376,10 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
                            GPR_TIMESPAN));
 }
 
-void grpc_test_init(int argc, char **argv) {
+void grpc_test_init(int argc, char** argv) {
   install_crash_handler();
   { /* poll-cv poll strategy runs much more slowly than anything else */
-    char *s = gpr_getenv("GRPC_POLL_STRATEGY");
+    char* s = gpr_getenv("GRPC_POLL_STRATEGY");
     if (s != NULL && 0 == strcmp(s, "poll-cv")) {
       g_poller_slowdown_factor = 5;
     }
