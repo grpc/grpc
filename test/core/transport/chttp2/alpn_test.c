@@ -33,7 +33,7 @@ static void test_alpn_failure(void) {
 
 // First index in ALPN supported version list of a given protocol. Returns a
 // value one beyond the last valid element index if not found.
-static size_t alpn_version_index(const char *version, size_t size) {
+static size_t alpn_version_index(const char* version, size_t size) {
   size_t i;
   for (i = 0; i < grpc_chttp2_num_alpn_versions(); ++i) {
     if (!strncmp(version, grpc_chttp2_get_alpn_version_index(i), size)) {
@@ -48,7 +48,7 @@ static void test_alpn_grpc_before_h2(void) {
   GPR_ASSERT(alpn_version_index("grpc-exp", 8) < alpn_version_index("h2", 2));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_alpn_success();
   test_alpn_failure();

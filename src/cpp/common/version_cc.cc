@@ -23,4 +23,4 @@
 
 namespace grpc {
 grpc::string Version() { return "1.8.0-dev"; }
-}
+}  // namespace grpc

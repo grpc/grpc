@@ -37,17 +37,17 @@ typedef struct {
   int expected;
 
   /* Host name to match. */
-  const char *host_name;
+  const char* host_name;
 
   /* Common name (CN). */
-  const char *common_name;
+  const char* common_name;
 
   /* Comma separated list of certificate names to match against. Any occurrence
      of '#' will be replaced with a null character before processing. */
-  const char *dns_names;
+  const char* dns_names;
 
   /* Comma separated list of IP SANs to match aggainst */
-  const char *ip_names;
+  const char* ip_names;
 } cert_name_test_entry;
 
 /* Largely inspired from:
@@ -189,26 +189,26 @@ const cert_name_test_entry cert_name_test_entries[] = {
 };
 
 typedef struct name_list {
-  const char *name;
-  struct name_list *next;
+  const char* name;
+  struct name_list* next;
 } name_list;
 
 typedef struct {
   size_t name_count;
-  char *buffer;
-  name_list *names;
+  char* buffer;
+  name_list* names;
 } parsed_names;
 
-name_list *name_list_add(const char *n) {
-  name_list *result = gpr_malloc(sizeof(name_list));
+name_list* name_list_add(const char* n) {
+  name_list* result = gpr_malloc(sizeof(name_list));
   result->name = n;
   result->next = NULL;
   return result;
 }
 
-static parsed_names parse_names(const char *names_str) {
+static parsed_names parse_names(const char* names_str) {
   parsed_names result;
-  name_list *current_nl;
+  name_list* current_nl;
   size_t i;
   memset(&result, 0, sizeof(parsed_names));
   if (names_str == 0) return result;
@@ -228,18 +228,18 @@ static parsed_names parse_names(const char *names_str) {
   return result;
 }
 
-static void destruct_parsed_names(parsed_names *pdn) {
-  name_list *nl = pdn->names;
+static void destruct_parsed_names(parsed_names* pdn) {
+  name_list* nl = pdn->names;
   if (pdn->buffer != NULL) gpr_free(pdn->buffer);
   while (nl != NULL) {
-    name_list *to_be_free = nl;
+    name_list* to_be_free = nl;
     nl = nl->next;
     gpr_free(to_be_free);
   }
 }
 
-static char *processed_name(const char *name) {
-  char *result = gpr_strdup(name);
+static char* processed_name(const char* name) {
+  char* result = gpr_strdup(name);
   size_t i;
   for (i = 0; i < strlen(result); i++) {
     if (result[i] == '#') {
@@ -250,10 +250,10 @@ static char *processed_name(const char *name) {
 }
 
 static tsi_peer peer_from_cert_name_test_entry(
-    const cert_name_test_entry *entry) {
+    const cert_name_test_entry* entry) {
   size_t i;
   tsi_peer peer;
-  name_list *nl;
+  name_list* nl;
   parsed_names dns_entries = parse_names(entry->dns_names);
   parsed_names ip_entries = parse_names(entry->ip_names);
   nl = dns_entries.names;
@@ -265,7 +265,7 @@ static tsi_peer peer_from_cert_name_test_entry(
                  &peer.properties[0]) == TSI_OK);
   i = 1;
   while (nl != NULL) {
-    char *processed = processed_name(nl->name);
+    char* processed = processed_name(nl->name);
     GPR_ASSERT(tsi_construct_string_peer_property(
                    TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, processed,
                    strlen(nl->name), &peer.properties[i++]) == TSI_OK);
@@ -275,7 +275,7 @@ static tsi_peer peer_from_cert_name_test_entry(
 
   nl = ip_entries.names;
   while (nl != NULL) {
-    char *processed = processed_name(nl->name);
+    char* processed = processed_name(nl->name);
     GPR_ASSERT(tsi_construct_string_peer_property(
                    TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, processed,
                    strlen(nl->name), &peer.properties[i++]) == TSI_OK);
@@ -287,8 +287,8 @@ static tsi_peer peer_from_cert_name_test_entry(
   return peer;
 }
 
-char *cert_name_test_entry_to_string(const cert_name_test_entry *entry) {
-  char *s;
+char* cert_name_test_entry_to_string(const cert_name_test_entry* entry) {
+  char* s;
   gpr_asprintf(&s,
                "{ success = %s, host_name = %s, common_name = %s, dns_names = "
                "%s, ip_names = %s}",
@@ -302,11 +302,11 @@ char *cert_name_test_entry_to_string(const cert_name_test_entry *entry) {
 static void test_peer_matches_name(void) {
   size_t i = 0;
   for (i = 0; i < GPR_ARRAY_SIZE(cert_name_test_entries); i++) {
-    const cert_name_test_entry *entry = &cert_name_test_entries[i];
+    const cert_name_test_entry* entry = &cert_name_test_entries[i];
     tsi_peer peer = peer_from_cert_name_test_entry(entry);
     int result = tsi_ssl_peer_matches_name(&peer, entry->host_name);
     if (result != entry->expected) {
-      char *entry_str = cert_name_test_entry_to_string(entry);
+      char* entry_str = cert_name_test_entry_to_string(entry);
       gpr_log(GPR_ERROR, "%s", entry_str);
       gpr_free(entry_str);
       GPR_ASSERT(0); /* Unexpected result. */
@@ -317,7 +317,7 @@ static void test_peer_matches_name(void) {
 
 typedef struct {
   tsi_result res;
-  const char *str;
+  const char* str;
 } tsi_result_string_pair;
 
 static void test_result_strings(void) {
@@ -366,16 +366,16 @@ static void test_handshaker_invalid_args(void) {
 }
 
 static void test_handshaker_invalid_state(void) {
-  tsi_handshaker *h = tsi_create_fake_handshaker(0);
+  tsi_handshaker* h = tsi_create_fake_handshaker(0);
   tsi_peer peer;
-  tsi_frame_protector *p;
+  tsi_frame_protector* p;
   GPR_ASSERT(tsi_handshaker_extract_peer(h, &peer) == TSI_FAILED_PRECONDITION);
   GPR_ASSERT(tsi_handshaker_create_frame_protector(h, NULL, &p) ==
              TSI_FAILED_PRECONDITION);
   tsi_handshaker_destroy(h);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_peer_matches_name();
   test_result_strings();

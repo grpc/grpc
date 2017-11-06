@@ -33,12 +33,12 @@ extern "C" {
    this tsi adapter handshaker is temporary. It will be removed once TSI has
    been fully migrated to the new interface.
    Ownership of input tsi_handshaker is transferred to this new adapter.  */
-tsi_handshaker *tsi_create_adapter_handshaker(tsi_handshaker *wrapped);
+tsi_handshaker* tsi_create_adapter_handshaker(tsi_handshaker* wrapped);
 
 /* Given a tsi adapter handshaker, return the original wrapped handshaker. The
    adapter still owns the wrapped handshaker which should not be destroyed by
    the caller. */
-tsi_handshaker *tsi_adapter_handshaker_get_wrapped(tsi_handshaker *adapter);
+tsi_handshaker* tsi_adapter_handshaker_get_wrapped(tsi_handshaker* adapter);
 
 #ifdef __cplusplus
 }

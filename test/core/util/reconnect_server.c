@@ -31,11 +31,11 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_tcp_server.h"
 
-static void pretty_print_backoffs(reconnect_server *server) {
+static void pretty_print_backoffs(reconnect_server* server) {
   gpr_timespec diff;
   int i = 1;
   double expected_backoff = 1000.0, backoff;
-  timestamp_list *head = server->head;
+  timestamp_list* head = server->head;
   gpr_log(GPR_INFO, "reconnect server: new connection");
   for (head = server->head; head && head->next; head = head->next, i++) {
     diff = gpr_time_sub(head->next->timestamp, head->timestamp);
@@ -55,15 +55,15 @@ static void pretty_print_backoffs(reconnect_server *server) {
   }
 }
 
-static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
-                       grpc_pollset *accepting_pollset,
-                       grpc_tcp_server_acceptor *acceptor) {
+static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
+                       grpc_pollset* accepting_pollset,
+                       grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
-  char *peer;
-  char *last_colon;
-  reconnect_server *server = (reconnect_server *)arg;
+  char* peer;
+  char* last_colon;
+  reconnect_server* server = (reconnect_server*)arg;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-  timestamp_list *new_tail;
+  timestamp_list* new_tail;
   peer = grpc_endpoint_get_peer(tcp);
   grpc_endpoint_shutdown(exec_ctx, tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
@@ -95,7 +95,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   pretty_print_backoffs(server);
 }
 
-void reconnect_server_init(reconnect_server *server) {
+void reconnect_server_init(reconnect_server* server) {
   test_tcp_server_init(&server->tcp_server, on_connect, server);
   server->head = NULL;
   server->tail = NULL;
@@ -103,16 +103,16 @@ void reconnect_server_init(reconnect_server *server) {
   server->max_reconnect_backoff_ms = 0;
 }
 
-void reconnect_server_start(reconnect_server *server, int port) {
+void reconnect_server_start(reconnect_server* server, int port) {
   test_tcp_server_start(&server->tcp_server, port);
 }
 
-void reconnect_server_poll(reconnect_server *server, int seconds) {
+void reconnect_server_poll(reconnect_server* server, int seconds) {
   test_tcp_server_poll(&server->tcp_server, seconds);
 }
 
-void reconnect_server_clear_timestamps(reconnect_server *server) {
-  timestamp_list *new_head = server->head;
+void reconnect_server_clear_timestamps(reconnect_server* server) {
+  timestamp_list* new_head = server->head;
   while (server->head) {
     new_head = server->head->next;
     gpr_free(server->head);
@@ -123,7 +123,7 @@ void reconnect_server_clear_timestamps(reconnect_server *server) {
   server->peer = NULL;
 }
 
-void reconnect_server_destroy(reconnect_server *server) {
+void reconnect_server_destroy(reconnect_server* server) {
   reconnect_server_clear_timestamps(server);
   test_tcp_server_destroy(&server->tcp_server);
 }

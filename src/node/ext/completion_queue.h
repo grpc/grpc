@@ -22,7 +22,7 @@
 namespace grpc {
 namespace node {
 
-grpc_completion_queue *GetCompletionQueue();
+grpc_completion_queue* GetCompletionQueue();
 
 void CompletionQueueNext();
 

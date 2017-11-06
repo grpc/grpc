@@ -47,8 +47,8 @@ void grpc_security_pre_init(void) {
 }
 
 static bool maybe_prepend_client_auth_filter(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder, void *arg) {
-  const grpc_channel_args *args =
+    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
+  const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
@@ -62,8 +62,8 @@ static bool maybe_prepend_client_auth_filter(
 }
 
 static bool maybe_prepend_server_auth_filter(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder, void *arg) {
-  const grpc_channel_args *args =
+    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
+  const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {

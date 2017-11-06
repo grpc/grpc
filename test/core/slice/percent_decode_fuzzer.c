@@ -29,10 +29,10 @@
 bool squelch = true;
 bool leak_check = true;
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   struct grpc_memory_counters counters;
   grpc_memory_counters_init();
-  grpc_slice input = grpc_slice_from_copied_buffer((const char *)data, size);
+  grpc_slice input = grpc_slice_from_copied_buffer((const char*)data, size);
   grpc_slice output;
   if (grpc_strict_percent_decode_slice(
           input, grpc_url_percent_encoding_unreserved_bytes, &output)) {

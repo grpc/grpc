@@ -42,8 +42,8 @@
   "\x10\x02te\x08trailers"                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq,
-                     void *registered_method) {
+static void verifier(grpc_server* server, grpc_completion_queue* cq,
+                     void* registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), NULL)
@@ -51,11 +51,11 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq,
   }
 }
 
-char *g_buffer;
+char* g_buffer;
 size_t g_cap = 0;
 size_t g_count = 0;
 
-static void addbuf(const void *data, size_t len) {
+static void addbuf(const void* data, size_t len) {
   if (g_count + len > g_cap) {
     g_cap = GPR_MAX(g_count + len, g_cap * 2);
     g_buffer = gpr_realloc(g_buffer, g_cap);
@@ -64,7 +64,7 @@ static void addbuf(const void *data, size_t len) {
   g_count += len;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   int i, j;
 #define MAX_FRAME_SIZE 16384
 #define MESSAGES_PER_FRAME (MAX_FRAME_SIZE / 5)

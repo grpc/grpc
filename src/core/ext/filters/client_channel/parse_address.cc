@@ -33,13 +33,13 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-bool grpc_parse_unix(const grpc_uri *uri,
-                     grpc_resolved_address *resolved_addr) {
+bool grpc_parse_unix(const grpc_uri* uri,
+                     grpc_resolved_address* resolved_addr) {
   if (strcmp("unix", uri->scheme) != 0) {
     gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'", uri->scheme);
     return false;
   }
-  struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
+  struct sockaddr_un* un = (struct sockaddr_un*)resolved_addr->addr;
   const size_t maxlen = sizeof(un->sun_path);
   const size_t path_len = strnlen(uri->path, maxlen);
   if (path_len == maxlen) return false;
@@ -51,24 +51,24 @@ bool grpc_parse_unix(const grpc_uri *uri,
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
 
-bool grpc_parse_unix(const grpc_uri *uri,
-                     grpc_resolved_address *resolved_addr) {
+bool grpc_parse_unix(const grpc_uri* uri,
+                     grpc_resolved_address* resolved_addr) {
   abort();
 }
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
-bool grpc_parse_ipv4_hostport(const char *hostport, grpc_resolved_address *addr,
+bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors) {
   bool success = false;
   // Split host and port.
-  char *host;
-  char *port;
+  char* host;
+  char* port;
   if (!gpr_split_host_port(hostport, &host, &port)) return false;
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = sizeof(struct sockaddr_in);
-  struct sockaddr_in *in = (struct sockaddr_in *)addr->addr;
+  struct sockaddr_in* in = (struct sockaddr_in*)addr->addr;
   in->sin_family = AF_INET;
   if (inet_pton(AF_INET, host, &in->sin_addr) == 0) {
     if (log_errors) gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host);
@@ -92,32 +92,32 @@ done:
   return success;
 }
 
-bool grpc_parse_ipv4(const grpc_uri *uri,
-                     grpc_resolved_address *resolved_addr) {
+bool grpc_parse_ipv4(const grpc_uri* uri,
+                     grpc_resolved_address* resolved_addr) {
   if (strcmp("ipv4", uri->scheme) != 0) {
     gpr_log(GPR_ERROR, "Expected 'ipv4' scheme, got '%s'", uri->scheme);
     return false;
   }
-  const char *host_port = uri->path;
+  const char* host_port = uri->path;
   if (*host_port == '/') ++host_port;
   return grpc_parse_ipv4_hostport(host_port, resolved_addr,
                                   true /* log_errors */);
 }
 
-bool grpc_parse_ipv6_hostport(const char *hostport, grpc_resolved_address *addr,
+bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors) {
   bool success = false;
   // Split host and port.
-  char *host;
-  char *port;
+  char* host;
+  char* port;
   if (!gpr_split_host_port(hostport, &host, &port)) return false;
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = sizeof(struct sockaddr_in6);
-  struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)addr->addr;
+  struct sockaddr_in6* in6 = (struct sockaddr_in6*)addr->addr;
   in6->sin6_family = AF_INET6;
   // Handle the RFC6874 syntax for IPv6 zone identifiers.
-  char *host_end = (char *)gpr_memrchr(host, '%', strlen(host));
+  char* host_end = (char*)gpr_memrchr(host, '%', strlen(host));
   if (host_end != NULL) {
     GPR_ASSERT(host_end >= host);
     char host_without_scope[INET6_ADDRSTRLEN];
@@ -161,19 +161,19 @@ done:
   return success;
 }
 
-bool grpc_parse_ipv6(const grpc_uri *uri,
-                     grpc_resolved_address *resolved_addr) {
+bool grpc_parse_ipv6(const grpc_uri* uri,
+                     grpc_resolved_address* resolved_addr) {
   if (strcmp("ipv6", uri->scheme) != 0) {
     gpr_log(GPR_ERROR, "Expected 'ipv6' scheme, got '%s'", uri->scheme);
     return false;
   }
-  const char *host_port = uri->path;
+  const char* host_port = uri->path;
   if (*host_port == '/') ++host_port;
   return grpc_parse_ipv6_hostport(host_port, resolved_addr,
                                   true /* log_errors */);
 }
 
-bool grpc_parse_uri(const grpc_uri *uri, grpc_resolved_address *resolved_addr) {
+bool grpc_parse_uri(const grpc_uri* uri, grpc_resolved_address* resolved_addr) {
   if (strcmp("unix", uri->scheme) == 0) {
     return grpc_parse_unix(uri, resolved_addr);
   } else if (strcmp("ipv4", uri->scheme) == 0) {

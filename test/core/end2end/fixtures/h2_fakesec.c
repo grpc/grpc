@@ -31,14 +31,14 @@
 #include "test/core/util/test_config.h"
 
 typedef struct fullstack_secure_fixture_data {
-  char *localaddr;
+  char* localaddr;
 } fullstack_secure_fixture_data;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
-    grpc_channel_args *client_args, grpc_channel_args *server_args) {
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data *ffd =
+  fullstack_secure_fixture_data* ffd =
       gpr_malloc(sizeof(fullstack_secure_fixture_data));
 
   memset(&f, 0, sizeof(f));
@@ -51,18 +51,18 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
-static void process_auth_failure(void *state, grpc_auth_context *ctx,
-                                 const grpc_metadata *md, size_t md_count,
+static void process_auth_failure(void* state, grpc_auth_context* ctx,
+                                 const grpc_metadata* md, size_t md_count,
                                  grpc_process_auth_metadata_done_cb cb,
-                                 void *user_data) {
+                                 void* user_data) {
   GPR_ASSERT(state == NULL);
   cb(user_data, NULL, 0, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
 }
 
 static void chttp2_init_client_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *client_args,
-    grpc_channel_credentials *creds) {
-  fullstack_secure_fixture_data *ffd = f->fixture_data;
+    grpc_end2end_test_fixture* f, grpc_channel_args* client_args,
+    grpc_channel_credentials* creds) {
+  fullstack_secure_fixture_data* ffd = f->fixture_data;
   f->client =
       grpc_secure_channel_create(creds, ffd->localaddr, client_args, NULL);
   GPR_ASSERT(f->client != NULL);
@@ -70,9 +70,9 @@ static void chttp2_init_client_secure_fullstack(
 }
 
 static void chttp2_init_server_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
-    grpc_server_credentials *server_creds) {
-  fullstack_secure_fixture_data *ffd = f->fixture_data;
+    grpc_end2end_test_fixture* f, grpc_channel_args* server_args,
+    grpc_server_credentials* server_creds) {
+  fullstack_secure_fixture_data* ffd = f->fixture_data;
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -84,20 +84,20 @@ static void chttp2_init_server_secure_fullstack(
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
-  fullstack_secure_fixture_data *ffd = f->fixture_data;
+void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
+  fullstack_secure_fixture_data* ffd = f->fixture_data;
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
 }
 
 static void chttp2_init_client_fake_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  grpc_channel_credentials *fake_ts_creds =
+    grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
+  grpc_channel_credentials* fake_ts_creds =
       grpc_fake_transport_security_credentials_create();
   chttp2_init_client_secure_fullstack(f, client_args, fake_ts_creds);
 }
 
-static int fail_server_auth_check(grpc_channel_args *server_args) {
+static int fail_server_auth_check(grpc_channel_args* server_args) {
   size_t i;
   if (server_args == NULL) return 0;
   for (i = 0; i < server_args->num_args; i++) {
@@ -110,8 +110,8 @@ static int fail_server_auth_check(grpc_channel_args *server_args) {
 }
 
 static void chttp2_init_server_fake_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
-  grpc_server_credentials *fake_ts_creds =
+    grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
+  grpc_server_credentials* fake_ts_creds =
       grpc_fake_transport_security_server_credentials_create();
   if (fail_server_auth_check(server_args)) {
     grpc_auth_metadata_processor processor = {process_auth_failure, NULL, NULL};
@@ -135,7 +135,7 @@ static grpc_end2end_test_config configs[] = {
      chttp2_tear_down_secure_fullstack},
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   size_t i;
   grpc_test_init(argc, argv);
   grpc_end2end_tests_pre_init();

@@ -28,12 +28,12 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char *test_name,
-                                            grpc_channel_args *client_args,
-                                            grpc_channel_args *server_args) {
+                                            const char* test_name,
+                                            grpc_channel_args* client_args,
+                                            grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -50,14 +50,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
+static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
@@ -68,13 +68,13 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   f->server = NULL;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture *f) {
+static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = NULL;
 }
 
-static void end_test(grpc_end2end_test_fixture *f) {
+static void end_test(grpc_end2end_test_fixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -89,9 +89,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
-  char *output;
+  char* output;
   const size_t output_size = 1024 * 1024;
-  output = (char *)gpr_malloc(output_size);
+  output = (char*)gpr_malloc(output_size);
   for (i = 0; i < output_size - 1; ++i) {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
@@ -106,7 +106,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
       FEATURE_MASK_DOES_NOT_SUPPORT_RESOURCE_QUOTA_SERVER) {
     return;
   }
-  grpc_resource_quota *resource_quota =
+  grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
 
@@ -131,26 +131,26 @@ void resource_quota_server(grpc_end2end_test_config config) {
    * will be verified on completion. */
   grpc_slice request_payload_slice = generate_random_slice();
 
-  grpc_call **client_calls =
-      (grpc_call **)malloc(sizeof(grpc_call *) * NUM_CALLS);
-  grpc_call **server_calls =
-      (grpc_call **)malloc(sizeof(grpc_call *) * NUM_CALLS);
-  grpc_metadata_array *initial_metadata_recv =
-      (grpc_metadata_array *)malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
-  grpc_metadata_array *trailing_metadata_recv =
-      (grpc_metadata_array *)malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
-  grpc_metadata_array *request_metadata_recv =
-      (grpc_metadata_array *)malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
-  grpc_call_details *call_details =
-      (grpc_call_details *)malloc(sizeof(grpc_call_details) * NUM_CALLS);
-  grpc_status_code *status =
-      (grpc_status_code *)malloc(sizeof(grpc_status_code) * NUM_CALLS);
-  grpc_slice *details = (grpc_slice *)malloc(sizeof(grpc_slice) * NUM_CALLS);
-  grpc_byte_buffer **request_payload =
-      (grpc_byte_buffer **)malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
-  grpc_byte_buffer **request_payload_recv =
-      (grpc_byte_buffer **)malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
-  int *was_cancelled = (int *)malloc(sizeof(int) * NUM_CALLS);
+  grpc_call** client_calls =
+      (grpc_call**)malloc(sizeof(grpc_call*) * NUM_CALLS);
+  grpc_call** server_calls =
+      (grpc_call**)malloc(sizeof(grpc_call*) * NUM_CALLS);
+  grpc_metadata_array* initial_metadata_recv =
+      (grpc_metadata_array*)malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_metadata_array* trailing_metadata_recv =
+      (grpc_metadata_array*)malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_metadata_array* request_metadata_recv =
+      (grpc_metadata_array*)malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_call_details* call_details =
+      (grpc_call_details*)malloc(sizeof(grpc_call_details) * NUM_CALLS);
+  grpc_status_code* status =
+      (grpc_status_code*)malloc(sizeof(grpc_status_code) * NUM_CALLS);
+  grpc_slice* details = (grpc_slice*)malloc(sizeof(grpc_slice) * NUM_CALLS);
+  grpc_byte_buffer** request_payload =
+      (grpc_byte_buffer**)malloc(sizeof(grpc_byte_buffer*) * NUM_CALLS);
+  grpc_byte_buffer** request_payload_recv =
+      (grpc_byte_buffer**)malloc(sizeof(grpc_byte_buffer*) * NUM_CALLS);
+  int* was_cancelled = (int*)malloc(sizeof(int) * NUM_CALLS);
   grpc_call_error error;
   int pending_client_calls = 0;
   int pending_server_start_calls = 0;
@@ -162,7 +162,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   int unavailable = 0;
 
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
 
   for (int i = 0; i < NUM_CALLS; i++) {
     grpc_metadata_array_init(&initial_metadata_recv[i]);
