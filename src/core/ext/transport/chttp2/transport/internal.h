@@ -38,6 +38,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/support/abstract.h"
 #include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -240,12 +241,15 @@ typedef enum {
 class AbstractBase {
  public:
   AbstractBase() {}
+  virtual ~AbstractBase() { gpr_log(GPR_ERROR, "base dtor"); }
   virtual void foo() { gpr_log(GPR_ERROR, "base"); }
+  GRPC_ABSTRACT_BASE_CLASS
 };
 
 class Derived : public AbstractBase {
  public:
   Derived() {}
+  virtual ~Derived() { gpr_log(GPR_ERROR, "derived dtor"); }
   void foo() override { gpr_log(GPR_ERROR, "derived"); }
 };
 
