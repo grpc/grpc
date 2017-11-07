@@ -139,7 +139,7 @@ void grpc_auth_metadata_context_build(
     method_name = gpr_strdup(last_slash + 1);
   }
   char* host_and_port = grpc_slice_to_c_string(call_host);
-  if (strcmp(url_scheme, GRPC_SSL_URL_SCHEME) == 0) {
+  if (url_scheme != NULL && strcmp(url_scheme, GRPC_SSL_URL_SCHEME) == 0) {
     /* Remove the port if it is 443. */
     char* port_delimiter = strrchr(host_and_port, ':');
     if (port_delimiter != NULL && strcmp(port_delimiter + 1, "443") == 0) {
