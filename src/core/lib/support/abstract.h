@@ -23,6 +23,7 @@
 // doesn't have a c++ runtime, it will hit a linker error on delete unless
 // a we define a virtual operator delete. See this blog for more info:
 // https://eli.thegreenplace.net/2015/c-deleting-destructors-and-virtual-operator-delete/
-#define GRPC_ABSTRACT_BASE_CLASS static void operator delete(void *p) { abort(); }
+#define GRPC_ABSTRACT_BASE_CLASS \
+  static void operator delete(void* p) { abort(); }
 
 #endif /* GRPC_CORE_LIB_SUPPORT_ABSTRACT_H */

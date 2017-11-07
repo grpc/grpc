@@ -33,7 +33,7 @@ namespace grpc_core {
   if ((x))        \
     ;             \
   else            \
-  abort()
+    abort()
 
 template <class Needle, class... Haystack>
 class is_one_of;
