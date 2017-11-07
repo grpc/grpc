@@ -1709,7 +1709,6 @@ static bool is_epoll_available() {
 
 const grpc_event_engine_vtable* grpc_init_epollsig_linux(
     bool explicit_request) {
-  const char *error_msg = NULL;
   /* If use of signals is disabled, we cannot use epoll engine*/
   if (is_grpc_wakeup_signal_initialized && grpc_wakeup_signal < 0) {
     gpr_log(GPR_ERROR, "Skipping epollsig because use of signals is disabled.");
