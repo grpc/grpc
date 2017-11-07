@@ -174,7 +174,7 @@ static void test_jitter_backoff(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   gpr_time_init();
 

@@ -36,8 +36,8 @@ struct test {
 };
 
 /* A Thread body.   Decrement t->n, and if is becomes zero, set t->done. */
-static void thd_body(void *v) {
-  struct test *t = v;
+static void thd_body(void* v) {
+  struct test* t = v;
   gpr_mu_lock(&t->mu);
   t->n--;
   if (t->n == 0) {
@@ -47,7 +47,7 @@ static void thd_body(void *v) {
   gpr_mu_unlock(&t->mu);
 }
 
-static void thd_body_joinable(void *v) {}
+static void thd_body_joinable(void* v) {}
 
 /* Test thread options work as expected */
 static void test_options(void) {
@@ -93,7 +93,7 @@ static void test(void) {
 
 /* ------------------------------------------------- */
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   grpc_test_init(argc, argv);
   test_options();
   test();

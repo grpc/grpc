@@ -28,13 +28,13 @@ extern "C" {
 #endif
 
 typedef struct grpc_iomgr_object {
-  char *name;
-  struct grpc_iomgr_object *next;
-  struct grpc_iomgr_object *prev;
+  char* name;
+  struct grpc_iomgr_object* next;
+  struct grpc_iomgr_object* prev;
 } grpc_iomgr_object;
 
-void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name);
-void grpc_iomgr_unregister_object(grpc_iomgr_object *obj);
+void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name);
+void grpc_iomgr_unregister_object(grpc_iomgr_object* obj);
 
 void grpc_iomgr_platform_init(void);
 /** flush any globally queued work from iomgr */

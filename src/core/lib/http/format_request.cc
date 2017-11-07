@@ -28,8 +28,8 @@
 #include <grpc/support/useful.h>
 #include "src/core/lib/support/string.h"
 
-static void fill_common_header(const grpc_httpcli_request *request,
-                               gpr_strvec *buf, bool connection_close) {
+static void fill_common_header(const grpc_httpcli_request* request,
+                               gpr_strvec* buf, bool connection_close) {
   size_t i;
   gpr_strvec_add(buf, gpr_strdup(request->http.path));
   gpr_strvec_add(buf, gpr_strdup(" HTTP/1.0\r\n"));
@@ -51,9 +51,9 @@ static void fill_common_header(const grpc_httpcli_request *request,
 }
 
 grpc_slice grpc_httpcli_format_get_request(
-    const grpc_httpcli_request *request) {
+    const grpc_httpcli_request* request) {
   gpr_strvec out;
-  char *flat;
+  char* flat;
   size_t flat_len;
 
   gpr_strvec_init(&out);
@@ -67,11 +67,11 @@ grpc_slice grpc_httpcli_format_get_request(
   return grpc_slice_new(flat, flat_len, gpr_free);
 }
 
-grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
-                                            const char *body_bytes,
+grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
+                                            const char* body_bytes,
                                             size_t body_size) {
   gpr_strvec out;
-  char *tmp;
+  char* tmp;
   size_t out_len;
   size_t i;
 
@@ -98,7 +98,7 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
   gpr_strvec_destroy(&out);
 
   if (body_bytes) {
-    tmp = (char *)gpr_realloc(tmp, out_len + body_size);
+    tmp = (char*)gpr_realloc(tmp, out_len + body_size);
     memcpy(tmp + out_len, body_bytes, body_size);
     out_len += body_size;
   }
@@ -107,14 +107,14 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
 }
 
 grpc_slice grpc_httpcli_format_connect_request(
-    const grpc_httpcli_request *request) {
+    const grpc_httpcli_request* request) {
   gpr_strvec out;
   gpr_strvec_init(&out);
   gpr_strvec_add(&out, gpr_strdup("CONNECT "));
   fill_common_header(request, &out, false);
   gpr_strvec_add(&out, gpr_strdup("\r\n"));
   size_t flat_len;
-  char *flat = gpr_strvec_flatten(&out, &flat_len);
+  char* flat = gpr_strvec_flatten(&out, &flat_len);
   gpr_strvec_destroy(&out);
   return grpc_slice_new(flat, flat_len, gpr_free);
 }

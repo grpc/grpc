@@ -29,11 +29,11 @@
 
 static int all_ok = 1;
 
-static void expect_slice_eq(grpc_exec_ctx *exec_ctx, grpc_slice expected,
-                            grpc_slice slice, char *debug, int line) {
+static void expect_slice_eq(grpc_exec_ctx* exec_ctx, grpc_slice expected,
+                            grpc_slice slice, char* debug, int line) {
   if (!grpc_slice_eq(slice, expected)) {
-    char *hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    char *he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char* hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char* he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
             he);
     gpr_free(hs);
@@ -44,22 +44,22 @@ static void expect_slice_eq(grpc_exec_ctx *exec_ctx, grpc_slice expected,
   grpc_slice_unref_internal(exec_ctx, slice);
 }
 
-static grpc_slice base64_encode(grpc_exec_ctx *exec_ctx, const char *s) {
+static grpc_slice base64_encode(grpc_exec_ctx* exec_ctx, const char* s) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_encode(ss);
   grpc_slice_unref_internal(exec_ctx, ss);
   return out;
 }
 
-static grpc_slice base64_decode(grpc_exec_ctx *exec_ctx, const char *s) {
+static grpc_slice base64_decode(grpc_exec_ctx* exec_ctx, const char* s) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_decode(exec_ctx, ss);
   grpc_slice_unref_internal(exec_ctx, ss);
   return out;
 }
 
-static grpc_slice base64_decode_with_length(grpc_exec_ctx *exec_ctx,
-                                            const char *s,
+static grpc_slice base64_decode_with_length(grpc_exec_ctx* exec_ctx,
+                                            const char* s,
                                             size_t output_length) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out =
@@ -78,7 +78,7 @@ static grpc_slice base64_decode_with_length(grpc_exec_ctx *exec_ctx,
                   grpc_chttp2_base64_decode_with_length( \
                       exec_ctx, base64_encode(exec_ctx, s), strlen(s)));
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* ENCODE_AND_DECODE tests grpc_chttp2_base64_decode_with_length(), which

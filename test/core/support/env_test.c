@@ -29,9 +29,9 @@
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
 static void test_setenv_getenv(void) {
-  const char *name = "FOO";
-  const char *value = "BAR";
-  char *retrieved_value;
+  const char* name = "FOO";
+  const char* value = "BAR";
+  char* retrieved_value;
 
   LOG_TEST_NAME("test_setenv_getenv");
 
@@ -42,7 +42,7 @@ static void test_setenv_getenv(void) {
   gpr_free(retrieved_value);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_setenv_getenv();
   return 0;

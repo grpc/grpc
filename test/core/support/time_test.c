@@ -28,15 +28,15 @@
 #include <string.h>
 #include "test/core/util/test_config.h"
 
-static void to_fp(void *arg, const char *buf, size_t len) {
-  fwrite(buf, 1, len, (FILE *)arg);
+static void to_fp(void* arg, const char* buf, size_t len) {
+  fwrite(buf, 1, len, (FILE*)arg);
 }
 
 /* Convert gpr_intmax x to ascii base b (2..16), and write with
    (*writer)(arg, ...), zero padding to "chars" digits).  */
 static void i_to_s(intmax_t x, int base, int chars,
-                   void (*writer)(void *arg, const char *buf, size_t len),
-                   void *arg) {
+                   void (*writer)(void* arg, const char* buf, size_t len),
+                   void* arg) {
   char buf[64];
   char fmt[32];
   GPR_ASSERT(base == 16 || base == 10);
@@ -47,8 +47,8 @@ static void i_to_s(intmax_t x, int base, int chars,
 
 /* Convert ts to ascii, and write with (*writer)(arg, ...).  */
 static void ts_to_s(gpr_timespec t,
-                    void (*writer)(void *arg, const char *buf, size_t len),
-                    void *arg) {
+                    void (*writer)(void* arg, const char* buf, size_t len),
+                    void* arg) {
   if (t.tv_sec < 0 && t.tv_nsec != 0) {
     t.tv_sec++;
     t.tv_nsec = GPR_NS_PER_SEC - t.tv_nsec;
@@ -241,7 +241,7 @@ static void test_cmp_extreme(void) {
   GPR_ASSERT(gpr_time_cmp(t1, t2) == 0);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   grpc_test_init(argc, argv);
 
   test_values();

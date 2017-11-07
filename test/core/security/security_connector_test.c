@@ -35,10 +35,10 @@
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 
-static int check_transport_security_type(const grpc_auth_context *ctx) {
+static int check_transport_security_type(const grpc_auth_context* ctx) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       ctx, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
-  const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == NULL) return 0;
   if (strncmp(prop->value, GRPC_SSL_TRANSPORT_SECURITY_TYPE,
               prop->value_length) != 0) {
@@ -49,11 +49,11 @@ static int check_transport_security_type(const grpc_auth_context *ctx) {
   return 1;
 }
 
-static int check_peer_property(const tsi_peer *peer,
-                               const tsi_peer_property *expected) {
+static int check_peer_property(const tsi_peer* peer,
+                               const tsi_peer_property* expected) {
   size_t i;
   for (i = 0; i < peer->property_count; i++) {
-    const tsi_peer_property *prop = &peer->properties[i];
+    const tsi_peer_property* prop = &peer->properties[i];
     if ((strcmp(prop->name, expected->name) == 0) &&
         (prop->value.length == expected->value.length) &&
         (memcmp(prop->value.data, expected->value.data,
@@ -64,12 +64,12 @@ static int check_peer_property(const tsi_peer *peer,
   return 0; /* Not found... */
 }
 
-static int check_ssl_peer_equivalence(const tsi_peer *original,
-                                      const tsi_peer *reconstructed) {
+static int check_ssl_peer_equivalence(const tsi_peer* original,
+                                      const tsi_peer* reconstructed) {
   /* The reconstructed peer only has CN, SAN and pem cert properties. */
   size_t i;
   for (i = 0; i < original->property_count; i++) {
-    const tsi_peer_property *prop = &original->properties[i];
+    const tsi_peer_property* prop = &original->properties[i];
     if ((strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) ||
         (strcmp(prop->name, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
          0) ||
@@ -83,7 +83,7 @@ static int check_ssl_peer_equivalence(const tsi_peer *original,
 static void test_unauthenticated_ssl_peer(void) {
   tsi_peer peer;
   tsi_peer rpeer;
-  grpc_auth_context *ctx;
+  grpc_auth_context* ctx;
   GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
@@ -101,12 +101,12 @@ static void test_unauthenticated_ssl_peer(void) {
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
-static int check_identity(const grpc_auth_context *ctx,
-                          const char *expected_property_name,
-                          const char **expected_identities,
+static int check_identity(const grpc_auth_context* ctx,
+                          const char* expected_property_name,
+                          const char** expected_identities,
                           size_t num_identities) {
   grpc_auth_property_iterator it;
-  const grpc_auth_property *prop;
+  const grpc_auth_property* prop;
   size_t i;
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   it = grpc_auth_context_peer_identity(ctx);
@@ -131,11 +131,11 @@ static int check_identity(const grpc_auth_context *ctx,
   return 1;
 }
 
-static int check_x509_cn(const grpc_auth_context *ctx,
-                         const char *expected_cn) {
+static int check_x509_cn(const grpc_auth_context* ctx,
+                         const char* expected_cn) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       ctx, GRPC_X509_CN_PROPERTY_NAME);
-  const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == NULL) {
     gpr_log(GPR_ERROR, "CN property not found.");
     return 0;
@@ -151,11 +151,11 @@ static int check_x509_cn(const grpc_auth_context *ctx,
   return 1;
 }
 
-static int check_x509_pem_cert(const grpc_auth_context *ctx,
-                               const char *expected_pem_cert) {
+static int check_x509_pem_cert(const grpc_auth_context* ctx,
+                               const char* expected_pem_cert) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
-  const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == NULL) {
     gpr_log(GPR_ERROR, "Pem certificate property not found.");
     return 0;
@@ -175,9 +175,9 @@ static int check_x509_pem_cert(const grpc_auth_context *ctx,
 static void test_cn_only_ssl_peer_to_auth_context(void) {
   tsi_peer peer;
   tsi_peer rpeer;
-  grpc_auth_context *ctx;
-  const char *expected_cn = "cn1";
-  const char *expected_pem_cert = "pem_cert1";
+  grpc_auth_context* ctx;
+  const char* expected_cn = "cn1";
+  const char* expected_pem_cert = "pem_cert1";
   GPR_ASSERT(tsi_construct_peer(3, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
@@ -207,10 +207,10 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
 static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
   tsi_peer peer;
   tsi_peer rpeer;
-  grpc_auth_context *ctx;
-  const char *expected_cn = "cn1";
-  const char *expected_san = "san1";
-  const char *expected_pem_cert = "pem_cert1";
+  grpc_auth_context* ctx;
+  const char* expected_cn = "cn1";
+  const char* expected_san = "san1";
+  const char* expected_pem_cert = "pem_cert1";
   GPR_ASSERT(tsi_construct_peer(4, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
@@ -244,10 +244,10 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
 static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
   tsi_peer peer;
   tsi_peer rpeer;
-  grpc_auth_context *ctx;
-  const char *expected_cn = "cn1";
-  const char *expected_sans[] = {"san1", "san2", "san3"};
-  const char *expected_pem_cert = "pem_cert1";
+  grpc_auth_context* ctx;
+  const char* expected_cn = "cn1";
+  const char* expected_sans[] = {"san1", "san2", "san3"};
+  const char* expected_pem_cert = "pem_cert1";
   size_t i;
   GPR_ASSERT(tsi_construct_peer(3 + GPR_ARRAY_SIZE(expected_sans), &peer) ==
              TSI_OK);
@@ -286,10 +286,10 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
     void) {
   tsi_peer peer;
   tsi_peer rpeer;
-  grpc_auth_context *ctx;
-  const char *expected_cn = "cn1";
-  const char *expected_pem_cert = "pem_cert1";
-  const char *expected_sans[] = {"san1", "san2", "san3"};
+  grpc_auth_context* ctx;
+  const char* expected_cn = "cn1";
+  const char* expected_pem_cert = "pem_cert1";
+  const char* expected_sans[] = {"san1", "san2", "san3"};
   size_t i;
   GPR_ASSERT(tsi_construct_peer(5 + GPR_ARRAY_SIZE(expected_sans), &peer) ==
              TSI_OK);
@@ -328,24 +328,24 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
-static const char *roots_for_override_api = "roots for override api";
+static const char* roots_for_override_api = "roots for override api";
 
 static grpc_ssl_roots_override_result override_roots_success(
-    char **pem_root_certs) {
+    char** pem_root_certs) {
   *pem_root_certs = gpr_strdup(roots_for_override_api);
   return GRPC_SSL_ROOTS_OVERRIDE_OK;
 }
 
 static grpc_ssl_roots_override_result override_roots_permanent_failure(
-    char **pem_root_certs) {
+    char** pem_root_certs) {
   return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
 }
 
 static void test_default_ssl_roots(void) {
-  const char *roots_for_env_var = "roots for env var";
+  const char* roots_for_env_var = "roots for env var";
 
-  char *roots_env_var_file_path;
-  FILE *roots_env_var_file =
+  char* roots_env_var_file_path;
+  FILE* roots_env_var_file =
       gpr_tmpfile("test_roots_for_env_var", &roots_env_var_file_path);
   fwrite(roots_for_env_var, 1, strlen(roots_for_env_var), roots_env_var_file);
   fclose(roots_env_var_file);
@@ -355,7 +355,7 @@ static void test_default_ssl_roots(void) {
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
   grpc_set_ssl_roots_override_callback(override_roots_success);
   grpc_slice roots = grpc_get_default_ssl_roots_for_testing();
-  char *roots_contents = grpc_slice_to_c_string(roots);
+  char* roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
   GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
   gpr_free(roots_contents);
@@ -389,7 +389,7 @@ static void test_default_ssl_roots(void) {
   gpr_free(roots_env_var_file_path);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
 

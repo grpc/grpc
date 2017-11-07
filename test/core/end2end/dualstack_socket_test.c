@@ -39,36 +39,36 @@
 
 /* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
 
-static void *tag(intptr_t i) { return (void *)i; }
+static void* tag(intptr_t i) { return (void*)i; }
 
 static gpr_timespec ms_from_now(int ms) {
   return grpc_timeout_milliseconds_to_deadline(ms);
 }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, ms_from_now(5000), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void do_nothing(void *ignored) {}
+static void do_nothing(void* ignored) {}
 
-void test_connect(const char *server_host, const char *client_host, int port,
+void test_connect(const char* server_host, const char* client_host, int port,
                   int expect_ok) {
-  char *client_hostport;
-  char *server_hostport;
-  grpc_channel *client;
-  grpc_server *server;
-  grpc_completion_queue *cq;
-  grpc_completion_queue *shutdown_cq;
-  grpc_call *c;
-  grpc_call *s;
-  cq_verifier *cqv;
+  char* client_hostport;
+  char* server_hostport;
+  grpc_channel* client;
+  grpc_server* server;
+  grpc_completion_queue* cq;
+  grpc_completion_queue* shutdown_cq;
+  grpc_call* c;
+  grpc_call* s;
+  cq_verifier* cqv;
   gpr_timespec deadline;
   int got_port;
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -77,7 +77,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_slice details;
   int was_cancelled = 2;
   grpc_call_details call_details;
-  char *peer;
+  char* peer;
   int picked_port = 0;
 
   if (port == 0) {
@@ -112,19 +112,19 @@ void test_connect(const char *server_host, const char *client_host, int port,
     size_t i;
     grpc_slice uri_slice;
     grpc_slice_buffer uri_parts;
-    char **hosts_with_port;
+    char** hosts_with_port;
 
     uri_slice =
-        grpc_slice_new((char *)client_host, strlen(client_host), do_nothing);
+        grpc_slice_new((char*)client_host, strlen(client_host), do_nothing);
     grpc_slice_buffer_init(&uri_parts);
     grpc_slice_split(uri_slice, ",", &uri_parts);
-    hosts_with_port = gpr_malloc(sizeof(char *) * uri_parts.count);
+    hosts_with_port = gpr_malloc(sizeof(char*) * uri_parts.count);
     for (i = 0; i < uri_parts.count; i++) {
-      char *uri_part_str = grpc_slice_to_c_string(uri_parts.slices[i]);
+      char* uri_part_str = grpc_slice_to_c_string(uri_parts.slices[i]);
       gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
       gpr_free(uri_part_str);
     }
-    client_hostport = gpr_strjoin_sep((const char **)hosts_with_port,
+    client_hostport = gpr_strjoin_sep((const char**)hosts_with_port,
                                       uri_parts.count, ",", NULL);
     for (i = 0; i < uri_parts.count; i++) {
       gpr_free(hosts_with_port[i]);
@@ -268,9 +268,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
   }
 }
 
-int external_dns_works(const char *host) {
-  grpc_resolved_addresses *res = NULL;
-  grpc_error *error = grpc_blocking_resolve_address(host, "80", &res);
+int external_dns_works(const char* host) {
+  grpc_resolved_addresses* res = NULL;
+  grpc_error* error = grpc_blocking_resolve_address(host, "80", &res);
   GRPC_ERROR_UNREF(error);
   if (res != NULL) {
     grpc_resolved_addresses_destroy(res);
@@ -279,7 +279,7 @@ int external_dns_works(const char *host) {
   return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   int do_ipv6 = 1;
 
   grpc_test_init(argc, argv);
@@ -352,6 +352,6 @@ int main(int argc, char **argv) {
 
 #else /* GRPC_POSIX_SOCKET */
 
-int main(int argc, char **argv) { return 1; }
+int main(int argc, char** argv) { return 1; }
 
 #endif /* GRPC_POSIX_SOCKET */

@@ -25,45 +25,45 @@
 
 #include "src/core/lib/slice/slice_internal.h"
 
-bool grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                           grpc_byte_stream *byte_stream, size_t max_size_hint,
-                           grpc_closure *on_complete) {
+bool grpc_byte_stream_next(grpc_exec_ctx* exec_ctx,
+                           grpc_byte_stream* byte_stream, size_t max_size_hint,
+                           grpc_closure* on_complete) {
   return byte_stream->vtable->next(exec_ctx, byte_stream, max_size_hint,
                                    on_complete);
 }
 
-grpc_error *grpc_byte_stream_pull(grpc_exec_ctx *exec_ctx,
-                                  grpc_byte_stream *byte_stream,
-                                  grpc_slice *slice) {
+grpc_error* grpc_byte_stream_pull(grpc_exec_ctx* exec_ctx,
+                                  grpc_byte_stream* byte_stream,
+                                  grpc_slice* slice) {
   return byte_stream->vtable->pull(exec_ctx, byte_stream, slice);
 }
 
-void grpc_byte_stream_shutdown(grpc_exec_ctx *exec_ctx,
-                               grpc_byte_stream *byte_stream,
-                               grpc_error *error) {
+void grpc_byte_stream_shutdown(grpc_exec_ctx* exec_ctx,
+                               grpc_byte_stream* byte_stream,
+                               grpc_error* error) {
   byte_stream->vtable->shutdown(exec_ctx, byte_stream, error);
 }
 
-void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
-                              grpc_byte_stream *byte_stream) {
+void grpc_byte_stream_destroy(grpc_exec_ctx* exec_ctx,
+                              grpc_byte_stream* byte_stream) {
   byte_stream->vtable->destroy(exec_ctx, byte_stream);
 }
 
 // grpc_slice_buffer_stream
 
-static bool slice_buffer_stream_next(grpc_exec_ctx *exec_ctx,
-                                     grpc_byte_stream *byte_stream,
+static bool slice_buffer_stream_next(grpc_exec_ctx* exec_ctx,
+                                     grpc_byte_stream* byte_stream,
                                      size_t max_size_hint,
-                                     grpc_closure *on_complete) {
-  grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
+                                     grpc_closure* on_complete) {
+  grpc_slice_buffer_stream* stream = (grpc_slice_buffer_stream*)byte_stream;
   GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
   return true;
 }
 
-static grpc_error *slice_buffer_stream_pull(grpc_exec_ctx *exec_ctx,
-                                            grpc_byte_stream *byte_stream,
-                                            grpc_slice *slice) {
-  grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
+static grpc_error* slice_buffer_stream_pull(grpc_exec_ctx* exec_ctx,
+                                            grpc_byte_stream* byte_stream,
+                                            grpc_slice* slice) {
+  grpc_slice_buffer_stream* stream = (grpc_slice_buffer_stream*)byte_stream;
   if (stream->shutdown_error != GRPC_ERROR_NONE) {
     return GRPC_ERROR_REF(stream->shutdown_error);
   }
@@ -74,17 +74,17 @@ static grpc_error *slice_buffer_stream_pull(grpc_exec_ctx *exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-static void slice_buffer_stream_shutdown(grpc_exec_ctx *exec_ctx,
-                                         grpc_byte_stream *byte_stream,
-                                         grpc_error *error) {
-  grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
+static void slice_buffer_stream_shutdown(grpc_exec_ctx* exec_ctx,
+                                         grpc_byte_stream* byte_stream,
+                                         grpc_error* error) {
+  grpc_slice_buffer_stream* stream = (grpc_slice_buffer_stream*)byte_stream;
   GRPC_ERROR_UNREF(stream->shutdown_error);
   stream->shutdown_error = error;
 }
 
-static void slice_buffer_stream_destroy(grpc_exec_ctx *exec_ctx,
-                                        grpc_byte_stream *byte_stream) {
-  grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
+static void slice_buffer_stream_destroy(grpc_exec_ctx* exec_ctx,
+                                        grpc_byte_stream* byte_stream) {
+  grpc_slice_buffer_stream* stream = (grpc_slice_buffer_stream*)byte_stream;
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, stream->backing_buffer);
   GRPC_ERROR_UNREF(stream->shutdown_error);
 }
@@ -93,8 +93,8 @@ static const grpc_byte_stream_vtable slice_buffer_stream_vtable = {
     slice_buffer_stream_next, slice_buffer_stream_pull,
     slice_buffer_stream_shutdown, slice_buffer_stream_destroy};
 
-void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
-                                   grpc_slice_buffer *slice_buffer,
+void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream* stream,
+                                   grpc_slice_buffer* slice_buffer,
                                    uint32_t flags) {
   GPR_ASSERT(slice_buffer->length <= UINT32_MAX);
   stream->base.length = (uint32_t)slice_buffer->length;
@@ -107,33 +107,33 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
 
 // grpc_caching_byte_stream
 
-void grpc_byte_stream_cache_init(grpc_byte_stream_cache *cache,
-                                 grpc_byte_stream *underlying_stream) {
+void grpc_byte_stream_cache_init(grpc_byte_stream_cache* cache,
+                                 grpc_byte_stream* underlying_stream) {
   cache->underlying_stream = underlying_stream;
   grpc_slice_buffer_init(&cache->cache_buffer);
 }
 
-void grpc_byte_stream_cache_destroy(grpc_exec_ctx *exec_ctx,
-                                    grpc_byte_stream_cache *cache) {
+void grpc_byte_stream_cache_destroy(grpc_exec_ctx* exec_ctx,
+                                    grpc_byte_stream_cache* cache) {
   grpc_byte_stream_destroy(exec_ctx, cache->underlying_stream);
   grpc_slice_buffer_destroy_internal(exec_ctx, &cache->cache_buffer);
 }
 
-static bool caching_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                                     grpc_byte_stream *byte_stream,
+static bool caching_byte_stream_next(grpc_exec_ctx* exec_ctx,
+                                     grpc_byte_stream* byte_stream,
                                      size_t max_size_hint,
-                                     grpc_closure *on_complete) {
-  grpc_caching_byte_stream *stream = (grpc_caching_byte_stream *)byte_stream;
+                                     grpc_closure* on_complete) {
+  grpc_caching_byte_stream* stream = (grpc_caching_byte_stream*)byte_stream;
   if (stream->shutdown_error != GRPC_ERROR_NONE) return true;
   if (stream->cursor < stream->cache->cache_buffer.count) return true;
   return grpc_byte_stream_next(exec_ctx, stream->cache->underlying_stream,
                                max_size_hint, on_complete);
 }
 
-static grpc_error *caching_byte_stream_pull(grpc_exec_ctx *exec_ctx,
-                                            grpc_byte_stream *byte_stream,
-                                            grpc_slice *slice) {
-  grpc_caching_byte_stream *stream = (grpc_caching_byte_stream *)byte_stream;
+static grpc_error* caching_byte_stream_pull(grpc_exec_ctx* exec_ctx,
+                                            grpc_byte_stream* byte_stream,
+                                            grpc_slice* slice) {
+  grpc_caching_byte_stream* stream = (grpc_caching_byte_stream*)byte_stream;
   if (stream->shutdown_error != GRPC_ERROR_NONE) {
     return GRPC_ERROR_REF(stream->shutdown_error);
   }
@@ -143,7 +143,7 @@ static grpc_error *caching_byte_stream_pull(grpc_exec_ctx *exec_ctx,
     ++stream->cursor;
     return GRPC_ERROR_NONE;
   }
-  grpc_error *error =
+  grpc_error* error =
       grpc_byte_stream_pull(exec_ctx, stream->cache->underlying_stream, slice);
   if (error == GRPC_ERROR_NONE) {
     ++stream->cursor;
@@ -153,18 +153,18 @@ static grpc_error *caching_byte_stream_pull(grpc_exec_ctx *exec_ctx,
   return error;
 }
 
-static void caching_byte_stream_shutdown(grpc_exec_ctx *exec_ctx,
-                                         grpc_byte_stream *byte_stream,
-                                         grpc_error *error) {
-  grpc_caching_byte_stream *stream = (grpc_caching_byte_stream *)byte_stream;
+static void caching_byte_stream_shutdown(grpc_exec_ctx* exec_ctx,
+                                         grpc_byte_stream* byte_stream,
+                                         grpc_error* error) {
+  grpc_caching_byte_stream* stream = (grpc_caching_byte_stream*)byte_stream;
   GRPC_ERROR_UNREF(stream->shutdown_error);
   stream->shutdown_error = GRPC_ERROR_REF(error);
   grpc_byte_stream_shutdown(exec_ctx, stream->cache->underlying_stream, error);
 }
 
-static void caching_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
-                                        grpc_byte_stream *byte_stream) {
-  grpc_caching_byte_stream *stream = (grpc_caching_byte_stream *)byte_stream;
+static void caching_byte_stream_destroy(grpc_exec_ctx* exec_ctx,
+                                        grpc_byte_stream* byte_stream) {
+  grpc_caching_byte_stream* stream = (grpc_caching_byte_stream*)byte_stream;
   GRPC_ERROR_UNREF(stream->shutdown_error);
 }
 
@@ -172,8 +172,8 @@ static const grpc_byte_stream_vtable caching_byte_stream_vtable = {
     caching_byte_stream_next, caching_byte_stream_pull,
     caching_byte_stream_shutdown, caching_byte_stream_destroy};
 
-void grpc_caching_byte_stream_init(grpc_caching_byte_stream *stream,
-                                   grpc_byte_stream_cache *cache) {
+void grpc_caching_byte_stream_init(grpc_caching_byte_stream* stream,
+                                   grpc_byte_stream_cache* cache) {
   memset(stream, 0, sizeof(*stream));
   stream->base.length = cache->underlying_stream->length;
   stream->base.flags = cache->underlying_stream->flags;
@@ -182,6 +182,6 @@ void grpc_caching_byte_stream_init(grpc_caching_byte_stream *stream,
   stream->shutdown_error = GRPC_ERROR_NONE;
 }
 
-void grpc_caching_byte_stream_reset(grpc_caching_byte_stream *stream) {
+void grpc_caching_byte_stream_reset(grpc_caching_byte_stream* stream) {
   stream->cursor = 0;
 }

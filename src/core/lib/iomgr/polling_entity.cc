@@ -22,7 +22,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
-    grpc_pollset_set *pollset_set) {
+    grpc_pollset_set* pollset_set) {
   grpc_polling_entity pollent;
   pollent.pollent.pollset_set = pollset_set;
   pollent.tag = GRPC_POLLS_POLLSET_SET;
@@ -30,35 +30,35 @@ grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
 }
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset(
-    grpc_pollset *pollset) {
+    grpc_pollset* pollset) {
   grpc_polling_entity pollent;
   pollent.pollent.pollset = pollset;
   pollent.tag = GRPC_POLLS_POLLSET;
   return pollent;
 }
 
-grpc_pollset *grpc_polling_entity_pollset(grpc_polling_entity *pollent) {
+grpc_pollset* grpc_polling_entity_pollset(grpc_polling_entity* pollent) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
     return pollent->pollent.pollset;
   }
   return NULL;
 }
 
-grpc_pollset_set *grpc_polling_entity_pollset_set(
-    grpc_polling_entity *pollent) {
+grpc_pollset_set* grpc_polling_entity_pollset_set(
+    grpc_polling_entity* pollent) {
   if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     return pollent->pollent.pollset_set;
   }
   return NULL;
 }
 
-bool grpc_polling_entity_is_empty(const grpc_polling_entity *pollent) {
+bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent) {
   return pollent->tag == GRPC_POLLS_NONE;
 }
 
-void grpc_polling_entity_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
-                                            grpc_polling_entity *pollent,
-                                            grpc_pollset_set *pss_dst) {
+void grpc_polling_entity_add_to_pollset_set(grpc_exec_ctx* exec_ctx,
+                                            grpc_polling_entity* pollent,
+                                            grpc_pollset_set* pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
     GPR_ASSERT(pollent->pollent.pollset != NULL);
     grpc_pollset_set_add_pollset(exec_ctx, pss_dst, pollent->pollent.pollset);
@@ -72,9 +72,9 @@ void grpc_polling_entity_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_polling_entity_del_from_pollset_set(grpc_exec_ctx *exec_ctx,
-                                              grpc_polling_entity *pollent,
-                                              grpc_pollset_set *pss_dst) {
+void grpc_polling_entity_del_from_pollset_set(grpc_exec_ctx* exec_ctx,
+                                              grpc_polling_entity* pollent,
+                                              grpc_pollset_set* pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
     GPR_ASSERT(pollent->pollent.pollset != NULL);
     grpc_pollset_set_del_pollset(exec_ctx, pss_dst, pollent->pollent.pollset);

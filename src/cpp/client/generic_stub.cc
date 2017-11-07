@@ -28,8 +28,9 @@ std::unique_ptr<GenericClientAsyncReaderWriter> CallInternal(
     const grpc::string& method, CompletionQueue* cq, bool start, void* tag) {
   return std::unique_ptr<GenericClientAsyncReaderWriter>(
       internal::ClientAsyncReaderWriterFactory<ByteBuffer, ByteBuffer>::Create(
-          channel, cq, internal::RpcMethod(method.c_str(),
-                                           internal::RpcMethod::BIDI_STREAMING),
+          channel, cq,
+          internal::RpcMethod(method.c_str(),
+                              internal::RpcMethod::BIDI_STREAMING),
           context, start, tag));
 }
 

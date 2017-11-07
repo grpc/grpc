@@ -27,10 +27,10 @@
 #include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
 
 using ::google::protobuf::compiler::objectivec::ClassName;
-using ::grpc::protobuf::io::Printer;
+using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::MethodDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
-using ::grpc::protobuf::FileDescriptor;
+using ::grpc::protobuf::io::Printer;
 using ::std::map;
 using ::std::set;
 
@@ -38,7 +38,7 @@ namespace grpc_objective_c_generator {
 namespace {
 
 void PrintProtoRpcDeclarationAsPragma(
-    Printer *printer, const MethodDescriptor *method,
+    Printer* printer, const MethodDescriptor* method,
     map< ::grpc::string, ::grpc::string> vars) {
   vars["client_stream"] = method->client_streaming() ? "stream " : "";
   vars["server_stream"] = method->server_streaming() ? "stream " : "";
@@ -49,7 +49,7 @@ void PrintProtoRpcDeclarationAsPragma(
 }
 
 template <typename DescriptorType>
-static void PrintAllComments(const DescriptorType *desc, Printer *printer) {
+static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
   std::vector<grpc::string> comments;
   grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
                              &comments);
@@ -72,8 +72,8 @@ static void PrintAllComments(const DescriptorType *desc, Printer *printer) {
   printer->Print(" */\n");
 }
 
-void PrintMethodSignature(Printer *printer, const MethodDescriptor *method,
-                          const map< ::grpc::string, ::grpc::string> &vars) {
+void PrintMethodSignature(Printer* printer, const MethodDescriptor* method,
+                          const map< ::grpc::string, ::grpc::string>& vars) {
   // Print comment
   PrintAllComments(method, printer);
 
@@ -97,7 +97,7 @@ void PrintMethodSignature(Printer *printer, const MethodDescriptor *method,
   }
 }
 
-void PrintSimpleSignature(Printer *printer, const MethodDescriptor *method,
+void PrintSimpleSignature(Printer* printer, const MethodDescriptor* method,
                           map< ::grpc::string, ::grpc::string> vars) {
   vars["method_name"] =
       grpc_generator::LowercaseFirstLetter(vars["method_name"]);
@@ -105,7 +105,7 @@ void PrintSimpleSignature(Printer *printer, const MethodDescriptor *method,
   PrintMethodSignature(printer, method, vars);
 }
 
-void PrintAdvancedSignature(Printer *printer, const MethodDescriptor *method,
+void PrintAdvancedSignature(Printer* printer, const MethodDescriptor* method,
                             map< ::grpc::string, ::grpc::string> vars) {
   vars["method_name"] = "RPCTo" + vars["method_name"];
   vars["return_type"] = "GRPCProtoCall *";
@@ -113,7 +113,7 @@ void PrintAdvancedSignature(Printer *printer, const MethodDescriptor *method,
 }
 
 inline map< ::grpc::string, ::grpc::string> GetMethodVars(
-    const MethodDescriptor *method) {
+    const MethodDescriptor* method) {
   map< ::grpc::string, ::grpc::string> res;
   res["method_name"] = method->name();
   res["request_type"] = method->input_type()->name();
@@ -123,7 +123,7 @@ inline map< ::grpc::string, ::grpc::string> GetMethodVars(
   return res;
 }
 
-void PrintMethodDeclarations(Printer *printer, const MethodDescriptor *method) {
+void PrintMethodDeclarations(Printer* printer, const MethodDescriptor* method) {
   map< ::grpc::string, ::grpc::string> vars = GetMethodVars(method);
 
   PrintProtoRpcDeclarationAsPragma(printer, method, vars);
@@ -134,7 +134,7 @@ void PrintMethodDeclarations(Printer *printer, const MethodDescriptor *method) {
   printer->Print(";\n\n\n");
 }
 
-void PrintSimpleImplementation(Printer *printer, const MethodDescriptor *method,
+void PrintSimpleImplementation(Printer* printer, const MethodDescriptor* method,
                                map< ::grpc::string, ::grpc::string> vars) {
   printer->Print("{\n");
   printer->Print(vars, "  [[self RPCTo$method_name$With");
@@ -151,8 +151,8 @@ void PrintSimpleImplementation(Printer *printer, const MethodDescriptor *method,
   printer->Print("}\n");
 }
 
-void PrintAdvancedImplementation(Printer *printer,
-                                 const MethodDescriptor *method,
+void PrintAdvancedImplementation(Printer* printer,
+                                 const MethodDescriptor* method,
                                  map< ::grpc::string, ::grpc::string> vars) {
   printer->Print("{\n");
   printer->Print(vars, "  return [self RPCToMethod:@\"$method_name$\"\n");
@@ -176,8 +176,8 @@ void PrintAdvancedImplementation(Printer *printer,
   printer->Print("}\n");
 }
 
-void PrintMethodImplementations(Printer *printer,
-                                const MethodDescriptor *method) {
+void PrintMethodImplementations(Printer* printer,
+                                const MethodDescriptor* method) {
   map< ::grpc::string, ::grpc::string> vars = GetMethodVars(method);
 
   PrintProtoRpcDeclarationAsPragma(printer, method, vars);
@@ -193,7 +193,7 @@ void PrintMethodImplementations(Printer *printer,
 
 }  // namespace
 
-::grpc::string GetAllMessageClasses(const FileDescriptor *file) {
+::grpc::string GetAllMessageClasses(const FileDescriptor* file) {
   ::grpc::string output;
   set< ::grpc::string> classes;
   for (int i = 0; i < file->service_count(); i++) {
@@ -211,7 +211,7 @@ void PrintMethodImplementations(Printer *printer,
   return output;
 }
 
-::grpc::string GetHeader(const ServiceDescriptor *service) {
+::grpc::string GetHeader(const ServiceDescriptor* service) {
   ::grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -245,7 +245,7 @@ void PrintMethodImplementations(Printer *printer,
   return output;
 }
 
-::grpc::string GetSource(const ServiceDescriptor *service) {
+::grpc::string GetSource(const ServiceDescriptor* service) {
   ::grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.

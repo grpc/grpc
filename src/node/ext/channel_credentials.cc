@@ -47,10 +47,10 @@ using v8::Object;
 using v8::ObjectTemplate;
 using v8::Value;
 
-Nan::Callback *ChannelCredentials::constructor;
+Nan::Callback* ChannelCredentials::constructor;
 Persistent<FunctionTemplate> ChannelCredentials::fun_tpl;
 
-ChannelCredentials::ChannelCredentials(grpc_channel_credentials *credentials)
+ChannelCredentials::ChannelCredentials(grpc_channel_credentials* credentials)
     : wrapped_credentials(credentials) {}
 
 ChannelCredentials::~ChannelCredentials() {
@@ -81,11 +81,11 @@ bool ChannelCredentials::HasInstance(Local<Value> val) {
 }
 
 Local<Value> ChannelCredentials::WrapStruct(
-    grpc_channel_credentials *credentials) {
+    grpc_channel_credentials* credentials) {
   EscapableHandleScope scope;
   const int argc = 1;
   Local<Value> argv[argc] = {
-      Nan::New<External>(reinterpret_cast<void *>(credentials))};
+      Nan::New<External>(reinterpret_cast<void*>(credentials))};
   MaybeLocal<Object> maybe_instance =
       Nan::NewInstance(constructor->GetFunction(), argc, argv);
   if (maybe_instance.IsEmpty()) {
@@ -95,7 +95,7 @@ Local<Value> ChannelCredentials::WrapStruct(
   }
 }
 
-grpc_channel_credentials *ChannelCredentials::GetWrappedCredentials() {
+grpc_channel_credentials* ChannelCredentials::GetWrappedCredentials() {
   return wrapped_credentials;
 }
 
@@ -106,9 +106,9 @@ NAN_METHOD(ChannelCredentials::New) {
           "ChannelCredentials can only be created with the provided functions");
     }
     Local<External> ext = info[0].As<External>();
-    grpc_channel_credentials *creds_value =
-        reinterpret_cast<grpc_channel_credentials *>(ext->Value());
-    ChannelCredentials *credentials = new ChannelCredentials(creds_value);
+    grpc_channel_credentials* creds_value =
+        reinterpret_cast<grpc_channel_credentials*>(ext->Value());
+    ChannelCredentials* credentials = new ChannelCredentials(creds_value);
     credentials->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
     return;
@@ -120,7 +120,7 @@ NAN_METHOD(ChannelCredentials::New) {
 }
 
 NAN_METHOD(ChannelCredentials::CreateSsl) {
-  char *root_certs = NULL;
+  char* root_certs = NULL;
   grpc_ssl_pem_key_cert_pair key_cert_pair = {NULL, NULL};
   if (::node::Buffer::HasInstance(info[0])) {
     root_certs = ::node::Buffer::Data(info[0]);
@@ -145,7 +145,7 @@ NAN_METHOD(ChannelCredentials::CreateSsl) {
         "createSsl's second and third arguments must be"
         " provided or omitted together");
   }
-  grpc_channel_credentials *creds = grpc_ssl_credentials_create(
+  grpc_channel_credentials* creds = grpc_ssl_credentials_create(
       root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair,
       NULL);
   if (creds == NULL) {
@@ -164,14 +164,14 @@ NAN_METHOD(ChannelCredentials::Compose) {
     return Nan::ThrowTypeError(
         "compose's first argument must be a CallCredentials object");
   }
-  ChannelCredentials *self =
+  ChannelCredentials* self =
       ObjectWrap::Unwrap<ChannelCredentials>(info.This());
   if (self->wrapped_credentials == NULL) {
     return Nan::ThrowTypeError("Cannot compose insecure credential");
   }
-  CallCredentials *other = ObjectWrap::Unwrap<CallCredentials>(
+  CallCredentials* other = ObjectWrap::Unwrap<CallCredentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());
-  grpc_channel_credentials *creds = grpc_composite_channel_credentials_create(
+  grpc_channel_credentials* creds = grpc_composite_channel_credentials_create(
       self->wrapped_credentials, other->GetWrappedCredentials(), NULL);
   if (creds == NULL) {
     info.GetReturnValue().SetNull();

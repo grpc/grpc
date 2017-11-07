@@ -37,18 +37,18 @@
 #include "test/core/util/test_config.h"
 
 typedef struct fullstack_fixture_data {
-  grpc_end2end_proxy *proxy;
+  grpc_end2end_proxy* proxy;
 } fullstack_fixture_data;
 
-static grpc_server *create_proxy_server(const char *port,
-                                        grpc_channel_args *server_args) {
-  grpc_server *s = grpc_server_create(server_args, NULL);
+static grpc_server* create_proxy_server(const char* port,
+                                        grpc_channel_args* server_args) {
+  grpc_server* s = grpc_server_create(server_args, NULL);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(s, port));
   return s;
 }
 
-static grpc_channel *create_proxy_client(const char *target,
-                                         grpc_channel_args *client_args) {
+static grpc_channel* create_proxy_client(const char* target,
+                                         grpc_channel_args* client_args) {
   return grpc_insecure_channel_create(target, client_args, NULL);
 }
 
@@ -56,9 +56,9 @@ static const grpc_end2end_proxy_def proxy_def = {create_proxy_server,
                                                  create_proxy_client};
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args *client_args, grpc_channel_args *server_args) {
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
-  fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
+  fullstack_fixture_data* ffd = gpr_malloc(sizeof(fullstack_fixture_data));
   memset(&f, 0, sizeof(f));
 
   ffd->proxy = grpc_end2end_proxy_create(&proxy_def, client_args, server_args);
@@ -70,17 +70,17 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   return f;
 }
 
-void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
-                                  grpc_channel_args *client_args) {
-  fullstack_fixture_data *ffd = f->fixture_data;
+void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
+                                  grpc_channel_args* client_args) {
+  fullstack_fixture_data* ffd = f->fixture_data;
   f->client = grpc_insecure_channel_create(
       grpc_end2end_proxy_get_client_target(ffd->proxy), client_args, NULL);
   GPR_ASSERT(f->client);
 }
 
-void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
-                                  grpc_channel_args *server_args) {
-  fullstack_fixture_data *ffd = f->fixture_data;
+void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
+                                  grpc_channel_args* server_args) {
+  fullstack_fixture_data* ffd = f->fixture_data;
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -91,23 +91,24 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
-  fullstack_fixture_data *ffd = f->fixture_data;
+void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
+  fullstack_fixture_data* ffd = f->fixture_data;
   grpc_end2end_proxy_destroy(ffd->proxy);
   gpr_free(ffd);
 }
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fullstack+proxy", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-                                   FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
-                                   FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                   FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+    {"chttp2/fullstack+proxy",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   size_t i;
 
   grpc_test_init(argc, argv);

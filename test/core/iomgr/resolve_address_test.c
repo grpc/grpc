@@ -32,16 +32,16 @@ static gpr_timespec test_deadline(void) {
 
 typedef struct args_struct {
   gpr_event ev;
-  grpc_resolved_addresses *addrs;
+  grpc_resolved_addresses* addrs;
   gpr_atm done_atm;
-  gpr_mu *mu;
-  grpc_pollset *pollset;
-  grpc_pollset_set *pollset_set;
+  gpr_mu* mu;
+  grpc_pollset* pollset;
+  grpc_pollset_set* pollset_set;
 } args_struct;
 
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
+static void do_nothing(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {}
 
-void args_init(grpc_exec_ctx *exec_ctx, args_struct *args) {
+void args_init(grpc_exec_ctx* exec_ctx, args_struct* args) {
   gpr_event_init(&args->ev);
   args->pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(args->pollset, &args->mu);
@@ -51,7 +51,7 @@ void args_init(grpc_exec_ctx *exec_ctx, args_struct *args) {
   gpr_atm_rel_store(&args->done_atm, 0);
 }
 
-void args_finish(grpc_exec_ctx *exec_ctx, args_struct *args) {
+void args_finish(grpc_exec_ctx* exec_ctx, args_struct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
   grpc_resolved_addresses_destroy(args->addrs);
   grpc_pollset_set_del_pollset(exec_ctx, args->pollset_set, args->pollset);
@@ -73,7 +73,7 @@ static grpc_millis n_sec_deadline(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-static void poll_pollset_until_request_done(args_struct *args) {
+static void poll_pollset_until_request_done(args_struct* args) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_millis deadline = n_sec_deadline(10);
   while (true) {
@@ -84,7 +84,7 @@ static void poll_pollset_until_request_done(args_struct *args) {
     grpc_millis time_left = deadline - grpc_exec_ctx_now(&exec_ctx);
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRIdPTR, done, time_left);
     GPR_ASSERT(time_left >= 0);
-    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_worker* worker = NULL;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
                       grpc_pollset_work(&exec_ctx, args->pollset, &worker,
@@ -92,13 +92,13 @@ static void poll_pollset_until_request_done(args_struct *args) {
     gpr_mu_unlock(args->mu);
     grpc_exec_ctx_flush(&exec_ctx);
   }
-  gpr_event_set(&args->ev, (void *)1);
+  gpr_event_set(&args->ev, (void*)1);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *argsp,
-                         grpc_error *err) {
-  args_struct *args = argsp;
+static void must_succeed(grpc_exec_ctx* exec_ctx, void* argsp,
+                         grpc_error* err) {
+  args_struct* args = argsp;
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != NULL);
   GPR_ASSERT(args->addrs->naddrs > 0);
@@ -109,8 +109,8 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *argsp,
   gpr_mu_unlock(args->mu);
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *argsp, grpc_error *err) {
-  args_struct *args = argsp;
+static void must_fail(grpc_exec_ctx* exec_ctx, void* argsp, grpc_error* err) {
+  args_struct* args = argsp;
   GPR_ASSERT(err != GRPC_ERROR_NONE);
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
@@ -190,8 +190,10 @@ static void test_ipv6_with_port(void) {
 }
 
 static void test_ipv6_without_port(void) {
-  const char *const kCases[] = {
-      "2001:db8::1", "2001:db8::1.2.3.4", "[2001:db8::1]",
+  const char* const kCases[] = {
+      "2001:db8::1",
+      "2001:db8::1.2.3.4",
+      "[2001:db8::1]",
   };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
@@ -210,8 +212,9 @@ static void test_ipv6_without_port(void) {
 }
 
 static void test_invalid_ip_addresses(void) {
-  const char *const kCases[] = {
-      "293.283.1238.3:1", "[2001:db8::11111]:1",
+  const char* const kCases[] = {
+      "293.283.1238.3:1",
+      "[2001:db8::11111]:1",
   };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
@@ -230,7 +233,7 @@ static void test_invalid_ip_addresses(void) {
 }
 
 static void test_unparseable_hostports(void) {
-  const char *const kCases[] = {
+  const char* const kCases[] = {
       "[", "[::1", "[::1]bad", "[1.2.3.4]", "[localhost]", "[localhost]:1",
   };
   unsigned i;
@@ -249,7 +252,7 @@ static void test_unparseable_hostports(void) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

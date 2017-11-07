@@ -28,12 +28,12 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char *test_name,
-                                            grpc_channel_args *client_args,
-                                            grpc_channel_args *server_args) {
+                                            const char* test_name,
+                                            grpc_channel_args* client_args,
+                                            grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -50,14 +50,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
+static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
@@ -68,13 +68,13 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   f->server = NULL;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture *f) {
+static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = NULL;
 }
 
-static void end_test(grpc_end2end_test_fixture *f) {
+static void end_test(grpc_end2end_test_fixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -87,15 +87,15 @@ static void end_test(grpc_end2end_test_fixture *f) {
 /* Request/response with metadata and payload.*/
 static void test_request_response_with_metadata_and_payload(
     grpc_end2end_test_config config) {
-  grpc_call *c;
-  grpc_call *s;
+  grpc_call* c;
+  grpc_call* s;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string("hello you");
-  grpc_byte_buffer *request_payload =
+  grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer *response_payload =
+  grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   grpc_metadata meta_c[2] = {{grpc_slice_from_static_string("key1"),
                               grpc_slice_from_static_string("val1"),
@@ -115,14 +115,14 @@ static void test_request_response_with_metadata_and_payload(
                               {{NULL, NULL, NULL, NULL}}}};
   grpc_end2end_test_fixture f = begin_test(
       config, "test_request_response_with_metadata_and_payload", NULL, NULL);
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer *request_payload_recv = NULL;
-  grpc_byte_buffer *response_payload_recv = NULL;
+  grpc_byte_buffer* request_payload_recv = NULL;
+  grpc_byte_buffer* response_payload_recv = NULL;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;

@@ -30,7 +30,7 @@
 
 GPR_TLS_DECL(test_var);
 
-static void thd_body(void *arg) {
+static void thd_body(void* arg) {
   intptr_t i;
 
   GPR_ASSERT(gpr_tls_get(&test_var) == 0);
@@ -44,7 +44,7 @@ static void thd_body(void *arg) {
 
 /* ------------------------------------------------- */
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   gpr_thd_options opt = gpr_thd_options_default();
   int i;
   gpr_thd_id threads[NUM_THREADS];

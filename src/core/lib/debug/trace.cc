@@ -25,13 +25,13 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/support/env.h"
 
-int grpc_tracer_set_enabled(const char *name, int enabled);
+int grpc_tracer_set_enabled(const char* name, int enabled);
 
 typedef struct tracer {
-  grpc_tracer_flag *flag;
-  struct tracer *next;
+  grpc_tracer_flag* flag;
+  struct tracer* next;
 } tracer;
-static tracer *tracers;
+static tracer* tracers;
 
 #ifdef GRPC_THREADSAFE_TRACER
 #define TRACER_SET(flag, on) gpr_atm_no_barrier_store(&(flag).value, (on))
@@ -39,31 +39,31 @@ static tracer *tracers;
 #define TRACER_SET(flag, on) (flag).value = (on)
 #endif
 
-void grpc_register_tracer(grpc_tracer_flag *flag) {
-  tracer *t = (tracer *)gpr_malloc(sizeof(*t));
+void grpc_register_tracer(grpc_tracer_flag* flag) {
+  tracer* t = (tracer*)gpr_malloc(sizeof(*t));
   t->flag = flag;
   t->next = tracers;
   TRACER_SET(*flag, false);
   tracers = t;
 }
 
-static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
+static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
   size_t n = *ns;
   size_t np = n + 1;
-  char *s;
+  char* s;
   size_t len;
   GPR_ASSERT(end >= beg);
   len = (size_t)(end - beg);
-  s = (char *)gpr_malloc(len + 1);
+  s = (char*)gpr_malloc(len + 1);
   memcpy(s, beg, len);
   s[len] = 0;
-  *ss = (char **)gpr_realloc(*ss, sizeof(char **) * np);
+  *ss = (char**)gpr_realloc(*ss, sizeof(char**) * np);
   (*ss)[n] = s;
   *ns = np;
 }
 
-static void split(const char *s, char ***ss, size_t *ns) {
-  const char *c = strchr(s, ',');
+static void split(const char* s, char*** ss, size_t* ns) {
+  const char* c = strchr(s, ',');
   if (c == NULL) {
     add(s, s + strlen(s), ss, ns);
   } else {
@@ -72,8 +72,8 @@ static void split(const char *s, char ***ss, size_t *ns) {
   }
 }
 
-static void parse(const char *s) {
-  char **strings = NULL;
+static void parse(const char* s) {
+  char** strings = NULL;
   size_t nstrings = 0;
   size_t i;
   split(s, &strings, &nstrings);
@@ -94,14 +94,14 @@ static void parse(const char *s) {
 
 static void list_tracers() {
   gpr_log(GPR_DEBUG, "available tracers:");
-  tracer *t;
+  tracer* t;
   for (t = tracers; t; t = t->next) {
     gpr_log(GPR_DEBUG, "\t%s", t->flag->name);
   }
 }
 
-void grpc_tracer_init(const char *env_var) {
-  char *e = gpr_getenv(env_var);
+void grpc_tracer_init(const char* env_var) {
+  char* e = gpr_getenv(env_var);
   if (e != NULL) {
     parse(e);
     gpr_free(e);
@@ -110,14 +110,14 @@ void grpc_tracer_init(const char *env_var) {
 
 void grpc_tracer_shutdown(void) {
   while (tracers) {
-    tracer *t = tracers;
+    tracer* t = tracers;
     tracers = t->next;
     gpr_free(t);
   }
 }
 
-int grpc_tracer_set_enabled(const char *name, int enabled) {
-  tracer *t;
+int grpc_tracer_set_enabled(const char* name, int enabled) {
+  tracer* t;
   if (0 == strcmp(name, "all")) {
     for (t = tracers; t; t = t->next) {
       TRACER_SET(*t->flag, enabled);
