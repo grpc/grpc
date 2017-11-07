@@ -78,7 +78,7 @@ def _args():
     '-l',
     '--loops',
     type=int,
-    default=20,
+    default=10,
     help='Number of times to loops the benchmarks. More loops cuts down on noise'
   )
   argp.add_argument(
