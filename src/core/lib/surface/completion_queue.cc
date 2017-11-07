@@ -127,6 +127,7 @@ static grpc_error* non_polling_poller_work(grpc_exec_ctx* exec_ctx,
   while (!npp->shutdown && !w.kicked &&
          !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts))
     ;
+  grpc_exec_ctx_invalidate_now(exec_ctx);
   if (&w == npp->root) {
     npp->root = w.next;
     if (&w == npp->root) {
