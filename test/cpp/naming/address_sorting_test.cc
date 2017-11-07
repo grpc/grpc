@@ -14,6 +14,8 @@
 #include <sys/types.h>
 #include <vector>
 
+#include <address_sorting.h>
+
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
@@ -33,8 +35,6 @@ extern "C" {
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 }
-
-#include "third_party/address_sorting/address_sorting.h"
 
 namespace {
 
