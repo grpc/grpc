@@ -21,7 +21,7 @@
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/transport/status_conversion.h"
 
-static grpc_error *recursively_find_error_with_field(grpc_error *error,
+static grpc_error* recursively_find_error_with_field(grpc_error* error,
                                                      grpc_error_ints which) {
   // If the error itself has a status code, return it.
   if (grpc_error_get_int(error, which, NULL)) {
@@ -31,21 +31,21 @@ static grpc_error *recursively_find_error_with_field(grpc_error *error,
   // Otherwise, search through its children.
   uint8_t slot = error->first_err;
   while (slot != UINT8_MAX) {
-    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
-    grpc_error *result = recursively_find_error_with_field(lerr->err, which);
+    grpc_linked_error* lerr = (grpc_linked_error*)(error->arena + slot);
+    grpc_error* result = recursively_find_error_with_field(lerr->err, which);
     if (result) return result;
     slot = lerr->next;
   }
   return NULL;
 }
 
-void grpc_error_get_status(grpc_exec_ctx *exec_ctx, grpc_error *error,
-                           grpc_millis deadline, grpc_status_code *code,
-                           grpc_slice *slice,
-                           grpc_http2_error_code *http_error) {
+void grpc_error_get_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
+                           grpc_millis deadline, grpc_status_code* code,
+                           grpc_slice* slice,
+                           grpc_http2_error_code* http_error) {
   // Start with the parent error and recurse through the tree of children
   // until we find the first one that has a status code.
-  grpc_error *found_error =
+  grpc_error* found_error =
       recursively_find_error_with_field(error, GRPC_ERROR_INT_GRPC_STATUS);
   if (found_error == NULL) {
     /// If no grpc-status exists, retry through the tree to find a http2 error
@@ -94,13 +94,13 @@ void grpc_error_get_status(grpc_exec_ctx *exec_ctx, grpc_error *error,
   if (found_error == NULL) found_error = error;
 }
 
-bool grpc_error_has_clear_grpc_status(grpc_error *error) {
+bool grpc_error_has_clear_grpc_status(grpc_error* error) {
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
     return true;
   }
   uint8_t slot = error->first_err;
   while (slot != UINT8_MAX) {
-    grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
+    grpc_linked_error* lerr = (grpc_linked_error*)(error->arena + slot);
     if (grpc_error_has_clear_grpc_status(lerr->err)) {
       return true;
     }

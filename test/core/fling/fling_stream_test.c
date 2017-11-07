@@ -26,12 +26,12 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 
-int main(int argc, char **argv) {
-  char *me = argv[0];
-  char *lslash = strrchr(me, '/');
+int main(int argc, char** argv) {
+  char* me = argv[0];
+  char* lslash = strrchr(me, '/');
   char root[1024];
   int port = grpc_pick_unused_port_or_die();
-  char *args[10];
+  char* args[10];
   int status;
   gpr_subprocess *svr, *cli;
   /* figure out where we are */
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
   args[1] = "--bind";
   gpr_join_host_port(&args[2], "::", port);
   args[3] = "--no-secure";
-  svr = gpr_subprocess_create(4, (const char **)args);
+  svr = gpr_subprocess_create(4, (const char**)args);
   gpr_free(args[0]);
   gpr_free(args[2]);
 
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
   args[3] = "--scenario=ping-pong-stream";
   args[4] = "--no-secure";
   args[5] = 0;
-  cli = gpr_subprocess_create(6, (const char **)args);
+  cli = gpr_subprocess_create(6, (const char**)args);
   gpr_free(args[0]);
   gpr_free(args[2]);
 

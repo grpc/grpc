@@ -31,12 +31,12 @@
 
 extern "C" void grpc_summon_debugger_macros() {}
 
-grpc_stream *grpc_transport_stream_from_call(grpc_call *call) {
-  grpc_call_stack *cs = grpc_call_get_call_stack(call);
+grpc_stream* grpc_transport_stream_from_call(grpc_call* call) {
+  grpc_call_stack* cs = grpc_call_get_call_stack(call);
   for (;;) {
-    grpc_call_element *el = grpc_call_stack_element(cs, cs->count - 1);
+    grpc_call_element* el = grpc_call_stack_element(cs, cs->count - 1);
     if (el->filter == &grpc_client_channel_filter) {
-      grpc_subchannel_call *scc = grpc_client_channel_get_subchannel_call(el);
+      grpc_subchannel_call* scc = grpc_client_channel_get_subchannel_call(el);
       if (scc == NULL) {
         fprintf(stderr, "No subchannel-call");
         return NULL;
@@ -51,6 +51,6 @@ grpc_stream *grpc_transport_stream_from_call(grpc_call *call) {
   }
 }
 
-grpc_chttp2_stream *grpc_chttp2_stream_from_call(grpc_call *call) {
-  return (grpc_chttp2_stream *)grpc_transport_stream_from_call(call);
+grpc_chttp2_stream* grpc_chttp2_stream_from_call(grpc_call* call) {
+  return (grpc_chttp2_stream*)grpc_transport_stream_from_call(call);
 }

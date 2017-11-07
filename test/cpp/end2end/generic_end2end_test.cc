@@ -321,8 +321,9 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
 TEST_F(GenericEnd2endTest, Deadline) {
   ResetStub();
-  SendRpc(1, true, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                gpr_time_from_seconds(10, GPR_TIMESPAN)));
+  SendRpc(1, true,
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                       gpr_time_from_seconds(10, GPR_TIMESPAN)));
 }
 
 }  // namespace

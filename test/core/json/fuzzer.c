@@ -29,13 +29,13 @@
 bool squelch = true;
 bool leak_check = true;
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  char *s;
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+  char* s;
   struct grpc_memory_counters counters;
   grpc_memory_counters_init();
   s = gpr_malloc(size);
   memcpy(s, data, size);
-  grpc_json *x;
+  grpc_json* x;
   if ((x = grpc_json_parse_string_with_len(s, size))) {
     grpc_json_destroy(x);
   }

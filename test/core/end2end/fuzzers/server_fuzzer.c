@@ -30,12 +30,12 @@ bool leak_check = true;
 
 static void discard_write(grpc_slice slice) {}
 
-static void *tag(int n) { return (void *)(uintptr_t)n; }
-static int detag(void *p) { return (int)(uintptr_t)p; }
+static void* tag(int n) { return (void*)(uintptr_t)n; }
+static int detag(void* p) { return (int)(uintptr_t)p; }
 
-static void dont_log(gpr_log_func_args *args) {}
+static void dont_log(gpr_log_func_args* args) {}
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);
@@ -44,28 +44,28 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_executor_set_threading(&exec_ctx, false);
 
-  grpc_resource_quota *resource_quota =
+  grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("server_fuzzer");
-  grpc_endpoint *mock_endpoint =
+  grpc_endpoint* mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_quota);
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   grpc_mock_endpoint_put_read(
       &exec_ctx, mock_endpoint,
-      grpc_slice_from_copied_buffer((const char *)data, size));
+      grpc_slice_from_copied_buffer((const char*)data, size));
 
-  grpc_server *server = grpc_server_create(NULL, NULL);
-  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_server* server = grpc_server_create(NULL, NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
   grpc_server_register_completion_queue(server, cq, NULL);
   // TODO(ctiller): add registered methods (one for POST, one for PUT)
   // void *registered_method =
   //    grpc_server_register_method(server, "/reg", NULL, 0);
   grpc_server_start(server);
-  grpc_transport *transport =
+  grpc_transport* transport =
       grpc_create_chttp2_transport(&exec_ctx, NULL, mock_endpoint, 0);
   grpc_server_setup_transport(&exec_ctx, server, transport, NULL, NULL);
   grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
 
-  grpc_call *call1 = NULL;
+  grpc_call* call1 = NULL;
   grpc_call_details call_details1;
   grpc_metadata_array request_metadata1;
   grpc_call_details_init(&call_details1);

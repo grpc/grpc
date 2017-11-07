@@ -33,15 +33,15 @@
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/test_config.h"
 
-static grpc_channel *channel;
-static grpc_completion_queue *cq;
+static grpc_channel* channel;
+static grpc_completion_queue* cq;
 static grpc_op metadata_ops[2];
 static grpc_op status_ops[2];
 static grpc_op snapshot_ops[6];
-static grpc_op *op;
+static grpc_op* op;
 
 typedef struct {
-  grpc_call *call;
+  grpc_call* call;
   grpc_metadata_array initial_metadata_recv;
   grpc_status_code status;
   grpc_slice details;
@@ -52,7 +52,7 @@ typedef struct {
 // calls and 1 extra for the snapshot calls.
 static fling_call calls[10001];
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
 // A call is intentionally divided into two steps. First step is to initiate a
 // call (i.e send and recv metadata). A call is outstanding after we initated,
@@ -114,7 +114,7 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
   grpc_metadata_array_init(&calls[call_idx].initial_metadata_recv);
   grpc_metadata_array_init(&calls[call_idx].trailing_metadata_recv);
 
-  grpc_byte_buffer *response_payload_recv = NULL;
+  grpc_byte_buffer* response_payload_recv = NULL;
   memset(snapshot_ops, 0, sizeof(snapshot_ops));
   op = snapshot_ops;
 
@@ -144,7 +144,7 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
       gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
                                  calls[call_idx].call, snapshot_ops,
-                                 (size_t)(op - snapshot_ops), (void *)0, NULL));
+                                 (size_t)(op - snapshot_ops), (void*)0, NULL));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
   grpc_byte_buffer_reader reader;
@@ -153,16 +153,16 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
 
   struct grpc_memory_counters snapshot;
   snapshot.total_size_absolute =
-      ((struct grpc_memory_counters *)GRPC_SLICE_START_PTR(response))
+      ((struct grpc_memory_counters*)GRPC_SLICE_START_PTR(response))
           ->total_size_absolute;
   snapshot.total_allocs_absolute =
-      ((struct grpc_memory_counters *)GRPC_SLICE_START_PTR(response))
+      ((struct grpc_memory_counters*)GRPC_SLICE_START_PTR(response))
           ->total_allocs_absolute;
   snapshot.total_size_relative =
-      ((struct grpc_memory_counters *)GRPC_SLICE_START_PTR(response))
+      ((struct grpc_memory_counters*)GRPC_SLICE_START_PTR(response))
           ->total_size_relative;
   snapshot.total_allocs_relative =
-      ((struct grpc_memory_counters *)GRPC_SLICE_START_PTR(response))
+      ((struct grpc_memory_counters*)GRPC_SLICE_START_PTR(response))
           ->total_allocs_relative;
 
   grpc_metadata_array_destroy(&calls[call_idx].initial_metadata_recv);
@@ -178,13 +178,13 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
   return snapshot;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_memory_counters_init();
   grpc_slice slice = grpc_slice_from_copied_string("x");
-  char *fake_argv[1];
+  char* fake_argv[1];
 
-  char *target = "localhost:443";
-  gpr_cmdline *cl;
+  char* target = "localhost:443";
+  gpr_cmdline* cl;
   grpc_event event;
 
   grpc_init();
@@ -251,8 +251,9 @@ int main(int argc, char **argv) {
 
   do {
     event = grpc_completion_queue_next(
-        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(10000, GPR_TIMESPAN)),
+        cq,
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_micros(10000, GPR_TIMESPAN)),
         NULL);
   } while (event.type != GRPC_QUEUE_TIMEOUT);
 
@@ -301,11 +302,11 @@ int main(int argc, char **argv) {
           server_calls_end.total_size_relative -
               after_server_create.total_size_relative);
 
-  const char *csv_file = "memory_usage.csv";
-  FILE *csv = fopen(csv_file, "w");
+  const char* csv_file = "memory_usage.csv";
+  FILE* csv = fopen(csv_file, "w");
   if (csv) {
-    char *env_build = gpr_getenv("BUILD_NUMBER");
-    char *env_job = gpr_getenv("JOB_NAME");
+    char* env_build = gpr_getenv("BUILD_NUMBER");
+    char* env_job = gpr_getenv("JOB_NAME");
     fprintf(csv, "%f,%zi,%zi,%f,%zi,%s,%s\n",
             (double)(client_calls_inflight.total_size_relative -
                      client_benchmark_calls_start.total_size_relative) /

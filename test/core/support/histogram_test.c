@@ -25,7 +25,7 @@ static void test_no_op(void) {
   gpr_histogram_destroy(gpr_histogram_create(0.01, 60e9));
 }
 
-static void expect_percentile(gpr_histogram *h, double percentile,
+static void expect_percentile(gpr_histogram* h, double percentile,
                               double min_expect, double max_expect) {
   double got = gpr_histogram_percentile(h, percentile);
   gpr_log(GPR_INFO, "@%f%%, expect %f <= %f <= %f", percentile, min_expect, got,
@@ -35,7 +35,7 @@ static void expect_percentile(gpr_histogram *h, double percentile,
 }
 
 static void test_simple(void) {
-  gpr_histogram *h;
+  gpr_histogram* h;
 
   LOG_TEST("test_simple");
 
@@ -52,7 +52,7 @@ static void test_simple(void) {
 }
 
 static void test_percentile(void) {
-  gpr_histogram *h;
+  gpr_histogram* h;
   double last;
   double i;
   double cur;

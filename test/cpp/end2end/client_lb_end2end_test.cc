@@ -36,6 +36,7 @@
 extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
+#include "src/core/lib/support/env.h"
 }
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -86,7 +87,11 @@ class MyTestServiceImpl : public TestServiceImpl {
 class ClientLbEnd2endTest : public ::testing::Test {
  protected:
   ClientLbEnd2endTest()
-      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {}
+      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {
+    // Make the backup poller poll very frequently in order to pick up
+    // updates from all the subchannels's FDs.
+    gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
+  }
 
   void SetUp() override {
     response_generator_ = grpc_fake_resolver_response_generator_create();
@@ -305,7 +310,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   ports.clear();
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET none *******");
-  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  grpc_connectivity_state channel_state;
   do {
     channel_state = channel_->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);
@@ -481,7 +486,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
   ports.clear();
   SetNextResolution(ports);
-  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  grpc_connectivity_state channel_state;
   do {
     channel_state = channel_->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);

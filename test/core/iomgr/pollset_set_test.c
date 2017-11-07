@@ -24,6 +24,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -36,16 +37,18 @@
  * test_pollset_set
  */
 
-typedef struct test_pollset_set { grpc_pollset_set *pss; } test_pollset_set;
+typedef struct test_pollset_set {
+  grpc_pollset_set* pss;
+} test_pollset_set;
 
-void init_test_pollset_sets(test_pollset_set *pollset_sets, const int num_pss) {
+void init_test_pollset_sets(test_pollset_set* pollset_sets, const int num_pss) {
   for (int i = 0; i < num_pss; i++) {
     pollset_sets[i].pss = grpc_pollset_set_create();
   }
 }
 
-void cleanup_test_pollset_sets(grpc_exec_ctx *exec_ctx,
-                               test_pollset_set *pollset_sets,
+void cleanup_test_pollset_sets(grpc_exec_ctx* exec_ctx,
+                               test_pollset_set* pollset_sets,
                                const int num_pss) {
   for (int i = 0; i < num_pss; i++) {
     grpc_pollset_set_destroy(exec_ctx, pollset_sets[i].pss);
@@ -58,24 +61,24 @@ void cleanup_test_pollset_sets(grpc_exec_ctx *exec_ctx,
  */
 
 typedef struct test_pollset {
-  grpc_pollset *ps;
-  gpr_mu *mu;
+  grpc_pollset* ps;
+  gpr_mu* mu;
 } test_pollset;
 
-static void init_test_pollsets(test_pollset *pollsets, const int num_pollsets) {
+static void init_test_pollsets(test_pollset* pollsets, const int num_pollsets) {
   for (int i = 0; i < num_pollsets; i++) {
     pollsets[i].ps = gpr_zalloc(grpc_pollset_size());
     grpc_pollset_init(pollsets[i].ps, &pollsets[i].mu);
   }
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
-                            grpc_error *error) {
+static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* p,
+                            grpc_error* error) {
   grpc_pollset_destroy(exec_ctx, p);
 }
 
-static void cleanup_test_pollsets(grpc_exec_ctx *exec_ctx,
-                                  test_pollset *pollsets,
+static void cleanup_test_pollsets(grpc_exec_ctx* exec_ctx,
+                                  test_pollset* pollsets,
                                   const int num_pollsets) {
   grpc_closure destroyed;
   for (int i = 0; i < num_pollsets; i++) {
@@ -94,18 +97,18 @@ static void cleanup_test_pollsets(grpc_exec_ctx *exec_ctx,
  */
 
 typedef struct test_fd {
-  grpc_fd *fd;
+  grpc_fd* fd;
   grpc_wakeup_fd wakeup_fd;
 
   bool is_on_readable_called; /* Is on_readable closure is called ? */
   grpc_closure on_readable;   /* Closure to call when this fd is readable */
 } test_fd;
 
-void on_readable(grpc_exec_ctx *exec_ctx, void *tfd, grpc_error *error) {
-  ((test_fd *)tfd)->is_on_readable_called = true;
+void on_readable(grpc_exec_ctx* exec_ctx, void* tfd, grpc_error* error) {
+  ((test_fd*)tfd)->is_on_readable_called = true;
 }
 
-static void reset_test_fd(grpc_exec_ctx *exec_ctx, test_fd *tfd) {
+static void reset_test_fd(grpc_exec_ctx* exec_ctx, test_fd* tfd) {
   tfd->is_on_readable_called = false;
 
   GRPC_CLOSURE_INIT(&tfd->on_readable, on_readable, tfd,
@@ -113,7 +116,7 @@ static void reset_test_fd(grpc_exec_ctx *exec_ctx, test_fd *tfd) {
   grpc_fd_notify_on_read(exec_ctx, tfd->fd, &tfd->on_readable);
 }
 
-static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
+static void init_test_fds(grpc_exec_ctx* exec_ctx, test_fd* tfds,
                           const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_wakeup_fd_init(&tfds[i].wakeup_fd));
@@ -123,7 +126,7 @@ static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
   }
 }
 
-static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
+static void cleanup_test_fds(grpc_exec_ctx* exec_ctx, test_fd* tfds,
                              const int num_fds) {
   int release_fd;
 
@@ -145,13 +148,13 @@ static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
   }
 }
 
-static void make_test_fds_readable(test_fd *tfds, const int num_fds) {
+static void make_test_fds_readable(test_fd* tfds, const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_wakeup_fd_wakeup(&tfds[i].wakeup_fd));
   }
 }
 
-static void verify_readable_and_reset(grpc_exec_ctx *exec_ctx, test_fd *tfds,
+static void verify_readable_and_reset(grpc_exec_ctx* exec_ctx, test_fd* tfds,
                                       const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     /* Verify that the on_readable callback was called */
@@ -202,7 +205,7 @@ static void pollset_set_test_basic() {
    *                    +---> FD9 (Added after PS2 is added to PSS0)
    */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_pollset_worker *worker;
+  grpc_pollset_worker* worker;
   grpc_millis deadline;
 
   test_fd tfds[10];
@@ -307,7 +310,7 @@ void pollset_set_test_dup_fds() {
    *                    +---> FD1
    */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_pollset_worker *worker;
+  grpc_pollset_worker* worker;
   grpc_millis deadline;
 
   test_fd tfds[3];
@@ -380,7 +383,7 @@ void pollset_set_test_empty_pollset() {
    *                   +---> FD2
    */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_pollset_worker *worker;
+  grpc_pollset_worker* worker;
   grpc_millis deadline;
 
   test_fd tfds[3];
@@ -429,15 +432,14 @@ void pollset_set_test_empty_pollset() {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-int main(int argc, char **argv) {
-  const char *poll_strategy = grpc_get_poll_strategy_name();
+int main(int argc, char** argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init(&exec_ctx);
-  grpc_iomgr_start(&exec_ctx);
+  grpc_init();
+  const char* poll_strategy = grpc_get_poll_strategy_name();
 
   if (poll_strategy != NULL &&
-      (strcmp(poll_strategy, "epoll") == 0 ||
+      (strcmp(poll_strategy, "epollsig") == 0 ||
        strcmp(poll_strategy, "epoll-threadpool") == 0)) {
     pollset_set_test_basic();
     pollset_set_test_dup_fds();
@@ -449,10 +451,10 @@ int main(int argc, char **argv) {
             poll_strategy);
   }
 
-  grpc_iomgr_shutdown(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
   return 0;
 }
-#else /* defined(GRPC_LINUX_EPOLL) */
-int main(int argc, char **argv) { return 0; }
+#else  /* defined(GRPC_LINUX_EPOLL) */
+int main(int argc, char** argv) { return 0; }
 #endif /* !defined(GRPC_LINUX_EPOLL) */
