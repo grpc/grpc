@@ -544,7 +544,8 @@ static void init_transport(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
     }
   }
 
-  t->flow_control.Init(exec_ctx, t, enable_bdp);
+  t->flow_control.Init<grpc_core::chttp2::TransportFlowControl>(exec_ctx, t,
+                                                                enable_bdp);
 
   /* No pings allowed before receiving a header or data frame. */
   t->ping_state.pings_before_data_required = 0;
@@ -716,7 +717,10 @@ static int init_stream(grpc_exec_ctx* exec_ctx, grpc_transport* gt,
     post_destructive_reclaimer(exec_ctx, t);
   }
 
-  s->flow_control.Init(t->flow_control.get(), s);
+  s->flow_control.Init<grpc_core::chttp2::StreamFlowControl>(
+      static_cast<grpc_core::chttp2::TransportFlowControl *>(
+          t->flow_control.get()),
+      s);
   GPR_TIMER_END("init_stream", 0);
 
   return 0;
