@@ -243,9 +243,9 @@ class AbstractBase {
   virtual void foo() { gpr_log(GPR_ERROR, "base"); }
 };
 
-class D1 : public AbstractBase {
+class Derived : public AbstractBase {
  public:
-  D1() {}
+  Derived() {}
   void foo() override { gpr_log(GPR_ERROR, "derived"); }
 };
 
@@ -255,7 +255,7 @@ struct grpc_chttp2_transport {
   grpc_endpoint* ep;
   char* peer_string;
 
-  AbstractBase* abstract;
+  grpc_core::PolymorphicManualConstructor<AbstractBase, Derived> abstract;
 
   grpc_combiner* combiner;
 

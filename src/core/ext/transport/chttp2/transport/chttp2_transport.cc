@@ -274,7 +274,7 @@ static void init_transport(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
-  t->abstract = new D1;
+  t->abstract.Init<Derived>();
   t->abstract->foo();
 
   t->base.vtable = get_vtable();
