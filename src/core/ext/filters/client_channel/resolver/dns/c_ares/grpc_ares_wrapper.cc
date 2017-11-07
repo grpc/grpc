@@ -101,14 +101,15 @@ static void grpc_ares_request_ref(grpc_ares_request* r) {
   gpr_ref(&r->pending_queries);
 }
 
-static void log_address_sorting_list(grpc_lb_addresses *lb_addrs,
-                                     const char *input_output_str) {
+static void log_address_sorting_list(grpc_lb_addresses* lb_addrs,
+                                     const char* input_output_str) {
   for (size_t i = 0; i < lb_addrs->num_addresses; i++) {
-    char *addr_str;
+    char* addr_str;
     if (grpc_sockaddr_to_string(&addr_str, &lb_addrs->addresses[i].address,
                                 true)) {
-      gpr_log(GPR_INFO, "C-ares sockaddr address sorting %s index: %" PRIdPTR
-                        ". Sockaddr-to-string: %s",
+      gpr_log(GPR_INFO,
+              "C-ares sockaddr address sorting %s index: %" PRIdPTR
+              ". Sockaddr-to-string: %s",
               input_output_str, i, addr_str);
       gpr_free(addr_str);
     } else {
@@ -120,8 +121,8 @@ static void log_address_sorting_list(grpc_lb_addresses *lb_addrs,
   }
 }
 
-static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
-                                    grpc_ares_request *r) {
+static void grpc_ares_request_unref(grpc_exec_ctx* exec_ctx,
+                                    grpc_ares_request* r) {
   /* If there are no pending queries, invoke on_done callback and destroy the
      request */
   if (gpr_unref(&r->pending_queries)) {

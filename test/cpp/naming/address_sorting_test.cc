@@ -44,8 +44,8 @@ struct TestAddress {
 };
 
 grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
-  char *host;
-  char *port;
+  char* host;
+  char* port;
   grpc_resolved_address resolved_addr;
   gpr_split_host_port(test_addr.dest_addr.c_str(), &host, &port);
   if (test_addr.family == AF_INET) {
@@ -92,13 +92,13 @@ class MockSocketFactory : public address_sorting_socket_factory {
     return cur_socket_++;
   }
 
-  int Connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+  int Connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
     if ((addr->sa_family == AF_INET && !ipv4_supported_) ||
         (addr->sa_family == AF_INET6 && !ipv6_supported_)) {
       errno = EAFNOSUPPORT;
       return -1;
     }
-    char *ip_addr_str;
+    char* ip_addr_str;
     grpc_resolved_address resolved_addr;
     memcpy(&resolved_addr.addr, addr, addrlen);
     resolved_addr.len = addrlen;
@@ -115,7 +115,7 @@ class MockSocketFactory : public address_sorting_socket_factory {
     return 0;
   }
 
-  int GetSockName(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+  int GetSockName(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
     auto it = fd_to_getsockname_return_vals_.find(sockfd);
     EXPECT_TRUE(it != fd_to_getsockname_return_vals_.end());
     grpc_resolved_address resolved_addr =
@@ -137,35 +137,35 @@ class MockSocketFactory : public address_sorting_socket_factory {
   int cur_socket_;
 };
 
-int mock_socket_factory_wrapper_socket(address_sorting_socket_factory *factory,
+int mock_socket_factory_wrapper_socket(address_sorting_socket_factory* factory,
                                        int domain, int type, int protocol) {
-  MockSocketFactory *mock = reinterpret_cast<MockSocketFactory *>(factory);
+  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
   return mock->Socket(domain, type, protocol);
 }
 
-int mock_socket_factory_wrapper_connect(address_sorting_socket_factory *factory,
-                                        int sockfd, const struct sockaddr *addr,
+int mock_socket_factory_wrapper_connect(address_sorting_socket_factory* factory,
+                                        int sockfd, const struct sockaddr* addr,
                                         socklen_t addrlen) {
-  MockSocketFactory *mock = reinterpret_cast<MockSocketFactory *>(factory);
+  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
   return mock->Connect(sockfd, addr, addrlen);
 }
 
-int mock_socket_factory_getsockname(address_sorting_socket_factory *factory,
-                                    int sockfd, struct sockaddr *addr,
-                                    socklen_t *addrlen) {
-  MockSocketFactory *mock = reinterpret_cast<MockSocketFactory *>(factory);
+int mock_socket_factory_getsockname(address_sorting_socket_factory* factory,
+                                    int sockfd, struct sockaddr* addr,
+                                    socklen_t* addrlen) {
+  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
   return mock->GetSockName(sockfd, addr, addrlen);
 }
 
-int mock_socket_factory_close(address_sorting_socket_factory *factory,
+int mock_socket_factory_close(address_sorting_socket_factory* factory,
                               int sockfd) {
-  MockSocketFactory *mock = reinterpret_cast<MockSocketFactory *>(factory);
+  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
   return mock->Close(sockfd);
 }
 
 void mock_socket_factory_wrapper_destroy(
-    address_sorting_socket_factory *factory) {
-  MockSocketFactory *mock = reinterpret_cast<MockSocketFactory *>(factory);
+    address_sorting_socket_factory* factory) {
+  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
   delete mock;
 }
 
@@ -178,16 +178,16 @@ const address_sorting_socket_factory_vtable kMockSocketFactoryVtable = {
 void OverrideAddressSortingSocketFactory(
     bool ipv4_supported, bool ipv6_supported,
     std::map<std::string, TestAddress> dest_addr_to_src_addr) {
-  address_sorting_socket_factory *factory = new MockSocketFactory(
+  address_sorting_socket_factory* factory = new MockSocketFactory(
       ipv4_supported, ipv6_supported, dest_addr_to_src_addr);
   factory->vtable = &kMockSocketFactoryVtable;
   address_sorting_override_socket_factory_for_testing(factory);
 }
 
-grpc_lb_addresses *BuildLbAddrInputs(std::vector<TestAddress> test_addrs) {
-  grpc_lb_addresses *lb_addrs = grpc_lb_addresses_create(0, NULL);
-  lb_addrs->addresses = (grpc_lb_address *)gpr_zalloc(sizeof(grpc_lb_address) *
-                                                      test_addrs.size());
+grpc_lb_addresses* BuildLbAddrInputs(std::vector<TestAddress> test_addrs) {
+  grpc_lb_addresses* lb_addrs = grpc_lb_addresses_create(0, NULL);
+  lb_addrs->addresses =
+      (grpc_lb_address*)gpr_zalloc(sizeof(grpc_lb_address) * test_addrs.size());
   lb_addrs->num_addresses = test_addrs.size();
   for (size_t i = 0; i < test_addrs.size(); i++) {
     lb_addrs->addresses[i].address =
@@ -196,11 +196,11 @@ grpc_lb_addresses *BuildLbAddrInputs(std::vector<TestAddress> test_addrs) {
   return lb_addrs;
 }
 
-void VerifyLbAddrOutputs(grpc_lb_addresses *lb_addrs,
+void VerifyLbAddrOutputs(grpc_lb_addresses* lb_addrs,
                          std::vector<std::string> expected_addrs) {
   EXPECT_EQ(lb_addrs->num_addresses, expected_addrs.size());
   for (size_t i = 0; i < lb_addrs->num_addresses; i++) {
-    char *ip_addr_str;
+    char* ip_addr_str;
     grpc_sockaddr_to_string(&ip_addr_str, &lb_addrs->addresses[i].address,
                             false /* normalize */);
     EXPECT_EQ(expected_addrs[i], ip_addr_str);
@@ -219,12 +219,14 @@ TEST(AddressSortingTest, TestDepriotizesUnreachableAddresses) {
       {
           {"1.2.3.4:443", {"4.3.2.1:443", AF_INET}},
       });
-  auto *lb_addrs = BuildLbAddrInputs({
-      {"1.2.3.4:443", AF_INET}, {"5.6.7.8:443", AF_INET},
+  auto* lb_addrs = BuildLbAddrInputs({
+      {"1.2.3.4:443", AF_INET},
+      {"5.6.7.8:443", AF_INET},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
-                                    "1.2.3.4:443", "5.6.7.8:443",
+                                    "1.2.3.4:443",
+                                    "5.6.7.8:443",
                                 });
 }
 
@@ -237,13 +239,14 @@ TEST(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv6) {
           {"1.2.3.4:443", {"4.3.2.1:0", AF_INET}},
       });
   auto lb_addrs = BuildLbAddrInputs({
-      {"[2607:f8b0:400a:801::1002]:443", AF_INET6}, {"1.2.3.4:443", AF_INET},
+      {"[2607:f8b0:400a:801::1002]:443", AF_INET6},
+      {"1.2.3.4:443", AF_INET},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs,
-                      {
-                          "1.2.3.4:443", "[2607:f8b0:400a:801::1002]:443",
-                      });
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "1.2.3.4:443",
+                                    "[2607:f8b0:400a:801::1002]:443",
+                                });
 }
 
 TEST(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv4) {
@@ -255,14 +258,15 @@ TEST(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv4) {
           {"1.2.3.4:443", {"4.3.2.1:0", AF_INET}},
           {"[2607:f8b0:400a:801::1002]:443", {"[fec0::1234]:0", AF_INET6}},
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
-      {"[2607:f8b0:400a:801::1002]:443", AF_INET6}, {"1.2.3.4:443", AF_INET},
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[2607:f8b0:400a:801::1002]:443", AF_INET6},
+      {"1.2.3.4:443", AF_INET},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs,
-                      {
-                          "[2607:f8b0:400a:801::1002]:443", "1.2.3.4:443",
-                      });
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[2607:f8b0:400a:801::1002]:443",
+                                    "1.2.3.4:443",
+                                });
 }
 
 /* Tests for rule 2 */
@@ -278,15 +282,15 @@ TEST(AddressSortingTest, TestDepriotizesNonMatchingScope) {
           {"[fec0::5000]:443",
            {"[fec0::5001]:0", AF_INET6}},  // site-local and site-local scope
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
       {"[2000:f8b0:400a:801::1002]:443", AF_INET6},
       {"[fec0::5000]:443", AF_INET6},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs,
-                      {
-                          "[fec0::5000]:443", "[2000:f8b0:400a:801::1002]:443",
-                      });
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[fec0::5000]:443",
+                                    "[2000:f8b0:400a:801::1002]:443",
+                                });
 }
 
 /* Tests for rule 5 */
@@ -301,12 +305,14 @@ TEST(AddressSortingTest, TestUsesLabelFromDefaultTable) {
           {"[2001::5001]:443",
            {"[2001::5002]:0", AF_INET6}},  // matching labels
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
-      {"[2002::5001]:443", AF_INET6}, {"[2001::5001]:443", AF_INET6},
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[2002::5001]:443", AF_INET6},
+      {"[2001::5001]:443", AF_INET6},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
-                                    "[2001::5001]:443", "[2002::5001]:443",
+                                    "[2001::5001]:443",
+                                    "[2002::5001]:443",
                                 });
 }
 
@@ -322,8 +328,9 @@ TEST(AddressSortingTest,
           {"[3ffe::5001]:443", {"[3ffe::5002]:0", AF_INET6}},
           {"1.2.3.4:443", {"5.6.7.8:0", AF_INET}},
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
-      {"[3ffe::5001]:443", AF_INET6}, {"1.2.3.4:443", AF_INET},
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[3ffe::5001]:443", AF_INET6},
+      {"1.2.3.4:443", AF_INET},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
   VerifyLbAddrOutputs(
@@ -331,7 +338,8 @@ TEST(AddressSortingTest,
                     // The AF_INET address should be IPv4-mapped by the sort,
                     // and IPv4-mapped
                     // addresses have higher precedence than 3ffe::/16 by spec.
-                    "1.2.3.4:443", "[3ffe::5001]:443",
+                    "1.2.3.4:443",
+                    "[3ffe::5001]:443",
                 });
 }
 
@@ -345,14 +353,16 @@ TEST(AddressSortingTest,
           {"[2001::1234]:443", {"[2001::5678]:0", AF_INET6}},
           {"[2000::5001]:443", {"[2000::5002]:0", AF_INET6}},
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
-      {"[2001::1234]:443", AF_INET6}, {"[2000::5001]:443", AF_INET6},
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[2001::1234]:443", AF_INET6},
+      {"[2000::5001]:443", AF_INET6},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
   VerifyLbAddrOutputs(
       lb_addrs, {
                     // The 2000::/16 address should match the ::/0 prefix rule
-                    "[2000::5001]:443", "[2001::1234]:443",
+                    "[2000::5001]:443",
+                    "[2001::1234]:443",
                 });
 }
 
@@ -366,12 +376,14 @@ TEST(AddressSortingTest,
           {"[fec0::1234]:443", {"[fec0::5678]:0", AF_INET6}},
           {"[fc00::5001]:443", {"[fc00::5002]:0", AF_INET6}},
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
-      {"[fec0::1234]:443", AF_INET6}, {"[fc00::5001]:443", AF_INET6},
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[fec0::1234]:443", AF_INET6},
+      {"[fc00::5001]:443", AF_INET6},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
-                                    "[fc00::5001]:443", "[fec0::1234]:443",
+                                    "[fc00::5001]:443",
+                                    "[fec0::1234]:443",
                                 });
 }
 
@@ -389,12 +401,14 @@ TEST(AddressSortingTest, TestPrefersSmallerScope) {
           {"[fec0::1234]:443", {"[fec0::5678]:0", AF_INET6}},
           {"[3ffe::5001]:443", {"[3ffe::5002]:0", AF_INET6}},
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
-      {"[3ffe::5001]:443", AF_INET6}, {"[fec0::1234]:443", AF_INET6},
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[3ffe::5001]:443", AF_INET6},
+      {"[fec0::1234]:443", AF_INET6},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
-                                    "[fec0::1234]:443", "[3ffe::5001]:443",
+                                    "[fec0::1234]:443",
+                                    "[3ffe::5001]:443",
                                 });
 }
 
@@ -412,12 +426,14 @@ TEST(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefix) {
           {"[3ffe::1234]:443", {"[3ffe::1235]:0", AF_INET6}},
           {"[3ffe::5001]:443", {"[3ffe::4321]:0", AF_INET6}},
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
-      {"[3ffe::5001]:443", AF_INET6}, {"[3ffe::1234]:443", AF_INET6},
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[3ffe::5001]:443", AF_INET6},
+      {"[3ffe::1234]:443", AF_INET6},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
-                                    "[3ffe::1234]:443", "[3ffe::5001]:443",
+                                    "[3ffe::1234]:443",
+                                    "[3ffe::5001]:443",
                                 });
 }
 
@@ -432,12 +448,14 @@ TEST(AddressSortingTest, TestStableSort) {
           {"[3ffe::1234]:443", {"[3ffe::1236]:0", AF_INET6}},
           {"[3ffe::1235]:443", {"[3ffe::1237]:0", AF_INET6}},
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
-      {"[3ffe::1234]:443", AF_INET6}, {"[3ffe::1235]:443", AF_INET6},
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[3ffe::1234]:443", AF_INET6},
+      {"[3ffe::1235]:443", AF_INET6},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
-                                    "[3ffe::1234]:443", "[3ffe::1235]:443",
+                                    "[3ffe::1234]:443",
+                                    "[3ffe::1235]:443",
                                 });
 }
 
@@ -453,7 +471,7 @@ TEST(AddressSortingTest, TestStableSortFiveElements) {
           {"[3ffe::1234]:443", {"[3ffe::1204]:0", AF_INET6}},
           {"[3ffe::1235]:443", {"[3ffe::1205]:0", AF_INET6}},
       });
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
       {"[3ffe::1231]:443", AF_INET6},
       {"[3ffe::1232]:443", AF_INET6},
       {"[3ffe::1233]:443", AF_INET6},
@@ -461,18 +479,20 @@ TEST(AddressSortingTest, TestStableSortFiveElements) {
       {"[3ffe::1235]:443", AF_INET6},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
-  VerifyLbAddrOutputs(
-      lb_addrs, {
-                    "[3ffe::1231]:443", "[3ffe::1232]:443", "[3ffe::1233]:443",
-                    "[3ffe::1234]:443", "[3ffe::1235]:443",
-                });
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[3ffe::1231]:443",
+                                    "[3ffe::1232]:443",
+                                    "[3ffe::1233]:443",
+                                    "[3ffe::1234]:443",
+                                    "[3ffe::1235]:443",
+                                });
 }
 
 TEST(AddressSortingTest, TestStableSortNoSrcAddrsExist) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
   OverrideAddressSortingSocketFactory(ipv4_supported, ipv6_supported, {});
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
       {"[3ffe::1231]:443", AF_INET6},
       {"[3ffe::1232]:443", AF_INET6},
       {"[3ffe::1233]:443", AF_INET6},
@@ -480,27 +500,31 @@ TEST(AddressSortingTest, TestStableSortNoSrcAddrsExist) {
       {"[3ffe::1235]:443", AF_INET6},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
-  VerifyLbAddrOutputs(
-      lb_addrs, {
-                    "[3ffe::1231]:443", "[3ffe::1232]:443", "[3ffe::1233]:443",
-                    "[3ffe::1234]:443", "[3ffe::1235]:443",
-                });
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[3ffe::1231]:443",
+                                    "[3ffe::1232]:443",
+                                    "[3ffe::1233]:443",
+                                    "[3ffe::1234]:443",
+                                    "[3ffe::1235]:443",
+                                });
 }
 
 TEST(AddressSortingTest, TestStableSortNoSrcAddrsExistWithIpv4) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
   OverrideAddressSortingSocketFactory(ipv4_supported, ipv6_supported, {});
-  grpc_lb_addresses *lb_addrs = BuildLbAddrInputs({
-      {"[::ffff:5.6.7.8]:443", AF_INET6}, {"1.2.3.4:443", AF_INET},
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[::ffff:5.6.7.8]:443", AF_INET6},
+      {"1.2.3.4:443", AF_INET},
   });
   address_sorting_rfc_6724_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
-                                    "[::ffff:5.6.7.8]:443", "1.2.3.4:443",
+                                    "[::ffff:5.6.7.8]:443",
+                                    "1.2.3.4:443",
                                 });
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   const char* resolver = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver == NULL || strlen(resolver) == 0) {
     gpr_setenv("GRPC_DNS_RESOLVER", "ares");
