@@ -84,6 +84,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/sync_posix.h )
   s.files += %w( include/grpc/impl/codegen/sync_windows.h )
   s.files += %w( src/core/lib/profiling/timers.h )
+  s.files += %w( src/core/lib/support/abstract.h )
   s.files += %w( src/core/lib/support/arena.h )
   s.files += %w( src/core/lib/support/atomic.h )
   s.files += %w( src/core/lib/support/atomic_with_atm.h )
