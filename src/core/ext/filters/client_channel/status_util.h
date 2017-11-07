@@ -16,11 +16,12 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_STRING_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_STRING_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_UTIL_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_UTIL_H
 
 #include <grpc/status.h>
 
+#include <string.h>
 #include <stdbool.h>
 
 /// If \a status_str is a valid status string, sets \a status to the
@@ -30,4 +31,14 @@ bool grpc_status_from_string(const char* status_str, grpc_status_code* status);
 /// Returns the string form of \a status, or "UNKNOWN" if invalid.
 const char* grpc_status_string(grpc_status_code status);
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_STRING_H */
+namespace grpc_core {
+namespace internal {
+
+/// Returns true if \a status is present in \a list.
+bool is_status_code_in_list(grpc_status_code status,
+                            grpc_status_code* list, size_t list_size);
+
+}  // namespace internal
+}  // namespace grpc_core
+
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_UTIL_H */

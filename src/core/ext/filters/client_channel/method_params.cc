@@ -24,7 +24,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/method_params.h"
-#include "src/core/ext/filters/client_channel/status_string.h"
+#include "src/core/ext/filters/client_channel/status_util.h"
 #include "src/core/lib/support/string.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.

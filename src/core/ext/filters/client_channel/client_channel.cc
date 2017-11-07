@@ -39,7 +39,7 @@
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
-#include "src/core/ext/filters/client_channel/status_string.h"
+#include "src/core/ext/filters/client_channel/status_util.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -62,6 +62,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
+using grpc_core::internal::is_status_code_in_list;
 using grpc_core::internal::method_parameters;
 using grpc_core::internal::method_parameters_ref;
 using grpc_core::internal::method_parameters_unref;
@@ -1267,15 +1268,6 @@ static void maybe_cache_send_ops_for_batch(grpc_exec_ctx* exec_ctx,
                              &calld->send_trailing_metadata,
                              calld->send_trailing_metadata_storage);
   }
-}
-
-static bool is_status_code_in_list(grpc_status_code status,
-                                   grpc_status_code* list, size_t list_size) {
-  if (list == NULL) return true;
-  for (size_t i = 0; i < list_size; ++i) {
-    if (status == list[i]) return true;
-  }
-  return false;
 }
 
 static void start_pick_locked(grpc_exec_ctx* exec_ctx, void* arg,

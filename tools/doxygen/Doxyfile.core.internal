@@ -938,8 +938,8 @@ src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
 src/core/ext/filters/client_channel/retry_throttle.cc \
 src/core/ext/filters/client_channel/retry_throttle.h \
-src/core/ext/filters/client_channel/status_string.cc \
-src/core/ext/filters/client_channel/status_string.h \
+src/core/ext/filters/client_channel/status_util.cc \
+src/core/ext/filters/client_channel/status_util.h \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_index.cc \

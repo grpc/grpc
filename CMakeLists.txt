@@ -1168,7 +1168,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver_factory.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_string.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1483,7 +1483,7 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/resolver_factory.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_string.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1777,7 +1777,7 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/resolver_factory.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_string.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -2046,7 +2046,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolver_factory.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_string.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -2334,7 +2334,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver_factory.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_string.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -3060,7 +3060,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/resolver_factory.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_string.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
