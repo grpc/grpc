@@ -35,7 +35,6 @@ grpc_cc_test(
     name = "client_channel_stress_test",
     srcs = ["client_channel_stress_test.cc"],
     deps = [
-        ":test_service_impl",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
