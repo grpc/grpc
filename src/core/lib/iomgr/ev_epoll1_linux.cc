@@ -18,6 +18,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <grpc/support/log.h>
+
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
@@ -34,7 +36,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
