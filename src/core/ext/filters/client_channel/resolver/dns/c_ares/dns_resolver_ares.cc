@@ -28,6 +28,8 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
+#include <address_sorting.h>
+
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -42,7 +44,6 @@
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/service_config.h"
-#include "third_party/address_sorting/address_sorting.h"
 
 #define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1

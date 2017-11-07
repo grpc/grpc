@@ -34,6 +34,8 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
+#include <address_sorting.h>
+
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/iomgr/error.h"
@@ -42,8 +44,6 @@
 #include "src/core/lib/iomgr/nameser.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
-
-#include "third_party/address_sorting/address_sorting.h"
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
