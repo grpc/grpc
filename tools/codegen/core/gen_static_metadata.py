@@ -278,6 +278,22 @@ for mask in range(1, 1 << len(STREAM_COMPRESSION_ALGORITHMS)):
   stream_compression_elems.append(elem)
   static_userdata[elem] = 1 + (mask | 1)
 
+non_timeout_strs_count = len(all_strs)
+non_timeout_elem_count = len(all_elems)
+
+# extending static timeout table
+timeout_vals = range(0,100)
+timeout_vals.extend(range(100, 1000, 10))
+timeout_vals.extend(range(1000, 10000, 100))
+timeout_vals.extend(range(10000, 100000, 1000))
+timeout_strs = [str(t) + 'm' if t%1000 != 0 else str(t/1000) + 'S' for t in timeout_vals]
+all_strs += timeout_strs
+timeout_elems = [('grpc-timeout', x) for x in timeout_strs]
+all_elems += timeout_elems
+for i, elem in enumerate(timeout_elems):
+  static_userdata[elem] = timeout_vals[i]
+
+
 # output configuration
 args = sys.argv[1:]
 H = None
@@ -342,6 +358,8 @@ def esc_dict(line):
   return out + "\""
 
 
+
+
 put_banner([H, C], """WARNING: Auto-generated code.
 
 To make changes to this file, change
@@ -387,6 +405,8 @@ print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
 print >> H, ('extern const grpc_slice '
              'grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];')
 for i, elem in enumerate(all_strs):
+  if i == non_timeout_strs_count:
+    break
   print >> H, '/* "%s" */' % elem
   print >> H, '#define %s (grpc_static_slice_table[%d])' % (
       mangle(elem).upper(), i)
@@ -436,12 +456,14 @@ for i, elem in enumerate(all_elems):
   print >> D, '%s' % (esc_dict([0, len(elem[0])] + [ord(c) for c in elem[0]] +
                                [len(elem[1])] + [ord(c) for c in elem[1]]))
 
-print >> H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
+print >> H, '#define GRPC_STATIC_MDELEM_COUNT %d' % (len(all_elems) + len(timeout_vals))
 print >> H, ('extern grpc_mdelem_data '
              'grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];')
 print >> H, ('extern uintptr_t '
              'grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];')
 for i, elem in enumerate(all_elems):
+  if i == non_timeout_elem_count:
+    break
   print >> H, '/* "%s": "%s" */' % elem
   print >> H, ('#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d], '
                'GRPC_MDELEM_STORAGE_STATIC))') % (
@@ -492,7 +514,7 @@ def perfect_hash(keys, name):
           f,
       'code':
           """
-static const int8_t %(name)s_r[] = {%(r)s};
+static const int16_t %(name)s_r[] = {%(r)s};
 static uint32_t %(name)s_phash(uint32_t i) {
   i %(offset_sign)s= %(offset)d;
   uint32_t x = i %% %(t)d;
@@ -529,7 +551,7 @@ for i, k in enumerate(elem_keys):
   idxs[h] = i
 print >> C, 'static const uint16_t elem_keys[] = {%s};' % ','.join(
     '%d' % k for k in keys)
-print >> C, 'static const uint8_t elem_idxs[] = {%s};' % ','.join(
+print >> C, 'static const uint16_t elem_idxs[] = {%s};' % ','.join(
     '%d' % i for i in idxs)
 print >> C
 
@@ -592,6 +614,16 @@ print >> C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in stream_compression
 print >> C, '};'
 
 print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
+
+print >> H, 'grpc_mdelem grpc_static_timeout_elem(int32_t millis);'
+print >> C, 'grpc_mdelem grpc_static_timeout_elem(int32_t m) {'
+print >> C, '  m = m < 0 ? 0 : m;'
+print >> C, '  if (m < 100) { return GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[m + %d], GRPC_MDELEM_STORAGE_STATIC); }' % non_timeout_elem_count
+print >> C, '  if (m < 1000) { return GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[m/10+90 + %d], GRPC_MDELEM_STORAGE_STATIC); }' % non_timeout_elem_count
+print >> C, '  if (m < 10000) { return GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[m/100+180+ %d], GRPC_MDELEM_STORAGE_STATIC); }' % non_timeout_elem_count
+print >> C, '  if (m < 100000) { return GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[m/1000+270+ %d], GRPC_MDELEM_STORAGE_STATIC); }' % non_timeout_elem_count
+print >> C, '  return GRPC_MDNULL;'
+print >> C, '}'
 
 print >> H, '#ifdef __cplusplus'
 print >> H, '}'
