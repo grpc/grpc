@@ -4860,6 +4860,7 @@ configs:
       LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
+    CXXFLAGS: -fno-exceptions
     DEFINES: NDEBUG
   c++-compat:
     CFLAGS: -Wc++-compat
@@ -4867,6 +4868,7 @@ configs:
     DEFINES: _DEBUG DEBUG
   counters:
     CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
+    CXXFLAGS: -fno-exceptions
     DEFINES: NDEBUG
   dbg:
     CPPFLAGS: -O0

@@ -123,6 +123,7 @@ CC_basicprof = $(DEFAULT_CC)
 CXX_basicprof = $(DEFAULT_CXX)
 LD_basicprof = $(DEFAULT_CC)
 LDXX_basicprof = $(DEFAULT_CXX)
+CXXFLAGS_basicprof = -fno-exceptions
 CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
 DEFINES_basicprof = NDEBUG
 
@@ -221,6 +222,7 @@ CC_counters = $(DEFAULT_CC)
 CXX_counters = $(DEFAULT_CXX)
 LD_counters = $(DEFAULT_CC)
 LDXX_counters = $(DEFAULT_CXX)
+CXXFLAGS_counters = -fno-exceptions
 CPPFLAGS_counters = -O2 -DGPR_LOW_LEVEL_COUNTERS
 DEFINES_counters = NDEBUG
 
