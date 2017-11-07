@@ -3849,9 +3849,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
 - name: client_crash_test
   gtest: true
   cpu_cost: 0.1

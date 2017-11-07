@@ -221,13 +221,12 @@ class ClientChannelStressTest {
     const auto wait_duration =
         std::chrono::milliseconds(resolution_update_interval_ms_);
     std::vector<AddressData> addresses;
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> distribution{0.0, 1.0};
     while (!shutdown_) {
       // Generate a random subset of balancers.
       addresses.clear();
       for (const auto& balancer_server : balancer_servers_) {
-        if (distribution(generator) < 0.8) {
+        // Select each address with probability of 0.8.
+        if (std::rand() % 10 < 8) {
           addresses.emplace_back(AddressData{balancer_server.port_, true, ""});
         }
       }
