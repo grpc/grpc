@@ -50,7 +50,7 @@
 extern "C" {
 #endif
 
-void address_sorting_rfc_6724_sort(grpc_lb_addresses *resolved_lb_addrs);
+void address_sorting_rfc_6724_sort(grpc_lb_addresses* resolved_lb_addrs);
 
 void address_sorting_init();
 void address_sorting_shutdown();
@@ -59,22 +59,22 @@ struct address_sorting_socket_factory;
 
 /* The socket factory interface is exposed only for testing */
 typedef struct {
-  int (*socket)(struct address_sorting_socket_factory *factory, int domain,
+  int (*socket)(struct address_sorting_socket_factory* factory, int domain,
                 int type, int protocol);
-  int (*connect)(struct address_sorting_socket_factory *factory, int sockfd,
-                 const struct sockaddr *addr, socklen_t addrlen);
-  int (*getsockname)(struct address_sorting_socket_factory *factory, int sockfd,
-                     struct sockaddr *addr, socklen_t *addrlen);
-  int (*close)(struct address_sorting_socket_factory *factory, int sockfd);
-  void (*destroy)(struct address_sorting_socket_factory *factory);
+  int (*connect)(struct address_sorting_socket_factory* factory, int sockfd,
+                 const struct sockaddr* addr, socklen_t addrlen);
+  int (*getsockname)(struct address_sorting_socket_factory* factory, int sockfd,
+                     struct sockaddr* addr, socklen_t* addrlen);
+  int (*close)(struct address_sorting_socket_factory* factory, int sockfd);
+  void (*destroy)(struct address_sorting_socket_factory* factory);
 } address_sorting_socket_factory_vtable;
 
 typedef struct address_sorting_socket_factory {
-  const address_sorting_socket_factory_vtable *vtable;
+  const address_sorting_socket_factory_vtable* vtable;
 } address_sorting_socket_factory;
 
 void address_sorting_override_socket_factory_for_testing(
-    address_sorting_socket_factory *factory);
+    address_sorting_socket_factory* factory);
 
 #ifdef __cplusplus
 }
