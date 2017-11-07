@@ -235,6 +235,7 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
 elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
   find_package(OpenSSL REQUIRED)
   set(_gRPC_SSL_LIBRARIES ${OPENSSL_LIBRARIES})
+  include_directories(${OPENSSL_INCLUDE_DIR})
   set(_gRPC_FIND_SSL "if(NOT OPENSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
 endif()
 
