@@ -50,6 +50,9 @@ class CoreCodegen final : public CoreCodegenInterface {
   void* gpr_malloc(size_t size) override;
   void gpr_free(void* p) override;
 
+  void grpc_init() override;
+  void grpc_shutdown() override;
+
   void gpr_mu_init(gpr_mu* mu) override;
   void gpr_mu_destroy(gpr_mu* mu) override;
   void gpr_mu_lock(gpr_mu* mu) override;

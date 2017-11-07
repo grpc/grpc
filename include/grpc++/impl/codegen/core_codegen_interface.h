@@ -63,6 +63,13 @@ class CoreCodegenInterface {
   virtual void* gpr_malloc(size_t size) = 0;
   virtual void gpr_free(void* p) = 0;
 
+  // These are only to be used to fix edge cases involving grpc_init and
+  // grpc_shutdown. Calling grpc_init from the codegen interface before
+  // the real grpc_init is called will cause a crash, so if you use this
+  // function, ensure that it is not the first call to grpc_init.
+  virtual void grpc_init() = 0;
+  virtual void grpc_shutdown() = 0;
+
   virtual void gpr_mu_init(gpr_mu* mu) = 0;
   virtual void gpr_mu_destroy(gpr_mu* mu) = 0;
   virtual void gpr_mu_lock(gpr_mu* mu) = 0;
