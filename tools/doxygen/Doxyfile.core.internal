@@ -909,6 +909,8 @@ src/core/ext/filters/client_channel/lb_policy_factory.cc \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \
 src/core/ext/filters/client_channel/lb_policy_registry.h \
+src/core/ext/filters/client_channel/method_params.cc \
+src/core/ext/filters/client_channel/method_params.h \
 src/core/ext/filters/client_channel/parse_address.cc \
 src/core/ext/filters/client_channel/parse_address.h \
 src/core/ext/filters/client_channel/proxy_mapper.cc \

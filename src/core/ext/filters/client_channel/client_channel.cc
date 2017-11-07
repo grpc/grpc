@@ -35,6 +35,7 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/method_params.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
@@ -61,10 +62,15 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
-/* Client channel implementation */
+using grpc_core::internal::method_parameters;
+using grpc_core::internal::method_parameters_ref;
+using grpc_core::internal::method_parameters_unref;
+using grpc_core::internal::method_parameters_create_from_json;
+using grpc_core::internal::retry_policy_params;
+using grpc_core::internal::WAIT_FOR_READY_UNSET;
+using grpc_core::internal::WAIT_FOR_READY_TRUE;
 
-// As per the retry design, we do not allow more than 5 retry attempts.
-#define MAX_MAX_RETRY_ATTEMPTS 5
+/* Client channel implementation */
 
 // By default, we buffer 1 MiB per RPC for retries.
 // TODO(roth): Do we have any data to suggest a better value?
@@ -77,201 +83,6 @@
 grpc_tracer_flag grpc_client_channel_trace =
     GRPC_TRACER_INITIALIZER(false, "client_channel");
 
-/*************************************************************************
- * METHOD-CONFIG TABLE
- */
-
-typedef enum {
-  /* zero so it can be default initialized */
-  WAIT_FOR_READY_UNSET = 0,
-  WAIT_FOR_READY_FALSE,
-  WAIT_FOR_READY_TRUE
-} wait_for_ready_value;
-
-typedef struct {
-  int max_attempts;
-  grpc_millis initial_backoff;
-  grpc_millis max_backoff;
-  float backoff_multiplier;
-  grpc_status_code* retryable_status_codes;
-  size_t num_retryable_status_codes;
-} retry_policy_params;
-
-static void retry_policy_params_free(retry_policy_params* retry_policy) {
-  if (retry_policy != NULL) {
-    gpr_free(retry_policy->retryable_status_codes);
-    gpr_free(retry_policy);
-  }
-}
-
-typedef struct {
-  gpr_refcount refs;
-  grpc_millis timeout;
-  wait_for_ready_value wait_for_ready;
-  retry_policy_params* retry_policy;
-} method_parameters;
-
-static method_parameters* method_parameters_ref(
-    method_parameters* method_params) {
-  gpr_ref(&method_params->refs);
-  return method_params;
-}
-
-static void method_parameters_unref(method_parameters* method_params) {
-  if (gpr_unref(&method_params->refs)) {
-    retry_policy_params_free(method_params->retry_policy);
-    gpr_free(method_params);
-  }
-}
-
-// Wrappers to pass to grpc_service_config_create_method_config_table().
-static void* method_parameters_ref_wrapper(void* value) {
-  return method_parameters_ref((method_parameters*)value);
-}
-static void method_parameters_unref_wrapper(grpc_exec_ctx* exec_ctx,
-                                            void* value) {
-  method_parameters_unref((method_parameters*)value);
-}
-
-static bool parse_wait_for_ready(grpc_json* field,
-                                 wait_for_ready_value* wait_for_ready) {
-  if (field->type != GRPC_JSON_TRUE && field->type != GRPC_JSON_FALSE) {
-    return false;
-  }
-  *wait_for_ready = field->type == GRPC_JSON_TRUE ? WAIT_FOR_READY_TRUE
-                                                  : WAIT_FOR_READY_FALSE;
-  return true;
-}
-
-static bool parse_duration(grpc_json* field, grpc_millis* duration) {
-  if (field->type != GRPC_JSON_STRING) return false;
-  size_t len = strlen(field->value);
-  if (field->value[len - 1] != 's') return false;
-  char* buf = gpr_strdup(field->value);
-  buf[len - 1] = '\0';  // Remove trailing 's'.
-  char* decimal_point = strchr(buf, '.');
-  int nanos = 0;
-  if (decimal_point != NULL) {
-    *decimal_point = '\0';
-    nanos = gpr_parse_nonnegative_int(decimal_point + 1);
-    if (nanos == -1) {
-      gpr_free(buf);
-      return false;
-    }
-    int num_digits = (int)strlen(decimal_point + 1);
-    if (num_digits > 9) {  // We don't accept greater precision than nanos.
-      gpr_free(buf);
-      return false;
-    }
-    for (int i = 0; i < (9 - num_digits); ++i) {
-      nanos *= 10;
-    }
-  }
-  int seconds = decimal_point == buf ? 0 : gpr_parse_nonnegative_int(buf);
-  gpr_free(buf);
-  if (seconds == -1) return false;
-  *duration = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
-  return true;
-}
-
-static bool parse_retry_policy(grpc_json* field,
-                               retry_policy_params* retry_policy) {
-  if (field->type != GRPC_JSON_OBJECT) return false;
-  for (grpc_json* sub_field = field->child; sub_field != NULL;
-       sub_field = sub_field->next) {
-    if (sub_field->key == NULL) return false;
-    if (strcmp(sub_field->key, "maxAttempts") == 0) {
-      if (retry_policy->max_attempts != 0) return false;  // Duplicate.
-      if (sub_field->type != GRPC_JSON_NUMBER) return false;
-      retry_policy->max_attempts = gpr_parse_nonnegative_int(sub_field->value);
-      if (retry_policy->max_attempts <= 1) return false;
-      if (retry_policy->max_attempts > MAX_MAX_RETRY_ATTEMPTS) {
-        gpr_log(GPR_INFO,
-                "service config: clamped retryPolicy.maxAttempts at %d",
-                MAX_MAX_RETRY_ATTEMPTS);
-        retry_policy->max_attempts = MAX_MAX_RETRY_ATTEMPTS;
-      }
-    } else if (strcmp(sub_field->key, "initialBackoff") == 0) {
-      if (retry_policy->initial_backoff > 0) return false;  // Duplicate.
-      if (!parse_duration(sub_field, &retry_policy->initial_backoff)) {
-        return false;
-      }
-      if (retry_policy->initial_backoff == 0) return false;
-    } else if (strcmp(sub_field->key, "maxBackoff") == 0) {
-      if (retry_policy->max_backoff > 0) return false;  // Duplicate.
-      if (!parse_duration(sub_field, &retry_policy->max_backoff)) return false;
-      if (retry_policy->max_backoff == 0) return false;
-    } else if (strcmp(sub_field->key, "backoffMultiplier") == 0) {
-      if (retry_policy->backoff_multiplier != 0) return false;  // Duplicate.
-      if (sub_field->type != GRPC_JSON_NUMBER) return false;
-      if (sscanf(sub_field->value, "%f", &retry_policy->backoff_multiplier) !=
-          1) {
-        return false;
-      }
-      if (retry_policy->backoff_multiplier <= 0) return false;
-    } else if (strcmp(sub_field->key, "retryableStatusCodes") == 0) {
-      if (retry_policy->retryable_status_codes != NULL) {
-        return false;  // Duplicate.
-      }
-      if (sub_field->type != GRPC_JSON_ARRAY) return false;
-      for (grpc_json* element = sub_field->child; element != NULL;
-           element = element->next) {
-        if (element->type != GRPC_JSON_STRING) return false;
-        ++retry_policy->num_retryable_status_codes;
-        retry_policy->retryable_status_codes = (grpc_status_code*)gpr_realloc(
-            retry_policy->retryable_status_codes,
-            retry_policy->num_retryable_status_codes *
-                sizeof(grpc_status_code));
-        if (!grpc_status_from_string(
-                element->value,
-                &retry_policy->retryable_status_codes
-                     [retry_policy->num_retryable_status_codes - 1])) {
-          return false;
-        }
-      }
-    }
-  }
-  // Make sure required fields are set.
-  if (retry_policy->max_attempts == 0 || retry_policy->initial_backoff == 0 ||
-      retry_policy->max_backoff == 0 || retry_policy->backoff_multiplier == 0 ||
-      retry_policy->retryable_status_codes == NULL) {
-    return false;
-  }
-  return true;
-}
-
-static void* method_parameters_create_from_json(const grpc_json* json,
-                                                void* user_data) {
-  const bool enable_retries = (bool)user_data;
-  wait_for_ready_value wait_for_ready = WAIT_FOR_READY_UNSET;
-  grpc_millis timeout = 0;
-  retry_policy_params* retry_policy = NULL;
-  method_parameters* value = NULL;
-  for (grpc_json* field = json->child; field != NULL; field = field->next) {
-    if (field->key == NULL) continue;
-    if (strcmp(field->key, "waitForReady") == 0) {
-      if (wait_for_ready != WAIT_FOR_READY_UNSET) goto error;  // Duplicate.
-      if (!parse_wait_for_ready(field, &wait_for_ready)) goto error;
-    } else if (strcmp(field->key, "timeout") == 0) {
-      if (timeout > 0) return NULL;  // Duplicate.
-      if (!parse_duration(field, &timeout)) goto error;
-    } else if (strcmp(field->key, "retryPolicy") == 0 && enable_retries) {
-      if (retry_policy != NULL) goto error;  // Duplicate.
-      retry_policy = (retry_policy_params*)gpr_zalloc(sizeof(*retry_policy));
-      if (!parse_retry_policy(field, retry_policy)) goto error;
-    }
-  }
-  value = (method_parameters*)gpr_malloc(sizeof(method_parameters));
-  gpr_ref_init(&value->refs, 1);
-  value->timeout = timeout;
-  value->wait_for_ready = wait_for_ready;
-  value->retry_policy = retry_policy;
-  return value;
-error:
-  retry_policy_params_free(retry_policy);
-  return NULL;
-}
-
 struct external_connectivity_watcher;
 
 /*************************************************************************
@@ -279,17 +90,11 @@ struct external_connectivity_watcher;
  */
 
 typedef struct client_channel_channel_data {
-  /** resolver for this channel */
   grpc_resolver* resolver;
-  /** have we started resolving this channel */
   bool started_resolving;
-  /** is deadline checking enabled? */
   bool deadline_checking_enabled;
-  /** client channel factory */
   grpc_client_channel_factory* client_channel_factory;
-  /** Enable retries. */
   bool enable_retries;
-  /** per-RPC retry buffer size */
   size_t per_rpc_retry_buffer_size;
 
   /** combiner protecting all variables below in this data structure */
@@ -320,7 +125,7 @@ typedef struct client_channel_channel_data {
   gpr_mu external_connectivity_watcher_list_mu;
   struct external_connectivity_watcher* external_connectivity_watcher_list_head;
 
-  /* the following properties are guarded by a mutex since API's require them
+  /* the following properties are guarded by a mutex since APIs require them
      to be instantaneously available */
   gpr_mu info_mu;
   char* info_lb_policy_name;
@@ -484,6 +289,15 @@ static void parse_retry_throttle_params(const grpc_json* field, void* arg) {
         grpc_retry_throttle_map_get_data_for_server(
             parsing_state->server_name, max_milli_tokens, milli_token_ratio);
   }
+}
+
+// Wrappers to pass to grpc_service_config_create_method_config_table().
+static void* method_parameters_ref_wrapper(void* value) {
+  return method_parameters_ref((method_parameters*)value);
+}
+static void method_parameters_unref_wrapper(grpc_exec_ctx* exec_ctx,
+                                            void* value) {
+  method_parameters_unref((method_parameters*)value);
 }
 
 static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
@@ -1016,28 +830,28 @@ typedef struct {
 // Retry state associated with a subchannel call.
 // Stored in the parent_data of the subchannel call object.
 typedef struct {
-  // These fields indicate which ops have been started on this subchannel call.
-  size_t started_send_message_count;
-  size_t started_recv_message_count;
-  bool started_send_initial_metadata : 1;
-  bool started_send_trailing_metadata : 1;
-  bool started_recv_initial_metadata : 1;
-  bool started_recv_trailing_metadata : 1;
-  // These fields indicate which ops have finished.
-  size_t completed_send_message_count;
-  size_t completed_recv_message_count;
-  bool completed_send_initial_metadata : 1;
-  bool completed_send_trailing_metadata : 1;
-  bool completed_recv_initial_metadata : 1;
-  bool completed_recv_trailing_metadata : 1;
   // subchannel_batch_data.batch.payload points to this.
   grpc_transport_stream_op_batch_payload batch_payload;
+  // These fields indicate which ops have been started and completed on
+  // this subchannel call.
+  size_t started_send_message_count;
+  size_t completed_send_message_count;
+  size_t started_recv_message_count;
+  size_t completed_recv_message_count;
+  bool started_send_initial_metadata : 1;
+  bool completed_send_initial_metadata : 1;
+  bool started_send_trailing_metadata : 1;
+  bool completed_send_trailing_metadata : 1;
+  bool started_recv_initial_metadata : 1;
+  bool completed_recv_initial_metadata : 1;
+  bool started_recv_trailing_metadata : 1;
+  bool completed_recv_trailing_metadata : 1;
   // State for callback processing.
-  bool recv_initial_metadata_ready_deferred : 1;
-  grpc_error* recv_initial_metadata_error;
-  bool recv_message_ready_deferred : 1;
-  grpc_error* recv_message_error;
   bool retry_dispatched : 1;
+  bool recv_initial_metadata_ready_deferred : 1;
+  bool recv_message_ready_deferred : 1;
+  grpc_error* recv_initial_metadata_error;
+  grpc_error* recv_message_error;
 } subchannel_call_retry_state;
 
 // Pending batches stored in call data.
@@ -1045,7 +859,7 @@ typedef struct {
   // The pending batch.  If NULL, this slot is empty.
   grpc_transport_stream_op_batch* batch;
   // Indicates whether payload for send ops has been cached in call data.
-  bool send_ops_cached : 1;
+  bool send_ops_cached;
 } pending_batch;
 
 /** Call data.  Holds a pointer to grpc_subchannel_call and the
