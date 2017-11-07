@@ -275,7 +275,6 @@ static void init_transport(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
   t->abstract.Init<Derived>();
-  t->abstract->foo();
 
   t->base.vtable = get_vtable();
   t->ep = ep;
