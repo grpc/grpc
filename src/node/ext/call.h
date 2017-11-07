@@ -32,17 +32,17 @@
 namespace grpc {
 namespace node {
 
-using std::unique_ptr;
 using std::shared_ptr;
+using std::unique_ptr;
 
-v8::Local<v8::Value> nanErrorWithCode(const char *msg, grpc_call_error code);
+v8::Local<v8::Value> nanErrorWithCode(const char* msg, grpc_call_error code);
 
-v8::Local<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
+v8::Local<v8::Value> ParseMetadata(const grpc_metadata_array* metadata_array);
 
 bool CreateMetadataArray(v8::Local<v8::Object> metadata,
-                         grpc_metadata_array *array);
+                         grpc_metadata_array* array);
 
-void DestroyMetadataArray(grpc_metadata_array *array);
+void DestroyMetadataArray(grpc_metadata_array* array);
 
 /* Wrapper class for grpc_call structs. */
 class Call : public Nan::ObjectWrap {
@@ -50,17 +50,17 @@ class Call : public Nan::ObjectWrap {
   static void Init(v8::Local<v8::Object> exports);
   static bool HasInstance(v8::Local<v8::Value> val);
   /* Wrap a grpc_call struct in a javascript object */
-  static v8::Local<v8::Value> WrapStruct(grpc_call *call);
+  static v8::Local<v8::Value> WrapStruct(grpc_call* call);
 
   void CompleteBatch(bool is_final_op);
 
  private:
-  explicit Call(grpc_call *call);
+  explicit Call(grpc_call* call);
   ~Call();
 
   // Prevent copying
-  Call(const Call &);
-  Call &operator=(const Call &);
+  Call(const Call&);
+  Call& operator=(const Call&);
 
   void DestroyCall();
 
@@ -70,24 +70,24 @@ class Call : public Nan::ObjectWrap {
   static NAN_METHOD(CancelWithStatus);
   static NAN_METHOD(GetPeer);
   static NAN_METHOD(SetCredentials);
-  static Nan::Callback *constructor;
+  static Nan::Callback* constructor;
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
-  grpc_call *wrapped_call;
+  grpc_call* wrapped_call;
   // The number of ops that were started but not completed on this call
   int pending_batches;
   /* Indicates whether the "final" op on a call has completed. For a client
      call, this is GRPC_OP_RECV_STATUS_ON_CLIENT and for a server call, this
      is GRPC_OP_SEND_STATUS_FROM_SERVER */
   bool has_final_op_completed;
-  char *peer;
+  char* peer;
 };
 
 class Op {
  public:
   virtual v8::Local<v8::Value> GetNodeValue() const = 0;
-  virtual bool ParseOp(v8::Local<v8::Value> value, grpc_op *out) = 0;
+  virtual bool ParseOp(v8::Local<v8::Value> value, grpc_op* out) = 0;
   virtual ~Op();
   v8::Local<v8::Value> GetOpType() const;
   virtual bool IsFinalOp() = 0;
@@ -99,19 +99,19 @@ class Op {
 
 typedef std::vector<unique_ptr<Op>> OpVec;
 struct tag {
-  tag(Nan::Callback *callback, OpVec *ops, Call *call,
+  tag(Nan::Callback* callback, OpVec* ops, Call* call,
       v8::Local<v8::Value> call_value);
   ~tag();
-  Nan::Callback *callback;
-  OpVec *ops;
-  Call *call;
+  Nan::Callback* callback;
+  OpVec* ops;
+  Call* call;
   Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>>
       call_persist;
 };
 
-void DestroyTag(void *tag);
+void DestroyTag(void* tag);
 
-void CompleteTag(void *tag, const char *error_message);
+void CompleteTag(void* tag, const char* error_message);
 
 }  // namespace node
 }  // namespace grpc

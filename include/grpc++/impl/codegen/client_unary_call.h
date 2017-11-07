@@ -41,7 +41,7 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
   return BlockingUnaryCallImpl<InputMessage, OutputMessage>(
              channel, method, context, request, result)
       .status();
-};
+}
 
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl {

@@ -35,7 +35,9 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "test/core/util/test_config.h"
 
-typedef struct { int fd_pair[2]; } sp_fixture_data;
+typedef struct {
+  int fd_pair[2];
+} sp_fixture_data;
 
 static void create_sockets(int sv[2]) {
   int flags;
@@ -49,8 +51,8 @@ static void create_sockets(int sv[2]) {
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
-    grpc_channel_args *client_args, grpc_channel_args *server_args) {
-  sp_fixture_data *fixture_data = gpr_malloc(sizeof(*fixture_data));
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  sp_fixture_data* fixture_data = gpr_malloc(sizeof(*fixture_data));
 
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
@@ -63,10 +65,10 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   return f;
 }
 
-static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
-                                          grpc_channel_args *client_args) {
+static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
+                                          grpc_channel_args* client_args) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  sp_fixture_data *sfd = f->fixture_data;
+  sp_fixture_data* sfd = f->fixture_data;
 
   GPR_ASSERT(!f->client);
   f->client = grpc_insecure_channel_create_from_fd(
@@ -76,10 +78,10 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
-                                          grpc_channel_args *server_args) {
+static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
+                                          grpc_channel_args* server_args) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  sp_fixture_data *sfd = f->fixture_data;
+  sp_fixture_data* sfd = f->fixture_data;
   GPR_ASSERT(!f->server);
   f->server = grpc_server_create(server_args, NULL);
   GPR_ASSERT(f->server);
@@ -91,7 +93,7 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture *f) {
+static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
   gpr_free(f->fixture_data);
 }
 
@@ -102,7 +104,7 @@ static grpc_end2end_test_config configs[] = {
      chttp2_init_server_socketpair, chttp2_tear_down_socketpair},
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   size_t i;
 
   grpc_test_init(argc, argv);
@@ -120,6 +122,6 @@ int main(int argc, char **argv) {
 
 #else /* GRPC_POSIX_SOCKET */
 
-int main(int argc, char **argv) { return 1; }
+int main(int argc, char** argv) { return 1; }
 
 #endif /* GRPC_POSIX_SOCKET */

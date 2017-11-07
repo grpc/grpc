@@ -28,15 +28,15 @@
 
 static void test_compression_algorithm_parse(void) {
   size_t i;
-  const char *valid_names[] = {"identity", "gzip", "deflate"};
+  const char* valid_names[] = {"identity", "gzip", "deflate"};
   const grpc_compression_algorithm valid_algorithms[] = {
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_DEFLATE};
-  const char *invalid_names[] = {"gzip2", "foo", "", "2gzip"};
+  const char* invalid_names[] = {"gzip2", "foo", "", "2gzip"};
 
   gpr_log(GPR_DEBUG, "test_compression_algorithm_parse");
 
   for (i = 0; i < GPR_ARRAY_SIZE(valid_names); i++) {
-    const char *valid_name = valid_names[i];
+    const char* valid_name = valid_names[i];
     grpc_compression_algorithm algorithm;
     const int success = grpc_compression_algorithm_parse(
         grpc_slice_from_static_string(valid_name), &algorithm);
@@ -45,7 +45,7 @@ static void test_compression_algorithm_parse(void) {
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(invalid_names); i++) {
-    const char *invalid_name = invalid_names[i];
+    const char* invalid_name = invalid_names[i];
     grpc_compression_algorithm algorithm;
     int success;
     success = grpc_compression_algorithm_parse(
@@ -57,9 +57,9 @@ static void test_compression_algorithm_parse(void) {
 
 static void test_compression_algorithm_name(void) {
   int success;
-  const char *name;
+  const char* name;
   size_t i;
-  const char *valid_names[] = {"identity", "gzip", "deflate"};
+  const char* valid_names[] = {"identity", "gzip", "deflate"};
   const grpc_compression_algorithm valid_algorithms[] = {
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_DEFLATE};
 
@@ -202,7 +202,7 @@ static void test_compression_enable_disable_algorithm(void) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_init();
   test_compression_algorithm_parse();
   test_compression_algorithm_name();

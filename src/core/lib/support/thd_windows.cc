@@ -36,23 +36,23 @@
 #endif
 
 struct thd_info {
-  void (*body)(void *arg); /* body of a thread */
-  void *arg;               /* argument to a thread */
+  void (*body)(void* arg); /* body of a thread */
+  void* arg;               /* argument to a thread */
   HANDLE join_event;       /* if joinable, the join event */
   int joinable;            /* true if not detached */
 };
 
-static thread_local struct thd_info *g_thd_info;
+static thread_local struct thd_info* g_thd_info;
 
 /* Destroys a thread info */
-static void destroy_thread(struct thd_info *t) {
+static void destroy_thread(struct thd_info* t) {
   if (t->joinable) CloseHandle(t->join_event);
   gpr_free(t);
 }
 
 /* Body of every thread started via gpr_thd_new. */
-static DWORD WINAPI thread_body(void *v) {
-  g_thd_info = (struct thd_info *)v;
+static DWORD WINAPI thread_body(void* v) {
+  g_thd_info = (struct thd_info*)v;
   g_thd_info->body(g_thd_info->arg);
   if (g_thd_info->joinable) {
     BOOL ret = SetEvent(g_thd_info->join_event);
@@ -63,10 +63,10 @@ static DWORD WINAPI thread_body(void *v) {
   return 0;
 }
 
-int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
-                const gpr_thd_options *options) {
+int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
+                const gpr_thd_options* options) {
   HANDLE handle;
-  struct thd_info *info = (struct thd_info *)gpr_malloc(sizeof(*info));
+  struct thd_info* info = (struct thd_info*)gpr_malloc(sizeof(*info));
   info->body = thd_body;
   info->arg = arg;
   *t = 0;
@@ -93,7 +93,7 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
 gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)g_thd_info; }
 
 void gpr_thd_join(gpr_thd_id t) {
-  struct thd_info *info = (struct thd_info *)t;
+  struct thd_info* info = (struct thd_info*)t;
   DWORD ret = WaitForSingleObject(info->join_event, INFINITE);
   GPR_ASSERT(ret == WAIT_OBJECT_0);
   destroy_thread(info);

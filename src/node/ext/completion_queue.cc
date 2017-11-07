@@ -31,11 +31,11 @@ using v8::Local;
 using v8::Object;
 using v8::Value;
 
-grpc_completion_queue *queue;
+grpc_completion_queue* queue;
 uv_prepare_t prepare;
 int pending_batches;
 
-void drain_completion_queue(uv_prepare_t *handle) {
+void drain_completion_queue(uv_prepare_t* handle) {
   Nan::HandleScope scope;
   grpc_event event;
   (void)handle;
@@ -44,7 +44,7 @@ void drain_completion_queue(uv_prepare_t *handle) {
                                        NULL);
 
     if (event.type == GRPC_OP_COMPLETE) {
-      const char *error_message;
+      const char* error_message;
       if (event.success) {
         error_message = NULL;
       } else {
@@ -60,11 +60,11 @@ void drain_completion_queue(uv_prepare_t *handle) {
   } while (event.type != GRPC_QUEUE_TIMEOUT);
 }
 
-grpc_completion_queue *GetCompletionQueue() { return queue; }
+grpc_completion_queue* GetCompletionQueue() { return queue; }
 
 void CompletionQueueNext() {
   if (pending_batches == 0) {
-    GPR_ASSERT(!uv_is_active((uv_handle_t *)&prepare));
+    GPR_ASSERT(!uv_is_active((uv_handle_t*)&prepare));
     uv_prepare_start(&prepare, drain_completion_queue);
   }
   pending_batches++;

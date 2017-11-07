@@ -32,7 +32,7 @@
 #define MAX_THREADS 32
 
 static void test_serial_sized(size_t size) {
-  gpr_stack_lockfree *stack = gpr_stack_lockfree_create(size);
+  gpr_stack_lockfree* stack = gpr_stack_lockfree_create(size);
   size_t i;
   size_t j;
 
@@ -67,15 +67,15 @@ static void test_serial() {
 }
 
 struct test_arg {
-  gpr_stack_lockfree *stack;
+  gpr_stack_lockfree* stack;
   int stack_size;
   int nthreads;
   int rank;
   int sum;
 };
 
-static void test_mt_body(void *v) {
-  struct test_arg *arg = (struct test_arg *)v;
+static void test_mt_body(void* v) {
+  struct test_arg* arg = (struct test_arg*)v;
   int lo, hi;
   int i;
   int res;
@@ -93,7 +93,7 @@ static void test_mt_body(void *v) {
 }
 
 static void test_mt_sized(size_t size, int nth) {
-  gpr_stack_lockfree *stack;
+  gpr_stack_lockfree* stack;
   struct test_arg args[MAX_THREADS];
   gpr_thd_id thds[MAX_THREADS];
   int sum;
@@ -132,7 +132,7 @@ static void test_mt() {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_serial();
   test_mt();

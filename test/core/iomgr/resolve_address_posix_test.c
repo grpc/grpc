@@ -39,16 +39,16 @@ static gpr_timespec test_deadline(void) {
 
 typedef struct args_struct {
   gpr_event ev;
-  grpc_resolved_addresses *addrs;
+  grpc_resolved_addresses* addrs;
   gpr_atm done_atm;
-  gpr_mu *mu;
-  grpc_pollset *pollset;
-  grpc_pollset_set *pollset_set;
+  gpr_mu* mu;
+  grpc_pollset* pollset;
+  grpc_pollset_set* pollset_set;
 } args_struct;
 
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
+static void do_nothing(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {}
 
-void args_init(grpc_exec_ctx *exec_ctx, args_struct *args) {
+void args_init(grpc_exec_ctx* exec_ctx, args_struct* args) {
   gpr_event_init(&args->ev);
   args->pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(args->pollset, &args->mu);
@@ -57,7 +57,7 @@ void args_init(grpc_exec_ctx *exec_ctx, args_struct *args) {
   args->addrs = NULL;
 }
 
-void args_finish(grpc_exec_ctx *exec_ctx, args_struct *args) {
+void args_finish(grpc_exec_ctx* exec_ctx, args_struct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
   grpc_resolved_addresses_destroy(args->addrs);
   grpc_pollset_set_del_pollset(exec_ctx, args->pollset_set, args->pollset);
@@ -77,8 +77,8 @@ static grpc_millis n_sec_deadline(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-static void actually_poll(void *argsp) {
-  args_struct *args = argsp;
+static void actually_poll(void* argsp) {
+  args_struct* args = argsp;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_millis deadline = n_sec_deadline(10);
   while (true) {
@@ -89,7 +89,7 @@ static void actually_poll(void *argsp) {
     grpc_millis time_left = deadline - grpc_exec_ctx_now(&exec_ctx);
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRIdPTR, done, time_left);
     GPR_ASSERT(time_left >= 0);
-    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_worker* worker = NULL;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
                       grpc_pollset_work(&exec_ctx, args->pollset, &worker,
@@ -97,27 +97,27 @@ static void actually_poll(void *argsp) {
     gpr_mu_unlock(args->mu);
     grpc_exec_ctx_flush(&exec_ctx);
   }
-  gpr_event_set(&args->ev, (void *)1);
+  gpr_event_set(&args->ev, (void*)1);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void poll_pollset_until_request_done(args_struct *args) {
+static void poll_pollset_until_request_done(args_struct* args) {
   gpr_atm_rel_store(&args->done_atm, 0);
   gpr_thd_id id;
   gpr_thd_new(&id, actually_poll, args, NULL);
 }
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *argsp,
-                         grpc_error *err) {
-  args_struct *args = argsp;
+static void must_succeed(grpc_exec_ctx* exec_ctx, void* argsp,
+                         grpc_error* err) {
+  args_struct* args = argsp;
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != NULL);
   GPR_ASSERT(args->addrs->naddrs > 0);
   gpr_atm_rel_store(&args->done_atm, 1);
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *argsp, grpc_error *err) {
-  args_struct *args = argsp;
+static void must_fail(grpc_exec_ctx* exec_ctx, void* argsp, grpc_error* err) {
+  args_struct* args = argsp;
   GPR_ASSERT(err != GRPC_ERROR_NONE);
   gpr_atm_rel_store(&args->done_atm, 1);
 }
@@ -141,8 +141,8 @@ static void test_unix_socket_path_name_too_long(void) {
   args_init(&exec_ctx, &args);
   const char prefix[] = "unix:/path/name";
   size_t path_name_length =
-      GPR_ARRAY_SIZE(((struct sockaddr_un *)0)->sun_path) + 6;
-  char *path_name = gpr_malloc(sizeof(char) * path_name_length);
+      GPR_ARRAY_SIZE(((struct sockaddr_un*)0)->sun_path) + 6;
+  char* path_name = gpr_malloc(sizeof(char) * path_name_length);
   memset(path_name, 'a', path_name_length);
   memcpy(path_name, prefix, strlen(prefix) - 1);
   path_name[path_name_length - 1] = '\0';
@@ -157,7 +157,7 @@ static void test_unix_socket_path_name_too_long(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

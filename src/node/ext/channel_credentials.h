@@ -33,29 +33,29 @@ class ChannelCredentials : public Nan::ObjectWrap {
   static void Init(v8::Local<v8::Object> exports);
   static bool HasInstance(v8::Local<v8::Value> val);
   /* Wrap a grpc_channel_credentials struct in a javascript object */
-  static v8::Local<v8::Value> WrapStruct(grpc_channel_credentials *credentials);
+  static v8::Local<v8::Value> WrapStruct(grpc_channel_credentials* credentials);
 
   /* Returns the grpc_channel_credentials struct that this object wraps */
-  grpc_channel_credentials *GetWrappedCredentials();
+  grpc_channel_credentials* GetWrappedCredentials();
 
  private:
-  explicit ChannelCredentials(grpc_channel_credentials *credentials);
+  explicit ChannelCredentials(grpc_channel_credentials* credentials);
   ~ChannelCredentials();
 
   // Prevent copying
-  ChannelCredentials(const ChannelCredentials &);
-  ChannelCredentials &operator=(const ChannelCredentials &);
+  ChannelCredentials(const ChannelCredentials&);
+  ChannelCredentials& operator=(const ChannelCredentials&);
 
   static NAN_METHOD(New);
   static NAN_METHOD(CreateSsl);
   static NAN_METHOD(CreateInsecure);
 
   static NAN_METHOD(Compose);
-  static Nan::Callback *constructor;
+  static Nan::Callback* constructor;
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
-  grpc_channel_credentials *wrapped_credentials;
+  grpc_channel_credentials* wrapped_credentials;
 };
 
 }  // namespace node

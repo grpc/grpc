@@ -27,8 +27,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
-static int buffers_are_equal(const unsigned char *buf1,
-                             const unsigned char *buf2, size_t size) {
+static int buffers_are_equal(const unsigned char* buf1,
+                             const unsigned char* buf2, size_t size) {
   size_t i;
   for (i = 0; i < size; i++) {
     if (buf1[i] != buf2[i]) {
@@ -41,13 +41,13 @@ static int buffers_are_equal(const unsigned char *buf1,
 }
 
 static void test_simple_encode_decode_b64(int url_safe, int multiline) {
-  const char *hello = "hello";
-  char *hello_b64 =
+  const char* hello = "hello";
+  char* hello_b64 =
       grpc_base64_encode(hello, strlen(hello), url_safe, multiline);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_slice hello_slice = grpc_base64_decode(&exec_ctx, hello_b64, url_safe);
   GPR_ASSERT(GRPC_SLICE_LENGTH(hello_slice) == strlen(hello));
-  GPR_ASSERT(strncmp((const char *)GRPC_SLICE_START_PTR(hello_slice), hello,
+  GPR_ASSERT(strncmp((const char*)GRPC_SLICE_START_PTR(hello_slice), hello,
                      GRPC_SLICE_LENGTH(hello_slice)) == 0);
 
   grpc_slice_unref_internal(&exec_ctx, hello_slice);
@@ -58,7 +58,7 @@ static void test_simple_encode_decode_b64(int url_safe, int multiline) {
 static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
   unsigned char orig[256];
   size_t i;
-  char *b64;
+  char* b64;
   grpc_slice orig_decoded;
   for (i = 0; i < sizeof(orig); i++) orig[i] = (uint8_t)i;
 
@@ -111,7 +111,7 @@ static void test_full_range_encode_decode_b64_urlsafe_multiline(void) {
 static void test_url_safe_unsafe_mismatch_failure(void) {
   unsigned char orig[256];
   size_t i;
-  char *b64;
+  char* b64;
   grpc_slice orig_decoded;
   int url_safe = 1;
   for (i = 0; i < sizeof(orig); i++) orig[i] = (uint8_t)i;
@@ -132,7 +132,7 @@ static void test_url_safe_unsafe_mismatch_failure(void) {
 }
 
 static void test_rfc4648_test_vectors(void) {
-  char *b64;
+  char* b64;
 
   b64 = grpc_base64_encode("", 0, 0, 0);
   GPR_ASSERT(strcmp("", b64) == 0);
@@ -202,7 +202,7 @@ static void test_unpadded_decode(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_simple_encode_decode_b64_no_multiline();
   test_simple_encode_decode_b64_multiline();

@@ -21,7 +21,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 
-void grpc_census_call_set_context(grpc_call *call, census_context *context) {
+void grpc_census_call_set_context(grpc_call* call, census_context* context) {
   GRPC_API_TRACE("grpc_census_call_set_context(call=%p, census_context=%p)", 2,
                  (call, context));
   if (context != NULL) {
@@ -29,7 +29,7 @@ void grpc_census_call_set_context(grpc_call *call, census_context *context) {
   }
 }
 
-census_context *grpc_census_call_get_context(grpc_call *call) {
+census_context* grpc_census_call_get_context(grpc_call* call) {
   GRPC_API_TRACE("grpc_census_call_get_context(call=%p)", 1, (call));
-  return (census_context *)grpc_call_context_get(call, GRPC_CONTEXT_TRACING);
+  return (census_context*)grpc_call_context_get(call, GRPC_CONTEXT_TRACING);
 }

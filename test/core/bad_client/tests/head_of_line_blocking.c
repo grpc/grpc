@@ -65,16 +65,16 @@ static const char prefix[] =
     "\x01\x00\x00\x27\x10"
     "";
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq,
-                     void *registered_method) {
+static void verifier(grpc_server* server, grpc_completion_queue* cq,
+                     void* registered_method) {
   grpc_call_error error;
-  grpc_call *s;
-  cq_verifier *cqv = cq_verifier_create(cq);
+  grpc_call* s;
+  cq_verifier* cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
   gpr_timespec deadline;
-  grpc_byte_buffer *payload = NULL;
+  grpc_byte_buffer* payload = NULL;
 
   grpc_metadata_array_init(&request_metadata_recv);
 
@@ -93,11 +93,11 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq,
   cq_verifier_destroy(cqv);
 }
 
-char *g_buffer;
+char* g_buffer;
 size_t g_cap = 0;
 size_t g_count = 0;
 
-static void addbuf(const void *data, size_t len) {
+static void addbuf(const void* data, size_t len) {
   if (g_count + len > g_cap) {
     g_cap = GPR_MAX(g_count + len, g_cap * 2);
     g_buffer = gpr_realloc(g_buffer, g_cap);
@@ -106,7 +106,7 @@ static void addbuf(const void *data, size_t len) {
   g_count += len;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   int i;
   grpc_test_init(argc, argv);
 

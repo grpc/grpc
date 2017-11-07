@@ -32,21 +32,21 @@
 #include "src/core/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
 
-static gpr_mu *g_mu;
-static grpc_pollset *g_pollset;
+static gpr_mu* g_mu;
+static grpc_pollset* g_pollset;
 
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
-    size_t slice_size, grpc_slice *leftover_slices, size_t leftover_nslices,
+    size_t slice_size, grpc_slice* leftover_slices, size_t leftover_nslices,
     bool use_zero_copy_protector) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  tsi_frame_protector *fake_read_protector =
+  tsi_frame_protector* fake_read_protector =
       tsi_create_fake_frame_protector(NULL);
-  tsi_frame_protector *fake_write_protector =
+  tsi_frame_protector* fake_write_protector =
       tsi_create_fake_frame_protector(NULL);
-  tsi_zero_copy_grpc_protector *fake_read_zero_copy_protector =
+  tsi_zero_copy_grpc_protector* fake_read_zero_copy_protector =
       use_zero_copy_protector ? tsi_create_fake_zero_copy_grpc_protector(NULL)
                               : NULL;
-  tsi_zero_copy_grpc_protector *fake_write_zero_copy_protector =
+  tsi_zero_copy_grpc_protector* fake_write_zero_copy_protector =
       use_zero_copy_protector ? tsi_create_fake_zero_copy_grpc_protector(NULL)
                               : NULL;
   grpc_endpoint_test_fixture f;
@@ -70,12 +70,12 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t still_pending_size;
     size_t total_buffer_size = 8192;
     size_t buffer_size = total_buffer_size;
-    uint8_t *encrypted_buffer = (uint8_t *)gpr_malloc(buffer_size);
-    uint8_t *cur = encrypted_buffer;
+    uint8_t* encrypted_buffer = (uint8_t*)gpr_malloc(buffer_size);
+    uint8_t* cur = encrypted_buffer;
     grpc_slice encrypted_leftover;
     for (i = 0; i < leftover_nslices; i++) {
       grpc_slice plain = leftover_slices[i];
-      uint8_t *message_bytes = GRPC_SLICE_START_PTR(plain);
+      uint8_t* message_bytes = GRPC_SLICE_START_PTR(plain);
       size_t message_size = GRPC_SLICE_LENGTH(plain);
       while (message_size > 0) {
         size_t protected_buffer_size_to_send = buffer_size;
@@ -103,7 +103,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
       buffer_size -= protected_buffer_size_to_send;
     } while (still_pending_size > 0);
     encrypted_leftover = grpc_slice_from_copied_buffer(
-        (const char *)encrypted_buffer, total_buffer_size - buffer_size);
+        (const char*)encrypted_buffer, total_buffer_size - buffer_size);
     f.client_ep = grpc_secure_endpoint_create(
         fake_read_protector, fake_read_zero_copy_protector, tcp.client,
         &encrypted_leftover, 1);
@@ -162,9 +162,9 @@ static grpc_endpoint_test_config configs[] = {
      clean_up},
 };
 
-static void inc_call_ctr(grpc_exec_ctx *exec_ctx, void *arg,
-                         grpc_error *error) {
-  ++*(int *)arg;
+static void inc_call_ctr(grpc_exec_ctx* exec_ctx, void* arg,
+                         grpc_error* error) {
+  ++*(int*)arg;
 }
 
 static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
@@ -200,18 +200,18 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   clean_up();
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
-                            grpc_error *error) {
-  grpc_pollset_destroy(exec_ctx, (grpc_pollset *)p);
+static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* p,
+                            grpc_error* error) {
+  grpc_pollset_destroy(exec_ctx, (grpc_pollset*)p);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
 
   grpc_init();
-  g_pollset = (grpc_pollset *)gpr_zalloc(grpc_pollset_size());
+  g_pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   grpc_endpoint_tests(configs[1], g_pollset, g_mu);

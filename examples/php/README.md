@@ -41,11 +41,12 @@ TRY IT!
    $ node greeter_server.js
    ```
 
- - Run the client
+ - Generate proto files and run the client
 
    ```
    $ cd examples/php
    $ composer update -o
+   $ ./greeter_proto_gen.sh
    $ ./run_greeter_client.sh
    ```
 

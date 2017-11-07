@@ -41,12 +41,12 @@ class Server : public Nan::ObjectWrap {
   void DestroyWrappedServer();
 
  private:
-  explicit Server(grpc_server *server);
+  explicit Server(grpc_server* server);
   ~Server();
 
   // Prevent copying
-  Server(const Server &);
-  Server &operator=(const Server &);
+  Server(const Server&);
+  Server& operator=(const Server&);
 
   void ShutdownServer();
 
@@ -56,11 +56,11 @@ class Server : public Nan::ObjectWrap {
   static NAN_METHOD(Start);
   static NAN_METHOD(TryShutdown);
   static NAN_METHOD(ForceShutdown);
-  static Nan::Callback *constructor;
+  static Nan::Callback* constructor;
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
-  grpc_server *wrapped_server;
-  grpc_completion_queue *shutdown_queue;
+  grpc_server* wrapped_server;
+  grpc_completion_queue* shutdown_queue;
 };
 
 }  // namespace node

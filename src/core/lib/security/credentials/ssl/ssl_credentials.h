@@ -30,14 +30,14 @@ typedef struct {
 } grpc_ssl_credentials;
 
 struct grpc_ssl_server_certificate_config {
-  grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs;
+  grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs;
   size_t num_key_cert_pairs;
-  char *pem_root_certs;
+  char* pem_root_certs;
 };
 
 typedef struct {
   grpc_ssl_server_certificate_config_callback cb;
-  void *user_data;
+  void* user_data;
 } grpc_ssl_server_certificate_config_fetcher;
 
 typedef struct {
@@ -46,11 +46,11 @@ typedef struct {
   grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher;
 } grpc_ssl_server_credentials;
 
-tsi_ssl_pem_key_cert_pair *grpc_convert_grpc_to_tsi_cert_pairs(
-    const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
+    const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs);
 
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair *kp,
+void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
                                              size_t num_key_cert_pairs);
 
 #ifdef __cplusplus

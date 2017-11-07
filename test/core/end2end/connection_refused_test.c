@@ -33,15 +33,15 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void *tag(intptr_t i) { return (void *)i; }
+static void* tag(intptr_t i) { return (void*)i; }
 
 static void run_test(bool wait_for_ready, bool use_service_config) {
-  grpc_channel *chan;
-  grpc_call *call;
-  grpc_completion_queue *cq;
-  cq_verifier *cqv;
+  grpc_channel* chan;
+  grpc_call* call;
+  grpc_completion_queue* cq;
+  cq_verifier* cqv;
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_slice details;
@@ -57,7 +57,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   cqv = cq_verifier_create(cq);
 
   /* if using service config, create channel args */
-  grpc_channel_args *args = NULL;
+  grpc_channel_args* args = NULL;
   if (use_service_config) {
     GPR_ASSERT(wait_for_ready);
     grpc_arg arg;
@@ -77,7 +77,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   /* create a call, channel to a port which will refuse connection */
   int port = grpc_pick_unused_port_or_die();
-  char *addr;
+  char* addr;
   gpr_join_host_port(&addr, "127.0.0.1", port);
   gpr_log(GPR_INFO, "server: %s", addr);
   chan = grpc_insecure_channel_create(addr, args, NULL);
@@ -139,7 +139,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_shutdown();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   run_test(false /* wait_for_ready */, false /* use_service_config */);
   run_test(true /* wait_for_ready */, false /* use_service_config */);

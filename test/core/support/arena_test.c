@@ -32,10 +32,10 @@
 
 static void test_noop(void) { gpr_arena_destroy(gpr_arena_create(1)); }
 
-static void test(const char *name, size_t init_size, const size_t *allocs,
+static void test(const char* name, size_t init_size, const size_t* allocs,
                  size_t nallocs) {
   gpr_strvec v;
-  char *s;
+  char* s;
   gpr_strvec_init(&v);
   gpr_asprintf(&s, "test '%s': %" PRIdPTR " <- {", name, init_size);
   gpr_strvec_add(&v, s);
@@ -49,8 +49,8 @@ static void test(const char *name, size_t init_size, const size_t *allocs,
   gpr_log(GPR_INFO, "%s", s);
   gpr_free(s);
 
-  gpr_arena *a = gpr_arena_create(init_size);
-  void **ps = gpr_zalloc(sizeof(*ps) * nallocs);
+  gpr_arena* a = gpr_arena_create(init_size);
+  void** ps = gpr_zalloc(sizeof(*ps) * nallocs);
   for (size_t i = 0; i < nallocs; i++) {
     ps[i] = gpr_arena_alloc(a, allocs[i]);
     // ensure no duplicate results
@@ -71,20 +71,20 @@ static void test(const char *name, size_t init_size, const size_t *allocs,
 #define CONCURRENT_TEST_THREADS 100
 
 size_t concurrent_test_iterations() {
-  if (sizeof(void *) < 8) return 1000;
+  if (sizeof(void*) < 8) return 1000;
   return 100000;
 }
 
 typedef struct {
   gpr_event ev_start;
-  gpr_arena *arena;
+  gpr_arena* arena;
 } concurrent_test_args;
 
-static void concurrent_test_body(void *arg) {
-  concurrent_test_args *a = arg;
+static void concurrent_test_body(void* arg) {
+  concurrent_test_args* a = arg;
   gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
   for (size_t i = 0; i < concurrent_test_iterations(); i++) {
-    *(char *)gpr_arena_alloc(a->arena, 1) = (char)i;
+    *(char*)gpr_arena_alloc(a->arena, 1) = (char)i;
   }
 }
 
@@ -103,7 +103,7 @@ static void concurrent_test(void) {
     gpr_thd_new(&thds[i], concurrent_test_body, &args, &opt);
   }
 
-  gpr_event_set(&args.ev_start, (void *)1);
+  gpr_event_set(&args.ev_start, (void*)1);
 
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     gpr_thd_join(thds[i]);
@@ -112,7 +112,7 @@ static void concurrent_test(void) {
   gpr_arena_destroy(args.arena);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   grpc_test_init(argc, argv);
 
   test_noop();

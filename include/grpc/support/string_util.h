@@ -29,7 +29,7 @@ extern "C" {
 
 /** Returns a copy of src that can be passed to gpr_free().
    If allocation fails or if src is NULL, returns NULL. */
-GPRAPI char *gpr_strdup(const char *src);
+GPRAPI char* gpr_strdup(const char* src);
 
 /** printf to a newly-allocated string.  The set of supported formats may vary
    between platforms.
@@ -39,7 +39,7 @@ GPRAPI char *gpr_strdup(const char *src);
 
    On error, returns -1 and sets *strp to NULL. If the format string is bad,
    the result is undefined. */
-GPRAPI int gpr_asprintf(char **strp, const char *format, ...)
+GPRAPI int gpr_asprintf(char** strp, const char* format, ...)
     GPR_PRINT_FORMAT_CHECK(2, 3);
 
 #ifdef __cplusplus

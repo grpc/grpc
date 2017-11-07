@@ -36,12 +36,12 @@ extern "C" {
 
 /* Converts array buf, of length len, into a C string  according to the flags.
    Result should be freed with gpr_free() */
-char *gpr_dump(const char *buf, size_t len, uint32_t flags);
+char* gpr_dump(const char* buf, size_t len, uint32_t flags);
 
 /* Parses an array of bytes into an integer (base 10). Returns 1 on success,
    0 on failure. */
-int gpr_parse_bytes_to_uint32(const char *data, size_t length,
-                              uint32_t *result);
+int gpr_parse_bytes_to_uint32(const char* data, size_t length,
+                              uint32_t* result);
 
 /* Minimum buffer size for calling ltoa */
 #define GPR_LTOA_MIN_BUFSIZE (3 * sizeof(long))
@@ -49,7 +49,7 @@ int gpr_parse_bytes_to_uint32(const char *data, size_t length,
 /* Convert a long to a string in base 10; returns the length of the
    output string (or 0 on failure).
    output must be at least GPR_LTOA_MIN_BUFSIZE bytes long. */
-int gpr_ltoa(long value, char *output);
+int gpr_ltoa(long value, char* output);
 
 /* Minimum buffer size for calling int64toa */
 #define GPR_INT64TOA_MIN_BUFSIZE (3 * sizeof(int64_t))
@@ -59,56 +59,56 @@ output string (or 0 on failure).
 output must be at least GPR_INT64TOA_MIN_BUFSIZE bytes long.
 NOTE: This function ensures sufficient bit width even on Win x64,
 where long is 32bit is size.*/
-int int64_ttoa(int64_t value, char *output);
+int int64_ttoa(int64_t value, char* output);
 
 // Parses a non-negative number from a value string.  Returns -1 on error.
-int gpr_parse_nonnegative_int(const char *value);
+int gpr_parse_nonnegative_int(const char* value);
 
 /* Reverse a run of bytes */
-void gpr_reverse_bytes(char *str, int len);
+void gpr_reverse_bytes(char* str, int len);
 
 /* Pad a string with flag characters. The given length specifies the minimum
    field width. The input string is never truncated. */
-char *gpr_leftpad(const char *str, char flag, size_t length);
+char* gpr_leftpad(const char* str, char flag, size_t length);
 
 /* Join a set of strings, returning the resulting string.
    Total combined length (excluding null terminator) is returned in total_length
    if it is non-null. */
-char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
+char* gpr_strjoin(const char** strs, size_t nstrs, size_t* total_length);
 
 /* Join a set of strings using a separator, returning the resulting string.
    Total combined length (excluding null terminator) is returned in total_length
    if it is non-null. */
-char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
-                      size_t *total_length);
+char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
+                      size_t* total_length);
 
-void gpr_string_split(const char *input, const char *sep, char ***strs,
-                      size_t *nstrs);
+void gpr_string_split(const char* input, const char* sep, char*** strs,
+                      size_t* nstrs);
 
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {
-  char **strs;
+  char** strs;
   size_t count;
   size_t capacity;
 } gpr_strvec;
 
 /* Initialize/destroy */
-void gpr_strvec_init(gpr_strvec *strs);
-void gpr_strvec_destroy(gpr_strvec *strs);
+void gpr_strvec_init(gpr_strvec* strs);
+void gpr_strvec_destroy(gpr_strvec* strs);
 /* Add a string to a strvec, takes ownership of the string */
-void gpr_strvec_add(gpr_strvec *strs, char *add);
+void gpr_strvec_add(gpr_strvec* strs, char* add);
 /* Return a joined string with all added substrings, optionally setting
    total_length as per gpr_strjoin */
-char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
+char* gpr_strvec_flatten(gpr_strvec* strs, size_t* total_length);
 
 /** Case insensitive string comparison... return <0 if lower(a)<lower(b), ==0 if
     lower(a)==lower(b), >0 if lower(a)>lower(b) */
-int gpr_stricmp(const char *a, const char *b);
+int gpr_stricmp(const char* a, const char* b);
 
-void *gpr_memrchr(const void *s, int c, size_t n);
+void* gpr_memrchr(const void* s, int c, size_t n);
 
 /** Return true if lower(s) equals "true", "yes" or "1", otherwise false. */
-bool gpr_is_true(const char *s);
+bool gpr_is_true(const char* s);
 #ifdef __cplusplus
 }
 #endif
