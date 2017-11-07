@@ -58,33 +58,33 @@ static const int kIpv6AddrScopeLinkLocal = 1;
 const int kIpv6AddrScopeSiteLocal = 2;
 const int kIpv6AddrScopeGlobal = 3;
 
-static address_sorting_socket_factory *g_current_socket_factory = NULL;
+static address_sorting_socket_factory* g_current_socket_factory = NULL;
 
-static int default_socket_factory_socket(address_sorting_socket_factory *self,
+static int default_socket_factory_socket(address_sorting_socket_factory* self,
                                          int domain, int type, int protocol) {
   return socket(domain, type, protocol);
 }
 
-static int default_socket_factory_connect(address_sorting_socket_factory *self,
+static int default_socket_factory_connect(address_sorting_socket_factory* self,
                                           int sockfd,
-                                          const struct sockaddr *addr,
+                                          const struct sockaddr* addr,
                                           socklen_t addrlen) {
   return connect(sockfd, addr, addrlen);
 }
 
 static int default_socket_factory_getsockname(
-    address_sorting_socket_factory *self, int sockfd, struct sockaddr *addr,
-    socklen_t *addrlen) {
+    address_sorting_socket_factory* self, int sockfd, struct sockaddr* addr,
+    socklen_t* addrlen) {
   return getsockname(sockfd, addr, addrlen);
 }
 
-static int default_socket_factory_close(address_sorting_socket_factory *self,
+static int default_socket_factory_close(address_sorting_socket_factory* self,
                                         int sockfd) {
   return close(sockfd);
 }
 
 static void default_socket_factory_destroy(
-    address_sorting_socket_factory *self) {
+    address_sorting_socket_factory* self) {
   return;
 }
 
@@ -94,8 +94,8 @@ const address_sorting_socket_factory_vtable default_socket_factory_vtable = {
     default_socket_factory_destroy,
 };
 
-static address_sorting_socket_factory *create_default_socket_factory() {
-  address_sorting_socket_factory *factory =
+static address_sorting_socket_factory* create_default_socket_factory() {
+  address_sorting_socket_factory* factory =
       gpr_zalloc(sizeof(address_sorting_socket_factory));
   factory->vtable = &default_socket_factory_vtable;
   return factory;
@@ -106,14 +106,14 @@ static int address_sorting_socket(int domain, int type, int protocol) {
                                                   domain, type, protocol);
 }
 
-static int address_sorting_connect(int sockfd, const struct sockaddr *addr,
+static int address_sorting_connect(int sockfd, const struct sockaddr* addr,
                                    socklen_t addrlen) {
   return g_current_socket_factory->vtable->connect(g_current_socket_factory,
                                                    sockfd, addr, addrlen);
 }
 
-static int address_sorting_getsockname(int sockfd, struct sockaddr *addr,
-                                       socklen_t *addrlen) {
+static int address_sorting_getsockname(int sockfd, struct sockaddr* addr,
+                                       socklen_t* addrlen) {
   return g_current_socket_factory->vtable->getsockname(g_current_socket_factory,
                                                        sockfd, addr, addrlen);
 }
@@ -123,10 +123,10 @@ static int address_sorting_close(int sockfd) {
                                                  sockfd);
 }
 
-static int ipv6_prefix_match_length(const struct sockaddr_in6 *sa,
-                                    const struct sockaddr_in6 *sb) {
-  unsigned char *a = (unsigned char *)&sa->sin6_addr;
-  unsigned char *b = (unsigned char *)&sb->sin6_addr;
+static int ipv6_prefix_match_length(const struct sockaddr_in6* sa,
+                                    const struct sockaddr_in6* sb) {
+  unsigned char* a = (unsigned char*)&sa->sin6_addr;
+  unsigned char* b = (unsigned char*)&sb->sin6_addr;
   int cur_bit = 0;
   while (cur_bit < 128) {
     int a_val = a[cur_bit / CHAR_BIT] & (1 << (cur_bit % CHAR_BIT));
@@ -140,35 +140,35 @@ static int ipv6_prefix_match_length(const struct sockaddr_in6 *sa,
   return cur_bit;
 }
 
-static int in6_is_addr_6to4(const struct in6_addr *s_addr) {
-  uint8_t *bytes = (uint8_t *)s_addr;
+static int in6_is_addr_6to4(const struct in6_addr* s_addr) {
+  uint8_t* bytes = (uint8_t*)s_addr;
   return bytes[0] == 0x20 && bytes[1] == 0x02;
 }
 
-static int in6_is_addr_ula(const struct in6_addr *s_addr) {
-  uint8_t *bytes = (uint8_t *)s_addr;
+static int in6_is_addr_ula(const struct in6_addr* s_addr) {
+  uint8_t* bytes = (uint8_t*)s_addr;
   return (bytes[0] & 0xfe) == 0xfc;
 }
 
-static int in6_is_addr_toredo(const struct in6_addr *s_addr) {
-  uint8_t *bytes = (uint8_t *)s_addr;
+static int in6_is_addr_toredo(const struct in6_addr* s_addr) {
+  uint8_t* bytes = (uint8_t*)s_addr;
   return bytes[0] == 0x20 && bytes[1] == 0x02 && bytes[2] == 0x00 &&
          bytes[3] == 0x00;
 }
 
-static int in6_is_addr_6bone(const struct in6_addr *s_addr) {
-  uint8_t *bytes = (uint8_t *)s_addr;
+static int in6_is_addr_6bone(const struct in6_addr* s_addr) {
+  uint8_t* bytes = (uint8_t*)s_addr;
   return bytes[0] == 0x3f && bytes[1] == 0xfe;
 }
 
-static int get_label_value(const grpc_resolved_address *resolved_addr) {
+static int get_label_value(const grpc_resolved_address* resolved_addr) {
   if (grpc_sockaddr_get_family(resolved_addr) == AF_INET) {
     return 4;
   } else if (grpc_sockaddr_get_family(resolved_addr) != AF_INET6) {
     gpr_log(GPR_INFO, "Address is not AF_INET or AF_INET6.");
     return 1;
   }
-  struct sockaddr_in6 *ipv6_addr = (struct sockaddr_in6 *)&resolved_addr->addr;
+  struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
   if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr)) {
     return 0;
   } else if (IN6_IS_ADDR_V4MAPPED(&ipv6_addr->sin6_addr)) {
@@ -189,14 +189,14 @@ static int get_label_value(const grpc_resolved_address *resolved_addr) {
   return 1;
 }
 
-static int get_precedence_value(const grpc_resolved_address *resolved_addr) {
+static int get_precedence_value(const grpc_resolved_address* resolved_addr) {
   if (grpc_sockaddr_get_family(resolved_addr) == AF_INET) {
     return 35;
   } else if (grpc_sockaddr_get_family(resolved_addr) != AF_INET6) {
     gpr_log(GPR_INFO, "Address is not AF_INET or AF_INET6.");
     return 1;
   }
-  struct sockaddr_in6 *ipv6_addr = (struct sockaddr_in6 *)&resolved_addr->addr;
+  struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
   if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr)) {
     return 50;
   } else if (IN6_IS_ADDR_V4MAPPED(&ipv6_addr->sin6_addr)) {
@@ -215,12 +215,11 @@ static int get_precedence_value(const grpc_resolved_address *resolved_addr) {
   return 40;
 }
 
-static int sockaddr_get_scope(const grpc_resolved_address *resolved_addr) {
+static int sockaddr_get_scope(const grpc_resolved_address* resolved_addr) {
   if (grpc_sockaddr_get_family(resolved_addr) == AF_INET) {
     return kIpv6AddrScopeGlobal;
   } else if (grpc_sockaddr_get_family(resolved_addr) == AF_INET6) {
-    struct sockaddr_in6 *ipv6_addr =
-        (struct sockaddr_in6 *)&resolved_addr->addr;
+    struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
     if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr) ||
         IN6_IS_ADDR_LINKLOCAL(&ipv6_addr->sin6_addr)) {
       return kIpv6AddrScopeLinkLocal;
@@ -313,19 +312,19 @@ static int compare_source_dest_prefix_match_lengths(sortable_address first,
       second.source_addr_exists &&
       grpc_sockaddr_get_family(&second.source_addr) == AF_INET6) {
     int first_match_length =
-        ipv6_prefix_match_length((struct sockaddr_in6 *)&first.source_addr.addr,
-                                 (struct sockaddr_in6 *)&first.dest_addr.addr);
-    int second_match_length = ipv6_prefix_match_length(
-        (struct sockaddr_in6 *)&second.source_addr.addr,
-        (struct sockaddr_in6 *)&second.dest_addr.addr);
+        ipv6_prefix_match_length((struct sockaddr_in6*)&first.source_addr.addr,
+                                 (struct sockaddr_in6*)&first.dest_addr.addr);
+    int second_match_length =
+        ipv6_prefix_match_length((struct sockaddr_in6*)&second.source_addr.addr,
+                                 (struct sockaddr_in6*)&second.dest_addr.addr);
     return second_match_length - first_match_length;
   }
   return 0;
 }
 
-static int rfc_6724_compare(const void *a, const void *b) {
-  const sortable_address first = *(sortable_address *)a;
-  const sortable_address second = *(sortable_address *)b;
+static int rfc_6724_compare(const void* a, const void* b) {
+  const sortable_address first = *(sortable_address*)a;
+  const sortable_address second = *(sortable_address*)b;
   int out = 0;
   if ((out = compare_source_addr_exists(first, second))) {
     return out;
@@ -348,14 +347,14 @@ static int rfc_6724_compare(const void *a, const void *b) {
 }
 
 void address_sorting_override_socket_factory_for_testing(
-    address_sorting_socket_factory *factory) {
+    address_sorting_socket_factory* factory) {
   GPR_ASSERT(g_current_socket_factory);
   g_current_socket_factory->vtable->destroy(g_current_socket_factory);
   g_current_socket_factory = factory;
 }
 
-void address_sorting_rfc_6724_sort(grpc_lb_addresses *resolved_lb_addrs) {
-  sortable_address *sortable =
+void address_sorting_rfc_6724_sort(grpc_lb_addresses* resolved_lb_addrs) {
+  sortable_address* sortable =
       gpr_zalloc(sizeof(sortable_address) * resolved_lb_addrs->num_addresses);
   for (size_t i = 0; i < resolved_lb_addrs->num_addresses; i++) {
     sortable_address next;
@@ -370,12 +369,12 @@ void address_sorting_rfc_6724_sort(grpc_lb_addresses *resolved_lb_addrs) {
     if (s != -1) {
       if (address_sorting_connect(
               s,
-              (struct sockaddr *)&resolved_lb_addrs->addresses[i].address.addr,
+              (struct sockaddr*)&resolved_lb_addrs->addresses[i].address.addr,
               (socklen_t)resolved_lb_addrs->addresses[i].address.len) != -1) {
         grpc_resolved_address found_source_addr;
         if (address_sorting_getsockname(
-                s, (struct sockaddr *)&found_source_addr.addr,
-                (socklen_t *)&found_source_addr.len) != -1) {
+                s, (struct sockaddr*)&found_source_addr.addr,
+                (socklen_t*)&found_source_addr.len) != -1) {
           next.source_addr_exists = 1;
           next.source_addr = found_source_addr;
         }
@@ -386,7 +385,7 @@ void address_sorting_rfc_6724_sort(grpc_lb_addresses *resolved_lb_addrs) {
   }
   qsort(sortable, resolved_lb_addrs->num_addresses, sizeof(sortable_address),
         rfc_6724_compare);
-  grpc_lb_address *sorted_lb_addrs = (grpc_lb_address *)gpr_zalloc(
+  grpc_lb_address* sorted_lb_addrs = (grpc_lb_address*)gpr_zalloc(
       resolved_lb_addrs->num_addresses * sizeof(grpc_lb_address));
   for (size_t i = 0; i < resolved_lb_addrs->num_addresses; i++) {
     sorted_lb_addrs[i] = sortable[i].lb_addr;
