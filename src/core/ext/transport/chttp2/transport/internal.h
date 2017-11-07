@@ -237,11 +237,25 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
+class AbstractBase {
+ public:
+  AbstractBase() {}
+  virtual void foo() { gpr_log(GPR_ERROR, "base"); }
+};
+
+class D1 : public AbstractBase {
+ public:
+  D1() {}
+  void foo() override { gpr_log(GPR_ERROR, "derived"); }
+};
+
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   gpr_refcount refs;
   grpc_endpoint* ep;
   char* peer_string;
+
+  AbstractBase* abstract;
 
   grpc_combiner* combiner;
 
