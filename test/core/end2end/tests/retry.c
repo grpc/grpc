@@ -247,8 +247,8 @@ static void test_retry_basic(grpc_end2end_test_config config) {
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
     if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
                       GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(grpc_slice_str_cmp(request_metadata_recv.metadata[i].value,
-                                    "1") == 0);
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               GRPC_MDSTR_1));
       found_retry_header = true;
       break;
     }

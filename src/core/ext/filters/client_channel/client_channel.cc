@@ -62,13 +62,13 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
+using grpc_core::internal::WAIT_FOR_READY_TRUE;
+using grpc_core::internal::WAIT_FOR_READY_UNSET;
 using grpc_core::internal::method_parameters;
+using grpc_core::internal::method_parameters_create_from_json;
 using grpc_core::internal::method_parameters_ref;
 using grpc_core::internal::method_parameters_unref;
-using grpc_core::internal::method_parameters_create_from_json;
 using grpc_core::internal::retry_policy_params;
-using grpc_core::internal::WAIT_FOR_READY_UNSET;
-using grpc_core::internal::WAIT_FOR_READY_TRUE;
 
 /* Client channel implementation */
 
@@ -1710,8 +1710,8 @@ static void add_closures_for_deferred_recv_callbacks(
 
 static void add_closures_for_replay_or_pending_send_ops(
     grpc_call_element* elem, subchannel_batch_data* batch_data,
-    subchannel_call_retry_state* retry_state,
-    closure_to_execute* closures, size_t* num_closures) {
+    subchannel_call_retry_state* retry_state, closure_to_execute* closures,
+    size_t* num_closures) {
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
   bool have_pending_send_message_ops =
@@ -1894,7 +1894,8 @@ static void start_batch_in_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_subchannel_call_process_op(exec_ctx, subchannel_call, batch);
 }
 
-static const char* g_retry_count_strings[] = {"1", "2", "3", "4"};
+static const grpc_slice* g_retry_count_strings[] = {
+    &GRPC_MDSTR_1, &GRPC_MDSTR_2, &GRPC_MDSTR_3, &GRPC_MDSTR_4};
 
 static void add_retriable_send_initial_metadata_op(
     grpc_exec_ctx* exec_ctx, call_data* calld,
@@ -1919,8 +1920,7 @@ static void add_retriable_send_initial_metadata_op(
   if (calld->num_attempts_completed > 0) {
     grpc_mdelem retry_md = grpc_mdelem_from_slices(
         exec_ctx, GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS,
-        grpc_slice_from_static_string(
-            g_retry_count_strings[calld->num_attempts_completed - 1]));
+        *g_retry_count_strings[calld->num_attempts_completed - 1]);
     grpc_error* error = grpc_metadata_batch_add_tail(
         exec_ctx, &batch_data->send_initial_metadata,
         &batch_data->send_initial_metadata_storage[calld->send_initial_metadata

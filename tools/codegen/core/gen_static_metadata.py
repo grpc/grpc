@@ -47,6 +47,10 @@ CONFIG = [
     'grpc-trace-bin',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
+    '1',
+    '2',
+    '3',
+    '4',
     '',
     # channel arg keys
     'grpc.wait_for_ready',
