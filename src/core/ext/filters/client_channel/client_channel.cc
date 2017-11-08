@@ -72,9 +72,9 @@ using grpc_core::internal::retry_policy_params;
 
 /* Client channel implementation */
 
-// By default, we buffer 1 MiB per RPC for retries.
+// By default, we buffer 256 KiB per RPC for retries.
 // TODO(roth): Do we have any data to suggest a better value?
-#define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (1 << 20)
+#define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (256 << 10)
 
 // This value was picked arbitrarily.  It can be changed if there is
 // any even moderately compelling reason to do so.
@@ -928,6 +928,9 @@ typedef struct client_channel_call_data {
   // When we get a send_message op, we replace the original byte stream
   // with a grpc_caching_byte_stream that caches the slices to a
   // local buffer for use in retries.
+  // Note: We inline the cache for the first 3 send_message ops and use
+  // dynamic allocation after that.  This number was essentially picked
+  // at random; it could be changed in the future to tune performance.
   grpc_core::InlinedVector<grpc_byte_stream_cache*, 3> send_messages;
   // send_trailing_metadata
   bool seen_send_trailing_metadata;
@@ -995,25 +998,22 @@ static void pending_batches_add(grpc_exec_ctx* exec_ctx,
   GPR_ASSERT(pending->batch == NULL);
   pending->batch = batch;
   pending->send_ops_cached = false;
+  // Update state in calld about pending batches.
+  // Also check if the batch takes us over the retry buffer limit.
+  // Note: We don't check the size of trailing metadata here, because
+  // gRPC clients do not send trailing metadata.
   if (batch->send_initial_metadata) {
     calld->pending_send_initial_metadata = true;
-  }
-  if (batch->send_message) {
-    calld->pending_send_message = true;
-  }
-  if (batch->send_trailing_metadata) {
-    calld->pending_send_trailing_metadata = true;
-  }
-  // Check if the batch takes us over the retry buffer limit.
-  // Note: We don't check trailing metadata here, because gRPC clients
-  // do not send trailing metadata.
-  if (batch->send_initial_metadata) {
     calld->bytes_buffered_for_retry += grpc_metadata_batch_size(
         batch->payload->send_initial_metadata.send_initial_metadata);
   }
   if (batch->send_message) {
+    calld->pending_send_message = true;
     calld->bytes_buffered_for_retry +=
         batch->payload->send_message.send_message->length;
+  }
+  if (batch->send_trailing_metadata) {
+    calld->pending_send_trailing_metadata = true;
   }
   if (calld->bytes_buffered_for_retry > chand->per_rpc_retry_buffer_size) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
@@ -1062,6 +1062,7 @@ static void fail_pending_batch_in_call_combiner(grpc_exec_ctx* exec_ctx,
 static void pending_batches_fail(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem, grpc_error* error,
                                  bool yield_call_combiner) {
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
   call_data* calld = (call_data*)elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     size_t num_batches = 0;
@@ -1207,6 +1208,8 @@ static void maybe_clear_pending_batch(grpc_call_element* elem,
   call_data* calld = (call_data*)elem->call_data;
   channel_data* chand = (channel_data*)elem->channel_data;
   grpc_transport_stream_op_batch* batch = pending->batch;
+  // We clear the pending batch if all of its callbacks have been
+  // scheduled and reset to NULL.
   if (batch->on_complete == NULL &&
       (!batch->recv_initial_metadata ||
        batch->payload->recv_initial_metadata.recv_initial_metadata_ready ==
@@ -1386,7 +1389,7 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   }
   // Check whether we have retries remaining.
   ++calld->num_attempts_completed;
-  if (calld->num_attempts_completed == retry_policy->max_attempts) {
+  if (calld->num_attempts_completed >= retry_policy->max_attempts) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: exceeded %d retry attempts", chand,
               calld, retry_policy->max_attempts);
