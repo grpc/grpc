@@ -16,7 +16,7 @@
 set -e
 
 # directories to run against
-DIRS="src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/node src/csharp src/ruby"
+DIRS="src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/csharp src/ruby"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc"
@@ -29,7 +29,7 @@ for dir in $DIRS
 do
   for glob in $GLOB
   do
-    files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob -and -not -name '*.generated.*' -and -not -name '*.pb.h' -and -not -name '*.pb.c' -and -not -name '*.pb.cc' -and -not -name end2end_tests.c -and -not -name end2end_nosec_tests.c -and -not -name public_headers_must_be_c89.c`"
+    files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob -and -not -name '*.generated.*' -and -not -name '*.pb.h' -and -not -name '*.pb.c' -and -not -name '*.pb.cc' -and -not -name end2end_tests.cc -and -not -name end2end_nosec_tests.cc -and -not -name public_headers_must_be_c89.c`"
   done
 done
 

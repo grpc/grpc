@@ -23,10 +23,6 @@
 
 #include <grpc/support/sync.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 32
 #define TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE 128
 #define TSI_TEST_SMALL_READ_BUFFER_ALLOCATED_SIZE 41
@@ -174,9 +170,5 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture);
    message, and unprotects it. The same operation is triggered again with
    the client and server switching its role. */
 void tsi_test_do_round_trip(tsi_test_fixture* fixture);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_

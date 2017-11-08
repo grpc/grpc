@@ -23,10 +23,6 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_tcp_server.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct timestamp_list {
   gpr_timespec timestamp;
   struct timestamp_list* next;
@@ -45,9 +41,5 @@ void reconnect_server_start(reconnect_server* server, int port);
 void reconnect_server_poll(reconnect_server* server, int seconds);
 void reconnect_server_destroy(reconnect_server* server);
 void reconnect_server_clear_timestamps(reconnect_server* server);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_TEST_CORE_UTIL_RECONNECT_SERVER_H */
