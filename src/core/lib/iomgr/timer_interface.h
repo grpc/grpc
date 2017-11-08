@@ -21,12 +21,6 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_UV
-#include "src/core/lib/iomgr/timer_uv.h"
-#else
-#include "src/core/lib/iomgr/timer_generic.h"
-#endif /* GRPC_UV */
-
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <type_traits>
