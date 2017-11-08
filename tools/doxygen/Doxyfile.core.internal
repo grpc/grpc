@@ -1276,6 +1276,7 @@ src/core/lib/support/atomic.h \
 src/core/lib/support/atomic_with_atm.h \
 src/core/lib/support/atomic_with_std.h \
 src/core/lib/support/avl.cc \
+src/core/lib/support/closure_ref.h \
 src/core/lib/support/cmdline.cc \
 src/core/lib/support/cpu_iphone.cc \
 src/core/lib/support/cpu_linux.cc \

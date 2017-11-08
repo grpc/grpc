@@ -66,4 +66,4 @@ size_t grpc_stats_histo_count(const grpc_stats_data* data,
 }
 #endif
 
-#endif
+#endif /* GRPC_CORE_LIB_DEBUG_STATS_H */

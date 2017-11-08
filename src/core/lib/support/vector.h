@@ -29,4 +29,4 @@ using InlinedVector = absl::InlinedVector<T, N, Allocator<T>>;
 
 }  // namespace grpc_core
 
-#endif
+#endif /* GRPC_CORE_LIB_SUPPORT_VECTOR_H */

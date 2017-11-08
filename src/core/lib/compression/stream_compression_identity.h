@@ -32,4 +32,4 @@ extern const grpc_stream_compression_vtable
 }
 #endif
 
-#endif
+#endif /* GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_IDENTITY_H */

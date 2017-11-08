@@ -119,4 +119,4 @@ int grpc_stream_compression_method_parse(
 }
 #endif
 
-#endif
+#endif /* GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H */

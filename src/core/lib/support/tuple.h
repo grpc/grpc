@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_MPSCQ_H
-#define GRPC_CORE_LIB_SUPPORT_MPSCQ_H
+#ifndef GRPC_CORE_LIB_SUPPORT_TUPLE_H
+#define GRPC_CORE_LIB_SUPPORT_TUPLE_H
 
 #include <utility>
 
@@ -202,4 +202,4 @@ auto TupleCallMember(C* p, R (C::*f)(Args...), const Tuple<Types...>& args)
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SUPPORT_MPSCQ_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_TUPLE_H */

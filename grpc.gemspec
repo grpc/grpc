@@ -88,6 +88,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/atomic.h )
   s.files += %w( src/core/lib/support/atomic_with_atm.h )
   s.files += %w( src/core/lib/support/atomic_with_std.h )
+  s.files += %w( src/core/lib/support/closure_ref.h )
   s.files += %w( src/core/lib/support/env.h )
   s.files += %w( src/core/lib/support/manual_constructor.h )
   s.files += %w( src/core/lib/support/memory.h )
