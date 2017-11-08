@@ -637,13 +637,13 @@ static void StartTransportStreamOp(grpc_exec_ctx* exec_ctx,
                                    grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (op->recv_initial_metadata) {
-    GRPC_CALL_COMBINER_START(
+    GRPC_CALL_COMBINER_SCHED(
         exec_ctx, calld->call_combiner,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready,
         GRPC_ERROR_NONE, "recv_initial_metadata");
   }
   if (op->recv_message) {
-    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+    GRPC_CALL_COMBINER_SCHED(exec_ctx, calld->call_combiner,
                              op->payload->recv_message.recv_message_ready,
                              GRPC_ERROR_NONE, "recv_message");
   }

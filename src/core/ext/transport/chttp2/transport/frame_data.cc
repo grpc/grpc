@@ -302,7 +302,7 @@ grpc_error* grpc_chttp2_data_parser_parse(grpc_exec_ctx* exec_ctx, void* parser,
     grpc_slice_ref_internal(slice);
     grpc_slice_buffer_add(&s->unprocessed_incoming_frames_buffer, slice);
     s->unprocessed_incoming_frames_decompressed = false;
-    grpc_closure *c = s->on_next;
+    grpc_closure* c = s->on_next;
     s->on_next = NULL;
     GRPC_CLOSURE_RUN(exec_ctx, c, GRPC_ERROR_NONE);
   } else {
