@@ -62,7 +62,6 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
-using grpc_core::internal::is_status_code_in_list;
 using grpc_core::internal::method_parameters;
 using grpc_core::internal::method_parameters_ref;
 using grpc_core::internal::method_parameters_unref;
@@ -1309,8 +1308,7 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     return false;
   }
   // Status is not OK.  Check whether the status is retryable.
-  if (!is_status_code_in_list(status, retry_policy->retryable_status_codes,
-                              retry_policy->num_retryable_status_codes)) {
+  if (!retry_policy->retryable_status_codes.Contains(status)) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: status %s not configured as retryable", chand,

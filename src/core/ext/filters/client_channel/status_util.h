@@ -34,9 +34,22 @@ const char* grpc_status_string(grpc_status_code status);
 namespace grpc_core {
 namespace internal {
 
-/// Returns true if \a status is present in \a list.
-bool is_status_code_in_list(grpc_status_code status,
-                            grpc_status_code* list, size_t list_size);
+/// A set of grpc_status_code values.
+class StatusCodeSet {
+ public:
+  bool Empty() const { return status_code_mask_ == 0; }
+
+  void Add(grpc_status_code status) {
+    status_code_mask_ |= (1 << status);
+  }
+
+  bool Contains(grpc_status_code status) const {
+    return status_code_mask_ & (1 << status);
+  }
+
+ private:
+  int status_code_mask_ = 0;  // A bitfield of status codes in the set.
+};
 
 }  // namespace internal
 }  // namespace grpc_core

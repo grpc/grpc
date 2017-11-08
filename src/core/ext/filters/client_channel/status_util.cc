@@ -77,18 +77,3 @@ const char* grpc_status_string(grpc_status_code status) {
     default: return "UNKNOWN";
   }
 }
-
-namespace grpc_core {
-namespace internal {
-
-bool is_status_code_in_list(grpc_status_code status,
-                            grpc_status_code* list, size_t list_size) {
-  if (list == NULL) return true;
-  for (size_t i = 0; i < list_size; ++i) {
-    if (status == list[i]) return true;
-  }
-  return false;
-}
-
-}  // namespace internal
-}  // namespace grpc_core

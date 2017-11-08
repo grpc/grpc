@@ -19,6 +19,7 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_METHOD_PARAMS_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_METHOD_PARAMS_H
 
+#include "src/core/ext/filters/client_channel/status_util.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
@@ -36,8 +37,7 @@ typedef struct {
   grpc_millis initial_backoff;
   grpc_millis max_backoff;
   float backoff_multiplier;
-  grpc_status_code* retryable_status_codes;
-  size_t num_retryable_status_codes;
+  StatusCodeSet retryable_status_codes;
 } retry_policy_params;
 
 typedef struct {

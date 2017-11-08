@@ -37,7 +37,6 @@ namespace {
 
 void retry_policy_params_free(retry_policy_params* retry_policy) {
   if (retry_policy != NULL) {
-    gpr_free(retry_policy->retryable_status_codes);
     gpr_free(retry_policy);
   }
 }
@@ -136,31 +135,24 @@ bool parse_retry_policy(grpc_json* field, retry_policy_params* retry_policy) {
       }
       if (retry_policy->backoff_multiplier <= 0) return false;
     } else if (strcmp(sub_field->key, "retryableStatusCodes") == 0) {
-      if (retry_policy->retryable_status_codes != NULL) {
+      if (!retry_policy->retryable_status_codes.Empty()) {
         return false;  // Duplicate.
       }
       if (sub_field->type != GRPC_JSON_ARRAY) return false;
       for (grpc_json* element = sub_field->child; element != NULL;
            element = element->next) {
         if (element->type != GRPC_JSON_STRING) return false;
-        ++retry_policy->num_retryable_status_codes;
-        retry_policy->retryable_status_codes = (grpc_status_code*)gpr_realloc(
-            retry_policy->retryable_status_codes,
-            retry_policy->num_retryable_status_codes *
-                sizeof(grpc_status_code));
-        if (!grpc_status_from_string(
-                element->value,
-                &retry_policy->retryable_status_codes
-                     [retry_policy->num_retryable_status_codes - 1])) {
-          return false;
-        }
+        grpc_status_code status;
+        if (!grpc_status_from_string(element->value, &status)) return false;
+        retry_policy->retryable_status_codes.Add(status);
       }
+      if (retry_policy->retryable_status_codes.Empty()) return false;
     }
   }
   // Make sure required fields are set.
   if (retry_policy->max_attempts == 0 || retry_policy->initial_backoff == 0 ||
       retry_policy->max_backoff == 0 || retry_policy->backoff_multiplier == 0 ||
-      retry_policy->retryable_status_codes == NULL) {
+      retry_policy->retryable_status_codes.Empty()) {
     return false;
   }
   return true;
