@@ -2037,22 +2037,11 @@ static void start_internal_recv_trailing_metadata(grpc_exec_ctx* exec_ctx,
                                   &batch_data->batch);
 }
 
-static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
-                                               void* arg, grpc_error* ignored) {
-  grpc_call_element* elem = (grpc_call_element*)arg;
+static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    subchannel_call_retry_state* retry_state) {
   call_data* calld = (call_data*)elem->call_data;
   channel_data* chand = (channel_data*)elem->channel_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-    gpr_log(GPR_DEBUG, "chand=%p calld=%p: constructing retriable batches",
-            chand, calld);
-  }
-  subchannel_call_retry_state* retry_state = (subchannel_call_retry_state*)
-      grpc_connected_subchannel_call_get_parent_data(calld->subchannel_call);
-  // We can start up to 6 batches.
-  grpc_transport_stream_op_batch*
-      batches[GPR_ARRAY_SIZE(calld->pending_batches)];
-  size_t num_batches = 0;
-  // Replay previously-returned send_* ops if needed.
   subchannel_batch_data* replay_batch_data = NULL;
   // send_initial_metadata.
   if (calld->seen_send_initial_metadata &&
@@ -2070,10 +2059,10 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
   }
   // send_message.
   // Note that we can only have one send_message op in flight at a time.
-  bool send_message_op_in_flight = retry_state->started_send_message_count <
-                                   retry_state->completed_send_message_count;
   if (retry_state->started_send_message_count < calld->send_messages.size() &&
-      !send_message_op_in_flight && !calld->pending_send_message) {
+      retry_state->started_send_message_count ==
+          retry_state->completed_send_message_count &&
+      !calld->pending_send_message) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: replaying previously completed "
@@ -2085,7 +2074,6 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
     }
     add_retriable_send_message_op(exec_ctx, calld, retry_state,
                                   replay_batch_data);
-    send_message_op_in_flight = true;
   }
   // send_trailing_metadata.
   // Note that we only add this op if we have no more send_message ops
@@ -2107,10 +2095,14 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
     add_retriable_send_trailing_metadata_op(exec_ctx, calld, retry_state,
                                             replay_batch_data);
   }
-  if (replay_batch_data != NULL) {
-    batches[num_batches++] = &replay_batch_data->batch;
-  }
-  // Now add pending batches.
+  return replay_batch_data;
+}
+
+static void add_subchannel_batches_for_pending_batches(
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    subchannel_call_retry_state* retry_state,
+    grpc_transport_stream_op_batch** batches, size_t* num_batches) {
+  call_data* calld = (call_data*)elem->call_data;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
     pending_batch* pending = &calld->pending_batches[i];
     grpc_transport_stream_op_batch* batch = pending->batch;
@@ -2129,7 +2121,11 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
         retry_state->started_send_initial_metadata) {
       continue;
     }
-    if (batch->send_message && send_message_op_in_flight) continue;
+    if (batch->send_message &&
+        retry_state->started_send_message_count <
+            retry_state->completed_send_message_count) {
+      continue;
+    }
     // Note that we only start send_trailing_metadata if we have no more
     // send_message ops to start, since we can't send down any more
     // send_message ops after send_trailing_metadata.
@@ -2154,7 +2150,7 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
     // If we're not retrying, just send the batch as-is.
     if (calld->method_params == NULL ||
         calld->method_params->retry_policy == NULL || calld->retry_committed) {
-      batches[num_batches++] = batch;
+      batches[(*num_batches)++] = batch;
       pending_batch_clear(calld, pending);
       continue;
     }
@@ -2195,8 +2191,34 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
       add_retriable_recv_trailing_metadata_op(exec_ctx, calld, retry_state,
                                               batch_data);
     }
-    batches[num_batches++] = &batch_data->batch;
+    batches[(*num_batches)++] = &batch_data->batch;
   }
+}
+
+static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
+                                               void* arg, grpc_error* ignored) {
+  grpc_call_element* elem = (grpc_call_element*)arg;
+  call_data* calld = (call_data*)elem->call_data;
+  channel_data* chand = (channel_data*)elem->channel_data;
+  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    gpr_log(GPR_DEBUG, "chand=%p calld=%p: constructing retriable batches",
+            chand, calld);
+  }
+  subchannel_call_retry_state* retry_state = (subchannel_call_retry_state*)
+      grpc_connected_subchannel_call_get_parent_data(calld->subchannel_call);
+  // We can start up to 6 batches.
+  grpc_transport_stream_op_batch*
+      batches[GPR_ARRAY_SIZE(calld->pending_batches)];
+  size_t num_batches = 0;
+  // Replay previously-returned send_* ops if needed.
+  subchannel_batch_data* replay_batch_data =
+      maybe_create_subchannel_batch_for_replay(exec_ctx, elem, retry_state);
+  if (replay_batch_data != NULL) {
+    batches[num_batches++] = &replay_batch_data->batch;
+  }
+  // Now add pending batches.
+  add_subchannel_batches_for_pending_batches(exec_ctx, elem, retry_state,
+                                             batches, &num_batches);
   // Start batches on subchannel call.
   // Note that the call combiner will be yielded for each batch that we
   // send down.  We're already running in the call combiner, so one of
