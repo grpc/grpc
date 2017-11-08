@@ -45,17 +45,17 @@ static void event_initialize(void) {
 }
 
 /* Hash ev into an element of sync_array[]. */
-static struct sync_array_s *hash(gpr_event *ev) {
+static struct sync_array_s* hash(gpr_event* ev) {
   return &sync_array[((uintptr_t)ev) % event_sync_partitions];
 }
 
-void gpr_event_init(gpr_event *ev) {
+void gpr_event_init(gpr_event* ev) {
   gpr_once_init(&event_once, &event_initialize);
   ev->state = 0;
 }
 
-void gpr_event_set(gpr_event *ev, void *value) {
-  struct sync_array_s *s = hash(ev);
+void gpr_event_set(gpr_event* ev, void* value) {
+  struct sync_array_s* s = hash(ev);
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(gpr_atm_acq_load(&ev->state) == 0);
   gpr_atm_rel_store(&ev->state, (gpr_atm)value);
@@ -64,28 +64,28 @@ void gpr_event_set(gpr_event *ev, void *value) {
   GPR_ASSERT(value != NULL);
 }
 
-void *gpr_event_get(gpr_event *ev) {
-  return (void *)gpr_atm_acq_load(&ev->state);
+void* gpr_event_get(gpr_event* ev) {
+  return (void*)gpr_atm_acq_load(&ev->state);
 }
 
-void *gpr_event_wait(gpr_event *ev, gpr_timespec abs_deadline) {
-  void *result = (void *)gpr_atm_acq_load(&ev->state);
+void* gpr_event_wait(gpr_event* ev, gpr_timespec abs_deadline) {
+  void* result = (void*)gpr_atm_acq_load(&ev->state);
   if (result == NULL) {
-    struct sync_array_s *s = hash(ev);
+    struct sync_array_s* s = hash(ev);
     gpr_mu_lock(&s->mu);
     do {
-      result = (void *)gpr_atm_acq_load(&ev->state);
+      result = (void*)gpr_atm_acq_load(&ev->state);
     } while (result == NULL && !gpr_cv_wait(&s->cv, &s->mu, abs_deadline));
     gpr_mu_unlock(&s->mu);
   }
   return result;
 }
 
-void gpr_ref_init(gpr_refcount *r, int n) { gpr_atm_rel_store(&r->count, n); }
+void gpr_ref_init(gpr_refcount* r, int n) { gpr_atm_rel_store(&r->count, n); }
 
-void gpr_ref(gpr_refcount *r) { gpr_atm_no_barrier_fetch_add(&r->count, 1); }
+void gpr_ref(gpr_refcount* r) { gpr_atm_no_barrier_fetch_add(&r->count, 1); }
 
-void gpr_ref_non_zero(gpr_refcount *r) {
+void gpr_ref_non_zero(gpr_refcount* r) {
 #ifndef NDEBUG
   gpr_atm prior = gpr_atm_no_barrier_fetch_add(&r->count, 1);
   assert(prior > 0);
@@ -94,29 +94,29 @@ void gpr_ref_non_zero(gpr_refcount *r) {
 #endif
 }
 
-void gpr_refn(gpr_refcount *r, int n) {
+void gpr_refn(gpr_refcount* r, int n) {
   gpr_atm_no_barrier_fetch_add(&r->count, n);
 }
 
-int gpr_unref(gpr_refcount *r) {
+int gpr_unref(gpr_refcount* r) {
   gpr_atm prior = gpr_atm_full_fetch_add(&r->count, -1);
   GPR_ASSERT(prior > 0);
   return prior == 1;
 }
 
-int gpr_ref_is_unique(gpr_refcount *r) {
+int gpr_ref_is_unique(gpr_refcount* r) {
   return gpr_atm_acq_load(&r->count) == 1;
 }
 
-void gpr_stats_init(gpr_stats_counter *c, intptr_t n) {
+void gpr_stats_init(gpr_stats_counter* c, intptr_t n) {
   gpr_atm_rel_store(&c->value, n);
 }
 
-void gpr_stats_inc(gpr_stats_counter *c, intptr_t inc) {
+void gpr_stats_inc(gpr_stats_counter* c, intptr_t inc) {
   gpr_atm_no_barrier_fetch_add(&c->value, inc);
 }
 
-intptr_t gpr_stats_read(const gpr_stats_counter *c) {
+intptr_t gpr_stats_read(const gpr_stats_counter* c) {
   /* don't need acquire-load, but we have no no-barrier load yet */
   return gpr_atm_acq_load(&c->value);
 }

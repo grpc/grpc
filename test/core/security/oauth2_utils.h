@@ -21,17 +21,9 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Fetch oauth2 access token with a credentials object. Does not take ownership.
    Returns NULL on a failure. The caller should call gpr_free on the token. */
-char *grpc_test_fetch_oauth2_token_with_credentials(
-    grpc_call_credentials *creds);
-
-#ifdef __cplusplus
-}
-#endif
+char* grpc_test_fetch_oauth2_token_with_credentials(
+    grpc_call_credentials* creds);
 
 #endif /* GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H */

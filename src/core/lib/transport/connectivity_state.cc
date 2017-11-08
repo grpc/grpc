@@ -27,7 +27,7 @@
 grpc_tracer_flag grpc_connectivity_state_trace =
     GRPC_TRACER_INITIALIZER(false, "connectivity_state");
 
-const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
+const char* grpc_connectivity_state_name(grpc_connectivity_state state) {
   switch (state) {
     case GRPC_CHANNEL_IDLE:
       return "IDLE";
@@ -43,19 +43,19 @@ const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
-void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
+void grpc_connectivity_state_init(grpc_connectivity_state_tracker* tracker,
                                   grpc_connectivity_state init_state,
-                                  const char *name) {
+                                  const char* name) {
   gpr_atm_no_barrier_store(&tracker->current_state_atm, init_state);
   tracker->current_error = GRPC_ERROR_NONE;
   tracker->watchers = NULL;
   tracker->name = gpr_strdup(name);
 }
 
-void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
-                                     grpc_connectivity_state_tracker *tracker) {
-  grpc_error *error;
-  grpc_connectivity_state_watcher *w;
+void grpc_connectivity_state_destroy(grpc_exec_ctx* exec_ctx,
+                                     grpc_connectivity_state_tracker* tracker) {
+  grpc_error* error;
+  grpc_connectivity_state_watcher* w;
   while ((w = tracker->watchers)) {
     tracker->watchers = w->next;
 
@@ -74,7 +74,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_connectivity_state grpc_connectivity_state_check(
-    grpc_connectivity_state_tracker *tracker) {
+    grpc_connectivity_state_tracker* tracker) {
   grpc_connectivity_state cur =
       (grpc_connectivity_state)gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
@@ -86,7 +86,7 @@ grpc_connectivity_state grpc_connectivity_state_check(
 }
 
 grpc_connectivity_state grpc_connectivity_state_get(
-    grpc_connectivity_state_tracker *tracker, grpc_error **error) {
+    grpc_connectivity_state_tracker* tracker, grpc_error** error) {
   grpc_connectivity_state cur =
       (grpc_connectivity_state)gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
@@ -101,13 +101,13 @@ grpc_connectivity_state grpc_connectivity_state_get(
 }
 
 bool grpc_connectivity_state_has_watchers(
-    grpc_connectivity_state_tracker *connectivity_state) {
+    grpc_connectivity_state_tracker* connectivity_state) {
   return connectivity_state->watchers != NULL;
 }
 
 bool grpc_connectivity_state_notify_on_state_change(
-    grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
-    grpc_connectivity_state *current, grpc_closure *notify) {
+    grpc_exec_ctx* exec_ctx, grpc_connectivity_state_tracker* tracker,
+    grpc_connectivity_state* current, grpc_closure* notify) {
   grpc_connectivity_state cur =
       (grpc_connectivity_state)gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
@@ -122,7 +122,7 @@ bool grpc_connectivity_state_notify_on_state_change(
     }
   }
   if (current == NULL) {
-    grpc_connectivity_state_watcher *w = tracker->watchers;
+    grpc_connectivity_state_watcher* w = tracker->watchers;
     if (w != NULL && w->notify == notify) {
       GRPC_CLOSURE_SCHED(exec_ctx, notify, GRPC_ERROR_CANCELLED);
       tracker->watchers = w->next;
@@ -130,7 +130,7 @@ bool grpc_connectivity_state_notify_on_state_change(
       return false;
     }
     while (w != NULL) {
-      grpc_connectivity_state_watcher *rm_candidate = w->next;
+      grpc_connectivity_state_watcher* rm_candidate = w->next;
       if (rm_candidate != NULL && rm_candidate->notify == notify) {
         GRPC_CLOSURE_SCHED(exec_ctx, notify, GRPC_ERROR_CANCELLED);
         w->next = w->next->next;
@@ -146,8 +146,8 @@ bool grpc_connectivity_state_notify_on_state_change(
       GRPC_CLOSURE_SCHED(exec_ctx, notify,
                          GRPC_ERROR_REF(tracker->current_error));
     } else {
-      grpc_connectivity_state_watcher *w =
-          (grpc_connectivity_state_watcher *)gpr_malloc(sizeof(*w));
+      grpc_connectivity_state_watcher* w =
+          (grpc_connectivity_state_watcher*)gpr_malloc(sizeof(*w));
       w->current = current;
       w->notify = notify;
       w->next = tracker->watchers;
@@ -157,16 +157,16 @@ bool grpc_connectivity_state_notify_on_state_change(
   }
 }
 
-void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
-                                 grpc_connectivity_state_tracker *tracker,
+void grpc_connectivity_state_set(grpc_exec_ctx* exec_ctx,
+                                 grpc_connectivity_state_tracker* tracker,
                                  grpc_connectivity_state state,
-                                 grpc_error *error, const char *reason) {
+                                 grpc_error* error, const char* reason) {
   grpc_connectivity_state cur =
       (grpc_connectivity_state)gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
-  grpc_connectivity_state_watcher *w;
+  grpc_connectivity_state_watcher* w;
   if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {
-    const char *error_string = grpc_error_string(error);
+    const char* error_string = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "SET: %p %s: %s --> %s [%s] error=%p %s", tracker,
             tracker->name, grpc_connectivity_state_name(cur),
             grpc_connectivity_state_name(state), reason, error, error_string);

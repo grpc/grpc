@@ -32,10 +32,10 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   NodeGrpcGenerator() {}
   ~NodeGrpcGenerator() {}
 
-  bool Generate(const grpc::protobuf::FileDescriptor *file,
-                const grpc::string &parameter,
-                grpc::protobuf::compiler::GeneratorContext *context,
-                grpc::string *error) const {
+  bool Generate(const grpc::protobuf::FileDescriptor* file,
+                const grpc::string& parameter,
+                grpc::protobuf::compiler::GeneratorContext* context,
+                grpc::string* error) const {
     grpc::string code = GenerateFile(file);
     if (code.size() == 0) {
       return true;
@@ -52,7 +52,7 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   NodeGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

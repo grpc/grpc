@@ -31,26 +31,26 @@
 #include <string.h>
 
 struct thd_arg {
-  void (*body)(void *arg); /* body of a thread */
-  void *arg;               /* argument to a thread */
+  void (*body)(void* arg); /* body of a thread */
+  void* arg;               /* argument to a thread */
 };
 
 /* Body of every thread started via gpr_thd_new. */
-static void *thread_body(void *v) {
-  struct thd_arg a = *(struct thd_arg *)v;
+static void* thread_body(void* v) {
+  struct thd_arg a = *(struct thd_arg*)v;
   free(v);
   (*a.body)(a.arg);
   return NULL;
 }
 
-int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
-                const gpr_thd_options *options) {
+int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
+                const gpr_thd_options* options) {
   int thread_started;
   pthread_attr_t attr;
   pthread_t p;
   /* don't use gpr_malloc as we may cause an infinite recursion with
    * the profiling code */
-  struct thd_arg *a = (struct thd_arg *)malloc(sizeof(*a));
+  struct thd_arg* a = (struct thd_arg*)malloc(sizeof(*a));
   GPR_ASSERT(a != NULL);
   a->body = thd_body;
   a->arg = arg;
