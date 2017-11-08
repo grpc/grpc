@@ -54,9 +54,9 @@
 #include "third_party/address_sorting/address_sorting.h"
 
 // Scope values increase with increase in scope.
-static const int kIpv6AddrScopeLinkLocal = 1;
-const int kIpv6AddrScopeSiteLocal = 2;
-const int kIpv6AddrScopeGlobal = 3;
+static const int kIPv6AddrScopeLinkLocal = 1;
+const int kIPv6AddrScopeSiteLocal = 2;
+const int kIPv6AddrScopeGlobal = 3;
 
 static address_sorting_socket_factory* g_current_socket_factory = NULL;
 
@@ -150,7 +150,7 @@ static int in6_is_addr_ula(const struct in6_addr* s_addr) {
   return (bytes[0] & 0xfe) == 0xfc;
 }
 
-static int in6_is_addr_toredo(const struct in6_addr* s_addr) {
+static int in6_is_addr_teredo(const struct in6_addr* s_addr) {
   uint8_t* bytes = (uint8_t*)s_addr;
   return bytes[0] == 0x20 && bytes[1] == 0x02 && bytes[2] == 0x00 &&
          bytes[3] == 0x00;
@@ -164,26 +164,34 @@ static int in6_is_addr_6bone(const struct in6_addr* s_addr) {
 static int get_label_value(const grpc_resolved_address* resolved_addr) {
   if (grpc_sockaddr_get_family(resolved_addr) == AF_INET) {
     return 4;
-  } else if (grpc_sockaddr_get_family(resolved_addr) != AF_INET6) {
+  }
+  if (grpc_sockaddr_get_family(resolved_addr) != AF_INET6) {
     gpr_log(GPR_INFO, "Address is not AF_INET or AF_INET6.");
     return 1;
   }
   struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
   if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr)) {
     return 0;
-  } else if (IN6_IS_ADDR_V4MAPPED(&ipv6_addr->sin6_addr)) {
+  }
+  if (IN6_IS_ADDR_V4MAPPED(&ipv6_addr->sin6_addr)) {
     return 4;
-  } else if (in6_is_addr_6to4(&ipv6_addr->sin6_addr)) {
+  }
+  if (in6_is_addr_6to4(&ipv6_addr->sin6_addr)) {
     return 2;
-  } else if (in6_is_addr_toredo(&ipv6_addr->sin6_addr)) {
+  }
+  if (in6_is_addr_teredo(&ipv6_addr->sin6_addr)) {
     return 5;
-  } else if (in6_is_addr_ula(&ipv6_addr->sin6_addr)) {
+  }
+  if (in6_is_addr_ula(&ipv6_addr->sin6_addr)) {
     return 13;
-  } else if (IN6_IS_ADDR_V4COMPAT(&ipv6_addr->sin6_addr)) {
+  }
+  if (IN6_IS_ADDR_V4COMPAT(&ipv6_addr->sin6_addr)) {
     return 3;
-  } else if (IN6_IS_ADDR_SITELOCAL(&ipv6_addr->sin6_addr)) {
+  }
+  if (IN6_IS_ADDR_SITELOCAL(&ipv6_addr->sin6_addr)) {
     return 11;
-  } else if (in6_is_addr_6bone(&ipv6_addr->sin6_addr)) {
+  }
+  if (in6_is_addr_6bone(&ipv6_addr->sin6_addr)) {
     return 12;
   }
   return 1;
@@ -192,24 +200,30 @@ static int get_label_value(const grpc_resolved_address* resolved_addr) {
 static int get_precedence_value(const grpc_resolved_address* resolved_addr) {
   if (grpc_sockaddr_get_family(resolved_addr) == AF_INET) {
     return 35;
-  } else if (grpc_sockaddr_get_family(resolved_addr) != AF_INET6) {
+  }
+  if (grpc_sockaddr_get_family(resolved_addr) != AF_INET6) {
     gpr_log(GPR_INFO, "Address is not AF_INET or AF_INET6.");
     return 1;
   }
   struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
   if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr)) {
     return 50;
-  } else if (IN6_IS_ADDR_V4MAPPED(&ipv6_addr->sin6_addr)) {
+  }
+  if (IN6_IS_ADDR_V4MAPPED(&ipv6_addr->sin6_addr)) {
     return 35;
-  } else if (in6_is_addr_6to4(&ipv6_addr->sin6_addr)) {
+  }
+  if (in6_is_addr_6to4(&ipv6_addr->sin6_addr)) {
     return 30;
-  } else if (in6_is_addr_toredo(&ipv6_addr->sin6_addr)) {
+  }
+  if (in6_is_addr_teredo(&ipv6_addr->sin6_addr)) {
     return 5;
-  } else if (in6_is_addr_ula(&ipv6_addr->sin6_addr)) {
+  }
+  if (in6_is_addr_ula(&ipv6_addr->sin6_addr)) {
     return 3;
-  } else if (IN6_IS_ADDR_V4COMPAT(&ipv6_addr->sin6_addr) ||
-             IN6_IS_ADDR_SITELOCAL(&ipv6_addr->sin6_addr) ||
-             in6_is_addr_6bone(&ipv6_addr->sin6_addr)) {
+  }
+  if (IN6_IS_ADDR_V4COMPAT(&ipv6_addr->sin6_addr) ||
+      IN6_IS_ADDR_SITELOCAL(&ipv6_addr->sin6_addr) ||
+      in6_is_addr_6bone(&ipv6_addr->sin6_addr)) {
     return 1;
   }
   return 40;
@@ -217,17 +231,18 @@ static int get_precedence_value(const grpc_resolved_address* resolved_addr) {
 
 static int sockaddr_get_scope(const grpc_resolved_address* resolved_addr) {
   if (grpc_sockaddr_get_family(resolved_addr) == AF_INET) {
-    return kIpv6AddrScopeGlobal;
-  } else if (grpc_sockaddr_get_family(resolved_addr) == AF_INET6) {
+    return kIPv6AddrScopeGlobal;
+  }
+  if (grpc_sockaddr_get_family(resolved_addr) == AF_INET6) {
     struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
     if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr) ||
         IN6_IS_ADDR_LINKLOCAL(&ipv6_addr->sin6_addr)) {
-      return kIpv6AddrScopeLinkLocal;
+      return kIPv6AddrScopeLinkLocal;
     }
     if (IN6_IS_ADDR_SITELOCAL(&ipv6_addr->sin6_addr)) {
-      return kIpv6AddrScopeSiteLocal;
+      return kIPv6AddrScopeSiteLocal;
     }
-    return kIpv6AddrScopeGlobal;
+    return kIPv6AddrScopeGlobal;
   }
   gpr_log(GPR_ERROR, "Unknown socket family %d.",
           grpc_sockaddr_get_family(resolved_addr));
@@ -250,7 +265,7 @@ static int compare_source_addr_exists(sortable_address first,
   return 0;
 }
 
-static int compre_source_dest_scope_matches(sortable_address first,
+static int compare_source_dest_scope_matches(sortable_address first,
                                             sortable_address second) {
   int first_src_dst_scope_matches = false;
   if (sockaddr_get_scope(&first.dest_addr) ==
@@ -288,21 +303,13 @@ static int compare_source_dest_labels_match(sortable_address first,
 
 static int compare_dest_precedence(sortable_address first,
                                    sortable_address second) {
-  if (get_precedence_value(&first.dest_addr) !=
-      get_precedence_value(&second.dest_addr)) {
-    return get_precedence_value(&second.dest_addr) -
-           get_precedence_value(&first.dest_addr);
-  }
-  return 0;
+  return get_precedence_value(&second.dest_addr) -
+         get_precedence_value(&first.dest_addr);
 }
 
 static int compare_dest_scope(sortable_address first, sortable_address second) {
-  if (sockaddr_get_scope(&first.dest_addr) !=
-      sockaddr_get_scope(&second.dest_addr)) {
-    return sockaddr_get_scope(&first.dest_addr) -
-           sockaddr_get_scope(&second.dest_addr);
-  }
-  return 0;
+  return sockaddr_get_scope(&first.dest_addr) -
+         sockaddr_get_scope(&second.dest_addr);
 }
 
 static int compare_source_dest_prefix_match_lengths(sortable_address first,
@@ -328,18 +335,23 @@ static int rfc_6724_compare(const void* a, const void* b) {
   int out = 0;
   if ((out = compare_source_addr_exists(first, second))) {
     return out;
-  } else if ((out = compre_source_dest_scope_matches(first, second))) {
+  }
+  if ((out = compare_source_dest_scope_matches(first, second))) {
     return out;
-  } else if ((out = compare_source_dest_labels_match(first, second))) {
+  }
+  if ((out = compare_source_dest_labels_match(first, second))) {
     return out;
-    // TODO: avoid deprecated addresses
-    // TODO: avoid temporary addresses
-  } else if ((out = compare_dest_precedence(first, second))) {
+  }
+  // TODO: Implement rule 3; avoid deprecated addresses.
+  // TODO: Implement rule 4; avoid temporary addresses.
+  if ((out = compare_dest_precedence(first, second))) {
     return out;
-    // TODO: prefer native transport
-  } else if ((out = compare_dest_scope(first, second))) {
+  }
+  // TODO: Implement rule 7; prefer native transports.
+  if ((out = compare_dest_scope(first, second))) {
     return out;
-  } else if ((out = compare_source_dest_prefix_match_lengths(first, second))) {
+  }
+  if ((out = compare_source_dest_prefix_match_lengths(first, second))) {
     return out;
   }
   // Prefer that the sort be stable otherwise
@@ -372,6 +384,7 @@ void address_sorting_rfc_6724_sort(grpc_lb_addresses* resolved_lb_addrs) {
               (struct sockaddr*)&resolved_lb_addrs->addresses[i].address.addr,
               (socklen_t)resolved_lb_addrs->addresses[i].address.len) != -1) {
         grpc_resolved_address found_source_addr;
+        memset(&found_source_addr, 0, sizeof(grpc_resolved_address));
         if (address_sorting_getsockname(
                 s, (struct sockaddr*)&found_source_addr.addr,
                 (socklen_t*)&found_source_addr.len) != -1) {
