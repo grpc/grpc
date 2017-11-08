@@ -1272,6 +1272,53 @@ static void maybe_cache_send_ops_for_batch(grpc_exec_ctx* exec_ctx,
 static void start_pick_locked(grpc_exec_ctx* exec_ctx, void* arg,
                               grpc_error* ignored);
 
+static void do_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+                     subchannel_call_retry_state* retry_state,
+                     grpc_millis server_pushback_ms) {
+  channel_data* chand = (channel_data*)elem->channel_data;
+  call_data* calld = (call_data*)elem->call_data;
+  GPR_ASSERT(calld->method_params != NULL);
+  retry_policy_params* retry_policy = calld->method_params->retry_policy;
+  GPR_ASSERT(retry_policy != NULL);
+  // Reset subchannel call.
+  if (calld->subchannel_call != NULL) {
+    GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, calld->subchannel_call,
+                               "client_channel_call_retry");
+    calld->subchannel_call = NULL;
+  }
+  // Compute backoff delay.
+  grpc_millis next_attempt_time;
+  if (server_pushback_ms >= 0) {
+    next_attempt_time = grpc_exec_ctx_now(exec_ctx) + server_pushback_ms;
+    calld->last_attempt_got_server_pushback = true;
+  } else if (calld->num_attempts_completed == 1 ||
+             calld->last_attempt_got_server_pushback) {
+    grpc_backoff_init(
+        &calld->retry_backoff, retry_policy->initial_backoff,
+        retry_policy->backoff_multiplier, RETRY_BACKOFF_JITTER,
+        GPR_MIN(retry_policy->initial_backoff, retry_policy->max_backoff),
+        retry_policy->max_backoff);
+    next_attempt_time = grpc_backoff_begin(exec_ctx, &calld->retry_backoff)
+                            .next_attempt_start_time;
+    calld->last_attempt_got_server_pushback = false;
+  } else {
+    next_attempt_time = grpc_backoff_step(exec_ctx, &calld->retry_backoff)
+                            .next_attempt_start_time;
+  }
+  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    gpr_log(GPR_DEBUG,
+            "chand=%p calld=%p: retrying failed call in %" PRIuPTR " ms", chand,
+            calld, next_attempt_time - grpc_exec_ctx_now(exec_ctx));
+  }
+  // Schedule retry after computed delay.
+  GRPC_CLOSURE_INIT(&calld->pick_closure, start_pick_locked, elem,
+                    grpc_combiner_scheduler(chand->combiner));
+  grpc_timer_init(exec_ctx, &calld->retry_timer, next_attempt_time,
+                  &calld->pick_closure);
+  // Update bookkeeping.
+  if (retry_state != NULL) retry_state->retry_dispatched = true;
+}
+
 // Returns true if the call is being retried.
 static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                         subchannel_batch_data* batch_data,
@@ -1376,43 +1423,7 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
       server_pushback_ms = (grpc_millis)ms;
     }
   }
-  // Reset subchannel call.
-  if (calld->subchannel_call != NULL) {
-    GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, calld->subchannel_call,
-                               "client_channel_call_retry");
-    calld->subchannel_call = NULL;
-  }
-  // Compute backoff delay.
-  grpc_millis next_attempt_time;
-  if (server_pushback_ms >= 0) {
-    next_attempt_time = grpc_exec_ctx_now(exec_ctx) + server_pushback_ms;
-    calld->last_attempt_got_server_pushback = true;
-  } else if (calld->num_attempts_completed == 1 ||
-             calld->last_attempt_got_server_pushback) {
-    grpc_backoff_init(
-        &calld->retry_backoff, retry_policy->initial_backoff,
-        retry_policy->backoff_multiplier, RETRY_BACKOFF_JITTER,
-        GPR_MIN(retry_policy->initial_backoff, retry_policy->max_backoff),
-        retry_policy->max_backoff);
-    next_attempt_time = grpc_backoff_begin(exec_ctx, &calld->retry_backoff)
-                            .next_attempt_start_time;
-    calld->last_attempt_got_server_pushback = false;
-  } else {
-    next_attempt_time = grpc_backoff_step(exec_ctx, &calld->retry_backoff)
-                            .next_attempt_start_time;
-  }
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-    gpr_log(GPR_DEBUG,
-            "chand=%p calld=%p: retrying failed call in %" PRIuPTR " ms", chand,
-            calld, next_attempt_time - grpc_exec_ctx_now(exec_ctx));
-  }
-  // Schedule retry after computed delay.
-  GRPC_CLOSURE_INIT(&calld->pick_closure, start_pick_locked, elem,
-                    grpc_combiner_scheduler(chand->combiner));
-  grpc_timer_init(exec_ctx, &calld->retry_timer, next_attempt_time,
-                  &calld->pick_closure);
-  // Update bookkeeping.
-  if (retry_state != NULL) retry_state->retry_dispatched = true;
+  do_retry(exec_ctx, elem, retry_state, server_pushback_ms);
   return true;
 }
 
