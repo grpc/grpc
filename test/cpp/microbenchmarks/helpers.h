@@ -22,11 +22,9 @@
 #include <sstream>
 #include <vector>
 
-extern "C" {
 #include <grpc/support/port_platform.h>
 #include "src/core/lib/debug/stats.h"
 #include "test/core/util/memory_counters.h"
-}
 
 #include <benchmark/benchmark.h>
 #include <grpc++/impl/grpc_library.h>

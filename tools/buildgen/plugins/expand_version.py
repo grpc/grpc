@@ -23,14 +23,13 @@ a custom version string for each language's package.
 import re
 
 LANGUAGES = [
-  'core', 
-  'cpp', 
-  'csharp', 
-  'node', 
-  'objc', 
+  'core',
+  'cpp',
+  'csharp',
+  'objc',
   'php',
-  'python', 
-  'ruby', 
+  'python',
+  'ruby',
   ]
 
 class Version:
@@ -84,7 +83,7 @@ class Version:
   def php_composer(self):
     """Version string for PHP Composer package"""
     return '%d.%d.%d' % (self.major, self.minor, self.patch)
-    
+
 def mako_plugin(dictionary):
   """Expand version numbers:
      - for each language, ensure there's a language_version tag in

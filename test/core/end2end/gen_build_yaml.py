@@ -272,9 +272,9 @@ def main():
               'build': 'private',
               'language': 'c',
               'secure': True,
-              'src': ['test/core/end2end/end2end_tests.c',
-                      'test/core/end2end/end2end_test_utils.c'] + [
-                  'test/core/end2end/tests/%s.c' % t
+              'src': ['test/core/end2end/end2end_tests.cc',
+                      'test/core/end2end/end2end_test_utils.cc'] + [
+                  'test/core/end2end/tests/%s.cc' % t
                   for t in sorted(END2END_TESTS.keys())],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
                           'test/core/end2end/end2end_tests.h'],
@@ -287,9 +287,9 @@ def main():
               'build': 'private',
               'language': 'c',
               'secure': False,
-              'src': ['test/core/end2end/end2end_nosec_tests.c',
-                      'test/core/end2end/end2end_test_utils.c'] + [
-                  'test/core/end2end/tests/%s.c' % t
+              'src': ['test/core/end2end/end2end_nosec_tests.cc',
+                      'test/core/end2end/end2end_test_utils.cc'] + [
+                  'test/core/end2end/tests/%s.cc' % t
                   for t in sorted(END2END_TESTS.keys())
                   if not END2END_TESTS[t].secure],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
@@ -304,7 +304,7 @@ def main():
               'build': 'test',
               'language': 'c',
               'run': False,
-              'src': ['test/core/end2end/fixtures/%s.c' % f],
+              'src': ['test/core/end2end/fixtures/%s.cc' % f],
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(
@@ -321,7 +321,7 @@ def main():
               'build': 'test',
               'language': 'c',
               'secure': False,
-              'src': ['test/core/end2end/fixtures/%s.c' % f],
+              'src': ['test/core/end2end/fixtures/%s.cc' % f],
               'run': False,
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms

@@ -59,7 +59,9 @@ static grpc_uri* bad_uri(const char* uri_text, size_t pos, const char* section,
 static char* decode_and_copy_component(grpc_exec_ctx* exec_ctx, const char* src,
                                        size_t begin, size_t end) {
   grpc_slice component =
-      grpc_slice_from_copied_buffer(src + begin, end - begin);
+      (begin == NOT_SET || end == NOT_SET)
+          ? grpc_empty_slice()
+          : grpc_slice_from_copied_buffer(src + begin, end - begin);
   grpc_slice decoded_component =
       grpc_permissive_percent_decode_slice(component);
   char* out = grpc_dump_slice(decoded_component, GPR_DUMP_ASCII);
