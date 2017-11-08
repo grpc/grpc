@@ -50,21 +50,18 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
   gpr_split_host_port(test_addr.dest_addr.c_str(), &host, &port);
   if (test_addr.family == AF_INET) {
     sockaddr_in in_dest;
+    memset(&in_dest, 0, sizeof(sockaddr_in));
     in_dest.sin_port = htons(atoi(port));
-    ;
     in_dest.sin_family = AF_INET;
-    int zeros[2]{0, 0};
-    memcpy(&in_dest.sin_zero, &zeros, 8);
     GPR_ASSERT(inet_pton(AF_INET, host, &in_dest.sin_addr) == 1);
     memcpy(&resolved_addr.addr, &in_dest, sizeof(sockaddr_in));
     resolved_addr.len = sizeof(sockaddr_in);
   } else {
     GPR_ASSERT(test_addr.family == AF_INET6);
     sockaddr_in6 in6_dest;
+    memset(&in6_dest, 0, sizeof(sockaddr_in6));
     in6_dest.sin6_port = htons(atoi(port));
     in6_dest.sin6_family = AF_INET6;
-    in6_dest.sin6_flowinfo = 0;
-    in6_dest.sin6_scope_id = 0;
     GPR_ASSERT(inet_pton(AF_INET6, host, &in6_dest.sin6_addr) == 1);
     memcpy(&resolved_addr.addr, &in6_dest, sizeof(sockaddr_in6));
     resolved_addr.len = sizeof(sockaddr_in6);
@@ -120,6 +117,10 @@ class MockSocketFactory : public address_sorting_socket_factory {
     EXPECT_TRUE(it != fd_to_getsockname_return_vals_.end());
     grpc_resolved_address resolved_addr =
         TestAddressToGrpcResolvedAddress(it->second);
+    if (*addrlen < resolved_addr.len) {
+      errno = EINVAL;
+      return -1;
+    }
     memcpy(addr, &resolved_addr.addr, resolved_addr.len);
     *addrlen = resolved_addr.len;
     return 0;
