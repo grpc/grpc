@@ -93,11 +93,14 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Tests a basic retry scenario:
-// - 2 retry attempts allowed for ABORTED status
-// - first attempt gets ABORTED
-// - second attempt gets OK
-static void test_retry(grpc_end2end_test_config config) {
+// Similar to test_retry_exceeds_buffer_size_in_initial_batch(), but we don't
+// exceed the buffer size until the second batch.
+// - 1 retry attempt allowed for ABORTED status
+// - buffer size set to 100 KiB (larger than initial metadata)
+// - client sends a 100 KiB message
+// - first attempt gets ABORTED but is not retried
+static void test_retry_exceeds_buffer_size_in_subsequent_batch(
+    grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
   grpc_op ops[6];
@@ -106,7 +109,10 @@ static void test_retry(grpc_end2end_test_config config) {
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
-  grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
+  char buf[102401];
+  memset(buf, 'a', sizeof(buf) - 1);
+  buf[sizeof(buf) - 1] = '\0';
+  grpc_slice request_payload_slice = grpc_slice_from_static_string(buf);
   grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -120,26 +126,33 @@ static void test_retry(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char *peer;
 
-  grpc_arg arg = {
-      .key = GRPC_ARG_SERVICE_CONFIG,
-      .type = GRPC_ARG_STRING,
-      .value.string =
-          "{\n"
-          "  \"methodConfig\": [ {\n"
-          "    \"name\": [\n"
-          "      { \"service\": \"service\", \"method\": \"method\" }\n"
-          "    ],\n"
-          "    \"retryPolicy\": {\n"
-          "      \"maxAttempts\": 3,\n"
-          "      \"initialBackoff\": \"1s\",\n"
-          "      \"maxBackoff\": \"120s\",\n"
-          "      \"backoffMultiplier\": 1.6,\n"
-          "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-          "    }\n"
-          "  } ]\n"
-          "}"};
-  grpc_channel_args client_args = {1, &arg};
-  grpc_end2end_test_fixture f = begin_test(config, "retry", &client_args, NULL);
+  grpc_arg args[] = {
+      {.key = GRPC_ARG_SERVICE_CONFIG,
+       .type = GRPC_ARG_STRING,
+       .value.string =
+           "{\n"
+           "  \"methodConfig\": [ {\n"
+           "    \"name\": [\n"
+           "      { \"service\": \"service\", \"method\": \"method\" }\n"
+           "    ],\n"
+           "    \"retryPolicy\": {\n"
+           "      \"maxAttempts\": 2,\n"
+           "      \"initialBackoff\": \"1s\",\n"
+           "      \"maxBackoff\": \"120s\",\n"
+           "      \"backoffMultiplier\": 1.6,\n"
+           "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+           "    }\n"
+           "  } ]\n"
+           "}"},
+      {
+          .key = GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE,
+          .type = GRPC_ARG_INTEGER,
+          .value.integer = 102400,
+      }};
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
+  grpc_end2end_test_fixture f =
+      begin_test(config, "retry_exceeds_buffer_size_in_subsequent_batch",
+                 &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -167,6 +180,13 @@ static void test_retry(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
+  cq_verify(cqv);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op++;
@@ -183,7 +203,7 @@ static void test_retry(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -192,13 +212,6 @@ static void test_retry(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
-
-  // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
-  // initial attempt.
-  for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    GPR_ASSERT(!grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                              GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS));
-  }
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != NULL);
@@ -226,76 +239,16 @@ static void test_retry(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(2), true);
   cq_verify(cqv);
 
-  grpc_call_unref(s);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-  grpc_call_details_init(&call_details);
-
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(201));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(201), true);
-  cq_verify(cqv);
-
-  // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
-  bool found_retry_header = false;
-  for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
-                               GRPC_MDSTR_1));
-      found_retry_header = true;
-      break;
-    }
-  }
-  GPR_ASSERT(found_retry_header);
-
-  peer = grpc_call_get_peer(s);
-  GPR_ASSERT(peer != NULL);
-  gpr_log(GPR_DEBUG, "server_peer=%s", peer);
-  gpr_free(peer);
-  peer = grpc_call_get_peer(c);
-  GPR_ASSERT(peer != NULL);
-  gpr_log(GPR_DEBUG, "client_peer=%s", peer);
-  gpr_free(peer);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = &status_details;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(202), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(202), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
-  cq_verify(cqv);
-
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
   GPR_ASSERT(0 == call_details.flags);
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -316,9 +269,10 @@ static void test_retry(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void retry(grpc_end2end_test_config config) {
+void retry_exceeds_buffer_size_in_subsequent_batch(
+    grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
-  test_retry(config);
+  test_retry_exceeds_buffer_size_in_subsequent_batch(config);
 }
 
-void retry_pre_init(void) {}
+void retry_exceeds_buffer_size_in_subsequent_batch_pre_init(void) {}

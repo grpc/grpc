@@ -93,11 +93,11 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Tests a basic retry scenario:
-// - 2 retry attempts allowed for ABORTED status
+// Tests that we stop retrying after the configured number of attempts.
+// - 1 retry attempt allowed for ABORTED status
 // - first attempt gets ABORTED
-// - second attempt gets OK
-static void test_retry(grpc_end2end_test_config config) {
+// - second attempt gets ABORTED but does not retry
+static void test_retry_too_many_attempts(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
   grpc_op ops[6];
@@ -130,7 +130,7 @@ static void test_retry(grpc_end2end_test_config config) {
           "      { \"service\": \"service\", \"method\": \"method\" }\n"
           "    ],\n"
           "    \"retryPolicy\": {\n"
-          "      \"maxAttempts\": 3,\n"
+          "      \"maxAttempts\": 2,\n"
           "      \"initialBackoff\": \"1s\",\n"
           "      \"maxBackoff\": \"120s\",\n"
           "      \"backoffMultiplier\": 1.6,\n"
@@ -139,7 +139,8 @@ static void test_retry(grpc_end2end_test_config config) {
           "  } ]\n"
           "}"};
   grpc_channel_args client_args = {1, &arg};
-  grpc_end2end_test_fixture f = begin_test(config, "retry", &client_args, NULL);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "retry_too_many_attempts", &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -193,13 +194,6 @@ static void test_retry(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
-  // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
-  // initial attempt.
-  for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    GPR_ASSERT(!grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                              GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS));
-  }
-
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != NULL);
   gpr_log(GPR_DEBUG, "server_peer=%s", peer);
@@ -241,19 +235,6 @@ static void test_retry(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(201), true);
   cq_verify(cqv);
 
-  // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
-  bool found_retry_header = false;
-  for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
-                               GRPC_MDSTR_1));
-      found_retry_header = true;
-      break;
-    }
-  }
-  GPR_ASSERT(found_retry_header);
-
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != NULL);
   gpr_log(GPR_DEBUG, "server_peer=%s", peer);
@@ -268,15 +249,9 @@ static void test_retry(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
-  op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
+  op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
   op->data.send_status_from_server.status_details = &status_details;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -289,13 +264,13 @@ static void test_retry(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
   GPR_ASSERT(0 == call_details.flags);
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -316,9 +291,9 @@ static void test_retry(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void retry(grpc_end2end_test_config config) {
+void retry_too_many_attempts(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
-  test_retry(config);
+  test_retry_too_many_attempts(config);
 }
 
-void retry_pre_init(void) {}
+void retry_too_many_attempts_pre_init(void) {}

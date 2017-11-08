@@ -149,6 +149,36 @@ END2END_TESTS = {
     'request_with_payload': default_test_options._replace(cpu_cost=LOWCPU),
     'retry': default_test_options._replace(cpu_cost=LOWCPU,
                                            needs_client_channel=True),
+    'retry_cancellation': default_test_options._replace(
+        cpu_cost=LOWCPU, needs_client_channel=True),
+    'retry_disabled': default_test_options._replace(cpu_cost=LOWCPU,
+                                                    needs_client_channel=True),
+    'retry_exceeds_buffer_size_in_initial_batch': default_test_options._replace(
+        cpu_cost=LOWCPU, needs_client_channel=True),
+    'retry_exceeds_buffer_size_in_subsequent_batch':
+        default_test_options._replace(cpu_cost=LOWCPU,
+                                      needs_client_channel=True),
+    'retry_non_retriable_status': default_test_options._replace(
+        cpu_cost=LOWCPU, needs_client_channel=True),
+    'retry_recv_initial_metadata': default_test_options._replace(
+        cpu_cost=LOWCPU, needs_client_channel=True),
+    'retry_recv_message': default_test_options._replace(
+        cpu_cost=LOWCPU, needs_client_channel=True),
+    'retry_server_pushback_delay': default_test_options._replace(
+        cpu_cost=LOWCPU, needs_client_channel=True),
+    'retry_server_pushback_disabled': default_test_options._replace(
+        cpu_cost=LOWCPU, needs_client_channel=True),
+    'retry_streaming': default_test_options._replace(cpu_cost=LOWCPU,
+                                                     needs_client_channel=True),
+    'retry_streaming_after_commit': default_test_options._replace(
+        cpu_cost=LOWCPU, needs_client_channel=True),
+    'retry_streaming_succeeds_before_replay_finished':
+        default_test_options._replace(cpu_cost=LOWCPU,
+                                      needs_client_channel=True),
+    'retry_throttled': default_test_options._replace(cpu_cost=LOWCPU,
+                                                     needs_client_channel=True),
+    'retry_too_many_attempts': default_test_options._replace(
+        cpu_cost=LOWCPU, needs_client_channel=True),
     'server_finishes_request': default_test_options._replace(cpu_cost=LOWCPU),
     'shutdown_finishes_calls': default_test_options._replace(cpu_cost=LOWCPU),
     'shutdown_finishes_tags': default_test_options._replace(cpu_cost=LOWCPU),

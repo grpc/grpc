@@ -141,6 +141,23 @@ END2END_TESTS = {
     'request_with_flags': test_options(proxyable=False),
     'request_with_payload': test_options(),
     'retry': test_options(needs_client_channel=True),
+    'retry_cancellation': test_options(needs_client_channel=True),
+    'retry_disabled': test_options(needs_client_channel=True),
+    'retry_exceeds_buffer_size_in_initial_batch': test_options(
+        needs_client_channel=True),
+    'retry_exceeds_buffer_size_in_subsequent_batch': test_options(
+        needs_client_channel=True),
+    'retry_non_retriable_status': test_options(needs_client_channel=True),
+    'retry_recv_initial_metadata': test_options(needs_client_channel=True),
+    'retry_recv_message': test_options(needs_client_channel=True),
+    'retry_server_pushback_delay': test_options(needs_client_channel=True),
+    'retry_server_pushback_disabled': test_options(needs_client_channel=True),
+    'retry_streaming': test_options(needs_client_channel=True),
+    'retry_streaming_after_commit': test_options(needs_client_channel=True),
+    'retry_streaming_succeeds_before_replay_finished': test_options(
+        needs_client_channel=True),
+    'retry_throttled': test_options(needs_client_channel=True),
+    'retry_too_many_attempts': test_options(needs_client_channel=True),
     'server_finishes_request': test_options(),
     'shutdown_finishes_calls': test_options(),
     'shutdown_finishes_tags': test_options(),
