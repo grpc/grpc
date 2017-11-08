@@ -67,10 +67,8 @@ class BalancerServiceImpl : public LoadBalancer::Service {
  public:
   using Stream = ServerReaderWriter<LoadBalanceResponse, LoadBalanceRequest>;
 
-  explicit BalancerServiceImpl(int serverlist_update_interval_ms,
-                               const std::vector<int>& all_backend_ports)
-      : serverlist_update_interval_ms_(serverlist_update_interval_ms),
-        all_backend_ports_(all_backend_ports) {}
+  explicit BalancerServiceImpl(const std::vector<int>& all_backend_ports)
+      : all_backend_ports_(all_backend_ports) {}
 
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
     gpr_log(GPR_INFO, "LB[%p]: Start BalanceLoad.", this);
@@ -79,7 +77,7 @@ class BalancerServiceImpl : public LoadBalancer::Service {
     while (!shutdown_) {
       stream->Write(BuildRandomResponseForBackends());
       std::this_thread::sleep_for(
-          std::chrono::milliseconds(serverlist_update_interval_ms_));
+          std::chrono::milliseconds(kServerlistUpdateIntervalMs));
     }
     gpr_log(GPR_INFO, "LB[%p]: Finish BalanceLoad.", this);
     return Status::OK;
@@ -95,47 +93,46 @@ class BalancerServiceImpl : public LoadBalancer::Service {
   }
 
   LoadBalanceResponse BuildRandomResponseForBackends() {
-    // Generate a random serverlist with varying size, order, and duplicate.
+    // Generate a random serverlist with varying size (if N =
+    // all_backend_ports_.size(), num_non_drop_entry is in [0, 2N],
+    // num_drop_entry is in [0, N]), order, duplicate and drop rate.
     size_t num_non_drop_entry =
         std::rand() % (all_backend_ports_.size() * 2 + 1);
     size_t num_drop_entry = std::rand() % (all_backend_ports_.size() + 1);
-    std::vector<size_t> random_backend_indices;
+    std::vector<int> random_backend_indices;
     for (size_t i = 0; i < num_non_drop_entry; ++i) {
       random_backend_indices.push_back(std::rand() % all_backend_ports_.size());
     }
+    for (size_t i = 0; i < num_drop_entry; ++i) {
+      random_backend_indices.push_back(-1);
+    }
+    std::random_shuffle(random_backend_indices.begin(),
+                        random_backend_indices.end());
     // Build the response according to the random list generated above.
     LoadBalanceResponse response;
-    for (size_t index : random_backend_indices) {
-      auto* server = response.mutable_server_list()->add_servers();
-      server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
-      server->set_port(all_backend_ports_[index]);
-    }
-    for (size_t i = 0; i < num_drop_entry; ++i) {
-      auto* server = response.mutable_server_list()->add_servers();
-      server->set_drop(true);
-      server->set_load_balance_token("load_balancing");
+    for (int index : random_backend_indices) {
+      if (index < 0) {
+        auto* server = response.mutable_server_list()->add_servers();
+        server->set_drop(true);
+        server->set_load_balance_token("load_balancing");
+      } else {
+        auto* server = response.mutable_server_list()->add_servers();
+        server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
+        server->set_port(all_backend_ports_[index]);
+      }
     }
     return response;
   }
 
   std::atomic_bool shutdown_{false};
-  const int serverlist_update_interval_ms_;
   const std::vector<int> all_backend_ports_;
 };
 
 class ClientChannelStressTest {
  public:
-  ClientChannelStressTest()
-      : num_backends_(kNumBackends),
-        num_balancers_(kNumBalancers),
-        num_client_threads_(kNumClientThreads),
-        resolution_update_interval_ms_(kResolutionUpdateIntervalMs),
-        serverlist_update_interval_ms_(kServerlistUpdateIntervalMs),
-        test_duration_sec_(kTestDurationSec) {}
-
   void Run() {
     Start();
-    std::this_thread::sleep_for(std::chrono::seconds(test_duration_sec_));
+    std::this_thread::sleep_for(std::chrono::seconds(kTestDurationSec));
     Shutdown();
   }
 
@@ -219,7 +216,7 @@ class ClientChannelStressTest {
   void PeriodicallyUpdateRandomResolution() {
     gpr_log(GPR_INFO, "Start updating resolution.");
     const auto wait_duration =
-        std::chrono::milliseconds(resolution_update_interval_ms_);
+        std::chrono::milliseconds(kResolutionUpdateIntervalMs);
     std::vector<AddressData> addresses;
     while (!shutdown_) {
       // Generate a random subset of balancers.
@@ -253,7 +250,7 @@ class ClientChannelStressTest {
     gpr_log(GPR_INFO, "Finish sending requests.");
   }
 
-  void ResetStub(int fallback_timeout = 0) {
+  void CreateStub(int fallback_timeout = 0) {
     ChannelArguments args;
     args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -268,26 +265,25 @@ class ClientChannelStressTest {
   void Start() {
     // Start the backends.
     std::vector<int> backend_ports;
-    for (size_t i = 0; i < num_backends_; ++i) {
+    for (size_t i = 0; i < kNumBackends; ++i) {
       backends_.emplace_back(new BackendServiceImpl());
       backend_servers_.emplace_back(ServerThread<BackendServiceImpl>(
           "backend", server_host_, backends_.back().get()));
       backend_ports.push_back(backend_servers_.back().port_);
     }
     // Start the load balancers.
-    for (size_t i = 0; i < num_balancers_; ++i) {
-      balancers_.emplace_back(new BalancerServiceImpl(
-          serverlist_update_interval_ms_, backend_ports));
+    for (size_t i = 0; i < kNumBalancers; ++i) {
+      balancers_.emplace_back(new BalancerServiceImpl(backend_ports));
       balancer_servers_.emplace_back(ServerThread<BalancerServiceImpl>(
           "balancer", server_host_, balancers_.back().get()));
     }
     // Start updating resolution.
     response_generator_ = grpc_fake_resolver_response_generator_create();
-    ResetStub();
+    CreateStub();
     resolver_thread_ = std::thread(
         &ClientChannelStressTest::PeriodicallyUpdateRandomResolution, this);
     // Start sending RPCs in multiple threads.
-    for (size_t i = 0; i < num_client_threads_; ++i) {
+    for (size_t i = 0; i < kNumClientThreads; ++i) {
       client_threads_.emplace_back(
           std::thread(&ClientChannelStressTest::KeepSendingRequests, this));
     }
@@ -311,12 +307,6 @@ class ClientChannelStressTest {
 
   std::atomic_bool shutdown_{false};
   const grpc::string server_host_ = "localhost";
-  const size_t num_backends_;
-  const size_t num_balancers_;
-  const size_t num_client_threads_;
-  const int resolution_update_interval_ms_;
-  const int serverlist_update_interval_ms_;
-  const int test_duration_sec_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::mutex stub_mutex_;
