@@ -48,7 +48,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/support/spinlock.h"
 
 // debug aid: create workers on the heap (allows asan to spot
@@ -154,8 +153,8 @@ struct grpc_fd {
   gpr_mu pollable_mu;
   pollable* pollable_obj;
 
-  grpc_core::ManualConstructor<grpc_core::LockfreeEvent> read_closure;
-  grpc_core::ManualConstructor<grpc_core::LockfreeEvent> write_closure;
+  gpr_atm read_closure;
+  gpr_atm write_closure;
 
   struct grpc_fd* freelist_next;
   grpc_closure* on_done_closure;
@@ -287,8 +286,8 @@ static void fd_destroy(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   fd->freelist_next = fd_freelist;
   fd_freelist = fd;
 
-  fd->read_closure.Destroy();
-  fd->write_closure.Destroy();
+  grpc_lfev_destroy(&fd->read_closure);
+  grpc_lfev_destroy(&fd->write_closure);
 
   gpr_mu_unlock(&fd_freelist_mu);
 }
@@ -348,8 +347,8 @@ static grpc_fd* fd_create(int fd, const char* name) {
   new_fd->pollable_obj = NULL;
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
-  new_fd->read_closure.Init();
-  new_fd->write_closure.Init();
+  grpc_lfev_init(&new_fd->read_closure);
+  grpc_lfev_init(&new_fd->write_closure);
   gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = NULL;
@@ -412,26 +411,27 @@ static grpc_pollset* fd_get_read_notifier_pollset(grpc_exec_ctx* exec_ctx,
 }
 
 static bool fd_is_shutdown(grpc_fd* fd) {
-  return fd->read_closure->IsShutdown();
+  return grpc_lfev_is_shutdown(&fd->read_closure);
 }
 
 /* Might be called multiple times */
 static void fd_shutdown(grpc_exec_ctx* exec_ctx, grpc_fd* fd, grpc_error* why) {
-  if (fd->read_closure->SetShutdown(exec_ctx, GRPC_ERROR_REF(why))) {
+  if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
+                             GRPC_ERROR_REF(why))) {
     shutdown(fd->fd, SHUT_RDWR);
-    fd->write_closure->SetShutdown(exec_ctx, GRPC_ERROR_REF(why));
+    grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
   }
   GRPC_ERROR_UNREF(why);
 }
 
 static void fd_notify_on_read(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                               grpc_closure* closure) {
-  fd->read_closure->NotifyOn(exec_ctx, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
 }
 
 static void fd_notify_on_write(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                                grpc_closure* closure) {
-  fd->write_closure->NotifyOn(exec_ctx, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
 }
 
 /*******************************************************************************
@@ -702,7 +702,7 @@ static int poll_deadline_to_millis_timeout(grpc_exec_ctx* exec_ctx,
 
 static void fd_become_readable(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                                grpc_pollset* notifier) {
-  fd->read_closure->SetReady(exec_ctx);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
 
   /* Note, it is possible that fd_become_readable might be called twice with
      different 'notifier's when an fd becomes readable and it is in two epoll
@@ -714,7 +714,7 @@ static void fd_become_readable(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx* exec_ctx, grpc_fd* fd) {
-  fd->write_closure->SetReady(exec_ctx);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
 }
 
 static grpc_error* fd_get_or_become_pollable(grpc_fd* fd, pollable** p) {
