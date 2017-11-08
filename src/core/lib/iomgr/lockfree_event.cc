@@ -58,16 +58,29 @@ extern grpc_tracer_flag grpc_polling_trace;
 namespace grpc_core {
 
 LockfreeEvent::LockfreeEvent() {
+  /* Perform an atomic store to start the state machine.
+
+     Note carefully that LockfreeEvent *MAY* be used whilst in a destroyed
+     state, while a file descriptor is on a freelist. In such a state it may
+     be SetReady'd, and so we need to perform an atomic operation here to
+     ensure no races */
   gpr_atm_no_barrier_store(&state_, kClosureNotReady);
 }
 
 LockfreeEvent::~LockfreeEvent() {
-  gpr_atm curr = gpr_atm_no_barrier_load(&state_);
-  if (curr & kShutdownBit) {
-    GRPC_ERROR_UNREF((grpc_error*)(curr & ~kShutdownBit));
-  } else {
-    GPR_ASSERT(curr == kClosureNotReady || curr == kClosureReady);
-  }
+  gpr_atm curr;
+  do {
+    curr = gpr_atm_no_barrier_load(&state_);
+    if (curr & kShutdownBit) {
+      GRPC_ERROR_UNREF((grpc_error*)(curr & ~kShutdownBit));
+    } else {
+      GPR_ASSERT(curr == kClosureNotReady || curr == kClosureReady);
+    }
+    /* we CAS in a shutdown, no error value here. If this event is interacted
+       with post-deletion (see the note in the constructor) we want the bit
+       pattern to prevent error retention in a deleted object */
+  } while (!gpr_atm_no_barrier_cas(&state_, curr,
+                                   kShutdownBit /* shutdown, no error */));
 }
 
 void LockfreeEvent::NotifyOn(grpc_exec_ctx* exec_ctx, grpc_closure* closure) {
