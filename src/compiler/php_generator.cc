@@ -30,6 +30,11 @@ using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
 using std::map;
 
+// TODO(ddyihai): use API to check reserved names after bumping to protobuf
+// v3.5.0
+const char* const kReservedNames[] = {"ARRAY", "Empty", "ECHO"};
+const int kReservedNamesSize = 3;
+
 namespace grpc_php_generator {
 namespace {
 
@@ -54,8 +59,25 @@ grpc::string PackageName(const FileDescriptor *file) {
 grpc::string MessageIdentifierName(const grpc::string &name,
                                    const FileDescriptor *file) {
   std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
+  bool is_reserved = false;
+  grpc::string classname = tokens[tokens.size() - 1];
+  for (int i = 0; i < kReservedNamesSize; i++) {
+    if (classname == kReservedNames[i]) {
+      is_reserved = true;
+      break;
+    }
+  }
+  grpc::string prefix = "";
+  if (is_reserved) {
+    if (name.substr(0, name.length() - classname.length()) ==
+        "google.protobuf.") {
+      prefix = "GPB";
+    } else {
+      prefix = "PB";
+    }
+  }
   std::ostringstream oss;
-  oss << PackageName(file) << "\\"
+  oss << PackageName(file) << "\\" << prefix
       << grpc_generator::CapitalizeFirstLetter(tokens[tokens.size() - 1]);
   return oss.str();
 }
