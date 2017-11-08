@@ -4062,6 +4062,20 @@
   }, 
   {
     "deps": [
+      "grpc"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "status_metadata_test", 
+    "src": [
+      "test/core/transport/status_metadata_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "gpr_test_util", 
       "grpc", 

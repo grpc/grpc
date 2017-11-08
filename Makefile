@@ -1171,6 +1171,7 @@ server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
 server_request_call_test: $(BINDIR)/$(CONFIG)/server_request_call_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 stats_test: $(BINDIR)/$(CONFIG)/stats_test
+status_metadata_test: $(BINDIR)/$(CONFIG)/status_metadata_test
 status_test: $(BINDIR)/$(CONFIG)/status_test
 status_util_test: $(BINDIR)/$(CONFIG)/status_util_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
@@ -1605,6 +1606,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/stats_test \
+  $(BINDIR)/$(CONFIG)/status_metadata_test \
   $(BINDIR)/$(CONFIG)/status_test \
   $(BINDIR)/$(CONFIG)/status_util_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
@@ -1731,6 +1733,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/stats_test \
+  $(BINDIR)/$(CONFIG)/status_metadata_test \
   $(BINDIR)/$(CONFIG)/status_test \
   $(BINDIR)/$(CONFIG)/status_util_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
@@ -2137,6 +2140,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing stats_test"
 	$(Q) $(BINDIR)/$(CONFIG)/stats_test || ( echo test stats_test failed ; exit 1 )
+	$(E) "[RUN]     Testing status_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/status_metadata_test || ( echo test status_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_test || ( echo test status_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_util_test"
@@ -16823,6 +16828,49 @@ deps_stats_test: $(STATS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(STATS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+STATUS_METADATA_TEST_SRC = \
+    test/core/transport/status_metadata_test.cc \
+
+STATUS_METADATA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STATUS_METADATA_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/status_metadata_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/status_metadata_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/status_metadata_test: $(PROTOBUF_DEP) $(STATUS_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/status_metadata_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/status_metadata_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_status_metadata_test: $(STATUS_METADATA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STATUS_METADATA_TEST_OBJS:.o=.dep)
 endif
 endif
 

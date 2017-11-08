@@ -4677,6 +4677,15 @@ targets:
   - tsan
   timeout_seconds: 1200
   uses_polling: false
+- name: status_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/status_metadata_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: status_test
   build: test
   language: c++
