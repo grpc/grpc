@@ -129,8 +129,9 @@ static int ipv6_prefix_match_length(const struct sockaddr_in6* sa,
   unsigned char* b = (unsigned char*)&sb->sin6_addr;
   int cur_bit = 0;
   while (cur_bit < 128) {
-    int a_val = a[cur_bit / CHAR_BIT] & (1 << (cur_bit % CHAR_BIT));
-    int b_val = b[cur_bit / CHAR_BIT] & (1 << (cur_bit % CHAR_BIT));
+    int high_bit = 1 << (CHAR_BIT - 1);
+    int a_val = a[cur_bit / CHAR_BIT] & (high_bit >> (cur_bit % CHAR_BIT));
+    int b_val = b[cur_bit / CHAR_BIT] & (high_bit >> (cur_bit % CHAR_BIT));
     if (a_val == b_val) {
       cur_bit++;
     } else {
@@ -152,7 +153,7 @@ static int in6_is_addr_ula(const struct in6_addr* s_addr) {
 
 static int in6_is_addr_teredo(const struct in6_addr* s_addr) {
   uint8_t* bytes = (uint8_t*)s_addr;
-  return bytes[0] == 0x20 && bytes[1] == 0x02 && bytes[2] == 0x00 &&
+  return bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] == 0x00 &&
          bytes[3] == 0x00;
 }
 
