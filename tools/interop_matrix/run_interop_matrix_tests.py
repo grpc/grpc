@@ -172,7 +172,6 @@ def run_tests_for_lang(lang, runtime, images):
     jobset.message('START', 'Testing %s' % image, do_newline=True)
     # Download the docker image before running each test case.
     subprocess.check_call(['gcloud', 'docker', '--', 'pull', image])
-    #_docker_images_cleanup.append(image)
     suite_name = '%s__%s_%s' % (lang, runtime, release)
     job_spec_list = find_test_cases(lang, runtime, release, suite_name)
     
