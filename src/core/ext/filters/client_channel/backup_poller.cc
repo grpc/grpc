@@ -149,7 +149,7 @@ void grpc_client_channel_start_backup_polling(
    * TSAN happy. Otherwise, reading from g_poller (i.e g_poller->pollset) after
    * releasing the lock and setting g_poller to NULL in g_poller_unref() is
    * being flagged as a data-race by TSAN */
-  grpc_pollset *pollset = g_poller->pollset;
+  grpc_pollset* pollset = g_poller->pollset;
   gpr_mu_unlock(&g_poller_mu);
 
   grpc_pollset_set_add_pollset(exec_ctx, interested_parties, pollset);
