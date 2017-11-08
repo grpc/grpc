@@ -57,6 +57,10 @@ extern grpc_tracer_flag grpc_polling_trace;
 
 namespace grpc_core {
 
+LockfreeEvent::LockfreeEvent() {
+  gpr_atm_no_barrier_store(&state_, kClosureNotReady);
+}
+
 LockfreeEvent::~LockfreeEvent() {
   gpr_atm curr = gpr_atm_no_barrier_load(&state_);
   if (curr & kShutdownBit) {

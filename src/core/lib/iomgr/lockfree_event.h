@@ -29,7 +29,7 @@ namespace grpc_core {
 
 class LockfreeEvent {
  public:
-  LockfreeEvent() = default;
+  LockfreeEvent();
   ~LockfreeEvent();
 
   LockfreeEvent(const LockfreeEvent&) = delete;
@@ -46,7 +46,7 @@ class LockfreeEvent {
  private:
   enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
 
-  gpr_atm state_ = kClosureNotReady;
+  gpr_atm state_;
 };
 
 }  // namespace grpc_core
