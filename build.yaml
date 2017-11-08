@@ -717,20 +717,20 @@ filegroups:
   - test/core/util/trickle_endpoint.h
   src:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
-  - test/core/end2end/cq_verifier.c
-  - test/core/end2end/fixtures/http_proxy_fixture.c
-  - test/core/end2end/fixtures/proxy.c
-  - test/core/iomgr/endpoint_tests.c
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/iomgr/endpoint_tests.cc
   - test/core/util/debugger_macros.cc
-  - test/core/util/grpc_profiler.c
-  - test/core/util/memory_counters.c
-  - test/core/util/mock_endpoint.c
-  - test/core/util/parse_hexstring.c
-  - test/core/util/passthru_endpoint.c
-  - test/core/util/port.c
-  - test/core/util/port_server_client.c
-  - test/core/util/slice_splitter.c
-  - test/core/util/trickle_endpoint.c
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/memory_counters.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/port.cc
+  - test/core/util/port_server_client.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/trickle_endpoint.cc
   deps:
   - gpr_test_util
   - gpr
@@ -915,7 +915,7 @@ filegroups:
   headers:
   - test/core/tsi/transport_security_test_lib.h
   src:
-  - test/core/tsi/transport_security_test_lib.c
+  - test/core/tsi/transport_security_test_lib.cc
   deps:
   - grpc
 - name: tsi
@@ -1125,7 +1125,7 @@ libs:
   headers:
   - test/core/util/test_config.h
   src:
-  - test/core/util/test_config.c
+  - test/core/util/test_config.cc
   deps:
   - gpr
   secure: false
@@ -1211,11 +1211,11 @@ libs:
   - test/core/end2end/data/ssl_test_data.h
   - test/core/security/oauth2_utils.h
   src:
-  - test/core/end2end/data/client_certs.c
-  - test/core/end2end/data/server1_cert.c
-  - test/core/end2end/data/server1_key.c
-  - test/core/end2end/data/test_root_cert.c
-  - test/core/security/oauth2_utils.c
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/security/oauth2_utils.cc
   deps:
   - gpr_test_util
   - gpr
@@ -1271,7 +1271,7 @@ libs:
   headers:
   - test/core/util/reconnect_server.h
   src:
-  - test/core/util/reconnect_server.c
+  - test/core/util/reconnect_server.cc
   deps:
   - test_tcp_server
   - grpc_test_util
@@ -1284,7 +1284,7 @@ libs:
   headers:
   - test/core/util/test_tcp_server.h
   src:
-  - test/core/util/test_tcp_server.c
+  - test/core/util/test_tcp_server.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1700,7 +1700,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/alarm_test.c
+  - test/core/surface/alarm_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1710,7 +1710,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/compression/algorithm_test.c
+  - test/core/compression/algorithm_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1721,7 +1721,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/alloc_test.c
+  - test/core/support/alloc_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -1730,7 +1730,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/alpn_test.c
+  - test/core/transport/chttp2/alpn_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1740,7 +1740,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/end2end/fuzzers/api_fuzzer.c
+  - test/core/end2end/fuzzers/api_fuzzer.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1754,7 +1754,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/arena_test.c
+  - test/core/support/arena_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -1763,7 +1763,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/backoff/backoff_test.c
+  - test/core/backoff/backoff_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1774,7 +1774,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/end2end/bad_server_response_test.c
+  - test/core/end2end/bad_server_response_test.cc
   deps:
   - test_tcp_server
   - grpc_test_util
@@ -1787,7 +1787,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/bin_decoder_test.c
+  - test/core/transport/chttp2/bin_decoder_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1796,7 +1796,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/bin_encoder_test.c
+  - test/core/transport/chttp2/bin_encoder_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1805,7 +1805,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/byte_stream_test.c
+  - test/core/transport/byte_stream_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1816,7 +1816,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/channel_create_test.c
+  - test/core/surface/channel_create_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1834,7 +1834,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/hpack_encoder_test.c
+  - test/core/transport/chttp2/hpack_encoder_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1845,7 +1845,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/stream_map_test.c
+  - test/core/transport/chttp2/stream_map_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1856,7 +1856,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/varint_test.c
+  - test/core/transport/chttp2/varint_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1867,7 +1867,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/end2end/fuzzers/client_fuzzer.c
+  - test/core/end2end/fuzzers/client_fuzzer.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1882,7 +1882,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/combiner_test.c
+  - test/core/iomgr/combiner_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1892,7 +1892,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/compression/compression_test.c
+  - test/core/compression/compression_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1904,7 +1904,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/concurrent_connectivity_test.c
+  - test/core/surface/concurrent_connectivity_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1917,7 +1917,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/end2end/connection_refused_test.c
+  - test/core/end2end/connection_refused_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1928,7 +1928,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_channel/resolvers/dns_resolver_connectivity_test.c
+  - test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1940,7 +1940,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_channel/resolvers/dns_resolver_test.c
+  - test/core/client_channel/resolvers/dns_resolver_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1951,7 +1951,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/end2end/dualstack_socket_test.c
+  - test/core/end2end/dualstack_socket_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1967,7 +1967,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/endpoint_pair_test.c
+  - test/core/iomgr/endpoint_pair_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1980,7 +1980,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/error_test.c
+  - test/core/iomgr/error_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -1992,7 +1992,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/ev_epollsig_linux_test.c
+  - test/core/iomgr/ev_epollsig_linux_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2006,7 +2006,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_channel/resolvers/fake_resolver_test.c
+  - test/core/client_channel/resolvers/fake_resolver_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2016,7 +2016,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/tsi/fake_transport_security_test.c
+  - test/core/tsi/fake_transport_security_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2031,7 +2031,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/fd_conservation_posix_test.c
+  - test/core/iomgr/fd_conservation_posix_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2047,7 +2047,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/fd_posix_test.c
+  - test/core/iomgr/fd_posix_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2064,7 +2064,7 @@ targets:
   run: false
   language: c
   src:
-  - test/core/fling/client.c
+  - test/core/fling/client.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2075,7 +2075,7 @@ targets:
   run: false
   language: c
   src:
-  - test/core/fling/server.c
+  - test/core/fling/server.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2086,7 +2086,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/fling/fling_stream_test.c
+  - test/core/fling/fling_stream_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2101,7 +2101,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/fling/fling_test.c
+  - test/core/fling/fling_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2138,7 +2138,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/end2end/goaway_server_test.c
+  - test/core/end2end/goaway_server_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2154,7 +2154,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/avl_test.c
+  - test/core/support/avl_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2163,7 +2163,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/cmdline_test.c
+  - test/core/support/cmdline_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2173,7 +2173,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/cpu_test.c
+  - test/core/support/cpu_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2182,7 +2182,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/env_test.c
+  - test/core/support/env_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2191,7 +2191,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/histogram_test.c
+  - test/core/support/histogram_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2200,7 +2200,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/host_port_test.c
+  - test/core/support/host_port_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2209,7 +2209,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/log_test.c
+  - test/core/support/log_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2219,7 +2219,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/mpscq_test.c
+  - test/core/support/mpscq_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2229,7 +2229,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/spinlock_test.c
+  - test/core/support/spinlock_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2239,7 +2239,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/stack_lockfree_test.c
+  - test/core/support/stack_lockfree_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2248,7 +2248,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/string_test.c
+  - test/core/support/string_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2258,7 +2258,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/sync_test.c
+  - test/core/support/sync_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2268,7 +2268,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/thd_test.c
+  - test/core/support/thd_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2277,7 +2277,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/time_test.c
+  - test/core/support/time_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2286,7 +2286,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/tls_test.c
+  - test/core/support/tls_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2295,7 +2295,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/useful_test.c
+  - test/core/support/useful_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2304,7 +2304,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/auth_context_test.c
+  - test/core/security/auth_context_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2315,7 +2315,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/slice/b64_test.c
+  - test/core/slice/b64_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2326,7 +2326,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/byte_buffer_reader_test.c
+  - test/core/surface/byte_buffer_reader_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2337,7 +2337,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/channel/channel_args_test.c
+  - test/core/channel/channel_args_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2348,7 +2348,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/channel/channel_stack_builder_test.c
+  - test/core/channel/channel_stack_builder_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2358,7 +2358,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/channel/channel_stack_test.c
+  - test/core/channel/channel_stack_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2369,7 +2369,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/completion_queue_test.c
+  - test/core/surface/completion_queue_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2379,7 +2379,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/completion_queue_threading_test.c
+  - test/core/surface/completion_queue_threading_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2391,7 +2391,7 @@ targets:
   build: tool
   language: c
   src:
-  - test/core/security/create_jwt.c
+  - test/core/security/create_jwt.cc
   deps:
   - grpc
   - gpr
@@ -2401,7 +2401,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/credentials_test.c
+  - test/core/security/credentials_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2412,7 +2412,7 @@ targets:
   run: false
   language: c
   src:
-  - test/core/security/fetch_oauth2.c
+  - test/core/security/fetch_oauth2.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2422,7 +2422,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/invalid_channel_args_test.c
+  - test/core/surface/invalid_channel_args_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2433,7 +2433,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/json_token_test.c
+  - test/core/security/json_token_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2448,7 +2448,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/jwt_verifier_test.c
+  - test/core/security/jwt_verifier_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2459,7 +2459,7 @@ targets:
   build: tool
   language: c
   src:
-  - test/core/security/print_google_default_creds_token.c
+  - test/core/security/print_google_default_creds_token.cc
   deps:
   - grpc
   - gpr
@@ -2468,7 +2468,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/security_connector_test.c
+  - test/core/security/security_connector_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2478,7 +2478,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/ssl_credentials_test.c
+  - test/core/security/ssl_credentials_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2488,7 +2488,7 @@ targets:
   build: tool
   language: c
   src:
-  - test/core/security/verify_jwt.c
+  - test/core/security/verify_jwt.cc
   deps:
   - grpc
   - gpr
@@ -2497,7 +2497,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/handshake/client_ssl.c
+  - test/core/handshake/client_ssl.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2512,7 +2512,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/handshake/server_ssl.c
+  - test/core/handshake/server_ssl.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2527,7 +2527,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/transport/chttp2/hpack_parser_fuzzer_test.c
+  - test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2541,7 +2541,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/hpack_parser_test.c
+  - test/core/transport/chttp2/hpack_parser_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2552,7 +2552,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/hpack_table_test.c
+  - test/core/transport/chttp2/hpack_table_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2563,7 +2563,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/http/parser_test.c
+  - test/core/http/parser_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2574,7 +2574,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/http/request_fuzzer.c
+  - test/core/http/request_fuzzer.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2587,7 +2587,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/http/response_fuzzer.c
+  - test/core/http/response_fuzzer.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2600,7 +2600,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/http/format_request_test.c
+  - test/core/http/format_request_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2611,7 +2611,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/http/httpcli_test.c
+  - test/core/http/httpcli_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2626,7 +2626,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/http/httpscli_test.c
+  - test/core/http/httpscli_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2638,7 +2638,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/init_test.c
+  - test/core/surface/init_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2650,7 +2650,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/end2end/invalid_call_argument_test.c
+  - test/core/end2end/invalid_call_argument_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2660,7 +2660,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/json/fuzzer.c
+  - test/core/json/fuzzer.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2674,7 +2674,7 @@ targets:
   run: false
   language: c
   src:
-  - test/core/json/json_rewrite.c
+  - test/core/json/json_rewrite.cc
   deps:
   - grpc
   - gpr
@@ -2683,7 +2683,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/json/json_rewrite_test.c
+  - test/core/json/json_rewrite_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2694,7 +2694,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/json/json_stream_error_test.c
+  - test/core/json/json_stream_error_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2705,7 +2705,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/json/json_test.c
+  - test/core/json/json_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2716,7 +2716,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/lame_client_test.c
+  - test/core/surface/lame_client_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2728,7 +2728,7 @@ targets:
   run: false
   language: c
   src:
-  - test/core/client_channel/lb_policies_test.c
+  - test/core/client_channel/lb_policies_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2739,7 +2739,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/load_file_test.c
+  - test/core/iomgr/load_file_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2750,7 +2750,7 @@ targets:
   build: benchmark
   language: c
   src:
-  - test/core/network_benchmarks/low_level_ping_pong.c
+  - test/core/network_benchmarks/low_level_ping_pong.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2765,7 +2765,7 @@ targets:
   run: false
   language: c
   src:
-  - test/core/memory_usage/client.c
+  - test/core/memory_usage/client.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2777,7 +2777,7 @@ targets:
   run: false
   language: c
   src:
-  - test/core/memory_usage/server.c
+  - test/core/memory_usage/server.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2788,7 +2788,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/memory_usage/memory_usage_test.c
+  - test/core/memory_usage/memory_usage_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2802,7 +2802,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/compression/message_compress_test.c
+  - test/core/compression/message_compress_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2813,7 +2813,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/channel/minimal_stack_is_minimal_test.c
+  - test/core/channel/minimal_stack_is_minimal_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2824,7 +2824,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/end2end/multiple_server_queues_test.c
+  - test/core/end2end/multiple_server_queues_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2834,7 +2834,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/murmur_hash_test.c
+  - test/core/support/murmur_hash_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2843,7 +2843,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/nanopb/fuzzer_response.c
+  - test/core/nanopb/fuzzer_response.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2856,7 +2856,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/nanopb/fuzzer_serverlist.c
+  - test/core/nanopb/fuzzer_serverlist.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2870,7 +2870,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/end2end/no_server_test.c
+  - test/core/end2end/no_server_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2880,7 +2880,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/num_external_connectivity_watchers_test.c
+  - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2892,7 +2892,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_channel/parse_address_test.c
+  - test/core/client_channel/parse_address_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2903,7 +2903,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/slice/percent_decode_fuzzer.c
+  - test/core/slice/percent_decode_fuzzer.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2916,7 +2916,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/slice/percent_encode_fuzzer.c
+  - test/core/slice/percent_encode_fuzzer.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2929,7 +2929,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/slice/percent_encoding_test.c
+  - test/core/slice/percent_encoding_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2940,7 +2940,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/pollset_set_test.c
+  - test/core/iomgr/pollset_set_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2954,7 +2954,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/resolve_address_posix_test.c
+  - test/core/iomgr/resolve_address_posix_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2970,7 +2970,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/resolve_address_test.c
+  - test/core/iomgr/resolve_address_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2981,7 +2981,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/resource_quota_test.c
+  - test/core/iomgr/resource_quota_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2991,7 +2991,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/secure_channel_create_test.c
+  - test/core/surface/secure_channel_create_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3001,7 +3001,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/secure_endpoint_test.c
+  - test/core/security/secure_endpoint_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3013,7 +3013,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/sequential_connectivity_test.c
+  - test/core/surface/sequential_connectivity_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3025,7 +3025,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/server_chttp2_test.c
+  - test/core/surface/server_chttp2_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3035,7 +3035,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/end2end/fuzzers/server_fuzzer.c
+  - test/core/end2end/fuzzers/server_fuzzer.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3049,7 +3049,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/surface/server_test.c
+  - test/core/surface/server_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3059,7 +3059,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/slice/slice_buffer_test.c
+  - test/core/slice/slice_buffer_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3070,7 +3070,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/slice/slice_hash_table_test.c
+  - test/core/slice/slice_hash_table_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3081,7 +3081,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/slice/slice_string_helpers_test.c
+  - test/core/slice/slice_string_helpers_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3092,7 +3092,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/slice/slice_test.c
+  - test/core/slice/slice_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3103,7 +3103,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_channel/resolvers/sockaddr_resolver_test.c
+  - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3113,7 +3113,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/sockaddr_utils_test.c
+  - test/core/iomgr/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3123,7 +3123,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/socket_utils_test.c
+  - test/core/iomgr/socket_utils_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3139,7 +3139,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/security/ssl_server_fuzzer.c
+  - test/core/security/ssl_server_fuzzer.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3152,7 +3152,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/tsi/ssl_transport_security_test.c
+  - test/core/tsi/ssl_transport_security_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -3167,7 +3167,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/status_conversion_test.c
+  - test/core/transport/status_conversion_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3178,7 +3178,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/compression/stream_compression_test.c
+  - test/core/compression/stream_compression_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3189,7 +3189,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/stream_owned_slice_test.c
+  - test/core/transport/stream_owned_slice_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3201,7 +3201,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/tcp_client_posix_test.c
+  - test/core/iomgr/tcp_client_posix_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3218,7 +3218,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/tcp_client_uv_test.c
+  - test/core/iomgr/tcp_client_uv_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3231,7 +3231,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/tcp_posix_test.c
+  - test/core/iomgr/tcp_posix_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3247,7 +3247,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/tcp_server_posix_test.c
+  - test/core/iomgr/tcp_server_posix_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3263,7 +3263,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/tcp_server_uv_test.c
+  - test/core/iomgr/tcp_server_uv_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3275,7 +3275,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/time_averaged_stats_test.c
+  - test/core/iomgr/time_averaged_stats_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3286,7 +3286,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/timeout_encoding_test.c
+  - test/core/transport/timeout_encoding_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3297,7 +3297,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/timer_heap_test.c
+  - test/core/iomgr/timer_heap_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3310,7 +3310,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/timer_list_test.c
+  - test/core/iomgr/timer_list_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3323,7 +3323,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/connectivity_state_test.c
+  - test/core/transport/connectivity_state_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3333,7 +3333,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/transport/metadata_test.c
+  - test/core/transport/metadata_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3343,7 +3343,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/tsi/transport_security_test.c
+  - test/core/tsi/transport_security_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3357,7 +3357,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/udp_server_test.c
+  - test/core/iomgr/udp_server_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3373,7 +3373,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/client_channel/uri_fuzzer_test.c
+  - test/core/client_channel/uri_fuzzer_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3386,7 +3386,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/client_channel/uri_parser_test.c
+  - test/core/client_channel/uri_parser_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3396,7 +3396,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/iomgr/wakeup_fd_cv_test.c
+  - test/core/iomgr/wakeup_fd_cv_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -4935,45 +4935,6 @@ defaults:
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
-node_modules:
-- deps:
-  - grpc
-  - gpr
-  - boringssl
-  - z
-  headers:
-  - src/node/ext/byte_buffer.h
-  - src/node/ext/call.h
-  - src/node/ext/call_credentials.h
-  - src/node/ext/channel.h
-  - src/node/ext/channel_credentials.h
-  - src/node/ext/completion_queue.h
-  - src/node/ext/server.h
-  - src/node/ext/server_credentials.h
-  - src/node/ext/slice.h
-  - src/node/ext/timeval.h
-  js:
-  - src/node/index.js
-  - src/node/src/client.js
-  - src/node/src/common.js
-  - src/node/src/credentials.js
-  - src/node/src/constants.js
-  - src/node/src/grpc_extension.js
-  - src/node/src/metadata.js
-  - src/node/src/server.js
-  name: grpc_node
-  src:
-  - src/node/ext/byte_buffer.cc
-  - src/node/ext/call.cc
-  - src/node/ext/call_credentials.cc
-  - src/node/ext/channel.cc
-  - src/node/ext/channel_credentials.cc
-  - src/node/ext/completion_queue.cc
-  - src/node/ext/node_grpc.cc
-  - src/node/ext/server.cc
-  - src/node/ext/server_credentials.cc
-  - src/node/ext/slice.cc
-  - src/node/ext/timeval.cc
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f

@@ -29,7 +29,7 @@ extern "C" {
    If tmp_filename is not NULL, *tmp_filename is assigned the name of the
    created file and it is the responsibility of the caller to gpr_free it
    unless an error occurs in which case it will be set to NULL. */
-FILE *gpr_tmpfile(const char *prefix, char **tmp_filename);
+FILE* gpr_tmpfile(const char* prefix, char** tmp_filename);
 
 #ifdef __cplusplus
 }

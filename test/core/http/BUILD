@@ -22,8 +22,8 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "response_fuzzer",
-    srcs = ["response_fuzzer.c"],
-    language = "C",
+    srcs = ["response_fuzzer.cc"],
+    language = "C++",
     corpus = "response_corpus",
     deps = [
         "//:gpr",
@@ -34,8 +34,8 @@ grpc_fuzzer(
 
 grpc_fuzzer(
     name = "request_fuzzer",
-    srcs = ["request_fuzzer.c"],
-    language = "C",
+    srcs = ["request_fuzzer.cc"],
+    language = "C++",
     corpus = "request_corpus",
     deps = [
         "//:gpr",
@@ -64,8 +64,8 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_cc_test(
     name = "httpcli_test",
-    srcs = ["httpcli_test.c"],
-    language = "C",
+    srcs = ["httpcli_test.cc"],
+    language = "C++",
     data = ["test_server.py"],
     deps = [
         "//:gpr",
@@ -78,8 +78,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "httpscli_test",
-    srcs = ["httpscli_test.c"],
-    language = "C",
+    srcs = ["httpscli_test.cc"],
+    language = "C++",
     data = ["test_server.py"],
     deps = [
         "//:gpr",
@@ -92,8 +92,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "parser_test",
-    srcs = ["parser_test.c"],
-    language = "C",
+    srcs = ["parser_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

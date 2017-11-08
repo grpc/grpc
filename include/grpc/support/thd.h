@@ -44,23 +44,23 @@ typedef struct {
    in *t, and return true.  If there are insufficient resources, return false.
    If options==NULL, default options are used.
    The thread is immediately runnable, and exits when (*thd_body)() returns.  */
-GPRAPI int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
-                       const gpr_thd_options *options);
+GPRAPI int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
+                       const gpr_thd_options* options);
 
 /** Return a gpr_thd_options struct with all fields set to defaults. */
 GPRAPI gpr_thd_options gpr_thd_options_default(void);
 
 /** Set the thread to become detached on startup - this is the default. */
-GPRAPI void gpr_thd_options_set_detached(gpr_thd_options *options);
+GPRAPI void gpr_thd_options_set_detached(gpr_thd_options* options);
 
 /** Set the thread to become joinable - mutually exclusive with detached. */
-GPRAPI void gpr_thd_options_set_joinable(gpr_thd_options *options);
+GPRAPI void gpr_thd_options_set_joinable(gpr_thd_options* options);
 
 /** Returns non-zero if the option detached is set. */
-GPRAPI int gpr_thd_options_is_detached(const gpr_thd_options *options);
+GPRAPI int gpr_thd_options_is_detached(const gpr_thd_options* options);
 
 /** Returns non-zero if the option joinable is set. */
-GPRAPI int gpr_thd_options_is_joinable(const gpr_thd_options *options);
+GPRAPI int gpr_thd_options_is_joinable(const gpr_thd_options* options);
 
 /** Returns the identifier of the current thread. */
 GPRAPI gpr_thd_id gpr_thd_currentid(void);

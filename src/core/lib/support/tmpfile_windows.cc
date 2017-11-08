@@ -32,8 +32,8 @@
 #include "src/core/lib/support/string_windows.h"
 #include "src/core/lib/support/tmpfile.h"
 
-FILE *gpr_tmpfile(const char *prefix, char **tmp_filename_out) {
-  FILE *result = NULL;
+FILE* gpr_tmpfile(const char* prefix, char** tmp_filename_out) {
+  FILE* result = NULL;
   LPTSTR template_string = NULL;
   TCHAR tmp_path[MAX_PATH];
   TCHAR tmp_filename[MAX_PATH];
