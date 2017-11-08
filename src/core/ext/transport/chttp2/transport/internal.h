@@ -308,7 +308,7 @@ struct grpc_chttp2_transport {
 
   /** Set to a grpc_error object if a goaway frame is received. By default, set
    * to GRPC_ERROR_NONE */
-  grpc_error *goaway_error;
+  grpc_error* goaway_error;
 
   grpc_chttp2_sent_goaway_state sent_goaway_state;
 
@@ -377,7 +377,7 @@ struct grpc_chttp2_transport {
                         grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                         grpc_slice slice, int is_last);
 
-  grpc_chttp2_write_cb *write_cb_pool;
+  grpc_chttp2_write_cb* write_cb_pool;
 
   /* bdp estimator */
   grpc_closure next_bdp_ping_timer_expired_locked;
