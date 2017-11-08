@@ -254,7 +254,7 @@ void CheckResolverResultLocked(grpc_exec_ctx* exec_ctx, void* argsp,
     grpc_lb_address addr = addresses->addresses[i];
     char* str;
     grpc_sockaddr_to_string(&str, &addr.address, 1 /* normalize */);
-    gpr_log(GPR_INFO, "%s", str);
+    gpr_log(GPR_INFO, "found:%s", str);
     found_lb_addrs.emplace_back(
         GrpcLBAddress(std::string(str), addr.is_balancer));
     gpr_free(str);

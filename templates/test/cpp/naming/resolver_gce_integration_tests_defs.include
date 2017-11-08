@@ -17,6 +17,7 @@
 
 set -ex
 
+export GRPC_VERBOSITY=DEBUG
 if [[ "$GRPC_DNS_RESOLVER" == "" ]]; then
   export GRPC_DNS_RESOLVER=ares
 elif [[ "$GRPC_DNS_RESOLVER" != ares ]]; then

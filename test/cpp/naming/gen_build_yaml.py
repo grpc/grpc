@@ -30,6 +30,13 @@ _TARGET_RECORDS_TO_SKIP_AGAINST_GCE = [
   'ipv4-config-causing-fallback-to-tcp',
 ]
 
+_TARGET_RECORDS_TO_SKIP_AGAINST_LOCAL_SERVER = [
+  # TODO: enable if twisted DNS server adds ability
+  # to follow CNAME chains.
+  'chained-cname-to-ipv4',
+  'chained-cname-to-ipv6',
+]
+
 def _append_zone_name(name, zone_name):
   return '%s.%s' % (name, zone_name)
 
@@ -79,6 +86,11 @@ def _data_for_type(r_type, r_data, common_zone_name):
     # are associated with the same TXT record (to make it one bash token for
     # gcloud)
     return '\'%s\'' % ' '.join(chunks)
+  if r_type == 'CNAME':
+    assert len(r_data) == 1
+    out = '%s.%s' % (r_data[0], common_zone_name)
+    assert out[-1] == '.'
+    return out
 
 # Convert DNS records from their "within a test group" format
 # of the yaml file to an easier form for the templates to use.
@@ -139,7 +151,7 @@ def main():
       'all_integration_test_records': _gcloud_uploadable_form(resolver_component_data['resolver_component_tests'],
                                                               resolver_component_data['resolver_tests_common_zone_name']),
       'resolver_gce_integration_test_cases': _resolver_test_cases(resolver_component_data, _TARGET_RECORDS_TO_SKIP_AGAINST_GCE),
-      'resolver_component_test_cases': _resolver_test_cases(resolver_component_data, []),
+      'resolver_component_test_cases': _resolver_test_cases(resolver_component_data, _TARGET_RECORDS_TO_SKIP_AGAINST_LOCAL_SERVER),
       'targets': [
           {
               'name': 'resolver_component_test' + unsecure_build_config_suffix,

@@ -90,6 +90,11 @@ def start_local_dns_server(args):
           _push_record(record_full_name, dns.Record_SRV(p, w, port, target_full_name, ttl=r_ttl))
         if r_type == 'TXT':
           _maybe_split_up_txt_data(record_full_name, r_data, r_ttl)
+        if r_type == 'CNAME':
+          r_data = '%s.%s' % (r_data, common_zone_name)
+          assert r_data[-1] == '.'
+          r_data = r_data[:-1]
+          _push_record(record_full_name, dns.Record_CNAME(r_data, ttl=r_ttl))
   # Server health check record
   _push_record(_SERVER_HEALTH_CHECK_RECORD_NAME, dns.Record_A(_SERVER_HEALTH_CHECK_RECORD_DATA, ttl=0))
   soa_record = dns.Record_SOA(mname = common_zone_name)
