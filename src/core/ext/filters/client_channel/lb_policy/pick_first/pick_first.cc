@@ -316,7 +316,7 @@ static void pf_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
         p->selected = sd;
         if (p->subchannel_list != NULL) {
           grpc_lb_subchannel_list_shutdown_and_unref(
-                  exec_ctx, p->subchannel_list, "pf_update_includes_selected");
+              exec_ctx, p->subchannel_list, "pf_update_includes_selected");
         }
         p->subchannel_list = subchannel_list;
         destroy_unselected_subchannels_locked(exec_ctx, p);
@@ -415,16 +415,15 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
           GRPC_ERROR_REF(error), "selected_not_ready+switch_to_update");
     } else {
       grpc_connectivity_state publish_state =
-              sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN
+          sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN
               ? GRPC_CHANNEL_TRANSIENT_FAILURE
               : sd->curr_connectivity_state;
       if (publish_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         /* if the selected channel goes bad, request a re-resolution */
-        grpc_lb_policy_try_reresolve(exec_ctx, &p->base,
-                                     &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+        grpc_lb_policy_try_reresolve(
+            exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
       }
-      grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                  publish_state,
+      grpc_connectivity_state_set(exec_ctx, &p->state_tracker, publish_state,
                                   GRPC_ERROR_REF(error), "selected_changed");
       if (sd->curr_connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
         // Renew notification.
@@ -539,8 +538,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                                  "pf_candidate_shutdown");
         if (sd->subchannel_list == p->subchannel_list) {
           grpc_connectivity_state_set(
-                  exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-                  GRPC_ERROR_REF(error), "subchannel_failed");
+              exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+              GRPC_ERROR_REF(error), "subchannel_failed");
         }
         // Advance to next subchannel and check its state.
         grpc_lb_subchannel_data* original_sd = sd;
@@ -555,7 +554,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
           grpc_lb_subchannel_list_unref_for_connectivity_watch(
               exec_ctx, sd->subchannel_list, "pf_candidate_shutdown");
           grpc_lb_policy_try_reresolve(
-                  exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+              exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
           return;
         }
         sd->curr_connectivity_state =
@@ -574,9 +573,9 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
 }
 
 static void pf_set_reresolve_closure_locked(
-    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-    grpc_closure *request_reresolution) {
-  pick_first_lb_policy *p = (pick_first_lb_policy *)policy;
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
+    grpc_closure* request_reresolution) {
+  pick_first_lb_policy* p = (pick_first_lb_policy*)policy;
   GPR_ASSERT(!p->shutdown);
   GPR_ASSERT(policy->request_reresolution == NULL);
   policy->request_reresolution = request_reresolution;

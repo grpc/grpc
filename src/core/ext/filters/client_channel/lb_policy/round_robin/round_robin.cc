@@ -196,8 +196,8 @@ static void shutdown_locked(grpc_exec_ctx* exec_ctx, round_robin_lb_policy* p,
     p->latest_pending_subchannel_list = NULL;
   }
   GRPC_ERROR_UNREF(error);
-    grpc_lb_policy_try_reresolve(exec_ctx, &p->base, &grpc_lb_round_robin_trace,
-                                 GRPC_ERROR_CANCELLED);
+  grpc_lb_policy_try_reresolve(exec_ctx, &p->base, &grpc_lb_round_robin_trace,
+                               GRPC_ERROR_CANCELLED);
 }
 
 static void rr_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
@@ -353,8 +353,9 @@ static void update_state_counters_locked(grpc_lb_subchannel_data* sd) {
  * subchannel list \a sd belongs to (sd->subchannel_list). \a error will be used
  * only if the policy transitions to state TRANSIENT_FAILURE, in which case
  * re-resolution will be requested. */
-static void update_lb_connectivity_status_locked(
-    grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_data *sd, grpc_error *error) {
+static void update_lb_connectivity_status_locked(grpc_exec_ctx* exec_ctx,
+                                                 grpc_lb_subchannel_data* sd,
+                                                 grpc_error* error) {
   /* In priority order. The first rule to match terminates the search (ie, if we
    * are on rule n, all previous rules were unfulfilled).
    *
@@ -447,11 +448,11 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
   update_lb_connectivity_status_locked(exec_ctx, sd, GRPC_ERROR_REF(error));
   // If the sd's new state is SHUTDOWN, unref the subchannel.
   if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
-      grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
-      grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd,
-                                               "rr_connectivity_shutdown");
-      grpc_lb_subchannel_list_unref_for_connectivity_watch(
-              exec_ctx, sd->subchannel_list, "rr_connectivity_shutdown");
+    grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
+    grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd,
+                                             "rr_connectivity_shutdown");
+    grpc_lb_subchannel_list_unref_for_connectivity_watch(
+        exec_ctx, sd->subchannel_list, "rr_connectivity_shutdown");
   } else {  // sd not in SHUTDOWN
     if (sd->curr_connectivity_state == GRPC_CHANNEL_READY) {
       if (sd->connected_subchannel == NULL) {
@@ -626,9 +627,9 @@ static void rr_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
 }
 
 static void rr_set_reresolve_closure_locked(
-    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-    grpc_closure *request_reresolution) {
-  round_robin_lb_policy *p = (round_robin_lb_policy *)policy;
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
+    grpc_closure* request_reresolution) {
+  round_robin_lb_policy* p = (round_robin_lb_policy*)policy;
   GPR_ASSERT(!p->shutdown);
   GPR_ASSERT(policy->request_reresolution == NULL);
   policy->request_reresolution = request_reresolution;

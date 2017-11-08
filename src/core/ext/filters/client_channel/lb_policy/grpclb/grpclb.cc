@@ -1854,9 +1854,9 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx* exec_ctx,
 }
 
 static void glb_set_reresolve_closure_locked(
-    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-    grpc_closure *request_reresolution) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
+    grpc_closure* request_reresolution) {
+  glb_lb_policy* glb_policy = (glb_lb_policy*)policy;
   GPR_ASSERT(!glb_policy->shutting_down);
   GPR_ASSERT(glb_policy->base.request_reresolution == NULL);
   if (glb_policy->rr_policy != NULL) {

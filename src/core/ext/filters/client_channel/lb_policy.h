@@ -217,15 +217,15 @@ void grpc_lb_policy_update_locked(grpc_exec_ctx* exec_ctx,
 
 /** Set the re-resolution closure to \a request_reresolution. */
 void grpc_lb_policy_set_reresolve_closure_locked(
-    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-    grpc_closure *request_reresolution);
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
+    grpc_closure* request_reresolution);
 
 /** Try to request a re-resolution. It's NOT a public API; it's only for use by
     the LB policy implementations. */
-void grpc_lb_policy_try_reresolve(grpc_exec_ctx *exec_ctx,
-                                  grpc_lb_policy *policy,
-                                  grpc_tracer_flag *grpc_lb_trace,
-                                  grpc_error *error);
+void grpc_lb_policy_try_reresolve(grpc_exec_ctx* exec_ctx,
+                                  grpc_lb_policy* policy,
+                                  grpc_tracer_flag* grpc_lb_trace,
+                                  grpc_error* error);
 
 #ifdef __cplusplus
 }

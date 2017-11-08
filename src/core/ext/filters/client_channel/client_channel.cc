@@ -212,10 +212,10 @@ typedef struct client_channel_channel_data {
 } channel_data;
 
 typedef struct {
-  channel_data *chand;
+  channel_data* chand;
   /** used as an identifier, don't dereference it because the LB policy may be
    * non-existing when the callback is run */
-  grpc_lb_policy *lb_policy;
+  grpc_lb_policy* lb_policy;
   grpc_closure closure;
 } reresolution_request_args;
 
@@ -465,8 +465,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
       if (new_lb_policy == NULL) {
         gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
       } else {
-        reresolution_request_args *args =
-            (reresolution_request_args *)gpr_zalloc(sizeof(*args));
+        reresolution_request_args* args =
+            (reresolution_request_args*)gpr_zalloc(sizeof(*args));
         args->chand = chand;
         args->lb_policy = new_lb_policy;
         GRPC_CLOSURE_INIT(&args->closure, request_reresolution_locked, args,
