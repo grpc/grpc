@@ -367,6 +367,28 @@ TEST(AddressSortingTest,
                 });
 }
 
+TEST(
+    AddressSortingTest,
+    TestUsesDestinationWithHigherPrecedenceWith2000PrefixedAddressEnsurePrefixMatchHasNoEffect) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+  OverrideAddressSortingSocketFactory(
+      ipv4_supported, ipv6_supported,
+      {
+          {"[2001::1231]:443", {"[2001::1232]:0", AF_INET6}},
+          {"[2000::5001]:443", {"[2000::5002]:0", AF_INET6}},
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[2001::1231]:443", AF_INET6},
+      {"[2000::5001]:443", AF_INET6},
+  });
+  address_sorting_rfc_6724_sort(lb_addrs);
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[2000::5001]:443",
+                                    "[2001::1231]:443",
+                                });
+}
+
 TEST(AddressSortingTest,
      TestUsesDestinationWithHigherPrecedenceWithLinkAndSiteLocalAddresses) {
   bool ipv4_supported = true;
@@ -424,6 +446,27 @@ TEST(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefix) {
           // Both of these destinations have the same precedence in default
           // policy
           // table.
+          {"[3ffe:1234::]:443", {"[3ffe:1235::]:0", AF_INET6}},
+          {"[3ffe:5001::]:443", {"[3ffe:4321::]:0", AF_INET6}},
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[3ffe:5001::]:443", AF_INET6},
+      {"[3ffe:1234::]:443", AF_INET6},
+  });
+  address_sorting_rfc_6724_sort(lb_addrs);
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[3ffe:1234::]:443",
+                                    "[3ffe:5001::]:443",
+                                });
+}
+
+TEST(AddressSortingTest,
+     TestPrefersLongestMatchingSrcDstPrefixMatchesWholeAddress) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+  OverrideAddressSortingSocketFactory(
+      ipv4_supported, ipv6_supported,
+      {
           {"[3ffe::1234]:443", {"[3ffe::1235]:0", AF_INET6}},
           {"[3ffe::5001]:443", {"[3ffe::4321]:0", AF_INET6}},
       });
@@ -435,6 +478,68 @@ TEST(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefix) {
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[3ffe::1234]:443",
                                     "[3ffe::5001]:443",
+                                });
+}
+
+TEST(AddressSortingTest, TestPrefersLongestPrefixStressInnerBytePrefix) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+  OverrideAddressSortingSocketFactory(
+      ipv4_supported, ipv6_supported,
+      {
+          {"[3ffe:8000::]:443", {"[3ffe:C000::]:0", AF_INET6}},
+          {"[3ffe:2000::]:443", {"[3ffe:3000::]:0", AF_INET6}},
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[3ffe:8000::]:443", AF_INET6},
+      {"[3ffe:2000::]:443", AF_INET6},
+  });
+  address_sorting_rfc_6724_sort(lb_addrs);
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[3ffe:2000::]:443",
+                                    "[3ffe:8000::]:443",
+                                });
+}
+
+TEST(AddressSortingTest, TestPrefersLongestPrefixDiffersOnHighestBitOfByte) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+  OverrideAddressSortingSocketFactory(
+      ipv4_supported, ipv6_supported,
+      {
+          {"[3ffe:6::]:443", {"[3ffe:8::]:0", AF_INET6}},
+          {"[3ffe:c::]:443", {"[3ffe:8::]:0", AF_INET6}},
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[3ffe:6::]:443", AF_INET6},
+      {"[3ffe:c::]:443", AF_INET6},
+  });
+  address_sorting_rfc_6724_sort(lb_addrs);
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[3ffe:c::]:443",
+                                    "[3ffe:6::]:443",
+                                });
+}
+
+TEST(AddressSortingTest, TestPrefersLongestPrefixDiffersByLastBit) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+  OverrideAddressSortingSocketFactory(
+      ipv4_supported, ipv6_supported,
+      {
+          {"[3ffe:1111:1111:1111::]:443",
+           {"[3ffe:1111:1111:1111::]:0", AF_INET6}},
+          {"[3ffe:1111:1111:1110::]:443",
+           {"[3ffe:1111:1111:1111::]:0", AF_INET6}},
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[3ffe:1111:1111:1110::]:443", AF_INET6},
+      {"[3ffe:1111:1111:1111::]:443", AF_INET6},
+  });
+  address_sorting_rfc_6724_sort(lb_addrs);
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[3ffe:1111:1111:1111::]:443",
+                                    "[3ffe:1111:1111:1110::]:443",
                                 });
 }
 
