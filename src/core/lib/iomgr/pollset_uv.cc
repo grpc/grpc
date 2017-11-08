@@ -40,7 +40,7 @@ grpc_tracer_flag grpc_trace_fd_refcount =
 #endif
 
 struct grpc_pollset {
-  uv_timer_t *timer;
+  uv_timer_t* timer;
   int shutting_down;
 };
 
