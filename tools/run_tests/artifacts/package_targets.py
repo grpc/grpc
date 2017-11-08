@@ -89,24 +89,6 @@ class CSharpPackage:
   def __str__(self):
     return self.name
 
-
-class NodePackage:
-  """Builds Node NPM package and collects precompiled binaries"""
-
-  def __init__(self):
-    self.name = 'node_package'
-    self.labels = ['package', 'node', 'linux']
-
-  def pre_build_jobspecs(self):
-    return []
-
-  def build_jobspec(self):
-    return create_docker_jobspec(
-        self.name,
-        'tools/dockerfile/grpc_artifact_linux_x64',
-        'tools/run_tests/artifacts/build_package_node.sh')
-
-
 class RubyPackage:
   """Collects ruby gems created in the artifact phase"""
 
@@ -162,7 +144,6 @@ def targets():
   """Gets list of supported targets"""
   return [CSharpPackage(),
           CSharpPackage(linux=True),
-          NodePackage(),
           RubyPackage(),
           PythonPackage(),
           PHPPackage()]
