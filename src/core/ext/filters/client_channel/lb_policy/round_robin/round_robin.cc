@@ -168,8 +168,8 @@ static void rr_destroy(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   gpr_free(p);
 }
 
-static void shutdown_locked(grpc_exec_ctx* exec_ctx, round_robin_lb_policy* p,
-                            grpc_error* error) {
+static void rr_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
+  round_robin_lb_policy* p = (round_robin_lb_policy*)pol;
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "[RR %p] Shutting down", p);
   }
@@ -178,12 +178,14 @@ static void shutdown_locked(grpc_exec_ctx* exec_ctx, round_robin_lb_policy* p,
   while ((pp = p->pending_picks) != NULL) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
-    GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, pp->on_complete,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown"));
     gpr_free(pp);
   }
-  grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                              GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
-                              "rr_shutdown");
+  grpc_connectivity_state_set(
+      exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown"), "rr_shutdown");
   if (p->subchannel_list != NULL) {
     grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
                                                "sl_shutdown_rr_shutdown");
@@ -195,15 +197,8 @@ static void shutdown_locked(grpc_exec_ctx* exec_ctx, round_robin_lb_policy* p,
         "sl_shutdown_pending_rr_shutdown");
     p->latest_pending_subchannel_list = NULL;
   }
-  GRPC_ERROR_UNREF(error);
   grpc_lb_policy_try_reresolve(exec_ctx, &p->base, &grpc_lb_round_robin_trace,
                                GRPC_ERROR_CANCELLED);
-}
-
-static void rr_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
-  round_robin_lb_policy* p = (round_robin_lb_policy*)pol;
-  shutdown_locked(exec_ctx, p,
-                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
 }
 
 static void rr_cancel_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
