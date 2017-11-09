@@ -3224,10 +3224,10 @@ static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
 
 grpc_transport* grpc_create_chttp2_transport(
     grpc_exec_ctx* exec_ctx, const grpc_channel_args* channel_args,
-    grpc_endpoint* ep, int is_client) {
+    grpc_endpoint* ep, bool is_client) {
   grpc_chttp2_transport* t =
       (grpc_chttp2_transport*)gpr_zalloc(sizeof(grpc_chttp2_transport));
-  init_transport(exec_ctx, t, channel_args, ep, is_client != 0);
+  init_transport(exec_ctx, t, channel_args, ep, is_client);
   return &t->base;
 }
 

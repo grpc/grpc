@@ -53,7 +53,7 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
       &exec_ctx, grpc_fd_create(fd, "client"), args, "fd-client");
 
   grpc_transport* transport =
-      grpc_create_chttp2_transport(&exec_ctx, final_args, client, 1);
+      grpc_create_chttp2_transport(&exec_ctx, final_args, client, true);
   GPR_ASSERT(transport);
   grpc_channel* channel = grpc_channel_create(
       &exec_ctx, target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
