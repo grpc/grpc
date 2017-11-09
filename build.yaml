@@ -2215,6 +2215,16 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: gpr_manual_constructor_test
+  cpu_cost: 3
+  build: test
+  language: c
+  src:
+  - test/core/support/manual_constructor_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: gpr_mpscq_test
   cpu_cost: 30
   build: test

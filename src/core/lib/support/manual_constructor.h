@@ -27,6 +27,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <grpc/support/log.h>
+
 namespace grpc_core {
 
 // this contains templated helpers needed to implement the ManualConstructors

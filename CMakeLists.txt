@@ -430,6 +430,7 @@ add_dependencies(buildtests_c gpr_env_test)
 add_dependencies(buildtests_c gpr_histogram_test)
 add_dependencies(buildtests_c gpr_host_port_test)
 add_dependencies(buildtests_c gpr_log_test)
+add_dependencies(buildtests_c gpr_manual_constructor_test)
 add_dependencies(buildtests_c gpr_mpscq_test)
 add_dependencies(buildtests_c gpr_spinlock_test)
 add_dependencies(buildtests_c gpr_stack_lockfree_test)
@@ -6382,6 +6383,34 @@ target_include_directories(gpr_log_test
 )
 
 target_link_libraries(gpr_log_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(gpr_manual_constructor_test
+  test/core/support/manual_constructor_test.cc
+)
+
+
+target_include_directories(gpr_manual_constructor_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+)
+
+target_link_libraries(gpr_manual_constructor_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr

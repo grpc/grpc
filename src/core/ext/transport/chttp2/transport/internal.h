@@ -38,7 +38,6 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/support/abstract.h"
 #include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -238,28 +237,12 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-class AbstractBase {
- public:
-  AbstractBase() {}
-  virtual ~AbstractBase() { gpr_log(GPR_ERROR, "base dtor"); }
-  virtual void foo() { gpr_log(GPR_ERROR, "base"); }
-  GRPC_ABSTRACT_BASE_CLASS
-};
-
-class Derived : public AbstractBase {
- public:
-  Derived() {}
-  virtual ~Derived() { gpr_log(GPR_ERROR, "derived dtor"); }
-  void foo() override { gpr_log(GPR_ERROR, "derived"); }
-};
 
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   gpr_refcount refs;
   grpc_endpoint* ep;
   char* peer_string;
-
-  grpc_core::PolymorphicManualConstructor<AbstractBase, Derived> abstract;
 
   grpc_combiner* combiner;
 
