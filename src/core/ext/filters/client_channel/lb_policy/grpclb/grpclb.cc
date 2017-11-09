@@ -1766,7 +1766,7 @@ static void glb_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
       (const grpc_lb_addresses*)arg->value.pointer.p;
   // If a non-empty serverlist hasn't been received from the balancer,
   // propagate the update to fallback_backend_addresses.
-  if (glb_policy->serverlist == NULL) {
+  if (glb_policy->started_picking && glb_policy->serverlist == NULL) {
     fallback_update_locked(exec_ctx, glb_policy, addresses);
   }
   GPR_ASSERT(glb_policy->lb_channel != NULL);
