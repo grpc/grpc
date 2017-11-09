@@ -413,7 +413,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/http/httpcli.cc )
   s.files += %w( src/core/lib/http/parser.cc )
   s.files += %w( src/core/lib/iomgr/call_combiner.cc )
-  s.files += %w( src/core/lib/iomgr/closure.cc )
   s.files += %w( src/core/lib/iomgr/combiner.cc )
   s.files += %w( src/core/lib/iomgr/endpoint.cc )
   s.files += %w( src/core/lib/iomgr/endpoint_pair_posix.cc )
