@@ -29,12 +29,12 @@
 
 namespace grpc_core {
 
-#define ASSERT(x) \
-  if ((x))        \
-    ;             \
-  else            \
-    abort()
+// this contains templated helpers needed to implement the ManualConstructors
+// in this file.
+namespace manual_ctor_impl {
 
+// is_one_of returns true it a class, Needle, is present in a variadic list of
+// classes, Haystack.
 template <class Needle, class... Haystack>
 class is_one_of;
 
@@ -56,6 +56,8 @@ class is_one_of<Needle> {
   static constexpr const bool value = false;
 };
 
+// max_size_of returns sizeof(Type) for the largest type in the variadic list
+// of classes, Types.
 template <class... Types>
 class max_size_of;
 
@@ -73,6 +75,8 @@ class max_size_of<A, B...> {
                                             : max_size_of<B...>::value;
 };
 
+// max_size_of returns alignof(Type) for the largest type in the variadic list
+// of classes, Types.
 template <class... Types>
 class max_align_of;
 
@@ -89,6 +93,8 @@ class max_align_of<A, B...> {
                                             ? alignof(A)
                                             : max_align_of<B...>::value;
 };
+
+}  // namespace manual_ctor_impl
 
 template <class BaseType, class... DerivedTypes>
 class PolymorphicManualConstructor {
@@ -143,14 +149,14 @@ class PolymorphicManualConstructor {
  private:
   template <class DerivedType>
   void FinishInit(DerivedType* p) {
-    static_assert(is_one_of<DerivedType, DerivedTypes...>::value,
+    static_assert(manual_ctor_impl::is_one_of<DerivedType, DerivedTypes...>::value,
                   "DerivedType must be one of the predeclared DerivedTypes");
-    ASSERT(reinterpret_cast<BaseType*>(static_cast<DerivedType*>(p)) == p);
+    GPR_ASSERT(reinterpret_cast<BaseType*>(static_cast<DerivedType*>(p)) == p);
   }
 
   typename std::aligned_storage<
-      grpc_core::max_size_of<DerivedTypes...>::value,
-      grpc_core::max_align_of<DerivedTypes...>::value>::type space_;
+      grpc_core::manual_ctor_impl::max_size_of<DerivedTypes...>::value,
+      grpc_core::manual_ctor_impl::max_align_of<DerivedTypes...>::value>::type space_;
 };
 
 template <typename Type>
