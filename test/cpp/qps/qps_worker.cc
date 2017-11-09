@@ -225,11 +225,14 @@ class WorkerServiceImpl final : public WorkerService::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "Bad server creation args");
     }
-    if (server_port_ != 0) {
+    if (server_port_ > 0) {
       args.mutable_setup()->set_port(server_port_);
     }
     gpr_log(GPR_INFO, "RunServerBody: about to create server");
     auto server = CreateServer(args.setup());
+    if (g_inproc_servers != nullptr) {
+      g_inproc_servers->push_back(server.get());
+    }
     if (!server) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create server");
     }
@@ -269,16 +272,16 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   impl_.reset(new WorkerServiceImpl(server_port, this));
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
-  char* server_address = NULL;
-  gpr_join_host_port(&server_address, "::", driver_port);
-
   ServerBuilder builder;
-  builder.AddListeningPort(
-      server_address,
-      GetCredentialsProvider()->GetServerCredentials(credential_type));
+  if (driver_port >= 0) {
+    char* server_address = nullptr;
+    gpr_join_host_port(&server_address, "::", driver_port);
+    builder.AddListeningPort(
+        server_address,
+        GetCredentialsProvider()->GetServerCredentials(credential_type));
+    gpr_free(server_address);
+  }
   builder.RegisterService(impl_.get());
-
-  gpr_free(server_address);
 
   server_ = builder.BuildAndStart();
 }

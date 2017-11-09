@@ -33,8 +33,8 @@ extern "C" {
 
 /* Encode/decode timeouts to the GRPC over HTTP/2 format;
    encoding may round up arbitrarily */
-void grpc_http2_encode_timeout(grpc_millis timeout, char *buffer);
-int grpc_http2_decode_timeout(grpc_slice text, grpc_millis *timeout);
+void grpc_http2_encode_timeout(grpc_millis timeout, char* buffer);
+int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout);
 
 #ifdef __cplusplus
 }

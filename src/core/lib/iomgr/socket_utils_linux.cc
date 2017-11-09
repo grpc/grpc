@@ -28,15 +28,15 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-int grpc_accept4(int sockfd, grpc_resolved_address *resolved_addr, int nonblock,
+int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
                  int cloexec) {
   int flags = 0;
   GPR_ASSERT(sizeof(socklen_t) <= sizeof(size_t));
   GPR_ASSERT(resolved_addr->len <= (socklen_t)-1);
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
-  return accept4(sockfd, (struct sockaddr *)resolved_addr->addr,
-                 (socklen_t *)&resolved_addr->len, flags);
+  return accept4(sockfd, (struct sockaddr*)resolved_addr->addr,
+                 (socklen_t*)&resolved_addr->len, flags);
 }
 
 #endif

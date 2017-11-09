@@ -42,31 +42,31 @@
 #include "src/core/lib/surface/server.h"
 
 typedef struct {
-  grpc_server *server;
-  grpc_tcp_server *tcp_server;
-  grpc_channel_args *args;
+  grpc_server* server;
+  grpc_tcp_server* tcp_server;
+  grpc_channel_args* args;
   gpr_mu mu;
   bool shutdown;
   grpc_closure tcp_server_shutdown_complete;
-  grpc_closure *server_destroy_listener_done;
-  grpc_handshake_manager *pending_handshake_mgrs;
+  grpc_closure* server_destroy_listener_done;
+  grpc_handshake_manager* pending_handshake_mgrs;
 } server_state;
 
 typedef struct {
-  server_state *svr_state;
-  grpc_pollset *accepting_pollset;
-  grpc_tcp_server_acceptor *acceptor;
-  grpc_handshake_manager *handshake_mgr;
+  server_state* svr_state;
+  grpc_pollset* accepting_pollset;
+  grpc_tcp_server_acceptor* acceptor;
+  grpc_handshake_manager* handshake_mgr;
 } server_connection_state;
 
-static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
-                              grpc_error *error) {
-  grpc_handshaker_args *args = (grpc_handshaker_args *)arg;
-  server_connection_state *connection_state =
-      (server_connection_state *)args->user_data;
+static void on_handshake_done(grpc_exec_ctx* exec_ctx, void* arg,
+                              grpc_error* error) {
+  grpc_handshaker_args* args = (grpc_handshaker_args*)arg;
+  server_connection_state* connection_state =
+      (server_connection_state*)args->user_data;
   gpr_mu_lock(&connection_state->svr_state->mu);
   if (error != GRPC_ERROR_NONE || connection_state->svr_state->shutdown) {
-    const char *error_str = grpc_error_string(error);
+    const char* error_str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
 
     if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
@@ -87,7 +87,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     // handshaker may have handed off the connection to some external
     // code, so we can just clean up here without creating a transport.
     if (args->endpoint != NULL) {
-      grpc_transport *transport =
+      grpc_transport* transport =
           grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
       grpc_server_setup_transport(
           exec_ctx, connection_state->svr_state->server, transport,
@@ -107,10 +107,10 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(connection_state);
 }
 
-static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
-                      grpc_pollset *accepting_pollset,
-                      grpc_tcp_server_acceptor *acceptor) {
-  server_state *state = (server_state *)arg;
+static void on_accept(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
+                      grpc_pollset* accepting_pollset,
+                      grpc_tcp_server_acceptor* acceptor) {
+  server_state* state = (server_state*)arg;
   gpr_mu_lock(&state->mu);
   if (state->shutdown) {
     gpr_mu_unlock(&state->mu);
@@ -119,13 +119,13 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
     gpr_free(acceptor);
     return;
   }
-  grpc_handshake_manager *handshake_mgr = grpc_handshake_manager_create();
+  grpc_handshake_manager* handshake_mgr = grpc_handshake_manager_create();
   grpc_handshake_manager_pending_list_add(&state->pending_handshake_mgrs,
                                           handshake_mgr);
   gpr_mu_unlock(&state->mu);
   grpc_tcp_server_ref(state->tcp_server);
-  server_connection_state *connection_state =
-      (server_connection_state *)gpr_malloc(sizeof(*connection_state));
+  server_connection_state* connection_state =
+      (server_connection_state*)gpr_malloc(sizeof(*connection_state));
   connection_state->svr_state = state;
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
@@ -142,10 +142,10 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
 }
 
 /* Server callback: start listening on our ports */
-static void server_start_listener(grpc_exec_ctx *exec_ctx, grpc_server *server,
-                                  void *arg, grpc_pollset **pollsets,
+static void server_start_listener(grpc_exec_ctx* exec_ctx, grpc_server* server,
+                                  void* arg, grpc_pollset** pollsets,
                                   size_t pollset_count) {
-  server_state *state = (server_state *)arg;
+  server_state* state = (server_state*)arg;
   gpr_mu_lock(&state->mu);
   state->shutdown = false;
   gpr_mu_unlock(&state->mu);
@@ -153,12 +153,12 @@ static void server_start_listener(grpc_exec_ctx *exec_ctx, grpc_server *server,
                         on_accept, state);
 }
 
-static void tcp_server_shutdown_complete(grpc_exec_ctx *exec_ctx, void *arg,
-                                         grpc_error *error) {
-  server_state *state = (server_state *)arg;
+static void tcp_server_shutdown_complete(grpc_exec_ctx* exec_ctx, void* arg,
+                                         grpc_error* error) {
+  server_state* state = (server_state*)arg;
   /* ensure all threads have unlocked */
   gpr_mu_lock(&state->mu);
-  grpc_closure *destroy_done = state->server_destroy_listener_done;
+  grpc_closure* destroy_done = state->server_destroy_listener_done;
   GPR_ASSERT(state->shutdown);
   grpc_handshake_manager_pending_list_shutdown_all(
       exec_ctx, state->pending_handshake_mgrs, GRPC_ERROR_REF(error));
@@ -177,31 +177,31 @@ static void tcp_server_shutdown_complete(grpc_exec_ctx *exec_ctx, void *arg,
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void server_destroy_listener(grpc_exec_ctx *exec_ctx,
-                                    grpc_server *server, void *arg,
-                                    grpc_closure *destroy_done) {
-  server_state *state = (server_state *)arg;
+static void server_destroy_listener(grpc_exec_ctx* exec_ctx,
+                                    grpc_server* server, void* arg,
+                                    grpc_closure* destroy_done) {
+  server_state* state = (server_state*)arg;
   gpr_mu_lock(&state->mu);
   state->shutdown = true;
   state->server_destroy_listener_done = destroy_done;
-  grpc_tcp_server *tcp_server = state->tcp_server;
+  grpc_tcp_server* tcp_server = state->tcp_server;
   gpr_mu_unlock(&state->mu);
   grpc_tcp_server_shutdown_listeners(exec_ctx, tcp_server);
   grpc_tcp_server_unref(exec_ctx, tcp_server);
 }
 
-grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
-                                        grpc_server *server, const char *addr,
-                                        grpc_channel_args *args,
-                                        int *port_num) {
-  grpc_resolved_addresses *resolved = NULL;
-  grpc_tcp_server *tcp_server = NULL;
+grpc_error* grpc_chttp2_server_add_port(grpc_exec_ctx* exec_ctx,
+                                        grpc_server* server, const char* addr,
+                                        grpc_channel_args* args,
+                                        int* port_num) {
+  grpc_resolved_addresses* resolved = NULL;
+  grpc_tcp_server* tcp_server = NULL;
   size_t i;
   size_t count = 0;
   int port_temp;
-  grpc_error *err = GRPC_ERROR_NONE;
-  server_state *state = NULL;
-  grpc_error **errors = NULL;
+  grpc_error* err = GRPC_ERROR_NONE;
+  server_state* state = NULL;
+  grpc_error** errors = NULL;
   size_t naddrs = 0;
 
   *port_num = -1;
@@ -211,7 +211,7 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
-  state = (server_state *)gpr_zalloc(sizeof(*state));
+  state = (server_state*)gpr_zalloc(sizeof(*state));
   GRPC_CLOSURE_INIT(&state->tcp_server_shutdown_complete,
                     tcp_server_shutdown_complete, state,
                     grpc_schedule_on_exec_ctx);
@@ -228,7 +228,7 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
   gpr_mu_init(&state->mu);
 
   naddrs = resolved->naddrs;
-  errors = (grpc_error **)gpr_malloc(sizeof(*errors) * naddrs);
+  errors = (grpc_error**)gpr_malloc(sizeof(*errors) * naddrs);
   for (i = 0; i < naddrs; i++) {
     errors[i] =
         grpc_tcp_server_add_port(tcp_server, &resolved->addrs[i], &port_temp);
@@ -242,21 +242,22 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
     }
   }
   if (count == 0) {
-    char *msg;
+    char* msg;
     gpr_asprintf(&msg, "No address added out of total %" PRIuPTR " resolved",
                  naddrs);
     err = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, errors, naddrs);
     gpr_free(msg);
     goto error;
   } else if (count != naddrs) {
-    char *msg;
-    gpr_asprintf(&msg, "Only %" PRIuPTR
-                       " addresses added out of total %" PRIuPTR " resolved",
+    char* msg;
+    gpr_asprintf(&msg,
+                 "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
+                 " resolved",
                  count, naddrs);
     err = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(msg, errors, naddrs);
     gpr_free(msg);
 
-    const char *warning_message = grpc_error_string(err);
+    const char* warning_message = grpc_error_string(err);
     gpr_log(GPR_INFO, "WARNING: %s", warning_message);
 
     /* we managed to bind some addresses: continue */

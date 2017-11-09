@@ -47,11 +47,11 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == GRPC_ERROR_NONE);
 }
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
-                                                   grpc_channel_args *args) {
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
+                                                   grpc_channel_args* args) {
   int sv[2];
   grpc_endpoint_pair p;
-  char *final_name;
+  char* final_name;
   create_sockets(sv);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

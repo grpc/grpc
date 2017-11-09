@@ -384,10 +384,6 @@ add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
 add_dependencies(buildtests_c byte_stream_test)
-add_dependencies(buildtests_c census_context_test)
-add_dependencies(buildtests_c census_intrusive_hash_map_test)
-add_dependencies(buildtests_c census_resource_test)
-add_dependencies(buildtests_c census_trace_context_test)
 add_dependencies(buildtests_c channel_create_test)
 add_dependencies(buildtests_c chttp2_hpack_encoder_test)
 add_dependencies(buildtests_c chttp2_stream_map_test)
@@ -459,6 +455,7 @@ add_dependencies(buildtests_c grpc_json_token_test)
 endif()
 add_dependencies(buildtests_c grpc_jwt_verifier_test)
 add_dependencies(buildtests_c grpc_security_connector_test)
+add_dependencies(buildtests_c grpc_ssl_credentials_test)
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_client)
 endif()
@@ -491,7 +488,6 @@ add_dependencies(buildtests_c memory_profile_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
 add_dependencies(buildtests_c minimal_stack_is_minimal_test)
-add_dependencies(buildtests_c mlog_test)
 add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
 add_dependencies(buildtests_c no_server_test)
@@ -543,7 +539,6 @@ add_dependencies(buildtests_c timer_heap_test)
 add_dependencies(buildtests_c timer_list_test)
 add_dependencies(buildtests_c transport_connectivity_state_test)
 add_dependencies(buildtests_c transport_metadata_test)
-add_dependencies(buildtests_c transport_pid_controller_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c transport_security_test)
 endif()
@@ -560,7 +555,6 @@ add_dependencies(buildtests_c connection_prefix_bad_client_test)
 add_dependencies(buildtests_c head_of_line_blocking_bad_client_test)
 add_dependencies(buildtests_c headers_bad_client_test)
 add_dependencies(buildtests_c initial_settings_frame_bad_client_test)
-add_dependencies(buildtests_c large_metadata_bad_client_test)
 add_dependencies(buildtests_c server_registered_method_bad_client_test)
 add_dependencies(buildtests_c simple_request_bad_client_test)
 add_dependencies(buildtests_c unknown_frame_bad_client_test)
@@ -710,6 +704,9 @@ add_dependencies(buildtests_cxx http2_client)
 endif()
 add_dependencies(buildtests_cxx hybrid_end2end_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx inproc_sync_unary_ping_pong_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx interop_client)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -758,6 +755,8 @@ endif()
 add_dependencies(buildtests_cxx stress_test)
 add_dependencies(buildtests_cxx thread_manager_test)
 add_dependencies(buildtests_cxx thread_stress_test)
+add_dependencies(buildtests_cxx transport_pid_controller_test)
+add_dependencies(buildtests_cxx vector_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
 endif()
@@ -851,6 +850,7 @@ target_include_directories(gpr
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr
@@ -917,7 +917,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_library(gpr_test_util
-  test/core/util/test_config.c
+  test/core/util/test_config.cc
 )
 
 if(WIN32 AND MSVC)
@@ -943,6 +943,7 @@ target_include_directories(gpr_test_util
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_test_util
@@ -1148,6 +1149,7 @@ add_library(grpc
   src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -1187,6 +1189,7 @@ add_library(grpc
   third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
+  src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1196,21 +1199,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
   src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
-  src/core/ext/census/base_resources.cc
-  src/core/ext/census/context.cc
-  src/core/ext/census/gen/census.pb.c
-  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.cc
-  src/core/ext/census/grpc_filter.cc
-  src/core/ext/census/grpc_plugin.cc
-  src/core/ext/census/initialize.cc
-  src/core/ext/census/intrusive_hash_map.cc
-  src/core/ext/census/mlog.cc
-  src/core/ext/census/operation.cc
-  src/core/ext/census/placeholders.cc
-  src/core/ext/census/resource.cc
-  src/core/ext/census/trace_context.cc
-  src/core/ext/census/tracing.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
@@ -1241,6 +1230,7 @@ target_include_directories(grpc
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc
@@ -1471,6 +1461,7 @@ add_library(grpc_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -1551,6 +1542,7 @@ target_include_directories(grpc_cronet
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_cronet
@@ -1607,26 +1599,26 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
-  test/core/end2end/data/client_certs.c
-  test/core/end2end/data/server1_cert.c
-  test/core/end2end/data/server1_key.c
-  test/core/end2end/data/test_root_cert.c
-  test/core/security/oauth2_utils.c
+  test/core/end2end/data/client_certs.cc
+  test/core/end2end/data/server1_cert.cc
+  test/core/end2end/data/server1_key.cc
+  test/core/end2end/data/test_root_cert.cc
+  test/core/security/oauth2_utils.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
-  test/core/end2end/cq_verifier.c
-  test/core/end2end/fixtures/http_proxy_fixture.c
-  test/core/end2end/fixtures/proxy.c
-  test/core/iomgr/endpoint_tests.c
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/fixtures/http_proxy_fixture.cc
+  test/core/end2end/fixtures/proxy.cc
+  test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
-  test/core/util/grpc_profiler.c
-  test/core/util/memory_counters.c
-  test/core/util/mock_endpoint.c
-  test/core/util/parse_hexstring.c
-  test/core/util/passthru_endpoint.c
-  test/core/util/port.c
-  test/core/util/port_server_client.c
-  test/core/util/slice_splitter.c
-  test/core/util/trickle_endpoint.c
+  test/core/util/grpc_profiler.cc
+  test/core/util/memory_counters.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/port.cc
+  test/core/util/port_server_client.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1760,6 +1752,7 @@ add_library(grpc_test_util
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -1833,6 +1826,7 @@ target_include_directories(grpc_test_util
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_test_util
@@ -1877,20 +1871,20 @@ if (gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
-  test/core/end2end/cq_verifier.c
-  test/core/end2end/fixtures/http_proxy_fixture.c
-  test/core/end2end/fixtures/proxy.c
-  test/core/iomgr/endpoint_tests.c
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/fixtures/http_proxy_fixture.cc
+  test/core/end2end/fixtures/proxy.cc
+  test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
-  test/core/util/grpc_profiler.c
-  test/core/util/memory_counters.c
-  test/core/util/mock_endpoint.c
-  test/core/util/parse_hexstring.c
-  test/core/util/passthru_endpoint.c
-  test/core/util/port.c
-  test/core/util/port_server_client.c
-  test/core/util/slice_splitter.c
-  test/core/util/trickle_endpoint.c
+  test/core/util/grpc_profiler.cc
+  test/core/util/memory_counters.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/port.cc
+  test/core/util/port_server_client.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -2024,6 +2018,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -2097,6 +2092,7 @@ target_include_directories(grpc_test_util_unsecure
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_test_util_unsecure
@@ -2307,6 +2303,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -2349,22 +2346,9 @@ add_library(grpc_unsecure
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
+  src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  src/core/ext/census/base_resources.cc
-  src/core/ext/census/context.cc
-  src/core/ext/census/gen/census.pb.c
-  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.cc
-  src/core/ext/census/grpc_filter.cc
-  src/core/ext/census/grpc_plugin.cc
-  src/core/ext/census/initialize.cc
-  src/core/ext/census/intrusive_hash_map.cc
-  src/core/ext/census/mlog.cc
-  src/core/ext/census/operation.cc
-  src/core/ext/census/placeholders.cc
-  src/core/ext/census/resource.cc
-  src/core/ext/census/trace_context.cc
-  src/core/ext/census/tracing.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
@@ -2395,6 +2379,7 @@ target_include_directories(grpc_unsecure
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_unsecure
@@ -2459,7 +2444,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_library(reconnect_server
-  test/core/util/reconnect_server.c
+  test/core/util/reconnect_server.cc
 )
 
 if(WIN32 AND MSVC)
@@ -2485,6 +2470,7 @@ target_include_directories(reconnect_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(reconnect_server
@@ -2501,7 +2487,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(test_tcp_server
-  test/core/util/test_tcp_server.c
+  test/core/util/test_tcp_server.cc
 )
 
 if(WIN32 AND MSVC)
@@ -2527,6 +2513,7 @@ target_include_directories(test_tcp_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(test_tcp_server
@@ -2608,6 +2595,7 @@ target_include_directories(grpc++
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -2810,6 +2798,7 @@ target_include_directories(grpc++_core_stats
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3037,6 +3026,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -3061,21 +3051,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/census/base_resources.cc
-  src/core/ext/census/context.cc
-  src/core/ext/census/gen/census.pb.c
-  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.cc
-  src/core/ext/census/grpc_filter.cc
-  src/core/ext/census/grpc_plugin.cc
-  src/core/ext/census/initialize.cc
-  src/core/ext/census/intrusive_hash_map.cc
-  src/core/ext/census/mlog.cc
-  src/core/ext/census/operation.cc
-  src/core/ext/census/placeholders.cc
-  src/core/ext/census/resource.cc
-  src/core/ext/census/trace_context.cc
-  src/core/ext/census/tracing.cc
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -3104,6 +3080,7 @@ target_include_directories(grpc++_cronet
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3305,6 +3282,7 @@ target_include_directories(grpc++_error_details
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3370,6 +3348,7 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3431,6 +3410,7 @@ target_include_directories(grpc++_reflection
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3489,6 +3469,7 @@ target_include_directories(grpc++_test_config
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3567,6 +3548,7 @@ target_include_directories(grpc++_test_util
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3707,6 +3689,7 @@ target_include_directories(grpc++_test_util_unsecure
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3849,6 +3832,7 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4041,6 +4025,7 @@ target_include_directories(grpc_benchmark
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4100,6 +4085,7 @@ target_include_directories(grpc_cli_libs
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4160,6 +4146,7 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4238,6 +4225,7 @@ target_include_directories(http2_client_main
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4293,6 +4281,7 @@ target_include_directories(interop_client_helper
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4363,6 +4352,7 @@ target_include_directories(interop_client_main
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4414,6 +4404,7 @@ target_include_directories(interop_server_helper
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4483,6 +4474,7 @@ target_include_directories(interop_server_lib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4534,6 +4526,7 @@ target_include_directories(interop_server_main
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4622,6 +4615,7 @@ target_include_directories(qps
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4669,6 +4663,7 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_csharp_ext
@@ -4764,6 +4759,7 @@ target_include_directories(ares
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(ares
@@ -4776,7 +4772,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
-  test/core/bad_client/bad_client.c
+  test/core/bad_client/bad_client.cc
 )
 
 if(WIN32 AND MSVC)
@@ -4802,6 +4798,7 @@ target_include_directories(bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(bad_client_test
@@ -4817,7 +4814,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_ssl_test_server
-  test/core/bad_ssl/server_common.c
+  test/core/bad_ssl/server_common.cc
 )
 
 if(WIN32 AND MSVC)
@@ -4843,6 +4840,7 @@ target_include_directories(bad_ssl_test_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(bad_ssl_test_server
@@ -4858,67 +4856,67 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(end2end_tests
-  test/core/end2end/end2end_tests.c
-  test/core/end2end/end2end_test_utils.c
-  test/core/end2end/tests/authority_not_supported.c
-  test/core/end2end/tests/bad_hostname.c
-  test/core/end2end/tests/bad_ping.c
-  test/core/end2end/tests/binary_metadata.c
-  test/core/end2end/tests/call_creds.c
-  test/core/end2end/tests/cancel_after_accept.c
-  test/core/end2end/tests/cancel_after_client_done.c
-  test/core/end2end/tests/cancel_after_invoke.c
-  test/core/end2end/tests/cancel_after_round_trip.c
-  test/core/end2end/tests/cancel_before_invoke.c
-  test/core/end2end/tests/cancel_in_a_vacuum.c
-  test/core/end2end/tests/cancel_with_status.c
-  test/core/end2end/tests/compressed_payload.c
-  test/core/end2end/tests/connectivity.c
-  test/core/end2end/tests/default_host.c
-  test/core/end2end/tests/disappearing_server.c
-  test/core/end2end/tests/empty_batch.c
-  test/core/end2end/tests/filter_call_init_fails.c
-  test/core/end2end/tests/filter_causes_close.c
-  test/core/end2end/tests/filter_latency.c
-  test/core/end2end/tests/graceful_server_shutdown.c
-  test/core/end2end/tests/high_initial_seqno.c
-  test/core/end2end/tests/hpack_size.c
-  test/core/end2end/tests/idempotent_request.c
-  test/core/end2end/tests/invoke_large_request.c
-  test/core/end2end/tests/keepalive_timeout.c
-  test/core/end2end/tests/large_metadata.c
-  test/core/end2end/tests/load_reporting_hook.c
-  test/core/end2end/tests/max_concurrent_streams.c
-  test/core/end2end/tests/max_connection_age.c
-  test/core/end2end/tests/max_connection_idle.c
-  test/core/end2end/tests/max_message_length.c
-  test/core/end2end/tests/negative_deadline.c
-  test/core/end2end/tests/network_status_change.c
-  test/core/end2end/tests/no_logging.c
-  test/core/end2end/tests/no_op.c
-  test/core/end2end/tests/payload.c
-  test/core/end2end/tests/ping.c
-  test/core/end2end/tests/ping_pong_streaming.c
-  test/core/end2end/tests/proxy_auth.c
-  test/core/end2end/tests/registered_call.c
-  test/core/end2end/tests/request_with_flags.c
-  test/core/end2end/tests/request_with_payload.c
-  test/core/end2end/tests/resource_quota_server.c
-  test/core/end2end/tests/server_finishes_request.c
-  test/core/end2end/tests/shutdown_finishes_calls.c
-  test/core/end2end/tests/shutdown_finishes_tags.c
-  test/core/end2end/tests/simple_cacheable_request.c
-  test/core/end2end/tests/simple_delayed_request.c
-  test/core/end2end/tests/simple_metadata.c
-  test/core/end2end/tests/simple_request.c
-  test/core/end2end/tests/stream_compression_compressed_payload.c
-  test/core/end2end/tests/stream_compression_payload.c
-  test/core/end2end/tests/stream_compression_ping_pong_streaming.c
-  test/core/end2end/tests/streaming_error_response.c
-  test/core/end2end/tests/trailing_metadata.c
-  test/core/end2end/tests/workaround_cronet_compression.c
-  test/core/end2end/tests/write_buffering.c
-  test/core/end2end/tests/write_buffering_at_end.c
+  test/core/end2end/end2end_tests.cc
+  test/core/end2end/end2end_test_utils.cc
+  test/core/end2end/tests/authority_not_supported.cc
+  test/core/end2end/tests/bad_hostname.cc
+  test/core/end2end/tests/bad_ping.cc
+  test/core/end2end/tests/binary_metadata.cc
+  test/core/end2end/tests/call_creds.cc
+  test/core/end2end/tests/cancel_after_accept.cc
+  test/core/end2end/tests/cancel_after_client_done.cc
+  test/core/end2end/tests/cancel_after_invoke.cc
+  test/core/end2end/tests/cancel_after_round_trip.cc
+  test/core/end2end/tests/cancel_before_invoke.cc
+  test/core/end2end/tests/cancel_in_a_vacuum.cc
+  test/core/end2end/tests/cancel_with_status.cc
+  test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connectivity.cc
+  test/core/end2end/tests/default_host.cc
+  test/core/end2end/tests/disappearing_server.cc
+  test/core/end2end/tests/empty_batch.cc
+  test/core/end2end/tests/filter_call_init_fails.cc
+  test/core/end2end/tests/filter_causes_close.cc
+  test/core/end2end/tests/filter_latency.cc
+  test/core/end2end/tests/graceful_server_shutdown.cc
+  test/core/end2end/tests/high_initial_seqno.cc
+  test/core/end2end/tests/hpack_size.cc
+  test/core/end2end/tests/idempotent_request.cc
+  test/core/end2end/tests/invoke_large_request.cc
+  test/core/end2end/tests/keepalive_timeout.cc
+  test/core/end2end/tests/large_metadata.cc
+  test/core/end2end/tests/load_reporting_hook.cc
+  test/core/end2end/tests/max_concurrent_streams.cc
+  test/core/end2end/tests/max_connection_age.cc
+  test/core/end2end/tests/max_connection_idle.cc
+  test/core/end2end/tests/max_message_length.cc
+  test/core/end2end/tests/negative_deadline.cc
+  test/core/end2end/tests/network_status_change.cc
+  test/core/end2end/tests/no_logging.cc
+  test/core/end2end/tests/no_op.cc
+  test/core/end2end/tests/payload.cc
+  test/core/end2end/tests/ping.cc
+  test/core/end2end/tests/ping_pong_streaming.cc
+  test/core/end2end/tests/proxy_auth.cc
+  test/core/end2end/tests/registered_call.cc
+  test/core/end2end/tests/request_with_flags.cc
+  test/core/end2end/tests/request_with_payload.cc
+  test/core/end2end/tests/resource_quota_server.cc
+  test/core/end2end/tests/server_finishes_request.cc
+  test/core/end2end/tests/shutdown_finishes_calls.cc
+  test/core/end2end/tests/shutdown_finishes_tags.cc
+  test/core/end2end/tests/simple_cacheable_request.cc
+  test/core/end2end/tests/simple_delayed_request.cc
+  test/core/end2end/tests/simple_metadata.cc
+  test/core/end2end/tests/simple_request.cc
+  test/core/end2end/tests/stream_compression_compressed_payload.cc
+  test/core/end2end/tests/stream_compression_payload.cc
+  test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
+  test/core/end2end/tests/streaming_error_response.cc
+  test/core/end2end/tests/trailing_metadata.cc
+  test/core/end2end/tests/workaround_cronet_compression.cc
+  test/core/end2end/tests/write_buffering.cc
+  test/core/end2end/tests/write_buffering_at_end.cc
 )
 
 if(WIN32 AND MSVC)
@@ -4944,6 +4942,7 @@ target_include_directories(end2end_tests
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(end2end_tests
@@ -4960,66 +4959,66 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(end2end_nosec_tests
-  test/core/end2end/end2end_nosec_tests.c
-  test/core/end2end/end2end_test_utils.c
-  test/core/end2end/tests/authority_not_supported.c
-  test/core/end2end/tests/bad_hostname.c
-  test/core/end2end/tests/bad_ping.c
-  test/core/end2end/tests/binary_metadata.c
-  test/core/end2end/tests/cancel_after_accept.c
-  test/core/end2end/tests/cancel_after_client_done.c
-  test/core/end2end/tests/cancel_after_invoke.c
-  test/core/end2end/tests/cancel_after_round_trip.c
-  test/core/end2end/tests/cancel_before_invoke.c
-  test/core/end2end/tests/cancel_in_a_vacuum.c
-  test/core/end2end/tests/cancel_with_status.c
-  test/core/end2end/tests/compressed_payload.c
-  test/core/end2end/tests/connectivity.c
-  test/core/end2end/tests/default_host.c
-  test/core/end2end/tests/disappearing_server.c
-  test/core/end2end/tests/empty_batch.c
-  test/core/end2end/tests/filter_call_init_fails.c
-  test/core/end2end/tests/filter_causes_close.c
-  test/core/end2end/tests/filter_latency.c
-  test/core/end2end/tests/graceful_server_shutdown.c
-  test/core/end2end/tests/high_initial_seqno.c
-  test/core/end2end/tests/hpack_size.c
-  test/core/end2end/tests/idempotent_request.c
-  test/core/end2end/tests/invoke_large_request.c
-  test/core/end2end/tests/keepalive_timeout.c
-  test/core/end2end/tests/large_metadata.c
-  test/core/end2end/tests/load_reporting_hook.c
-  test/core/end2end/tests/max_concurrent_streams.c
-  test/core/end2end/tests/max_connection_age.c
-  test/core/end2end/tests/max_connection_idle.c
-  test/core/end2end/tests/max_message_length.c
-  test/core/end2end/tests/negative_deadline.c
-  test/core/end2end/tests/network_status_change.c
-  test/core/end2end/tests/no_logging.c
-  test/core/end2end/tests/no_op.c
-  test/core/end2end/tests/payload.c
-  test/core/end2end/tests/ping.c
-  test/core/end2end/tests/ping_pong_streaming.c
-  test/core/end2end/tests/proxy_auth.c
-  test/core/end2end/tests/registered_call.c
-  test/core/end2end/tests/request_with_flags.c
-  test/core/end2end/tests/request_with_payload.c
-  test/core/end2end/tests/resource_quota_server.c
-  test/core/end2end/tests/server_finishes_request.c
-  test/core/end2end/tests/shutdown_finishes_calls.c
-  test/core/end2end/tests/shutdown_finishes_tags.c
-  test/core/end2end/tests/simple_cacheable_request.c
-  test/core/end2end/tests/simple_delayed_request.c
-  test/core/end2end/tests/simple_metadata.c
-  test/core/end2end/tests/simple_request.c
-  test/core/end2end/tests/stream_compression_compressed_payload.c
-  test/core/end2end/tests/stream_compression_payload.c
-  test/core/end2end/tests/stream_compression_ping_pong_streaming.c
-  test/core/end2end/tests/streaming_error_response.c
-  test/core/end2end/tests/trailing_metadata.c
-  test/core/end2end/tests/workaround_cronet_compression.c
-  test/core/end2end/tests/write_buffering.c
-  test/core/end2end/tests/write_buffering_at_end.c
+  test/core/end2end/end2end_nosec_tests.cc
+  test/core/end2end/end2end_test_utils.cc
+  test/core/end2end/tests/authority_not_supported.cc
+  test/core/end2end/tests/bad_hostname.cc
+  test/core/end2end/tests/bad_ping.cc
+  test/core/end2end/tests/binary_metadata.cc
+  test/core/end2end/tests/cancel_after_accept.cc
+  test/core/end2end/tests/cancel_after_client_done.cc
+  test/core/end2end/tests/cancel_after_invoke.cc
+  test/core/end2end/tests/cancel_after_round_trip.cc
+  test/core/end2end/tests/cancel_before_invoke.cc
+  test/core/end2end/tests/cancel_in_a_vacuum.cc
+  test/core/end2end/tests/cancel_with_status.cc
+  test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connectivity.cc
+  test/core/end2end/tests/default_host.cc
+  test/core/end2end/tests/disappearing_server.cc
+  test/core/end2end/tests/empty_batch.cc
+  test/core/end2end/tests/filter_call_init_fails.cc
+  test/core/end2end/tests/filter_causes_close.cc
+  test/core/end2end/tests/filter_latency.cc
+  test/core/end2end/tests/graceful_server_shutdown.cc
+  test/core/end2end/tests/high_initial_seqno.cc
+  test/core/end2end/tests/hpack_size.cc
+  test/core/end2end/tests/idempotent_request.cc
+  test/core/end2end/tests/invoke_large_request.cc
+  test/core/end2end/tests/keepalive_timeout.cc
+  test/core/end2end/tests/large_metadata.cc
+  test/core/end2end/tests/load_reporting_hook.cc
+  test/core/end2end/tests/max_concurrent_streams.cc
+  test/core/end2end/tests/max_connection_age.cc
+  test/core/end2end/tests/max_connection_idle.cc
+  test/core/end2end/tests/max_message_length.cc
+  test/core/end2end/tests/negative_deadline.cc
+  test/core/end2end/tests/network_status_change.cc
+  test/core/end2end/tests/no_logging.cc
+  test/core/end2end/tests/no_op.cc
+  test/core/end2end/tests/payload.cc
+  test/core/end2end/tests/ping.cc
+  test/core/end2end/tests/ping_pong_streaming.cc
+  test/core/end2end/tests/proxy_auth.cc
+  test/core/end2end/tests/registered_call.cc
+  test/core/end2end/tests/request_with_flags.cc
+  test/core/end2end/tests/request_with_payload.cc
+  test/core/end2end/tests/resource_quota_server.cc
+  test/core/end2end/tests/server_finishes_request.cc
+  test/core/end2end/tests/shutdown_finishes_calls.cc
+  test/core/end2end/tests/shutdown_finishes_tags.cc
+  test/core/end2end/tests/simple_cacheable_request.cc
+  test/core/end2end/tests/simple_delayed_request.cc
+  test/core/end2end/tests/simple_metadata.cc
+  test/core/end2end/tests/simple_request.cc
+  test/core/end2end/tests/stream_compression_compressed_payload.cc
+  test/core/end2end/tests/stream_compression_payload.cc
+  test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
+  test/core/end2end/tests/streaming_error_response.cc
+  test/core/end2end/tests/trailing_metadata.cc
+  test/core/end2end/tests/workaround_cronet_compression.cc
+  test/core/end2end/tests/write_buffering.cc
+  test/core/end2end/tests/write_buffering_at_end.cc
 )
 
 if(WIN32 AND MSVC)
@@ -5045,6 +5044,7 @@ target_include_directories(end2end_nosec_tests
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(end2end_nosec_tests
@@ -5061,7 +5061,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(alarm_test
-  test/core/surface/alarm_test.c
+  test/core/surface/alarm_test.cc
 )
 
 
@@ -5076,6 +5076,7 @@ target_include_directories(alarm_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(alarm_test
@@ -5090,7 +5091,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(algorithm_test
-  test/core/compression/algorithm_test.c
+  test/core/compression/algorithm_test.cc
 )
 
 
@@ -5105,6 +5106,7 @@ target_include_directories(algorithm_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(algorithm_test
@@ -5119,7 +5121,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(alloc_test
-  test/core/support/alloc_test.c
+  test/core/support/alloc_test.cc
 )
 
 
@@ -5134,6 +5136,7 @@ target_include_directories(alloc_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(alloc_test
@@ -5146,7 +5149,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(alpn_test
-  test/core/transport/chttp2/alpn_test.c
+  test/core/transport/chttp2/alpn_test.cc
 )
 
 
@@ -5161,6 +5164,7 @@ target_include_directories(alpn_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(alpn_test
@@ -5175,7 +5179,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(arena_test
-  test/core/support/arena_test.c
+  test/core/support/arena_test.cc
 )
 
 
@@ -5190,6 +5194,7 @@ target_include_directories(arena_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(arena_test
@@ -5202,7 +5207,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(backoff_test
-  test/core/backoff/backoff_test.c
+  test/core/backoff/backoff_test.cc
 )
 
 
@@ -5217,6 +5222,7 @@ target_include_directories(backoff_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(backoff_test
@@ -5231,7 +5237,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(bad_server_response_test
-  test/core/end2end/bad_server_response_test.c
+  test/core/end2end/bad_server_response_test.cc
 )
 
 
@@ -5246,6 +5252,7 @@ target_include_directories(bad_server_response_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(bad_server_response_test
@@ -5261,7 +5268,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(bin_decoder_test
-  test/core/transport/chttp2/bin_decoder_test.c
+  test/core/transport/chttp2/bin_decoder_test.cc
 )
 
 
@@ -5276,6 +5283,7 @@ target_include_directories(bin_decoder_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(bin_decoder_test
@@ -5288,7 +5296,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(bin_encoder_test
-  test/core/transport/chttp2/bin_encoder_test.c
+  test/core/transport/chttp2/bin_encoder_test.cc
 )
 
 
@@ -5303,6 +5311,7 @@ target_include_directories(bin_encoder_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(bin_encoder_test
@@ -5315,7 +5324,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(byte_stream_test
-  test/core/transport/byte_stream_test.c
+  test/core/transport/byte_stream_test.cc
 )
 
 
@@ -5330,6 +5339,7 @@ target_include_directories(byte_stream_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(byte_stream_test
@@ -5343,124 +5353,8 @@ target_link_libraries(byte_stream_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(census_context_test
-  test/core/census/context_test.c
-)
-
-
-target_include_directories(census_context_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(census_context_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(census_intrusive_hash_map_test
-  test/core/census/intrusive_hash_map_test.c
-)
-
-
-target_include_directories(census_intrusive_hash_map_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(census_intrusive_hash_map_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(census_resource_test
-  test/core/census/resource_test.c
-)
-
-
-target_include_directories(census_resource_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(census_resource_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(census_trace_context_test
-  test/core/census/trace_context_test.c
-)
-
-
-target_include_directories(census_trace_context_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(census_trace_context_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(channel_create_test
-  test/core/surface/channel_create_test.c
+  test/core/surface/channel_create_test.cc
 )
 
 
@@ -5475,6 +5369,7 @@ target_include_directories(channel_create_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(channel_create_test
@@ -5503,6 +5398,7 @@ target_include_directories(check_epollexclusive
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(check_epollexclusive
@@ -5523,7 +5419,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_hpack_encoder_test
-  test/core/transport/chttp2/hpack_encoder_test.c
+  test/core/transport/chttp2/hpack_encoder_test.cc
 )
 
 
@@ -5538,6 +5434,7 @@ target_include_directories(chttp2_hpack_encoder_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(chttp2_hpack_encoder_test
@@ -5552,7 +5449,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_stream_map_test
-  test/core/transport/chttp2/stream_map_test.c
+  test/core/transport/chttp2/stream_map_test.cc
 )
 
 
@@ -5567,6 +5464,7 @@ target_include_directories(chttp2_stream_map_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(chttp2_stream_map_test
@@ -5581,7 +5479,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_varint_test
-  test/core/transport/chttp2/varint_test.c
+  test/core/transport/chttp2/varint_test.cc
 )
 
 
@@ -5596,6 +5494,7 @@ target_include_directories(chttp2_varint_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(chttp2_varint_test
@@ -5610,7 +5509,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(combiner_test
-  test/core/iomgr/combiner_test.c
+  test/core/iomgr/combiner_test.cc
 )
 
 
@@ -5625,6 +5524,7 @@ target_include_directories(combiner_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(combiner_test
@@ -5639,7 +5539,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(compression_test
-  test/core/compression/compression_test.c
+  test/core/compression/compression_test.cc
 )
 
 
@@ -5654,6 +5554,7 @@ target_include_directories(compression_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(compression_test
@@ -5668,7 +5569,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(concurrent_connectivity_test
-  test/core/surface/concurrent_connectivity_test.c
+  test/core/surface/concurrent_connectivity_test.cc
 )
 
 
@@ -5683,6 +5584,7 @@ target_include_directories(concurrent_connectivity_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(concurrent_connectivity_test
@@ -5697,7 +5599,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(connection_refused_test
-  test/core/end2end/connection_refused_test.c
+  test/core/end2end/connection_refused_test.cc
 )
 
 
@@ -5712,6 +5614,7 @@ target_include_directories(connection_refused_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(connection_refused_test
@@ -5726,7 +5629,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(dns_resolver_connectivity_test
-  test/core/client_channel/resolvers/dns_resolver_connectivity_test.c
+  test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
 )
 
 
@@ -5741,6 +5644,7 @@ target_include_directories(dns_resolver_connectivity_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(dns_resolver_connectivity_test
@@ -5755,7 +5659,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(dns_resolver_test
-  test/core/client_channel/resolvers/dns_resolver_test.c
+  test/core/client_channel/resolvers/dns_resolver_test.cc
 )
 
 
@@ -5770,6 +5674,7 @@ target_include_directories(dns_resolver_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(dns_resolver_test
@@ -5785,7 +5690,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(dualstack_socket_test
-  test/core/end2end/dualstack_socket_test.c
+  test/core/end2end/dualstack_socket_test.cc
 )
 
 
@@ -5800,6 +5705,7 @@ target_include_directories(dualstack_socket_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(dualstack_socket_test
@@ -5815,7 +5721,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(endpoint_pair_test
-  test/core/iomgr/endpoint_pair_test.c
+  test/core/iomgr/endpoint_pair_test.cc
 )
 
 
@@ -5830,6 +5736,7 @@ target_include_directories(endpoint_pair_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(endpoint_pair_test
@@ -5844,7 +5751,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(error_test
-  test/core/iomgr/error_test.c
+  test/core/iomgr/error_test.cc
 )
 
 
@@ -5859,6 +5766,7 @@ target_include_directories(error_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(error_test
@@ -5874,7 +5782,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(ev_epollsig_linux_test
-  test/core/iomgr/ev_epollsig_linux_test.c
+  test/core/iomgr/ev_epollsig_linux_test.cc
 )
 
 
@@ -5889,6 +5797,7 @@ target_include_directories(ev_epollsig_linux_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(ev_epollsig_linux_test
@@ -5904,7 +5813,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(fake_resolver_test
-  test/core/client_channel/resolvers/fake_resolver_test.c
+  test/core/client_channel/resolvers/fake_resolver_test.cc
 )
 
 
@@ -5919,6 +5828,7 @@ target_include_directories(fake_resolver_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(fake_resolver_test
@@ -5934,8 +5844,8 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fake_transport_security_test
-  test/core/tsi/fake_transport_security_test.c
-  test/core/tsi/transport_security_test_lib.c
+  test/core/tsi/fake_transport_security_test.cc
+  test/core/tsi/transport_security_test_lib.cc
 )
 
 
@@ -5950,6 +5860,7 @@ target_include_directories(fake_transport_security_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(fake_transport_security_test
@@ -5965,7 +5876,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fd_conservation_posix_test
-  test/core/iomgr/fd_conservation_posix_test.c
+  test/core/iomgr/fd_conservation_posix_test.cc
 )
 
 
@@ -5980,6 +5891,7 @@ target_include_directories(fd_conservation_posix_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(fd_conservation_posix_test
@@ -5996,7 +5908,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fd_posix_test
-  test/core/iomgr/fd_posix_test.c
+  test/core/iomgr/fd_posix_test.cc
 )
 
 
@@ -6011,6 +5923,7 @@ target_include_directories(fd_posix_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(fd_posix_test
@@ -6026,7 +5939,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(fling_client
-  test/core/fling/client.c
+  test/core/fling/client.cc
 )
 
 
@@ -6041,6 +5954,7 @@ target_include_directories(fling_client
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(fling_client
@@ -6055,7 +5969,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(fling_server
-  test/core/fling/server.c
+  test/core/fling/server.cc
 )
 
 
@@ -6070,6 +5984,7 @@ target_include_directories(fling_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(fling_server
@@ -6085,7 +6000,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fling_stream_test
-  test/core/fling/fling_stream_test.c
+  test/core/fling/fling_stream_test.cc
 )
 
 
@@ -6100,6 +6015,7 @@ target_include_directories(fling_stream_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(fling_stream_test
@@ -6116,7 +6032,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fling_test
-  test/core/fling/fling_test.c
+  test/core/fling/fling_test.cc
 )
 
 
@@ -6131,6 +6047,7 @@ target_include_directories(fling_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(fling_test
@@ -6160,6 +6077,7 @@ target_include_directories(gen_hpack_tables
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gen_hpack_tables
@@ -6194,6 +6112,7 @@ target_include_directories(gen_legal_metadata_characters
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gen_legal_metadata_characters
@@ -6226,6 +6145,7 @@ target_include_directories(gen_percent_encoding_tables
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gen_percent_encoding_tables
@@ -6245,7 +6165,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(goaway_server_test
-  test/core/end2end/goaway_server_test.c
+  test/core/end2end/goaway_server_test.cc
 )
 
 
@@ -6260,6 +6180,7 @@ target_include_directories(goaway_server_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(goaway_server_test
@@ -6275,7 +6196,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_avl_test
-  test/core/support/avl_test.c
+  test/core/support/avl_test.cc
 )
 
 
@@ -6290,6 +6211,7 @@ target_include_directories(gpr_avl_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_avl_test
@@ -6302,7 +6224,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_cmdline_test
-  test/core/support/cmdline_test.c
+  test/core/support/cmdline_test.cc
 )
 
 
@@ -6317,6 +6239,7 @@ target_include_directories(gpr_cmdline_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_cmdline_test
@@ -6329,7 +6252,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_cpu_test
-  test/core/support/cpu_test.c
+  test/core/support/cpu_test.cc
 )
 
 
@@ -6344,6 +6267,7 @@ target_include_directories(gpr_cpu_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_cpu_test
@@ -6356,7 +6280,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_env_test
-  test/core/support/env_test.c
+  test/core/support/env_test.cc
 )
 
 
@@ -6371,6 +6295,7 @@ target_include_directories(gpr_env_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_env_test
@@ -6383,7 +6308,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_histogram_test
-  test/core/support/histogram_test.c
+  test/core/support/histogram_test.cc
 )
 
 
@@ -6398,6 +6323,7 @@ target_include_directories(gpr_histogram_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_histogram_test
@@ -6410,7 +6336,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_host_port_test
-  test/core/support/host_port_test.c
+  test/core/support/host_port_test.cc
 )
 
 
@@ -6425,6 +6351,7 @@ target_include_directories(gpr_host_port_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_host_port_test
@@ -6437,7 +6364,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_log_test
-  test/core/support/log_test.c
+  test/core/support/log_test.cc
 )
 
 
@@ -6452,6 +6379,7 @@ target_include_directories(gpr_log_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_log_test
@@ -6464,7 +6392,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_mpscq_test
-  test/core/support/mpscq_test.c
+  test/core/support/mpscq_test.cc
 )
 
 
@@ -6479,6 +6407,7 @@ target_include_directories(gpr_mpscq_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_mpscq_test
@@ -6491,7 +6420,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_spinlock_test
-  test/core/support/spinlock_test.c
+  test/core/support/spinlock_test.cc
 )
 
 
@@ -6506,6 +6435,7 @@ target_include_directories(gpr_spinlock_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_spinlock_test
@@ -6518,7 +6448,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_stack_lockfree_test
-  test/core/support/stack_lockfree_test.c
+  test/core/support/stack_lockfree_test.cc
 )
 
 
@@ -6533,6 +6463,7 @@ target_include_directories(gpr_stack_lockfree_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_stack_lockfree_test
@@ -6545,7 +6476,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_string_test
-  test/core/support/string_test.c
+  test/core/support/string_test.cc
 )
 
 
@@ -6560,6 +6491,7 @@ target_include_directories(gpr_string_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_string_test
@@ -6572,7 +6504,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_sync_test
-  test/core/support/sync_test.c
+  test/core/support/sync_test.cc
 )
 
 
@@ -6587,6 +6519,7 @@ target_include_directories(gpr_sync_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_sync_test
@@ -6599,7 +6532,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_thd_test
-  test/core/support/thd_test.c
+  test/core/support/thd_test.cc
 )
 
 
@@ -6614,6 +6547,7 @@ target_include_directories(gpr_thd_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_thd_test
@@ -6626,7 +6560,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_time_test
-  test/core/support/time_test.c
+  test/core/support/time_test.cc
 )
 
 
@@ -6641,6 +6575,7 @@ target_include_directories(gpr_time_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_time_test
@@ -6653,7 +6588,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_tls_test
-  test/core/support/tls_test.c
+  test/core/support/tls_test.cc
 )
 
 
@@ -6668,6 +6603,7 @@ target_include_directories(gpr_tls_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_tls_test
@@ -6680,7 +6616,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_useful_test
-  test/core/support/useful_test.c
+  test/core/support/useful_test.cc
 )
 
 
@@ -6695,6 +6631,7 @@ target_include_directories(gpr_useful_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(gpr_useful_test
@@ -6707,7 +6644,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_auth_context_test
-  test/core/security/auth_context_test.c
+  test/core/security/auth_context_test.cc
 )
 
 
@@ -6722,6 +6659,7 @@ target_include_directories(grpc_auth_context_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_auth_context_test
@@ -6736,7 +6674,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_b64_test
-  test/core/slice/b64_test.c
+  test/core/slice/b64_test.cc
 )
 
 
@@ -6751,6 +6689,7 @@ target_include_directories(grpc_b64_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_b64_test
@@ -6765,7 +6704,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_byte_buffer_reader_test
-  test/core/surface/byte_buffer_reader_test.c
+  test/core/surface/byte_buffer_reader_test.cc
 )
 
 
@@ -6780,6 +6719,7 @@ target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_byte_buffer_reader_test
@@ -6794,7 +6734,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_channel_args_test
-  test/core/channel/channel_args_test.c
+  test/core/channel/channel_args_test.cc
 )
 
 
@@ -6809,6 +6749,7 @@ target_include_directories(grpc_channel_args_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_channel_args_test
@@ -6823,7 +6764,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_channel_stack_builder_test
-  test/core/channel/channel_stack_builder_test.c
+  test/core/channel/channel_stack_builder_test.cc
 )
 
 
@@ -6838,6 +6779,7 @@ target_include_directories(grpc_channel_stack_builder_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_channel_stack_builder_test
@@ -6852,7 +6794,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_channel_stack_test
-  test/core/channel/channel_stack_test.c
+  test/core/channel/channel_stack_test.cc
 )
 
 
@@ -6867,6 +6809,7 @@ target_include_directories(grpc_channel_stack_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_channel_stack_test
@@ -6881,7 +6824,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_completion_queue_test
-  test/core/surface/completion_queue_test.c
+  test/core/surface/completion_queue_test.cc
 )
 
 
@@ -6896,6 +6839,7 @@ target_include_directories(grpc_completion_queue_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_completion_queue_test
@@ -6910,7 +6854,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_completion_queue_threading_test
-  test/core/surface/completion_queue_threading_test.c
+  test/core/surface/completion_queue_threading_test.cc
 )
 
 
@@ -6925,6 +6869,7 @@ target_include_directories(grpc_completion_queue_threading_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_completion_queue_threading_test
@@ -6938,7 +6883,7 @@ target_link_libraries(grpc_completion_queue_threading_test
 endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_create_jwt
-  test/core/security/create_jwt.c
+  test/core/security/create_jwt.cc
 )
 
 
@@ -6953,6 +6898,7 @@ target_include_directories(grpc_create_jwt
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_create_jwt
@@ -6974,7 +6920,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_credentials_test
-  test/core/security/credentials_test.c
+  test/core/security/credentials_test.cc
 )
 
 
@@ -6989,6 +6935,7 @@ target_include_directories(grpc_credentials_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_credentials_test
@@ -7003,7 +6950,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_fetch_oauth2
-  test/core/security/fetch_oauth2.c
+  test/core/security/fetch_oauth2.cc
 )
 
 
@@ -7018,6 +6965,7 @@ target_include_directories(grpc_fetch_oauth2
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_fetch_oauth2
@@ -7032,7 +6980,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_invalid_channel_args_test
-  test/core/surface/invalid_channel_args_test.c
+  test/core/surface/invalid_channel_args_test.cc
 )
 
 
@@ -7047,6 +6995,7 @@ target_include_directories(grpc_invalid_channel_args_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_invalid_channel_args_test
@@ -7062,7 +7011,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(grpc_json_token_test
-  test/core/security/json_token_test.c
+  test/core/security/json_token_test.cc
 )
 
 
@@ -7077,6 +7026,7 @@ target_include_directories(grpc_json_token_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_json_token_test
@@ -7092,7 +7042,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_jwt_verifier_test
-  test/core/security/jwt_verifier_test.c
+  test/core/security/jwt_verifier_test.cc
 )
 
 
@@ -7107,6 +7057,7 @@ target_include_directories(grpc_jwt_verifier_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_jwt_verifier_test
@@ -7120,7 +7071,7 @@ target_link_libraries(grpc_jwt_verifier_test
 endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_print_google_default_creds_token
-  test/core/security/print_google_default_creds_token.c
+  test/core/security/print_google_default_creds_token.cc
 )
 
 
@@ -7135,6 +7086,7 @@ target_include_directories(grpc_print_google_default_creds_token
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_print_google_default_creds_token
@@ -7155,7 +7107,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_security_connector_test
-  test/core/security/security_connector_test.c
+  test/core/security/security_connector_test.cc
 )
 
 
@@ -7170,6 +7122,7 @@ target_include_directories(grpc_security_connector_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_security_connector_test
@@ -7181,9 +7134,39 @@ target_link_libraries(grpc_security_connector_test
 )
 
 endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_ssl_credentials_test
+  test/core/security/ssl_credentials_test.cc
+)
+
+
+target_include_directories(grpc_ssl_credentials_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+)
+
+target_link_libraries(grpc_ssl_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_verify_jwt
-  test/core/security/verify_jwt.c
+  test/core/security/verify_jwt.cc
 )
 
 
@@ -7198,6 +7181,7 @@ target_include_directories(grpc_verify_jwt
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(grpc_verify_jwt
@@ -7219,7 +7203,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(handshake_client
-  test/core/handshake/client_ssl.c
+  test/core/handshake/client_ssl.cc
 )
 
 
@@ -7234,6 +7218,7 @@ target_include_directories(handshake_client
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(handshake_client
@@ -7251,7 +7236,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(handshake_server
-  test/core/handshake/server_ssl.c
+  test/core/handshake/server_ssl.cc
 )
 
 
@@ -7266,6 +7251,7 @@ target_include_directories(handshake_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(handshake_server
@@ -7282,7 +7268,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_test
-  test/core/transport/chttp2/hpack_parser_test.c
+  test/core/transport/chttp2/hpack_parser_test.cc
 )
 
 
@@ -7297,6 +7283,7 @@ target_include_directories(hpack_parser_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(hpack_parser_test
@@ -7311,7 +7298,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(hpack_table_test
-  test/core/transport/chttp2/hpack_table_test.c
+  test/core/transport/chttp2/hpack_table_test.cc
 )
 
 
@@ -7326,6 +7313,7 @@ target_include_directories(hpack_table_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(hpack_table_test
@@ -7340,7 +7328,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(http_parser_test
-  test/core/http/parser_test.c
+  test/core/http/parser_test.cc
 )
 
 
@@ -7355,6 +7343,7 @@ target_include_directories(http_parser_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(http_parser_test
@@ -7369,7 +7358,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(httpcli_format_request_test
-  test/core/http/format_request_test.c
+  test/core/http/format_request_test.cc
 )
 
 
@@ -7384,6 +7373,7 @@ target_include_directories(httpcli_format_request_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(httpcli_format_request_test
@@ -7399,7 +7389,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(httpcli_test
-  test/core/http/httpcli_test.c
+  test/core/http/httpcli_test.cc
 )
 
 
@@ -7414,6 +7404,7 @@ target_include_directories(httpcli_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(httpcli_test
@@ -7430,7 +7421,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(httpscli_test
-  test/core/http/httpscli_test.c
+  test/core/http/httpscli_test.cc
 )
 
 
@@ -7445,6 +7436,7 @@ target_include_directories(httpscli_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(httpscli_test
@@ -7460,7 +7452,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(init_test
-  test/core/surface/init_test.c
+  test/core/surface/init_test.cc
 )
 
 
@@ -7475,6 +7467,7 @@ target_include_directories(init_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(init_test
@@ -7489,7 +7482,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(invalid_call_argument_test
-  test/core/end2end/invalid_call_argument_test.c
+  test/core/end2end/invalid_call_argument_test.cc
 )
 
 
@@ -7504,6 +7497,7 @@ target_include_directories(invalid_call_argument_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(invalid_call_argument_test
@@ -7518,7 +7512,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_rewrite
-  test/core/json/json_rewrite.c
+  test/core/json/json_rewrite.cc
 )
 
 
@@ -7533,6 +7527,7 @@ target_include_directories(json_rewrite
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(json_rewrite
@@ -7545,7 +7540,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_rewrite_test
-  test/core/json/json_rewrite_test.c
+  test/core/json/json_rewrite_test.cc
 )
 
 
@@ -7560,6 +7555,7 @@ target_include_directories(json_rewrite_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(json_rewrite_test
@@ -7574,7 +7570,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_stream_error_test
-  test/core/json/json_stream_error_test.c
+  test/core/json/json_stream_error_test.cc
 )
 
 
@@ -7589,6 +7585,7 @@ target_include_directories(json_stream_error_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(json_stream_error_test
@@ -7603,7 +7600,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_test
-  test/core/json/json_test.c
+  test/core/json/json_test.cc
 )
 
 
@@ -7618,6 +7615,7 @@ target_include_directories(json_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(json_test
@@ -7632,7 +7630,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(lame_client_test
-  test/core/surface/lame_client_test.c
+  test/core/surface/lame_client_test.cc
 )
 
 
@@ -7647,6 +7645,7 @@ target_include_directories(lame_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(lame_client_test
@@ -7661,7 +7660,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(lb_policies_test
-  test/core/client_channel/lb_policies_test.c
+  test/core/client_channel/lb_policies_test.cc
 )
 
 
@@ -7676,6 +7675,7 @@ target_include_directories(lb_policies_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(lb_policies_test
@@ -7690,7 +7690,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(load_file_test
-  test/core/iomgr/load_file_test.c
+  test/core/iomgr/load_file_test.cc
 )
 
 
@@ -7705,6 +7705,7 @@ target_include_directories(load_file_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(load_file_test
@@ -7719,7 +7720,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(memory_profile_client
-  test/core/memory_usage/client.c
+  test/core/memory_usage/client.cc
 )
 
 
@@ -7734,6 +7735,7 @@ target_include_directories(memory_profile_client
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(memory_profile_client
@@ -7748,7 +7750,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(memory_profile_server
-  test/core/memory_usage/server.c
+  test/core/memory_usage/server.cc
 )
 
 
@@ -7763,6 +7765,7 @@ target_include_directories(memory_profile_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(memory_profile_server
@@ -7778,7 +7781,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(memory_profile_test
-  test/core/memory_usage/memory_usage_test.c
+  test/core/memory_usage/memory_usage_test.cc
 )
 
 
@@ -7793,6 +7796,7 @@ target_include_directories(memory_profile_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(memory_profile_test
@@ -7808,7 +7812,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(message_compress_test
-  test/core/compression/message_compress_test.c
+  test/core/compression/message_compress_test.cc
 )
 
 
@@ -7823,6 +7827,7 @@ target_include_directories(message_compress_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(message_compress_test
@@ -7837,7 +7842,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(minimal_stack_is_minimal_test
-  test/core/channel/minimal_stack_is_minimal_test.c
+  test/core/channel/minimal_stack_is_minimal_test.cc
 )
 
 
@@ -7852,6 +7857,7 @@ target_include_directories(minimal_stack_is_minimal_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(minimal_stack_is_minimal_test
@@ -7865,37 +7871,8 @@ target_link_libraries(minimal_stack_is_minimal_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(mlog_test
-  test/core/census/mlog_test.c
-)
-
-
-target_include_directories(mlog_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(mlog_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(multiple_server_queues_test
-  test/core/end2end/multiple_server_queues_test.c
+  test/core/end2end/multiple_server_queues_test.cc
 )
 
 
@@ -7910,6 +7887,7 @@ target_include_directories(multiple_server_queues_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(multiple_server_queues_test
@@ -7924,7 +7902,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(murmur_hash_test
-  test/core/support/murmur_hash_test.c
+  test/core/support/murmur_hash_test.cc
 )
 
 
@@ -7939,6 +7917,7 @@ target_include_directories(murmur_hash_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(murmur_hash_test
@@ -7951,7 +7930,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(no_server_test
-  test/core/end2end/no_server_test.c
+  test/core/end2end/no_server_test.cc
 )
 
 
@@ -7966,6 +7945,7 @@ target_include_directories(no_server_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(no_server_test
@@ -7980,7 +7960,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(num_external_connectivity_watchers_test
-  test/core/surface/num_external_connectivity_watchers_test.c
+  test/core/surface/num_external_connectivity_watchers_test.cc
 )
 
 
@@ -7995,6 +7975,7 @@ target_include_directories(num_external_connectivity_watchers_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(num_external_connectivity_watchers_test
@@ -8009,7 +7990,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(parse_address_test
-  test/core/client_channel/parse_address_test.c
+  test/core/client_channel/parse_address_test.cc
 )
 
 
@@ -8024,6 +8005,7 @@ target_include_directories(parse_address_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(parse_address_test
@@ -8038,7 +8020,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(percent_encoding_test
-  test/core/slice/percent_encoding_test.c
+  test/core/slice/percent_encoding_test.cc
 )
 
 
@@ -8053,6 +8035,7 @@ target_include_directories(percent_encoding_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(percent_encoding_test
@@ -8068,7 +8051,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(pollset_set_test
-  test/core/iomgr/pollset_set_test.c
+  test/core/iomgr/pollset_set_test.cc
 )
 
 
@@ -8083,6 +8066,7 @@ target_include_directories(pollset_set_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(pollset_set_test
@@ -8099,7 +8083,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(resolve_address_posix_test
-  test/core/iomgr/resolve_address_posix_test.c
+  test/core/iomgr/resolve_address_posix_test.cc
 )
 
 
@@ -8114,6 +8098,7 @@ target_include_directories(resolve_address_posix_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(resolve_address_posix_test
@@ -8129,7 +8114,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(resolve_address_test
-  test/core/iomgr/resolve_address_test.c
+  test/core/iomgr/resolve_address_test.cc
 )
 
 
@@ -8144,6 +8129,7 @@ target_include_directories(resolve_address_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(resolve_address_test
@@ -8158,7 +8144,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(resource_quota_test
-  test/core/iomgr/resource_quota_test.c
+  test/core/iomgr/resource_quota_test.cc
 )
 
 
@@ -8173,6 +8159,7 @@ target_include_directories(resource_quota_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(resource_quota_test
@@ -8187,7 +8174,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(secure_channel_create_test
-  test/core/surface/secure_channel_create_test.c
+  test/core/surface/secure_channel_create_test.cc
 )
 
 
@@ -8202,6 +8189,7 @@ target_include_directories(secure_channel_create_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(secure_channel_create_test
@@ -8216,7 +8204,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(secure_endpoint_test
-  test/core/security/secure_endpoint_test.c
+  test/core/security/secure_endpoint_test.cc
 )
 
 
@@ -8231,6 +8219,7 @@ target_include_directories(secure_endpoint_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(secure_endpoint_test
@@ -8245,7 +8234,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(sequential_connectivity_test
-  test/core/surface/sequential_connectivity_test.c
+  test/core/surface/sequential_connectivity_test.cc
 )
 
 
@@ -8260,6 +8249,7 @@ target_include_directories(sequential_connectivity_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(sequential_connectivity_test
@@ -8274,7 +8264,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_chttp2_test
-  test/core/surface/server_chttp2_test.c
+  test/core/surface/server_chttp2_test.cc
 )
 
 
@@ -8289,6 +8279,7 @@ target_include_directories(server_chttp2_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(server_chttp2_test
@@ -8303,7 +8294,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_test
-  test/core/surface/server_test.c
+  test/core/surface/server_test.cc
 )
 
 
@@ -8318,6 +8309,7 @@ target_include_directories(server_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(server_test
@@ -8332,7 +8324,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(slice_buffer_test
-  test/core/slice/slice_buffer_test.c
+  test/core/slice/slice_buffer_test.cc
 )
 
 
@@ -8347,6 +8339,7 @@ target_include_directories(slice_buffer_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(slice_buffer_test
@@ -8361,7 +8354,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(slice_hash_table_test
-  test/core/slice/slice_hash_table_test.c
+  test/core/slice/slice_hash_table_test.cc
 )
 
 
@@ -8376,6 +8369,7 @@ target_include_directories(slice_hash_table_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(slice_hash_table_test
@@ -8390,7 +8384,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(slice_string_helpers_test
-  test/core/slice/slice_string_helpers_test.c
+  test/core/slice/slice_string_helpers_test.cc
 )
 
 
@@ -8405,6 +8399,7 @@ target_include_directories(slice_string_helpers_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(slice_string_helpers_test
@@ -8419,7 +8414,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(slice_test
-  test/core/slice/slice_test.c
+  test/core/slice/slice_test.cc
 )
 
 
@@ -8434,6 +8429,7 @@ target_include_directories(slice_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(slice_test
@@ -8448,7 +8444,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(sockaddr_resolver_test
-  test/core/client_channel/resolvers/sockaddr_resolver_test.c
+  test/core/client_channel/resolvers/sockaddr_resolver_test.cc
 )
 
 
@@ -8463,6 +8459,7 @@ target_include_directories(sockaddr_resolver_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(sockaddr_resolver_test
@@ -8477,7 +8474,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(sockaddr_utils_test
-  test/core/iomgr/sockaddr_utils_test.c
+  test/core/iomgr/sockaddr_utils_test.cc
 )
 
 
@@ -8492,6 +8489,7 @@ target_include_directories(sockaddr_utils_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(sockaddr_utils_test
@@ -8507,7 +8505,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(socket_utils_test
-  test/core/iomgr/socket_utils_test.c
+  test/core/iomgr/socket_utils_test.cc
 )
 
 
@@ -8522,6 +8520,7 @@ target_include_directories(socket_utils_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(socket_utils_test
@@ -8538,8 +8537,8 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(ssl_transport_security_test
-  test/core/tsi/ssl_transport_security_test.c
-  test/core/tsi/transport_security_test_lib.c
+  test/core/tsi/ssl_transport_security_test.cc
+  test/core/tsi/transport_security_test_lib.cc
 )
 
 
@@ -8554,6 +8553,7 @@ target_include_directories(ssl_transport_security_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(ssl_transport_security_test
@@ -8568,7 +8568,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(status_conversion_test
-  test/core/transport/status_conversion_test.c
+  test/core/transport/status_conversion_test.cc
 )
 
 
@@ -8583,6 +8583,7 @@ target_include_directories(status_conversion_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(status_conversion_test
@@ -8597,7 +8598,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(stream_compression_test
-  test/core/compression/stream_compression_test.c
+  test/core/compression/stream_compression_test.cc
 )
 
 
@@ -8612,6 +8613,7 @@ target_include_directories(stream_compression_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(stream_compression_test
@@ -8626,7 +8628,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(stream_owned_slice_test
-  test/core/transport/stream_owned_slice_test.c
+  test/core/transport/stream_owned_slice_test.cc
 )
 
 
@@ -8641,6 +8643,7 @@ target_include_directories(stream_owned_slice_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(stream_owned_slice_test
@@ -8656,7 +8659,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(tcp_client_posix_test
-  test/core/iomgr/tcp_client_posix_test.c
+  test/core/iomgr/tcp_client_posix_test.cc
 )
 
 
@@ -8671,6 +8674,7 @@ target_include_directories(tcp_client_posix_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(tcp_client_posix_test
@@ -8686,7 +8690,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(tcp_client_uv_test
-  test/core/iomgr/tcp_client_uv_test.c
+  test/core/iomgr/tcp_client_uv_test.cc
 )
 
 
@@ -8701,6 +8705,7 @@ target_include_directories(tcp_client_uv_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(tcp_client_uv_test
@@ -8716,7 +8721,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(tcp_posix_test
-  test/core/iomgr/tcp_posix_test.c
+  test/core/iomgr/tcp_posix_test.cc
 )
 
 
@@ -8731,6 +8736,7 @@ target_include_directories(tcp_posix_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(tcp_posix_test
@@ -8747,7 +8753,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(tcp_server_posix_test
-  test/core/iomgr/tcp_server_posix_test.c
+  test/core/iomgr/tcp_server_posix_test.cc
 )
 
 
@@ -8762,6 +8768,7 @@ target_include_directories(tcp_server_posix_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(tcp_server_posix_test
@@ -8777,7 +8784,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(tcp_server_uv_test
-  test/core/iomgr/tcp_server_uv_test.c
+  test/core/iomgr/tcp_server_uv_test.cc
 )
 
 
@@ -8792,6 +8799,7 @@ target_include_directories(tcp_server_uv_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(tcp_server_uv_test
@@ -8806,7 +8814,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(time_averaged_stats_test
-  test/core/iomgr/time_averaged_stats_test.c
+  test/core/iomgr/time_averaged_stats_test.cc
 )
 
 
@@ -8821,6 +8829,7 @@ target_include_directories(time_averaged_stats_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(time_averaged_stats_test
@@ -8835,7 +8844,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(timeout_encoding_test
-  test/core/transport/timeout_encoding_test.c
+  test/core/transport/timeout_encoding_test.cc
 )
 
 
@@ -8850,6 +8859,7 @@ target_include_directories(timeout_encoding_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(timeout_encoding_test
@@ -8864,7 +8874,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(timer_heap_test
-  test/core/iomgr/timer_heap_test.c
+  test/core/iomgr/timer_heap_test.cc
 )
 
 
@@ -8879,6 +8889,7 @@ target_include_directories(timer_heap_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(timer_heap_test
@@ -8893,7 +8904,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(timer_list_test
-  test/core/iomgr/timer_list_test.c
+  test/core/iomgr/timer_list_test.cc
 )
 
 
@@ -8908,6 +8919,7 @@ target_include_directories(timer_list_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(timer_list_test
@@ -8922,7 +8934,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(transport_connectivity_state_test
-  test/core/transport/connectivity_state_test.c
+  test/core/transport/connectivity_state_test.cc
 )
 
 
@@ -8937,6 +8949,7 @@ target_include_directories(transport_connectivity_state_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(transport_connectivity_state_test
@@ -8951,7 +8964,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(transport_metadata_test
-  test/core/transport/metadata_test.c
+  test/core/transport/metadata_test.cc
 )
 
 
@@ -8966,6 +8979,7 @@ target_include_directories(transport_metadata_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(transport_metadata_test
@@ -8978,39 +8992,10 @@ target_link_libraries(transport_metadata_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
-
-add_executable(transport_pid_controller_test
-  test/core/transport/pid_controller_test.c
-)
-
-
-target_include_directories(transport_pid_controller_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(transport_pid_controller_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(transport_security_test
-  test/core/tsi/transport_security_test.c
+  test/core/tsi/transport_security_test.cc
 )
 
 
@@ -9025,6 +9010,7 @@ target_include_directories(transport_security_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(transport_security_test
@@ -9041,7 +9027,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(udp_server_test
-  test/core/iomgr/udp_server_test.c
+  test/core/iomgr/udp_server_test.cc
 )
 
 
@@ -9056,6 +9042,7 @@ target_include_directories(udp_server_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(udp_server_test
@@ -9071,7 +9058,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(uri_parser_test
-  test/core/client_channel/uri_parser_test.c
+  test/core/client_channel/uri_parser_test.cc
 )
 
 
@@ -9086,6 +9073,7 @@ target_include_directories(uri_parser_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(uri_parser_test
@@ -9101,7 +9089,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(wakeup_fd_cv_test
-  test/core/iomgr/wakeup_fd_cv_test.c
+  test/core/iomgr/wakeup_fd_cv_test.cc
 )
 
 
@@ -9116,6 +9104,7 @@ target_include_directories(wakeup_fd_cv_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(wakeup_fd_cv_test
@@ -9148,6 +9137,7 @@ target_include_directories(alarm_cpp_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9188,6 +9178,7 @@ target_include_directories(async_end2end_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9228,6 +9219,7 @@ target_include_directories(auth_property_iterator_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9268,6 +9260,7 @@ target_include_directories(bdp_estimator_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9309,6 +9302,7 @@ target_include_directories(bm_arena
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9353,6 +9347,7 @@ target_include_directories(bm_call_create
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9397,6 +9392,7 @@ target_include_directories(bm_chttp2_hpack
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9441,6 +9437,7 @@ target_include_directories(bm_chttp2_transport
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9485,6 +9482,7 @@ target_include_directories(bm_closure
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9529,6 +9527,7 @@ target_include_directories(bm_cq
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9573,6 +9572,7 @@ target_include_directories(bm_cq_multiple_threads
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9617,6 +9617,7 @@ target_include_directories(bm_error
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9661,6 +9662,7 @@ target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9705,6 +9707,7 @@ target_include_directories(bm_fullstack_streaming_pump
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9749,6 +9752,7 @@ target_include_directories(bm_fullstack_trickle
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9794,6 +9798,7 @@ target_include_directories(bm_fullstack_unary_ping_pong
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9838,6 +9843,7 @@ target_include_directories(bm_metadata
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9882,6 +9888,7 @@ target_include_directories(bm_pollset
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9925,6 +9932,7 @@ target_include_directories(channel_arguments_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9962,6 +9970,7 @@ target_include_directories(channel_filter_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9999,6 +10008,7 @@ target_include_directories(cli_call_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10041,6 +10051,7 @@ target_include_directories(client_crash_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10082,6 +10093,7 @@ target_include_directories(client_crash_test_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10122,6 +10134,7 @@ target_include_directories(client_lb_end2end_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10197,6 +10210,7 @@ target_include_directories(codegen_test_full
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10271,6 +10285,7 @@ target_include_directories(codegen_test_minimal
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10308,6 +10323,7 @@ target_include_directories(credentials_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10345,6 +10361,7 @@ target_include_directories(cxx_byte_buffer_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10384,6 +10401,7 @@ target_include_directories(cxx_slice_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10423,6 +10441,7 @@ target_include_directories(cxx_string_ref_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10459,6 +10478,7 @@ target_include_directories(cxx_time_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10498,6 +10518,7 @@ target_include_directories(end2end_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10545,6 +10566,7 @@ target_include_directories(error_details_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10581,6 +10603,7 @@ target_include_directories(filter_end2end_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10621,6 +10644,7 @@ target_include_directories(generic_end2end_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10668,6 +10692,7 @@ target_include_directories(golden_file_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10705,6 +10730,7 @@ target_include_directories(grpc_cli
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10742,6 +10768,7 @@ target_include_directories(grpc_cpp_plugin
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10778,6 +10805,7 @@ target_include_directories(grpc_csharp_plugin
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10814,6 +10842,7 @@ target_include_directories(grpc_node_plugin
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10850,6 +10879,7 @@ target_include_directories(grpc_objective_c_plugin
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10886,6 +10916,7 @@ target_include_directories(grpc_php_plugin
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10922,6 +10953,7 @@ target_include_directories(grpc_python_plugin
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10958,6 +10990,7 @@ target_include_directories(grpc_ruby_plugin
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -11011,6 +11044,7 @@ target_include_directories(grpc_tool_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11061,6 +11095,7 @@ target_include_directories(grpclb_api_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11106,6 +11141,7 @@ target_include_directories(grpclb_end2end_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11153,6 +11189,7 @@ target_include_directories(grpclb_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11193,6 +11230,7 @@ target_include_directories(h2_ssl_cert_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11232,6 +11270,7 @@ target_include_directories(health_service_end2end_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11272,6 +11311,7 @@ target_include_directories(http2_client
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11313,6 +11353,7 @@ target_include_directories(hybrid_end2end_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11336,6 +11377,52 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
+add_executable(inproc_sync_unary_ping_pong_test
+  test/cpp/qps/inproc_sync_unary_ping_pong_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(inproc_sync_unary_ping_pong_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(inproc_sync_unary_ping_pong_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  qps
+  grpc++_core_stats
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
 add_executable(interop_client
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -11353,6 +11440,7 @@ target_include_directories(interop_client
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11397,6 +11485,7 @@ target_include_directories(interop_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11443,6 +11532,7 @@ target_include_directories(interop_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11484,6 +11574,7 @@ target_include_directories(json_run_localhost
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11526,6 +11617,7 @@ target_include_directories(memory_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11572,6 +11664,7 @@ target_include_directories(metrics_client
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11610,6 +11703,7 @@ target_include_directories(mock_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11650,6 +11744,7 @@ target_include_directories(noop-benchmark
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11685,6 +11780,7 @@ target_include_directories(proto_server_reflection_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11727,6 +11823,7 @@ target_include_directories(proto_utils_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11764,6 +11861,7 @@ target_include_directories(qps_interarrival_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11807,6 +11905,7 @@ target_include_directories(qps_json_driver
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11851,6 +11950,7 @@ target_include_directories(qps_openloop_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11895,6 +11995,7 @@ target_include_directories(qps_worker
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11959,6 +12060,7 @@ target_include_directories(reconnect_interop_client
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12021,6 +12123,7 @@ target_include_directories(reconnect_interop_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12064,6 +12167,7 @@ target_include_directories(secure_auth_context_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12105,6 +12209,7 @@ target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12149,6 +12254,7 @@ target_include_directories(server_builder_plugin_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12203,6 +12309,7 @@ target_include_directories(server_builder_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12243,6 +12350,7 @@ target_include_directories(server_context_test_spouse_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12283,6 +12391,7 @@ target_include_directories(server_crash_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12324,6 +12433,7 @@ target_include_directories(server_crash_test_client
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12378,6 +12488,7 @@ target_include_directories(server_request_call_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12418,6 +12529,7 @@ target_include_directories(shutdown_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12458,6 +12570,7 @@ target_include_directories(stats_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12497,6 +12610,7 @@ target_include_directories(status_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12537,6 +12651,7 @@ target_include_directories(streaming_throughput_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12609,6 +12724,7 @@ target_include_directories(stress_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12650,6 +12766,7 @@ target_include_directories(thread_manager_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12688,6 +12805,7 @@ target_include_directories(thread_stress_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12702,6 +12820,87 @@ target_link_libraries(thread_stress_test
   grpc_test_util_unsecure
   grpc++_unsecure
   grpc_unsecure
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(transport_pid_controller_test
+  test/core/transport/pid_controller_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(transport_pid_controller_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(transport_pid_controller_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc++
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(vector_test
+  test/core/support/vector_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(vector_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(vector_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
   gpr_test_util
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -12729,6 +12928,7 @@ target_include_directories(writes_per_rpc_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12768,6 +12968,7 @@ target_include_directories(public_headers_must_be_c89
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(public_headers_must_be_c89
@@ -12780,7 +12981,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(badreq_bad_client_test
-  test/core/bad_client/tests/badreq.c
+  test/core/bad_client/tests/badreq.cc
 )
 
 
@@ -12795,6 +12996,7 @@ target_include_directories(badreq_bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(badreq_bad_client_test
@@ -12811,7 +13013,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(connection_prefix_bad_client_test
-  test/core/bad_client/tests/connection_prefix.c
+  test/core/bad_client/tests/connection_prefix.cc
 )
 
 
@@ -12826,6 +13028,7 @@ target_include_directories(connection_prefix_bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(connection_prefix_bad_client_test
@@ -12842,7 +13045,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(head_of_line_blocking_bad_client_test
-  test/core/bad_client/tests/head_of_line_blocking.c
+  test/core/bad_client/tests/head_of_line_blocking.cc
 )
 
 
@@ -12857,6 +13060,7 @@ target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(head_of_line_blocking_bad_client_test
@@ -12873,7 +13077,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(headers_bad_client_test
-  test/core/bad_client/tests/headers.c
+  test/core/bad_client/tests/headers.cc
 )
 
 
@@ -12888,6 +13092,7 @@ target_include_directories(headers_bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(headers_bad_client_test
@@ -12904,7 +13109,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(initial_settings_frame_bad_client_test
-  test/core/bad_client/tests/initial_settings_frame.c
+  test/core/bad_client/tests/initial_settings_frame.cc
 )
 
 
@@ -12919,6 +13124,7 @@ target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(initial_settings_frame_bad_client_test
@@ -12934,39 +13140,8 @@ target_link_libraries(initial_settings_frame_bad_client_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(large_metadata_bad_client_test
-  test/core/bad_client/tests/large_metadata.c
-)
-
-
-target_include_directories(large_metadata_bad_client_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(large_metadata_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(server_registered_method_bad_client_test
-  test/core/bad_client/tests/server_registered_method.c
+  test/core/bad_client/tests/server_registered_method.cc
 )
 
 
@@ -12981,6 +13156,7 @@ target_include_directories(server_registered_method_bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(server_registered_method_bad_client_test
@@ -12997,7 +13173,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(simple_request_bad_client_test
-  test/core/bad_client/tests/simple_request.c
+  test/core/bad_client/tests/simple_request.cc
 )
 
 
@@ -13012,6 +13188,7 @@ target_include_directories(simple_request_bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(simple_request_bad_client_test
@@ -13028,7 +13205,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(unknown_frame_bad_client_test
-  test/core/bad_client/tests/unknown_frame.c
+  test/core/bad_client/tests/unknown_frame.cc
 )
 
 
@@ -13043,6 +13220,7 @@ target_include_directories(unknown_frame_bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(unknown_frame_bad_client_test
@@ -13059,7 +13237,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(window_overflow_bad_client_test
-  test/core/bad_client/tests/window_overflow.c
+  test/core/bad_client/tests/window_overflow.cc
 )
 
 
@@ -13074,6 +13252,7 @@ target_include_directories(window_overflow_bad_client_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(window_overflow_bad_client_test
@@ -13091,7 +13270,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bad_ssl_cert_server
-  test/core/bad_ssl/servers/cert.c
+  test/core/bad_ssl/servers/cert.cc
 )
 
 
@@ -13106,6 +13285,7 @@ target_include_directories(bad_ssl_cert_server
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(bad_ssl_cert_server
@@ -13123,7 +13303,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bad_ssl_cert_test
-  test/core/bad_ssl/bad_ssl_test.c
+  test/core/bad_ssl/bad_ssl_test.cc
 )
 
 
@@ -13138,6 +13318,7 @@ target_include_directories(bad_ssl_cert_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(bad_ssl_cert_test
@@ -13153,7 +13334,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_census_test
-  test/core/end2end/fixtures/h2_census.c
+  test/core/end2end/fixtures/h2_census.cc
 )
 
 
@@ -13168,6 +13349,7 @@ target_include_directories(h2_census_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_census_test
@@ -13183,7 +13365,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_compress_test
-  test/core/end2end/fixtures/h2_compress.c
+  test/core/end2end/fixtures/h2_compress.cc
 )
 
 
@@ -13198,6 +13380,7 @@ target_include_directories(h2_compress_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_compress_test
@@ -13213,7 +13396,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_fakesec_test
-  test/core/end2end/fixtures/h2_fakesec.c
+  test/core/end2end/fixtures/h2_fakesec.cc
 )
 
 
@@ -13228,6 +13411,7 @@ target_include_directories(h2_fakesec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_fakesec_test
@@ -13244,7 +13428,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_fd_test
-  test/core/end2end/fixtures/h2_fd.c
+  test/core/end2end/fixtures/h2_fd.cc
 )
 
 
@@ -13259,6 +13443,7 @@ target_include_directories(h2_fd_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_fd_test
@@ -13275,7 +13460,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full_test
-  test/core/end2end/fixtures/h2_full.c
+  test/core/end2end/fixtures/h2_full.cc
 )
 
 
@@ -13290,6 +13475,7 @@ target_include_directories(h2_full_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_full_test
@@ -13306,7 +13492,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(h2_full+pipe_test
-  test/core/end2end/fixtures/h2_full+pipe.c
+  test/core/end2end/fixtures/h2_full+pipe.cc
 )
 
 
@@ -13321,6 +13507,7 @@ target_include_directories(h2_full+pipe_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_full+pipe_test
@@ -13337,7 +13524,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full+trace_test
-  test/core/end2end/fixtures/h2_full+trace.c
+  test/core/end2end/fixtures/h2_full+trace.cc
 )
 
 
@@ -13352,6 +13539,7 @@ target_include_directories(h2_full+trace_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_full+trace_test
@@ -13367,7 +13555,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full+workarounds_test
-  test/core/end2end/fixtures/h2_full+workarounds.c
+  test/core/end2end/fixtures/h2_full+workarounds.cc
 )
 
 
@@ -13382,6 +13570,7 @@ target_include_directories(h2_full+workarounds_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_full+workarounds_test
@@ -13397,7 +13586,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_http_proxy_test
-  test/core/end2end/fixtures/h2_http_proxy.c
+  test/core/end2end/fixtures/h2_http_proxy.cc
 )
 
 
@@ -13412,6 +13601,7 @@ target_include_directories(h2_http_proxy_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_http_proxy_test
@@ -13427,7 +13617,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_load_reporting_test
-  test/core/end2end/fixtures/h2_load_reporting.c
+  test/core/end2end/fixtures/h2_load_reporting.cc
 )
 
 
@@ -13442,6 +13632,7 @@ target_include_directories(h2_load_reporting_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_load_reporting_test
@@ -13457,7 +13648,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_oauth2_test
-  test/core/end2end/fixtures/h2_oauth2.c
+  test/core/end2end/fixtures/h2_oauth2.cc
 )
 
 
@@ -13472,6 +13663,7 @@ target_include_directories(h2_oauth2_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_oauth2_test
@@ -13487,7 +13679,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_proxy_test
-  test/core/end2end/fixtures/h2_proxy.c
+  test/core/end2end/fixtures/h2_proxy.cc
 )
 
 
@@ -13502,6 +13694,7 @@ target_include_directories(h2_proxy_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_proxy_test
@@ -13517,7 +13710,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair_test
-  test/core/end2end/fixtures/h2_sockpair.c
+  test/core/end2end/fixtures/h2_sockpair.cc
 )
 
 
@@ -13532,6 +13725,7 @@ target_include_directories(h2_sockpair_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_sockpair_test
@@ -13547,7 +13741,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair+trace_test
-  test/core/end2end/fixtures/h2_sockpair+trace.c
+  test/core/end2end/fixtures/h2_sockpair+trace.cc
 )
 
 
@@ -13562,6 +13756,7 @@ target_include_directories(h2_sockpair+trace_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_sockpair+trace_test
@@ -13577,7 +13772,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair_1byte_test
-  test/core/end2end/fixtures/h2_sockpair_1byte.c
+  test/core/end2end/fixtures/h2_sockpair_1byte.cc
 )
 
 
@@ -13592,6 +13787,7 @@ target_include_directories(h2_sockpair_1byte_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_sockpair_1byte_test
@@ -13607,7 +13803,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_test
-  test/core/end2end/fixtures/h2_ssl.c
+  test/core/end2end/fixtures/h2_ssl.cc
 )
 
 
@@ -13622,6 +13818,7 @@ target_include_directories(h2_ssl_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_ssl_test
@@ -13637,7 +13834,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_proxy_test
-  test/core/end2end/fixtures/h2_ssl_proxy.c
+  test/core/end2end/fixtures/h2_ssl_proxy.cc
 )
 
 
@@ -13652,6 +13849,7 @@ target_include_directories(h2_ssl_proxy_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_ssl_proxy_test
@@ -13668,7 +13866,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_uds_test
-  test/core/end2end/fixtures/h2_uds.c
+  test/core/end2end/fixtures/h2_uds.cc
 )
 
 
@@ -13683,6 +13881,7 @@ target_include_directories(h2_uds_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_uds_test
@@ -13699,7 +13898,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(inproc_test
-  test/core/end2end/fixtures/inproc.c
+  test/core/end2end/fixtures/inproc.cc
 )
 
 
@@ -13714,6 +13913,7 @@ target_include_directories(inproc_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(inproc_test
@@ -13729,7 +13929,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_census_nosec_test
-  test/core/end2end/fixtures/h2_census.c
+  test/core/end2end/fixtures/h2_census.cc
 )
 
 
@@ -13744,6 +13944,7 @@ target_include_directories(h2_census_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_census_nosec_test
@@ -13759,7 +13960,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_compress_nosec_test
-  test/core/end2end/fixtures/h2_compress.c
+  test/core/end2end/fixtures/h2_compress.cc
 )
 
 
@@ -13774,6 +13975,7 @@ target_include_directories(h2_compress_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_compress_nosec_test
@@ -13790,7 +13992,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_fd_nosec_test
-  test/core/end2end/fixtures/h2_fd.c
+  test/core/end2end/fixtures/h2_fd.cc
 )
 
 
@@ -13805,6 +14007,7 @@ target_include_directories(h2_fd_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_fd_nosec_test
@@ -13821,7 +14024,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full_nosec_test
-  test/core/end2end/fixtures/h2_full.c
+  test/core/end2end/fixtures/h2_full.cc
 )
 
 
@@ -13836,6 +14039,7 @@ target_include_directories(h2_full_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_full_nosec_test
@@ -13852,7 +14056,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(h2_full+pipe_nosec_test
-  test/core/end2end/fixtures/h2_full+pipe.c
+  test/core/end2end/fixtures/h2_full+pipe.cc
 )
 
 
@@ -13867,6 +14071,7 @@ target_include_directories(h2_full+pipe_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_full+pipe_nosec_test
@@ -13883,7 +14088,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full+trace_nosec_test
-  test/core/end2end/fixtures/h2_full+trace.c
+  test/core/end2end/fixtures/h2_full+trace.cc
 )
 
 
@@ -13898,6 +14103,7 @@ target_include_directories(h2_full+trace_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_full+trace_nosec_test
@@ -13913,7 +14119,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full+workarounds_nosec_test
-  test/core/end2end/fixtures/h2_full+workarounds.c
+  test/core/end2end/fixtures/h2_full+workarounds.cc
 )
 
 
@@ -13928,6 +14134,7 @@ target_include_directories(h2_full+workarounds_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_full+workarounds_nosec_test
@@ -13943,7 +14150,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_http_proxy_nosec_test
-  test/core/end2end/fixtures/h2_http_proxy.c
+  test/core/end2end/fixtures/h2_http_proxy.cc
 )
 
 
@@ -13958,6 +14165,7 @@ target_include_directories(h2_http_proxy_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_http_proxy_nosec_test
@@ -13973,7 +14181,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_load_reporting_nosec_test
-  test/core/end2end/fixtures/h2_load_reporting.c
+  test/core/end2end/fixtures/h2_load_reporting.cc
 )
 
 
@@ -13988,6 +14196,7 @@ target_include_directories(h2_load_reporting_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_load_reporting_nosec_test
@@ -14003,7 +14212,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_proxy_nosec_test
-  test/core/end2end/fixtures/h2_proxy.c
+  test/core/end2end/fixtures/h2_proxy.cc
 )
 
 
@@ -14018,6 +14227,7 @@ target_include_directories(h2_proxy_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_proxy_nosec_test
@@ -14033,7 +14243,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair_nosec_test
-  test/core/end2end/fixtures/h2_sockpair.c
+  test/core/end2end/fixtures/h2_sockpair.cc
 )
 
 
@@ -14048,6 +14258,7 @@ target_include_directories(h2_sockpair_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_sockpair_nosec_test
@@ -14063,7 +14274,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair+trace_nosec_test
-  test/core/end2end/fixtures/h2_sockpair+trace.c
+  test/core/end2end/fixtures/h2_sockpair+trace.cc
 )
 
 
@@ -14078,6 +14289,7 @@ target_include_directories(h2_sockpair+trace_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_sockpair+trace_nosec_test
@@ -14093,7 +14305,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair_1byte_nosec_test
-  test/core/end2end/fixtures/h2_sockpair_1byte.c
+  test/core/end2end/fixtures/h2_sockpair_1byte.cc
 )
 
 
@@ -14108,6 +14320,7 @@ target_include_directories(h2_sockpair_1byte_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_sockpair_1byte_nosec_test
@@ -14124,7 +14337,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_uds_nosec_test
-  test/core/end2end/fixtures/h2_uds.c
+  test/core/end2end/fixtures/h2_uds.cc
 )
 
 
@@ -14139,6 +14352,7 @@ target_include_directories(h2_uds_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(h2_uds_nosec_test
@@ -14155,7 +14369,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(inproc_nosec_test
-  test/core/end2end/fixtures/inproc.c
+  test/core/end2end/fixtures/inproc.cc
 )
 
 
@@ -14170,6 +14384,7 @@ target_include_directories(inproc_nosec_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(inproc_nosec_test
@@ -14203,6 +14418,7 @@ target_include_directories(resolver_component_test_unsecure
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -14246,6 +14462,7 @@ target_include_directories(resolver_component_test
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -14289,6 +14506,7 @@ target_include_directories(resolver_component_tests_runner_invoker_unsecure
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -14332,6 +14550,7 @@ target_include_directories(resolver_component_tests_runner_invoker
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -14357,8 +14576,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(api_fuzzer_one_entry
-  test/core/end2end/fuzzers/api_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/end2end/fuzzers/api_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14373,6 +14592,7 @@ target_include_directories(api_fuzzer_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(api_fuzzer_one_entry
@@ -14387,8 +14607,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(client_fuzzer_one_entry
-  test/core/end2end/fuzzers/client_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/end2end/fuzzers/client_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14403,6 +14623,7 @@ target_include_directories(client_fuzzer_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(client_fuzzer_one_entry
@@ -14417,8 +14638,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_fuzzer_test_one_entry
-  test/core/transport/chttp2/hpack_parser_fuzzer_test.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14433,6 +14654,7 @@ target_include_directories(hpack_parser_fuzzer_test_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(hpack_parser_fuzzer_test_one_entry
@@ -14447,8 +14669,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(http_request_fuzzer_test_one_entry
-  test/core/http/request_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/http/request_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14463,6 +14685,7 @@ target_include_directories(http_request_fuzzer_test_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(http_request_fuzzer_test_one_entry
@@ -14477,8 +14700,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(http_response_fuzzer_test_one_entry
-  test/core/http/response_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/http/response_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14493,6 +14716,7 @@ target_include_directories(http_response_fuzzer_test_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(http_response_fuzzer_test_one_entry
@@ -14507,8 +14731,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_fuzzer_test_one_entry
-  test/core/json/fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/json/fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14523,6 +14747,7 @@ target_include_directories(json_fuzzer_test_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(json_fuzzer_test_one_entry
@@ -14537,8 +14762,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(nanopb_fuzzer_response_test_one_entry
-  test/core/nanopb/fuzzer_response.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/nanopb/fuzzer_response.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14553,6 +14778,7 @@ target_include_directories(nanopb_fuzzer_response_test_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(nanopb_fuzzer_response_test_one_entry
@@ -14567,8 +14793,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(nanopb_fuzzer_serverlist_test_one_entry
-  test/core/nanopb/fuzzer_serverlist.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/nanopb/fuzzer_serverlist.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14583,6 +14809,7 @@ target_include_directories(nanopb_fuzzer_serverlist_test_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
@@ -14597,8 +14824,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(percent_decode_fuzzer_one_entry
-  test/core/slice/percent_decode_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/slice/percent_decode_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14613,6 +14840,7 @@ target_include_directories(percent_decode_fuzzer_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(percent_decode_fuzzer_one_entry
@@ -14627,8 +14855,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(percent_encode_fuzzer_one_entry
-  test/core/slice/percent_encode_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/slice/percent_encode_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14643,6 +14871,7 @@ target_include_directories(percent_encode_fuzzer_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(percent_encode_fuzzer_one_entry
@@ -14657,8 +14886,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_fuzzer_one_entry
-  test/core/end2end/fuzzers/server_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/end2end/fuzzers/server_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14673,6 +14902,7 @@ target_include_directories(server_fuzzer_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(server_fuzzer_one_entry
@@ -14687,8 +14917,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(ssl_server_fuzzer_one_entry
-  test/core/security/ssl_server_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/security/ssl_server_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14703,6 +14933,7 @@ target_include_directories(ssl_server_fuzzer_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(ssl_server_fuzzer_one_entry
@@ -14717,8 +14948,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(uri_fuzzer_test_one_entry
-  test/core/client_channel/uri_fuzzer_test.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/client_channel/uri_fuzzer_test.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14733,6 +14964,7 @@ target_include_directories(uri_fuzzer_test_one_entry
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
 )
 
 target_link_libraries(uri_fuzzer_test_one_entry

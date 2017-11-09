@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */
-const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size);
+const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size);
 
 #ifdef __cplusplus
 }

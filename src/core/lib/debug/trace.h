@@ -39,7 +39,7 @@ typedef struct {
 #else
   bool value;
 #endif
-  const char *name;
+  const char* name;
 } grpc_tracer_flag;
 
 #ifdef GRPC_THREADSAFE_TRACER
@@ -52,8 +52,8 @@ typedef struct {
   { (on), (name) }
 #endif
 
-void grpc_register_tracer(grpc_tracer_flag *flag);
-void grpc_tracer_init(const char *env_var_name);
+void grpc_register_tracer(grpc_tracer_flag* flag);
+void grpc_tracer_init(const char* env_var_name);
 void grpc_tracer_shutdown(void);
 
 #ifdef __cplusplus

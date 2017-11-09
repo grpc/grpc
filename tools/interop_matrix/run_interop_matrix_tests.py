@@ -122,15 +122,16 @@ def find_all_images_for_lang(lang):
   return images
 
 # caches test cases (list of JobSpec) loaded from file.  Keyed by lang and runtime.
-_loaded_testcases = {}
-def find_test_cases(lang, release, suite_name):
+def find_test_cases(lang, runtime, release, suite_name):
   """Returns the list of test cases from testcase files per lang/release."""
   file_tmpl = os.path.join(os.path.dirname(__file__), 'testcases/%s__%s')
-  if not os.path.exists(file_tmpl % (lang, release)):
-    release = 'master'
-  testcases = file_tmpl % (lang, release)
-  if lang in _loaded_testcases.keys() and release in _loaded_testcases[lang].keys():
-    return _loaded_testcases[lang][release]
+  testcase_release = release
+  filename_prefix = lang
+  if lang == 'csharp':
+    filename_prefix = runtime
+  if not os.path.exists(file_tmpl % (filename_prefix, release)):
+    testcase_release = 'master'
+  testcases = file_tmpl % (filename_prefix, testcase_release)
 
   job_spec_list=[]
   try:
@@ -155,9 +156,6 @@ def find_test_cases(lang, release, suite_name):
                      do_newline=True)
   except IOError as err:
     jobset.message('FAILED', err, do_newline=True)
-  if lang not in _loaded_testcases.keys():
-    _loaded_testcases[lang] = {}
-  _loaded_testcases[lang][release]=job_spec_list
   return job_spec_list
 
 _xml_report_tree = report_utils.new_junit_xml_tree()
@@ -174,7 +172,12 @@ def run_tests_for_lang(lang, runtime, images):
     subprocess.check_call(['gcloud', 'docker', '--', 'pull', image])
     _docker_images_cleanup.append(image)
     suite_name = '%s__%s_%s' % (lang, runtime, release)
-    job_spec_list = find_test_cases(lang, release, suite_name)
+    job_spec_list = find_test_cases(lang, runtime, release, suite_name)
+    
+    if not job_spec_list:  
+      jobset.message('FAILED', 'No test cases were found.', do_newline=True)
+      return 1
+
     num_failures, resultset = jobset.run(job_spec_list,
                                          newline_on_success=True,
                                          add_env={'docker_image':image},

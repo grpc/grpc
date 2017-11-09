@@ -409,41 +409,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "census",
     srcs = [
-        "src/core/ext/census/base_resources.cc",
-        "src/core/ext/census/context.cc",
-        "src/core/ext/census/gen/census.pb.c",
-        "src/core/ext/census/gen/trace_context.pb.c",
         "src/core/ext/census/grpc_context.cc",
-        "src/core/ext/census/grpc_filter.cc",
-        "src/core/ext/census/grpc_plugin.cc",
-        "src/core/ext/census/initialize.cc",
-        "src/core/ext/census/intrusive_hash_map.cc",
-        "src/core/ext/census/mlog.cc",
-        "src/core/ext/census/operation.cc",
-        "src/core/ext/census/placeholders.cc",
-        "src/core/ext/census/resource.cc",
-        "src/core/ext/census/trace_context.cc",
-        "src/core/ext/census/tracing.cc",
-    ],
-    hdrs = [
-        "src/core/ext/census/aggregation.h",
-        "src/core/ext/census/base_resources.h",
-        "src/core/ext/census/census_interface.h",
-        "src/core/ext/census/census_rpc_stats.h",
-        "src/core/ext/census/gen/census.pb.h",
-        "src/core/ext/census/gen/trace_context.pb.h",
-        "src/core/ext/census/grpc_filter.h",
-        "src/core/ext/census/intrusive_hash_map.h",
-        "src/core/ext/census/intrusive_hash_map_internal.h",
-        "src/core/ext/census/mlog.h",
-        "src/core/ext/census/resource.h",
-        "src/core/ext/census/rpc_metric_id.h",
-        "src/core/ext/census/trace_context.h",
-        "src/core/ext/census/trace_label.h",
-        "src/core/ext/census/trace_propagation.h",
-        "src/core/ext/census/trace_status.h",
-        "src/core/ext/census/trace_string.h",
-        "src/core/ext/census/tracing.h",
     ],
     external_deps = [
         "nanopb",
@@ -515,8 +481,9 @@ grpc_cc_library(
         "src/core/lib/support/atomic_with_atm.h",
         "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/support/env.h",
-        "src/core/lib/support/manual_constructor.h",
         "src/core/lib/support/memory.h",
+        "src/core/lib/support/vector.h",
+        "src/core/lib/support/manual_constructor.h",
         "src/core/lib/support/mpmcq_bounded.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
@@ -531,6 +498,7 @@ grpc_cc_library(
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
+        "@com_google_absl//absl/container:inlined_vector"
     ],
 )
 
@@ -701,7 +669,6 @@ grpc_cc_library(
         "src/core/lib/transport/transport_op_string.cc",
     ],
     hdrs = [
-        "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
@@ -720,7 +687,6 @@ grpc_cc_library(
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
-        "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
@@ -765,6 +731,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_posix.h",
         "src/core/lib/iomgr/socket_windows.h",
         "src/core/lib/iomgr/sys_epoll_wrapper.h",
+        "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",
@@ -820,6 +787,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/backoff/backoff.h",
     ],
     external_deps = [
         "zlib",
@@ -872,6 +840,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
+        "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
@@ -894,6 +863,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/uri_parser.cc",
     ],
     hdrs = [
+        "src/core/ext/filters/client_channel/backup_poller.h",
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
         "src/core/ext/filters/client_channel/connector.h",
@@ -1075,6 +1045,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_subchannel_list",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_pick_first",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
@@ -1083,6 +1068,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_subchannel_list",
     ],
 )
 
@@ -1095,6 +1081,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_subchannel_list",
     ],
 )
 
@@ -1261,6 +1248,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
         "src/core/ext/transport/chttp2/transport/frame.h",
+        "src/core/ext/transport/chttp2/transport/flow_control.h",
         "src/core/ext/transport/chttp2/transport/frame_data.h",
         "src/core/ext/transport/chttp2/transport/frame_goaway.h",
         "src/core/ext/transport/chttp2/transport/frame_ping.h",
@@ -1559,7 +1547,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_config_proto",
     external_deps = [
-        "protobuf",
+        "protobuf_headers",
     ],
     language = "c++",
     public_hdrs = [

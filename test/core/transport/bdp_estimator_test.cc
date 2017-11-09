@@ -37,9 +37,11 @@ namespace {
 int g_clock = 0;
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
-  return (gpr_timespec){
-      .tv_sec = g_clock, .tv_nsec = 0, .clock_type = clock_type,
-  };
+  gpr_timespec ts;
+  ts.tv_sec = g_clock;
+  ts.tv_nsec = 0;
+  ts.clock_type = clock_type;
+  return ts;
 }
 
 void inc_time(void) { g_clock += 30; }
@@ -49,21 +51,18 @@ TEST(BdpEstimatorTest, NoOp) { BdpEstimator est("test"); }
 
 TEST(BdpEstimatorTest, EstimateBdpNoSamples) {
   BdpEstimator est("test");
-  int64_t estimate;
-  est.EstimateBdp(&estimate);
+  est.EstimateBdp();
 }
 
 namespace {
-void AddSamples(BdpEstimator *estimator, int64_t *samples, size_t n) {
+void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   estimator->AddIncomingBytes(1234567);
   inc_time();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  EXPECT_TRUE(estimator->NeedPing(&exec_ctx));
   estimator->SchedulePing();
   estimator->StartPing();
   for (size_t i = 0; i < n; i++) {
     estimator->AddIncomingBytes(samples[i]);
-    EXPECT_FALSE(estimator->NeedPing(&exec_ctx));
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
@@ -72,7 +71,7 @@ void AddSamples(BdpEstimator *estimator, int64_t *samples, size_t n) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void AddSample(BdpEstimator *estimator, int64_t sample) {
+void AddSample(BdpEstimator* estimator, int64_t sample) {
   AddSamples(estimator, &sample, 1);
 }
 }  // namespace
@@ -80,16 +79,14 @@ void AddSample(BdpEstimator *estimator, int64_t sample) {
 TEST(BdpEstimatorTest, GetEstimate1Sample) {
   BdpEstimator est("test");
   AddSample(&est, 100);
-  int64_t estimate;
-  est.EstimateBdp(&estimate);
+  est.EstimateBdp();
 }
 
 TEST(BdpEstimatorTest, GetEstimate2Samples) {
   BdpEstimator est("test");
   AddSample(&est, 100);
   AddSample(&est, 100);
-  int64_t estimate;
-  est.EstimateBdp(&estimate);
+  est.EstimateBdp();
 }
 
 TEST(BdpEstimatorTest, GetEstimate3Samples) {
@@ -97,17 +94,10 @@ TEST(BdpEstimatorTest, GetEstimate3Samples) {
   AddSample(&est, 100);
   AddSample(&est, 100);
   AddSample(&est, 100);
-  int64_t estimate;
-  est.EstimateBdp(&estimate);
+  est.EstimateBdp();
 }
 
 namespace {
-static int64_t GetEstimate(const BdpEstimator &estimator) {
-  int64_t out;
-  EXPECT_TRUE(estimator.EstimateBdp(&out));
-  return out;
-}
-
 int64_t NextPow2(int64_t v) {
   v--;
   v |= v >> 1;
@@ -134,7 +124,7 @@ TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
     if (sample > max) max = sample;
     AddSample(&est, sample);
     if (i >= 3) {
-      EXPECT_LE(GetEstimate(est), GPR_MAX(65536, 2 * NextPow2(max)))
+      EXPECT_LE(est.EstimateBdp(), GPR_MAX(65536, 2 * NextPow2(max)))
           << " min:" << min << " max:" << max << " sample:" << sample;
     }
   }
@@ -143,10 +133,11 @@ TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
 INSTANTIATE_TEST_CASE_P(TooManyNames, BdpEstimatorRandomTest,
                         ::testing::Values(3, 4, 6, 9, 13, 19, 28, 42, 63, 94,
                                           141, 211, 316, 474, 711));
+
 }  // namespace testing
 }  // namespace grpc_core
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   gpr_now_impl = grpc_core::testing::fake_gpr_now;
   grpc_init();
