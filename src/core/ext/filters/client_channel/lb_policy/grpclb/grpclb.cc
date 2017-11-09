@@ -175,7 +175,8 @@ typedef struct wrapped_rr_closure_arg {
   /* The RR instance related to the closure */
   grpc_lb_policy* rr_policy;
 
-  /* The grpclb instance that created the wrapping */
+  /* The grpclb instance that created the wrapping. This instance is not owned,
+   * reference counts are untouched. Its used only for logging purposes. */
   grpc_lb_policy* glb_policy;
 
   /* heap memory to be freed upon closure execution. */
@@ -655,7 +656,7 @@ static bool pick_from_internal_rr_locked(
       // Not using the RR policy, so unref it.
       if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
         gpr_log(GPR_INFO, "[grpclb %p] Unreffing RR %p for drop", glb_policy,
-                (intptr_t)wc_arg->rr_policy);
+                wc_arg->rr_policy);
       }
       GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "glb_pick_sync");
       // Update client load reporting stats to indicate the number of
@@ -757,10 +758,11 @@ static void create_rr_locked(grpc_exec_ctx* exec_ctx, glb_lb_policy* glb_policy,
   if (new_rr_policy == NULL) {
     gpr_log(GPR_ERROR,
             "[grpclb %p] Failure creating a RoundRobin policy for serverlist "
-            "update with %lu entries. The previous RR instance (%p), if any, "
-            "will continue to be used. Future updates from the LB will attempt "
-            "to create new instances.",
-            glb_policy, (unsigned long)glb_policy->serverlist->num_servers,
+            "update with %" PRIuPTR
+            " entries. The previous RR instance (%p), if any, will continue to "
+            "be used. Future updates from the LB will attempt to create new "
+            "instances.",
+            glb_policy, glb_policy->serverlist->num_servers,
             glb_policy->rr_policy);
     return;
   }
@@ -1270,7 +1272,7 @@ static void lb_call_on_retry_timer_locked(grpc_exec_ctx* exec_ctx, void* arg,
   glb_policy->retry_timer_active = false;
   if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
-      gpr_log(GPR_INFO, "[grpclb %p] Restaring call to LB server", glb_policy);
+      gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server", glb_policy);
     }
     GPR_ASSERT(glb_policy->lb_call == NULL);
     query_for_backends_locked(exec_ctx, glb_policy);
@@ -1727,10 +1729,9 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx* exec_ctx,
         grpc_slice_to_c_string(glb_policy->lb_call_status_details);
     gpr_log(GPR_INFO,
             "[grpclb %p] Status from LB server received. Status = %d, Details "
-            "= '%s', "
-            "(call: %p), error %p",
+            "= '%s', (call: %p), error '%s'",
             glb_policy, glb_policy->lb_call_status, status_details,
-            glb_policy->lb_call, error);
+            glb_policy->lb_call, grpc_error_string(error));
     gpr_free(status_details);
   }
   /* We need to perform cleanups no matter what. */
