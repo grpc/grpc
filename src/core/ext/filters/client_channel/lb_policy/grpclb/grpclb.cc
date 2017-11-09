@@ -1264,8 +1264,9 @@ static void lb_call_on_retry_timer_locked(grpc_exec_ctx* exec_ctx, void* arg,
       gpr_log(GPR_INFO, "Restaring call to LB server (grpclb %p)",
               (void*)glb_policy);
     }
-    GPR_ASSERT(glb_policy->lb_call == NULL);
-    query_for_backends_locked(exec_ctx, glb_policy);
+    if (glb_policy->lb_call == NULL) {
+      query_for_backends_locked(exec_ctx, glb_policy);
+    }
   }
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base, "grpclb_retry_timer");
 }
