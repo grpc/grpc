@@ -1788,7 +1788,6 @@ static void perform_transport_op_locked(grpc_exec_ctx* exec_ctx,
   grpc_transport_op* op = (grpc_transport_op*)stream_op;
   grpc_chttp2_transport* t =
       (grpc_chttp2_transport*)op->handler_private.extra_arg;
-  grpc_error* close_transport = op->disconnect_with_error;
 
   if (op->goaway_error) {
     send_goaway(exec_ctx, t, op->goaway_error);
@@ -1820,8 +1819,13 @@ static void perform_transport_op_locked(grpc_exec_ctx* exec_ctx,
         op->on_connectivity_state_change);
   }
 
-  if (close_transport != GRPC_ERROR_NONE) {
-    close_transport_locked(exec_ctx, t, close_transport);
+  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+    close_transport_locked(exec_ctx, t, op->disconnect_with_error);
+    if (t->notify_on_receive_settings != nullptr) {
+      GRPC_CLOSURE_SCHED(exec_ctx, t->notify_on_receive_settings,
+                         GRPC_ERROR_CANCELLED);
+      t->notify_on_receive_settings = nullptr;
+    }
   }
 
   GRPC_CLOSURE_RUN(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
@@ -3231,15 +3235,16 @@ grpc_transport* grpc_create_chttp2_transport(
   return &t->base;
 }
 
-void grpc_chttp2_transport_start_reading(grpc_exec_ctx* exec_ctx,
-                                         grpc_transport* transport,
-                                         grpc_slice_buffer* read_buffer) {
+void grpc_chttp2_transport_start_reading(
+    grpc_exec_ctx* exec_ctx, grpc_transport* transport,
+    grpc_slice_buffer* read_buffer, grpc_closure* notify_on_receive_settings) {
   grpc_chttp2_transport* t = (grpc_chttp2_transport*)transport;
   GRPC_CHTTP2_REF_TRANSPORT(
       t, "reading_action"); /* matches unref inside reading_action */
-  if (read_buffer != NULL) {
+  if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);
   }
+  t->notify_on_receive_settings = notify_on_receive_settings;
   GRPC_CLOSURE_SCHED(exec_ctx, &t->read_action_locked, GRPC_ERROR_NONE);
 }

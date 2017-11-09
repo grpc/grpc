@@ -101,7 +101,8 @@ class EndpointPairFixture {
 
       grpc_server_setup_transport(&exec_ctx, server_->c_server(), transport,
                                   NULL, server_args);
-      grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
+      grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr,
+                                          nullptr);
     }
 
     /* create channel */
@@ -116,7 +117,8 @@ class EndpointPairFixture {
       GPR_ASSERT(transport);
       grpc_channel* channel = grpc_channel_create(
           &exec_ctx, "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-      grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
+      grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr,
+                                          nullptr);
 
       channel_ = CreateChannelInternal("", channel);
     }

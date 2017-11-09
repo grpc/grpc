@@ -58,7 +58,7 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   grpc_channel* channel = grpc_channel_create(
       &exec_ctx, target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
   grpc_channel_args_destroy(&exec_ctx, final_args);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr, nullptr);
 
   grpc_exec_ctx_finish(&exec_ctx);
 

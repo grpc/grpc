@@ -41,9 +41,11 @@ grpc_transport* grpc_create_chttp2_transport(
 
 /// Takes ownership of \a read_buffer, which (if non-NULL) contains
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
-void grpc_chttp2_transport_start_reading(grpc_exec_ctx* exec_ctx,
-                                         grpc_transport* transport,
-                                         grpc_slice_buffer* read_buffer);
+/// If non-null, \a notify_on_receive_settings will be scheduled when
+/// HTTP/2 settings are received from the peer.
+void grpc_chttp2_transport_start_reading(
+    grpc_exec_ctx* exec_ctx, grpc_transport* transport,
+    grpc_slice_buffer* read_buffer, grpc_closure* notify_on_receive_settings);
 
 #ifdef __cplusplus
 }

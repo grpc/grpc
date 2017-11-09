@@ -93,8 +93,10 @@ static void on_handshake_done(grpc_exec_ctx* exec_ctx, void* arg,
       grpc_server_setup_transport(
           exec_ctx, connection_state->svr_state->server, transport,
           connection_state->accepting_pollset, args->args);
+// FIXME: set notify_on_receive_settings callback and use it to enforce
+// handshaking deadline
       grpc_chttp2_transport_start_reading(exec_ctx, transport,
-                                          args->read_buffer);
+                                          args->read_buffer, nullptr);
       grpc_channel_args_destroy(exec_ctx, args->args);
     }
   }

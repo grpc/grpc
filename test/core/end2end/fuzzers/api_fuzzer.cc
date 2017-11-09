@@ -466,7 +466,7 @@ static void do_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
     grpc_transport* transport =
         grpc_create_chttp2_transport(exec_ctx, NULL, server, false);
     grpc_server_setup_transport(exec_ctx, g_server, transport, NULL, NULL);
-    grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
+    grpc_chttp2_transport_start_reading(exec_ctx, transport, nullptr, nullptr);
 
     GRPC_CLOSURE_SCHED(exec_ctx, fc->closure, GRPC_ERROR_NONE);
   } else {
