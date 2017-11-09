@@ -21,6 +21,7 @@
 #include <grpc/grpc.h>
 
 #include <inttypes.h>
+#include <limits.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -132,10 +133,12 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
   connection_state->handshake_mgr = handshake_mgr;
   grpc_handshakers_add(exec_ctx, HANDSHAKER_SERVER, state->args,
                        connection_state->handshake_mgr);
-  // TODO(roth): We should really get this timeout value from channel
-  // args instead of hard-coding it.
+  const grpc_arg* timeout_arg =
+      grpc_channel_args_find(state->args, GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS);
   const grpc_millis deadline =
-      grpc_exec_ctx_now(exec_ctx) + 120 * GPR_MS_PER_SEC;
+      grpc_exec_ctx_now(exec_ctx) +
+      grpc_channel_arg_get_integer(timeout_arg,
+                                   {120 * GPR_MS_PER_SEC, 1, INT_MAX});
   grpc_handshake_manager_do_handshake(exec_ctx, connection_state->handshake_mgr,
                                       tcp, state->args, deadline, acceptor,
                                       on_handshake_done, connection_state);
