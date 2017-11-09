@@ -68,7 +68,7 @@ static void worker_thread(void* arg) {
   unsigned i, j;
   /* Avoid repetitive division calculations */
   int64_t max_i = 1000 / grpc_test_slowdown_factor();
-  int64_t max_j = 1000000 / grpc_test_slowdown_factor();
+  int64_t max_j = 1000 / grpc_test_slowdown_factor();
   for (i = 0; i < max_i; i++) {
     /* run for a bit - just calculate something random. */
     for (j = 0; j < max_j; j++) {
