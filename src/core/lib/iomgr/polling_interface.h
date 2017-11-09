@@ -39,18 +39,18 @@ class PollingJoin;
 // This interface should not be implemented outside of a polling engine
 class Pollable {};
 
-// A PollableCollection is a front-end interface to Poller & PollingJoin,
+// A PollableSet is a front-end interface to Poller & PollingJoin,
 // collecting common methods.
 // In many situations we don't care which we're dealing with, and so this class
 // serves to abstract away that detail
-class PollableCollection {
+class PollableSet {
  public:
   // Add a Pollable to this collection
   virtual void AddPollable(Pollable* pollable) = 0;
 
  protected:
-  PollableCollection() {}
-  ~PollableCollection() {}
+  PollableSet() {}
+  ~PollableSet() {}
 
  private:
   friend class PollingJoin;
@@ -63,7 +63,7 @@ class PollableCollection {
 //      so that it can find new calls to service
 //    - a completion queue might keep a poller with an entry for each transport
 //      that is servicing a call that it's tracking
-class Poller : public PollableCollection {
+class Poller : public PollableSet {
  public:
   virtual ~Poller() {}
 
@@ -89,13 +89,13 @@ class Poller : public PollableCollection {
   //
   // Tries not to block past deadline. May call grpc_closure_list_run on
   // grpc_closure_list, without holding the pollset lock
-  virtual grpc_error* Work(grpc_exec_ctx* exec_ctx, Worker** worker,
+  virtual grpc_error* Poll(grpc_exec_ctx* exec_ctx, Worker** worker,
                            grpc_millis deadline) GRPC_MUST_USE_RESULT = 0;
 
   // Break one polling thread out of polling work for this pollset.
   // If specific_worker is non-NULL, then kick that worker.
   virtual grpc_error* Kick(grpc_exec_ctx* exec_ctx,
-                           Worker* specific_worker) = 0;
+                           Worker* specific_worker) GRPC_MUST_USE_RESULT = 0;
 
   // Begin shutting down the pollset, and call on_done when done.
   // pollset's mutex must be held
@@ -126,7 +126,7 @@ class Poller : public PollableCollection {
 // Using a PollingJoin is often cheaper than manually updating the same using
 // just the Poller/Pollable interfaces as some polling engines have short-cut
 // paths to bulk update pollers/pollables
-class PollingJoin : public PollableCollection {
+class PollingJoin : public PollableSet {
  public:
   // inherits AddPollable
 
@@ -145,8 +145,8 @@ class PollingJoin : public PollableCollection {
   // join
   virtual void MergePollingJoin(PollingJoin* other_polling_join) = 0;
 
-  // Helper to add a PollableCollection (by delegating to Poller/PollingJoin)
-  void AddPollableCollection(PollableCollection* pollable_collection) {
+  // Helper to add a PollableSet (by delegating to Poller/PollingJoin)
+  void AddPollableSet(PollableSet* pollable_collection) {
     pollable_collection->AddToPollingJoin(this);
   }
 
