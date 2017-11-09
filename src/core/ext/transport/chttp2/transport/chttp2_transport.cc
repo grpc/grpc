@@ -205,6 +205,8 @@ static void destruct_transport(grpc_exec_ctx* exec_ctx,
     GPR_ASSERT(t->lists[i].tail == NULL);
   }
 
+  GRPC_ERROR_UNREF(t->goaway_error);
+
   GPR_ASSERT(grpc_chttp2_stream_map_size(&t->stream_map) == 0);
 
   grpc_chttp2_stream_map_destroy(&t->stream_map);
@@ -320,6 +322,7 @@ static void init_transport(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
                     keepalive_watchdog_fired_locked, t,
                     grpc_combiner_scheduler(t->combiner));
 
+  t->goaway_error = GRPC_ERROR_NONE;
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(exec_ctx, &t->hpack_parser);
 
@@ -1123,7 +1126,16 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx* exec_ctx,
                                      grpc_slice goaway_text) {
   // GRPC_CHTTP2_IF_TRACING(
   //     gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
-  t->seen_goaway = 1;
+
+  // Discard the error from a previous goaway frame (if any)
+  if (t->goaway_error != GRPC_ERROR_NONE) {
+    GRPC_ERROR_UNREF(t->goaway_error);
+  }
+  t->goaway_error = grpc_error_set_str(
+      grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
+          GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)goaway_error),
+      GRPC_ERROR_STR_RAW_BYTES, goaway_text);
 
   /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
    * data equal to "too_many_pings", it should log the occurrence at a log level
@@ -1144,14 +1156,8 @@ void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx* exec_ctx,
 
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
-  connectivity_state_set(
-      exec_ctx, t, GRPC_CHANNEL_TRANSIENT_FAILURE,
-      grpc_error_set_str(
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
-              GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)goaway_error),
-          GRPC_ERROR_STR_RAW_BYTES, goaway_text),
-      "got_goaway");
+  connectivity_state_set(exec_ctx, t, GRPC_CHANNEL_TRANSIENT_FAILURE,
+                         GRPC_ERROR_REF(t->goaway_error), "got_goaway");
 }
 
 static void maybe_start_some_streams(grpc_exec_ctx* exec_ctx,
@@ -2078,7 +2084,6 @@ void grpc_chttp2_fake_status(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
   grpc_status_code status;
   grpc_slice slice;
   grpc_error_get_status(exec_ctx, error, s->deadline, &status, &slice, NULL);
-
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
   }
@@ -2546,6 +2551,12 @@ static void read_action_locked(grpc_exec_ctx* exec_ctx, void* tp,
         "Transport closed", &t->closed_with_error, 1);
   }
   if (error != GRPC_ERROR_NONE) {
+    /* If a goaway frame was received, this might be the reason why the read
+     * failed. Add this info to the error */
+    if (t->goaway_error != GRPC_ERROR_NONE) {
+      error = grpc_error_add_child(error, GRPC_ERROR_REF(t->goaway_error));
+    }
+
     close_transport_locked(exec_ctx, t, GRPC_ERROR_REF(error));
     t->endpoint_reading = 0;
   } else if (t->closed_with_error == GRPC_ERROR_NONE) {
