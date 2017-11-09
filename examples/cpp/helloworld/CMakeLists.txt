@@ -6,12 +6,27 @@ project(HelloWorld C CXX)
 
 if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+else()
+  add_definitions(-D_WIN32_WINNT=0x600)
 endif()
 
 # Protobuf
-set(protobuf_MODULE_COMPATIBLE TRUE)
-find_package(protobuf CONFIG REQUIRED)
+# NOTE: we cannot use "CONFIG" mode here because protobuf-config.cmake
+# is broken when used with CMAKE_INSTALL_PREFIX
+find_package(protobuf REQUIRED)
 message(STATUS "Using protobuf ${protobuf_VERSION}")
+
+if(Protobuf_FOUND)
+  # Protobuf_FOUND is set for package type "CONFIG"
+  set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
+  set(_PROTOBUF_PROTOC protobuf::protoc)
+endif()
+if(PROTOBUF_FOUND)
+  # PROTOBUF_FOUND is set for package type "MODULE"
+  set(_PROTOBUF_LIBPROTOBUF ${PROTOBUF_LIBRARIES})
+  set(_PROTOBUF_PROTOC ${PROTOBUF_PROTOC_EXECUTABLE})
+  include_directories(${PROTOBUF_INCLUDE_DIRS})
+endif()
 
 # gRPC
 find_package(gRPC CONFIG REQUIRED)
@@ -31,7 +46,7 @@ set(hw_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.grpc.pb.cc")
 set(hw_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.grpc.pb.h")
 add_custom_command(
       OUTPUT "${hw_grpc_srcs}" "${hw_grpc_hdrs}"
-      COMMAND protobuf::protoc
+      COMMAND ${_PROTOBUF_PROTOC}
       ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}" -I "${hw_proto_path}"
         --plugin=protoc-gen-grpc="${gRPC_CPP_PLUGIN_EXECUTABLE}"
         "${hw_proto}"
@@ -48,6 +63,6 @@ foreach(_target
     ${hw_proto_srcs}
     ${hw_grpc_srcs})
   target_link_libraries(${_target}
-    protobuf::libprotobuf
+    ${_PROTOBUF_LIBPROTOBUF}
     gRPC::grpc++_unsecure)
 endforeach()
