@@ -31,9 +31,21 @@ namespace Grpc.Core.Internal
     }
 
     /// <summary>
+    /// Provides a way to read the received message (a.k.a payload) from grpcsharp_batch_context
+    /// </summary>
+    internal interface INativePayloadReader
+    {
+        byte[] ReadPayload();
+
+        int? GetPayloadLength();
+
+        void ReadPayloadToBuffer(byte[] buffer, int offset, int length);
+    }
+
+    /// <summary>
     /// grpcsharp_batch_context
     /// </summary>
-    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback
+    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback, INativePayloadReader
     {
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<BatchContextSafeHandle>();
@@ -97,8 +109,15 @@ namespace Grpc.Core.Internal
                 return null;
             }
             byte[] data = new byte[(int)len];
-            Native.grpcsharp_batch_context_recv_message_to_buffer(this, data, new UIntPtr((ulong)data.Length));
+            Native.grpcsharp_batch_context_recv_message_to_buffer(this, data, UIntPtr.Zero, new UIntPtr((ulong)data.Length));
             return data;
+        }
+
+        /// Returns payload reader for recv_message completion.
+        /// The method exists a convenience to improve code readability.
+        public INativePayloadReader AsNativePayloadReader()
+        {
+            return this;
         }
 
         // Gets data of receive_close_on_server completion.
@@ -124,6 +143,29 @@ namespace Grpc.Core.Internal
         {
             Native.grpcsharp_batch_context_destroy(handle);
             return true;
+        }
+
+        byte[] INativePayloadReader.ReadPayload()
+        {
+            return GetReceivedMessage();
+        }
+
+        int? INativePayloadReader.GetPayloadLength()
+        {
+            IntPtr len = Native.grpcsharp_batch_context_recv_message_length(this);
+            if (len == new IntPtr(-1))
+            {
+                return null;
+            }
+            return (int)len;
+        }
+
+        void INativePayloadReader.ReadPayloadToBuffer(byte[] buffer, int offset, int length)
+        {
+            GrpcPreconditions.CheckArgument(offset >= 0);
+            GrpcPreconditions.CheckArgument(length >= 0);
+            GrpcPreconditions.CheckArgument(buffer.Length >= offset + length);
+            Native.grpcsharp_batch_context_recv_message_to_buffer(this, buffer, new UIntPtr((ulong)offset), new UIntPtr((ulong)length));
         }
 
         void IOpCompletionCallback.OnComplete(bool success)

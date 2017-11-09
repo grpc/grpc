@@ -563,9 +563,9 @@ namespace Grpc.Core.Internal.Tests
             return new ClientSideStatus(new Status(statusCode, ""), new Metadata());
         }
 
-        byte[] CreateResponsePayload()
+        INativePayloadReader CreateResponsePayload()
         {
-            return Marshallers.StringMarshaller.Serializer("response1");
+            return new FakeNativePayloadReader(Marshallers.StringMarshaller.Serializer("response1"));
         }
 
         static void AssertUnaryResponseSuccess(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<string> resultTask)

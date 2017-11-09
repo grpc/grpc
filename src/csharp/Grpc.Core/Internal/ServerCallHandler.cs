@@ -51,7 +51,7 @@ namespace Grpc.Core.Internal
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.RequestMarshaller.ArraySegmentDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -110,7 +110,7 @@ namespace Grpc.Core.Internal
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.RequestMarshaller.ArraySegmentDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -168,7 +168,7 @@ namespace Grpc.Core.Internal
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.RequestMarshaller.ArraySegmentDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -226,7 +226,7 @@ namespace Grpc.Core.Internal
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.RequestMarshaller.ArraySegmentDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);

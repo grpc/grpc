@@ -51,7 +51,7 @@ namespace Grpc.Core.Internal
         ClientSideStatus? finishedStatus;
 
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
-            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
+            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.ArraySegmentDeserializer)
         {
             this.details = callDetails.WithOptions(callDetails.Options.Normalize());
             this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.
@@ -103,7 +103,7 @@ namespace Grpc.Core.Internal
                         {
                             using (profiler.NewScope("AsyncCall.UnaryCall.HandleBatch"))
                             {
-                                HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessage(), ctx.GetReceivedInitialMetadata());
+                                HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.AsNativePayloadReader(), ctx.GetReceivedInitialMetadata());
                             }
                         }
                         catch (Exception e)
@@ -439,7 +439,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handler for unary response completion.
         /// </summary>
-        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
+        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, INativePayloadReader receivedMessage, Metadata responseHeaders)
         {
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
@@ -524,7 +524,7 @@ namespace Grpc.Core.Internal
 
         IUnaryResponseClientCallback UnaryResponseClientCallback => this;
 
-        void IUnaryResponseClientCallback.OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
+        void IUnaryResponseClientCallback.OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, INativePayloadReader receivedMessage, Metadata responseHeaders)
         {
             HandleUnaryResponse(success, receivedStatus, receivedMessage, responseHeaders);
         }

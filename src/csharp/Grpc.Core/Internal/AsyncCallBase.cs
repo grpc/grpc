@@ -38,10 +38,12 @@ namespace Grpc.Core.Internal
     internal abstract class AsyncCallBase<TWrite, TRead> : IReceivedMessageCallback, ISendCompletionCallback
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCallBase<TWrite, TRead>>();
+        static readonly ThreadLocalBufferCache DeserializerBufferCache = new ThreadLocalBufferCache();
+
         protected static readonly Status DeserializeResponseFailureStatus = new Status(StatusCode.Internal, "Failed to deserialize response message.");
 
         readonly Func<TWrite, byte[]> serializer;
-        readonly Func<byte[], TRead> deserializer;
+        readonly Func<ArraySegment<byte>, TRead> deserializer;
 
         protected readonly object myLock = new object();
 
@@ -63,7 +65,7 @@ namespace Grpc.Core.Internal
         protected bool initialMetadataSent;
         protected long streamingWritesCounter;  // Number of streaming send operations started so far.
 
-        public AsyncCallBase(Func<TWrite, byte[]> serializer, Func<byte[], TRead> deserializer)
+        public AsyncCallBase(Func<TWrite, byte[]> serializer, Func<ArraySegment<byte>, TRead> deserializer)
         {
             this.serializer = GrpcPreconditions.CheckNotNull(serializer);
             this.deserializer = GrpcPreconditions.CheckNotNull(deserializer);
@@ -214,11 +216,19 @@ namespace Grpc.Core.Internal
             return serializer(msg);
         }
 
-        protected Exception TryDeserialize(byte[] payload, out TRead msg)
+        protected Exception TryDeserialize(INativePayloadReader payloadReader, out TRead msg)
         {
             try
             {
-                msg = deserializer(payload);
+                int? len = payloadReader.GetPayloadLength();
+                if (!len.HasValue)
+                {
+                    msg = default(TRead);
+                    return null;
+                }
+                var buffer = DeserializerBufferCache.RentForCurrentScope(len.Value);
+                payloadReader.ReadPayloadToBuffer(buffer, 0, len.Value);
+                msg = deserializer(new ArraySegment<byte>(buffer, 0, len.Value));
                 return null;
             }
             catch (Exception e)
@@ -300,7 +310,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles streaming read completion.
         /// </summary>
-        protected void HandleReadFinished(bool success, byte[] receivedMessage)
+        protected void HandleReadFinished(bool success, INativePayloadReader receivedMessage)
         {
             // if success == false, received message will be null. It that case we will
             // treat this completion as the last read an rely on C core to handle the failed
@@ -352,7 +362,7 @@ namespace Grpc.Core.Internal
 
         IReceivedMessageCallback ReceivedMessageCallback => this;
 
-        void IReceivedMessageCallback.OnReceivedMessage(bool success, byte[] receivedMessage)
+        void IReceivedMessageCallback.OnReceivedMessage(bool success, INativePayloadReader receivedMessage)
         {
             HandleReadFinished(success, receivedMessage);
         }

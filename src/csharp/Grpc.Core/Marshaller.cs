@@ -28,6 +28,7 @@ namespace Grpc.Core
     {
         readonly Func<T, byte[]> serializer;
         readonly Func<byte[], T> deserializer;
+        readonly Func<ArraySegment<byte>, T> segmentDeserializer;
 
         /// <summary>
         /// Initializes a new marshaller.
@@ -36,8 +37,19 @@ namespace Grpc.Core
         /// <param name="deserializer">Function that will be used to deserialize messages.</param>
         public Marshaller(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
         {
-            this.serializer = GrpcPreconditions.CheckNotNull(serializer, "serializer");
-            this.deserializer = GrpcPreconditions.CheckNotNull(deserializer, "deserializer");
+            this.serializer = GrpcPreconditions.CheckNotNull(serializer, nameof(serializer));
+            this.deserializer = GrpcPreconditions.CheckNotNull(deserializer, nameof(deserializer));
+            this.segmentDeserializer = (arraySegment) => this.deserializer(CopyToNewByteArray(arraySegment));
+        }
+
+        /// <summary>
+        /// Initializes a new marshaller.
+        /// </summary>
+        public Marshaller(Func<T, byte[]> serializer, Func<ArraySegment<byte>, T> segmentDeserializer)
+        {
+            this.serializer = GrpcPreconditions.CheckNotNull(serializer, nameof(serializer));
+            this.segmentDeserializer = GrpcPreconditions.CheckNotNull(segmentDeserializer, nameof(segmentDeserializer));
+            this.deserializer = (bytes) => this.segmentDeserializer(new ArraySegment<byte>(bytes));
         }
 
         /// <summary>
@@ -61,6 +73,29 @@ namespace Grpc.Core
                 return this.deserializer;
             }
         }
+
+        /// <summary>
+        /// Get the segment deserialize function.
+        /// IMPORTANT: The <c>ArraySegment</c> containing the data to deserialize
+        /// is only guaranteed to exist (and contain meaningul data) over the course
+        /// of deserializer's invocation. The deserializer's implementation must not keep
+        /// any references to the input data once it returns (the buffer will likely
+        /// get reused).
+        /// </summary>
+        public Func<ArraySegment<byte>, T> ArraySegmentDeserializer
+        {
+            get
+            {
+                return this.segmentDeserializer;
+            }
+        }
+
+        private static byte[] CopyToNewByteArray(ArraySegment<byte> segment)
+        {
+            var bytes = new byte[segment.Count];
+            Buffer.BlockCopy(segment.Array, segment.Offset, bytes, 0, segment.Count);
+            return bytes;
+        }
     }
 
     /// <summary>
@@ -72,6 +107,14 @@ namespace Grpc.Core
         /// Creates a marshaller from specified serializer and deserializer.
         /// </summary>
         public static Marshaller<T> Create<T>(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
+        {
+            return new Marshaller<T>(serializer, deserializer);
+        }
+
+        /// <summary>
+        /// Creates a marshaller from specified serializer and deserializer.
+        /// </summary>
+        public static Marshaller<T> Create<T>(Func<T, byte[]> serializer, Func<ArraySegment<byte>, T> deserializer)
         {
             return new Marshaller<T>(serializer, deserializer);
         }

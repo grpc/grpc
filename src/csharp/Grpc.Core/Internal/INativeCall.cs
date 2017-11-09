@@ -22,7 +22,7 @@ namespace Grpc.Core.Internal
 {
     internal interface IUnaryResponseClientCallback
     {
-        void OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders);
+        void OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, INativePayloadReader receivedMessage, Metadata responseHeaders);
     }
 
     // Received status for streaming response calls.
@@ -33,7 +33,7 @@ namespace Grpc.Core.Internal
 
     internal interface IReceivedMessageCallback
     {
-        void OnReceivedMessage(bool success, byte[] receivedMessage);
+        void OnReceivedMessage(bool success, INativePayloadReader receivedMessage);
     }
 
     internal interface IReceivedResponseHeadersCallback
