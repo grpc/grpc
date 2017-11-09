@@ -29,7 +29,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/surface/call.h"
 
-extern "C" void grpc_summon_debugger_macros() {}
+void grpc_summon_debugger_macros() {}
 
 grpc_stream* grpc_transport_stream_from_call(grpc_call* call) {
   grpc_call_stack* cs = grpc_call_get_call_stack(call);

@@ -35,7 +35,7 @@
 #include <grpc/support/time.h>
 
 #include <grpc++/impl/codegen/config.h>
-extern "C" {
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -50,7 +50,6 @@ extern "C" {
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-}
 
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"
 

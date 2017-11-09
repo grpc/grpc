@@ -23,7 +23,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif /*  __cplusplus */
+#endif
 
 extern int64_t g_fixture_slowdown_factor;
 extern int64_t g_poller_slowdown_factor;
@@ -45,6 +45,6 @@ void grpc_test_init(int argc, char** argv);
 
 #ifdef __cplusplus
 }
-#endif /*  __cplusplus */
+#endif
 
 #endif /* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */

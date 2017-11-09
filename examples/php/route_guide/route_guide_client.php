@@ -17,12 +17,9 @@
  *
  */
 
-require dirname(__FILE__).'/../vendor/autoload.php';
+// php:generate protoc --proto_path=./../../protos  --php_out=./  --grpc_out=./ --plugin=protoc-gen-grpc=./../../../bins/opt/grpc_php_plugin ./../../protos/route_guide.proto
 
-// The following includes are needed when using protobuf 3.1.0
-// and will suppress warnings when using protobuf 3.2.0+
-@include_once dirname(__FILE__).'/route_guide.pb.php';
-@include_once dirname(__FILE__).'/route_guide_grpc_pb.php';
+require dirname(__FILE__).'/../vendor/autoload.php';
 
 define('COORD_FACTOR', 1e7);
 
@@ -38,9 +35,12 @@ function printFeature($feature)
     } else {
         $name_str = "feature called $name";
     }
-    echo sprintf("Found %s \n  at %f, %f\n", $name_str,
+    echo sprintf(
+        "Found %s \n  at %f, %f\n",
+        $name_str,
                  $feature->getLocation()->getLatitude() / COORD_FACTOR,
-                 $feature->getLocation()->getLongitude() / COORD_FACTOR);
+                 $feature->getLocation()->getLongitude() / COORD_FACTOR
+    );
 }
 
 /**
@@ -122,19 +122,24 @@ function runRecordRoute()
         $feature_name = $db[$index]['name'];
         $point->setLatitude($lat);
         $point->setLongitude($long);
-        echo sprintf("Visiting point %f, %f,\n  with feature name: %s\n",
-                     $lat / COORD_FACTOR, $long / COORD_FACTOR,
-                     $feature_name ? $feature_name : '<empty>');
+        echo sprintf(
+            "Visiting point %f, %f,\n  with feature name: %s\n",
+                     $lat / COORD_FACTOR,
+            $long / COORD_FACTOR,
+                     $feature_name ? $feature_name : '<empty>'
+        );
         usleep(rand(300000, 800000));
         $call->write($point);
     }
     list($route_summary, $status) = $call->wait();
-    echo sprintf("Finished trip with %d points\nPassed %d features\n".
+    echo sprintf(
+        "Finished trip with %d points\nPassed %d features\n".
                  "Travelled %d meters\nIt took %d seconds\n",
                  $route_summary->getPointCount(),
                  $route_summary->getFeatureCount(),
                  $route_summary->getDistance(),
-                 $route_summary->getElapsedTime());
+                 $route_summary->getElapsedTime()
+    );
 }
 
 /**
@@ -166,8 +171,12 @@ function runRouteChat()
         $route_note->setLocation($point);
         $route_note->setMessage($message = $n[2]);
 
-        echo sprintf("Sending message: '%s' at (%d, %d)\n",
-                     $message, $lat, $long);
+        echo sprintf(
+            "Sending message: '%s' at (%d, %d)\n",
+                     $message,
+            $lat,
+            $long
+        );
         // send a bunch of messages to the server
         $call->write($route_note);
     }
@@ -175,10 +184,12 @@ function runRouteChat()
 
     // read from the server until there's no more
     while ($route_note_reply = $call->read()) {
-        echo sprintf("Previous left message at (%d, %d): '%s'\n",
+        echo sprintf(
+            "Previous left message at (%d, %d): '%s'\n",
                      $route_note_reply->getLocation()->getLatitude(),
                      $route_note_reply->getLocation()->getLongitude(),
-                     $route_note_reply->getMessage());
+                     $route_note_reply->getMessage()
+        );
     }
 }
 
