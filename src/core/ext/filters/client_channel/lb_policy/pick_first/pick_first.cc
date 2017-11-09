@@ -532,11 +532,6 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
       case GRPC_CHANNEL_SHUTDOWN: {
         grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd,
                                                  "pf_candidate_shutdown");
-        if (sd->subchannel_list == p->subchannel_list) {
-          grpc_connectivity_state_set(
-              exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-              GRPC_ERROR_REF(error), "subchannel_failed");
-        }
         // Advance to next subchannel and check its state.
         grpc_lb_subchannel_data* original_sd = sd;
         do {
@@ -551,6 +546,11 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
               exec_ctx, sd->subchannel_list, "pf_candidate_shutdown");
           grpc_lb_policy_try_reresolve(
               exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+          if (sd->subchannel_list == p->subchannel_list) {
+            grpc_connectivity_state_set(
+                exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+                GRPC_ERROR_REF(error), "exhausted_subchannels");
+          }
           return;
         }
         sd->curr_connectivity_state =
