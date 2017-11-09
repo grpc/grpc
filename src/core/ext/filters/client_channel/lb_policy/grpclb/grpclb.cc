@@ -1486,9 +1486,6 @@ static void query_for_backends_locked(grpc_exec_ctx* exec_ctx,
   GPR_ASSERT(glb_policy->lb_channel != NULL);
   if (glb_policy->shutting_down) return;
 
-  if (glb_policy->retry_timer_active) {
-    grpc_timer_cancel(exec_ctx, &glb_policy->lb_call_retry_timer);
-  }
   lb_call_init_locked(exec_ctx, glb_policy);
 
   if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
