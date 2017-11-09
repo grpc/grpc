@@ -176,7 +176,7 @@ typedef struct wrapped_rr_closure_arg {
   grpc_lb_policy* rr_policy;
 
   /* The grpclb instance that created the wrapping. This instance is not owned,
-   * reference counts are untouched. Its used only for logging purposes. */
+   * reference counts are untouched. It's used only for logging purposes. */
   grpc_lb_policy* glb_policy;
 
   /* heap memory to be freed upon closure execution. */
