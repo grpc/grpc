@@ -188,9 +188,14 @@ Status GenericSerialize(const grpc::protobuf::Message& msg,
       "BufferWriter must be a subclass of io::ZeroCopyOutputStream");
   *own_buffer = true;
   int byte_size = msg.ByteSize();
-  if (byte_size == 0) {
-    grpc_slice empty_slice = g_core_codegen_interface->grpc_empty_slice();
-    *bp = g_core_codegen_interface->grpc_raw_byte_buffer_create(&empty_slice, 1);
+  if ((size_t)byte_size <= GRPC_SLICE_INLINED_SIZE) {
+    grpc_slice slice = g_core_codegen_interface->grpc_slice_malloc(byte_size);
+    GPR_CODEGEN_ASSERT(
+        GRPC_SLICE_END_PTR(slice) ==
+        msg.SerializeWithCachedSizesToArray(GRPC_SLICE_START_PTR(slice)));
+    *bp = g_core_codegen_interface->grpc_raw_byte_buffer_create(&slice, 1);
+    g_core_codegen_interface->grpc_slice_unref(slice);
+
     return g_core_codegen_interface->ok();
   }
   BufferWriter writer(bp, kGrpcBufferWriterMaxBufferLength, byte_size);
