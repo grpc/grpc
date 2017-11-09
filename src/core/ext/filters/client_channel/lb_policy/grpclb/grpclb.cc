@@ -1259,14 +1259,13 @@ static void lb_call_on_retry_timer_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                           grpc_error* error) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
   glb_policy->retry_timer_active = false;
-  if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
+  if (!glb_policy->shutting_down && glb_policy->lb_call == NULL &&
+      error == GRPC_ERROR_NONE) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO, "Restaring call to LB server (grpclb %p)",
               (void*)glb_policy);
     }
-    if (glb_policy->lb_call == NULL) {
-      query_for_backends_locked(exec_ctx, glb_policy);
-    }
+    query_for_backends_locked(exec_ctx, glb_policy);
   }
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base, "grpclb_retry_timer");
 }
