@@ -18,6 +18,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <grpc/support/log.h>
+
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
@@ -34,7 +36,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
@@ -1230,6 +1231,7 @@ static const grpc_event_engine_vtable vtable = {
  * support is available */
 const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
   if (!grpc_has_wakeup_fd()) {
+    gpr_log(GPR_ERROR, "Skipping epoll1 because of no wakeup fd.");
     return NULL;
   }
 
@@ -1254,6 +1256,8 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
 const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
+  gpr_log(GPR_ERROR,
+          "Skipping epoll1 becuase GRPC_LINUX_EPOLL is not defined.");
   return NULL;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */

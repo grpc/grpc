@@ -19,6 +19,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 #include <grpc/grpc_posix.h>
+#include <grpc/support/log.h>
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
@@ -37,7 +38,6 @@
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
@@ -1711,14 +1711,17 @@ const grpc_event_engine_vtable* grpc_init_epollsig_linux(
     bool explicit_request) {
   /* If use of signals is disabled, we cannot use epoll engine*/
   if (is_grpc_wakeup_signal_initialized && grpc_wakeup_signal < 0) {
+    gpr_log(GPR_ERROR, "Skipping epollsig because use of signals is disabled.");
     return NULL;
   }
 
   if (!grpc_has_wakeup_fd()) {
+    gpr_log(GPR_ERROR, "Skipping epollsig because of no wakeup fd.");
     return NULL;
   }
 
   if (!is_epoll_available()) {
+    gpr_log(GPR_ERROR, "Skipping epollsig because epoll is unavailable.");
     return NULL;
   }
 
@@ -1726,6 +1729,8 @@ const grpc_event_engine_vtable* grpc_init_epollsig_linux(
     if (explicit_request) {
       grpc_use_signal(SIGRTMIN + 6);
     } else {
+      gpr_log(GPR_ERROR,
+              "Skipping epollsig because uninitialized wakeup signal.");
       return NULL;
     }
   }
@@ -1751,6 +1756,8 @@ const grpc_event_engine_vtable* grpc_init_epollsig_linux(
  * NULL */
 const grpc_event_engine_vtable* grpc_init_epollsig_linux(
     bool explicit_request) {
+  gpr_log(GPR_ERROR,
+          "Skipping epollsig becuase GRPC_LINUX_EPOLL is not defined.");
   return NULL;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
