@@ -108,14 +108,12 @@ static void log_address_sorting_list(grpc_lb_addresses* lb_addrs,
     if (grpc_sockaddr_to_string(&addr_str, &lb_addrs->addresses[i].address,
                                 true)) {
       gpr_log(GPR_INFO,
-              "C-ares sockaddr address sorting %s index: %" PRIdPTR
-              ". Sockaddr-to-string: %s",
+              "c-ares address sorting: %s:[%" PRIdPTR "]=%s",
               input_output_str, i, addr_str);
       gpr_free(addr_str);
     } else {
       gpr_log(GPR_INFO,
-              "Failed to convert sockaddr c-ares address sorting %s index: "
-              "%" PRIdPTR " to string.",
+              "c-ares address sorting: %s:[%" PRIdPTR "]=<unprintable>",
               input_output_str, i);
     }
   }

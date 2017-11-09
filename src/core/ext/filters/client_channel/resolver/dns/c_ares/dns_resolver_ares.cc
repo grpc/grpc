@@ -431,6 +431,8 @@ extern "C" void grpc_resolver_dns_ares_init(void) {
   /* TODO(zyc): Turn on c-ares based resolver by default after the address
      sorter and the CNAME support are added. */
   if (resolver != NULL && gpr_stricmp(resolver, "ares") == 0) {
+    grpc_register_tracer(&grpc_trace_cares_address_sorting);
+    address_sorting_init();
     grpc_error* error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
@@ -438,8 +440,6 @@ extern "C" void grpc_resolver_dns_ares_init(void) {
     }
     grpc_resolve_address = grpc_resolve_address_ares;
     grpc_register_resolver_type(dns_ares_resolver_factory_create());
-    grpc_register_tracer(&grpc_trace_cares_address_sorting);
-    address_sorting_init();
   }
   gpr_free(resolver);
 }
@@ -447,9 +447,9 @@ extern "C" void grpc_resolver_dns_ares_init(void) {
 extern "C" void grpc_resolver_dns_ares_shutdown(void) {
   char* resolver = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver != NULL && gpr_stricmp(resolver, "ares") == 0) {
+    address_sorting_shutdown();
     grpc_ares_cleanup();
   }
-  address_sorting_shutdown();
   gpr_free(resolver);
 }
 
