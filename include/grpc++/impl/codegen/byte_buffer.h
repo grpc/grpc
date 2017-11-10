@@ -31,18 +31,19 @@
 
 namespace grpc {
 
+namespace internal {
+class CallOpSendMessage;
 template <class R>
 class CallOpRecvMessage;
+class CallOpGenericRecvMessage;
 class MethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
-namespace CallOpGenericRecvMessageHelper {
 template <class R>
 class DeserializeFuncType;
-}  // namespace CallOpGenericRecvMessageHelper
-
+}  // namespace internal
 /// A sequence of bytes.
 class ByteBuffer final {
  public:
@@ -97,17 +98,17 @@ class ByteBuffer final {
 
  private:
   friend class SerializationTraits<ByteBuffer, void>;
-  friend class CallOpSendMessage;
+  friend class internal::CallOpSendMessage;
   template <class R>
-  friend class CallOpRecvMessage;
-  friend class CallOpGenericRecvMessage;
-  friend class MethodHandler;
+  friend class internal::CallOpRecvMessage;
+  friend class internal::CallOpGenericRecvMessage;
+  friend class internal::MethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class RpcMethodHandler;
+  friend class internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ServerStreamingHandler;
+  friend class internal::ServerStreamingHandler;
   template <class R>
-  friend class CallOpGenericRecvMessageHelper::DeserializeFuncType;
+  friend class internal::DeserializeFuncType;
 
   grpc_byte_buffer* buffer_;
 

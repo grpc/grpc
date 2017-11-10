@@ -167,7 +167,7 @@ TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
-  const uint32_t target_announced_window = target_window();
+  const uint32_t target_announced_window = (const uint32_t)target_window();
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
       announced_window_ != target_announced_window) {
     const uint32_t announce = (uint32_t)GPR_CLAMP(
@@ -226,9 +226,9 @@ grpc_error* StreamFlowControl::RecvData(int64_t incoming_frame_size) {
               incoming_frame_size, acked_stream_window, sent_stream_window);
     } else {
       char* msg;
-      gpr_asprintf(&msg, "frame of size %" PRId64
-                         " overflows local window of %" PRId64,
-                   incoming_frame_size, acked_stream_window);
+      gpr_asprintf(
+          &msg, "frame of size %" PRId64 " overflows local window of %" PRId64,
+          incoming_frame_size, acked_stream_window);
       grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
       return err;

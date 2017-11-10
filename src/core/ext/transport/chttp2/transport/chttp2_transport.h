@@ -23,10 +23,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern grpc_core::TraceFlag grpc_http_trace;
 extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 
@@ -34,15 +30,19 @@ extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 extern grpc_core::TraceFlag grpc_trace_chttp2_refcount;
 #endif
 
-grpc_transport *grpc_create_chttp2_transport(
-    grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
-    grpc_endpoint *ep, int is_client);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+grpc_transport* grpc_create_chttp2_transport(
+    grpc_exec_ctx* exec_ctx, const grpc_channel_args* channel_args,
+    grpc_endpoint* ep, int is_client);
 
 /// Takes ownership of \a read_buffer, which (if non-NULL) contains
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
-void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
-                                         grpc_transport *transport,
-                                         grpc_slice_buffer *read_buffer);
+void grpc_chttp2_transport_start_reading(grpc_exec_ctx* exec_ctx,
+                                         grpc_transport* transport,
+                                         grpc_slice_buffer* read_buffer);
 
 #ifdef __cplusplus
 }

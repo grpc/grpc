@@ -31,14 +31,14 @@ using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::string;
 
-inline string MessageHeaderName(const FileDescriptor *file) {
+inline string MessageHeaderName(const FileDescriptor* file) {
   return google::protobuf::compiler::objectivec::FilePath(file) + ".pbobjc.h";
 }
 
-inline string ServiceClassName(const ServiceDescriptor *service) {
-  const FileDescriptor *file = service->file();
+inline string ServiceClassName(const ServiceDescriptor* service) {
+  const FileDescriptor* file = service->file();
   string prefix = file->options().objc_class_prefix();
   return prefix + service->name();
 }
-}
+}  // namespace grpc_objective_c_generator
 #endif  // GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H

@@ -70,7 +70,7 @@ class Histogram {
 
   gpr_histogram* impl_;
 };
-}
-}
+}  // namespace testing
+}  // namespace grpc
 
 #endif /* TEST_QPS_HISTOGRAM_H */

@@ -24,7 +24,7 @@ For more details on each step, refer to sections below.
 - Create new `Dockerfile.template`, `build_interop.sh.template` for the language/runtime under `template/tools/dockerfile/`.
 - Run `tools/buildgen/generate_projects.sh` to create corresponding files under `tools/dockerfile/`.
 - Add language/runtimes to `client_matrix.py` following existing language/runtimes examples.
-- Run `tools/interop_matrix/create_matrix_images.py` which will build and upload images to GCR.  Unless you are also building images for a gRPC release, make sure not to set `--gcr_tag` (the default tag 'master' is used for testing).
+- Run `tools/interop_matrix/create_matrix_images.py` which will build and upload images to GCR.  Unless you are also building images for a gRPC release, make sure not to set `--release` (the default release 'master' is used for testing).
 
 *: Please delete your docker images at https://pantheon.corp.google.com/gcr/images/grpc-testing?project=grpc-testing afterwards.  Permissions to access GrpcTesting project is required for this step.
 

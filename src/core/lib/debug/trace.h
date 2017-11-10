@@ -51,6 +51,8 @@ class TraceFlag {
 
   static bool Set(const char *tracer, bool enabled);
 
+  const char* name() const { return name_; }
+
   bool enabled() {
 #ifdef GRPC_THREADSAFE_TRACER
     gpr_atm_no_barrier_load(&value_) != 0
