@@ -69,20 +69,20 @@ typedef struct grpc_combiner grpc_combiner;
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
   /** currently active combiner: updated only via combiner.c */
-  grpc_combiner *active_combiner;
+  grpc_combiner* active_combiner;
   /** last active combiner in the active combiner list */
-  grpc_combiner *last_combiner;
+  grpc_combiner* last_combiner;
   uintptr_t flags;
   unsigned starting_cpu;
-  void *check_ready_to_finish_arg;
-  bool (*check_ready_to_finish)(void *arg);
+  void* check_ready_to_finish_arg;
+  bool (*check_ready_to_finish)(void* arg);
 
   bool now_is_valid;
   grpc_millis now;
-  const char *creator;
+  const char* creator;
 };
 
-extern grpc_closure_scheduler *grpc_schedule_on_exec_ctx;
+extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
 
 bool grpc_exec_ctx_has_work();
 
@@ -98,9 +98,9 @@ void grpc_exec_ctx_finish();
     on outside context */
 bool grpc_exec_ctx_ready_to_finish();
 /** A finish check that is never ready to finish */
-bool grpc_never_ready_to_finish(void *arg_ignored);
+bool grpc_never_ready_to_finish(void* arg_ignored);
 /** A finish check that is always ready to finish */
-bool grpc_always_ready_to_finish(void *arg_ignored);
+bool grpc_always_ready_to_finish(void* arg_ignored);
 
 void grpc_exec_ctx_global_init(void);
 
@@ -121,28 +121,28 @@ inline grpc_exec_ctx make_exec_ctx(grpc_exec_ctx r) {
 class ExecCtx {
  public:
   ExecCtx();
-  ExecCtx(uintptr_t fl, bool (*finish_check)(void *arg),
-          void *finish_check_arg);
+  ExecCtx(uintptr_t fl, bool (*finish_check)(void* arg),
+          void* finish_check_arg);
   ~ExecCtx();
 
   grpc_closure_list closure_list;
   /** currently active combiner: updated only via combiner.c */
-  grpc_combiner *active_combiner;
+  grpc_combiner* active_combiner;
   /** last active combiner in the active combiner list */
-  grpc_combiner *last_combiner;
+  grpc_combiner* last_combiner;
   uintptr_t flags;
   unsigned starting_cpu;
-  void *check_ready_to_finish_arg;
-  bool (*check_ready_to_finish)(void *arg);
+  void* check_ready_to_finish_arg;
+  bool (*check_ready_to_finish)(void* arg);
 
   bool now_is_valid;
   grpc_millis now;
 
  private:
-  ExecCtx *last_exec_ctx;
+  ExecCtx* last_exec_ctx;
 };
 
-extern thread_local ExecCtx *exec_ctx;
+extern thread_local ExecCtx* exec_ctx;
 
 /* initializer for grpc_exec_ctx:
  *    prefer to use GRPC_EXEC_CTX_INIT whenever possible */

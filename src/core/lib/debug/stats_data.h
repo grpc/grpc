@@ -127,8 +127,8 @@ typedef enum {
   GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES,
   GRPC_STATS_COUNTER_COUNT
 } grpc_stats_counters;
-extern const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
-extern const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT];
+extern const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
+extern const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT];
 typedef enum {
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,
   GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED,
@@ -145,8 +145,8 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED,
   GRPC_STATS_HISTOGRAM_COUNT
 } grpc_stats_histograms;
-extern const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
-extern const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT];
+extern const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
+extern const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT];
 typedef enum {
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_FIRST_SLOT = 0,
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_BUCKETS = 64,
@@ -431,7 +431,7 @@ void grpc_stats_inc_http2_send_flowctl_per_write(int x);
 void grpc_stats_inc_server_cqs_checked(int x);
 extern const int grpc_stats_histo_buckets[13];
 extern const int grpc_stats_histo_start[13];
-extern const int *const grpc_stats_histo_bucket_boundaries[13];
+extern const int* const grpc_stats_histo_bucket_boundaries[13];
 extern void (*const grpc_stats_inc_histogram[13])(int x);
 
 #ifdef __cplusplus

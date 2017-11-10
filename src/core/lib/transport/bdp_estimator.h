@@ -37,18 +37,11 @@ namespace grpc_core {
 
 class BdpEstimator {
  public:
-  explicit BdpEstimator(const char *name);
+  explicit BdpEstimator(const char* name);
   ~BdpEstimator() {}
 
-  // Returns true if a reasonable estimate could be obtained
-  bool EstimateBdp(int64_t *estimate_out) const {
-    *estimate_out = estimate_;
-    return true;
-  }
-  bool EstimateBandwidth(double *bw_out) const {
-    *bw_out = bw_est_;
-    return true;
-  }
+  int64_t EstimateBdp() const { return estimate_; }
+  double EstimateBandwidth() const { return bw_est_; }
 
   void AddIncomingBytes(int64_t num_bytes) { accumulator_ += num_bytes; }
 
@@ -93,7 +86,7 @@ class BdpEstimator {
   int inter_ping_delay_;
   int stable_estimate_count_;
   double bw_est_;
-  const char *name_;
+  const char* name_;
 };
 
 }  // namespace grpc_core

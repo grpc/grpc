@@ -44,7 +44,7 @@ typedef struct {
   gpr_thd_id id;
 } thread_state;
 
-static thread_state *g_thread_state;
+static thread_state* g_thread_state;
 static size_t g_max_threads;
 static gpr_atm g_cur_threads;
 static gpr_spinlock g_adding_thread_lock = GPR_SPINLOCK_STATIC_INITIALIZER;
@@ -54,15 +54,15 @@ GPR_TLS_DECL(g_this_thread_state);
 static grpc_tracer_flag executor_trace =
     GRPC_TRACER_INITIALIZER(false, "executor");
 
-static void executor_thread(void *arg);
+static void executor_thread(void* arg);
 
 static size_t run_closures(grpc_closure_list list) {
   size_t n = 0;
 
-  grpc_closure *c = list.head;
+  grpc_closure* c = list.head;
   while (c != NULL) {
-    grpc_closure *next = c->next_data.next;
-    grpc_error *error = c->error_data.error;
+    grpc_closure* next = c->next_data.next;
+    grpc_error* error = c->error_data.error;
     if (GRPC_TRACER_ON(executor_trace)) {
 #ifndef NDEBUG
       gpr_log(GPR_DEBUG, "EXECUTOR: run %p [created by %s:%d]", c,
@@ -96,7 +96,7 @@ void grpc_executor_set_threading(bool threading) {
     gpr_atm_no_barrier_store(&g_cur_threads, 1);
     gpr_tls_init(&g_this_thread_state);
     g_thread_state =
-        (thread_state *)gpr_zalloc(sizeof(thread_state) * g_max_threads);
+        (thread_state*)gpr_zalloc(sizeof(thread_state) * g_max_threads);
     for (size_t i = 0; i < g_max_threads; i++) {
       gpr_mu_init(&g_thread_state[i].mu);
       gpr_cv_init(&g_thread_state[i].cv);
@@ -141,8 +141,8 @@ void grpc_executor_init() {
 
 void grpc_executor_shutdown() { grpc_executor_set_threading(false); }
 
-static void executor_thread(void *arg) {
-  thread_state *ts = (thread_state *)arg;
+static void executor_thread(void* arg) {
+  thread_state* ts = (thread_state*)arg;
   gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
 
   ExecCtx _local_exec_ctx(0, grpc_never_ready_to_finish, NULL);
@@ -181,7 +181,7 @@ static void executor_thread(void *arg) {
   grpc_exec_ctx_finish();
 }
 
-static void executor_push(grpc_closure *closure, grpc_error *error,
+static void executor_push(grpc_closure* closure, grpc_error* error,
                           bool is_short) {
   bool retry_push;
   if (is_short) {
@@ -204,13 +204,13 @@ static void executor_push(grpc_closure *closure, grpc_error *error,
       grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
       return;
     }
-    thread_state *ts = (thread_state *)gpr_tls_get(&g_this_thread_state);
+    thread_state* ts = (thread_state*)gpr_tls_get(&g_this_thread_state);
     if (ts == NULL) {
       ts = &g_thread_state[GPR_HASH_POINTER(&exec_ctx, cur_thread_count)];
     } else {
       GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF();
     }
-    thread_state *orig_ts = ts;
+    thread_state* orig_ts = ts;
 
     bool try_new_thread;
     for (;;) {
@@ -273,11 +273,11 @@ static void executor_push(grpc_closure *closure, grpc_error *error,
   } while (retry_push);
 }
 
-static void executor_push_short(grpc_closure *closure, grpc_error *error) {
+static void executor_push_short(grpc_closure* closure, grpc_error* error) {
   executor_push(closure, error, true);
 }
 
-static void executor_push_long(grpc_closure *closure, grpc_error *error) {
+static void executor_push_long(grpc_closure* closure, grpc_error* error) {
   executor_push(closure, error, false);
 }
 
@@ -290,7 +290,7 @@ static const grpc_closure_scheduler_vtable executor_vtable_long = {
     executor_push_long, executor_push_long, "executor"};
 static grpc_closure_scheduler executor_scheduler_long = {&executor_vtable_long};
 
-grpc_closure_scheduler *grpc_executor_scheduler(
+grpc_closure_scheduler* grpc_executor_scheduler(
     grpc_executor_job_length length) {
   return length == GRPC_EXECUTOR_SHORT ? &executor_scheduler_short
                                        : &executor_scheduler_long;

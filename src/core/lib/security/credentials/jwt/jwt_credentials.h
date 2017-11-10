@@ -34,7 +34,7 @@ typedef struct {
   gpr_mu cache_mu;
   struct {
     grpc_mdelem jwt_md;
-    char *service_url;
+    char* service_url;
     gpr_timespec jwt_expiration;
   } cached;
 
@@ -44,7 +44,7 @@ typedef struct {
 
 // Private constructor for jwt credentials from an already parsed json key.
 // Takes ownership of the key.
-grpc_call_credentials *
+grpc_call_credentials*
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime);
 

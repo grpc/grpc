@@ -28,7 +28,7 @@ extern "C" {
 /** Returns a load balancing factory for the glb policy, which tries to connect
  * to a load balancing server to decide the next successfully connected
  * subchannel to pick. */
-grpc_lb_policy_factory *grpc_glb_lb_factory_create();
+grpc_lb_policy_factory* grpc_glb_lb_factory_create();
 
 #ifdef __cplusplus
 }

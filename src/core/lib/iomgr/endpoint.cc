@@ -37,6 +37,11 @@ void grpc_endpoint_add_to_pollset_set(grpc_endpoint* ep,
   ep->vtable->add_to_pollset_set(ep, pollset_set);
 }
 
+void grpc_endpoint_delete_from_pollset_set(grpc_endpoint* ep,
+                                           grpc_pollset_set* pollset_set) {
+  ep->vtable->delete_from_pollset_set(ep, pollset_set);
+}
+
 void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
   ep->vtable->shutdown(ep, why);
 }

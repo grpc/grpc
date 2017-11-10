@@ -31,35 +31,35 @@
 #include "src/core/lib/surface/channel.h"
 
 static void client_channel_factory_ref(
-    grpc_client_channel_factory *cc_factory) {}
+    grpc_client_channel_factory* cc_factory) {}
 
 static void client_channel_factory_unref(
-    grpc_client_channel_factory *cc_factory) {}
+    grpc_client_channel_factory* cc_factory) {}
 
-static grpc_subchannel *client_channel_factory_create_subchannel(
-    grpc_client_channel_factory *cc_factory, const grpc_subchannel_args *args) {
-  grpc_connector *connector = grpc_chttp2_connector_create();
-  grpc_subchannel *s = grpc_subchannel_create(connector, args);
+static grpc_subchannel* client_channel_factory_create_subchannel(
+    grpc_client_channel_factory* cc_factory, const grpc_subchannel_args* args) {
+  grpc_connector* connector = grpc_chttp2_connector_create();
+  grpc_subchannel* s = grpc_subchannel_create(connector, args);
   grpc_connector_unref(connector);
   return s;
 }
 
-static grpc_channel *client_channel_factory_create_channel(
-    grpc_client_channel_factory *cc_factory, const char *target,
-    grpc_client_channel_type type, const grpc_channel_args *args) {
+static grpc_channel* client_channel_factory_create_channel(
+    grpc_client_channel_factory* cc_factory, const char* target,
+    grpc_client_channel_type type, const grpc_channel_args* args) {
   if (target == NULL) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     return NULL;
   }
   // Add channel arg containing the server URI.
   grpc_arg arg = grpc_channel_arg_string_create(
-      (char *)GRPC_ARG_SERVER_URI,
+      (char*)GRPC_ARG_SERVER_URI,
       grpc_resolver_factory_add_default_prefix_if_needed(target));
-  const char *to_remove[] = {GRPC_ARG_SERVER_URI};
-  grpc_channel_args *new_args =
+  const char* to_remove[] = {GRPC_ARG_SERVER_URI};
+  grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
   gpr_free(arg.value.string);
-  grpc_channel *channel =
+  grpc_channel* channel =
       grpc_channel_create(target, new_args, GRPC_CLIENT_CHANNEL, NULL);
   grpc_channel_args_destroy(new_args);
   return channel;
@@ -77,9 +77,9 @@ static grpc_client_channel_factory client_channel_factory = {
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
                    - perform handshakes */
-grpc_channel *grpc_insecure_channel_create(const char *target,
-                                           const grpc_channel_args *args,
-                                           void *reserved) {
+grpc_channel* grpc_insecure_channel_create(const char* target,
+                                           const grpc_channel_args* args,
+                                           void* reserved) {
   ExecCtx _local_exec_ctx;
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
@@ -88,15 +88,16 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   // Add channel arg containing the client channel factory.
   grpc_arg arg =
       grpc_client_channel_factory_create_channel_arg(&client_channel_factory);
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
   // Create channel.
-  grpc_channel *channel = client_channel_factory_create_channel(
+  grpc_channel* channel = client_channel_factory_create_channel(
       &client_channel_factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR,
       new_args);
   // Clean up.
   grpc_channel_args_destroy(new_args);
   grpc_exec_ctx_finish();
-  return channel != NULL ? channel : grpc_lame_client_channel_create(
-                                         target, GRPC_STATUS_INTERNAL,
-                                         "Failed to create client channel");
+  return channel != NULL ? channel
+                         : grpc_lame_client_channel_create(
+                               target, GRPC_STATUS_INTERNAL,
+                               "Failed to create client channel");
 }

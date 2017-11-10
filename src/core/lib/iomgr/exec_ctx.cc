@@ -25,7 +25,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/profiling/timers.h"
 
-thread_local ExecCtx *exec_ctx = nullptr;
+thread_local ExecCtx* exec_ctx = nullptr;
 
 ExecCtx::ExecCtx()
     : closure_list(GRPC_CLOSURE_LIST_INIT),
@@ -41,8 +41,8 @@ ExecCtx::ExecCtx()
   exec_ctx = this;
 }
 
-ExecCtx::ExecCtx(uintptr_t fl, bool (*finish_check)(void *arg),
-                 void *finish_check_arg)
+ExecCtx::ExecCtx(uintptr_t fl, bool (*finish_check)(void* arg),
+                 void* finish_check_arg)
     : closure_list(GRPC_CLOSURE_LIST_INIT),
       active_combiner(nullptr),
       last_combiner(nullptr),
@@ -74,9 +74,9 @@ bool grpc_exec_ctx_ready_to_finish() {
   }
 }
 
-bool grpc_never_ready_to_finish(void *arg_ignored) { return false; }
+bool grpc_never_ready_to_finish(void* arg_ignored) { return false; }
 
-bool grpc_always_ready_to_finish(void *arg_ignored) { return true; }
+bool grpc_always_ready_to_finish(void* arg_ignored) { return true; }
 
 bool grpc_exec_ctx_has_work() {
   return exec_ctx->active_combiner != NULL ||
@@ -88,7 +88,7 @@ void grpc_exec_ctx_finish() {
   grpc_exec_ctx_flush();
 }
 
-static void exec_ctx_run(grpc_closure *closure, grpc_error *error) {
+static void exec_ctx_run(grpc_closure* closure, grpc_error* error) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (GRPC_TRACER_ON(grpc_trace_closure)) {
@@ -112,11 +112,11 @@ bool grpc_exec_ctx_flush() {
   GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
   for (;;) {
     if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
-      grpc_closure *c = exec_ctx->closure_list.head;
+      grpc_closure* c = exec_ctx->closure_list.head;
       exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
       while (c != NULL) {
-        grpc_closure *next = c->next_data.next;
-        grpc_error *error = c->error_data.error;
+        grpc_closure* next = c->next_data.next;
+        grpc_error* error = c->error_data.error;
         did_something = true;
         exec_ctx_run(c, error);
         c = next;
@@ -130,7 +130,7 @@ bool grpc_exec_ctx_flush() {
   return did_something;
 }
 
-static void exec_ctx_sched(grpc_closure *closure, grpc_error *error) {
+static void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
   grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }
 
@@ -180,6 +180,15 @@ void grpc_exec_ctx_invalidate_now() { exec_ctx->now_is_valid = false; }
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
                                      gpr_clock_type clock_type) {
+  // special-case infinities as grpc_millis can be 32bit on some platforms
+  // while gpr_time_from_millis always takes an int64_t.
+  if (millis == GRPC_MILLIS_INF_FUTURE) {
+    return gpr_inf_future(clock_type);
+  }
+  if (millis == GRPC_MILLIS_INF_PAST) {
+    return gpr_inf_past(clock_type);
+  }
+
   if (clock_type == GPR_TIMESPAN) {
     return gpr_time_from_millis(millis, GPR_TIMESPAN);
   }
@@ -198,4 +207,4 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
     exec_ctx_run, exec_ctx_sched, "exec_ctx"};
 static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
-grpc_closure_scheduler *grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
+grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;

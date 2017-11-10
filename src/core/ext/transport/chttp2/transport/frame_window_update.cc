@@ -24,11 +24,11 @@
 #include <grpc/support/string_util.h>
 
 grpc_slice grpc_chttp2_window_update_create(
-    uint32_t id, uint32_t window_update, grpc_transport_one_way_stats *stats) {
+    uint32_t id, uint32_t window_update, grpc_transport_one_way_stats* stats) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
   stats->header_bytes += frame_size;
-  uint8_t *p = GRPC_SLICE_START_PTR(slice);
+  uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   GPR_ASSERT(window_update);
 
@@ -49,13 +49,13 @@ grpc_slice grpc_chttp2_window_update_create(
   return slice;
 }
 
-grpc_error *grpc_chttp2_window_update_parser_begin_frame(
-    grpc_chttp2_window_update_parser *parser, uint32_t length, uint8_t flags) {
+grpc_error* grpc_chttp2_window_update_parser_begin_frame(
+    grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags) {
   if (flags || length != 4) {
-    char *msg;
+    char* msg;
     gpr_asprintf(&msg, "invalid window update: length=%d, flags=%02x", length,
                  flags);
-    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
@@ -64,16 +64,16 @@ grpc_error *grpc_chttp2_window_update_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_chttp2_window_update_parser_parse(void *parser,
-                                                   grpc_chttp2_transport *t,
-                                                   grpc_chttp2_stream *s,
+grpc_error* grpc_chttp2_window_update_parser_parse(void* parser,
+                                                   grpc_chttp2_transport* t,
+                                                   grpc_chttp2_stream* s,
                                                    grpc_slice slice,
                                                    int is_last) {
-  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
-  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
-  uint8_t *cur = beg;
-  grpc_chttp2_window_update_parser *p =
-      (grpc_chttp2_window_update_parser *)parser;
+  uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t* const end = GRPC_SLICE_END_PTR(slice);
+  uint8_t* cur = beg;
+  grpc_chttp2_window_update_parser* p =
+      (grpc_chttp2_window_update_parser*)parser;
 
   while (p->byte != 4 && cur != end) {
     p->amount |= ((uint32_t)*cur) << (8 * (3 - p->byte));
@@ -88,9 +88,9 @@ grpc_error *grpc_chttp2_window_update_parser_parse(void *parser,
   if (p->byte == 4) {
     uint32_t received_update = p->amount;
     if (received_update == 0 || (received_update & 0x80000000u)) {
-      char *msg;
+      char* msg;
       gpr_asprintf(&msg, "invalid window update bytes: %d", p->amount);
-      grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+      grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
       return err;
     }
@@ -98,8 +98,7 @@ grpc_error *grpc_chttp2_window_update_parser_parse(void *parser,
 
     if (t->incoming_stream_id != 0) {
       if (s != NULL) {
-        grpc_chttp2_flowctl_recv_stream_update(
-            &t->flow_control, &s->flow_control, received_update);
+        s->flow_control->RecvUpdate(received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_mark_stream_writable(t, s);
           grpc_chttp2_initiate_write(
@@ -107,10 +106,9 @@ grpc_error *grpc_chttp2_window_update_parser_parse(void *parser,
         }
       }
     } else {
-      bool was_zero = t->flow_control.remote_window <= 0;
-      grpc_chttp2_flowctl_recv_transport_update(&t->flow_control,
-                                                received_update);
-      bool is_zero = t->flow_control.remote_window <= 0;
+      bool was_zero = t->flow_control->remote_window() <= 0;
+      t->flow_control->RecvUpdate(received_update);
+      bool is_zero = t->flow_control->remote_window() <= 0;
       if (was_zero && !is_zero) {
         grpc_chttp2_initiate_write(
             t, GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED);

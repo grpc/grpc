@@ -35,16 +35,16 @@ grpc_tracer_flag grpc_timer_check_trace =
     GRPC_TRACER_INITIALIZER(false, "timer_check");
 }
 
-static void timer_close_callback(uv_handle_t *handle) { gpr_free(handle); }
+static void timer_close_callback(uv_handle_t* handle) { gpr_free(handle); }
 
-static void stop_uv_timer(uv_timer_t *handle) {
+static void stop_uv_timer(uv_timer_t* handle) {
   uv_timer_stop(handle);
-  uv_unref((uv_handle_t *)handle);
-  uv_close((uv_handle_t *)handle, timer_close_callback);
+  uv_unref((uv_handle_t*)handle);
+  uv_close((uv_handle_t*)handle, timer_close_callback);
 }
 
-void run_expired_timer(uv_timer_t *handle) {
-  grpc_timer *timer = (grpc_timer *)handle->data;
+void run_expired_timer(uv_timer_t* handle) {
+  grpc_timer* timer = (grpc_timer*)handle->data;
   ExecCtx _local_exec_ctx;
   GRPC_UV_ASSERT_SAME_THREAD();
   GPR_ASSERT(timer->pending);
@@ -54,10 +54,10 @@ void run_expired_timer(uv_timer_t *handle) {
   grpc_exec_ctx_finish();
 }
 
-void grpc_timer_init(grpc_timer *timer, grpc_millis deadline,
-                     grpc_closure *closure) {
+void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
+                     grpc_closure* closure) {
   uint64_t timeout;
-  uv_timer_t *uv_timer;
+  uv_timer_t* uv_timer;
   GRPC_UV_ASSERT_SAME_THREAD();
   timer->closure = closure;
   if (deadline <= grpc_exec_ctx_now()) {
@@ -67,7 +67,7 @@ void grpc_timer_init(grpc_timer *timer, grpc_millis deadline,
   }
   timer->pending = 1;
   timeout = (uint64_t)(deadline - grpc_exec_ctx_now());
-  uv_timer = (uv_timer_t *)gpr_malloc(sizeof(uv_timer_t));
+  uv_timer = (uv_timer_t*)gpr_malloc(sizeof(uv_timer_t));
   uv_timer_init(uv_default_loop(), uv_timer);
   uv_timer->data = timer;
   timer->uv_timer = uv_timer;
@@ -75,21 +75,21 @@ void grpc_timer_init(grpc_timer *timer, grpc_millis deadline,
   /* We assume that gRPC timers are only used alongside other active gRPC
      objects, and that there will therefore always be something else keeping
      the uv loop alive whenever there is a timer */
-  uv_unref((uv_handle_t *)uv_timer);
+  uv_unref((uv_handle_t*)uv_timer);
 }
 
-void grpc_timer_init_unset(grpc_timer *timer) { timer->pending = 0; }
+void grpc_timer_init_unset(grpc_timer* timer) { timer->pending = 0; }
 
-void grpc_timer_cancel(grpc_timer *timer) {
+void grpc_timer_cancel(grpc_timer* timer) {
   GRPC_UV_ASSERT_SAME_THREAD();
   if (timer->pending) {
     timer->pending = 0;
     GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_CANCELLED);
-    stop_uv_timer((uv_timer_t *)timer->uv_timer);
+    stop_uv_timer((uv_timer_t*)timer->uv_timer);
   }
 }
 
-grpc_timer_check_result grpc_timer_check(grpc_millis *next) {
+grpc_timer_check_result grpc_timer_check(grpc_millis* next) {
   return GRPC_TIMERS_NOT_CHECKED;
 }
 

@@ -26,9 +26,7 @@
 #include <grpc/support/log.h>
 #include "test/cpp/microbenchmarks/helpers.h"
 
-extern "C" {
 #include "src/core/lib/surface/completion_queue.h"
-}
 
 namespace grpc {
 namespace testing {
@@ -67,10 +65,10 @@ static void BM_CreateDestroyCore(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateDestroyCore);
 
-static void DoneWithCompletionOnStack(void* arg,
+static void DoneWithCompletionOnStack(grpc_exec_ctx* exec_ctx, void* arg,
                                       grpc_cq_completion* completion) {}
 
-class DummyTag final : public CompletionQueueTag {
+class DummyTag final : public internal::CompletionQueueTag {
  public:
   bool FinalizeResult(void** tag, bool* status) override { return true; }
 };
@@ -84,9 +82,9 @@ static void BM_Pass1Cpp(benchmark::State& state) {
     DummyTag dummy_tag;
     ExecCtx _local_exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag));
-    grpc_cq_end_op(c_cq, &dummy_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
-                   NULL, &completion);
-    grpc_exec_ctx_finish();
+    grpc_cq_end_op(&exec_ctx, c_cq, &dummy_tag, GRPC_ERROR_NONE,
+                   DoneWithCompletionOnStack, NULL, &completion);
+    grpc_exec_ctx_finish(&exec_ctx);
     void* tag;
     bool ok;
     cq.Next(&tag, &ok);
@@ -104,9 +102,9 @@ static void BM_Pass1Core(benchmark::State& state) {
     grpc_cq_completion completion;
     ExecCtx _local_exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, NULL));
-    grpc_cq_end_op(cq, NULL, GRPC_ERROR_NONE, DoneWithCompletionOnStack, NULL,
-                   &completion);
-    grpc_exec_ctx_finish();
+    grpc_cq_end_op(&exec_ctx, cq, NULL, GRPC_ERROR_NONE,
+                   DoneWithCompletionOnStack, NULL, &completion);
+    grpc_exec_ctx_finish(&exec_ctx);
     grpc_completion_queue_next(cq, deadline, NULL);
   }
   grpc_completion_queue_destroy(cq);
@@ -123,9 +121,9 @@ static void BM_Pluck1Core(benchmark::State& state) {
     grpc_cq_completion completion;
     ExecCtx _local_exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, NULL));
-    grpc_cq_end_op(cq, NULL, GRPC_ERROR_NONE, DoneWithCompletionOnStack, NULL,
-                   &completion);
-    grpc_exec_ctx_finish();
+    grpc_cq_end_op(&exec_ctx, cq, NULL, GRPC_ERROR_NONE,
+                   DoneWithCompletionOnStack, NULL, &completion);
+    grpc_exec_ctx_finish(&exec_ctx);
     grpc_completion_queue_pluck(cq, NULL, deadline, NULL);
   }
   grpc_completion_queue_destroy(cq);

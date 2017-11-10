@@ -37,7 +37,7 @@ typedef enum {
  * non-blocking solution available. */
 void grpc_executor_init();
 
-grpc_closure_scheduler *grpc_executor_scheduler(grpc_executor_job_length);
+grpc_closure_scheduler* grpc_executor_scheduler(grpc_executor_job_length);
 
 /** Shutdown the executor, running all pending work as part of the call */
 void grpc_executor_shutdown();

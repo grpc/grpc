@@ -50,6 +50,9 @@ class CoreCodegen final : public CoreCodegenInterface {
   void* gpr_malloc(size_t size) override;
   void gpr_free(void* p) override;
 
+  void grpc_init() override;
+  void grpc_shutdown() override;
+
   void gpr_mu_init(gpr_mu* mu) override;
   void gpr_mu_destroy(gpr_mu* mu) override;
   void gpr_mu_lock(gpr_mu* mu) override;
@@ -89,6 +92,7 @@ class CoreCodegen final : public CoreCodegenInterface {
   grpc_slice grpc_slice_ref(grpc_slice slice) override;
   grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) override;
   grpc_slice grpc_slice_split_head(grpc_slice* s, size_t split) override;
+  grpc_slice grpc_slice_sub(grpc_slice s, size_t begin, size_t end) override;
   void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice slice) override;
   void grpc_slice_buffer_pop(grpc_slice_buffer* sb) override;
   grpc_slice grpc_slice_from_static_buffer(const void* buffer,

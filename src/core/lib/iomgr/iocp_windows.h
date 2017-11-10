@@ -38,7 +38,7 @@ void grpc_iocp_init(void);
 void grpc_iocp_kick(void);
 void grpc_iocp_flush(void);
 void grpc_iocp_shutdown(void);
-void grpc_iocp_add_socket(grpc_winsocket *);
+void grpc_iocp_add_socket(grpc_winsocket*);
 
 #ifdef __cplusplus
 }

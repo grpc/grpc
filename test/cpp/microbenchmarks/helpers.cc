@@ -16,10 +16,15 @@
  *
  */
 
+#include <string.h>
+
 #include "test/cpp/microbenchmarks/helpers.h"
 
-void TrackCounters::Finish(benchmark::State &state) {
+void TrackCounters::Finish(benchmark::State& state) {
   std::ostringstream out;
+  for (const auto& l : labels_) {
+    out << l << ' ';
+  }
   AddToLabel(out, state);
   std::string label = out.str();
   if (label.length() && label[0] == ' ') {
@@ -28,7 +33,11 @@ void TrackCounters::Finish(benchmark::State &state) {
   state.SetLabel(label.c_str());
 }
 
-void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
+void TrackCounters::AddLabel(const grpc::string& label) {
+  labels_.push_back(label);
+}
+
+void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
   grpc_stats_data stats_end;
   grpc_stats_collect(&stats_end);
   grpc_stats_data stats;
@@ -38,16 +47,21 @@ void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
         << "/iter:" << ((double)stats.counters[i] / (double)state.iterations());
   }
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
-    out << " " << grpc_stats_histogram_name[i] << "-median:"
-        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 50.0)
-        << " " << grpc_stats_histogram_name[i] << "-99p:"
-        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 99.0);
+    std::ostringstream median_ss;
+    median_ss << grpc_stats_histogram_name[i] << "-median";
+    state.counters[median_ss.str()] = benchmark::Counter(
+        grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 50.0));
+    std::ostringstream tail_ss;
+    tail_ss << grpc_stats_histogram_name[i] << "-99p";
+    state.counters[tail_ss.str()] = benchmark::Counter(
+        grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 99.0));
   }
 #ifdef GPR_LOW_LEVEL_COUNTERS
   grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
-  out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
-                                     mu_locks_at_start_) /
-                            (double)state.iterations())
+  out << " locks/iter:"
+      << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
+                   mu_locks_at_start_) /
+          (double)state.iterations())
       << " atm_cas/iter:"
       << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_cas) -
                    atm_cas_at_start_) /

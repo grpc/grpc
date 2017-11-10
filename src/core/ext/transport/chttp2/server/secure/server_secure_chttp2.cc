@@ -34,14 +34,14 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
-                                      grpc_server_credentials *creds) {
+int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
+                                      grpc_server_credentials* creds) {
   ExecCtx _local_exec_ctx;
-  grpc_error *err = GRPC_ERROR_NONE;
-  grpc_server_security_connector *sc = NULL;
+  grpc_error* err = GRPC_ERROR_NONE;
+  grpc_server_security_connector* sc = NULL;
   int port_num = 0;
   grpc_security_status status;
-  grpc_channel_args *args = NULL;
+  grpc_channel_args* args = NULL;
   GRPC_API_TRACE(
       "grpc_server_add_secure_http2_port("
       "server=%p, addr=%s, creds=%p)",
@@ -54,7 +54,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   }
   status = grpc_server_credentials_create_security_connector(creds, &sc);
   if (status != GRPC_SECURITY_OK) {
-    char *msg;
+    char* msg;
     gpr_asprintf(&msg,
                  "Unable to create secure server with credentials of type %s.",
                  creds->type);
@@ -78,7 +78,7 @@ done:
   }
   grpc_exec_ctx_finish();
   if (err != GRPC_ERROR_NONE) {
-    const char *msg = grpc_error_string(err);
+    const char* msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);
 
     GRPC_ERROR_UNREF(err);

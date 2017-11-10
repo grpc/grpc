@@ -111,7 +111,13 @@ const char* grpc_service_config_get_lb_policy_name(
 static size_t count_names_in_method_config_json(grpc_json* json) {
   size_t num_names = 0;
   for (grpc_json* field = json->child; field != NULL; field = field->next) {
-    if (field->key != NULL && strcmp(field->key, "name") == 0) ++num_names;
+    if (field->key != NULL && strcmp(field->key, "name") == 0) {
+      if (field->type != GRPC_JSON_ARRAY) return -1;
+      for (grpc_json* name = field->child; name != NULL; name = name->next) {
+        if (name->type != GRPC_JSON_OBJECT) return -1;
+        ++num_names;
+      }
+    }
   }
   return num_names;
 }
@@ -147,6 +153,7 @@ static char* parse_json_method_name(grpc_json* json) {
 // Returns false on error.
 static bool parse_json_method_config(
     grpc_json* json, void* (*create_value)(const grpc_json* method_config_json),
+    void* (*ref_value)(void* value), void (*unref_value)(void* value),
     grpc_slice_hash_table_entry* entries, size_t* idx) {
   // Construct value.
   void* method_config = create_value(json);
@@ -161,6 +168,7 @@ static bool parse_json_method_config(
       if (child->type != GRPC_JSON_ARRAY) goto done;
       for (grpc_json* name = child->child; name != NULL; name = name->next) {
         char* path = parse_json_method_name(name);
+        if (path == NULL) goto done;
         gpr_strvec_add(&paths, path);
       }
     }
@@ -169,11 +177,12 @@ static bool parse_json_method_config(
   // Add entry for each path.
   for (size_t i = 0; i < paths.count; ++i) {
     entries[*idx].key = grpc_slice_from_copied_string(paths.strs[i]);
-    entries[*idx].value = method_config;
+    entries[*idx].value = ref_value(method_config);
     ++*idx;
   }
   success = true;
 done:
+  unref_value(method_config);
   gpr_strvec_destroy(&paths);
   return success;
 }
@@ -181,7 +190,7 @@ done:
 grpc_slice_hash_table* grpc_service_config_create_method_config_table(
     const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
-    void (*destroy_value)(void* value)) {
+    void* (*ref_value)(void* value), void (*unref_value)(void* value)) {
   const grpc_json* json = service_config->json_tree;
   // Traverse parsed JSON tree.
   if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
@@ -195,7 +204,9 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
       // Find number of entries.
       for (grpc_json* method = field->child; method != NULL;
            method = method->next) {
-        num_entries += count_names_in_method_config_json(method);
+        size_t count = count_names_in_method_config_json(method);
+        if (count <= 0) return NULL;
+        num_entries += count;
       }
       // Populate method config table entries.
       entries = (grpc_slice_hash_table_entry*)gpr_malloc(
@@ -203,7 +214,13 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
       size_t idx = 0;
       for (grpc_json* method = field->child; method != NULL;
            method = method->next) {
-        if (!parse_json_method_config(method, create_value, entries, &idx)) {
+        if (!parse_json_method_config(method, create_value, ref_value,
+                                      unref_value, entries, &idx)) {
+          for (size_t i = 0; i < idx; ++i) {
+            grpc_slice_unref_internal(entries[i].key);
+            unref_value(entries[i].value);
+          }
+          gpr_free(entries);
           return NULL;
         }
       }
@@ -214,7 +231,7 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
   grpc_slice_hash_table* method_config_table = NULL;
   if (entries != NULL) {
     method_config_table =
-        grpc_slice_hash_table_create(num_entries, entries, destroy_value, NULL);
+        grpc_slice_hash_table_create(num_entries, entries, unref_value, NULL);
     gpr_free(entries);
   }
   return method_config_table;

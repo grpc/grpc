@@ -29,9 +29,9 @@ namespace grpc {
 
 // MetadataBatch
 
-grpc_linked_mdelem *MetadataBatch::AddMetadata(const string &key,
-                                               const string &value) {
-  grpc_linked_mdelem *storage = new grpc_linked_mdelem;
+grpc_linked_mdelem* MetadataBatch::AddMetadata(const string& key,
+                                               const string& value) {
+  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
   memset(storage, 0, sizeof(grpc_linked_mdelem));
   storage->md = grpc_mdelem_from_slices(SliceFromCopiedString(key),
                                         SliceFromCopiedString(value));
@@ -42,25 +42,25 @@ grpc_linked_mdelem *MetadataBatch::AddMetadata(const string &key,
 
 // ChannelData
 
-void ChannelData::StartTransportOp(grpc_channel_element *elem,
-                                   TransportOp *op) {
+void ChannelData::StartTransportOp(grpc_channel_element* elem,
+                                   TransportOp* op) {
   grpc_channel_next_op(elem, op->op());
 }
 
-void ChannelData::GetInfo(grpc_channel_element *elem,
-                          const grpc_channel_info *channel_info) {
+void ChannelData::GetInfo(grpc_channel_element* elem,
+                          const grpc_channel_info* channel_info) {
   grpc_channel_next_get_info(elem, channel_info);
 }
 
 // CallData
 
-void CallData::StartTransportStreamOpBatch(grpc_call_element *elem,
-                                           TransportStreamOpBatch *op) {
+void CallData::StartTransportStreamOpBatch(grpc_call_element* elem,
+                                           TransportStreamOpBatch* op) {
   grpc_call_next_op(elem, op->op());
 }
 
-void CallData::SetPollsetOrPollsetSet(grpc_call_element *elem,
-                                      grpc_polling_entity *pollent) {
+void CallData::SetPollsetOrPollsetSet(grpc_call_element* elem,
+                                      grpc_polling_entity* pollent) {
   grpc_call_stack_ignore_set_pollset_or_pollset_set(elem, pollent);
 }
 
@@ -69,14 +69,14 @@ void CallData::SetPollsetOrPollsetSet(grpc_call_element *elem,
 namespace internal {
 
 // Note: Implicitly initialized to nullptr due to static lifetime.
-std::vector<FilterRecord> *channel_filters;
+std::vector<FilterRecord>* channel_filters;
 
 namespace {
 
-bool MaybeAddFilter(grpc_channel_stack_builder *builder, void *arg) {
-  const FilterRecord &filter = *(FilterRecord *)arg;
+bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* arg) {
+  const FilterRecord& filter = *(FilterRecord*)arg;
   if (filter.include_filter) {
-    const grpc_channel_args *args =
+    const grpc_channel_args* args =
         grpc_channel_stack_builder_get_channel_arguments(builder);
     if (!filter.include_filter(*args)) return true;
   }
@@ -88,9 +88,9 @@ bool MaybeAddFilter(grpc_channel_stack_builder *builder, void *arg) {
 
 void ChannelFilterPluginInit() {
   for (size_t i = 0; i < channel_filters->size(); ++i) {
-    FilterRecord &filter = (*channel_filters)[i];
+    FilterRecord& filter = (*channel_filters)[i];
     grpc_channel_init_register_stage(filter.stack_type, filter.priority,
-                                     MaybeAddFilter, (void *)&filter);
+                                     MaybeAddFilter, (void*)&filter);
   }
 }
 

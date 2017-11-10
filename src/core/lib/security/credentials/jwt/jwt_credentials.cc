@@ -30,7 +30,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-static void jwt_reset_cache(grpc_service_account_jwt_access_credentials *c) {
+static void jwt_reset_cache(grpc_service_account_jwt_access_credentials* c) {
   GRPC_MDELEM_UNREF(c->cached.jwt_md);
   c->cached.jwt_md = GRPC_MDNULL;
   if (c->cached.service_url != NULL) {
@@ -40,22 +40,22 @@ static void jwt_reset_cache(grpc_service_account_jwt_access_credentials *c) {
   c->cached.jwt_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
 }
 
-static void jwt_destruct(grpc_call_credentials *creds) {
-  grpc_service_account_jwt_access_credentials *c =
-      (grpc_service_account_jwt_access_credentials *)creds;
+static void jwt_destruct(grpc_call_credentials* creds) {
+  grpc_service_account_jwt_access_credentials* c =
+      (grpc_service_account_jwt_access_credentials*)creds;
   grpc_auth_json_key_destruct(&c->key);
   jwt_reset_cache(c);
   gpr_mu_destroy(&c->cache_mu);
 }
 
-static bool jwt_get_request_metadata(grpc_call_credentials *creds,
-                                     grpc_polling_entity *pollent,
+static bool jwt_get_request_metadata(grpc_call_credentials* creds,
+                                     grpc_polling_entity* pollent,
                                      grpc_auth_metadata_context context,
-                                     grpc_credentials_mdelem_array *md_array,
-                                     grpc_closure *on_request_metadata,
-                                     grpc_error **error) {
-  grpc_service_account_jwt_access_credentials *c =
-      (grpc_service_account_jwt_access_credentials *)creds;
+                                     grpc_credentials_mdelem_array* md_array,
+                                     grpc_closure* on_request_metadata,
+                                     grpc_error** error) {
+  grpc_service_account_jwt_access_credentials* c =
+      (grpc_service_account_jwt_access_credentials*)creds;
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
@@ -75,14 +75,14 @@ static bool jwt_get_request_metadata(grpc_call_credentials *creds,
   }
 
   if (GRPC_MDISNULL(jwt_md)) {
-    char *jwt = NULL;
+    char* jwt = NULL;
     /* Generate a new jwt. */
     gpr_mu_lock(&c->cache_mu);
     jwt_reset_cache(c);
     jwt = grpc_jwt_encode_and_sign(&c->key, context.service_url,
                                    c->jwt_lifetime, NULL);
     if (jwt != NULL) {
-      char *md_value;
+      char* md_value;
       gpr_asprintf(&md_value, "Bearer %s", jwt);
       gpr_free(jwt);
       c->cached.jwt_expiration =
@@ -107,23 +107,23 @@ static bool jwt_get_request_metadata(grpc_call_credentials *creds,
 }
 
 static void jwt_cancel_get_request_metadata(
-    grpc_call_credentials *c, grpc_credentials_mdelem_array *md_array,
-    grpc_error *error) {
+    grpc_call_credentials* c, grpc_credentials_mdelem_array* md_array,
+    grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
 static grpc_call_credentials_vtable jwt_vtable = {
     jwt_destruct, jwt_get_request_metadata, jwt_cancel_get_request_metadata};
 
-grpc_call_credentials *
+grpc_call_credentials*
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime) {
-  grpc_service_account_jwt_access_credentials *c;
+  grpc_service_account_jwt_access_credentials* c;
   if (!grpc_auth_json_key_is_valid(&key)) {
     gpr_log(GPR_ERROR, "Invalid input for jwt credentials creation");
     return NULL;
   }
-  c = (grpc_service_account_jwt_access_credentials *)gpr_zalloc(
+  c = (grpc_service_account_jwt_access_credentials*)gpr_zalloc(
       sizeof(grpc_service_account_jwt_access_credentials));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_JWT;
   gpr_ref_init(&c->base.refcount, 1);
@@ -142,33 +142,33 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
   return &c->base;
 }
 
-static char *redact_private_key(const char *json_key) {
-  char *json_copy = gpr_strdup(json_key);
-  grpc_json *json = grpc_json_parse_string(json_copy);
+static char* redact_private_key(const char* json_key) {
+  char* json_copy = gpr_strdup(json_key);
+  grpc_json* json = grpc_json_parse_string(json_copy);
   if (!json) {
     gpr_free(json_copy);
     return gpr_strdup("<Json failed to parse.>");
   }
-  const char *redacted = "<redacted>";
-  grpc_json *current = json->child;
+  const char* redacted = "<redacted>";
+  grpc_json* current = json->child;
   while (current) {
     if (current->type == GRPC_JSON_STRING &&
         strcmp(current->key, "private_key") == 0) {
-      current->value = (char *)redacted;
+      current->value = (char*)redacted;
       break;
     }
     current = current->next;
   }
-  char *clean_json = grpc_json_dump_to_string(json, 2);
+  char* clean_json = grpc_json_dump_to_string(json, 2);
   gpr_free(json_copy);
   grpc_json_destroy(json);
   return clean_json;
 }
 
-grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
-    const char *json_key, gpr_timespec token_lifetime, void *reserved) {
+grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
+    const char* json_key, gpr_timespec token_lifetime, void* reserved) {
   if (GRPC_TRACER_ON(grpc_api_trace)) {
-    char *clean_json = redact_private_key(json_key);
+    char* clean_json = redact_private_key(json_key);
     gpr_log(GPR_INFO,
             "grpc_service_account_jwt_access_credentials_create("
             "json_key=%s, "
@@ -182,7 +182,7 @@ grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
   }
   GPR_ASSERT(reserved == NULL);
   ExecCtx _local_exec_ctx;
-  grpc_call_credentials *creds =
+  grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
           grpc_auth_json_key_create_from_string(json_key), token_lifetime);
   grpc_exec_ctx_finish();

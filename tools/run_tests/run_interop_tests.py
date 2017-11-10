@@ -313,20 +313,20 @@ class Http2Client:
 class NodeLanguage:
 
   def __init__(self):
-    self.client_cwd = None
-    self.server_cwd = None
+    self.client_cwd = '../grpc-node'
+    self.server_cwd = '../grpc-node'
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['tools/run_tests/interop/with_nvm.sh',
-            'node', 'src/node/interop/interop_client.js'] + args
+    return ['packages/grpc-native-core/deps/grpc/tools/run_tests/interop/with_nvm.sh',
+            'node', 'test/interop/interop_client.js'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['tools/run_tests/interop/with_nvm.sh',
-            'node', 'src/node/interop/interop_server.js'] + args
+    return ['packages/grpc-native-core/deps/grpc/tools/run_tests/interop/with_nvm.sh',
+            'node', 'test/interop/interop_server.js'] + args
 
   def global_env(self):
     return {}

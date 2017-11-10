@@ -38,14 +38,14 @@
 #include "src/core/lib/surface/channel.h"
 
 static void client_channel_factory_ref(
-    grpc_client_channel_factory *cc_factory) {}
+    grpc_client_channel_factory* cc_factory) {}
 
 static void client_channel_factory_unref(
-    grpc_client_channel_factory *cc_factory) {}
+    grpc_client_channel_factory* cc_factory) {}
 
-static grpc_subchannel_args *get_secure_naming_subchannel_args(
-    const grpc_subchannel_args *args) {
-  grpc_channel_credentials *channel_credentials =
+static grpc_subchannel_args* get_secure_naming_subchannel_args(
+    const grpc_subchannel_args* args) {
+  grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args->args);
   if (channel_credentials == NULL) {
     gpr_log(GPR_ERROR,
@@ -61,33 +61,33 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
     return NULL;
   }
   // To which address are we connecting? By default, use the server URI.
-  const grpc_arg *server_uri_arg =
+  const grpc_arg* server_uri_arg =
       grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(server_uri_arg != NULL);
   GPR_ASSERT(server_uri_arg->type == GRPC_ARG_STRING);
-  const char *server_uri_str = server_uri_arg->value.string;
+  const char* server_uri_str = server_uri_arg->value.string;
   GPR_ASSERT(server_uri_str != NULL);
-  grpc_uri *server_uri =
+  grpc_uri* server_uri =
       grpc_uri_parse(server_uri_str, true /* supress errors */);
   GPR_ASSERT(server_uri != NULL);
-  const char *server_uri_path;
+  const char* server_uri_path;
   server_uri_path =
       server_uri->path[0] == '/' ? server_uri->path + 1 : server_uri->path;
-  const grpc_slice_hash_table *targets_info =
+  const grpc_slice_hash_table* targets_info =
       grpc_lb_targets_info_find_in_args(args->args);
-  char *target_name_to_check = NULL;
+  char* target_name_to_check = NULL;
   if (targets_info != NULL) {  // LB channel
     // Find the balancer name for the target.
-    const char *target_uri_str =
+    const char* target_uri_str =
         grpc_get_subchannel_address_uri_arg(args->args);
-    grpc_uri *target_uri =
+    grpc_uri* target_uri =
         grpc_uri_parse(target_uri_str, false /* suppress errors */);
     GPR_ASSERT(target_uri != NULL);
     if (target_uri->path[0] != '\0') {  // "path" may be empty
       const grpc_slice key = grpc_slice_from_static_string(
           target_uri->path[0] == '/' ? target_uri->path + 1 : target_uri->path);
-      const char *value =
-          (const char *)grpc_slice_hash_table_get(targets_info, key);
+      const char* value =
+          (const char*)grpc_slice_hash_table_get(targets_info, key);
       if (value != NULL) target_name_to_check = gpr_strdup(value);
       grpc_slice_unref_internal(key);
     }
@@ -102,9 +102,9 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
   }
   grpc_uri_destroy(server_uri);
   GPR_ASSERT(target_name_to_check != NULL);
-  grpc_channel_security_connector *subchannel_security_connector = NULL;
+  grpc_channel_security_connector* subchannel_security_connector = NULL;
   // Create the security connector using the credentials and target name.
-  grpc_channel_args *new_args_from_connector = NULL;
+  grpc_channel_args* new_args_from_connector = NULL;
   const grpc_security_status security_status =
       grpc_channel_credentials_create_security_connector(
           channel_credentials, target_name_to_check, args->args,
@@ -120,7 +120,7 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
   grpc_arg new_security_connector_arg =
       grpc_security_connector_to_arg(&subchannel_security_connector->base);
 
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       new_args_from_connector != NULL ? new_args_from_connector : args->args,
       &new_security_connector_arg, 1);
   GRPC_SECURITY_CONNECTOR_UNREF(&subchannel_security_connector->base,
@@ -128,16 +128,16 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
   if (new_args_from_connector != NULL) {
     grpc_channel_args_destroy(new_args_from_connector);
   }
-  grpc_subchannel_args *final_sc_args =
-      (grpc_subchannel_args *)gpr_malloc(sizeof(*final_sc_args));
+  grpc_subchannel_args* final_sc_args =
+      (grpc_subchannel_args*)gpr_malloc(sizeof(*final_sc_args));
   memcpy(final_sc_args, args, sizeof(*args));
   final_sc_args->args = new_args;
   return final_sc_args;
 }
 
-static grpc_subchannel *client_channel_factory_create_subchannel(
-    grpc_client_channel_factory *cc_factory, const grpc_subchannel_args *args) {
-  grpc_subchannel_args *subchannel_args =
+static grpc_subchannel* client_channel_factory_create_subchannel(
+    grpc_client_channel_factory* cc_factory, const grpc_subchannel_args* args) {
+  grpc_subchannel_args* subchannel_args =
       get_secure_naming_subchannel_args(args);
   if (subchannel_args == NULL) {
     gpr_log(
@@ -145,30 +145,30 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
         "Failed to create subchannel arguments during subchannel creation.");
     return NULL;
   }
-  grpc_connector *connector = grpc_chttp2_connector_create();
-  grpc_subchannel *s = grpc_subchannel_create(connector, subchannel_args);
+  grpc_connector* connector = grpc_chttp2_connector_create();
+  grpc_subchannel* s = grpc_subchannel_create(connector, subchannel_args);
   grpc_connector_unref(connector);
-  grpc_channel_args_destroy((grpc_channel_args *)subchannel_args->args);
+  grpc_channel_args_destroy((grpc_channel_args*)subchannel_args->args);
   gpr_free(subchannel_args);
   return s;
 }
 
-static grpc_channel *client_channel_factory_create_channel(
-    grpc_client_channel_factory *cc_factory, const char *target,
-    grpc_client_channel_type type, const grpc_channel_args *args) {
+static grpc_channel* client_channel_factory_create_channel(
+    grpc_client_channel_factory* cc_factory, const char* target,
+    grpc_client_channel_type type, const grpc_channel_args* args) {
   if (target == NULL) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     return NULL;
   }
   // Add channel arg containing the server URI.
   grpc_arg arg = grpc_channel_arg_string_create(
-      (char *)GRPC_ARG_SERVER_URI,
+      (char*)GRPC_ARG_SERVER_URI,
       grpc_resolver_factory_add_default_prefix_if_needed(target));
-  const char *to_remove[] = {GRPC_ARG_SERVER_URI};
-  grpc_channel_args *new_args =
+  const char* to_remove[] = {GRPC_ARG_SERVER_URI};
+  grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
   gpr_free(arg.value.string);
-  grpc_channel *channel =
+  grpc_channel* channel =
       grpc_channel_create(target, new_args, GRPC_CLIENT_CHANNEL, NULL);
   grpc_channel_args_destroy(new_args);
   return channel;
@@ -186,24 +186,24 @@ static grpc_client_channel_factory client_channel_factory = {
 //   Asynchronously: - resolve target
 //                   - connect to it (trying alternatives as presented)
 //                   - perform handshakes
-grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
-                                         const char *target,
-                                         const grpc_channel_args *args,
-                                         void *reserved) {
+grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
+                                         const char* target,
+                                         const grpc_channel_args* args,
+                                         void* reserved) {
   ExecCtx _local_exec_ctx;
   GRPC_API_TRACE(
       "grpc_secure_channel_create(creds=%p, target=%s, args=%p, "
       "reserved=%p)",
-      4, ((void *)creds, target, (void *)args, (void *)reserved));
+      4, ((void*)creds, target, (void*)args, (void*)reserved));
   GPR_ASSERT(reserved == NULL);
-  grpc_channel *channel = NULL;
+  grpc_channel* channel = NULL;
   if (creds != NULL) {
     // Add channel args containing the client channel factory and channel
     // credentials.
     grpc_arg args_to_add[] = {
         grpc_client_channel_factory_create_channel_arg(&client_channel_factory),
         grpc_channel_credentials_to_arg(creds)};
-    grpc_channel_args *new_args = grpc_channel_args_copy_and_add(
+    grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
         args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
     // Create channel.
     channel = client_channel_factory_create_channel(

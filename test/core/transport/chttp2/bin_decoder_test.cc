@@ -29,11 +29,11 @@
 
 static int all_ok = 1;
 
-static void expect_slice_eq(grpc_slice expected, grpc_slice slice, char *debug,
-                            int line) {
+static void expect_slice_eq(grpc_slice expected, grpc_slice slice,
+                            const char* debug, int line) {
   if (!grpc_slice_eq(slice, expected)) {
-    char *hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    char *he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char* hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char* he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
             he);
     gpr_free(hs);
@@ -44,21 +44,21 @@ static void expect_slice_eq(grpc_slice expected, grpc_slice slice, char *debug,
   grpc_slice_unref_internal(slice);
 }
 
-static grpc_slice base64_encode(const char *s) {
+static grpc_slice base64_encode(const char* s) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_encode(ss);
   grpc_slice_unref_internal(ss);
   return out;
 }
 
-static grpc_slice base64_decode(const char *s) {
+static grpc_slice base64_decode(const char* s) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_decode(ss);
   grpc_slice_unref_internal(ss);
   return out;
 }
 
-static grpc_slice base64_decode_with_length(const char *s,
+static grpc_slice base64_decode_with_length(const char* s,
                                             size_t output_length) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_decode_with_length(ss, output_length);
@@ -66,16 +66,16 @@ static grpc_slice base64_decode_with_length(const char *s,
   return out;
 }
 
-#define EXPECT_SLICE_EQ(expected, slice)                                       \
-  expect_slice_eq(                                                             \
-      exec_ctx, grpc_slice_from_copied_buffer(expected, sizeof(expected) - 1), \
-      slice, #slice, __LINE__);
+#define EXPECT_SLICE_EQ(expected, slice)                                    \
+  expect_slice_eq(                                                          \
+      grpc_slice_from_copied_buffer(expected, sizeof(expected) - 1), slice, \
+      #slice, __LINE__);
 
-#define ENCODE_AND_DECODE(s)                                \
-  EXPECT_SLICE_EQ(s, grpc_chttp2_base64_decode_with_length( \
-                         exec_ctx, base64_encode(s), strlen(s)));
+#define ENCODE_AND_DECODE(s) \
+  EXPECT_SLICE_EQ(           \
+      s, grpc_chttp2_base64_decode_with_length(base64_encode(s), strlen(s)));
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ExecCtx _local_exec_ctx;
 
   /* ENCODE_AND_DECODE tests grpc_chttp2_base64_decode_with_length(), which

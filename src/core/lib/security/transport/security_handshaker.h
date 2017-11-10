@@ -28,8 +28,8 @@ extern "C" {
 #endif
 
 /// Creates a security handshaker using \a handshaker.
-grpc_handshaker *grpc_security_handshaker_create(
-    tsi_handshaker *handshaker, grpc_security_connector *connector);
+grpc_handshaker* grpc_security_handshaker_create(
+    tsi_handshaker* handshaker, grpc_security_connector* connector);
 
 /// Registers security handshaker factories.
 void grpc_security_register_handshaker_factories();

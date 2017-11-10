@@ -26,7 +26,6 @@
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
 
-extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -38,7 +37,7 @@ extern "C" {
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
-}
+
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -90,19 +89,19 @@ class EndpointPairFixture {
       const grpc_channel_args* server_args =
           grpc_server_get_channel_args(server_->c_server());
       grpc_transport* transport = grpc_create_chttp2_transport(
-          server_args, endpoints.server, 0 /* is_client */);
+          &exec_ctx, server_args, endpoints.server, 0 /* is_client */);
 
       grpc_pollset** pollsets;
       size_t num_pollsets = 0;
       grpc_server_get_pollsets(server_->c_server(), &pollsets, &num_pollsets);
 
       for (size_t i = 0; i < num_pollsets; i++) {
-        grpc_endpoint_add_to_pollset(endpoints.server, pollsets[i]);
+        grpc_endpoint_add_to_pollset(&exec_ctx, endpoints.server, pollsets[i]);
       }
 
-      grpc_server_setup_transport(server_->c_server(), transport, NULL,
-                                  server_args);
-      grpc_chttp2_transport_start_reading(transport, NULL);
+      grpc_server_setup_transport(&exec_ctx, server_->c_server(), transport,
+                                  NULL, server_args);
+      grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
     }
 
     /* create channel */
@@ -113,16 +112,16 @@ class EndpointPairFixture {
 
       grpc_channel_args c_args = args.c_channel_args();
       grpc_transport* transport =
-          grpc_create_chttp2_transport(&c_args, endpoints.client, 1);
+          grpc_create_chttp2_transport(&exec_ctx, &c_args, endpoints.client, 1);
       GPR_ASSERT(transport);
       grpc_channel* channel = grpc_channel_create(
-          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-      grpc_chttp2_transport_start_reading(transport, NULL);
+          &exec_ctx, "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+      grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
 
       channel_ = CreateChannelInternal("", channel);
     }
 
-    grpc_exec_ctx_finish();
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   virtual ~EndpointPairFixture() {

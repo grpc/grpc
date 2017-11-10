@@ -152,8 +152,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                              extra_args=extra_args,
                              inner_jobs=inner_jobs,
                              timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-  
-  test_jobs += _generate_jobs(languages=['csharp', 'node', 'python'],
+
+  test_jobs += _generate_jobs(languages=['csharp', 'python'],
                              configs=['dbg', 'opt'],
                              platforms=['linux', 'macos', 'windows'],
                              labels=['basictests', 'multilang'],
@@ -168,7 +168,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                               extra_args=extra_args,
                               inner_jobs=inner_jobs,
                               timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-  
+
   test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php'],
                               configs=['dbg', 'opt'],
                               platforms=['linux', 'macos'],
@@ -321,42 +321,6 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               extra_args=extra_args,
                               inner_jobs=inner_jobs,
                               timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-
-  test_jobs += _generate_jobs(languages=['node'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              arch='default',
-                              compiler='electron1.6',
-                              labels=['portability', 'multilang'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-
-  test_jobs += _generate_jobs(languages=['node'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              arch='default',
-                              compiler='node4',
-                              labels=['portability', 'multilang'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-
-  test_jobs += _generate_jobs(languages=['node'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              arch='default',
-                              compiler='node6',
-                              labels=['portability', 'multilang'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-
-  test_jobs += _generate_jobs(languages=['node'],
-                              configs=['dbg'],
-                              platforms=['linux'],
-                              arch='default',
-                              compiler='node7',
-                              labels=['portability', 'multilang'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
 
   return test_jobs
 

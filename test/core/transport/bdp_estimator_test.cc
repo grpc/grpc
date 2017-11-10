@@ -23,97 +23,82 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+#include <gtest/gtest.h>
 #include <limits.h>
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+extern "C" gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
-static int g_clock = 0;
+namespace grpc_core {
+namespace testing {
+namespace {
+int g_clock = 0;
 
-static gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
-  return (gpr_timespec){
-      .tv_sec = g_clock, .tv_nsec = 0, .clock_type = clock_type,
-  };
+gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
+  gpr_timespec ts;
+  ts.tv_sec = g_clock;
+  ts.tv_nsec = 0;
+  ts.clock_type = clock_type;
+  return ts;
 }
 
-static void inc_time(void) { g_clock += 30; }
+void inc_time(void) { g_clock += 30; }
+}  // namespace
 
-static void test_noop(void) {
-  gpr_log(GPR_INFO, "test_noop");
-  grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est, "test");
+TEST(BdpEstimatorTest, NoOp) { BdpEstimator est("test"); }
+
+TEST(BdpEstimatorTest, EstimateBdpNoSamples) {
+  BdpEstimator est("test");
+  est.EstimateBdp();
 }
 
-static void test_get_estimate_no_samples(void) {
-  gpr_log(GPR_INFO, "test_get_estimate_no_samples");
-  grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est, "test");
-  int64_t estimate;
-  grpc_bdp_estimator_get_estimate(&est, &estimate);
-}
-
-static void add_samples(grpc_bdp_estimator *estimator, int64_t *samples,
-                        size_t n) {
-  grpc_bdp_estimator_add_incoming_bytes(estimator, 1234567);
+namespace {
+void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
+  estimator->AddIncomingBytes(1234567);
   inc_time();
-
-  GPR_ASSERT(grpc_bdp_estimator_need_ping(estimator) == true);
-  grpc_bdp_estimator_schedule_ping(estimator);
-  grpc_bdp_estimator_start_ping(estimator);
-
+  ExecCtx _local_exec_ctx;
+  estimator->SchedulePing();
+  estimator->StartPing();
   for (size_t i = 0; i < n; i++) {
-    grpc_bdp_estimator_add_incoming_bytes(estimator, samples[i]);
-    GPR_ASSERT(grpc_bdp_estimator_need_ping(estimator) == false);
+    estimator->AddIncomingBytes(samples[i]);
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
-  grpc_bdp_estimator_complete_ping(estimator);
+  grpc_exec_ctx_invalidate_now();
+  estimator->CompletePing();
   grpc_exec_ctx_finish();
 }
 
-static void add_sample(grpc_bdp_estimator *estimator, int64_t sample) {
-  add_samples(estimator, &sample, 1);
+void AddSample(BdpEstimator* estimator, int64_t sample) {
+  AddSamples(estimator, &sample, 1);
+}
+}  // namespace
+
+TEST(BdpEstimatorTest, GetEstimate1Sample) {
+  BdpEstimator est("test");
+  AddSample(&est, 100);
+  est.EstimateBdp();
 }
 
-static void test_get_estimate_1_sample(void) {
-  gpr_log(GPR_INFO, "test_get_estimate_1_sample");
-  grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est, "test");
-  add_sample(&est, 100);
-  int64_t estimate;
-  grpc_bdp_estimator_get_estimate(&est, &estimate);
+TEST(BdpEstimatorTest, GetEstimate2Samples) {
+  BdpEstimator est("test");
+  AddSample(&est, 100);
+  AddSample(&est, 100);
+  est.EstimateBdp();
 }
 
-static void test_get_estimate_2_samples(void) {
-  gpr_log(GPR_INFO, "test_get_estimate_2_samples");
-  grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est, "test");
-  add_sample(&est, 100);
-  add_sample(&est, 100);
-  int64_t estimate;
-  grpc_bdp_estimator_get_estimate(&est, &estimate);
+TEST(BdpEstimatorTest, GetEstimate3Samples) {
+  BdpEstimator est("test");
+  AddSample(&est, 100);
+  AddSample(&est, 100);
+  AddSample(&est, 100);
+  est.EstimateBdp();
 }
 
-static int64_t get_estimate(grpc_bdp_estimator *estimator) {
-  int64_t out;
-  GPR_ASSERT(grpc_bdp_estimator_get_estimate(estimator, &out));
-  return out;
-}
-
-static void test_get_estimate_3_samples(void) {
-  gpr_log(GPR_INFO, "test_get_estimate_3_samples");
-  grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est, "test");
-  add_sample(&est, 100);
-  add_sample(&est, 100);
-  add_sample(&est, 100);
-  int64_t estimate;
-  grpc_bdp_estimator_get_estimate(&est, &estimate);
-}
-
-static int64_t next_pow_2(int64_t v) {
+namespace {
+int64_t NextPow2(int64_t v) {
   v--;
   v |= v >> 1;
   v |= v >> 2;
@@ -124,40 +109,41 @@ static int64_t next_pow_2(int64_t v) {
   v++;
   return v;
 }
+}  // namespace
 
-static void test_get_estimate_random_values(size_t n) {
-  gpr_log(GPR_INFO, "test_get_estimate_random_values(%" PRIdPTR ")", n);
-  grpc_bdp_estimator est;
-  grpc_bdp_estimator_init(&est, "test");
+class BdpEstimatorRandomTest : public ::testing::TestWithParam<size_t> {};
+
+TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
+  BdpEstimator est("test");
   const int kMaxSample = 65535;
   int min = kMaxSample;
   int max = 0;
-  for (size_t i = 0; i < n; i++) {
+  for (size_t i = 0; i < GetParam(); i++) {
     int sample = rand() % (kMaxSample + 1);
     if (sample < min) min = sample;
     if (sample > max) max = sample;
-    add_sample(&est, sample);
+    AddSample(&est, sample);
     if (i >= 3) {
-      gpr_log(GPR_DEBUG, "est:%" PRId64 " min:%d max:%d", get_estimate(&est),
-              min, max);
-      GPR_ASSERT(get_estimate(&est) <= GPR_MAX(65536, 2 * next_pow_2(max)));
+      EXPECT_LE(est.EstimateBdp(), GPR_MAX(65536, 2 * NextPow2(max)))
+          << " min:" << min << " max:" << max << " sample:" << sample;
     }
   }
 }
 
-int main(int argc, char **argv) {
+INSTANTIATE_TEST_CASE_P(TooManyNames, BdpEstimatorRandomTest,
+                        ::testing::Values(3, 4, 6, 9, 13, 19, 28, 42, 63, 94,
+                                          141, 211, 316, 474, 711));
+
+}  // namespace testing
+}  // namespace grpc_core
+
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  gpr_now_impl = fake_gpr_now;
+  gpr_now_impl = grpc_core::testing::fake_gpr_now;
   grpc_init();
   grpc_timer_manager_set_threading(false);
-  test_noop();
-  test_get_estimate_no_samples();
-  test_get_estimate_1_sample();
-  test_get_estimate_2_samples();
-  test_get_estimate_3_samples();
-  for (size_t i = 3; i < 1000; i = i * 3 / 2) {
-    test_get_estimate_random_values(i);
-  }
+  ::testing::InitGoogleTest(&argc, argv);
+  int ret = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return ret;
 }

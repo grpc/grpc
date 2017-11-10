@@ -49,7 +49,7 @@ static uint8_t decode_table[] = {
 
 static const uint8_t tail_xtra[4] = {0, 0, 1, 2};
 
-static bool input_is_valid(uint8_t *input_ptr, size_t length) {
+static bool input_is_valid(uint8_t* input_ptr, size_t length) {
   size_t i;
 
   for (i = 0; i < length; ++i) {
@@ -75,7 +75,7 @@ static bool input_is_valid(uint8_t *input_ptr, size_t length) {
 #define COMPOSE_OUTPUT_BYTE_2(input_ptr) \
   (uint8_t)((decode_table[input_ptr[2]] << 6) | decode_table[input_ptr[3]])
 
-bool grpc_base64_decode_partial(struct grpc_base64_decode_context *ctx) {
+bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
   size_t input_tail;
 
   if (ctx->input_cur > ctx->input_end || ctx->output_cur > ctx->output_end) {
@@ -146,7 +146,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   }
 
   if (input_length > 0) {
-    uint8_t *input_end = GRPC_SLICE_END_PTR(input);
+    uint8_t* input_end = GRPC_SLICE_END_PTR(input);
     if (*(--input_end) == '=') {
       output_length--;
       if (*(--input_end) == '=') {
@@ -163,7 +163,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   ctx.contains_tail = false;
 
   if (!grpc_base64_decode_partial(&ctx)) {
-    char *s = grpc_slice_to_c_string(input);
+    char* s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
     grpc_slice_unref_internal(output);
@@ -208,7 +208,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
   ctx.contains_tail = true;
 
   if (!grpc_base64_decode_partial(&ctx)) {
-    char *s = grpc_slice_to_c_string(input);
+    char* s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
     grpc_slice_unref_internal(output);
