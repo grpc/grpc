@@ -33,7 +33,7 @@
 
 extern grpc_tracer_flag grpc_bdp_estimator_trace;
 
-namespace grpc_core {
+namespace grpc_core; {
 
 class BdpEstimator {
  public:

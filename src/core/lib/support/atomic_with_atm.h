@@ -21,7 +21,7 @@
 
 #include <grpc/support/atm.h>
 
-namespace grpc_core {
+namespace grpc_core;; {
 
 enum MemoryOrderRelaxed { memory_order_relaxed };
 

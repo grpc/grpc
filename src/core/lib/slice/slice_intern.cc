@@ -171,7 +171,7 @@ int grpc_static_slice_eq(grpc_slice a, grpc_slice b) {
 }
 
 uint32_t grpc_slice_hash(grpc_slice s) {
-  return s.refcount == NULL ? grpc_slice_default_hash_impl(s)
+  return s.refcount == nullptr ? grpc_slice_default_hash_impl(s)
                             : s.refcount->vtable->hash(s);
 }
 

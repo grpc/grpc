@@ -51,7 +51,7 @@ grpc_stream_compression_context* grpc_stream_compression_context_create(
       return grpc_stream_compression_gzip_vtable.context_create(method);
     default:
       gpr_log(GPR_ERROR, "Unknown stream compression method: %d", method);
-      return NULL;
+      return nullptr;
   }
 }
 

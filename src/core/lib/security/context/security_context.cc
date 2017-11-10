@@ -39,7 +39,7 @@ grpc_tracer_flag grpc_trace_auth_context_refcount =
 grpc_call_error grpc_call_set_credentials(grpc_call* call,
                                           grpc_call_credentials* creds) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_client_security_context* ctx = NULL;
+  grpc_client_security_context* ctx = nullptr;
   GRPC_API_TRACE("grpc_call_set_credentials(call=%p, creds=%p)", 2,
                  (call, creds));
   if (!grpc_call_is_client(call)) {
@@ -48,7 +48,7 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
   }
   ctx = (grpc_client_security_context*)grpc_call_context_get(
       call, GRPC_CONTEXT_SECURITY);
-  if (ctx == NULL) {
+  if (ctx == nullptr) {
     ctx = grpc_client_security_context_create();
     ctx->creds = grpc_call_credentials_ref(creds);
     grpc_call_context_set(call, GRPC_CONTEXT_SECURITY, ctx,
@@ -64,7 +64,7 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
 grpc_auth_context* grpc_call_auth_context(grpc_call* call) {
   void* sec_ctx = grpc_call_context_get(call, GRPC_CONTEXT_SECURITY);
   GRPC_API_TRACE("grpc_call_auth_context(call=%p)", 1, (call));
-  if (sec_ctx == NULL) return NULL;
+  if (sec_ctx == nullptr) return nullptr;
   return grpc_call_is_client(call)
              ? GRPC_AUTH_CONTEXT_REF(
                    ((grpc_client_security_context*)sec_ctx)->auth_context,
@@ -91,7 +91,7 @@ void grpc_client_security_context_destroy(void* ctx) {
   grpc_client_security_context* c = (grpc_client_security_context*)ctx;
   grpc_call_credentials_unref(&exec_ctx, c->creds);
   GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "client_security_context");
-  if (c->extension.instance != NULL && c->extension.destroy != NULL) {
+  if (c->extension.instance != nullptr && c->extension.destroy != nullptr) {
     c->extension.destroy(c->extension.instance);
   }
   gpr_free(ctx);
@@ -108,7 +108,7 @@ grpc_server_security_context* grpc_server_security_context_create(void) {
 void grpc_server_security_context_destroy(void* ctx) {
   grpc_server_security_context* c = (grpc_server_security_context*)ctx;
   GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "server_security_context");
-  if (c->extension.instance != NULL && c->extension.destroy != NULL) {
+  if (c->extension.instance != nullptr && c->extension.destroy != nullptr) {
     c->extension.destroy(c->extension.instance);
   }
   gpr_free(ctx);
@@ -116,13 +116,13 @@ void grpc_server_security_context_destroy(void* ctx) {
 
 /* --- grpc_auth_context --- */
 
-static grpc_auth_property_iterator empty_iterator = {NULL, 0, NULL};
+static grpc_auth_property_iterator empty_iterator = {nullptr, 0, nullptr};
 
 grpc_auth_context* grpc_auth_context_create(grpc_auth_context* chained) {
   grpc_auth_context* ctx =
       (grpc_auth_context*)gpr_zalloc(sizeof(grpc_auth_context));
   gpr_ref_init(&ctx->refcount, 1);
-  if (chained != NULL) {
+  if (chained != nullptr) {
     ctx->chained = GRPC_AUTH_CONTEXT_REF(chained, "chained");
     ctx->peer_identity_property_name =
         ctx->chained->peer_identity_property_name;
@@ -134,7 +134,7 @@ grpc_auth_context* grpc_auth_context_create(grpc_auth_context* chained) {
 grpc_auth_context* grpc_auth_context_ref(grpc_auth_context* ctx,
                                          const char* file, int line,
                                          const char* reason) {
-  if (ctx == NULL) return NULL;
+  if (ctx == nullptr) return nullptr;
   if (GRPC_TRACER_ON(grpc_trace_auth_context_refcount)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
@@ -152,7 +152,7 @@ grpc_auth_context* grpc_auth_context_ref(grpc_auth_context* ctx) {
 #ifndef NDEBUG
 void grpc_auth_context_unref(grpc_auth_context* ctx, const char* file, int line,
                              const char* reason) {
-  if (ctx == NULL) return;
+  if (ctx == nullptr) return;
   if (GRPC_TRACER_ON(grpc_trace_auth_context_refcount)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
@@ -166,7 +166,7 @@ void grpc_auth_context_unref(grpc_auth_context* ctx) {
   if (gpr_unref(&ctx->refcount)) {
     size_t i;
     GRPC_AUTH_CONTEXT_UNREF(ctx->chained, "chained");
-    if (ctx->properties.array != NULL) {
+    if (ctx->properties.array != nullptr) {
       for (i = 0; i < ctx->properties.count; i++) {
         grpc_auth_property_reset(&ctx->properties.array[i]);
       }
@@ -191,9 +191,9 @@ int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context* ctx,
   GRPC_API_TRACE(
       "grpc_auth_context_set_peer_identity_property_name(ctx=%p, name=%s)", 2,
       (ctx, name));
-  if (prop == NULL) {
+  if (prop == nullptr) {
     gpr_log(GPR_ERROR, "Property name %s not found in auth context.",
-            name != NULL ? name : "NULL");
+            name != nullptr ? name : "NULL");
     return 0;
   }
   ctx->peer_identity_property_name = prop->name;
@@ -202,14 +202,14 @@ int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context* ctx,
 
 int grpc_auth_context_peer_is_authenticated(const grpc_auth_context* ctx) {
   GRPC_API_TRACE("grpc_auth_context_peer_is_authenticated(ctx=%p)", 1, (ctx));
-  return ctx->peer_identity_property_name == NULL ? 0 : 1;
+  return ctx->peer_identity_property_name == nullptr ? 0 : 1;
 }
 
 grpc_auth_property_iterator grpc_auth_context_property_iterator(
     const grpc_auth_context* ctx) {
   grpc_auth_property_iterator it = empty_iterator;
   GRPC_API_TRACE("grpc_auth_context_property_iterator(ctx=%p)", 1, (ctx));
-  if (ctx == NULL) return it;
+  if (ctx == nullptr) return it;
   it.ctx = ctx;
   return it;
 }
@@ -217,18 +217,18 @@ grpc_auth_property_iterator grpc_auth_context_property_iterator(
 const grpc_auth_property* grpc_auth_property_iterator_next(
     grpc_auth_property_iterator* it) {
   GRPC_API_TRACE("grpc_auth_property_iterator_next(it=%p)", 1, (it));
-  if (it == NULL || it->ctx == NULL) return NULL;
+  if (it == nullptr || it->ctx == nullptr) return nullptr;
   while (it->index == it->ctx->properties.count) {
-    if (it->ctx->chained == NULL) return NULL;
+    if (it->ctx->chained == nullptr) return nullptr;
     it->ctx = it->ctx->chained;
     it->index = 0;
   }
-  if (it->name == NULL) {
+  if (it->name == nullptr) {
     return &it->ctx->properties.array[it->index++];
   } else {
     while (it->index < it->ctx->properties.count) {
       const grpc_auth_property* prop = &it->ctx->properties.array[it->index++];
-      GPR_ASSERT(prop->name != NULL);
+      GPR_ASSERT(prop->name != nullptr);
       if (strcmp(it->name, prop->name) == 0) {
         return prop;
       }
@@ -243,7 +243,7 @@ grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
   grpc_auth_property_iterator it = empty_iterator;
   GRPC_API_TRACE("grpc_auth_context_find_properties_by_name(ctx=%p, name=%s)",
                  2, (ctx, name));
-  if (ctx == NULL || name == NULL) return empty_iterator;
+  if (ctx == nullptr || name == nullptr) return empty_iterator;
   it.ctx = ctx;
   it.name = name;
   return it;
@@ -252,7 +252,7 @@ grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
 grpc_auth_property_iterator grpc_auth_context_peer_identity(
     const grpc_auth_context* ctx) {
   GRPC_API_TRACE("grpc_auth_context_peer_identity(ctx=%p)", 1, (ctx));
-  if (ctx == NULL) return empty_iterator;
+  if (ctx == nullptr) return empty_iterator;
   return grpc_auth_context_find_properties_by_name(
       ctx, ctx->peer_identity_property_name);
 }
@@ -326,11 +326,11 @@ grpc_arg grpc_auth_context_to_arg(grpc_auth_context* p) {
 }
 
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_AUTH_CONTEXT_ARG) != 0) return NULL;
+  if (strcmp(arg->key, GRPC_AUTH_CONTEXT_ARG) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
             GRPC_AUTH_CONTEXT_ARG);
-    return NULL;
+    return nullptr;
   }
   return (grpc_auth_context*)arg->value.pointer.p;
 }
@@ -338,10 +338,10 @@ grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg) {
 grpc_auth_context* grpc_find_auth_context_in_args(
     const grpc_channel_args* args) {
   size_t i;
-  if (args == NULL) return NULL;
+  if (args == nullptr) return nullptr;
   for (i = 0; i < args->num_args; i++) {
     grpc_auth_context* p = grpc_auth_context_from_arg(&args->args[i]);
-    if (p != NULL) return p;
+    if (p != nullptr) return p;
   }
-  return NULL;
+  return nullptr;
 }

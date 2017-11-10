@@ -72,8 +72,8 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   const grpc_call_element_args* args) {
   call_data* calld = (call_data*)elem->call_data;
   // Get stats object from context and take a ref.
-  GPR_ASSERT(args->context != NULL);
-  GPR_ASSERT(args->context[GRPC_GRPCLB_CLIENT_STATS].value != NULL);
+  GPR_ASSERT(args->context != nullptr);
+  GPR_ASSERT(args->context[GRPC_GRPCLB_CLIENT_STATS].value != nullptr);
   calld->client_stats = grpc_grpclb_client_stats_ref(
       (grpc_grpclb_client_stats*)args->context[GRPC_GRPCLB_CLIENT_STATS].value);
   // Record call started.
