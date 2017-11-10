@@ -181,7 +181,7 @@ static void cover_self(grpc_tcp* tcp) {
   }
   if (old_count == 0) {
     GRPC_STATS_INC_TCP_BACKUP_POLLERS_CREATED();
-    p = (backup_poller*)gpr_malloc(sizeof(*p) + grpc_pollset_size());
+    p = (backup_poller*)gpr_zalloc(sizeof(*p) + grpc_pollset_size());
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p create", p);
     }
