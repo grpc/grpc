@@ -37,7 +37,7 @@ grpc_core::TraceFlag grpc_trace_stream_refcount(false, "stream_refcount");
 
 #ifndef NDEBUG
 void grpc_stream_ref(grpc_stream_refcount* refcount, const char* reason) {
-  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+  if (grpc_trace_stream_refcount.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
     gpr_log(GPR_DEBUG, "%s %p:%p   REF %" PRIdPTR "->%" PRIdPTR " %s",
             refcount->object_type, refcount, refcount->destroy.cb_arg, val,
@@ -52,7 +52,7 @@ void grpc_stream_ref(grpc_stream_refcount* refcount) {
 #ifndef NDEBUG
 void grpc_stream_unref(grpc_exec_ctx* exec_ctx, grpc_stream_refcount* refcount,
                        const char* reason) {
-  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+  if (grpc_trace_stream_refcount.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
     gpr_log(GPR_DEBUG, "%s %p:%p UNREF %" PRIdPTR "->%" PRIdPTR " %s",
             refcount->object_type, refcount, refcount->destroy.cb_arg, val,
