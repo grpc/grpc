@@ -176,13 +176,13 @@ void grpc_tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
     grpc_exec_ctx local_ExecCtx _local_exec_ctx;
-    GRPC_CLOSURE_LIST_SCHED(&local_exec_ctx, &s->shutdown_starting);
+    GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);
     if (exec_ctx == NULL) {
-      grpc_exec_ctx_flush(&local_exec_ctx);
-      tcp_server_destroy(&local_exec_ctx, s);
-      grpc_exec_ctx_finish(&local_exec_ctx);
+      grpc_exec_ctx_flush();
+      tcp_server_destroy(s);
+      grpc_exec_ctx_finish();
     } else {
-      grpc_exec_ctx_finish(&local_exec_ctx);
+      grpc_exec_ctx_finish();
       tcp_server_destroy(s);
     }
   }

@@ -301,8 +301,7 @@ static void uv_add_to_pollset_set(grpc_endpoint* ep,
   (void)pollset;
 }
 
-static void uv_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
-                                       grpc_endpoint* ep,
+static void uv_delete_from_pollset_set(grpc_endpoint* ep,
                                        grpc_pollset_set* pollset) {
   // No-op. We're ignoring pollsets currently
   (void)exec_ctx;

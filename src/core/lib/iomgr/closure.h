@@ -162,7 +162,7 @@ bool grpc_closure_list_empty(grpc_closure_list list);
 void grpc_closure_run(const char* file, int line, grpc_closure* closure,
                       grpc_error* error);
 #define GRPC_CLOSURE_RUN(closure, error) \
-  grpc_closure_run(__FILE__, __LINE__, exec_ctx, closure, error)
+  grpc_closure_run(__FILE__, __LINE__, closure, error)
 #else
 void grpc_closure_run(grpc_closure* closure, grpc_error* error);
 #define GRPC_CLOSURE_RUN(closure, error) grpc_closure_run(closure, error)
