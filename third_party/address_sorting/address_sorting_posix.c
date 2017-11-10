@@ -38,61 +38,59 @@
  * this was written.
  */
 
-#ifndef ADDRESS_SORTING_H
-#define ADDRESS_SORTING_H
+#include "address_sorting_internal.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#if defined(ADDRESS_SORTING_POSIX)
 
-typedef struct address_sorting_address {
-  char addr[128];
-  size_t len;
-} address_sorting_address;
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-/* address_sorting_sortable represents one entry in a list of destination
- * IP addresses to sort. It contains the destination IP address
- * "sorting key", along with placeholder and scratch fields. */
-typedef struct address_sorting_sortable {
-  // input data; sorting key
-  address_sorting_address dest_addr;
-  // input data; optional value to attach to the sorting key
-  void* user_data;
-  // internal fields, these must be zero'd when passed to sort function
-  address_sorting_address source_addr;
-  int source_addr_exists;
-  size_t original_index;
-} address_sorting_sortable;
-
-void address_sorting_rfc_6724_sort(address_sorting_sortable* sortables,
-                                   size_t sortables_len);
-
-void address_sorting_init();
-void address_sorting_shutdown();
-
-struct address_sorting_socket_factory;
-
-/* The socket factory interface is exposed only for testing */
-typedef struct {
-  int (*socket)(struct address_sorting_socket_factory* factory, int domain,
-                int type, int protocol);
-  int (*connect)(struct address_sorting_socket_factory* factory, int sockfd,
-                 const char* addr, size_t addrlen);
-  int (*getsockname)(struct address_sorting_socket_factory* factory, int sockfd,
-                     char* addr, size_t* addrlen);
-  int (*close)(struct address_sorting_socket_factory* factory, int sockfd);
-  void (*destroy)(struct address_sorting_socket_factory* factory);
-} address_sorting_socket_factory_vtable;
-
-typedef struct address_sorting_socket_factory {
-  const address_sorting_socket_factory_vtable* vtable;
-} address_sorting_socket_factory;
-
-void address_sorting_override_socket_factory_for_testing(
-    address_sorting_socket_factory* factory);
-
-#ifdef __cplusplus
+static int posix_socket_factory_socket(address_sorting_socket_factory* self,
+                                       int domain, int type, int protocol) {
+  return socket(domain, type, protocol);
 }
-#endif
 
-#endif  // ADDRESS_SORTING_H
+static int posix_socket_factory_connect(address_sorting_socket_factory* self,
+                                        int sockfd, const char* addr,
+                                        size_t addrlen) {
+  return connect(sockfd, (const struct sockaddr*)addr, (socklen_t)addrlen);
+}
+
+static int posix_socket_factory_getsockname(
+    address_sorting_socket_factory* self, int sockfd, char* addr,
+    size_t* addrlen) {
+  return getsockname(sockfd, (struct sockaddr*)addr, (socklen_t*)addrlen);
+}
+
+static int posix_socket_factory_close(address_sorting_socket_factory* self,
+                                      int sockfd) {
+  return close(sockfd);
+}
+
+static void posix_socket_factory_destroy(address_sorting_socket_factory* self) {
+  free(self);
+  return;
+}
+
+static const address_sorting_socket_factory_vtable posix_socket_factory_vtable =
+    {
+        posix_socket_factory_socket,      posix_socket_factory_connect,
+        posix_socket_factory_getsockname, posix_socket_factory_close,
+        posix_socket_factory_destroy,
+};
+
+address_sorting_socket_factory*
+address_sorting_create_socket_factory_for_current_platform() {
+  address_sorting_socket_factory* factory =
+      malloc(sizeof(address_sorting_socket_factory));
+  memset(factory, 0, sizeof(address_sorting_socket_factory));
+  factory->vtable = &posix_socket_factory_vtable;
+  return factory;
+}
+
+#endif  // defined(ADDRESS_SORTING_POSIX)
