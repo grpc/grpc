@@ -106,12 +106,12 @@ static void log_address_sorting_list(grpc_lb_addresses* lb_addrs,
     char* addr_str;
     if (grpc_sockaddr_to_string(&addr_str, &lb_addrs->addresses[i].address,
                                 true)) {
-      gpr_log(GPR_INFO, "c-ares address sorting: %s[%" PRIdPTR "]=%s",
+      gpr_log(GPR_DEBUG, "c-ares address sorting: %s[%" PRIuPTR "]=%s",
               input_output_str, i, addr_str);
       gpr_free(addr_str);
     } else {
-      gpr_log(GPR_INFO,
-              "c-ares address sorting: %s[%" PRIdPTR "]=<unprintable>",
+      gpr_log(GPR_DEBUG,
+              "c-ares address sorting: %s[%" PRIuPTR "]=<unprintable>",
               input_output_str, i);
     }
   }

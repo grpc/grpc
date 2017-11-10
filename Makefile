@@ -2814,6 +2814,8 @@ clean:
 
 LIBADDRESS_SORTING_SRC = \
     third_party/address_sorting/address_sorting.c \
+    third_party/address_sorting/address_sorting_posix.c \
+    third_party/address_sorting/address_sorting_windows.c \
 
 PUBLIC_HEADERS_C += \
 

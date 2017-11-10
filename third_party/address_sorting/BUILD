@@ -42,6 +42,13 @@ package(
 
 cc_library(
     name = "address_sorting",
-    hdrs = ["address_sorting.h"],
-    srcs = ["address_sorting.c"],
+    hdrs = [
+        "address_sorting.h",
+        "address_sorting_internal.h",
+    ],
+    srcs = [
+        "address_sorting.c",
+        "address_sorting_posix.c",
+        "address_sorting_windows.c",
+    ],
 )

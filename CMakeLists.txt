@@ -787,6 +787,8 @@ if (gRPC_BUILD_TESTS)
 
 add_library(address_sorting
   third_party/address_sorting/address_sorting.c
+  third_party/address_sorting/address_sorting_posix.c
+  third_party/address_sorting/address_sorting_windows.c
 )
 
 if(WIN32 AND MSVC)
