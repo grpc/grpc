@@ -175,7 +175,7 @@ void grpc_tcp_server_unref(grpc_tcp_server* s) {
   GRPC_UV_ASSERT_SAME_THREAD();
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
-    grpc_exec_ctx local_ExecCtx _local_exec_ctx;
+    ExecCtx _local_exec_ctx;
     GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);
     if (exec_ctx == NULL) {
       grpc_exec_ctx_flush();
