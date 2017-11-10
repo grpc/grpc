@@ -1460,10 +1460,6 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
     return NULL;
   }
 
-#ifndef NDEBUG
-  grpc_register_tracer(&grpc_trace_pollable_refcount);
-#endif
-
   fd_global_init();
 
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
