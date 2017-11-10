@@ -30,7 +30,7 @@
 namespace grpc_core {
 
 // Storage type for Timer: see comment on Timer declaration below
-static constexpr const size_t kMaxTimerSize = 6 * sizeof(void*);
+static constexpr size_t kMaxTimerSize = 6 * sizeof(void*);
 typedef std::aligned_storage<kMaxTimerSize>::type TimerStorage;
 
 // Abstract singleton interface for implementing timer engines
