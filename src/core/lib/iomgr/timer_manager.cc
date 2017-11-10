@@ -224,7 +224,11 @@ static bool wait_until(grpc_exec_ctx* exec_ctx, grpc_millis next) {
 static void timer_main_loop(grpc_exec_ctx* exec_ctx) {
   for (;;) {
     grpc_millis next = GRPC_MILLIS_INF_FUTURE;
+    // Check if it is time to update g_start_time
+    grpc_exec_ctx_maybe_update_start_time(exec_ctx);
+
     grpc_exec_ctx_invalidate_now(exec_ctx);
+
     // check timer state, updates next to the next time to run a check
     switch (grpc_timer_check(exec_ctx, &next)) {
       case GRPC_TIMERS_FIRED:

@@ -25,6 +25,9 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/profiling/timers.h"
 
+#define GRPC_START_TIME_UPDATE_INTERVAL 10000
+extern "C" grpc_tracer_flag grpc_timer_check_trace;
+
 bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx* exec_ctx) {
   if ((exec_ctx->flags & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
     if (exec_ctx->check_ready_to_finish(exec_ctx,
@@ -109,12 +112,16 @@ static gpr_timespec
                                      // last enum value in
                                      // gpr_clock_type
 
+static grpc_millis g_last_start_time_update;
+static gpr_mu g_start_time_mu;
+
 void grpc_exec_ctx_global_init(void) {
   for (int i = 0; i < GPR_TIMESPAN; i++) {
     g_start_time[i] = gpr_now((gpr_clock_type)i);
   }
   // allows uniform treatment in conversion functions
   g_start_time[GPR_TIMESPAN] = gpr_time_0(GPR_TIMESPAN);
+  gpr_mu_init(&g_start_time_mu);
 }
 
 void grpc_exec_ctx_global_shutdown(void) {}
@@ -174,6 +181,27 @@ grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts) {
 
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
   return timespec_to_atm_round_up(ts);
+}
+
+void grpc_exec_ctx_maybe_update_start_time(grpc_exec_ctx* exec_ctx) {
+  grpc_exec_ctx_invalidate_now(exec_ctx);
+  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  grpc_millis last_start_time_update = gpr_atm_acq_load(&g_last_start_time_update);
+  if (now > last_start_time_update &&
+      now - last_start_time_update > GRPC_START_TIME_UPDATE_INTERVAL) {
+    gpr_timespec real_now = gpr_now(GPR_CLOCK_REALTIME);
+    gpr_timespec old_now = grpc_millis_to_timespec(now, GPR_CLOCK_REALTIME);
+    gpr_timespec diff = gpr_time_sub(real_now, old_now);
+    if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+      gpr_log(GPR_DEBUG, "Update start time with diff: %" PRId64 "s %dns", diff.tv_sec, diff.tv_nsec);
+    }
+    gpr_mu_lock(&g_start_time_mu);
+    if (last_start_time_update == gpr_atm_acq_load(&g_last_start_time_update)) {
+      g_start_time[GPR_CLOCK_REALTIME] = gpr_time_add(g_start_time[GPR_CLOCK_REALTIME], diff);
+      g_last_start_time_update = now;
+    }
+    gpr_mu_unlock(&g_start_time_mu);
+  }
 }
 
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
