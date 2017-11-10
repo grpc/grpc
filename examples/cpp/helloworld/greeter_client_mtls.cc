@@ -42,24 +42,16 @@ class GreeterClient {
   GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
-  std::string SayHello(const std::string& user) {
-    // Data we are sending to the server.
+  grpc::string SayHello(const grpc::string& user) {
     HelloRequest request;
     request.set_name(user);
 
-    // Container for the data we expect from the server.
     HelloReply reply;
 
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
-    // The actual RPC.
     Status status = stub_->SayHello(&context, request, &reply);
 
-    // Act upon its status.
     if (status.ok()) {
       return reply.message();
     } else {
@@ -73,7 +65,7 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
-grpc::string LoadFromFile(grpc::string path) {
+grpc::string LoadFromFile(const grpc::string& path) {
   std::ifstream ifs(path);
   if (!ifs.is_open()) {
     std::cerr << "Unable to open file: " << path << std::endl;
@@ -112,8 +104,8 @@ int main(int argc, char** argv) {
   //       "foo.test.google.com.au:50051", grpc::SslCredentials(options)));
   GreeterClient greeter(grpc::CreateCustomChannel(
       "localhost:50051", grpc::SslCredentials(options), args));
-  std::string user("world");
-  std::string reply = greeter.SayHello(user);
+  grpc::string user("world");
+  grpc::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;
 
   return 0;

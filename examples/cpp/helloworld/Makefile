@@ -36,18 +36,18 @@ PROTOS_PATH = ../../protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_server_mTLS greeter_client_mTLS
+all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_server_mtls greeter_client_mtls
 
 greeter_client: helloworld.pb.o helloworld.grpc.pb.o greeter_client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-greeter_client_mTLS: helloworld.pb.o helloworld.grpc.pb.o greeter_client_mTLS.o
+greeter_client_mtls: helloworld.pb.o helloworld.grpc.pb.o greeter_client_mtls.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 greeter_server: helloworld.pb.o helloworld.grpc.pb.o greeter_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-greeter_server_mTLS: helloworld.pb.o helloworld.grpc.pb.o greeter_server_mTLS.o
+greeter_server_mtls: helloworld.pb.o helloworld.grpc.pb.o greeter_server_mtls.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 greeter_async_client: helloworld.pb.o helloworld.grpc.pb.o greeter_async_client.o
@@ -68,7 +68,7 @@ greeter_async_server: helloworld.pb.o helloworld.grpc.pb.o greeter_async_server.
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
-	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_server_mTLS greeter_client_mTLS
+	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_server_mtls greeter_client_mtls
 
 
 # The following is to test your system and ensure a smoother experience.
