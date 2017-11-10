@@ -102,3 +102,8 @@ local_repository(
     name = "com_google_absl",
     path = "third_party/abseil-cpp",
 )
+
+local_repository(
+    name = "address_sorting",
+    path = "third_party/address_sorting",
+)
