@@ -5995,10 +5995,7 @@
     "type": "target"
   }, 
   {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
+    "deps": [], 
     "headers": [
       "third_party/address_sorting/address_sorting.h"
     ], 

@@ -817,8 +817,6 @@ target_include_directories(address_sorting
 
 target_link_libraries(address_sorting
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
-  gpr
 )
 
 
