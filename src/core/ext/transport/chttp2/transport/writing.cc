@@ -397,7 +397,7 @@ class StreamWriteContext {
     GRPC_CHTTP2_IF_TRACING(
         gpr_log(GPR_DEBUG, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
-                s->sent_initial_metadata, s->send_initial_metadata != NULL,
+                s->sent_initial_metadata, s->send_initial_metadata != nullptr,
                 (int)(s->flow_control->local_window_delta() -
                       s->flow_control->announced_window_delta())));
   }

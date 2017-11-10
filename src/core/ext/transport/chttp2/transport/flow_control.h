@@ -41,7 +41,7 @@ class TrickledCHTTP2;  // to make this a friend
 namespace grpc_core {
 namespace chttp2 {
 
-static constexpr uint32_t;;;;;;;;;;;;; kDefaultWindow = 65535;
+static constexpr uint32_t kDefaultWindow = 65535;
 
 class TransportFlowControl;
 class StreamFlowControl;

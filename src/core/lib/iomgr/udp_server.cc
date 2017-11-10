@@ -508,6 +508,7 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index) {
   for (sp = s->head; sp && port_index != 0; sp = sp->next) {
     --port_index;
   }
+  GPR_ASSERT(sp);  // if this fails, our check earlier was bogus
   return sp->fd;
 }
 

@@ -70,10 +70,10 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
   grpc_endpoint_destroy(exec_ctx, tcp);
   if (peer) {
     last_colon = strrchr(peer, ':');
-    if (server->peer == NULL) {
+    if (server->peer == nullptr) {
       server->peer = peer;
     } else {
-      if (last_colon == NULL) {
+      if (last_colon == nullptr) {
         gpr_log(GPR_ERROR, "peer does not contain a ':'");
       } else if (strncmp(server->peer, peer, (size_t)(last_colon - peer)) !=
                  0) {
@@ -84,8 +84,8 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
   }
   new_tail = static_cast<timestamp_list*>(gpr_malloc(sizeof(timestamp_list)));
   new_tail->timestamp = now;
-  new_tail->next = NULL;
-  if (server->tail == NULL) {
+  new_tail->next = nullptr;
+  if (server->tail == nullptr) {
     server->head = new_tail;
     server->tail = new_tail;
   } else {
@@ -97,9 +97,9 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
 
 void reconnect_server_init(reconnect_server* server) {
   test_tcp_server_init(&server->tcp_server, on_connect, server);
-  server->head = NULL;
-  server->tail = NULL;
-  server->peer = NULL;
+  server->head = nullptr;
+  server->tail = nullptr;
+  server->peer = nullptr;
   server->max_reconnect_backoff_ms = 0;
 }
 
@@ -118,9 +118,9 @@ void reconnect_server_clear_timestamps(reconnect_server* server) {
     gpr_free(server->head);
     server->head = new_head;
   }
-  server->tail = NULL;
+  server->tail = nullptr;
   gpr_free(server->peer);
-  server->peer = NULL;
+  server->peer = nullptr;
 }
 
 void reconnect_server_destroy(reconnect_server* server) {

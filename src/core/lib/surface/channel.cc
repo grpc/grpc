@@ -302,10 +302,10 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
   GPR_ASSERT(!reserved);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_call* call = grpc_channel_create_call_internal(
-      &exec_ctx, channel, parent_call, propagation_mask, cq, NULL,
+      &exec_ctx, channel, parent_call, propagation_mask, cq, nullptr,
       grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_PATH,
                               grpc_slice_ref_internal(method)),
-      host != NULL ? grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_AUTHORITY,
+      host != nullptr ? grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_AUTHORITY,
                                              grpc_slice_ref_internal(*host))
                    : GRPC_MDNULL,
       grpc_timespec_to_millis_round_up(deadline));
@@ -319,10 +319,10 @@ grpc_call* grpc_channel_create_pollset_set_call(
     const grpc_slice* host, grpc_millis deadline, void* reserved) {
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
-      exec_ctx, channel, parent_call, propagation_mask, NULL, pollset_set,
+      exec_ctx, channel, parent_call, propagation_mask, nullptr, pollset_set,
       grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_PATH,
                               grpc_slice_ref_internal(method)),
-      host != NULL ? grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
+      host != nullptr ? grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
                                              grpc_slice_ref_internal(*host))
                    : GRPC_MDNULL,
       deadline);

@@ -42,7 +42,7 @@ std::shared_ptr<Channel> CreateCustomChannel(
   return creds
              ? creds->CreateChannel(target, args)
              : CreateChannelInternal("", grpc_lame_client_channel_create(
-                                             NULL, GRPC_STATUS_INVALID_ARGUMENT,
+                                             nullptr, GRPC_STATUS_INVALID_ARGUMENT,
                                              "Invalid credentials."));
 }
 

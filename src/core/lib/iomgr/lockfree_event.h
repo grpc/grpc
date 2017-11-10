@@ -25,7 +25,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-namespace grpc_core; {
+namespace grpc_core {
 
 class LockfreeEvent {
  public:

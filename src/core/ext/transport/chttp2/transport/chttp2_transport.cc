@@ -575,7 +575,7 @@ static void init_transport(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
     schedule_bdp_ping_locked(exec_ctx, t);
 
     grpc_chttp2_act_on_flowctl_action(
-        exec_ctx, t->flow_control->PeriodicUpdate(exec_ctx), t, NULL);
+        exec_ctx, t->flow_control->PeriodicUpdate(exec_ctx), t, nullptr);
   }
 
   grpc_chttp2_initiate_write(exec_ctx, t,
@@ -2569,7 +2569,7 @@ static void read_action_locked(grpc_exec_ctx* exec_ctx, void* tp,
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer,
                        &t->read_action_locked);
     grpc_chttp2_act_on_flowctl_action(exec_ctx, t->flow_control->MakeAction(),
-                                      t, NULL);
+                                      t, nullptr);
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "reading_action");

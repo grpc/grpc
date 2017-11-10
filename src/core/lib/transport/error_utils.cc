@@ -90,8 +90,6 @@ void grpc_error_get_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
       }
     }
   }
-
-  if (found_error == nullptr) found_error = error;
 }
 
 bool grpc_error_has_clear_grpc_status(grpc_error* error) {

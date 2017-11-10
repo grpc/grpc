@@ -63,7 +63,7 @@ TEST_F(ProtoUtilsTest, BackupNext) {
   EXPECT_TRUE(!peer.have_backup());
   // On the next allocation, the slice is non-inlined.
   ASSERT_TRUE(writer.Next(&data, &size));
-  EXPECT_TRUE(peer.slice().refcount != NULL);
+  EXPECT_TRUE(peer.slice().refcount != nullptr);
 
   // Cleanup.
   g_core_codegen_interface->grpc_byte_buffer_destroy(bp);

@@ -285,7 +285,7 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx* exec_ctx,
           ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
         fd_node* fdn = pop_fd_node(&ev_driver->fds, socks[i]);
         // Create a new fd_node if sock[i] is not in the fd_node list.
-        if (fdn == NULL) {
+        if (fdn == nullptr) {
           char* fd_name;
           gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
           fdn = (fd_node*)gpr_malloc(sizeof(fd_node));

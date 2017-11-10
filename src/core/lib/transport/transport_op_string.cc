@@ -189,7 +189,7 @@ char* grpc_transport_op_string(grpc_transport_op* op) {
 
   if (op->send_ping != nullptr) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    // first = false;
     gpr_strvec_add(&b, gpr_strdup("SEND_PING"));
   }
 

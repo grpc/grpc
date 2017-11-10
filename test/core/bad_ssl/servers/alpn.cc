@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
 
   grpc_init();
   ssl_creds =
-      grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0, NULL);
-  server = grpc_server_create(NULL, NULL);
+      grpc_ssl_server_credentials_create(nullptr, &pem_key_cert_pair, 1, 0, nullptr);
+  server = grpc_server_create(nullptr, nullptr);
   GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
   grpc_server_credentials_release(ssl_creds);
 

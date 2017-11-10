@@ -145,6 +145,7 @@ void* grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map* map) {
   if (map->free != 0) {
     map->count = compact(map->keys, map->values, map->count);
     map->free = 0;
+    GPR_ASSERT(map->count > 0);
   }
   return map->values[((size_t)rand()) % map->count];
 }

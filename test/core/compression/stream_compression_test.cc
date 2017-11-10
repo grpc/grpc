@@ -66,7 +66,7 @@ static void test_stream_compression_simple_compress_decompress() {
           GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
   grpc_slice_buffer_add(&source, slice);
-  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, NULL,
+  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, nullptr,
                                   ~(size_t)0,
                                   GRPC_STREAM_COMPRESSION_FLUSH_FINISH));
   bool end_of_context;
@@ -99,7 +99,7 @@ test_stream_compression_simple_compress_decompress_with_output_size_constraint()
           GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
   grpc_slice_buffer_add(&source, slice);
-  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, NULL,
+  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, nullptr,
                                   ~(size_t)0,
                                   GRPC_STREAM_COMPRESSION_FLUSH_FINISH));
   grpc_stream_compression_context_destroy(compress_ctx);
@@ -149,7 +149,7 @@ test_stream_compression_simple_compress_decompress_with_large_data() {
           GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
   grpc_slice_buffer_add(&source, slice);
-  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, NULL,
+  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, nullptr,
                                   ~(size_t)0,
                                   GRPC_STREAM_COMPRESSION_FLUSH_FINISH));
   bool end_of_context;
@@ -180,7 +180,7 @@ static void test_stream_compression_drop_context() {
           GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
   grpc_slice_buffer_add(&source, slice);
-  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, NULL,
+  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, nullptr,
                                   ~(size_t)0,
                                   GRPC_STREAM_COMPRESSION_FLUSH_FINISH));
   grpc_stream_compression_context_destroy(compress_ctx);
@@ -189,7 +189,7 @@ static void test_stream_compression_drop_context() {
       GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
   slice = grpc_slice_from_static_string(test_str2);
   grpc_slice_buffer_add(&source, slice);
-  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, NULL,
+  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, nullptr,
                                   ~(size_t)0,
                                   GRPC_STREAM_COMPRESSION_FLUSH_FINISH));
   grpc_stream_compression_context_destroy(compress_ctx);
@@ -249,7 +249,7 @@ static void test_stream_compression_sync_flush() {
           GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
   grpc_slice slice = grpc_slice_from_static_string(test_str);
   grpc_slice_buffer_add(&source, slice);
-  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, NULL,
+  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, nullptr,
                                   ~(size_t)0,
                                   GRPC_STREAM_COMPRESSION_FLUSH_SYNC));
 
@@ -268,7 +268,7 @@ static void test_stream_compression_sync_flush() {
   grpc_slice_buffer_init(&sink);
   slice = grpc_slice_from_static_string(test_str2);
   grpc_slice_buffer_add(&source, slice);
-  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, NULL,
+  GPR_ASSERT(grpc_stream_compress(compress_ctx, &source, &relay, nullptr,
                                   ~(size_t)0,
                                   GRPC_STREAM_COMPRESSION_FLUSH_FINISH));
   grpc_stream_compression_context_destroy(compress_ctx);

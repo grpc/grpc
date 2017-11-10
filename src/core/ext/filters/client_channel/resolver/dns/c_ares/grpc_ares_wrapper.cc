@@ -297,7 +297,7 @@ static void on_txt_done_cb(void* arg, int status, int timeouts,
     *r->service_config_json_out = (char*)gpr_malloc(service_config_len + 1);
     memcpy(*r->service_config_json_out, result->txt + prefix_len,
            service_config_len);
-    for (result = result->next; result != NULL && !result->record_start;
+    for (result = result->next; result != nullptr && !result->record_start;
          result = result->next) {
       *r->service_config_json_out = (char*)gpr_realloc(
           *r->service_config_json_out, service_config_len + result->length + 1);
@@ -334,7 +334,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_ares_hostbyname_request* hr = nullptr;
   grpc_ares_request* r = nullptr;
-  ares_channel* channel = NULL;
+  ares_channel* channel = nullptr;
   /* TODO(zyc): Enable tracing after #9603 is checked in */
   /* if (grpc_dns_trace) {
       gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",

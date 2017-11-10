@@ -29,6 +29,9 @@
    otherwise specified.
 */
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_WINSOCK_SOCKET
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
@@ -49,4 +52,5 @@ grpc_error* grpc_tcp_prepare_socket(SOCKET sock);
 }
 #endif
 
+#endif /* GRPC_WINSOCK_SOCKET */
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_WINDOWS_H */

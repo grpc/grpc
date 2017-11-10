@@ -449,8 +449,8 @@ static bool is_server_valid(const grpc_grpclb_server* server, size_t idx,
 
 /* vtable for LB tokens in grpc_lb_addresses. */
 static void* lb_token_copy(void* token) {
-  return token == NULL
-             ? NULL
+  return token == nullptr
+             ? nullptr
              : (void*)GRPC_MDELEM_REF(grpc_mdelem{(uintptr_t)token}).payload;
 }
 static void lb_token_destroy(grpc_exec_ctx* exec_ctx, void* token) {
@@ -563,7 +563,7 @@ static grpc_lb_addresses* extract_backend_addresses_locked(
     const grpc_resolved_address* addr = &addresses->addresses[i].address;
     grpc_lb_addresses_set_address(backend_addresses, num_copied, &addr->addr,
                                   addr->len, false /* is_balancer */,
-                                  NULL /* balancer_name */,
+                                  nullptr /* balancer_name */,
                                   (void*)GRPC_MDELEM_LB_TOKEN_EMPTY.payload);
     ++num_copied;
   }
