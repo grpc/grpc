@@ -306,9 +306,10 @@ struct grpc_chttp2_transport {
    */
   uint32_t write_buffer_size;
 
-  /** have we seen a goaway */
-  bool seen_goaway;
-  /** have we sent a goaway */
+  /** Set to a grpc_error object if a goaway frame is received. By default, set
+   * to GRPC_ERROR_NONE */
+  grpc_error* goaway_error;
+
   grpc_chttp2_sent_goaway_state sent_goaway_state;
 
   /** are the local settings dirty and need to be sent? */
@@ -374,11 +375,6 @@ struct grpc_chttp2_transport {
   grpc_chttp2_stream* incoming_stream;
   grpc_error* (*parser)(void* parser_user_data, grpc_chttp2_transport* t,
                         grpc_chttp2_stream* s, grpc_slice slice, int is_last);
-
-  /* goaway data */
-  grpc_status_code goaway_error;
-  uint32_t goaway_last_stream_index;
-  grpc_slice goaway_text;
 
   grpc_chttp2_write_cb* write_cb_pool;
 

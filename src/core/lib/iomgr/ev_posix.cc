@@ -172,12 +172,12 @@ void grpc_event_engine_init(void) {
     gpr_free(strings[i]);
   }
   gpr_free(strings);
-  gpr_free(s);
 
   if (g_event_engine == NULL) {
-    gpr_log(GPR_ERROR, "No event engine could be initialized");
+    gpr_log(GPR_ERROR, "No event engine could be initialized from %s", s);
     abort();
   }
+  gpr_free(s);
 }
 
 void grpc_event_engine_shutdown(void) {
