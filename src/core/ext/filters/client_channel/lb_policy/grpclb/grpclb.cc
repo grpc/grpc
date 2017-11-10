@@ -1215,7 +1215,7 @@ static int glb_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
       wc_arg->lb_token_mdelem_storage = pick_args->lb_token_mdelem_storage;
       wc_arg->initial_metadata = pick_args->initial_metadata;
       wc_arg->free_when_done = wc_arg;
-      wc_arg->glb_policy = glb_policy;
+      wc_arg->glb_policy = pol;
       pick_done =
           pick_from_internal_rr_locked(exec_ctx, glb_policy, pick_args,
                                        false /* force_async */, target, wc_arg);
