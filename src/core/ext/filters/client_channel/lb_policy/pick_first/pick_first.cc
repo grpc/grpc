@@ -444,6 +444,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
       sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
     grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
   }
+  bool updated_error = false;
   while (true) {
     switch (sd->curr_connectivity_state) {
       case GRPC_CHANNEL_READY: {
@@ -486,6 +487,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         }
         // Renew notification.
         grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
+        if (updated_error) GRPC_ERROR_UNREF(error);
         return;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
@@ -506,11 +508,13 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         }
         sd->curr_connectivity_state =
             grpc_subchannel_check_connectivity(sd->subchannel, &error);
-        GRPC_ERROR_UNREF(error);
         if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          GRPC_ERROR_UNREF(error);
           // Reuses the connectivity refs from the previous watch.
           grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
           return;
+        } else {
+          updated_error = true;
         }
         break;  // Go back to top of loop.
       }
@@ -524,6 +528,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         }
         // Renew notification.
         grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
+        if (updated_error) GRPC_ERROR_UNREF(error);
         return;
       }
       case GRPC_CHANNEL_SHUTDOWN: {
@@ -544,6 +549,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
           shutdown_locked(exec_ctx, p,
                           GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                               "Pick first exhausted channels", &error, 1));
+          if (updated_error) GRPC_ERROR_UNREF(error);
           return;
         }
         if (sd->subchannel_list == p->subchannel_list) {
@@ -553,11 +559,13 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         }
         sd->curr_connectivity_state =
             grpc_subchannel_check_connectivity(sd->subchannel, &error);
-        GRPC_ERROR_UNREF(error);
         if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          GRPC_ERROR_UNREF(error);
           // Reuses the connectivity refs from the previous watch.
           grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
           return;
+        } else {
+          updated_error = true;
         }
         // For any other state, go back to top of loop.
         // We will reuse the connectivity refs from the previous watch.
