@@ -98,9 +98,6 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   server->set_port(54321);
   server->set_load_balance_token("load_balancing");
   server->set_drop(true);
-  auto* expiration_interval = serverlist->mutable_expiration_interval();
-  expiration_interval->set_seconds(888);
-  expiration_interval->set_nanos(999);
 
   const grpc::string encoded_response = response.SerializeAsString();
   const grpc_slice encoded_slice = grpc_slice_from_copied_buffer(
@@ -120,11 +117,6 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   EXPECT_EQ(c_serverlist->servers[1]->port, 54321);
   EXPECT_STREQ(c_serverlist->servers[1]->load_balance_token, "load_balancing");
   EXPECT_TRUE(c_serverlist->servers[1]->drop);
-
-  EXPECT_TRUE(c_serverlist->expiration_interval.has_seconds);
-  EXPECT_EQ(c_serverlist->expiration_interval.seconds, 888);
-  EXPECT_TRUE(c_serverlist->expiration_interval.has_nanos);
-  EXPECT_EQ(c_serverlist->expiration_interval.nanos, 999);
 
   grpc_slice_unref(encoded_slice);
   grpc_grpclb_destroy_serverlist(c_serverlist);
