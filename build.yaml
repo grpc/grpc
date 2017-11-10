@@ -3475,8 +3475,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3498,8 +3496,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3521,8 +3517,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3544,8 +3538,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3566,8 +3558,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3588,8 +3578,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3610,8 +3598,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=4
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3632,8 +3618,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3657,8 +3641,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -3685,8 +3667,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -3712,8 +3692,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   exclude_configs:
@@ -3742,8 +3720,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -3768,8 +3744,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3791,8 +3765,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  args:
-  - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
   platforms:
