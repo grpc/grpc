@@ -1738,7 +1738,7 @@ static void fallback_update_locked(grpc_exec_ctx* exec_ctx,
   glb_policy->fallback_backend_addresses =
       extract_backend_addresses_locked(exec_ctx, addresses);
   if (glb_policy->lb_fallback_timeout_ms > 0 &&
-      !glb_policy->fallback_timer_active) {
+      glb_policy->rr_policy != NULL) {
     rr_handover_locked(exec_ctx, glb_policy);
   }
 }
