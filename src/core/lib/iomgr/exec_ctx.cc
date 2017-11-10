@@ -184,7 +184,6 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
 }
 
 void grpc_exec_ctx_maybe_update_start_time(grpc_exec_ctx* exec_ctx) {
-  grpc_exec_ctx_invalidate_now(exec_ctx);
   grpc_millis now = grpc_exec_ctx_now(exec_ctx);
   grpc_millis last_start_time_update = gpr_atm_acq_load(&g_last_start_time_update);
   if (now > last_start_time_update &&
