@@ -440,11 +440,6 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
   //    for a subchannel in p->latest_pending_subchannel_list.  The
   //    goal here is to find a subchannel from the update that we can
   //    select in place of the current one.
-  if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-      sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
-    grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
-  }
-  bool updated_error = false;
   switch (sd->curr_connectivity_state) {
     case GRPC_CHANNEL_READY: {
       // Case 2.  Promote p->latest_pending_subchannel_list to
@@ -486,10 +481,10 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
       }
       // Renew notification.
       grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
-      if (updated_error) GRPC_ERROR_UNREF(error);
       break;
     }
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
+      grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
       do {
         sd->subchannel_list->checking_subchannel =
             (sd->subchannel_list->checking_subchannel + 1) %
@@ -519,10 +514,10 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
       }
       // Renew notification.
       grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
-      if (updated_error) GRPC_ERROR_UNREF(error);
       break;
     }
     case GRPC_CHANNEL_SHUTDOWN: {
+      grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
       grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd,
                                                "pf_candidate_shutdown");
       // Advance to next subchannel and check its state.
@@ -540,7 +535,6 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         shutdown_locked(exec_ctx, p,
                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                             "Pick first exhausted channels", &error, 1));
-        if (updated_error) GRPC_ERROR_UNREF(error);
         break;
       }
       if (sd->subchannel_list == p->subchannel_list) {
