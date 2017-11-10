@@ -206,7 +206,7 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
     }
     thread_state* ts = (thread_state*)gpr_tls_get(&g_this_thread_state);
     if (ts == NULL) {
-      ts = &g_thread_state[GPR_HASH_POINTER(&exec_ctx, cur_thread_count)];
+      ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
     } else {
       GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF();
     }

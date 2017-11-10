@@ -443,7 +443,7 @@ static void UnrefHeader(void* user_data, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
 }
 
-template <class Fixture, void (*OnHeader)(grpc_exec_ctx*, void*, grpc_mdelem)>
+template <class Fixture, void (*OnHeader)(void*, grpc_mdelem)>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
   ExecCtx _local_exec_ctx;

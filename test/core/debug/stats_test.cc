@@ -95,7 +95,7 @@ TEST_P(HistogramTest, IncHistogram) {
       Snapshot snapshot;
 
       ExecCtx _local_exec_ctx;
-      grpc_stats_inc_histogram[kHistogram](&exec_ctx, j);
+      grpc_stats_inc_histogram[kHistogram](j);
       grpc_exec_ctx_finish();
 
       auto delta = snapshot.delta();

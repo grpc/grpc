@@ -152,7 +152,7 @@ class Fixture {
 
  private:
   DummyEndpoint* ep_;
-  grpc_exec_ctx _local_exec_ctx;
+  ExecCtx _local_exec_ctx;
   grpc_transport* t_;
 };
 

@@ -134,7 +134,7 @@ void grpc_subchannel_index_unref(void) {
   if (gpr_unref(&g_refcount)) {
     ExecCtx _local_exec_ctx;
     gpr_mu_destroy(&g_mu);
-    gpr_avl_unref(g_subchannel_index, &exec_ctx);
+    gpr_avl_unref(g_subchannel_index, exec_ctx);
     grpc_exec_ctx_finish();
   }
 }

@@ -366,8 +366,7 @@ static void win_add_to_pollset_set(grpc_endpoint* ep, grpc_pollset_set* pss) {
   grpc_iocp_add_socket(tcp->socket);
 }
 
-static void win_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
-                                        grpc_endpoint* ep,
+static void win_delete_from_pollset_set(grpc_endpoint* ep,
                                         grpc_pollset_set* pss) {}
 
 /* Initiates a shutdown of the TCP endpoint. This will queue abort callbacks
@@ -446,7 +445,7 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   /* Tell network status tracking code about the new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
-  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(resource_quota);
 
   return &tcp->base;
 }

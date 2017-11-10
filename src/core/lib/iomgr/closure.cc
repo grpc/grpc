@@ -135,8 +135,8 @@ grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg,
 }
 
 #ifndef NDEBUG
-void grpc_closure_run(const char* file, int line, grpc_exec_ctx* exec_ctx,
-                      grpc_closure* c, grpc_error* error) {
+void grpc_closure_run(const char* file, int line, grpc_closure* c,
+                      grpc_error* error) {
 #else
 void grpc_closure_run(grpc_closure* c, grpc_error* error) {
 #endif
@@ -156,8 +156,8 @@ void grpc_closure_run(grpc_closure* c, grpc_error* error) {
 }
 
 #ifndef NDEBUG
-void grpc_closure_sched(const char* file, int line, grpc_exec_ctx* exec_ctx,
-                        grpc_closure* c, grpc_error* error) {
+void grpc_closure_sched(const char* file, int line, grpc_closure* c,
+                        grpc_error* error) {
 #else
 void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
 #endif
@@ -187,7 +187,7 @@ void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
 
 #ifndef NDEBUG
 void grpc_closure_list_sched(const char* file, int line,
-                             grpc_exec_ctx* exec_ctx, grpc_closure_list* list) {
+                             grpc_closure_list* list) {
 #else
 void grpc_closure_list_sched(grpc_closure_list* list) {
 #endif

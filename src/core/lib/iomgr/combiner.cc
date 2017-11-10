@@ -161,7 +161,7 @@ static void combiner_exec(grpc_closure* cl, grpc_error* error) {
     GRPC_STATS_INC_COMBINER_LOCKS_INITIATED();
     GPR_TIMER_MARK("combiner.initiated", 0);
     gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null,
-                             (gpr_atm)&exec_ctx);
+                             (gpr_atm)exec_ctx);
     // first element on this list: add it to the list of combiner locks
     // executing within this exec_ctx
     push_last_on_exec_ctx(lock);
@@ -170,7 +170,7 @@ static void combiner_exec(grpc_closure* cl, grpc_error* error) {
     // offload for one or two actions, and that's fine
     gpr_atm initiator =
         gpr_atm_no_barrier_load(&lock->initiating_exec_ctx_or_null);
-    if (initiator != 0 && initiator != (gpr_atm)&exec_ctx) {
+    if (initiator != 0 && initiator != (gpr_atm)exec_ctx) {
       gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 0);
     }
   }
