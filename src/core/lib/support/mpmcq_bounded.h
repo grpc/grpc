@@ -33,7 +33,7 @@ extern "C" {
 
 typedef struct gpr_mpmcq_cell {
   gpr_atm sequence;
-  void *data;
+  void* data;
 } gpr_mpmcq_cell;
 
 // Queue type
@@ -41,7 +41,7 @@ typedef struct gpr_mpmcq_bounded {
   gpr_atm head;
 
   char padding_0[GPR_CACHELINE_SIZE];
-  gpr_mpmcq_cell *buffer;
+  gpr_mpmcq_cell* buffer;
   size_t buffer_mask;
 
   char padding_1[GPR_CACHELINE_SIZE];
@@ -54,12 +54,12 @@ typedef struct gpr_mpmcq_bounded {
 } gpr_mpmcq_bounded;
 
 /* Init and destroy queue */
-void gpr_mpmcq_bounded_init(gpr_mpmcq_bounded *q, size_t buffer_size);
-void gpr_mpmcq_bounded_destroy(gpr_mpmcq_bounded *q);
+void gpr_mpmcq_bounded_init(gpr_mpmcq_bounded* q, size_t buffer_size);
+void gpr_mpmcq_bounded_destroy(gpr_mpmcq_bounded* q);
 
 /* Push and Pop */
-bool gpr_mpmcq_bounded_push(gpr_mpmcq_bounded *q, void *data);
-bool gpr_mpmcq_bounded_pop(gpr_mpmcq_bounded *q, void **data);
+bool gpr_mpmcq_bounded_push(gpr_mpmcq_bounded* q, void* data);
+bool gpr_mpmcq_bounded_pop(gpr_mpmcq_bounded* q, void** data);
 
 #ifdef __cplusplus
 }

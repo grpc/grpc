@@ -212,7 +212,7 @@ typedef struct cq_vtable {
  * queue (a lockfree multiproducer multiconsumer queue with a bounded size).
  * Only used in completion queues whose completion_type is GRPC_CQ_NEXT */
 
-#define MPMC_BOUNDED_QUEUE_SIZE 1024 * 128
+#define MPMC_BOUNDED_QUEUE_SIZE 1024 * 8
 typedef struct grpc_cq_event_queue {
   gpr_mpmcq_bounded queue;
 
@@ -403,11 +403,11 @@ static void cq_event_queue_destroy(grpc_cq_event_queue* q) {
   gpr_mpmcq_bounded_destroy(&q->queue);
 }
 
-static bool cq_event_queue_push(grpc_cq_event_queue *q, grpc_cq_completion *c) {
+static bool cq_event_queue_push(grpc_cq_event_queue* q, grpc_cq_completion* c) {
   /* Queue is bounded - and if we can't push, the queue is full and we have not
    * sized it correctly */
   if (!gpr_mpmcq_bounded_push(&q->queue, (void*)c)) {
-    gpr_log(GPR_ERROR, "Queue full!! Num items: %ld",
+    gpr_log(GPR_ERROR, "Queue full!! Num items: % " PRIdPTR,
             gpr_atm_no_barrier_load(&q->num_queue_items));
     abort();
   }
