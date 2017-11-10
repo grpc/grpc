@@ -52,5 +52,6 @@ grpc_error* grpc_tcp_prepare_socket(SOCKET sock);
 }
 #endif
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif
+
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_WINDOWS_H */

@@ -29,5 +29,6 @@
 // must be included after the above
 #include <mswsock.h>
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif
+
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H */

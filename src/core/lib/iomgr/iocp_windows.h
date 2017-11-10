@@ -49,5 +49,6 @@ void grpc_iocp_add_socket(grpc_winsocket*);
 }
 #endif
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif
+
 #endif /* GRPC_CORE_LIB_IOMGR_IOCP_WINDOWS_H */

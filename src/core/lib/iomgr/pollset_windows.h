@@ -71,5 +71,6 @@ void grpc_pollset_global_shutdown(void);
 }
 #endif
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif
+
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H */

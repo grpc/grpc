@@ -118,5 +118,6 @@ void grpc_socket_become_ready(grpc_exec_ctx* exec_ctx,
 }
 #endif
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif
+
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */
