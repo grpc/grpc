@@ -38,19 +38,33 @@
  * this was written.
  */
 
-#ifndef GRPC_ADDRESS_SORTING_H
-#define GRPC_ADDRESS_SORTING_H
-
-#include <grpc/support/port_platform.h>
+#ifndef ADDRESS_SORTING_H
+#define ADDRESS_SORTING_H
 
 #include <netinet/in.h>
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void address_sorting_rfc_6724_sort(grpc_lb_addresses* resolved_lb_addrs);
+typedef struct address_sorting_address {
+  char addr[128];
+  size_t len;
+} address_sorting_address;
+
+typedef struct address_sorting_sortable {
+  // input data; sorting key
+  address_sorting_address dest_addr;
+  // input data; optional value to attach to the sorting key
+  void* user_data;
+  // internal fields, these must be zero'd when passed to sort function
+  address_sorting_address source_addr;
+  int source_addr_exists;
+  size_t original_index;
+} address_sorting_sortable;
+
+void address_sorting_rfc_6724_sort(address_sorting_sortable* sortables,
+                                   size_t sortables_len);
 
 void address_sorting_init();
 void address_sorting_shutdown();
@@ -80,4 +94,4 @@ void address_sorting_override_socket_factory_for_testing(
 }
 #endif
 
-#endif  // GRPC_ADDRESS_SORTING_H
+#endif  // ADDRESS_SORTING_H

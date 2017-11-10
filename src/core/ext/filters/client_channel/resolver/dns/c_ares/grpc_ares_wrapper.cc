@@ -34,8 +34,7 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
-#include <address_sorting.h>
-
+#include "address_sorting.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/iomgr/error.h"
@@ -107,15 +106,40 @@ static void log_address_sorting_list(grpc_lb_addresses* lb_addrs,
     char* addr_str;
     if (grpc_sockaddr_to_string(&addr_str, &lb_addrs->addresses[i].address,
                                 true)) {
-      gpr_log(GPR_INFO,
-              "c-ares address sorting: %s:[%" PRIdPTR "]=%s",
+      gpr_log(GPR_INFO, "c-ares address sorting: %s[%" PRIdPTR "]=%s",
               input_output_str, i, addr_str);
       gpr_free(addr_str);
     } else {
       gpr_log(GPR_INFO,
-              "c-ares address sorting: %s:[%" PRIdPTR "]=<unprintable>",
+              "c-ares address sorting: %s[%" PRIdPTR "]=<unprintable>",
               input_output_str, i);
     }
+  }
+}
+
+void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs) {
+  if (GRPC_TRACER_ON(grpc_trace_cares_address_sorting)) {
+    log_address_sorting_list(lb_addrs, "input");
+  }
+  address_sorting_sortable* sortables = (address_sorting_sortable*)gpr_zalloc(
+      sizeof(address_sorting_sortable) * lb_addrs->num_addresses);
+  for (size_t i = 0; i < lb_addrs->num_addresses; i++) {
+    sortables[i].user_data = &lb_addrs->addresses[i];
+    memcpy(&sortables[i].dest_addr.addr, &lb_addrs->addresses[i].address.addr,
+           lb_addrs->addresses[i].address.len);
+    sortables[i].dest_addr.len = lb_addrs->addresses[i].address.len;
+  }
+  address_sorting_rfc_6724_sort(sortables, lb_addrs->num_addresses);
+  grpc_lb_address* sorted_lb_addrs = (grpc_lb_address*)gpr_zalloc(
+      sizeof(grpc_lb_address) * lb_addrs->num_addresses);
+  for (size_t i = 0; i < lb_addrs->num_addresses; i++) {
+    sorted_lb_addrs[i] = *(grpc_lb_address*)sortables[i].user_data;
+  }
+  gpr_free(sortables);
+  gpr_free(lb_addrs->addresses);
+  lb_addrs->addresses = sorted_lb_addrs;
+  if (GRPC_TRACER_ON(grpc_trace_cares_address_sorting)) {
+    log_address_sorting_list(lb_addrs, "output");
   }
 }
 
@@ -124,13 +148,7 @@ static void grpc_ares_request_unref(grpc_exec_ctx* exec_ctx,
   /* If there are no pending queries, invoke on_done callback and destroy the
      request */
   if (gpr_unref(&r->pending_queries)) {
-    if (GRPC_TRACER_ON(grpc_trace_cares_address_sorting)) {
-      log_address_sorting_list(*(r->lb_addrs_out), "input");
-    }
-    address_sorting_rfc_6724_sort(*(r->lb_addrs_out));
-    if (GRPC_TRACER_ON(grpc_trace_cares_address_sorting)) {
-      log_address_sorting_list(*(r->lb_addrs_out), "output");
-    }
+    grpc_cares_wrapper_address_sorting_sort(*(r->lb_addrs_out));
     if (exec_ctx == NULL) {
       /* A new exec_ctx is created here, as the c-ares interface does not
          provide one in ares_host_callback. It's safe to schedule on_done with

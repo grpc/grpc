@@ -1130,6 +1130,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "@address_sorting//:address_sorting",
     ],
 )
 

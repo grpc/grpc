@@ -71,6 +71,9 @@ grpc_error* grpc_ares_init(void);
    it has been called the same number of times as grpc_ares_init(). */
 void grpc_ares_cleanup(void);
 
+/* Exposed only for testing */
+void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs);
+
 #ifdef __cplusplus
 }
 #endif

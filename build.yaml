@@ -1119,9 +1119,6 @@ libs:
   - third_party/address_sorting/address_sorting.h
   src:
   - third_party/address_sorting/address_sorting.c
-  deps:
-  - grpc
-  - gpr
   secure: false
 - name: gpr
   build: all

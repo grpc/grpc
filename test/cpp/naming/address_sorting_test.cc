@@ -14,8 +14,7 @@
 #include <sys/types.h>
 #include <vector>
 
-#include <address_sorting.h>
-
+#include "address_sorting.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
@@ -224,7 +223,7 @@ TEST(AddressSortingTest, TestDepriotizesUnreachableAddresses) {
       {"1.2.3.4:443", AF_INET},
       {"5.6.7.8:443", AF_INET},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "1.2.3.4:443",
                                     "5.6.7.8:443",
@@ -243,7 +242,7 @@ TEST(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv6) {
       {"[2607:f8b0:400a:801::1002]:443", AF_INET6},
       {"1.2.3.4:443", AF_INET},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "1.2.3.4:443",
                                     "[2607:f8b0:400a:801::1002]:443",
@@ -263,7 +262,7 @@ TEST(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv4) {
       {"[2607:f8b0:400a:801::1002]:443", AF_INET6},
       {"1.2.3.4:443", AF_INET},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[2607:f8b0:400a:801::1002]:443",
                                     "1.2.3.4:443",
@@ -287,7 +286,7 @@ TEST(AddressSortingTest, TestDepriotizesNonMatchingScope) {
       {"[2000:f8b0:400a:801::1002]:443", AF_INET6},
       {"[fec0::5000]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[fec0::5000]:443",
                                     "[2000:f8b0:400a:801::1002]:443",
@@ -310,7 +309,7 @@ TEST(AddressSortingTest, TestUsesLabelFromDefaultTable) {
       {"[2002::5001]:443", AF_INET6},
       {"[2001::5001]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[2001::5001]:443",
                                     "[2002::5001]:443",
@@ -333,7 +332,7 @@ TEST(AddressSortingTest,
       {"[3ffe::5001]:443", AF_INET6},
       {"1.2.3.4:443", AF_INET},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(
       lb_addrs, {
                     // The AF_INET address should be IPv4-mapped by the sort,
@@ -358,7 +357,7 @@ TEST(AddressSortingTest,
       {"[2001::1234]:443", AF_INET6},
       {"[2000::5001]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(
       lb_addrs, {
                     // The 2000::/16 address should match the ::/0 prefix rule
@@ -382,7 +381,7 @@ TEST(
       {"[2001::1231]:443", AF_INET6},
       {"[2000::5001]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[2000::5001]:443",
                                     "[2001::1231]:443",
@@ -403,7 +402,7 @@ TEST(AddressSortingTest,
       {"[fec0::1234]:443", AF_INET6},
       {"[fc00::5001]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[fc00::5001]:443",
                                     "[fec0::1234]:443",
@@ -428,7 +427,7 @@ TEST(AddressSortingTest, TestPrefersSmallerScope) {
       {"[3ffe::5001]:443", AF_INET6},
       {"[fec0::1234]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[fec0::1234]:443",
                                     "[3ffe::5001]:443",
@@ -453,7 +452,7 @@ TEST(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefix) {
       {"[3ffe:5001::]:443", AF_INET6},
       {"[3ffe:1234::]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[3ffe:1234::]:443",
                                     "[3ffe:5001::]:443",
@@ -474,7 +473,7 @@ TEST(AddressSortingTest,
       {"[3ffe::5001]:443", AF_INET6},
       {"[3ffe::1234]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[3ffe::1234]:443",
                                     "[3ffe::5001]:443",
@@ -494,7 +493,7 @@ TEST(AddressSortingTest, TestPrefersLongestPrefixStressInnerBytePrefix) {
       {"[3ffe:8000::]:443", AF_INET6},
       {"[3ffe:2000::]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[3ffe:2000::]:443",
                                     "[3ffe:8000::]:443",
@@ -514,7 +513,7 @@ TEST(AddressSortingTest, TestPrefersLongestPrefixDiffersOnHighestBitOfByte) {
       {"[3ffe:6::]:443", AF_INET6},
       {"[3ffe:c::]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[3ffe:c::]:443",
                                     "[3ffe:6::]:443",
@@ -536,7 +535,7 @@ TEST(AddressSortingTest, TestPrefersLongestPrefixDiffersByLastBit) {
       {"[3ffe:1111:1111:1110::]:443", AF_INET6},
       {"[3ffe:1111:1111:1111::]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[3ffe:1111:1111:1111::]:443",
                                     "[3ffe:1111:1111:1110::]:443",
@@ -558,7 +557,7 @@ TEST(AddressSortingTest, TestStableSort) {
       {"[3ffe::1234]:443", AF_INET6},
       {"[3ffe::1235]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[3ffe::1234]:443",
                                     "[3ffe::1235]:443",
@@ -584,7 +583,7 @@ TEST(AddressSortingTest, TestStableSortFiveElements) {
       {"[3ffe::1234]:443", AF_INET6},
       {"[3ffe::1235]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[3ffe::1231]:443",
                                     "[3ffe::1232]:443",
@@ -605,7 +604,7 @@ TEST(AddressSortingTest, TestStableSortNoSrcAddrsExist) {
       {"[3ffe::1234]:443", AF_INET6},
       {"[3ffe::1235]:443", AF_INET6},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[3ffe::1231]:443",
                                     "[3ffe::1232]:443",
@@ -623,7 +622,7 @@ TEST(AddressSortingTest, TestStableSortNoSrcAddrsExistWithIpv4) {
       {"[::ffff:5.6.7.8]:443", AF_INET6},
       {"1.2.3.4:443", AF_INET},
   });
-  address_sorting_rfc_6724_sort(lb_addrs);
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[::ffff:5.6.7.8]:443",
                                     "1.2.3.4:443",
