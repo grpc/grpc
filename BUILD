@@ -1129,12 +1129,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "cares",
+        "address_sorting",
     ],
     language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
-        "@address_sorting//:address_sorting",
     ],
 )
 
