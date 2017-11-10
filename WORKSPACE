@@ -58,6 +58,11 @@ bind(
     actual = "@com_github_gflags_gflags//:gflags",
 )
 
+bind(
+    name = "address_sorting",
+    actual = "@submodule_address_sorting//:address_sorting",
+)
+
 local_repository(
     name = "boringssl",
     path = "third_party/boringssl-with-bazel",
@@ -104,6 +109,6 @@ local_repository(
 )
 
 local_repository(
-    name = "address_sorting",
+    name = "submodule_address_sorting",
     path = "third_party/address_sorting",
 )

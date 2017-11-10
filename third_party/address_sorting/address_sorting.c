@@ -85,6 +85,7 @@ static int default_socket_factory_close(address_sorting_socket_factory* self,
 
 static void default_socket_factory_destroy(
     address_sorting_socket_factory* self) {
+  free(self);
   return;
 }
 

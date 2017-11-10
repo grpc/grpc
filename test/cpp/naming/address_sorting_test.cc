@@ -65,6 +65,8 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
     memcpy(&resolved_addr.addr, &in6_dest, sizeof(sockaddr_in6));
     resolved_addr.len = sizeof(sockaddr_in6);
   }
+  gpr_free(host);
+  gpr_free(port);
   return resolved_addr;
 }
 
@@ -103,9 +105,11 @@ class MockSocketFactory : public address_sorting_socket_factory {
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
       gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map", ip_addr_str);
+      gpr_free(ip_addr_str);
       errno = ENETUNREACH;
       return -1;
     }
+    gpr_free(ip_addr_str);
     fd_to_getsockname_return_vals_.insert(
         std::pair<int, TestAddress>(sockfd, it->second));
     return 0;
@@ -206,6 +210,9 @@ void VerifyLbAddrOutputs(grpc_lb_addresses* lb_addrs,
     EXPECT_EQ(expected_addrs[i], ip_addr_str);
     gpr_free(ip_addr_str);
   }
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_lb_addresses_destroy(&exec_ctx, lb_addrs);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 }  // namespace
