@@ -54,8 +54,8 @@ static void finish_connection() {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
-                               grpc_pollset_kick(&exec_ctx, g_pollset, nullptr)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "pollset_kick", grpc_pollset_kick(&exec_ctx, g_pollset, nullptr)));
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_mu_unlock(g_mu);
 }
@@ -108,8 +108,8 @@ void test_succeeds(void) {
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, nullptr,
-                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
+                          nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   /* await the connection */
   do {
@@ -157,8 +157,8 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, nullptr,
-                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
+                          nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   gpr_mu_lock(g_mu);
 

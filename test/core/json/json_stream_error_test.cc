@@ -38,7 +38,7 @@ static uint32_t read_char(void* userdata) { return GRPC_JSON_READ_CHAR_ERROR; }
 
 static grpc_json_reader_vtable reader_vtable = {
     string_clear, nullptr, nullptr, read_char, nullptr, nullptr,
-    nullptr,         nullptr, nullptr, nullptr,      nullptr, nullptr};
+    nullptr,      nullptr, nullptr, nullptr,   nullptr, nullptr};
 
 static void read_error() {
   grpc_json_reader reader;

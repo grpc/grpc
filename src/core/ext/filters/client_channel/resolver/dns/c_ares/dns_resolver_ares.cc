@@ -177,7 +177,8 @@ static char* choose_service_config(char* service_config_choice_json) {
       break;
     }
     grpc_json* service_config_json = nullptr;
-    for (grpc_json* field = choice->child; field != nullptr; field = field->next) {
+    for (grpc_json* field = choice->child; field != nullptr;
+         field = field->next) {
       // Check client language, if specified.
       if (strcmp(field->key, "clientLanguage") == 0) {
         if (field->type != GRPC_JSON_ARRAY ||

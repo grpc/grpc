@@ -234,10 +234,10 @@ int main(int argc, char** argv) {
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
 
-      GPR_ASSERT(
-          grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                      grpc_timeout_seconds_to_deadline(5), nullptr)
-              .type == GRPC_OP_COMPLETE);
+      GPR_ASSERT(grpc_completion_queue_pluck(
+                     shutdown_cq, tag(1000),
+                     grpc_timeout_seconds_to_deadline(5), nullptr)
+                     .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);
 
       grpc_completion_queue_shutdown(cq);

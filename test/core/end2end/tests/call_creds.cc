@@ -170,8 +170,8 @@ static void request_response_with_payload_and_call_creds(
       break;
     case OVERRIDE:
       grpc_call_credentials_release(creds);
-      creds = grpc_google_iam_credentials_create(overridden_iam_token,
-                                                 overridden_iam_selector, nullptr);
+      creds = grpc_google_iam_credentials_create(
+          overridden_iam_token, overridden_iam_selector, nullptr);
       GPR_ASSERT(creds != nullptr);
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
       break;

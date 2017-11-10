@@ -1761,8 +1761,8 @@ static void send_goaway(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_http2_error_code http_error;
   grpc_slice slice;
-  grpc_error_get_status(exec_ctx, error, GRPC_MILLIS_INF_FUTURE, nullptr, &slice,
-                        &http_error);
+  grpc_error_get_status(exec_ctx, error, GRPC_MILLIS_INF_FUTURE, nullptr,
+                        &slice, &http_error);
   grpc_chttp2_goaway_append(t->last_new_stream_id, (uint32_t)http_error,
                             grpc_slice_ref_internal(slice), &t->qbuf);
   grpc_chttp2_initiate_write(exec_ctx, t,
@@ -1980,10 +1980,10 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx* exec_ctx,
         s->stream_decompression_ctx = grpc_stream_compression_context_create(
             s->stream_decompression_method);
       }
-      if (!grpc_stream_decompress(s->stream_decompression_ctx,
-                                  &s->frame_storage,
-                                  &s->unprocessed_incoming_frames_buffer, nullptr,
-                                  GRPC_HEADER_SIZE_IN_BYTES, &end_of_context)) {
+      if (!grpc_stream_decompress(
+              s->stream_decompression_ctx, &s->frame_storage,
+              &s->unprocessed_incoming_frames_buffer, nullptr,
+              GRPC_HEADER_SIZE_IN_BYTES, &end_of_context)) {
         grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &s->frame_storage);
         grpc_slice_buffer_reset_and_unref_internal(
             exec_ctx, &s->unprocessed_incoming_frames_buffer);
@@ -2064,8 +2064,8 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx* exec_ctx,
   if (!s->read_closed || !s->write_closed) {
     if (s->id != 0) {
       grpc_http2_error_code http_error;
-      grpc_error_get_status(exec_ctx, due_to_error, s->deadline, nullptr, nullptr,
-                            &http_error);
+      grpc_error_get_status(exec_ctx, due_to_error, s->deadline, nullptr,
+                            nullptr, &http_error);
       grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(s->id, (uint32_t)http_error,
                                                   &s->stats.outgoing));

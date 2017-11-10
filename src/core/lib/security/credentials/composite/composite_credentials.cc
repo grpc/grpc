@@ -224,7 +224,8 @@ static grpc_security_status composite_channel_create_security_connector(
      downstream. */
   if (call_creds != nullptr) {
     grpc_call_credentials* composite_call_creds =
-        grpc_composite_call_credentials_create(c->call_creds, call_creds, nullptr);
+        grpc_composite_call_credentials_create(c->call_creds, call_creds,
+                                               nullptr);
     status = c->inner_creds->vtable->create_security_connector(
         exec_ctx, c->inner_creds, composite_call_creds, target, args, sc,
         new_args);
@@ -253,7 +254,8 @@ grpc_channel_credentials* grpc_composite_channel_credentials_create(
     void* reserved) {
   grpc_composite_channel_credentials* c =
       (grpc_composite_channel_credentials*)gpr_zalloc(sizeof(*c));
-  GPR_ASSERT(channel_creds != nullptr && call_creds != nullptr && reserved == nullptr);
+  GPR_ASSERT(channel_creds != nullptr && call_creds != nullptr &&
+             reserved == nullptr);
   GRPC_API_TRACE(
       "grpc_composite_channel_credentials_create(channel_creds=%p, "
       "call_creds=%p, reserved=%p)",

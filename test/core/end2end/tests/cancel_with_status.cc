@@ -167,7 +167,8 @@ static void test_invoke_simple_request(grpc_end2end_test_config config,
                                        size_t num_ops) {
   grpc_end2end_test_fixture f;
 
-  f = begin_test(config, "test_invoke_simple_request", num_ops, nullptr, nullptr);
+  f = begin_test(config, "test_invoke_simple_request", num_ops, nullptr,
+                 nullptr);
   simple_request_body(config, f, num_ops);
   end_test(&f);
   config.tear_down_data(&f);

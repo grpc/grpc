@@ -119,8 +119,9 @@ static void test_request_response_with_metadata_and_payload(
            "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"),
        0,
        {{nullptr, nullptr, nullptr, nullptr}}}};
-  grpc_end2end_test_fixture f = begin_test(
-      config, "test_request_response_with_metadata_and_payload", nullptr, nullptr);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_request_response_with_metadata_and_payload",
+                 nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;

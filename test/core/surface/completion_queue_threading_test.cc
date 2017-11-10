@@ -45,8 +45,8 @@ static void shutdown_and_destroy(grpc_completion_queue* cc) {
       break;
     }
     case GRPC_CQ_PLUCK: {
-      ev = grpc_completion_queue_pluck(cc, create_test_tag(),
-                                       gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
+      ev = grpc_completion_queue_pluck(
+          cc, create_test_tag(), gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
       break;
     }
     default: {
@@ -191,8 +191,8 @@ static void consumer_thread(void* arg) {
 
   gpr_log(GPR_INFO, "consumer %d phase 2", opt->id);
   for (;;) {
-    ev = grpc_completion_queue_next(opt->cc,
-                                    gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
+    ev = grpc_completion_queue_next(
+        opt->cc, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
         GPR_ASSERT(ev.success);

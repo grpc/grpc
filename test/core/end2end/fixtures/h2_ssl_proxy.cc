@@ -44,8 +44,8 @@ static grpc_server* create_proxy_server(const char* port,
   grpc_server* s = grpc_server_create(server_args, nullptr);
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
-  grpc_server_credentials* ssl_creds =
-      grpc_ssl_server_credentials_create(nullptr, &pem_cert_key_pair, 1, 0, nullptr);
+  grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
+      nullptr, &pem_cert_key_pair, 1, 0, nullptr);
   GPR_ASSERT(grpc_server_add_secure_http2_port(s, port, ssl_creds));
   grpc_server_credentials_release(ssl_creds);
   return s;
@@ -170,10 +170,11 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
-  grpc_server_credentials* ssl_creds =
-      grpc_ssl_server_credentials_create(nullptr, &pem_cert_key_pair, 1, 0, nullptr);
+  grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
+      nullptr, &pem_cert_key_pair, 1, 0, nullptr);
   if (fail_server_auth_check(server_args)) {
-    grpc_auth_metadata_processor processor = {process_auth_failure, nullptr, nullptr};
+    grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
+                                              nullptr};
     grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
   }
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);

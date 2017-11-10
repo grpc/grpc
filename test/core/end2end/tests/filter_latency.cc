@@ -321,8 +321,8 @@ static bool maybe_add_filter(grpc_exec_ctx* exec_ctx,
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    const bool retval =
-        grpc_channel_stack_builder_add_filter_before(it, filter, nullptr, nullptr);
+    const bool retval = grpc_channel_stack_builder_add_filter_before(
+        it, filter, nullptr, nullptr);
     grpc_channel_stack_builder_iterator_destroy(it);
     return retval;
   } else {

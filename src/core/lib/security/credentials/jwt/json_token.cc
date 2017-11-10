@@ -52,7 +52,8 @@ gpr_timespec grpc_max_auth_token_lifetime() {
 
 /* --- Override for testing. --- */
 
-static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override = nullptr;
+static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override =
+    nullptr;
 
 /* --- grpc_auth_json_key. --- */
 
@@ -99,7 +100,8 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const grpc_json* json) {
     gpr_log(GPR_ERROR, "Could not write into openssl BIO.");
     goto end;
   }
-  result.private_key = PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, (void*)"");
+  result.private_key =
+      PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, (void*)"");
   if (result.private_key == nullptr) {
     gpr_log(GPR_ERROR, "Could not deserialize private key.");
     goto end;
@@ -192,8 +194,8 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   int64_ttoa(now.tv_sec, now_str);
   int64_ttoa(expiration.tv_sec, expiration_str);
 
-  child =
-      create_child(nullptr, json, "iss", json_key->client_email, GRPC_JSON_STRING);
+  child = create_child(nullptr, json, "iss", json_key->client_email,
+                       GRPC_JSON_STRING);
   if (scope != nullptr) {
     child = create_child(child, json, "scope", scope, GRPC_JSON_STRING);
   } else {

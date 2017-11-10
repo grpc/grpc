@@ -211,7 +211,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     op->data.recv_close_on_server.cancelled = &was_cancelled;
     op->flags = 0;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(102), 1);

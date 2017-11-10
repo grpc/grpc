@@ -107,8 +107,8 @@ static void BM_CallCreateDestroy(benchmark::State& state) {
   Fixture fixture;
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  void* method_hdl =
-      grpc_channel_register_call(fixture.channel(), "/foo/bar", nullptr, nullptr);
+  void* method_hdl = grpc_channel_register_call(fixture.channel(), "/foo/bar",
+                                                nullptr, nullptr);
   while (state.KeepRunning()) {
     grpc_call_unref(grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, cq, method_hdl,
@@ -708,7 +708,8 @@ class IsolatedCallFixture : public TrackCounters {
     grpc_channel_stack_builder_set_name(builder, "dummy");
     grpc_channel_stack_builder_set_target(builder, "dummy_target");
     GPR_ASSERT(grpc_channel_stack_builder_append_filter(
-        builder, &isolated_call_filter::isolated_call_filter, nullptr, nullptr));
+        builder, &isolated_call_filter::isolated_call_filter, nullptr,
+        nullptr));
     {
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       channel_ = grpc_channel_create_with_builder(&exec_ctx, builder,
@@ -735,8 +736,8 @@ class IsolatedCallFixture : public TrackCounters {
 static void BM_IsolatedCall_NoOp(benchmark::State& state) {
   IsolatedCallFixture fixture;
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  void* method_hdl =
-      grpc_channel_register_call(fixture.channel(), "/foo/bar", nullptr, nullptr);
+  void* method_hdl = grpc_channel_register_call(fixture.channel(), "/foo/bar",
+                                                nullptr, nullptr);
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_unref(grpc_channel_create_registered_call(
@@ -750,8 +751,8 @@ BENCHMARK(BM_IsolatedCall_NoOp);
 static void BM_IsolatedCall_Unary(benchmark::State& state) {
   IsolatedCallFixture fixture;
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  void* method_hdl =
-      grpc_channel_register_call(fixture.channel(), "/foo/bar", nullptr, nullptr);
+  void* method_hdl = grpc_channel_register_call(fixture.channel(), "/foo/bar",
+                                                nullptr, nullptr);
   grpc_slice slice = grpc_slice_from_static_string("hello world");
   grpc_byte_buffer* send_message = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_byte_buffer* recv_message = nullptr;
@@ -796,8 +797,8 @@ BENCHMARK(BM_IsolatedCall_Unary);
 static void BM_IsolatedCall_StreamingSend(benchmark::State& state) {
   IsolatedCallFixture fixture;
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  void* method_hdl =
-      grpc_channel_register_call(fixture.channel(), "/foo/bar", nullptr, nullptr);
+  void* method_hdl = grpc_channel_register_call(fixture.channel(), "/foo/bar",
+                                                nullptr, nullptr);
   grpc_slice slice = grpc_slice_from_static_string("hello world");
   grpc_byte_buffer* send_message = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_metadata_array recv_initial_metadata;

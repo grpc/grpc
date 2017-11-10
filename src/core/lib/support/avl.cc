@@ -60,8 +60,8 @@ static long node_height(gpr_avl_node* node) {
 #ifndef NDEBUG
 static long calculate_height(gpr_avl_node* node) {
   return node == nullptr ? 0
-                      : 1 + GPR_MAX(calculate_height(node->left),
-                                    calculate_height(node->right));
+                         : 1 + GPR_MAX(calculate_height(node->left),
+                                       calculate_height(node->right));
 }
 
 static gpr_avl_node* assert_invariants(gpr_avl_node* n) {

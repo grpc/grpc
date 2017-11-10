@@ -71,7 +71,8 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   grpc_arg arg = make_census_enable_arg();
   client_args = grpc_channel_args_copy_and_add(client_args, &arg, 1);
-  f->client = grpc_insecure_channel_create(ffd->localaddr, client_args, nullptr);
+  f->client =
+      grpc_insecure_channel_create(ffd->localaddr, client_args, nullptr);
   GPR_ASSERT(f->client);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

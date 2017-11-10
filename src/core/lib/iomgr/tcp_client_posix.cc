@@ -296,8 +296,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx* exec_ctx,
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    grpc_fd_orphan(exec_ctx, fdobj, nullptr, nullptr, false /* already_closed */,
-                   "tcp_client_connect_error");
+    grpc_fd_orphan(exec_ctx, fdobj, nullptr, nullptr,
+                   false /* already_closed */, "tcp_client_connect_error");
     GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"));
     goto done;
   }

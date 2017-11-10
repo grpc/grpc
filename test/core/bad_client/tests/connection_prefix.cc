@@ -53,7 +53,8 @@ int main(int argc, char** argv) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PRI * HTTP/2.0\r\n\r\nSX", 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PRI * HTTP/2.0\r\n\r\nSMX", 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PRI * HTTP/2.0\r\n\r\nSM\rX", 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PRI * HTTP/2.0\r\n\r\nSM\r\nX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PRI * HTTP/2.0\r\n\r\nSM\r\nX",
+                           0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PRI * HTTP/2.0\r\n\r\nSM\r\n\rX",
                            0);
   return 0;

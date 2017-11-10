@@ -59,7 +59,8 @@ static void BM_CreateDestroyCore(benchmark::State& state) {
   while (state.KeepRunning()) {
     // TODO: sreek Templatize this benchmark and pass completion type and
     // polling type as parameters
-    grpc_completion_queue_destroy(grpc_completion_queue_create_for_next(nullptr));
+    grpc_completion_queue_destroy(
+        grpc_completion_queue_create_for_next(nullptr));
   }
   track_counters.Finish(state);
 }

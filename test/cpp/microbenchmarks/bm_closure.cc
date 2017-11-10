@@ -305,8 +305,10 @@ static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
   grpc_combiner* combiner2 = grpc_combiner_create();
   grpc_closure c1;
   grpc_closure c2;
-  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, grpc_combiner_scheduler(combiner1));
-  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_combiner_scheduler(combiner2));
+  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr,
+                    grpc_combiner_scheduler(combiner1));
+  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr,
+                    grpc_combiner_scheduler(combiner2));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (state.KeepRunning()) {
     GRPC_CLOSURE_SCHED(&exec_ctx, &c1, GRPC_ERROR_NONE);
@@ -328,10 +330,14 @@ static void BM_ClosureSched4OnTwoCombiners(benchmark::State& state) {
   grpc_closure c2;
   grpc_closure c3;
   grpc_closure c4;
-  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, grpc_combiner_scheduler(combiner1));
-  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_combiner_scheduler(combiner2));
-  GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, grpc_combiner_scheduler(combiner1));
-  GRPC_CLOSURE_INIT(&c4, DoNothing, nullptr, grpc_combiner_scheduler(combiner2));
+  GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr,
+                    grpc_combiner_scheduler(combiner1));
+  GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr,
+                    grpc_combiner_scheduler(combiner2));
+  GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr,
+                    grpc_combiner_scheduler(combiner1));
+  GRPC_CLOSURE_INIT(&c4, DoNothing, nullptr,
+                    grpc_combiner_scheduler(combiner2));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (state.KeepRunning()) {
     GRPC_CLOSURE_SCHED(&exec_ctx, &c1, GRPC_ERROR_NONE);

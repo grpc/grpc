@@ -77,7 +77,8 @@ static const tsi_handshaker_result_vtable result_vtable = {
 static tsi_result tsi_adapter_create_handshaker_result(
     tsi_handshaker* wrapped, const unsigned char* unused_bytes,
     size_t unused_bytes_size, tsi_handshaker_result** handshaker_result) {
-  if (wrapped == nullptr || (unused_bytes_size > 0 && unused_bytes == nullptr)) {
+  if (wrapped == nullptr ||
+      (unused_bytes_size > 0 && unused_bytes == nullptr)) {
     return TSI_INVALID_ARGUMENT;
   }
   tsi_adapter_handshaker_result* impl =

@@ -73,7 +73,8 @@ static grpc_ares_request* my_dns_lookup_ares(
   } else {
     gpr_mu_unlock(&g_mu);
     *lb_addrs = grpc_lb_addresses_create(1, nullptr);
-    grpc_lb_addresses_set_address(*lb_addrs, 0, nullptr, 0, false, nullptr, nullptr);
+    grpc_lb_addresses_set_address(*lb_addrs, 0, nullptr, 0, false, nullptr,
+                                  nullptr);
   }
   GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
   return nullptr;

@@ -116,8 +116,8 @@ static void test_cacheable_request_response_with_metadata_and_payload(
                               0,
                               {{nullptr, nullptr, nullptr, nullptr}}}};
   grpc_end2end_test_fixture f = begin_test(
-      config, "test_cacheable_request_response_with_metadata_and_payload", nullptr,
-      nullptr);
+      config, "test_cacheable_request_response_with_metadata_and_payload",
+      nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;

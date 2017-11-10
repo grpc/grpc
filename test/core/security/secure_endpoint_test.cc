@@ -44,11 +44,13 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   tsi_frame_protector* fake_write_protector =
       tsi_create_fake_frame_protector(nullptr);
   tsi_zero_copy_grpc_protector* fake_read_zero_copy_protector =
-      use_zero_copy_protector ? tsi_create_fake_zero_copy_grpc_protector(nullptr)
-                              : nullptr;
+      use_zero_copy_protector
+          ? tsi_create_fake_zero_copy_grpc_protector(nullptr)
+          : nullptr;
   tsi_zero_copy_grpc_protector* fake_write_zero_copy_protector =
-      use_zero_copy_protector ? tsi_create_fake_zero_copy_grpc_protector(nullptr)
-                              : nullptr;
+      use_zero_copy_protector
+          ? tsi_create_fake_zero_copy_grpc_protector(nullptr)
+          : nullptr;
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 

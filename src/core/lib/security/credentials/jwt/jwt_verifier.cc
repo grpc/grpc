@@ -576,7 +576,8 @@ static EVP_PKEY* find_verification_key(grpc_exec_ctx* exec_ctx,
     const char* kty = nullptr;
 
     if (jkey->type != GRPC_JSON_OBJECT) continue;
-    for (key_prop = jkey->child; key_prop != nullptr; key_prop = key_prop->next) {
+    for (key_prop = jkey->child; key_prop != nullptr;
+         key_prop = key_prop->next) {
       if (strcmp(key_prop->key, "alg") == 0 &&
           key_prop->type == GRPC_JSON_STRING) {
         alg = key_prop->value;
@@ -783,7 +784,8 @@ static void retrieve_key_and_verify(grpc_exec_ctx* exec_ctx,
   req.handshaker = &grpc_httpcli_ssl;
   http_response_index rsp_idx;
 
-  GPR_ASSERT(ctx != nullptr && ctx->header != nullptr && ctx->claims != nullptr);
+  GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
+             ctx->claims != nullptr);
   iss = ctx->claims->iss;
   if (ctx->header->kid == nullptr) {
     gpr_log(GPR_ERROR, "Missing kid in jose header.");
@@ -869,7 +871,8 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx* exec_ctx,
   size_t signed_jwt_len;
   const char* cur = jwt;
 
-  GPR_ASSERT(verifier != nullptr && jwt != nullptr && audience != nullptr && cb != nullptr);
+  GPR_ASSERT(verifier != nullptr && jwt != nullptr && audience != nullptr &&
+             cb != nullptr);
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(exec_ctx, cur, (size_t)(dot - cur),

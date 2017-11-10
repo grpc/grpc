@@ -167,8 +167,8 @@ int grpc_sockaddr_to_string(char** out,
     port = ntohs(addr6->sin6_port);
     sin6_scope_id = addr6->sin6_scope_id;
   }
-  if (ip != nullptr &&
-      grpc_inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != nullptr) {
+  if (ip != nullptr && grpc_inet_ntop(addr->sa_family, ip, ntop_buf,
+                                      sizeof(ntop_buf)) != nullptr) {
     if (sin6_scope_id != 0) {
       char* host_with_scope;
       /* Enclose sin6_scope_id with the format defined in RFC 6784 section 2. */

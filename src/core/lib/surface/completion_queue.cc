@@ -148,7 +148,8 @@ static grpc_error* non_polling_poller_kick(
     grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
     grpc_pollset_worker* specific_worker) {
   non_polling_poller* p = (non_polling_poller*)pollset;
-  if (specific_worker == nullptr) specific_worker = (grpc_pollset_worker*)p->root;
+  if (specific_worker == nullptr)
+    specific_worker = (grpc_pollset_worker*)p->root;
   if (specific_worker != nullptr) {
     non_polling_worker* w = (non_polling_worker*)specific_worker;
     if (!w->kicked) {
@@ -327,7 +328,8 @@ static void cq_destroy_pluck(void* data);
 static const cq_vtable g_cq_vtable[] = {
     /* GRPC_CQ_NEXT */
     {GRPC_CQ_NEXT, sizeof(cq_next_data), cq_init_next, cq_shutdown_next,
-     cq_destroy_next, cq_begin_op_for_next, cq_end_op_for_next, cq_next, nullptr},
+     cq_destroy_next, cq_begin_op_for_next, cq_end_op_for_next, cq_next,
+     nullptr},
     /* GRPC_CQ_PLUCK */
     {GRPC_CQ_PLUCK, sizeof(cq_pluck_data), cq_init_pluck, cq_shutdown_pluck,
      cq_destroy_pluck, cq_begin_op_for_pluck, cq_end_op_for_pluck, nullptr,

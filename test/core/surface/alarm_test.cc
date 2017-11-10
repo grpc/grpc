@@ -34,7 +34,8 @@ static void* create_test_tag(void) {
 static void shutdown_and_destroy(grpc_completion_queue* cc) {
   grpc_event ev;
   grpc_completion_queue_shutdown(cc);
-  ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
+  ev =
+      grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
@@ -49,7 +50,8 @@ static void test_alarm(void) {
     grpc_event ev;
     void* tag = create_test_tag();
     grpc_alarm* alarm = grpc_alarm_create(nullptr);
-    grpc_alarm_set(alarm, cc, grpc_timeout_seconds_to_deadline(1), tag, nullptr);
+    grpc_alarm_set(alarm, cc, grpc_timeout_seconds_to_deadline(1), tag,
+                   nullptr);
 
     ev = grpc_completion_queue_next(cc, grpc_timeout_seconds_to_deadline(2),
                                     nullptr);
@@ -63,7 +65,8 @@ static void test_alarm(void) {
     grpc_event ev;
     void* tag = create_test_tag();
     grpc_alarm* alarm = grpc_alarm_create(nullptr);
-    grpc_alarm_set(alarm, cc, grpc_timeout_seconds_to_deadline(2), tag, nullptr);
+    grpc_alarm_set(alarm, cc, grpc_timeout_seconds_to_deadline(2), tag,
+                   nullptr);
 
     grpc_alarm_cancel(alarm, nullptr);
     ev = grpc_completion_queue_next(cc, grpc_timeout_seconds_to_deadline(1),
@@ -78,7 +81,8 @@ static void test_alarm(void) {
     grpc_event ev;
     void* tag = create_test_tag();
     grpc_alarm* alarm = grpc_alarm_create(nullptr);
-    grpc_alarm_set(alarm, cc, grpc_timeout_seconds_to_deadline(2), tag, nullptr);
+    grpc_alarm_set(alarm, cc, grpc_timeout_seconds_to_deadline(2), tag,
+                   nullptr);
 
     grpc_alarm_destroy(alarm, nullptr);
     ev = grpc_completion_queue_next(cc, grpc_timeout_seconds_to_deadline(1),

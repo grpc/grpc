@@ -167,7 +167,8 @@ void ArgsFinish(grpc_exec_ctx* exec_ctx, ArgsStruct* args) {
   grpc_pollset_set_del_pollset(exec_ctx, args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(exec_ctx, args->pollset_set);
   grpc_closure DoNothing_cb;
-  GRPC_CLOSURE_INIT(&DoNothing_cb, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&DoNothing_cb, DoNothing, nullptr,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(exec_ctx, args->pollset, &DoNothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
   grpc_channel_args_destroy(exec_ctx, args->channel_args);

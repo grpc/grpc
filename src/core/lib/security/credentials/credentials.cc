@@ -117,7 +117,8 @@ bool grpc_call_credentials_get_request_metadata(
 void grpc_call_credentials_cancel_get_request_metadata(
     grpc_exec_ctx* exec_ctx, grpc_call_credentials* creds,
     grpc_credentials_mdelem_array* md_array, grpc_error* error) {
-  if (creds == nullptr || creds->vtable->cancel_get_request_metadata == nullptr) {
+  if (creds == nullptr ||
+      creds->vtable->cancel_get_request_metadata == nullptr) {
     return;
   }
   creds->vtable->cancel_get_request_metadata(exec_ctx, creds, md_array, error);
@@ -206,7 +207,8 @@ void grpc_server_credentials_unref(grpc_exec_ctx* exec_ctx,
     if (creds->vtable->destruct != nullptr) {
       creds->vtable->destruct(exec_ctx, creds);
     }
-    if (creds->processor.destroy != nullptr && creds->processor.state != nullptr) {
+    if (creds->processor.destroy != nullptr &&
+        creds->processor.state != nullptr) {
       creds->processor.destroy(creds->processor.state);
     }
     gpr_free(creds);
@@ -238,7 +240,8 @@ void grpc_server_credentials_set_auth_metadata_processor(
       "processor=grpc_auth_metadata_processor { process: %p, state: %p })",
       3, (creds, (void*)(intptr_t)processor.process, processor.state));
   if (creds == nullptr) return;
-  if (creds->processor.destroy != nullptr && creds->processor.state != nullptr) {
+  if (creds->processor.destroy != nullptr &&
+      creds->processor.state != nullptr) {
     creds->processor.destroy(creds->processor.state);
   }
   creds->processor = processor;

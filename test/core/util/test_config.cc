@@ -203,7 +203,7 @@ static void install_crash_handler() {
 #define SIGNAL_NAMES_LENGTH 32
 
 static const char* const signal_names[] = {
-    nullptr,      "SIGHUP",  "SIGINT",    "SIGQUIT", "SIGILL",    "SIGTRAP",
+    nullptr,   "SIGHUP",  "SIGINT",    "SIGQUIT", "SIGILL",    "SIGTRAP",
     "SIGABRT", "SIGBUS",  "SIGFPE",    "SIGKILL", "SIGUSR1",   "SIGSEGV",
     "SIGUSR2", "SIGPIPE", "SIGALRM",   "SIGTERM", "SIGSTKFLT", "SIGCHLD",
     "SIGCONT", "SIGSTOP", "SIGTSTP",   "SIGTTIN", "SIGTTOU",   "SIGURG",

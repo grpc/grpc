@@ -290,7 +290,8 @@ void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
                    gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
   grpc_event ev;
 
-  GPR_ASSERT(v->first_expectation == nullptr && "expectation queue must be empty");
+  GPR_ASSERT(v->first_expectation == nullptr &&
+             "expectation queue must be empty");
 
   ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {

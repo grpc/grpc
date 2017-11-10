@@ -146,8 +146,8 @@ void grpc_auth_metadata_context_build(
       *port_delimiter = '\0';
     }
   }
-  gpr_asprintf(&service_url, "%s://%s%s", url_scheme == nullptr ? "" : url_scheme,
-               host_and_port, service);
+  gpr_asprintf(&service_url, "%s://%s%s",
+               url_scheme == nullptr ? "" : url_scheme, host_and_port, service);
   auth_md_context->service_url = service_url;
   auth_md_context->method_name = method_name;
   auth_md_context->channel_auth_context =

@@ -175,9 +175,10 @@ void grpc_run_bad_client_test(
         grpc_exec_ctx_finish(&exec_ctx);
         do {
           GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
-          GPR_ASSERT(grpc_completion_queue_next(
-                         a.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
-                         .type == GRPC_QUEUE_TIMEOUT);
+          GPR_ASSERT(
+              grpc_completion_queue_next(
+                  a.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+                  .type == GRPC_QUEUE_TIMEOUT);
         } while (!gpr_event_get(&read_done_event));
         if (client_validator(&incoming)) break;
         gpr_log(GPR_INFO,
@@ -198,8 +199,9 @@ void grpc_run_bad_client_test(
       gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(1)));
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 shutdown_cq, nullptr, grpc_timeout_seconds_to_deadline(1), nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
+                                         grpc_timeout_seconds_to_deadline(1),
+                                         nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(a.server);

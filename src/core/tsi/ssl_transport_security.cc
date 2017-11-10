@@ -361,8 +361,8 @@ static tsi_result add_subject_alt_names_properties_to_peer(
 static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
                                  tsi_peer* peer) {
   /* TODO(jboeuf): Maybe add more properties. */
-  GENERAL_NAMES* subject_alt_names =
-      (GENERAL_NAMES*)X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr);
+  GENERAL_NAMES* subject_alt_names = (GENERAL_NAMES*)X509_get_ext_d2i(
+      cert, NID_subject_alt_name, nullptr, nullptr);
   int subject_alt_name_count = (subject_alt_names != nullptr)
                                    ? (int)sk_GENERAL_NAME_num(subject_alt_names)
                                    : 0;
@@ -631,7 +631,8 @@ static tsi_result populate_ssl_context(
       }
     }
   }
-  if ((cipher_list != nullptr) && !SSL_CTX_set_cipher_list(context, cipher_list)) {
+  if ((cipher_list != nullptr) &&
+      !SSL_CTX_set_cipher_list(context, cipher_list)) {
     gpr_log(GPR_ERROR, "Invalid cipher list: %s.", cipher_list);
     return TSI_INVALID_ARGUMENT;
   }
@@ -679,7 +680,8 @@ static tsi_result build_alpn_protocol_name_list(
   *protocol_name_list_length = 0;
   if (num_alpn_protocols == 0) return TSI_INVALID_ARGUMENT;
   for (i = 0; i < num_alpn_protocols; i++) {
-    size_t length = alpn_protocols[i] == nullptr ? 0 : strlen(alpn_protocols[i]);
+    size_t length =
+        alpn_protocols[i] == nullptr ? 0 : strlen(alpn_protocols[i]);
     if (length == 0 || length > 255) {
       gpr_log(GPR_ERROR, "Invalid protocol name length: %d.", (int)length);
       return TSI_INVALID_ARGUMENT;
@@ -1218,8 +1220,8 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   if (self->ssl_context_count == 0) return TSI_INVALID_ARGUMENT;
   /* Create the handshaker with the first context. We will switch if needed
      because of SNI in ssl_server_handshaker_factory_servername_callback.  */
-  return create_tsi_ssl_handshaker(self->ssl_contexts[0], 0, nullptr, &self->base,
-                                   handshaker);
+  return create_tsi_ssl_handshaker(self->ssl_contexts[0], 0, nullptr,
+                                   &self->base, handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(

@@ -233,8 +233,8 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
   // Instantiate method config table.
   grpc_slice_hash_table* method_config_table = nullptr;
   if (entries != nullptr) {
-    method_config_table =
-        grpc_slice_hash_table_create(num_entries, entries, unref_value, nullptr);
+    method_config_table = grpc_slice_hash_table_create(num_entries, entries,
+                                                       unref_value, nullptr);
     gpr_free(entries);
   }
   return method_config_table;

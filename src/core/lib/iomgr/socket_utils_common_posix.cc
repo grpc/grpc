@@ -263,8 +263,8 @@ static grpc_error* error_for_fd(int fd, const grpc_resolved_address* addr) {
 grpc_error* grpc_create_dualstack_socket(
     const grpc_resolved_address* resolved_addr, int type, int protocol,
     grpc_dualstack_mode* dsmode, int* newfd) {
-  return grpc_create_dualstack_socket_using_factory(nullptr, resolved_addr, type,
-                                                    protocol, dsmode, newfd);
+  return grpc_create_dualstack_socket_using_factory(
+      nullptr, resolved_addr, type, protocol, dsmode, newfd);
 }
 
 static int create_socket(grpc_socket_factory* factory, int domain, int type,

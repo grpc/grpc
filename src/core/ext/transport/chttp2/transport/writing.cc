@@ -333,10 +333,10 @@ class DataSendContext {
          s_->fetching_send_message == nullptr);
     if (is_last_data_frame && s_->send_trailing_metadata != nullptr &&
         s_->stream_compression_ctx != nullptr) {
-      if (!grpc_stream_compress(s_->stream_compression_ctx,
-                                &s_->flow_controlled_buffer,
-                                &s_->compressed_data_buffer, nullptr, MAX_SIZE_T,
-                                GRPC_STREAM_COMPRESSION_FLUSH_FINISH)) {
+      if (!grpc_stream_compress(
+              s_->stream_compression_ctx, &s_->flow_controlled_buffer,
+              &s_->compressed_data_buffer, nullptr, MAX_SIZE_T,
+              GRPC_STREAM_COMPRESSION_FLUSH_FINISH)) {
         gpr_log(GPR_ERROR, "Stream compression failed.");
       }
       grpc_stream_compression_context_destroy(s_->stream_compression_ctx);
@@ -347,7 +347,8 @@ class DataSendContext {
        * recalculated. */
       return;
     }
-    is_last_frame_ = is_last_data_frame && s_->send_trailing_metadata != nullptr &&
+    is_last_frame_ = is_last_data_frame &&
+                     s_->send_trailing_metadata != nullptr &&
                      grpc_metadata_batch_is_empty(s_->send_trailing_metadata);
     grpc_chttp2_encode_data(s_->id, &s_->compressed_data_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);

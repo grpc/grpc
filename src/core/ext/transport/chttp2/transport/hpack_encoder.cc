@@ -54,7 +54,7 @@
 static grpc_slice_refcount terminal_slice_refcount = {nullptr, nullptr};
 static const grpc_slice terminal_slice = {
     &terminal_slice_refcount, /* refcount */
-    {{nullptr, 0}}                  /* data.refcounted */
+    {{nullptr, 0}}            /* data.refcounted */
 };
 
 extern "C" grpc_tracer_flag grpc_http_trace;

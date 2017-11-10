@@ -270,7 +270,8 @@ void grpc_metadata_batch_clear(grpc_exec_ctx* exec_ctx,
 }
 
 bool grpc_metadata_batch_is_empty(grpc_metadata_batch* batch) {
-  return batch->list.head == nullptr && batch->deadline == GRPC_MILLIS_INF_FUTURE;
+  return batch->list.head == nullptr &&
+         batch->deadline == GRPC_MILLIS_INF_FUTURE;
 }
 
 size_t grpc_metadata_batch_size(grpc_metadata_batch* batch) {

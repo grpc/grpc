@@ -404,8 +404,8 @@ static void test_google_iam_creds(void) {
   grpc_call_credentials* creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       nullptr);
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   run_request_metadata_test(&exec_ctx, creds, auth_md_ctx, state);
   grpc_call_credentials_unref(&exec_ctx, creds);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -418,8 +418,8 @@ static void test_access_token_creds(void) {
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_call_credentials* creds =
       grpc_access_token_credentials_create("blah", nullptr);
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   GPR_ASSERT(strcmp(creds->type, GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
   run_request_metadata_test(&exec_ctx, creds, auth_md_ctx, state);
   grpc_call_credentials_unref(&exec_ctx, creds);
@@ -468,8 +468,8 @@ static void test_oauth2_google_iam_composite_creds(void) {
        test_google_iam_authority_selector}};
   request_metadata_state* state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
       &exec_ctx, "authorization", test_oauth2_bearer_token, 0);
   grpc_call_credentials* google_iam_creds = grpc_google_iam_credentials_create(
@@ -517,7 +517,8 @@ static void test_channel_oauth2_google_iam_composite_creds(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_args* new_args;
   grpc_channel_credentials_vtable vtable = {
-      nullptr, check_channel_oauth2_google_iam_create_security_connector, nullptr};
+      nullptr, check_channel_oauth2_google_iam_create_security_connector,
+      nullptr};
   grpc_channel_credentials* channel_creds =
       grpc_mock_channel_credentials_create(&vtable);
   grpc_call_credentials* oauth2_creds =
@@ -600,8 +601,8 @@ static void test_compute_engine_creds_success(void) {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
 
   /* First request: http get should be called. */
   request_metadata_state* state =
@@ -630,8 +631,8 @@ static void test_compute_engine_creds_failure(void) {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occured when fetching oauth2 token."),
       nullptr, 0);
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   grpc_httpcli_set_override(compute_engine_httpcli_get_failure_override,
@@ -689,8 +690,8 @@ static void test_refresh_token_creds_success(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   expected_md emd[] = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
 
@@ -721,8 +722,8 @@ static void test_refresh_token_creds_failure(void) {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occured when fetching oauth2 token."),
       nullptr, 0);
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
@@ -821,8 +822,8 @@ static void test_jwt_creds_lifetime(void) {
 static void test_jwt_creds_success(void) {
   char* json_key_string = test_json_key_str();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   char* expected_md_value;
   gpr_asprintf(&expected_md_value, "Bearer %s", test_signed_jwt);
   expected_md emd[] = {{"authorization", expected_md_value}};
@@ -864,10 +865,11 @@ static void test_jwt_creds_success(void) {
 static void test_jwt_creds_signing_failure(void) {
   char* json_key_string = test_json_key_str();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   request_metadata_state* state = make_request_metadata_state(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT."), nullptr, 0);
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT."), nullptr,
+      0);
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
@@ -959,8 +961,8 @@ static void test_google_default_creds_gce(void) {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   request_metadata_state* state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   grpc_flush_cached_google_default_credentials();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
   grpc_override_well_known_credentials_path_getter(
@@ -1092,8 +1094,8 @@ static void test_metadata_plugin_success(void) {
   plugin_state state = PLUGIN_INITIAL_STATE;
   grpc_metadata_credentials_plugin plugin;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   request_metadata_state* md_state = make_request_metadata_state(
       GRPC_ERROR_NONE, plugin_md, GPR_ARRAY_SIZE(plugin_md));
 
@@ -1115,8 +1117,8 @@ static void test_metadata_plugin_failure(void) {
   plugin_state state = PLUGIN_INITIAL_STATE;
   grpc_metadata_credentials_plugin plugin;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, nullptr,
-                                            nullptr};
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   char* expected_error;
   gpr_asprintf(&expected_error,
                "Getting metadata from plugin failed with error: %s",
@@ -1234,8 +1236,8 @@ static void test_auth_metadata_context(void) {
         grpc_slice_from_copied_string(test_cases[i].call_method);
     grpc_auth_metadata_context auth_md_context;
     memset(&auth_md_context, 0, sizeof(auth_md_context));
-    grpc_auth_metadata_context_build(url_scheme, call_host, call_method, nullptr,
-                                     &auth_md_context);
+    grpc_auth_metadata_context_build(url_scheme, call_host, call_method,
+                                     nullptr, &auth_md_context);
     if (strcmp(auth_md_context.service_url,
                test_cases[i].desired_service_url) != 0) {
       gpr_log(GPR_ERROR, "Invalid service url, want: %s, got %s.",

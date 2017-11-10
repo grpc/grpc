@@ -60,14 +60,16 @@ static int detag(void* p) { return (int)(uintptr_t)p; }
 void create_loop_destroy(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan = grpc_insecure_channel_create((char*)addr, nullptr, nullptr);
+    grpc_channel* chan =
+        grpc_insecure_channel_create((char*)addr, nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
       gpr_timespec later_time =
           grpc_timeout_milliseconds_to_deadline(DELAY_MILLIS);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 1);
-      grpc_channel_watch_connectivity_state(chan, state, later_time, cq, nullptr);
+      grpc_channel_watch_connectivity_state(chan, state, later_time, cq,
+                                            nullptr);
       gpr_timespec poll_time =
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS);
       GPR_ASSERT(grpc_completion_queue_next(cq, poll_time, nullptr).type ==
@@ -239,7 +241,8 @@ int run_concurrent_connectivity_test() {
 void watches_with_short_timeouts(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS_SHORT_TIMEOUTS; ++i) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan = grpc_insecure_channel_create((char*)addr, nullptr, nullptr);
+    grpc_channel* chan =
+        grpc_insecure_channel_create((char*)addr, nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS_SHORT_TIMEOUTS; ++j) {
       gpr_timespec later_time =
@@ -247,7 +250,8 @@ void watches_with_short_timeouts(void* addr) {
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 0);
       GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
-      grpc_channel_watch_connectivity_state(chan, state, later_time, cq, nullptr);
+      grpc_channel_watch_connectivity_state(chan, state, later_time, cq,
+                                            nullptr);
       gpr_timespec poll_time =
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS_SHORT_TIMEOUTS);
       grpc_event ev = grpc_completion_queue_next(cq, poll_time, nullptr);

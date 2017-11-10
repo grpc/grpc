@@ -218,7 +218,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
     grpc_exec_ctx_finish(&exec_ctx);
   }
   return channel != nullptr ? channel
-                         : grpc_lame_client_channel_create(
-                               target, GRPC_STATUS_INTERNAL,
-                               "Failed to create secure client channel");
+                            : grpc_lame_client_channel_create(
+                                  target, GRPC_STATUS_INTERNAL,
+                                  "Failed to create secure client channel");
 }

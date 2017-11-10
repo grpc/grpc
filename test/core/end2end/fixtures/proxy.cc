@@ -163,8 +163,9 @@ static void on_p2s_recv_initial_metadata(void* arg, int success) {
     op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
     op.data.send_initial_metadata.metadata = pc->p2s_initial_metadata.metadata;
     refpc(pc, "on_c2p_sent_initial_metadata");
-    err = grpc_call_start_batch(
-        pc->c2p, &op, 1, new_closure(on_c2p_sent_initial_metadata, pc), nullptr);
+    err = grpc_call_start_batch(pc->c2p, &op, 1,
+                                new_closure(on_c2p_sent_initial_metadata, pc),
+                                nullptr);
     GPR_ASSERT(err == GRPC_CALL_OK);
   }
 
@@ -215,8 +216,8 @@ static void on_c2p_recv_msg(void* arg, int success) {
       op.reserved = nullptr;
       op.data.send_message.send_message = pc->c2p_msg;
       refpc(pc, "on_p2s_sent_message");
-      err = grpc_call_start_batch(pc->p2s, &op, 1,
-                                  new_closure(on_p2s_sent_message, pc), nullptr);
+      err = grpc_call_start_batch(
+          pc->p2s, &op, 1, new_closure(on_p2s_sent_message, pc), nullptr);
       GPR_ASSERT(err == GRPC_CALL_OK);
     } else {
       op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -339,8 +340,9 @@ static void on_new_call(void* arg, int success) {
     op.data.recv_initial_metadata.recv_initial_metadata =
         &pc->p2s_initial_metadata;
     refpc(pc, "on_p2s_recv_initial_metadata");
-    err = grpc_call_start_batch(
-        pc->p2s, &op, 1, new_closure(on_p2s_recv_initial_metadata, pc), nullptr);
+    err = grpc_call_start_batch(pc->p2s, &op, 1,
+                                new_closure(on_p2s_recv_initial_metadata, pc),
+                                nullptr);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -348,8 +350,9 @@ static void on_new_call(void* arg, int success) {
     op.data.send_initial_metadata.count = pc->c2p_initial_metadata.count;
     op.data.send_initial_metadata.metadata = pc->c2p_initial_metadata.metadata;
     refpc(pc, "on_p2s_sent_initial_metadata");
-    err = grpc_call_start_batch(
-        pc->p2s, &op, 1, new_closure(on_p2s_sent_initial_metadata, pc), nullptr);
+    err = grpc_call_start_batch(pc->p2s, &op, 1,
+                                new_closure(on_p2s_sent_initial_metadata, pc),
+                                nullptr);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     op.op = GRPC_OP_RECV_MESSAGE;

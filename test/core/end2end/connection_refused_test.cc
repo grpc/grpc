@@ -83,9 +83,10 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   chan = grpc_insecure_channel_create(addr, args, nullptr);
   grpc_slice host = grpc_slice_from_static_string("nonexistant");
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
-  call = grpc_channel_create_call(
-      chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-      grpc_slice_from_static_string("/service/method"), &host, deadline, nullptr);
+  call =
+      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                               grpc_slice_from_static_string("/service/method"),
+                               &host, deadline, nullptr);
 
   gpr_free(addr);
 
@@ -105,8 +106,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
-                                 call, ops, (size_t)(op - ops), tag(1), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
+                                                   (size_t)(op - ops), tag(1),
+                                                   nullptr));
   /* verify that all tags get completed */
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
@@ -118,9 +120,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   }
 
   grpc_completion_queue_shutdown(cq);
-  while (
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-          .type != GRPC_QUEUE_SHUTDOWN)
+  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    nullptr)
+             .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
   grpc_call_unref(call);

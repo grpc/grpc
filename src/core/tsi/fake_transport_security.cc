@@ -402,7 +402,8 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
     grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self,
     grpc_slice_buffer* unprotected_slices,
     grpc_slice_buffer* protected_slices) {
-  if (self == nullptr || unprotected_slices == nullptr || protected_slices == nullptr) {
+  if (self == nullptr || unprotected_slices == nullptr ||
+      protected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   tsi_fake_zero_copy_grpc_protector* impl =
@@ -426,7 +427,8 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
     grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self,
     grpc_slice_buffer* protected_slices,
     grpc_slice_buffer* unprotected_slices) {
-  if (self == nullptr || unprotected_slices == nullptr || protected_slices == nullptr) {
+  if (self == nullptr || unprotected_slices == nullptr ||
+      protected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   tsi_fake_zero_copy_grpc_protector* impl =

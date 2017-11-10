@@ -99,8 +99,9 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   grpc_slice response_payload2_slice = grpc_slice_from_copied_string("world");
   grpc_byte_buffer* response_payload2 =
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
-  grpc_end2end_test_fixture f = begin_test(config, "streaming_error_response",
-                                           nullptr, nullptr, request_status_early);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "streaming_error_response", nullptr, nullptr,
+                 request_status_early);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;

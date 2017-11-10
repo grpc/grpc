@@ -600,7 +600,7 @@ static void ssl_channel_add_handshakers(grpc_exec_ctx* exec_ctx,
   tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
       c->client_handshaker_factory,
       c->overridden_target_name != nullptr ? c->overridden_target_name
-                                        : c->target_name,
+                                           : c->target_name,
       &tsi_hs);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
@@ -911,7 +911,8 @@ static bool ssl_channel_check_call_host(grpc_exec_ctx* exec_ctx,
   /* If the target name was overridden, then the original target_name was
      'checked' transitively during the previous peer check at the end of the
      handshake. */
-  if (c->overridden_target_name != nullptr && strcmp(host, c->target_name) == 0) {
+  if (c->overridden_target_name != nullptr &&
+      strcmp(host, c->target_name) == 0) {
     status = GRPC_SECURITY_OK;
   }
   if (status != GRPC_SECURITY_OK) {

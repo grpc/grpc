@@ -66,7 +66,8 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
                                   grpc_channel_args* client_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
-  f->client = grpc_insecure_channel_create(ffd->localaddr, client_args, nullptr);
+  f->client =
+      grpc_insecure_channel_create(ffd->localaddr, client_args, nullptr);
 }
 
 void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,

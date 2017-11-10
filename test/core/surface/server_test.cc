@@ -31,8 +31,8 @@ void test_register_method_fail(void) {
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   void* method;
   void* method_old;
-  method =
-      grpc_server_register_method(server, nullptr, nullptr, GRPC_SRM_PAYLOAD_NONE, 0);
+  method = grpc_server_register_method(server, nullptr, nullptr,
+                                       GRPC_SRM_PAYLOAD_NONE, 0);
   GPR_ASSERT(method == nullptr);
   method_old =
       grpc_server_register_method(server, "m", "h", GRPC_SRM_PAYLOAD_NONE, 0);
@@ -58,10 +58,12 @@ void test_request_call_on_no_server_cq(void) {
   grpc_completion_queue* cc = grpc_completion_queue_create_for_next(nullptr);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
-             grpc_server_request_call(server, nullptr, nullptr, nullptr, cc, cc, nullptr));
+             grpc_server_request_call(server, nullptr, nullptr, nullptr, cc, cc,
+                                      nullptr));
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
-             grpc_server_request_registered_call(server, nullptr, nullptr, nullptr, nullptr,
-                                                 nullptr, cc, cc, nullptr));
+             grpc_server_request_registered_call(server, nullptr, nullptr,
+                                                 nullptr, nullptr, nullptr, cc,
+                                                 cc, nullptr));
   grpc_completion_queue_destroy(cc);
   grpc_server_destroy(server);
 }

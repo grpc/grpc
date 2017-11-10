@@ -81,7 +81,8 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   }
   gpr_setenv("http_proxy", proxy_uri);
   gpr_free(proxy_uri);
-  f->client = grpc_insecure_channel_create(ffd->server_addr, client_args, nullptr);
+  f->client =
+      grpc_insecure_channel_create(ffd->server_addr, client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 

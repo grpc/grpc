@@ -53,8 +53,9 @@ static void te_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
 
 static void maybe_call_write_cb_locked(grpc_exec_ctx* exec_ctx,
                                        trickle_endpoint* te) {
-  if (te->write_cb != nullptr && (te->error != GRPC_ERROR_NONE ||
-                               te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
+  if (te->write_cb != nullptr &&
+      (te->error != GRPC_ERROR_NONE ||
+       te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
     GRPC_CLOSURE_SCHED(exec_ctx, te->write_cb, GRPC_ERROR_REF(te->error));
     te->write_cb = nullptr;
   }

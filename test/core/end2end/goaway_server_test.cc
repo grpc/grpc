@@ -176,7 +176,8 @@ int main(int argc, char** argv) {
   client_args.num_args = 1;
 
   /* create a channel that picks first amongst the servers */
-  grpc_channel* chan = grpc_insecure_channel_create("test", &client_args, nullptr);
+  grpc_channel* chan =
+      grpc_insecure_channel_create("test", &client_args, nullptr);
   /* and an initial call to them */
   grpc_slice host = grpc_slice_from_static_string("127.0.0.1");
   grpc_call* call1 =

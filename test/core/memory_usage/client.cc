@@ -142,9 +142,10 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
   calls[call_idx].call = grpc_channel_create_call(
       channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq, call_type, &hostname,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
-                                 calls[call_idx].call, snapshot_ops,
-                                 (size_t)(op - snapshot_ops), (void*)nullptr, nullptr));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
+                                                   snapshot_ops,
+                                                   (size_t)(op - snapshot_ops),
+                                                   (void*)nullptr, nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   grpc_byte_buffer_reader reader;
@@ -320,7 +321,8 @@ int main(int argc, char** argv) {
                 benchmark_iterations,
             server_calls_end.total_size_relative -
                 after_server_create.total_size_relative,
-            env_build == nullptr ? "" : env_build, env_job == nullptr ? "" : env_job);
+            env_build == nullptr ? "" : env_build,
+            env_job == nullptr ? "" : env_job);
     fclose(csv);
     gpr_log(GPR_INFO, "Summary written to %s", csv_file);
   }

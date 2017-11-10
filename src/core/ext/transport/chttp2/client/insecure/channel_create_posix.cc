@@ -63,9 +63,9 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   grpc_exec_ctx_finish(&exec_ctx);
 
   return channel != nullptr ? channel
-                         : grpc_lame_client_channel_create(
-                               target, GRPC_STATUS_INTERNAL,
-                               "Failed to create client channel");
+                            : grpc_lame_client_channel_create(
+                                  target, GRPC_STATUS_INTERNAL,
+                                  "Failed to create client channel");
 }
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD

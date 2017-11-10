@@ -1178,8 +1178,8 @@ static int glb_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
   bool pick_done = false;
   if (glb_policy->rr_policy != nullptr) {
     const grpc_connectivity_state rr_connectivity_state =
-        grpc_lb_policy_check_connectivity_locked(exec_ctx,
-                                                 glb_policy->rr_policy, nullptr);
+        grpc_lb_policy_check_connectivity_locked(
+            exec_ctx, glb_policy->rr_policy, nullptr);
     // The glb_policy->rr_policy may have transitioned to SHUTDOWN but the
     // callback registered to capture this event
     // (glb_rr_connectivity_changed_locked) may not have been invoked yet. We
@@ -1525,8 +1525,8 @@ static void query_for_backends_locked(grpc_exec_ctx* exec_ctx,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  call_error = grpc_call_start_batch_and_execute(exec_ctx, glb_policy->lb_call,
-                                                 ops, (size_t)(op - ops), nullptr);
+  call_error = grpc_call_start_batch_and_execute(
+      exec_ctx, glb_policy->lb_call, ops, (size_t)(op - ops), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 
   op = ops;

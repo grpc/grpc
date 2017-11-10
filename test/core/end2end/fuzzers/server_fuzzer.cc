@@ -80,7 +80,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_event ev;
   while (1) {
     grpc_exec_ctx_flush(&exec_ctx);
-    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
+    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                    nullptr);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
         goto done;
@@ -103,12 +104,14 @@ done:
   grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
   grpc_server_cancel_all_calls(server);
   for (int i = 0; i <= requested_calls; i++) {
-    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
+    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                    nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   }
   grpc_completion_queue_shutdown(cq);
   for (int i = 0; i <= requested_calls; i++) {
-    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
+    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                    nullptr);
     GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   }
   grpc_server_destroy(server);

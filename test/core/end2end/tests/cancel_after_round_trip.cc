@@ -140,8 +140,9 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
   }
 
-  grpc_end2end_test_fixture f = begin_test(
-      config, "cancel_after_round_trip", mode, use_service_config, args, nullptr);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "cancel_after_round_trip", mode, use_service_config,
+                 args, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = use_service_config

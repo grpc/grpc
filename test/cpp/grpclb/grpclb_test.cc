@@ -264,7 +264,8 @@ static void start_lb_server(server_fixture* sf, int* ports, size_t nports,
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(203), nullptr);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(203), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(203), 1);
     cq_verify(cqv);
@@ -328,8 +329,8 @@ static void start_backend_server(server_fixture* sf) {
                                      tag(100));
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] up", sf->servers_hostport);
-    ev = grpc_completion_queue_next(sf->cq,
-                                    grpc_timeout_seconds_to_deadline(60), nullptr);
+    ev = grpc_completion_queue_next(
+        sf->cq, grpc_timeout_seconds_to_deadline(60), nullptr);
     if (!ev.success) {
       gpr_log(GPR_INFO, "Server[%s] being torn down", sf->servers_hostport);
       cq_verifier_destroy(cqv);
@@ -358,7 +359,8 @@ static void start_backend_server(server_fixture* sf) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), nullptr);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);
 
@@ -371,7 +373,8 @@ static void start_backend_server(server_fixture* sf) {
       op->flags = 0;
       op->reserved = nullptr;
       op++;
-      error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+      error =
+          grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
       ev = grpc_completion_queue_next(
           sf->cq, grpc_timeout_seconds_to_deadline(3), nullptr);
@@ -400,8 +403,8 @@ static void start_backend_server(server_fixture* sf) {
         op->flags = 0;
         op->reserved = nullptr;
         op++;
-        error =
-            grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
+        error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103),
+                                      nullptr);
         GPR_ASSERT(GRPC_CALL_OK == error);
         ev = grpc_completion_queue_next(
             sf->cq, grpc_timeout_seconds_to_deadline(3), nullptr);
@@ -434,7 +437,8 @@ static void start_backend_server(server_fixture* sf) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), nullptr);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
@@ -588,8 +592,8 @@ static void setup_client(const server_fixture* lb_server,
       grpc_fake_transport_expected_targets_arg(expected_target_names),
       grpc_fake_resolver_response_generator_arg(response_generator)};
 
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(nullptr, new_args, GPR_ARRAY_SIZE(new_args));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(
+      nullptr, new_args, GPR_ARRAY_SIZE(new_args));
   gpr_free(expected_target_names);
 
   cf->cq = grpc_completion_queue_create_for_next(nullptr);

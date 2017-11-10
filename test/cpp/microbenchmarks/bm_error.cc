@@ -278,8 +278,8 @@ static void BM_ErrorHttpError(benchmark::State& state) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (state.KeepRunning()) {
     grpc_http2_error_code error;
-    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(), nullptr,
-                          nullptr, &error);
+    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
+                          nullptr, nullptr, &error);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);

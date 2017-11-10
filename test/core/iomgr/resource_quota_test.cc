@@ -189,7 +189,8 @@ static void test_async_alloc_blocked_by_size(void) {
                    &ev, grpc_timeout_milliseconds_to_deadline(100)) == nullptr);
   }
   grpc_resource_quota_resize(q, 1024);
-  GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) != nullptr);
+  GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
+             nullptr);
   ;
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -638,8 +639,8 @@ test_resource_user_stays_allocated_and_reclaimers_unrun_until_memory_released(
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&allocated));
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(gpr_event_wait(&allocated,
-                                grpc_timeout_seconds_to_deadline(5)) != nullptr);
+      GPR_ASSERT(gpr_event_wait(&allocated, grpc_timeout_seconds_to_deadline(
+                                                5)) != nullptr);
       GPR_ASSERT(gpr_event_wait(&reclaimer_cancelled,
                                 grpc_timeout_milliseconds_to_deadline(100)) ==
                  nullptr);
@@ -657,7 +658,8 @@ test_resource_user_stays_allocated_and_reclaimers_unrun_until_memory_released(
       grpc_resource_user_free(&exec_ctx, usr, 1024);
       grpc_exec_ctx_finish(&exec_ctx);
       GPR_ASSERT(gpr_event_wait(&reclaimer_cancelled,
-                                grpc_timeout_seconds_to_deadline(5)) != nullptr);
+                                grpc_timeout_seconds_to_deadline(5)) !=
+                 nullptr);
     }
   }
   grpc_resource_quota_unref(q);
@@ -697,10 +699,11 @@ static void test_reclaimers_can_be_posted_repeatedly(void) {
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_resource_user_alloc(&exec_ctx, usr, 1024, set_event(&allocated));
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(gpr_event_wait(&allocated,
-                                grpc_timeout_seconds_to_deadline(5)) != nullptr);
+      GPR_ASSERT(gpr_event_wait(&allocated, grpc_timeout_seconds_to_deadline(
+                                                5)) != nullptr);
       GPR_ASSERT(gpr_event_wait(&reclaimer_done,
-                                grpc_timeout_seconds_to_deadline(5)) != nullptr);
+                                grpc_timeout_seconds_to_deadline(5)) !=
+                 nullptr);
     }
   }
   {

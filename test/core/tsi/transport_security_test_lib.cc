@@ -110,7 +110,8 @@ static void check_handshake_results(tsi_test_fixture* fixture) {
   fixture->vtable->check_handshaker_peers(fixture);
   /* Check unused bytes. */
   if (fixture->test_unused_bytes) {
-    if (fixture->server_result != nullptr && fixture->client_result != nullptr) {
+    if (fixture->server_result != nullptr &&
+        fixture->client_result != nullptr) {
       check_unused_bytes(fixture);
     }
     fixture->bytes_written_to_server_channel = 0;
@@ -145,7 +146,8 @@ static void maybe_append_unused_bytes(handshaker_args* args) {
     args->appended_unused_bytes = true;
     send_bytes_to_peer(fixture, (const unsigned char*)TSI_TEST_UNUSED_BYTES,
                        strlen(TSI_TEST_UNUSED_BYTES), args->is_client);
-    if (fixture->client_result != nullptr && fixture->server_result == nullptr) {
+    if (fixture->client_result != nullptr &&
+        fixture->server_result == nullptr) {
       fixture->has_client_finished_first = true;
     }
   }
@@ -399,7 +401,8 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
       break;
     }
     GPR_ASSERT(client_args->transferred_data || server_args->transferred_data);
-  } while (fixture->client_result == nullptr || fixture->server_result == nullptr);
+  } while (fixture->client_result == nullptr ||
+           fixture->server_result == nullptr);
   /* Verify handshake results. */
   check_handshake_results(fixture);
   /* Cleanup. */

@@ -72,7 +72,8 @@ static void prepare_test(int is_client) {
     grpc_slice host = grpc_slice_from_static_string("nonexistant");
     g_state.call = grpc_channel_create_call(
         g_state.chan, nullptr, GRPC_PROPAGATE_DEFAULTS, g_state.cq,
-        grpc_slice_from_static_string("/Foo"), &host, g_state.deadline, nullptr);
+        grpc_slice_from_static_string("/Foo"), &host, g_state.deadline,
+        nullptr);
   } else {
     g_state.server = grpc_server_create(nullptr, nullptr);
     grpc_server_register_completion_queue(g_state.server, g_state.cq, nullptr);
@@ -81,12 +82,14 @@ static void prepare_test(int is_client) {
     grpc_server_start(g_state.server);
     gpr_free(server_hostport);
     gpr_join_host_port(&server_hostport, "localhost", port);
-    g_state.chan = grpc_insecure_channel_create(server_hostport, nullptr, nullptr);
+    g_state.chan =
+        grpc_insecure_channel_create(server_hostport, nullptr, nullptr);
     gpr_free(server_hostport);
     grpc_slice host = grpc_slice_from_static_string("bar");
     g_state.call = grpc_channel_create_call(
         g_state.chan, nullptr, GRPC_PROPAGATE_DEFAULTS, g_state.cq,
-        grpc_slice_from_static_string("/Foo"), &host, g_state.deadline, nullptr);
+        grpc_slice_from_static_string("/Foo"), &host, g_state.deadline,
+        nullptr);
     grpc_metadata_array_init(&g_state.server_initial_metadata_recv);
     grpc_call_details_init(&g_state.call_details);
     op = g_state.ops;
@@ -162,7 +165,8 @@ static void test_non_null_reserved_on_op() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -192,7 +196,8 @@ static void test_send_initial_metadata_more_than_once() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -210,7 +215,8 @@ static void test_too_many_metadata() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_INVALID_METADATA ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -233,7 +239,8 @@ static void test_send_null_message() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_INVALID_MESSAGE ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -264,7 +271,8 @@ static void test_send_messages_at_the_same_time() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   grpc_byte_buffer_destroy(request_payload);
   cleanup_test();
 }
@@ -286,7 +294,8 @@ static void test_send_server_status_from_client() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_ON_CLIENT ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -316,7 +325,8 @@ static void test_receive_initial_metadata_twice_at_client() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -334,7 +344,8 @@ static void test_receive_message_with_invalid_flags() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_INVALID_FLAGS ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -357,7 +368,8 @@ static void test_receive_two_messages_at_the_same_time() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -375,7 +387,8 @@ static void test_recv_close_on_server_from_client() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_ON_CLIENT ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -410,7 +423,8 @@ static void test_recv_status_on_client_twice() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -427,7 +441,8 @@ static void test_send_close_from_client_on_server() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_ON_SERVER ==
              grpc_call_start_batch(g_state.server_call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(2), nullptr));
+                                   (size_t)(op - g_state.ops), tag(2),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -448,7 +463,8 @@ static void test_recv_status_on_client_from_server() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_ON_SERVER ==
              grpc_call_start_batch(g_state.server_call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(2), nullptr));
+                                   (size_t)(op - g_state.ops), tag(2),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -469,7 +485,8 @@ static void test_send_status_from_server_with_invalid_flags() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_INVALID_FLAGS ==
              grpc_call_start_batch(g_state.server_call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(2), nullptr));
+                                   (size_t)(op - g_state.ops), tag(2),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -491,7 +508,8 @@ static void test_too_many_trailing_metadata() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_INVALID_METADATA ==
              grpc_call_start_batch(g_state.server_call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(2), nullptr));
+                                   (size_t)(op - g_state.ops), tag(2),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -519,7 +537,8 @@ static void test_send_server_status_twice() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
              grpc_call_start_batch(g_state.server_call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(2), nullptr));
+                                   (size_t)(op - g_state.ops), tag(2),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -537,7 +556,8 @@ static void test_recv_close_on_server_with_invalid_flags() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_INVALID_FLAGS ==
              grpc_call_start_batch(g_state.server_call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(2), nullptr));
+                                   (size_t)(op - g_state.ops), tag(2),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -560,7 +580,8 @@ static void test_recv_close_on_server_twice() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
              grpc_call_start_batch(g_state.server_call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(2), nullptr));
+                                   (size_t)(op - g_state.ops), tag(2),
+                                   nullptr));
   cleanup_test();
 }
 
@@ -582,7 +603,8 @@ static void test_invalid_initial_metadata_reserved_key() {
   op++;
   GPR_ASSERT(GRPC_CALL_ERROR_INVALID_METADATA ==
              grpc_call_start_batch(g_state.call, g_state.ops,
-                                   (size_t)(op - g_state.ops), tag(1), nullptr));
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   cleanup_test();
 }
 

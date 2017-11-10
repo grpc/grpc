@@ -306,8 +306,8 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
       grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_PATH,
                               grpc_slice_ref_internal(method)),
       host != nullptr ? grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_AUTHORITY,
-                                             grpc_slice_ref_internal(*host))
-                   : GRPC_MDNULL,
+                                                grpc_slice_ref_internal(*host))
+                      : GRPC_MDNULL,
       grpc_timespec_to_millis_round_up(deadline));
   grpc_exec_ctx_finish(&exec_ctx);
   return call;
@@ -323,8 +323,8 @@ grpc_call* grpc_channel_create_pollset_set_call(
       grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_PATH,
                               grpc_slice_ref_internal(method)),
       host != nullptr ? grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
-                                             grpc_slice_ref_internal(*host))
-                   : GRPC_MDNULL,
+                                                grpc_slice_ref_internal(*host))
+                      : GRPC_MDNULL,
       deadline);
 }
 
@@ -372,8 +372,8 @@ grpc_call* grpc_channel_create_registered_call(
   GPR_ASSERT(!reserved);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_call* call = grpc_channel_create_call_internal(
-      &exec_ctx, channel, parent_call, propagation_mask, completion_queue, nullptr,
-      GRPC_MDELEM_REF(rc->path), GRPC_MDELEM_REF(rc->authority),
+      &exec_ctx, channel, parent_call, propagation_mask, completion_queue,
+      nullptr, GRPC_MDELEM_REF(rc->path), GRPC_MDELEM_REF(rc->authority),
       grpc_timespec_to_millis_round_up(deadline));
   grpc_exec_ctx_finish(&exec_ctx);
   return call;

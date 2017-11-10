@@ -258,8 +258,8 @@ static void inc_on_failure(grpc_exec_ctx* exec_ctx, void* arg,
                            grpc_error* error) {
   gpr_mu_lock(g_mu);
   *(int*)arg += (error != GRPC_ERROR_NONE);
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(exec_ctx, g_pollset, nullptr)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "kick", grpc_pollset_kick(exec_ctx, g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 

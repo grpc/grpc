@@ -78,7 +78,8 @@ static const char test_scope[] = "myperm1 myperm2";
 static const char test_service_url[] = "https://foo.com/foo.v1";
 
 static char* test_json_key_str(const char* bad_part3) {
-  const char* part3 = bad_part3 != nullptr ? bad_part3 : test_json_key_str_part3;
+  const char* part3 =
+      bad_part3 != nullptr ? bad_part3 : test_json_key_str_part3;
   size_t result_len = strlen(test_json_key_str_part1) +
                       strlen(test_json_key_str_part2) + strlen(part3);
   char* result = static_cast<char*>(gpr_malloc(result_len + 1));
@@ -339,7 +340,8 @@ static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
   GPR_ASSERT(key != nullptr);
   EVP_PKEY_set1_RSA(key, rsa_key);
 
-  GPR_ASSERT(EVP_DigestVerifyInit(md_ctx, nullptr, EVP_sha256(), nullptr, key) == 1);
+  GPR_ASSERT(
+      EVP_DigestVerifyInit(md_ctx, nullptr, EVP_sha256(), nullptr, key) == 1);
   GPR_ASSERT(EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_size) ==
              1);
   GPR_ASSERT(EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(sig),

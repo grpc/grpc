@@ -1110,8 +1110,8 @@ void grpc_server_setup_transport(grpc_exec_ctx* exec_ctx, grpc_server* s,
   uint32_t max_probes = 0;
   grpc_transport_op* op = nullptr;
 
-  channel =
-      grpc_channel_create(exec_ctx, nullptr, args, GRPC_SERVER_CHANNEL, transport);
+  channel = grpc_channel_create(exec_ctx, nullptr, args, GRPC_SERVER_CHANNEL,
+                                transport);
   chand = (channel_data*)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)
               ->channel_data;

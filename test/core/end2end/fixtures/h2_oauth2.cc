@@ -149,7 +149,8 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
       &exec_ctx, "authorization", oauth2_md, true /* is_async */);
   grpc_channel_credentials* ssl_oauth2_creds =
-      grpc_composite_channel_credentials_create(ssl_creds, oauth2_creds, nullptr);
+      grpc_composite_channel_credentials_create(ssl_creds, oauth2_creds,
+                                                nullptr);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
@@ -200,8 +201,8 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                   test_server1_cert};
-  grpc_server_credentials* ssl_creds =
-      grpc_ssl_server_credentials_create(nullptr, &pem_key_cert_pair, 1, 0, nullptr);
+  grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
+      nullptr, &pem_key_cert_pair, 1, 0, nullptr);
   grpc_server_credentials_set_auth_metadata_processor(
       ssl_creds, test_processor_create(fail_server_auth_check(server_args)));
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);

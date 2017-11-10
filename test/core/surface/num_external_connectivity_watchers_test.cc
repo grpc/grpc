@@ -50,8 +50,8 @@ static void channel_idle_start_watch(grpc_channel* channel,
 
 static void channel_idle_poll_for_timeout(grpc_channel* channel,
                                           grpc_completion_queue* cq) {
-  grpc_event ev =
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_event ev = grpc_completion_queue_next(
+      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   /* expect watch_connectivity_state to end with a timeout */
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
@@ -105,9 +105,9 @@ static void run_timeouts_test(const test_fixture* fixture) {
 
   grpc_channel_destroy(channel);
   grpc_completion_queue_shutdown(cq);
-  GPR_ASSERT(
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-          .type == GRPC_QUEUE_SHUTDOWN);
+  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                        nullptr)
+                 .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
@@ -141,16 +141,16 @@ static void run_channel_shutdown_before_timeout_test(
                                         connect_deadline, cq, (void*)1);
   grpc_channel_destroy(channel);
 
-  grpc_event ev =
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_event ev = grpc_completion_queue_next(
+      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   /* expect success with a state transition to CHANNEL_SHUTDOWN */
   GPR_ASSERT(ev.success == true);
 
   grpc_completion_queue_shutdown(cq);
-  GPR_ASSERT(
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-          .type == GRPC_QUEUE_SHUTDOWN);
+  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                        nullptr)
+                 .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();

@@ -249,7 +249,8 @@ static const char* read_cred_artifact(cred_artifact_ctx* ctx, input_stream* inp,
                                       size_t num_builtins) {
   uint8_t b = next_byte(inp);
   if (b == 0) return nullptr;
-  if (b == 1) return ctx->release[ctx->num_release++] = read_string(inp, nullptr);
+  if (b == 1)
+    return ctx->release[ctx->num_release++] = read_string(inp, nullptr);
   if (b >= num_builtins + 1) {
     end(inp);
     return nullptr;
@@ -272,7 +273,8 @@ static grpc_channel_credentials* read_ssl_channel_creds(input_stream* inp) {
                                          GPR_ARRAY_SIZE(builtin_cert_chains));
   grpc_ssl_pem_key_cert_pair key_cert_pair = {private_key, certs};
   grpc_channel_credentials* creds = grpc_ssl_credentials_create(
-      root_certs, private_key != nullptr && certs != nullptr ? &key_cert_pair : nullptr,
+      root_certs,
+      private_key != nullptr && certs != nullptr ? &key_cert_pair : nullptr,
       nullptr);
   cred_artifact_ctx_finish(&ctx);
   return creds;
@@ -317,10 +319,11 @@ static grpc_call_credentials* read_call_creds(input_stream* inp) {
       cred_artifact_ctx ctx = CRED_ARTIFACT_CTX_INIT;
       const char* auth_token = read_cred_artifact(&ctx, inp, nullptr, 0);
       const char* auth_selector = read_cred_artifact(&ctx, inp, nullptr, 0);
-      grpc_call_credentials* out = auth_token == nullptr || auth_selector == nullptr
-                                       ? nullptr
-                                       : grpc_google_iam_credentials_create(
-                                             auth_token, auth_selector, nullptr);
+      grpc_call_credentials* out =
+          auth_token == nullptr || auth_selector == nullptr
+              ? nullptr
+              : grpc_google_iam_credentials_create(auth_token, auth_selector,
+                                                   nullptr);
       cred_artifact_ctx_finish(&ctx);
       return out;
     }
@@ -388,7 +391,8 @@ static void finish_resolve(grpc_exec_ctx* exec_ctx, void* arg,
       *r->addrs = addrs;
     } else if (r->lb_addrs != nullptr) {
       grpc_lb_addresses* lb_addrs = grpc_lb_addresses_create(1, nullptr);
-      grpc_lb_addresses_set_address(lb_addrs, 0, nullptr, 0, false, nullptr, nullptr);
+      grpc_lb_addresses_set_address(lb_addrs, 0, nullptr, 0, false, nullptr,
+                                    nullptr);
       *r->lb_addrs = lb_addrs;
     }
     GRPC_CLOSURE_SCHED(exec_ctx, r->on_done, GRPC_ERROR_NONE);
@@ -465,7 +469,8 @@ static void do_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 
     grpc_transport* transport =
         grpc_create_chttp2_transport(exec_ctx, nullptr, server, 0);
-    grpc_server_setup_transport(exec_ctx, g_server, transport, nullptr, nullptr);
+    grpc_server_setup_transport(exec_ctx, g_server, transport, nullptr,
+                                nullptr);
     grpc_chttp2_transport_start_reading(exec_ctx, transport, nullptr);
 
     GRPC_CLOSURE_SCHED(exec_ctx, fc->closure, GRPC_ERROR_NONE);
@@ -1084,8 +1089,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         if (ok) {
           validator* v = make_finished_batch_validator(g_active_call, has_ops);
           g_active_call->pending_ops++;
-          grpc_call_error error =
-              grpc_call_start_batch(g_active_call->call, ops, num_ops, v, nullptr);
+          grpc_call_error error = grpc_call_start_batch(
+              g_active_call->call, ops, num_ops, v, nullptr);
           if (error != GRPC_CALL_OK) {
             v->validate(v->arg, false);
             gpr_free(v);
@@ -1133,7 +1138,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         if (g_channel != nullptr) {
           pending_pings++;
           grpc_channel_ping(g_channel, cq,
-                            create_validator(decrement, &pending_pings), nullptr);
+                            create_validator(decrement, &pending_pings),
+                            nullptr);
         } else {
           end(&inp);
         }
@@ -1195,7 +1201,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           gpr_asprintf(&target_uri, "dns:%s", target);
           grpc_channel_args* args = read_args(&inp);
           grpc_channel_credentials* creds = read_channel_creds(&inp);
-          g_channel = grpc_secure_channel_create(creds, target_uri, args, nullptr);
+          g_channel =
+              grpc_secure_channel_create(creds, target_uri, args, nullptr);
           GPR_ASSERT(g_channel != nullptr);
           {
             grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

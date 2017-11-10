@@ -55,7 +55,8 @@ int main(int argc, char** argv) {
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x04\xff",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x04\x00\x00",
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR "\x00\x00\x00\x04\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x04\x00\x00\x00",

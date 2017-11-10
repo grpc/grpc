@@ -286,9 +286,10 @@ static request_sequences perform_request(servers_fixture* f,
     memset(s_valid, 0, f->num_servers * sizeof(int));
 
     grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
-    c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                                 grpc_slice_from_static_string("/foo"), &host,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                 f->cq, grpc_slice_from_static_string("/foo"),
+                                 &host, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                 nullptr);
     GPR_ASSERT(c);
     completed_client = 0;
 
@@ -317,14 +318,14 @@ static request_sequences perform_request(servers_fixture* f,
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr));
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, (size_t)(op - ops),
+                                                     tag(1), nullptr));
 
     s_idx = -1;
-    while (
-        (ev = grpc_completion_queue_next(
-             f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT), nullptr))
-            .type != GRPC_QUEUE_TIMEOUT) {
+    while ((ev = grpc_completion_queue_next(
+                f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT),
+                nullptr))
+               .type != GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(intptr_t)ev.tag);
       const grpc_connectivity_state conn_state =
@@ -401,10 +402,10 @@ static request_sequences perform_request(servers_fixture* f,
       }
     }
 
-    GPR_ASSERT(
-        grpc_completion_queue_next(
-            f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT), nullptr)
-            .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(grpc_completion_queue_next(
+                   f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT),
+                   nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
 
     grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
     grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
@@ -451,10 +452,10 @@ static grpc_call** perform_multirequest(servers_fixture* f,
 
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
   for (i = 0; i < concurrent_calls; i++) {
-    calls[i] =
-        grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                                 grpc_slice_from_static_string("/foo"), &host,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    calls[i] = grpc_channel_create_call(
+        client, nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq,
+        grpc_slice_from_static_string("/foo"), &host,
+        gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     GPR_ASSERT(calls[i]);
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(calls[i], ops,
                                                      (size_t)(op - ops), tag(1),
@@ -602,9 +603,8 @@ static void test_pending_calls(size_t concurrent_calls) {
 
   client = create_client(f);
   calls = perform_multirequest(f, client, concurrent_calls);
-  grpc_call_cancel(
-      calls[0],
-      nullptr); /* exercise the cancel pick path whilst there are pending picks */
+  grpc_call_cancel(calls[0], nullptr); /* exercise the cancel pick path whilst
+                                          there are pending picks */
 
   gpr_free(rdata.call_details);
 

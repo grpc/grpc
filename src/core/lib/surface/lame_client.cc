@@ -167,8 +167,8 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
                                               const char* error_message) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_element* elem;
-  grpc_channel* channel = grpc_channel_create(&exec_ctx, target, nullptr,
-                                              GRPC_CLIENT_LAME_CHANNEL, nullptr);
+  grpc_channel* channel = grpc_channel_create(
+      &exec_ctx, target, nullptr, GRPC_CLIENT_LAME_CHANNEL, nullptr);
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   GRPC_API_TRACE(
       "grpc_lame_client_channel_create(target=%s, error_code=%d, "

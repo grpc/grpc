@@ -125,8 +125,9 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
                  key_cert_lib->use_bad_server_cert
                      ? key_cert_lib->bad_server_num_key_cert_pairs
                      : key_cert_lib->server_num_key_cert_pairs,
-                 key_cert_lib->root_cert, ssl_fixture->force_client_auth, nullptr,
-                 (const char**)server_alpn_protocols, num_server_alpn_protocols,
+                 key_cert_lib->root_cert, ssl_fixture->force_client_auth,
+                 nullptr, (const char**)server_alpn_protocols,
+                 num_server_alpn_protocols,
                  &ssl_fixture->server_handshaker_factory) == TSI_OK);
   /* Create server and client handshakers. */
   tsi_handshaker* client_handshaker = nullptr;
@@ -565,8 +566,8 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
 
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
-                 nullptr, cert_chain, nullptr, nullptr, 0, &client_handshaker_factory) ==
-             TSI_OK);
+                 nullptr, cert_chain, nullptr, nullptr, 0,
+                 &client_handshaker_factory) == TSI_OK);
 
   handshaker_factory_destructor_called = false;
   original_vtable = tsi_ssl_handshaker_factory_swap_vtable(
@@ -644,8 +645,8 @@ void test_tsi_ssl_client_handshaker_factory_bad_params() {
 
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
-                 nullptr, cert_chain, nullptr, nullptr, 0, &client_handshaker_factory) ==
-             TSI_INVALID_ARGUMENT);
+                 nullptr, cert_chain, nullptr, nullptr, 0,
+                 &client_handshaker_factory) == TSI_INVALID_ARGUMENT);
   tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
 }
 

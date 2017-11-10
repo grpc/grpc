@@ -348,8 +348,8 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   // Read request and feed it to the parser.
   for (size_t i = 0; i < conn->client_read_buffer.count; ++i) {
     if (GRPC_SLICE_LENGTH(conn->client_read_buffer.slices[i]) > 0) {
-      error = grpc_http_parser_parse(&conn->http_parser,
-                                     conn->client_read_buffer.slices[i], nullptr);
+      error = grpc_http_parser_parse(
+          &conn->http_parser, conn->client_read_buffer.slices[i], nullptr);
       if (error != GRPC_ERROR_NONE) {
         proxy_connection_failed(exec_ctx, conn, true /* is_client */,
                                 "HTTP proxy request parse", error);

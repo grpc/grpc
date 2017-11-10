@@ -60,7 +60,8 @@ int main(int argc, char** argv) {
 
   grpc_init();
 
-  if (json_key_file_path != nullptr && json_refresh_token_file_path != nullptr) {
+  if (json_key_file_path != nullptr &&
+      json_refresh_token_file_path != nullptr) {
     gpr_log(GPR_ERROR,
             "--json_key and --json_refresh_token are mutually exclusive.");
     exit(1);
