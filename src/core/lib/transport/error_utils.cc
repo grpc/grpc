@@ -94,14 +94,14 @@ void grpc_error_get_status(grpc_exec_ctx *exec_ctx, grpc_error *error,
   if (found_error == NULL) found_error = error;
 }
 
-bool grpc_error_has_clear_grpc_status(grpc_error *error) {
-  if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
+bool grpc_error_has_clear_grpc_status(grpc_error *error, intptr_t* p) {
+  if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, p)) {
     return true;
   }
   uint8_t slot = error->first_err;
   while (slot != UINT8_MAX) {
     grpc_linked_error *lerr = (grpc_linked_error *)(error->arena + slot);
-    if (grpc_error_has_clear_grpc_status(lerr->err)) {
+    if (grpc_error_has_clear_grpc_status(lerr->err, p)) {
       return true;
     }
     slot = lerr->next;

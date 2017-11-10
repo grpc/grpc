@@ -42,7 +42,7 @@ void grpc_error_get_status(grpc_exec_ctx *exec_ctx, grpc_error *error,
 /// doesn't need to be guessed in \a error. This means that \a error or some
 /// child has GRPC_ERROR_INT_GRPC_STATUS set, or that it is GRPC_ERROR_NONE or
 /// GRPC_ERROR_CANCELLED
-bool grpc_error_has_clear_grpc_status(grpc_error *error);
+bool grpc_error_has_clear_grpc_status(grpc_error *error, intptr_t* p);
 
 #ifdef __cplusplus
 }

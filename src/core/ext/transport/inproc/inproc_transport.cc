@@ -109,6 +109,7 @@ typedef struct inproc_stream {
 
   grpc_error *cancel_self_error;
   grpc_error *cancel_other_error;
+  grpc_error *cancel_error;
 
   grpc_millis deadline;
 
@@ -890,6 +891,8 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     // Call cancel_stream_locked without ref'ing the cancel_error because
     // this function is responsible to make sure that that field gets unref'ed
     cancel_stream_locked(exec_ctx, s, op->payload->cancel_stream.cancel_error);
+    GRPC_ERROR_UNREF(s->cancel_error);
+    s->cancel_error = GRPC_ERROR_REF(op->payload->cancel_stream.cancel_error);
     // this op can complete without an error
   } else if (s->cancel_self_error != GRPC_ERROR_NONE) {
     // already self-canceled so still give it an error

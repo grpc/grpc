@@ -606,7 +606,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
   end_all_the_calls(exec_ctx, t, GRPC_ERROR_REF(error));
   cancel_pings(exec_ctx, t, GRPC_ERROR_REF(error));
   if (t->closed_with_error == GRPC_ERROR_NONE) {
-    if (!grpc_error_has_clear_grpc_status(error)) {
+    if (!grpc_error_has_clear_grpc_status(error, NULL)) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                  GRPC_STATUS_UNAVAILABLE);
     }
@@ -761,6 +761,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   GRPC_ERROR_UNREF(s->read_closed_error);
   GRPC_ERROR_UNREF(s->write_closed_error);
   GRPC_ERROR_UNREF(s->byte_stream_error);
+  GRPC_ERROR_UNREF(s->cancel_error);
 
   s->flow_control.Destroy();
 
@@ -1420,7 +1421,10 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   }
 
   if (op->cancel_stream) {
+    gpr_log(GPR_ERROR, "CANCEL_STREAM %p %p", op_payload->cancel_stream.cancel_error, s);
     GRPC_STATS_INC_HTTP2_OP_CANCEL(exec_ctx);
+    GRPC_ERROR_UNREF(s->cancel_error);
+    s->cancel_error = GRPC_ERROR_REF(op_payload->cancel_stream.cancel_error);
     grpc_chttp2_cancel_stream(exec_ctx, t, s,
                               op_payload->cancel_stream.cancel_error);
   }
@@ -1993,8 +1997,9 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
         s->recv_trailing_metadata_finished != NULL) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           exec_ctx, &s->metadata_buffer[1], s->recv_trailing_metadata);
+      gpr_log(GPR_ERROR, "CALLED %p %p", s->cancel_error, s);
       grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->recv_trailing_metadata_finished, GRPC_ERROR_NONE,
+          exec_ctx, t, s, &s->recv_trailing_metadata_finished, s->cancel_error,
           "recv_trailing_metadata_finished");
     }
   }
@@ -2046,7 +2051,7 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t, grpc_chttp2_stream *s,
                                grpc_error *due_to_error) {
   if (!t->is_client && !s->sent_trailing_metadata &&
-      grpc_error_has_clear_grpc_status(due_to_error)) {
+      grpc_error_has_clear_grpc_status(due_to_error, NULL)) {
     close_from_api(exec_ctx, t, s, due_to_error);
     return;
   }

@@ -1308,10 +1308,9 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       result = ACTION_TAKEN_NO_CALLBACK;
     }
     stream_state->state_op_done[OP_CANCEL_ERROR] = true;
-    if (!stream_state->cancel_error) {
-      stream_state->cancel_error =
-          GRPC_ERROR_REF(stream_op->payload->cancel_stream.cancel_error);
-    }
+    GRPC_ERROR_UNERF(stream_state->cancel_error);
+    stream_state->cancel_error =
+      GRPC_ERROR_REF(stream_op->payload->cancel_stream.cancel_error);
   } else if (stream_op->on_complete &&
              op_can_be_run(stream_op, s, &oas->state, OP_ON_COMPLETE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_ON_COMPLETE", oas);

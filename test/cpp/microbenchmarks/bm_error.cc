@@ -292,7 +292,7 @@ static void BM_HasClearGrpcStatus(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
   while (state.KeepRunning()) {
-    grpc_error_has_clear_grpc_status(fixture.error());
+    grpc_error_has_clear_grpc_status(fixture.error(), NULL);
   }
   track_counters.Finish(state);
 }

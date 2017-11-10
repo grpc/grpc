@@ -497,6 +497,8 @@ struct grpc_chttp2_stream {
   grpc_error *read_closed_error;
   /** the error that resulted in this stream being write-closed */
   grpc_error *write_closed_error;
+  /** the latest cancelation error */
+  grpc_error *cancel_error;
 
   grpc_published_metadata_method published_metadata[2];
   bool final_metadata_requested;
