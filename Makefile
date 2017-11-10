@@ -1064,6 +1064,7 @@ sequential_connectivity_test: $(BINDIR)/$(CONFIG)/sequential_connectivity_test
 server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
 server_fuzzer: $(BINDIR)/$(CONFIG)/server_fuzzer
 server_test: $(BINDIR)/$(CONFIG)/server_test
+serverless_connectivity_test: $(BINDIR)/$(CONFIG)/serverless_connectivity_test
 slice_buffer_test: $(BINDIR)/$(CONFIG)/slice_buffer_test
 slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
 slice_string_helpers_test: $(BINDIR)/$(CONFIG)/slice_string_helpers_test
@@ -1443,6 +1444,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/sequential_connectivity_test \
   $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/server_test \
+  $(BINDIR)/$(CONFIG)/serverless_connectivity_test \
   $(BINDIR)/$(CONFIG)/slice_buffer_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/slice_string_helpers_test \
@@ -1938,6 +1940,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/server_chttp2_test || ( echo test server_chttp2_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_test || ( echo test server_test failed ; exit 1 )
+	$(E) "[RUN]     Testing serverless_connectivity_test"
+	$(Q) $(BINDIR)/$(CONFIG)/serverless_connectivity_test || ( echo test serverless_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_buffer_test"
 	$(Q) $(BINDIR)/$(CONFIG)/slice_buffer_test || ( echo test slice_buffer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_hash_table_test"
@@ -12506,6 +12510,38 @@ deps_server_test: $(SERVER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SERVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVERLESS_CONNECTIVITY_TEST_SRC = \
+    test/core/surface/serverless_connectivity_test.cc \
+
+SERVERLESS_CONNECTIVITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVERLESS_CONNECTIVITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/serverless_connectivity_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/serverless_connectivity_test: $(SERVERLESS_CONNECTIVITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SERVERLESS_CONNECTIVITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/serverless_connectivity_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/serverless_connectivity_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_serverless_connectivity_test: $(SERVERLESS_CONNECTIVITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVERLESS_CONNECTIVITY_TEST_OBJS:.o=.dep)
 endif
 endif
 

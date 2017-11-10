@@ -507,6 +507,7 @@ add_dependencies(buildtests_c secure_endpoint_test)
 add_dependencies(buildtests_c sequential_connectivity_test)
 add_dependencies(buildtests_c server_chttp2_test)
 add_dependencies(buildtests_c server_test)
+add_dependencies(buildtests_c serverless_connectivity_test)
 add_dependencies(buildtests_c slice_buffer_test)
 add_dependencies(buildtests_c slice_hash_table_test)
 add_dependencies(buildtests_c slice_string_helpers_test)
@@ -8312,6 +8313,36 @@ target_include_directories(server_test
 )
 
 target_link_libraries(server_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(serverless_connectivity_test
+  test/core/surface/serverless_connectivity_test.cc
+)
+
+
+target_include_directories(serverless_connectivity_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+)
+
+target_link_libraries(serverless_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc

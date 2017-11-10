@@ -3055,6 +3055,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: serverless_connectivity_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/serverless_connectivity_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: slice_buffer_test
   build: test
   language: c
