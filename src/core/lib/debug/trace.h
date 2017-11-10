@@ -55,7 +55,7 @@ class TraceFlag {
 
   bool enabled() {
 #ifdef GRPC_THREADSAFE_TRACER
-    gpr_atm_no_barrier_load(&value_) != 0
+    return gpr_atm_no_barrier_load(&value_) != 0;
 #else
     return value_;
 #endif
@@ -66,7 +66,7 @@ class TraceFlag {
 
   void set_enabled(bool enabled) {
 #ifdef GRPC_THREADSAFE_TRACER
-    gpr_atm_no_barrier_store(&value, enabled);
+    gpr_atm_no_barrier_store(&value_, enabled);
 #else
     value_ = enabled;
 #endif
