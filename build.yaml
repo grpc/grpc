@@ -1117,8 +1117,11 @@ libs:
   language: c
   headers:
   - third_party/address_sorting/address_sorting.h
+  - third_party/address_sorting/address_sorting_internal.h
   src:
   - third_party/address_sorting/address_sorting.c
+  - third_party/address_sorting/address_sorting_posix.c
+  - third_party/address_sorting/address_sorting_windows.c
   secure: false
 - name: gpr
   build: all

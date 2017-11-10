@@ -148,17 +148,17 @@ int mock_socket_factory_wrapper_socket(address_sorting_socket_factory* factory,
 }
 
 int mock_socket_factory_wrapper_connect(address_sorting_socket_factory* factory,
-                                        int sockfd, const struct sockaddr* addr,
-                                        socklen_t addrlen) {
+                                        int sockfd, const char* addr,
+                                        size_t addrlen) {
   MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
-  return mock->Connect(sockfd, addr, addrlen);
+  return mock->Connect(sockfd, (const struct sockaddr*)addr,
+                       (socklen_t)addrlen);
 }
 
 int mock_socket_factory_getsockname(address_sorting_socket_factory* factory,
-                                    int sockfd, struct sockaddr* addr,
-                                    socklen_t* addrlen) {
+                                    int sockfd, char* addr, size_t* addrlen) {
   MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
-  return mock->GetSockName(sockfd, addr, addrlen);
+  return mock->GetSockName(sockfd, (struct sockaddr*)addr, (socklen_t*)addrlen);
 }
 
 int mock_socket_factory_close(address_sorting_socket_factory* factory,

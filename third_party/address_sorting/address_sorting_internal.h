@@ -38,58 +38,27 @@
  * this was written.
  */
 
-#ifndef ADDRESS_SORTING_H
-#define ADDRESS_SORTING_H
+#ifndef ADDRESS_SORTING_INTERNAL_H
+#define ADDRESS_SORTING_INTERNAL_H
 
-#ifdef __cplusplus
-extern "C" {
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
+#include <mswsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#define ADDRESS_SORTING_WINDOWS 1
+#else
+/* Workaround for issue described in
+ *
+ * https://bugs.launchpad.net/ubuntu/+source/eglibc/+bug/1187301 */
+#define _GNU_SOURCE
+#include <netinet/in.h>
+#include <sys/socket.h>
+#define ADDRESS_SORTING_POSIX 1
 #endif
 
-typedef struct address_sorting_address {
-  char addr[128];
-  size_t len;
-} address_sorting_address;
+#include "address_sorting.h"
 
-typedef struct address_sorting_sortable {
-  // input data; sorting key
-  address_sorting_address dest_addr;
-  // input data; optional value to attach to the sorting key
-  void* user_data;
-  // internal fields, these must be zero'd when passed to sort function
-  address_sorting_address source_addr;
-  int source_addr_exists;
-  size_t original_index;
-} address_sorting_sortable;
+address_sorting_socket_factory*
+address_sorting_create_socket_factory_for_current_platform();
 
-void address_sorting_rfc_6724_sort(address_sorting_sortable* sortables,
-                                   size_t sortables_len);
-
-void address_sorting_init();
-void address_sorting_shutdown();
-
-struct address_sorting_socket_factory;
-
-/* The socket factory interface is exposed only for testing */
-typedef struct {
-  int (*socket)(struct address_sorting_socket_factory* factory, int domain,
-                int type, int protocol);
-  int (*connect)(struct address_sorting_socket_factory* factory, int sockfd,
-                 const char* addr, size_t addrlen);
-  int (*getsockname)(struct address_sorting_socket_factory* factory, int sockfd,
-                     char* addr, size_t* addrlen);
-  int (*close)(struct address_sorting_socket_factory* factory, int sockfd);
-  void (*destroy)(struct address_sorting_socket_factory* factory);
-} address_sorting_socket_factory_vtable;
-
-typedef struct address_sorting_socket_factory {
-  const address_sorting_socket_factory_vtable* vtable;
-} address_sorting_socket_factory;
-
-void address_sorting_override_socket_factory_for_testing(
-    address_sorting_socket_factory* factory);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // ADDRESS_SORTING_H
+#endif  // ADDRESS_SORTING_INTERNAL_H
