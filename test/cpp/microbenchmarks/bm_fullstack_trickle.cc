@@ -180,10 +180,10 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     ExecCtx _local_exec_ctx;
     inc_time();
     size_t client_backlog =
-        grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.client);
+        grpc_trickle_endpoint_trickle(endpoint_pair_.client);
     size_t server_backlog =
-        grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.server);
-    grpc_exec_ctx_finish(&exec_ctx);
+        grpc_trickle_endpoint_trickle(endpoint_pair_.server);
+    grpc_exec_ctx_finish();
     if (update_stats) {
       UpdateStats((grpc_chttp2_transport*)client_transport_, &client_stats_,
                   client_backlog);
