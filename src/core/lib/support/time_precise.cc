@@ -24,7 +24,7 @@
 
 #ifdef GRPC_TIMERS_RDTSC
 #if defined(__i386__)
-static void gpr_get_cycle_counter(int64_t int *clk) {
+static void gpr_get_cycle_counter(int64_t int* clk) {
   int64_t int ret;
   __asm__ volatile("rdtsc" : "=A"(ret));
   *clk = ret;
@@ -32,7 +32,7 @@ static void gpr_get_cycle_counter(int64_t int *clk) {
 
 // ----------------------------------------------------------------
 #elif defined(__x86_64__) || defined(__amd64__)
-static void gpr_get_cycle_counter(int64_t *clk) {
+static void gpr_get_cycle_counter(int64_t* clk) {
   uint64_t low, high;
   __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
   *clk = (int64_t)(high << 32) | (int64_t)low;
@@ -56,7 +56,7 @@ void gpr_precise_clock_init(void) {
   gpr_log(GPR_DEBUG, "... cycles_per_second = %f\n", cycles_per_second);
 }
 
-void gpr_precise_clock_now(gpr_timespec *clk) {
+void gpr_precise_clock_now(gpr_timespec* clk) {
   int64_t counter;
   double secs;
   gpr_get_cycle_counter(&counter);
@@ -69,7 +69,7 @@ void gpr_precise_clock_now(gpr_timespec *clk) {
 #else  /* GRPC_TIMERS_RDTSC */
 void gpr_precise_clock_init(void) {}
 
-void gpr_precise_clock_now(gpr_timespec *clk) {
+void gpr_precise_clock_now(gpr_timespec* clk) {
   *clk = gpr_now(GPR_CLOCK_REALTIME);
   clk->clock_type = GPR_CLOCK_PRECISE;
 }

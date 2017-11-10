@@ -55,18 +55,18 @@ typedef union lockfree_node {
 #define INVALID_ENTRY_INDEX ((1 << 16) - 1)
 
 struct gpr_stack_lockfree {
-  lockfree_node *entries;
+  lockfree_node* entries;
   lockfree_node head; /* An atomic entry describing curr head */
 };
 
-gpr_stack_lockfree *gpr_stack_lockfree_create(size_t entries) {
-  gpr_stack_lockfree *stack;
-  stack = (gpr_stack_lockfree *)gpr_malloc(sizeof(*stack));
+gpr_stack_lockfree* gpr_stack_lockfree_create(size_t entries) {
+  gpr_stack_lockfree* stack;
+  stack = (gpr_stack_lockfree*)gpr_malloc(sizeof(*stack));
   /* Since we only allocate 16 bits to represent an entry number,
    * make sure that we are within the desired range */
   /* Reserve the highest entry number as a dummy */
   GPR_ASSERT(entries < INVALID_ENTRY_INDEX);
-  stack->entries = (lockfree_node *)gpr_malloc_aligned(
+  stack->entries = (lockfree_node*)gpr_malloc_aligned(
       entries * sizeof(stack->entries[0]), ENTRY_ALIGNMENT_BITS);
   /* Clear out all entries */
   memset(stack->entries, 0, entries * sizeof(stack->entries[0]));
@@ -84,12 +84,12 @@ gpr_stack_lockfree *gpr_stack_lockfree_create(size_t entries) {
   return stack;
 }
 
-void gpr_stack_lockfree_destroy(gpr_stack_lockfree *stack) {
+void gpr_stack_lockfree_destroy(gpr_stack_lockfree* stack) {
   gpr_free_aligned(stack->entries);
   gpr_free(stack);
 }
 
-int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
+int gpr_stack_lockfree_push(gpr_stack_lockfree* stack, int entry) {
   lockfree_node head;
   lockfree_node newhead;
   lockfree_node curent;
@@ -119,7 +119,7 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
   return head.contents.index == INVALID_ENTRY_INDEX;
 }
 
-int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack) {
+int gpr_stack_lockfree_pop(gpr_stack_lockfree* stack) {
   lockfree_node head;
   lockfree_node newhead;
 

@@ -47,7 +47,7 @@ class TestSuite:
 _CORE_TEST_SUITE = TestSuite(['c'])
 _CPP_TEST_SUITE = TestSuite(['c++'])
 _CSHARP_TEST_SUITE = TestSuite(['csharp'])
-_NODE_TEST_SUITE = TestSuite(['node', 'grpc-node'])
+_NODE_TEST_SUITE = TestSuite(['grpc-node'])
 _OBJC_TEST_SUITE = TestSuite(['objc'])
 _PHP_TEST_SUITE = TestSuite(['php', 'php7'])
 _PYTHON_TEST_SUITE = TestSuite(['python'])
@@ -72,22 +72,19 @@ _WHITELIST_DICT = {
   '^summerofcode/': [],
   '^src/cpp/': [_CPP_TEST_SUITE],
   '^src/csharp/': [_CSHARP_TEST_SUITE],
-  '^src/node/': [_NODE_TEST_SUITE],
   '^src/objective\-c/': [_OBJC_TEST_SUITE],
   '^src/php/': [_PHP_TEST_SUITE],
   '^src/python/': [_PYTHON_TEST_SUITE],
   '^src/ruby/': [_RUBY_TEST_SUITE],
   '^templates/': [],
-  '^test/core/': [_CORE_TEST_SUITE],
+  '^test/core/': [_CORE_TEST_SUITE, _CPP_TEST_SUITE],
   '^test/cpp/': [_CPP_TEST_SUITE],
   '^test/distrib/cpp/': [_CPP_TEST_SUITE],
   '^test/distrib/csharp/': [_CSHARP_TEST_SUITE],
-  '^test/distrib/node/': [_NODE_TEST_SUITE],
   '^test/distrib/php/': [_PHP_TEST_SUITE],
   '^test/distrib/python/': [_PYTHON_TEST_SUITE],
   '^test/distrib/ruby/': [_RUBY_TEST_SUITE],
   '^vsprojects/': [_WINDOWS_TEST_SUITE],
-  'binding\.gyp$': [_NODE_TEST_SUITE],
   'composer\.json$': [_PHP_TEST_SUITE],
   'config\.m4$': [_PHP_TEST_SUITE],
   'CONTRIBUTING\.md$': [],

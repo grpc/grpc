@@ -24,6 +24,11 @@ bind(
 )
 
 bind(
+    name = "protobuf_headers",
+    actual = "@com_google_protobuf//:protobuf_headers",
+)
+
+bind(
     name = "protocol_compiler",
     actual = "@com_google_protobuf//:protoc",
 )
@@ -91,4 +96,9 @@ new_local_repository(
     name = "submodule_cares",
     path = "third_party/cares",
     build_file = "third_party/cares/cares.BUILD",
+)
+
+local_repository(
+    name = "com_google_absl",
+    path = "third_party/abseil-cpp",
 )

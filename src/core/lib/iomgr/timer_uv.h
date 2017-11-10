@@ -22,10 +22,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 struct grpc_timer {
-  grpc_closure *closure;
+  grpc_closure* closure;
   /* This is actually a uv_timer_t*, but we want to keep platform-specific
      types out of headers */
-  void *uv_timer;
+  void* uv_timer;
   int pending;
 };
 

@@ -42,9 +42,9 @@ extern grpc_tracer_flag grpc_tcp_trace;
 extern "C" {
 #endif
 
-grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle,
-                               grpc_resource_quota *resource_quota,
-                               char *peer_string);
+grpc_endpoint* grpc_tcp_create(uv_tcp_t* handle,
+                               grpc_resource_quota* resource_quota,
+                               char* peer_string);
 
 #ifdef __cplusplus
 }

@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-const grpc_event_engine_vtable *grpc_init_epollex_linux(
+const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested);
 
 #ifdef __cplusplus
