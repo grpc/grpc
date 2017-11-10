@@ -51,7 +51,7 @@ also switch to IDLE to avoid connection overload at servers that are attempting
 to shed connections. We will use a default IDLE_TIMEOUT of 300 seconds (5 minutes).
 
 SHUTDOWN: This channel has started shutting down. Any new RPCs should fail
-immediately with status UNAVAILABLE. Pending RPCs may continue running till the
+immediately with status UNAVAILABLE. Pending RPCs may continue running until the
 application cancels them.
 Channels may enter this state either because the application explicitly requested
 a shutdown or if a non-recoverable error has happened during attempts to connect
