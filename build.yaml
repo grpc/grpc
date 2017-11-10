@@ -3881,10 +3881,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
-  - epollex
 - name: closure_ref_test
   gtest: true
   build: test

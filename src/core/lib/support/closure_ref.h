@@ -19,6 +19,104 @@
 #ifndef GRPC_CORE_LIB_SUPPORT_CLOSURE_REF_H
 #define GRPC_CORE_LIB_SUPPORT_CLOSURE_REF_H
 
+// This file declares gRPC's ClosureRef infrastructure and a single scheduler
+// that makes use of it: closure_scheduler::NonLockingScheduler.
+//
+// ClosureRefs are used to pass functions down our stack that will be called
+// back later. They are always created against some scheduling class - this
+// scheduling class tells the closure where it should run (on the same thread,
+// vs in some different thread pull; serially in a combiner vs concurrently;
+// etc... - individual scheduler classes will list the guarantees they provide)
+//
+// A ClosureRef itself is non-copyable but movable, and MUST have either its
+// UnsafeRun or Schedule function called before destruction of a non-null
+// ClosureRef. Not doing so will cause a runtime crash. Doing so twice will
+// cause a runtime crash.
+//
+// UnsafeRun will endeavour to call the callback within the current callstack
+// where allowed by the scheduler. It's only safe to call this member when it is
+// known that there is no possible call path leading to the execution that holds
+// a mutex owned by gRPC code.
+//
+// Schedule will wait for callback execution until such a safe location is
+// reached.
+//
+// A few places we guarantee to be safe for callback execution:
+// - StartStreamOp calls in filters & transports
+// - callback functions executed via this closure system (if it was safe to
+//   execute one callback, it's safe to execute another)
+// - Top-of-thread stacks (we can visually identify a lack of mutex
+//   acquisitions)
+// - API entry points (for the same reasoning)
+//
+// Schedulers derive from closure_impl::MakesClosuresForScheduler using the
+// curiously recurring template pattern. They must declare two methods for
+// scheduling:
+//
+//   template <class T, class F>
+//   static void Schedule(F&& f, T* env);
+//   template <class T, class F>
+//   static void UnsafeRun(F&& f, T* env);
+//
+// T is an arbitrary 'environment' type - Schedulers may place constraints on
+// what that environment looks like, and it's supplied at ClosureRef creation
+// time. F is a functor to run (which will execute the closure).
+//
+// All Schedulers inherit a set of constructor functions for ClosureRef, to
+// create closures that will be scheduled using their algorithm. These
+// constructors are created from a nested set of template classes to help
+// distinguish what all of the different type arguments are for. For scheduler
+// $SCHED$:
+//
+// $SCHED$::MakeClosureWithArgs<TL> defines the first level of the hierarchy
+//   with TL giving a list of types for the callback arguments for this closure
+//   .. for instance, $SCHEDULER$::MakeClosureWithArgs<int, Error*> declares a
+//   closure that takes arguments (int, Error*); these arguments are expected to
+//   be suppled to either UnsafeRun or Schedule on the ClosureRef when it comes
+//   time to execute it.
+//
+// Within MakeClosureWithArgs<TL> we declare constructor functions. In some
+// cases these functions take pointers as template arguments. This allows us to
+// keep the ClosureRef type to exactly two points in size, whilst also allowing
+// us to use NO memory to store data regarding an uninvoked closure.
+//
+// Constructors available:
+//   FromFreeFunction<F>()  - constructs a ClosureRef around a free function F
+//                            (which should be a function pointer) - the closure
+//                            environment is assumed to be nullptr
+//                    sample: void foo();
+//                            CR<> c = $SCHED$::MakeClosureWithArgs<>
+//                                            ::FromFreeFunction<&foo>()
+//   FromFreeFunction<F>(p) - constructs a ClosureRef around a free function F
+//                            (which should be a function pointer) - the closure
+//                            environment is taken as p, which can be of
+//                            arbitrary pointer type
+//   FromNonRefCountedMemberFunction<C, F>(p)
+//                          - constructs a ClosureRef around a member function F
+//                            from class C. The C argument here is necessary to
+//                            get template deduction to work. p declares the
+//                            instance of the object to call against (it must be
+//                            of type C), and defines the environment for the
+//                            closure
+//                          - this variant ignores ref counting - it's the
+//                            callers responsibility to ensure
+//                    sample: struct Foo { void foo(); }
+//                            Foo foo;
+//                            CR<> c = $SCHED$::MakeClosureWithArgs<>
+//                                            ::FromNonRefCountedMemberFunction
+//                                              <Foo, &Foo::foo>(&foo);
+//   FromRefCountedMemberFunction<C, F>(p)
+//                          - as FromNonRefCountedMemberFunction, but calls Ref
+//                            upon creation, and Unref after F returns, thus
+//                            ensuring that p is present for the lifetime of the
+//                            ClosureRef
+//   FromRefCountedMemberFunctionWithBarrier
+//                          - experimental for now barrier closure system
+//   FromFunctor            - creates a ClosureRef from an arbitrary functor
+//                            this variant performs a memory allocation to store
+//                            the functor object (and destroys said object after
+//                            the callback has completed)
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <stdio.h>
@@ -348,11 +446,15 @@ const typename ClosureRef<Args...>::VTable
 //
 // SCHEDULERS
 //
+// Most schedulers depend on the iomgr runtime environment, and so are declared
+// there. Schedulers here are only those that have no runtime dependencies on
+// other larger systems.
+//
 
 // Scheduler for callbacks that promise to acquire no mutexes
 // In this case Schedule is equivalent to UnsafeRun
-class AcquiresNoLocks
-    : public closure_impl::MakesClosuresForScheduler<AcquiresNoLocks> {
+class NonLockingScheduler
+    : public closure_impl::MakesClosuresForScheduler<NonLockingScheduler> {
  public:
   template <class T, class F>
   static void Schedule(F&& f, T* env) {

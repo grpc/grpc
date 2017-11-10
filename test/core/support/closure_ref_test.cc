@@ -41,13 +41,14 @@ TEST(ClosureRef, SimpleTests) {
   // simple closures around functions, member functions
   counter = 0;
   ClosureRef<> cb1 =
-      AcquiresNoLocks::MakeClosureWithArgs<>::FromFreeFunction<IncCounter>();
-  ClosureRef<int> cb2 = AcquiresNoLocks::MakeClosureWithArgs<
+      NonLockingScheduler::MakeClosureWithArgs<>::FromFreeFunction<
+          IncCounter>();
+  ClosureRef<int> cb2 = NonLockingScheduler::MakeClosureWithArgs<
       int>::FromFreeFunction<IncCounterBy>();
   Incrementer incrementer(&counter);
-  ClosureRef<> cb3 =
-      AcquiresNoLocks::MakeClosureWithArgs<>::FromNonRefCountedMemberFunction<
-          Incrementer, &Incrementer::Inc>(&incrementer);
+  ClosureRef<> cb3 = NonLockingScheduler::MakeClosureWithArgs<>::
+      FromNonRefCountedMemberFunction<Incrementer, &Incrementer::Inc>(
+          &incrementer);
 
   cb1.UnsafeRun();
   cb2.UnsafeRun(2);
@@ -66,8 +67,8 @@ TEST(ClosureRef, SimpleTests) {
 
 TEST(ClosureRef, Lambda) {
   counter = 0;
-  ClosureRef<> cb =
-      AcquiresNoLocks::MakeClosureWithArgs<>::FromFunctor([]() { counter++; });
+  ClosureRef<> cb = NonLockingScheduler::MakeClosureWithArgs<>::FromFunctor(
+      []() { counter++; });
   EXPECT_EQ(0, counter);
   cb.UnsafeRun();
   EXPECT_EQ(1, counter);
@@ -76,17 +77,19 @@ TEST(ClosureRef, Lambda) {
 TEST(ClosureRef, Move) {
   counter = 0;
   ClosureRef<> cb1 =
-      AcquiresNoLocks::MakeClosureWithArgs<>::FromFreeFunction<IncCounter>();
+      NonLockingScheduler::MakeClosureWithArgs<>::FromFreeFunction<
+          IncCounter>();
   ClosureRef<> cb2 = std::move(cb1);
   cb2.UnsafeRun();
   EXPECT_DEATH_IF_SUPPORTED(cb1.UnsafeRun(), "");
   EXPECT_DEATH_IF_SUPPORTED(cb2.UnsafeRun(), "");
 }
 
-TEST(ClosureRef, Movier) {
+TEST(ClosureRef, MoveBack) {
   counter = 0;
   ClosureRef<> cb1 =
-      AcquiresNoLocks::MakeClosureWithArgs<>::FromFreeFunction<IncCounter>();
+      NonLockingScheduler::MakeClosureWithArgs<>::FromFreeFunction<
+          IncCounter>();
   ClosureRef<> cb2 = std::move(cb1);
   cb1 = std::move(cb2);
   cb1.UnsafeRun();
@@ -106,7 +109,7 @@ TEST(ClosureRef, RefCountedMember) {
   };
   Foo foo;
   ClosureRef<> cb =
-      AcquiresNoLocks::MakeClosureWithArgs<>::FromRefCountedMemberFunction<
+      NonLockingScheduler::MakeClosureWithArgs<>::FromRefCountedMemberFunction<
           Foo, &Foo::Execute>(&foo);
   cb.Schedule();
   EXPECT_EQ(1, foo.refs);
@@ -117,7 +120,8 @@ TEST(ClosureRef, RefCountedMember) {
 TEST(ClosureRef, MustBeScheduled) {
   auto test_body = []() {
     ClosureRef<> cb1 =
-        AcquiresNoLocks::MakeClosureWithArgs<>::FromFreeFunction<IncCounter>();
+        NonLockingScheduler::MakeClosureWithArgs<>::FromFreeFunction<
+            IncCounter>();
     // should crash here due to reaching destructor without executing cb1
   };
   EXPECT_DEATH_IF_SUPPORTED(test_body(), "");
@@ -134,7 +138,7 @@ TEST(ClosureRef, BarrierMember) {
     void Unref() { ++unrefs; }
     void Execute() { ++executes; }
     ClosureRef<> MakeClosure() {
-      return AcquiresNoLocks::MakeClosureWithArgs<>::
+      return NonLockingScheduler::MakeClosureWithArgs<>::
           FromRefCountedMemberFunctionWithBarrier<Foo, &Foo::Execute, int,
                                                   &Foo::barrier>(this);
     }
