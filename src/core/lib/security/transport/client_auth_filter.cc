@@ -113,7 +113,7 @@ static void on_credentials_metadata(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_call_next_op(exec_ctx, elem, batch);
   } else {
     error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
-                               GRPC_STATUS_UNAVAILABLE);
+                               GRPC_STATUS_UNAUTHENTICATED);
     grpc_transport_stream_op_batch_finish_with_failure(exec_ctx, batch, error,
                                                        calld->call_combiner);
   }
