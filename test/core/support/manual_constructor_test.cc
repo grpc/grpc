@@ -18,7 +18,6 @@
 
 /* Test of gpr synchronization support. */
 
-#include "src/core/lib/support/abstract.h"
 #include "src/core/lib/support/manual_constructor.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -27,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
+#include "src/core/lib/support/abstract.h"
 #include "test/core/util/test_config.h"
 
 class A {
@@ -44,6 +44,7 @@ class B : public A {
   ~B() {}
   const char* foo() override { return "B_foo"; }
   char get_junk() { return junk[0]; }
+
  private:
   char junk[1000];
 };
@@ -54,6 +55,7 @@ class C : public B {
   ~C() {}
   virtual const char* bar() { return "C_bar"; }
   char get_more_junk() { return more_junk[0]; }
+
  private:
   char more_junk[1000];
 };
