@@ -390,7 +390,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/nanopb/pb_encode.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.h )
-  s.files += %w( address_sorting.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h )
   s.files += %w( src/core/ext/filters/load_reporting/server_load_reporting_filter.h )
