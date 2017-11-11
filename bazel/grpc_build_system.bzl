@@ -45,10 +45,10 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     alwayslink = alwayslink,
   )
 
-def grpc_proto_plugin(name, srcs = [], deps = []):
+def grpc_proto_plugin(name, srcs = [], hdrs = [], deps = []):
   native.cc_binary(
     name = name,
-    srcs = srcs,
+    srcs = srcs + hdrs,
     deps = deps,
   )
 
