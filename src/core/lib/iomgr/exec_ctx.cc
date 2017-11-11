@@ -107,6 +107,10 @@ static void exec_ctx_sched(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
   grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }
 
+/* This time pair is not entirely thread-safe as store/load of tv_sec and
+ * tv_nsec are performed separately. However g_start_time do not need to have
+ * sub-second precision, so it is ok if the value of tv_nsec is off in this
+ * case. */
 typedef struct time_atm_pair {
   gpr_atm tv_sec;
   gpr_atm tv_nsec;
@@ -208,8 +212,13 @@ void grpc_exec_ctx_maybe_update_start_time(grpc_exec_ctx* exec_ctx) {
   grpc_millis now = grpc_exec_ctx_now(exec_ctx);
   grpc_millis last_start_time_update =
       gpr_atm_no_barrier_load(&g_last_start_time_update);
+
   if (now > last_start_time_update &&
       now - last_start_time_update > GRPC_START_TIME_UPDATE_INTERVAL) {
+    /* Get the current system time and subtract \a now from it, where \a now is
+     * the relative time from grpc_init() from monotonic clock. This calibrates
+     * the time when grpc_exec_ctx_global_init was called based on current
+     * system clock. */
     gpr_atm_no_barrier_store(&g_last_start_time_update, now);
     gpr_timespec real_now = gpr_now(GPR_CLOCK_REALTIME);
     gpr_timespec real_start_time =
