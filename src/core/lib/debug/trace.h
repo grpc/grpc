@@ -61,9 +61,8 @@ class TraceFlag {
 #endif
   }
 
- private:
-  static void List();
-
+  // Only to be used for testing purposes. Tracers should usually be set using
+  // the static Set function
   void set_enabled(bool enabled) {
 #ifdef GRPC_THREADSAFE_TRACER
     gpr_atm_no_barrier_store(&value_, enabled);
@@ -71,6 +70,9 @@ class TraceFlag {
     value_ = enabled;
 #endif
   }
+
+ private:
+  static void List();
 
   static TraceFlag *root_tracer_;
   TraceFlag *next_tracer_;

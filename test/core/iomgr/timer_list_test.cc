@@ -31,8 +31,8 @@
 
 #define MAX_CB 30
 
-grpc_core::TraceFlag grpc_timer_trace;
-grpc_core::TraceFlag grpc_timer_check_trace;
+extern grpc_core::TraceFlag grpc_timer_trace;
+extern grpc_core::TraceFlag grpc_timer_check_trace;
 
 static int cb_called[MAX_CB][2];
 
@@ -48,8 +48,8 @@ static void add_test(void) {
   gpr_log(GPR_INFO, "add_test");
 
   grpc_timer_list_init(&exec_ctx);
-  grpc_timer_trace.value = 1;
-  grpc_timer_check_trace.value = 1;
+  grpc_timer_trace.set_enabled(1);
+  grpc_timer_check_trace.set_enabled(1);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_millis start = grpc_exec_ctx_now(&exec_ctx);
@@ -117,8 +117,8 @@ void destruction_test(void) {
   exec_ctx.now_is_valid = true;
   exec_ctx.now = 0;
   grpc_timer_list_init(&exec_ctx);
-  grpc_timer_trace.value = 1;
-  grpc_timer_check_trace.value = 1;
+  grpc_timer_trace.set_enabled(1);
+  grpc_timer_check_trace.set_enabled(1);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_timer_init(
