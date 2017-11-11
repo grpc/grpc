@@ -605,9 +605,10 @@ static bool tcp_flush(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
 
     if (tcp->outgoing_slice_idx == tcp->outgoing_buffer->count) {
       *error = GRPC_ERROR_NONE;
+      grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->outgoing_buffer);
       return true;
     }
-  };
+  }
 }
 
 static void tcp_handle_write(grpc_exec_ctx* exec_ctx, void* arg /* grpc_tcp */,
