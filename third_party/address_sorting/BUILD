@@ -46,6 +46,9 @@ cc_library(
         "address_sorting.h",
         "address_sorting_internal.h",
     ],
+    includes = [
+        ".",
+    ],
     srcs = [
         "address_sorting.c",
         "address_sorting_posix.c",

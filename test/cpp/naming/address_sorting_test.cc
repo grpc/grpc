@@ -32,7 +32,7 @@
 #include <sys/types.h>
 #include <vector>
 
-#include "address_sorting.h"
+#include <address_sorting.h>
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
