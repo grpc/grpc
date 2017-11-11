@@ -41,9 +41,296 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/call_combiner.h"
-#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/polling_interface.h"
 #include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/transport.h"
+
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <new>
+
+/*
+ * PROTOTYPE C++
+ */
+
+namespace grpc_core {
+
+class StreamBatch {};
+class TransportBatch {};
+
+class ChannelFilterArguments {};
+class CallFilterArguments {};
+class ChannelInfo;
+class PollingCollection;
+
+struct FilterVtable {
+  size_t call_elem_size;
+  void (*init_call_elem)(void* storage, void* channel_storage,
+                         const CallFilterArguments& arguments);
+  void (*destroy_call_elem)(void* storage);
+  void (*start_stream_batch)(void* storage, StreamBatch* b);
+
+  size_t channel_elem_size;
+  void (*init_channel_elem)(void* storage,
+                            const ChannelFilterArguments& arguments);
+  void (*destroy_channel_elem)(void* storage);
+  void (*start_transport_batch)(void* storage, TransportBatch* b);
+};
+
+enum class FilterArchetype {
+  DEFAULT,
+  TERMINATOR,
+};
+
+template <class ChannelImpl, class CallImpl, FilterArchetype kArchetype>
+class Filter;
+
+template <class ChannelImpl, class CallImpl>
+class Filter<ChannelImpl, CallImpl, FilterArchetype::DEFAULT> final {
+ public:
+  class CallElem;
+
+  class ChannelElem {
+   public:
+    /* abstract */ ChannelElem(const ChannelFilterArguments& arguments);
+    // virtual ~ChannelElem() {}
+
+    // virtual bool GetChannelInfo(ChannelInfo* info) = 0;
+    // virtual void StartBatch(TransportBatch* batch) = 0;
+
+   protected:
+    // call next filter in the stack
+    void ContinueBatch(TransportBatch* batch) {
+      next_filter_->start_transport_batch(static_cast<ChannelImpl*>(this) + 1,
+                                          batch);
+    }
+
+   private:
+    friend class CallElem;
+    const FilterVtable* const next_filter_;
+  };
+
+  class CallElem {
+   public:
+    /* abstract */ CallElem(ChannelImpl* channel_filter,
+                            const CallFilterArguments& arguments)
+        : channel_impl_(channel_filter) {}
+    // virtual ~CallElem() {}
+
+    // virtual void SetPollingCollection(PollingCollection* collection) = 0;
+    // virtual void StartBatch(StreamBatch* batch) = 0;
+
+    ChannelImpl* Channel() const { return channel_impl_; }
+
+   protected:
+    // call next filter in the stack
+    void ContinueBatch(StreamBatch* batch) {
+      channel_impl_->next_filter_->start_stream_batch(
+          static_cast<CallImpl*>(this) + 1, batch);
+    }
+
+   private:
+    ChannelImpl* const channel_impl_;
+  };
+
+  static const FilterVtable vtable;
+
+ private:
+  static void InitCallElem(void* storage, void* channel_storage,
+                           const CallFilterArguments& arguments) {
+    new (storage)
+        CallImpl(static_cast<ChannelImpl*>(channel_storage), arguments);
+  }
+
+  static void DestroyCallElem(void* storage) {
+    static_cast<CallImpl*>(storage)->~CallImpl();
+  }
+
+  static void StartStreamBatch(void* storage, StreamBatch* b) {
+    static_cast<CallImpl*>(storage)->StartBatch(b);
+  }
+
+  static void InitChannelElem(void* storage,
+                              const ChannelFilterArguments& arguments) {
+    new (storage) ChannelImpl(arguments);
+  }
+
+  static void DestroyChannelElem(void* storage) {
+    static_cast<ChannelImpl*>(storage)->~ChannelImpl();
+  }
+
+  static void StartTransportBatch(void* storage, TransportBatch* b) {
+    static_cast<ChannelImpl*>(storage)->StartBatch(b);
+  }
+};
+
+template <class ChannelImpl, class CallImpl>
+class Filter<ChannelImpl, CallImpl, FilterArchetype::TERMINATOR> final {
+ public:
+  class CallElem;
+
+  class ChannelElem {
+   public:
+    /* abstract */ ChannelElem(const ChannelFilterArguments& arguments) {}
+    // virtual ~ChannelElem() {}
+
+    // virtual bool GetChannelInfo(ChannelInfo* info) = 0;
+    // virtual void StartBatch(TransportBatch* batch) = 0;
+  };
+
+  class CallElem {
+   public:
+    /* abstract */ CallElem(ChannelImpl* channel_filter,
+                            const CallFilterArguments& arguments)
+        : channel_impl_(channel_filter) {}
+    // virtual ~CallElem() {}
+
+    // virtual void SetPollingCollection(PollingCollection* collection) = 0;
+    // virtual void StartBatch(StreamBatch* batch) = 0;
+
+    ChannelImpl* Channel() const { return channel_impl_; }
+
+   private:
+    ChannelImpl* const channel_impl_;
+  };
+
+  static const FilterVtable vtable;
+
+ private:
+  static void InitCallElem(void* storage, void* channel_storage,
+                           const CallFilterArguments& arguments) {
+    new (storage)
+        CallImpl(static_cast<ChannelImpl*>(channel_storage), arguments);
+  }
+
+  static void DestroyCallElem(void* storage) {
+    static_cast<CallImpl*>(storage)->~CallImpl();
+  }
+
+  static void StartStreamBatch(void* storage, StreamBatch* b) {
+    static_cast<CallImpl*>(storage)->StartBatch(b);
+  }
+
+  static void InitChannelElem(void* storage,
+                              const ChannelFilterArguments& arguments) {
+    new (storage) ChannelImpl(arguments);
+  }
+
+  static void DestroyChannelElem(void* storage) {
+    static_cast<ChannelImpl*>(storage)->~ChannelImpl();
+  }
+
+  static void StartTransportBatch(void* storage, TransportBatch* b) {
+    static_cast<ChannelImpl*>(storage)->StartBatch(b);
+  }
+};
+
+template <class ChannelImpl, class CallImpl>
+const FilterVtable
+    Filter<ChannelImpl, CallImpl, FilterArchetype::DEFAULT>::vtable = {
+        sizeof(CallImpl),   InitCallElem,        DestroyCallElem,
+        StartStreamBatch,   sizeof(ChannelImpl), InitChannelElem,
+        DestroyChannelElem, StartTransportBatch};
+
+template <class ChannelImpl, class CallImpl>
+const FilterVtable
+    Filter<ChannelImpl, CallImpl, FilterArchetype::TERMINATOR>::vtable = {
+        sizeof(CallImpl),   InitCallElem,        DestroyCallElem,
+        StartStreamBatch,   sizeof(ChannelImpl), InitChannelElem,
+        DestroyChannelElem, StartTransportBatch};
+
+}  // namespace grpc_core
+
+using namespace grpc_core;
+
+// Test filter 1
+
+class TestCallElem;
+class TestChannelElem;
+typedef Filter<TestChannelElem, TestCallElem, FilterArchetype::DEFAULT>
+    TestFilter;
+
+class TestChannelElem final : public TestFilter::ChannelElem {
+ public:
+  TestChannelElem(const ChannelFilterArguments& arguments)
+      : ChannelElem(arguments) {}
+
+  bool GetChannelInfo(ChannelInfo* info) { return true; }
+  void StartBatch(TransportBatch* batch) { ContinueBatch(batch); }
+};
+
+class TestCallElem final : public TestFilter::CallElem {
+ public:
+  TestCallElem(TestChannelElem* channel_elem,
+               const CallFilterArguments& arguments)
+      : CallElem(channel_elem, arguments) {
+    puts("Hello world");
+  }
+  ~TestCallElem() { puts("Goodbye world"); }
+
+  void SetPollingCollection(PollingCollection* collection) {}
+  void StartBatch(StreamBatch* batch) { ContinueBatch(batch); }
+};
+
+// Test filter 2
+
+class TestCallElem2;
+class TestChannelElem2;
+typedef Filter<TestChannelElem2, TestCallElem2, FilterArchetype::TERMINATOR>
+    TestFilter2;
+
+class TestChannelElem2 final : public TestFilter2::ChannelElem {
+ public:
+  TestChannelElem2(const ChannelFilterArguments& arguments)
+      : ChannelElem(arguments) {}
+
+  bool GetChannelInfo(ChannelInfo* info) { return true; }
+  void StartBatch(TransportBatch* batch) {}
+};
+
+class TestCallElem2 final : public TestFilter2::CallElem {
+ public:
+  TestCallElem2(TestChannelElem2* channel_elem,
+                const CallFilterArguments& arguments)
+      : CallElem(channel_elem, arguments) {
+    puts("Hello world");
+  }
+  ~TestCallElem2() { puts("Goodbye world"); }
+
+  void SetPollingCollection(PollingCollection* collection) {}
+  void StartBatch(StreamBatch* batch) {}
+
+  int big[256];
+};
+
+// Test harness
+
+void* CreateCallElem(const FilterVtable* filter) {
+  void* p = malloc(filter->call_elem_size);
+  filter->init_call_elem(p, nullptr, CallFilterArguments());
+  return p;
+}
+
+void StartBatch(const FilterVtable* filter, void* p, StreamBatch* b) {
+  filter->start_stream_batch(p, b);
+}
+
+void DestroyCallElem(const FilterVtable* filter, void* p) {
+  filter->destroy_call_elem(p);
+  free(p);
+}
+
+void Test(const FilterVtable* vtable) {
+  void* p = CreateCallElem(vtable);
+  StreamBatch b;
+  StartBatch(vtable, p, &b);
+  DestroyCallElem(vtable, p);
+}
+
+  /*
+   * REAL CODE BEGINETH
+   */
 
 #ifdef __cplusplus
 extern "C" {
