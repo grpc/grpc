@@ -31,9 +31,7 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#ifndef NDEBUG
-grpc_core::TraceFlag grpc_trace_stream_refcount(false, "stream_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false, "stream_refcount");
 
 #ifndef NDEBUG
 void grpc_stream_ref(grpc_stream_refcount* refcount, const char* reason) {

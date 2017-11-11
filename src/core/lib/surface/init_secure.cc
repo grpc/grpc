@@ -32,16 +32,9 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/tsi/transport_security_interface.h"
-
-#ifndef NDEBUG
 #include "src/core/lib/security/context/security_context.h"
-#endif
 
-void grpc_security_pre_init(void) {
-#ifndef NDEBUG
-
-#endif
-}
+void grpc_security_pre_init(void) {}
 
 static bool maybe_prepend_client_auth_filter(
     grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {

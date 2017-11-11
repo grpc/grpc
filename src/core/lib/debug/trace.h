@@ -72,7 +72,7 @@ class TraceFlag {
   }
 
  private:
-  static void List();
+  static void LogAllTracers();
 
   static TraceFlag *root_tracer_;
   TraceFlag *next_tracer_;

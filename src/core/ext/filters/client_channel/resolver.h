@@ -29,9 +29,7 @@ extern "C" {
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 
-#ifndef NDEBUG
-extern grpc_core::TraceFlag grpc_trace_resolver_refcount;
-#endif
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
 /** \a grpc_resolver provides \a grpc_channel_args objects to its caller */
 struct grpc_resolver {

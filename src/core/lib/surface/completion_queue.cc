@@ -41,10 +41,8 @@
 #include "src/core/lib/surface/event_string.h"
 
 grpc_core::TraceFlag grpc_trace_operation_failures(false, "op_failure");
-#ifndef NDEBUG
-grpc_core::TraceFlag grpc_trace_pending_tags(false, "pending_tags");
-grpc_core::TraceFlag grpc_trace_cq_refcount(false, "cq_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags(false, "pending_tags");
+grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount(false, "cq_refcount");
 
 // Specifies a cq thread local cache.
 // The first event that occurs on a thread

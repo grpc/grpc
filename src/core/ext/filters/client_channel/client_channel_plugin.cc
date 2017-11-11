@@ -78,10 +78,6 @@ extern "C" void grpc_client_channel_init(void) {
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
       (void*)&grpc_client_channel_filter);
   grpc_http_connect_register_handshaker_factory();
-
-#ifndef NDEBUG
-
-#endif
 }
 
 extern "C" void grpc_client_channel_shutdown(void) {

@@ -36,7 +36,7 @@ TraceFlag::TraceFlag(bool default_enabled, const char *name)
   root_tracer_ = this;
 }
 
-void TraceFlag::List() {
+void TraceFlag::LogAllTracers() {
   gpr_log(GPR_DEBUG, "available tracers:");
   TraceFlag *t;
   for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
@@ -51,7 +51,7 @@ bool TraceFlag::Set(const char *name, bool enabled) {
       t->set_enabled(enabled);
     }
   } else if (0 == strcmp(name, "list_tracers")) {
-    List();
+    LogAllTracers();
   } else if (0 == strcmp(name, "refcount")) {
     for (t = root_tracer_; t; t = t->next_tracer_) {
       if (strstr(t->name_, "refcount") != NULL) {

@@ -30,11 +30,8 @@
 extern grpc_core::TraceFlag grpc_cq_pluck_trace;
 extern grpc_core::TraceFlag grpc_cq_event_timeout_trace;
 extern grpc_core::TraceFlag grpc_trace_operation_failures;
-
-#ifndef NDEBUG
-extern grpc_core::TraceFlag grpc_trace_pending_tags;
-extern grpc_core::TraceFlag grpc_trace_cq_refcount;
-#endif
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount;
 
 #ifdef __cplusplus
 extern "C" {

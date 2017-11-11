@@ -29,10 +29,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#ifndef NDEBUG
-grpc_core::TraceFlag grpc_trace_auth_context_refcount(false,
+grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount(false,
                                                    "auth_context_refcount");
-#endif
 
 /* --- grpc_call --- */
 

@@ -126,10 +126,6 @@ void grpc_init(void) {
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
-
-#ifndef NDEBUG
-
-#endif
     grpc_security_pre_init();
     grpc_iomgr_init(&exec_ctx);
     gpr_timers_global_init();

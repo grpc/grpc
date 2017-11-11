@@ -33,9 +33,7 @@
 extern "C" {
 #endif
 
-#ifndef NDEBUG
-extern grpc_core::TraceFlag grpc_trace_security_connector_refcount;
-#endif
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 
 /* --- status enum. --- */
 

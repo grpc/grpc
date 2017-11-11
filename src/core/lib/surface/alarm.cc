@@ -27,9 +27,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/completion_queue.h"
 
-#ifndef NDEBUG
-grpc_core::TraceFlag grpc_trace_alarm_refcount(false, "alarm_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_alarm_refcount(false, "alarm_refcount");
 
 struct grpc_alarm {
   gpr_refcount refs;

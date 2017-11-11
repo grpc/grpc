@@ -48,8 +48,9 @@
  * used to determine which kind of element a pointer refers to.
  */
 
+grpc_core::DebugOnlyTraceFlag grpc_trace_metadata(false, "metadata");
+
 #ifndef NDEBUG
-grpc_core::TraceFlag grpc_trace_metadata(false, "metadata");
 #define DEBUG_ARGS , const char *file, int line
 #define FWD_DEBUG_ARGS , file, line
 #define REF_MD_LOCKED(shard, s) ref_md_locked((shard), (s), __FILE__, __LINE__)
