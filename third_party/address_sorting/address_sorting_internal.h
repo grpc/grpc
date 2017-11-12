@@ -42,9 +42,9 @@
 #define ADDRESS_SORTING_INTERNAL_H
 
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
-#include <mswsock.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <mswsock.h>
 #define ADDRESS_SORTING_WINDOWS 1
 #else
 /* Workaround for issue described in
