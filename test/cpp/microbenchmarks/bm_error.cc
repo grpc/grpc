@@ -253,7 +253,7 @@ static void BM_ErrorGetStatus(benchmark::State& state) {
     grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &slice,
                           NULL);
   }
-  grpc_exec_ctx_finish();
+
   track_counters.Finish(state);
 }
 
@@ -267,7 +267,7 @@ static void BM_ErrorGetStatusCode(benchmark::State& state) {
     grpc_error_get_status(fixture.error(), fixture.deadline(), &status, NULL,
                           NULL);
   }
-  grpc_exec_ctx_finish();
+
   track_counters.Finish(state);
 }
 
@@ -281,7 +281,7 @@ static void BM_ErrorHttpError(benchmark::State& state) {
     grpc_error_get_status(fixture.error(), fixture.deadline(), NULL, NULL,
                           &error);
   }
-  grpc_exec_ctx_finish();
+
   track_counters.Finish(state);
 }
 

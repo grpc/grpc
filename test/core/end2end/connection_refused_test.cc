@@ -133,7 +133,6 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   {
     ExecCtx _local_exec_ctx;
     if (args != NULL) grpc_channel_args_destroy(args);
-    grpc_exec_ctx_finish();
   }
 
   grpc_shutdown();

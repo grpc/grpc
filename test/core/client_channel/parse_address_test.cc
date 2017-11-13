@@ -43,7 +43,6 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   GPR_ASSERT(0 == strcmp(addr_un->sun_path, pathname));
 
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish();
 }
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
@@ -68,7 +67,6 @@ static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
   GPR_ASSERT(ntohs(addr_in->sin_port) == port);
 
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish();
 }
 
 static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
@@ -88,7 +86,6 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   GPR_ASSERT(addr_in6->sin6_scope_id == scope_id);
 
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

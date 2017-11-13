@@ -682,7 +682,7 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
 
 static int poll_deadline_to_millis_timeout(grpc_millis millis) {
   if (millis == GRPC_MILLIS_INF_FUTURE) return -1;
-  grpc_millis delta = millis - grpc_exec_ctx_now();
+  grpc_millis delta = millis - ExecCtx::Get()->Now();
   if (delta > INT_MAX)
     return INT_MAX;
   else if (delta < 0)
@@ -804,7 +804,7 @@ static grpc_error* pollable_epoll(pollable* p, grpc_millis deadline) {
     r = epoll_wait(p->epfd, p->events, MAX_EPOLL_EVENTS, timeout);
   } while (r < 0 && errno == EINTR);
   if (timeout != 0) {
-    GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX();
+    GRPC_SCHEDULING_END_BLOCKING_REGION;
   }
 
   if (r < 0) return GRPC_OS_ERROR(errno, "epoll_wait");
@@ -902,7 +902,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
                 worker->pollable_obj, worker);
       }
     }
-    grpc_exec_ctx_invalidate_now();
+    ExecCtx::Get()->InvalidateNow();
   } else {
     gpr_mu_unlock(&pollset->mu);
   }
@@ -970,7 +970,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     gpr_log(GPR_DEBUG,
             "PS:%p work hdl=%p worker=%p now=%" PRIdPTR " deadline=%" PRIdPTR
             " kwp=%d pollable=%p",
-            pollset, worker_hdl, WORKER_PTR, grpc_exec_ctx_now(), deadline,
+            pollset, worker_hdl, WORKER_PTR, ExecCtx::Get()->Now(), deadline,
             pollset->kicked_without_poller, pollset->active_pollable);
   }
   static const char* err_desc = "pollset_work";
@@ -990,7 +990,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
           &error,
           pollable_process_events(pollset, WORKER_PTR->pollable_obj, false),
           err_desc);
-      grpc_exec_ctx_flush();
+      ExecCtx::Get()->Flush();
       gpr_tls_set(&g_current_thread_pollset, 0);
       gpr_tls_set(&g_current_thread_worker, 0);
     }

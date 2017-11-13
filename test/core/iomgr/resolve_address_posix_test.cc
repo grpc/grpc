@@ -67,7 +67,7 @@ void args_finish(args_struct* args) {
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(args->pollset, &do_nothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
 }
@@ -86,7 +86,7 @@ static void actually_poll(void* argsp) {
     if (done) {
       break;
     }
-    grpc_millis time_left = deadline - grpc_exec_ctx_now();
+    grpc_millis time_left = deadline - ExecCtx::Get()->Now();
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRIdPTR, done, time_left);
     GPR_ASSERT(time_left >= 0);
     grpc_pollset_worker* worker = NULL;
@@ -94,10 +94,9 @@ static void actually_poll(void* argsp) {
     GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
                                                         n_sec_deadline(1)));
     gpr_mu_unlock(args->mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
   gpr_event_set(&args->ev, (void*)1);
-  grpc_exec_ctx_finish();
 }
 
 static void poll_pollset_until_request_done(args_struct* args) {
@@ -130,7 +129,6 @@ static void test_unix_socket(void) {
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
   args_finish(&args);
-  grpc_exec_ctx_finish();
 }
 
 static void test_unix_socket_path_name_too_long(void) {
@@ -153,7 +151,6 @@ static void test_unix_socket_path_name_too_long(void) {
       &args.addrs);
   gpr_free(path_name);
   args_finish(&args);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {
@@ -163,7 +160,7 @@ int main(int argc, char** argv) {
   test_unix_socket();
   test_unix_socket_path_name_too_long();
   grpc_executor_shutdown();
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
   return 0;
 }

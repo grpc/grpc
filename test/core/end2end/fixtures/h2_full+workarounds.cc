@@ -90,7 +90,6 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   GPR_ASSERT(grpc_server_add_insecure_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
   grpc_channel_args_destroy(server_args_new);
-  grpc_exec_ctx_finish();
 }
 
 void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {

@@ -54,13 +54,11 @@ void test_transport_op(grpc_channel* channel) {
   op->connectivity_state = &state;
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   elem->filter->start_transport_op(elem, op);
-  grpc_exec_ctx_finish();
 
   GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, NULL,
                     grpc_schedule_on_exec_ctx);
   op = grpc_make_transport_op(&transport_op_cb);
   elem->filter->start_transport_op(elem, op);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

@@ -62,7 +62,7 @@ void grpc_stream_unref(grpc_stream_refcount* refcount, const char* reason) {
 void grpc_stream_unref(grpc_stream_refcount* refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
-    if (exec_ctx->flags & GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP) {
+    if (ExecCtx::Get()->flags() & GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP) {
       /* Ick.
          The thread we're running on MAY be owned (indirectly) by a call-stack.
          If that's the case, destroying the call-stack MAY try to destroy the

@@ -134,7 +134,7 @@ void bad_server_thread(void* vargs) {
 
   gpr_mu_lock(args->mu);
   while (gpr_atm_acq_load(&args->stop) == 0) {
-    grpc_millis deadline = grpc_exec_ctx_now() + 100;
+    grpc_millis deadline = ExecCtx::Get()->Now() + 100;
 
     grpc_pollset_worker* worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
@@ -143,14 +143,12 @@ void bad_server_thread(void* vargs) {
       gpr_atm_rel_store(&args->stop, 1);
     }
     gpr_mu_unlock(args->mu);
-    grpc_exec_ctx_finish();
+
     gpr_mu_lock(args->mu);
   }
   gpr_mu_unlock(args->mu);
 
   grpc_tcp_server_unref(s);
-
-  grpc_exec_ctx_finish();
 
   gpr_free(args->addr);
 }
@@ -228,7 +226,6 @@ int run_concurrent_connectivity_test() {
   grpc_pollset_shutdown(args.pollset,
                         GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
                                             grpc_schedule_on_exec_ctx));
-  grpc_exec_ctx_finish();
 
   grpc_shutdown();
   return 0;

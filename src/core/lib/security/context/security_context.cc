@@ -57,7 +57,7 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
     grpc_call_credentials_unref(ctx->creds);
     ctx->creds = grpc_call_credentials_ref(creds);
   }
-  grpc_exec_ctx_finish();
+
   return GRPC_CALL_OK;
 }
 
@@ -95,7 +95,6 @@ void grpc_client_security_context_destroy(void* ctx) {
     c->extension.destroy(c->extension.instance);
   }
   gpr_free(ctx);
-  grpc_exec_ctx_finish();
 }
 
 /* --- grpc_server_security_context --- */

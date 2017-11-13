@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
             grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE)))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     gpr_mu_lock(sync.mu);
   }
   gpr_mu_unlock(sync.mu);
@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
   gpr_free(sync.pollset);
 
   grpc_jwt_verifier_destroy(verifier);
-  grpc_exec_ctx_finish();
+
   gpr_cmdline_destroy(cl);
   grpc_shutdown();
   return !sync.success;

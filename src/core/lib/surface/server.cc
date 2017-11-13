@@ -1047,8 +1047,6 @@ void grpc_server_start(grpc_server* server) {
       GRPC_CLOSURE_CREATE(start_listeners, server,
                           grpc_executor_scheduler(GRPC_EXECUTOR_SHORT)),
       GRPC_ERROR_NONE);
-
-  grpc_exec_ctx_finish();
 }
 
 void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
@@ -1188,7 +1186,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
     grpc_cq_end_op(cq, tag, GRPC_ERROR_NONE, done_published_shutdown, NULL,
                    (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
     gpr_mu_unlock(&server->mu_global);
-    goto done;
+    return;
   }
   server->shutdown_tags = (shutdown_tag*)gpr_realloc(
       server->shutdown_tags,
@@ -1198,7 +1196,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   sdt->cq = cq;
   if (gpr_atm_acq_load(&server->shutdown_flag)) {
     gpr_mu_unlock(&server->mu_global);
-    goto done;
+    return;
   }
 
   server->last_shutdown_message_time = gpr_now(GPR_CLOCK_REALTIME);
@@ -1225,9 +1223,6 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
 
   channel_broadcaster_shutdown(&broadcaster, true /* send_goaway */,
                                GRPC_ERROR_NONE);
-
-done:
-  grpc_exec_ctx_finish();
 }
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
@@ -1243,7 +1238,6 @@ void grpc_server_cancel_all_calls(grpc_server* server) {
   channel_broadcaster_shutdown(
       &broadcaster, false /* send_goaway */,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cancelling all calls"));
-  grpc_exec_ctx_finish();
 }
 
 void grpc_server_destroy(grpc_server* server) {
@@ -1265,7 +1259,6 @@ void grpc_server_destroy(grpc_server* server) {
   gpr_mu_unlock(&server->mu_global);
 
   server_unref(server);
-  grpc_exec_ctx_finish();
 }
 
 void grpc_server_add_listener(grpc_server* server, void* arg,
@@ -1368,7 +1361,7 @@ grpc_call_error grpc_server_request_call(
   rc->initial_metadata = initial_metadata;
   error = queue_call_request(server, cq_idx, rc);
 done:
-  grpc_exec_ctx_finish();
+
   return error;
 }
 
@@ -1425,7 +1418,7 @@ grpc_call_error grpc_server_request_registered_call(
   rc->data.registered.optional_payload = optional_payload;
   error = queue_call_request(server, cq_idx, rc);
 done:
-  grpc_exec_ctx_finish();
+
   return error;
 }
 

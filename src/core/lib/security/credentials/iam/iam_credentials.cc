@@ -77,6 +77,6 @@ grpc_call_credentials* grpc_google_iam_credentials_create(
       grpc_slice_from_copied_string(authority_selector));
   grpc_credentials_mdelem_array_add(&c->md_array, md);
   GRPC_MDELEM_UNREF(md);
-  grpc_exec_ctx_finish();
+
   return &c->base;
 }

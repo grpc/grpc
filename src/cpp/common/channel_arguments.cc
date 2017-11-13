@@ -73,7 +73,6 @@ ChannelArguments::~ChannelArguments() {
       it->value.pointer.vtable->destroy(it->value.pointer.p);
     }
   }
-  grpc_exec_ctx_finish();
 }
 
 void ChannelArguments::Swap(ChannelArguments& other) {
@@ -106,7 +105,7 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
       replaced = true;
     }
   }
-  grpc_exec_ctx_finish();
+
   if (!replaced) {
     args_.push_back(mutator_arg);
   }

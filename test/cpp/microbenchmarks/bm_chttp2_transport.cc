@@ -136,12 +136,9 @@ class Fixture {
     FlushExecCtx();
   }
 
-  void FlushExecCtx() { grpc_exec_ctx_flush(); }
+  void FlushExecCtx() { ExecCtx::Get()->Flush(); }
 
-  ~Fixture() {
-    grpc_transport_destroy(t_);
-    grpc_exec_ctx_finish();
-  }
+  ~Fixture() { grpc_transport_destroy(t_); }
 
   grpc_chttp2_transport* chttp2_transport() {
     return reinterpret_cast<grpc_chttp2_transport*>(t_);
@@ -152,7 +149,6 @@ class Fixture {
 
  private:
   DummyEndpoint* ep_;
-  ExecCtx _local_exec_ctx;
   grpc_transport* t_;
 };
 
@@ -261,6 +257,7 @@ class Stream {
 
 static void BM_StreamCreateDestroy(benchmark::State& state) {
   TrackCounters track_counters;
+  ExecCtx _local_exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   grpc_transport_stream_op_batch op;
@@ -306,6 +303,7 @@ class RepresentativeClientInitialMetadata {
 template <class Metadata>
 static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   TrackCounters track_counters;
+  ExecCtx _local_exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   grpc_transport_stream_op_batch op;
@@ -356,6 +354,7 @@ BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
 
 static void BM_TransportEmptyOp(benchmark::State& state) {
   TrackCounters track_counters;
+  ExecCtx _local_exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init(state);
@@ -388,6 +387,7 @@ std::vector<std::unique_ptr<gpr_event>> done_events;
 
 static void BM_TransportStreamSend(benchmark::State& state) {
   TrackCounters track_counters;
+  ExecCtx _local_exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   auto s = std::unique_ptr<Stream>(new Stream(&f));
   s->Init(state);
@@ -517,6 +517,7 @@ static grpc_slice CreateIncomingDataSlice(size_t length, size_t frame_size) {
 
 static void BM_TransportStreamRecv(benchmark::State& state) {
   TrackCounters track_counters;
+  ExecCtx _local_exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init(state);

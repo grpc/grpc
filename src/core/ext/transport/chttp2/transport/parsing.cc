@@ -436,7 +436,7 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
     }
     if (timeout != GRPC_MILLIS_INF_FUTURE) {
       grpc_chttp2_incoming_metadata_buffer_set_deadline(
-          &s->metadata_buffer[0], grpc_exec_ctx_now() + timeout);
+          &s->metadata_buffer[0], ExecCtx::Get()->Now() + timeout);
     }
     GRPC_MDELEM_UNREF(md);
   } else {

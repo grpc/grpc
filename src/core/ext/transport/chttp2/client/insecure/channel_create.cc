@@ -95,7 +95,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
       new_args);
   // Clean up.
   grpc_channel_args_destroy(new_args);
-  grpc_exec_ctx_finish();
+
   return channel != NULL ? channel
                          : grpc_lame_client_channel_create(
                                target, GRPC_STATUS_INTERNAL,

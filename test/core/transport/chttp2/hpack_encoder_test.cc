@@ -261,7 +261,6 @@ static void run_test(void (*test)(), const char* name) {
   grpc_chttp2_hpack_compressor_init(&g_compressor);
   test();
   grpc_chttp2_hpack_compressor_destroy(&g_compressor);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

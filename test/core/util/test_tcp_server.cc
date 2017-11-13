@@ -72,8 +72,6 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   grpc_tcp_server_start(server->tcp_server, &server->pollset, 1,
                         server->on_connect, server->cb_data);
   gpr_log(GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);
-
-  grpc_exec_ctx_finish();
 }
 
 void test_tcp_server_poll(test_tcp_server* server, int seconds) {
@@ -85,7 +83,6 @@ void test_tcp_server_poll(test_tcp_server* server, int seconds) {
   GRPC_LOG_IF_ERROR("pollset_work",
                     grpc_pollset_work(server->pollset, &worker, deadline));
   gpr_mu_unlock(server->mu);
-  grpc_exec_ctx_finish();
 }
 
 static void do_nothing(void* arg, grpc_error* error) {}
@@ -109,7 +106,7 @@ void test_tcp_server_destroy(test_tcp_server* server) {
   grpc_pollset_shutdown(server->pollset,
                         GRPC_CLOSURE_CREATE(finish_pollset, server->pollset,
                                             grpc_schedule_on_exec_ctx));
-  grpc_exec_ctx_finish();
+
   gpr_free(server->pollset);
   grpc_shutdown();
 }

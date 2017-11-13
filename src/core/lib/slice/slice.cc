@@ -69,7 +69,6 @@ grpc_slice grpc_slice_ref(grpc_slice slice) {
 void grpc_slice_unref(grpc_slice slice) {
   ExecCtx _local_exec_ctx;
   grpc_slice_unref_internal(slice);
-  grpc_exec_ctx_finish();
 }
 
 /* grpc_slice_from_static_string support structure - a refcount that does

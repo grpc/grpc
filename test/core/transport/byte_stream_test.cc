@@ -66,7 +66,6 @@ static void test_slice_buffer_stream_basic(void) {
   // Clean up.
   grpc_byte_stream_destroy(&stream.base);
   grpc_slice_buffer_destroy_internal(&buffer);
-  grpc_exec_ctx_finish();
 }
 
 static void test_slice_buffer_stream_shutdown(void) {
@@ -109,7 +108,6 @@ static void test_slice_buffer_stream_shutdown(void) {
   // Clean up.
   grpc_byte_stream_destroy(&stream.base);
   grpc_slice_buffer_destroy_internal(&buffer);
-  grpc_exec_ctx_finish();
 }
 
 //
@@ -153,7 +151,6 @@ static void test_caching_byte_stream_basic(void) {
   grpc_byte_stream_destroy(&stream.base);
   grpc_byte_stream_cache_destroy(&cache);
   grpc_slice_buffer_destroy_internal(&buffer);
-  grpc_exec_ctx_finish();
 }
 
 static void test_caching_byte_stream_reset(void) {
@@ -200,7 +197,6 @@ static void test_caching_byte_stream_reset(void) {
   grpc_byte_stream_destroy(&stream.base);
   grpc_byte_stream_cache_destroy(&cache);
   grpc_slice_buffer_destroy_internal(&buffer);
-  grpc_exec_ctx_finish();
 }
 
 static void test_caching_byte_stream_shared_cache(void) {
@@ -254,7 +250,6 @@ static void test_caching_byte_stream_shared_cache(void) {
   grpc_byte_stream_destroy(&stream2.base);
   grpc_byte_stream_cache_destroy(&cache);
   grpc_slice_buffer_destroy_internal(&buffer);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

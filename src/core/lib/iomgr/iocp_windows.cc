@@ -46,7 +46,7 @@ static DWORD deadline_to_millis_timeout(grpc_millis deadline) {
   if (deadline == GRPC_MILLIS_INF_FUTURE) {
     return INFINITE;
   }
-  grpc_millis now = grpc_exec_ctx_now();
+  grpc_millis now = ExecCtx::Get()->Now();
   if (deadline < now) return 0;
   grpc_millis timeout = deadline - now;
   if (timeout > std::numeric_limits<DWORD>::max()) return INFINITE;
@@ -65,7 +65,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_millis deadline) {
   success =
       GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key, &overlapped,
                                 deadline_to_millis_timeout(deadline));
-  grpc_exec_ctx_invalidate_now();
+  ExecCtx::Get()->InvalidateNow();
   if (success == 0 && overlapped == NULL) {
     return GRPC_IOCP_WORK_TIMEOUT;
   }
@@ -118,16 +118,16 @@ void grpc_iocp_flush(void) {
 
   do {
     work_status = grpc_iocp_work(GRPC_MILLIS_INF_PAST);
-  } while (work_status == GRPC_IOCP_WORK_KICK || grpc_exec_ctx_flush());
+  } while (work_status == GRPC_IOCP_WORK_KICK || ExecCtx::Get()->Flush());
 }
 
 void grpc_iocp_shutdown(void) {
   ExecCtx _local_exec_ctx;
   while (gpr_atm_acq_load(&g_custom_events)) {
     grpc_iocp_work(GRPC_MILLIS_INF_FUTURE);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
-  grpc_exec_ctx_finish();
+
   GPR_ASSERT(CloseHandle(g_iocp));
 }
 

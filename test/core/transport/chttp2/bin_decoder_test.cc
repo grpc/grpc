@@ -129,7 +129,5 @@ int main(int argc, char** argv) {
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm:v", 3));
   EXPECT_SLICE_EQ("", base64_decode_with_length("Zm=v", 3));
 
-  grpc_exec_ctx_finish();
-
   return all_ok ? 0 : 1;
 }

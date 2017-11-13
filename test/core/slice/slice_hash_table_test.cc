@@ -121,7 +121,6 @@ static void test_slice_hash_table() {
   // Clean up.
   ExecCtx _local_exec_ctx;
   grpc_slice_hash_table_unref(table);
-  grpc_exec_ctx_finish();
 }
 
 static int value_cmp_fn(void* a, void* b) {
@@ -150,7 +149,6 @@ static void test_slice_hash_table_eq() {
   ExecCtx _local_exec_ctx;
   grpc_slice_hash_table_unref(table_a);
   grpc_slice_hash_table_unref(table_b);
-  grpc_exec_ctx_finish();
 }
 
 static void test_slice_hash_table_not_eq() {
@@ -229,7 +227,6 @@ static void test_slice_hash_table_not_eq() {
   grpc_slice_hash_table_unref(table_f);
   grpc_slice_hash_table_unref(table_g);
   grpc_slice_hash_table_unref(table_h);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

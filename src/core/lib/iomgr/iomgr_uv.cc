@@ -34,7 +34,6 @@ void grpc_iomgr_platform_init(void) {
   grpc_register_tracer(&grpc_tcp_trace);
   grpc_executor_set_threading(false);
   g_init_thread = gpr_thd_currentid();
-  grpc_exec_ctx_finish();
 }
 void grpc_iomgr_platform_flush(void) {}
 void grpc_iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }

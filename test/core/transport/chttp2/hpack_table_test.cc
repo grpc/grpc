@@ -113,7 +113,6 @@ static void test_static_lookup(void) {
   assert_index(&tbl, 61, "www-authenticate", "");
 
   grpc_chttp2_hptbl_destroy(&tbl);
-  grpc_exec_ctx_finish();
 }
 
 static void test_many_additions(void) {
@@ -148,7 +147,6 @@ static void test_many_additions(void) {
   }
 
   grpc_chttp2_hptbl_destroy(&tbl);
-  grpc_exec_ctx_finish();
 }
 
 static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl* tbl,
@@ -159,7 +157,7 @@ static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl* tbl,
       grpc_slice_from_copied_string(key), grpc_slice_from_copied_string(value));
   grpc_chttp2_hptbl_find_result r = grpc_chttp2_hptbl_find(tbl, md);
   GRPC_MDELEM_UNREF(md);
-  grpc_exec_ctx_finish();
+
   return r;
 }
 
@@ -266,7 +264,6 @@ static void test_find(void) {
   GPR_ASSERT(r.has_value == 0);
 
   grpc_chttp2_hptbl_destroy(&tbl);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

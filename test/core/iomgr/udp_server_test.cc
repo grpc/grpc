@@ -130,7 +130,6 @@ static void test_no_op(void) {
   ExecCtx _local_exec_ctx;
   grpc_udp_server* s = grpc_udp_server_create(NULL);
   grpc_udp_server_destroy(s, NULL);
-  grpc_exec_ctx_finish();
 }
 
 static void test_no_op_with_start(void) {
@@ -139,7 +138,6 @@ static void test_no_op_with_start(void) {
   LOG_TEST("test_no_op_with_start");
   grpc_udp_server_start(s, NULL, 0, NULL);
   grpc_udp_server_destroy(s, NULL);
-  grpc_exec_ctx_finish();
 }
 
 static void test_no_op_with_port(void) {
@@ -157,7 +155,6 @@ static void test_no_op_with_port(void) {
                                       on_fd_orphaned));
 
   grpc_udp_server_destroy(s, NULL);
-  grpc_exec_ctx_finish();
 
   /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
@@ -188,7 +185,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
   GPR_ASSERT(socket_factory->number_of_bind_calls == 1);
 
   grpc_udp_server_destroy(s, NULL);
-  grpc_exec_ctx_finish();
+
   grpc_socket_factory_unref(&socket_factory->base);
 
   /* The server had a single FD, which should have been orphaned. */
@@ -212,7 +209,6 @@ static void test_no_op_with_port_and_start(void) {
   grpc_udp_server_start(s, NULL, 0, NULL);
 
   grpc_udp_server_destroy(s, NULL);
-  grpc_exec_ctx_finish();
 
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
@@ -264,12 +260,12 @@ static void test_receive(int number_of_clients) {
                        (socklen_t)resolved_addr.len) == 0);
     GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_reads == number_of_reads_before &&
-           deadline > grpc_exec_ctx_now()) {
+           deadline > ExecCtx::Get()->Now()) {
       grpc_pollset_worker* worker = NULL;
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
       gpr_mu_unlock(g_mu);
-      grpc_exec_ctx_flush();
+      ExecCtx::Get()->Flush();
       gpr_mu_lock(g_mu);
     }
     GPR_ASSERT(g_number_of_reads == number_of_reads_before + 1);
@@ -280,7 +276,6 @@ static void test_receive(int number_of_clients) {
   gpr_mu_unlock(g_mu);
 
   grpc_udp_server_destroy(s, NULL);
-  grpc_exec_ctx_finish();
 
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
@@ -313,7 +308,7 @@ int main(int argc, char** argv) {
   GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, &destroyed);
-  grpc_exec_ctx_finish();
+
   gpr_free(g_pollset);
   grpc_shutdown();
   return 0;

@@ -224,7 +224,7 @@ static grpc_json* parse_json_part_from_jwt(const char* str, size_t len,
   gpr_free(b64);
   *scratchpad = decoded;
   grpc_slice_unref(slice);
-  grpc_exec_ctx_finish();
+
   return json;
 }
 
@@ -348,8 +348,6 @@ static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
   grpc_slice_unref_internal(sig);
   if (key != NULL) EVP_PKEY_free(key);
   if (md_ctx != NULL) EVP_MD_CTX_destroy(md_ctx);
-
-  grpc_exec_ctx_finish();
 }
 
 static char* service_account_creds_jwt_encode_and_sign(

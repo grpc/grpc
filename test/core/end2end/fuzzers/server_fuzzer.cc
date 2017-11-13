@@ -78,7 +78,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   grpc_event ev;
   while (1) {
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:

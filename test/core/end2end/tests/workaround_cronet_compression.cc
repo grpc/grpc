@@ -150,7 +150,6 @@ static void request_with_payload_template(
     arg.value.string = user_agent_override;
     client_args = grpc_channel_args_copy_and_add(client_args_old, &arg, 1);
     grpc_channel_args_destroy(client_args_old);
-    grpc_exec_ctx_finish();
   }
 
   f = begin_test(config, test_name, client_args, server_args);
@@ -352,7 +351,6 @@ static void request_with_payload_template(
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(client_args);
     grpc_channel_args_destroy(server_args);
-    grpc_exec_ctx_finish();
   }
 
   end_test(&f);

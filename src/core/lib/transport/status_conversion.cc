@@ -46,8 +46,8 @@ grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
     case GRPC_HTTP2_CANCEL:
       /* http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
        * exceeded */
-      return grpc_exec_ctx_now() > deadline ? GRPC_STATUS_DEADLINE_EXCEEDED
-                                            : GRPC_STATUS_CANCELLED;
+      return ExecCtx::Get()->Now() > deadline ? GRPC_STATUS_DEADLINE_EXCEEDED
+                                              : GRPC_STATUS_CANCELLED;
     case GRPC_HTTP2_ENHANCE_YOUR_CALM:
       return GRPC_STATUS_RESOURCE_EXHAUSTED;
     case GRPC_HTTP2_INADEQUATE_SECURITY:

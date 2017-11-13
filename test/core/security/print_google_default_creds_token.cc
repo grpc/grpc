@@ -111,12 +111,10 @@ int main(int argc, char** argv) {
                               GRPC_MILLIS_INF_FUTURE)))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     gpr_mu_lock(sync.mu);
   }
   gpr_mu_unlock(sync.mu);
-
-  grpc_exec_ctx_finish();
 
   grpc_channel_credentials_release(creds);
   gpr_free(grpc_polling_entity_pollset(&sync.pops));

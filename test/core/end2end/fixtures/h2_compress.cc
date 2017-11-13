@@ -68,7 +68,6 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture* f,
   if (ffd->client_args_compression != NULL) {
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(ffd->client_args_compression);
-    grpc_exec_ctx_finish();
   }
   ffd->client_args_compression = grpc_channel_args_set_compression_algorithm(
       client_args, GRPC_COMPRESS_GZIP);
@@ -83,7 +82,6 @@ void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture* f,
   if (ffd->server_args_compression != NULL) {
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(ffd->server_args_compression);
-    grpc_exec_ctx_finish();
   }
   ffd->server_args_compression = grpc_channel_args_set_compression_algorithm(
       server_args, GRPC_COMPRESS_GZIP);
@@ -104,7 +102,6 @@ void chttp2_tear_down_fullstack_compression(grpc_end2end_test_fixture* f) {
   grpc_channel_args_destroy(ffd->server_args_compression);
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
-  grpc_exec_ctx_finish();
 }
 
 /* All test configurations */

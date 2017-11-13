@@ -534,7 +534,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
                                   ? &dummy_transport::dummy_transport
                                   : nullptr,
                               "CHANNEL", channel_stack)));
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   grpc_call_stack* call_stack =
       static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
   grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
@@ -558,7 +558,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     typename TestOp::Op op(&test_op_data, call_stack);
     grpc_call_stack_destroy(call_stack, &final_info, NULL);
     op.Finish();
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     // recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
       gpr_arena_destroy(call_args.arena);
@@ -567,7 +567,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   }
   gpr_arena_destroy(call_args.arena);
   grpc_channel_stack_destroy(channel_stack);
-  grpc_exec_ctx_finish();
+
   gpr_free(channel_stack);
   gpr_free(call_stack);
 
@@ -693,7 +693,6 @@ class IsolatedCallFixture : public TrackCounters {
     {
       ExecCtx _local_exec_ctx;
       channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL);
-      grpc_exec_ctx_finish();
     }
     cq_ = grpc_completion_queue_create_for_next(NULL);
   }

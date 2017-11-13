@@ -76,7 +76,7 @@ done:
   if (sc != NULL) {
     GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "server");
   }
-  grpc_exec_ctx_finish();
+
   if (err != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);

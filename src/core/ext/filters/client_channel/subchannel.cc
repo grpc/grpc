@@ -458,7 +458,7 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = true;
     const grpc_millis time_til_next =
-        c->backoff_result.next_attempt_start_time - grpc_exec_ctx_now();
+        c->backoff_result.next_attempt_start_time - ExecCtx::Get()->Now();
     if (time_til_next <= 0) {
       gpr_log(GPR_INFO, "Retry immediately");
     } else {

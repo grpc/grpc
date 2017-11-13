@@ -603,7 +603,6 @@ static void setup_client(const server_fixture* lb_server,
   grpc_channel_credentials_unref(fake_creds);
   grpc_channel_args_destroy(args);
   grpc_fake_resolver_response_generator_unref(response_generator);
-  grpc_exec_ctx_finish();
 }
 
 static void teardown_client(client_fixture* cf) {

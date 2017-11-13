@@ -1122,7 +1122,7 @@ static void start_picking_locked(glb_lb_policy* glb_policy) {
   if (glb_policy->lb_fallback_timeout_ms > 0 &&
       glb_policy->serverlist == NULL && !glb_policy->fallback_timer_active) {
     grpc_millis deadline =
-        grpc_exec_ctx_now() + glb_policy->lb_fallback_timeout_ms;
+        ExecCtx::Get()->Now() + glb_policy->lb_fallback_timeout_ms;
     GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "grpclb_fallback_timer");
     GRPC_CLOSURE_INIT(&glb_policy->lb_on_fallback, lb_on_fallback_timer_locked,
                       glb_policy,
@@ -1271,7 +1271,7 @@ static void maybe_restart_lb_call(glb_lb_policy* glb_policy) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
               glb_policy);
-      grpc_millis timeout = next_try - grpc_exec_ctx_now();
+      grpc_millis timeout = next_try - ExecCtx::Get()->Now();
       if (timeout > 0) {
         gpr_log(GPR_DEBUG,
                 "[grpclb %p] ... retry_timer_active in %" PRIuPTR "ms.",
@@ -1297,7 +1297,7 @@ static void send_client_load_report_locked(void* arg, grpc_error* error);
 
 static void schedule_next_client_load_report(glb_lb_policy* glb_policy) {
   const grpc_millis next_client_load_report_time =
-      grpc_exec_ctx_now() + glb_policy->client_stats_report_interval;
+      ExecCtx::Get()->Now() + glb_policy->client_stats_report_interval;
   GRPC_CLOSURE_INIT(&glb_policy->client_load_report_closure,
                     send_client_load_report_locked, glb_policy,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
@@ -1392,7 +1392,7 @@ static void lb_call_init_locked(glb_lb_policy* glb_policy) {
   grpc_millis deadline =
       glb_policy->lb_call_timeout_ms == 0
           ? GRPC_MILLIS_INF_FUTURE
-          : grpc_exec_ctx_now() + glb_policy->lb_call_timeout_ms;
+          : ExecCtx::Get()->Now() + glb_policy->lb_call_timeout_ms;
   glb_policy->lb_call = grpc_channel_create_pollset_set_call(
       glb_policy->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
       glb_policy->base.interested_parties,

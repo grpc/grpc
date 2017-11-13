@@ -183,7 +183,6 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
     {                                                                        \
       ExecCtx _local_exec_ctx;                                               \
       grpc_channel_args_destroy(new_client_args);                            \
-      grpc_exec_ctx_finish();                                                \
     }                                                                        \
   }
 

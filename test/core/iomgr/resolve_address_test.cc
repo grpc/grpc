@@ -63,7 +63,7 @@ void args_finish(args_struct* args) {
   grpc_pollset_shutdown(args->pollset, &do_nothing_cb);
   gpr_mu_unlock(args->mu);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
 }
@@ -81,7 +81,7 @@ static void poll_pollset_until_request_done(args_struct* args) {
     if (done) {
       break;
     }
-    grpc_millis time_left = deadline - grpc_exec_ctx_now();
+    grpc_millis time_left = deadline - ExecCtx::Get()->Now();
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRIdPTR, done, time_left);
     GPR_ASSERT(time_left >= 0);
     grpc_pollset_worker* worker = NULL;
@@ -89,10 +89,9 @@ static void poll_pollset_until_request_done(args_struct* args) {
     GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
                                                         n_sec_deadline(1)));
     gpr_mu_unlock(args->mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
   gpr_event_set(&args->ev, (void*)1);
-  grpc_exec_ctx_finish();
 }
 
 static void must_succeed(void* argsp, grpc_error* err) {
@@ -123,10 +122,9 @@ static void test_localhost(void) {
       "localhost:1", NULL, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
-  grpc_exec_ctx_finish();
 }
 
 static void test_default_port(void) {
@@ -137,10 +135,9 @@ static void test_default_port(void) {
       "localhost", "1", args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
-  grpc_exec_ctx_finish();
 }
 
 static void test_non_numeric_default_port(void) {
@@ -151,10 +148,9 @@ static void test_non_numeric_default_port(void) {
       "localhost", "https", args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
-  grpc_exec_ctx_finish();
 }
 
 static void test_missing_default_port(void) {
@@ -165,10 +161,9 @@ static void test_missing_default_port(void) {
       "localhost", NULL, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
-  grpc_exec_ctx_finish();
 }
 
 static void test_ipv6_with_port(void) {
@@ -179,10 +174,9 @@ static void test_ipv6_with_port(void) {
       "[2001:db8::1]:1", NULL, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
-  grpc_exec_ctx_finish();
 }
 
 static void test_ipv6_without_port(void) {
@@ -200,10 +194,9 @@ static void test_ipv6_without_port(void) {
         kCases[i], "80", args.pollset_set,
         GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
         &args.addrs);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     poll_pollset_until_request_done(&args);
     args_finish(&args);
-    grpc_exec_ctx_finish();
   }
 }
 
@@ -221,10 +214,9 @@ static void test_invalid_ip_addresses(void) {
         kCases[i], NULL, args.pollset_set,
         GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
         &args.addrs);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     poll_pollset_until_request_done(&args);
     args_finish(&args);
-    grpc_exec_ctx_finish();
   }
 }
 
@@ -241,10 +233,9 @@ static void test_unparseable_hostports(void) {
         kCases[i], "1", args.pollset_set,
         GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
         &args.addrs);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     poll_pollset_until_request_done(&args);
     args_finish(&args);
-    grpc_exec_ctx_finish();
   }
 }
 
@@ -261,7 +252,7 @@ int main(int argc, char** argv) {
   test_invalid_ip_addresses();
   test_unparseable_hostports();
   grpc_executor_shutdown();
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
   return 0;
 }

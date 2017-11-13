@@ -105,11 +105,10 @@ static void uv_tc_on_connect(uv_connect_t* req, int status) {
   }
   done = (--connect->refs == 0);
   if (done) {
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     uv_tcp_connect_cleanup(connect);
   }
   GRPC_CLOSURE_SCHED(closure, error);
-  grpc_exec_ctx_finish();
 }
 
 static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,

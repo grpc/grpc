@@ -1107,7 +1107,6 @@ void grpc_inproc_transport_init(void) {
   grpc_slice_unref_internal(auth_tmp);
 
   g_fake_auth_value = grpc_slice_from_static_string("inproc-fail");
-  grpc_exec_ctx_finish();
 }
 
 static const grpc_transport_vtable inproc_vtable = {
@@ -1182,7 +1181,6 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   grpc_channel_args_destroy(client_args);
 
   // Now finish scheduled operations
-  grpc_exec_ctx_finish();
 
   return channel;
 }
@@ -1194,5 +1192,4 @@ void grpc_inproc_transport_shutdown(void) {
   grpc_slice_unref_internal(g_fake_path_value);
   grpc_slice_unref_internal(g_fake_auth_key);
   grpc_slice_unref_internal(g_fake_auth_value);
-  grpc_exec_ctx_finish();
 }

@@ -85,19 +85,19 @@ void grpc_free_port_using_server(int port) {
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("port_server_client/free");
   grpc_httpcli_get(&context, &pr.pops, resource_quota, &req,
-                   grpc_exec_ctx_now() + 30 * GPR_MS_PER_SEC,
+                   ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                    GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                                        grpc_schedule_on_exec_ctx),
                    &rsp);
   grpc_resource_quota_unref_internal(resource_quota);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   gpr_mu_lock(pr.mu);
   while (!pr.done) {
     grpc_pollset_worker* worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&pr.pops), &worker,
-                              grpc_exec_ctx_now() + GPR_MS_PER_SEC))) {
+                              ExecCtx::Get()->Now() + GPR_MS_PER_SEC))) {
       pr.done = 1;
     }
   }
@@ -106,7 +106,7 @@ void grpc_free_port_using_server(int port) {
   grpc_httpcli_context_destroy(&context);
   grpc_pollset_shutdown(grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
-  grpc_exec_ctx_finish();
+
   gpr_free(path);
   grpc_http_response_destroy(&rsp);
 
@@ -167,7 +167,7 @@ static void got_port_from_server(void* arg, grpc_error* error) {
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("port_server_client/pick_retry");
     grpc_httpcli_get(pr->ctx, &pr->pops, resource_quota, &req,
-                     grpc_exec_ctx_now() + 30 * GPR_MS_PER_SEC,
+                     ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                                          grpc_schedule_on_exec_ctx),
                      &pr->response);
@@ -217,18 +217,18 @@ int grpc_pick_port_using_server(void) {
       grpc_resource_quota_create("port_server_client/pick");
   grpc_httpcli_get(
       &context, &pr.pops, resource_quota, &req,
-      grpc_exec_ctx_now() + 30 * GPR_MS_PER_SEC,
+      ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
       GRPC_CLOSURE_CREATE(got_port_from_server, &pr, grpc_schedule_on_exec_ctx),
       &pr.response);
   grpc_resource_quota_unref_internal(resource_quota);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   gpr_mu_lock(pr.mu);
   while (pr.port == -1) {
     grpc_pollset_worker* worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&pr.pops), &worker,
-                              grpc_exec_ctx_now() + GPR_MS_PER_SEC))) {
+                              ExecCtx::Get()->Now() + GPR_MS_PER_SEC))) {
       pr.port = 0;
     }
   }
@@ -238,7 +238,7 @@ int grpc_pick_port_using_server(void) {
   grpc_httpcli_context_destroy(&context);
   grpc_pollset_shutdown(grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
 
   return pr.port;

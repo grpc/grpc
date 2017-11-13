@@ -624,7 +624,6 @@ void grpc_resource_quota_unref_internal(grpc_resource_quota* resource_quota) {
 void grpc_resource_quota_unref(grpc_resource_quota* resource_quota) {
   ExecCtx _local_exec_ctx;
   grpc_resource_quota_unref_internal(resource_quota);
-  grpc_exec_ctx_finish();
 }
 
 grpc_resource_quota* grpc_resource_quota_ref_internal(
@@ -656,7 +655,6 @@ void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
                            (gpr_atm)GPR_MIN((size_t)GPR_ATM_MAX, size));
   GRPC_CLOSURE_INIT(&a->closure, rq_resize, a, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_SCHED(&a->closure, GRPC_ERROR_NONE);
-  grpc_exec_ctx_finish();
 }
 
 size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {

@@ -106,7 +106,6 @@ static bool wait_loop(int deadline_seconds, gpr_event* ev) {
 
     ExecCtx _local_exec_ctx;
     grpc_timer_check(NULL);
-    grpc_exec_ctx_finish();
   }
   return false;
 }
@@ -154,7 +153,7 @@ int main(int argc, char** argv) {
   call_resolver_next_after_locking(
       resolver, &result,
       GRPC_CLOSURE_CREATE(on_done, &ev1, grpc_schedule_on_exec_ctx));
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(wait_loop(5, &ev1));
   GPR_ASSERT(result == NULL);
 
@@ -163,14 +162,13 @@ int main(int argc, char** argv) {
   call_resolver_next_after_locking(
       resolver, &result,
       GRPC_CLOSURE_CREATE(on_done, &ev2, grpc_schedule_on_exec_ctx));
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(wait_loop(30, &ev2));
   GPR_ASSERT(result != NULL);
 
   grpc_channel_args_destroy(result);
   GRPC_RESOLVER_UNREF(resolver, "test");
   GRPC_COMBINER_UNREF(g_combiner, "test");
-  grpc_exec_ctx_finish();
 
   grpc_shutdown();
   gpr_mu_destroy(&g_mu);

@@ -252,7 +252,6 @@ void grpc_channel_get_info(grpc_channel* channel,
   grpc_channel_element* elem =
       grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
   elem->filter->get_channel_info(elem, channel_info);
-  grpc_exec_ctx_finish();
 }
 
 static grpc_call* grpc_channel_create_call_internal(
@@ -305,7 +304,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
                                              grpc_slice_ref_internal(*host))
                    : GRPC_MDNULL,
       grpc_timespec_to_millis_round_up(deadline));
-  grpc_exec_ctx_finish();
+
   return call;
 }
 
@@ -344,7 +343,7 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   rc->next = channel->registered_calls;
   channel->registered_calls = rc;
   gpr_mu_unlock(&channel->registered_call_mu);
-  grpc_exec_ctx_finish();
+
   return rc;
 }
 
@@ -370,7 +369,7 @@ grpc_call* grpc_channel_create_registered_call(
       channel, parent_call, propagation_mask, completion_queue, NULL,
       GRPC_MDELEM_REF(rc->path), GRPC_MDELEM_REF(rc->authority),
       grpc_timespec_to_millis_round_up(deadline));
-  grpc_exec_ctx_finish();
+
   return call;
 }
 
@@ -416,8 +415,6 @@ void grpc_channel_destroy(grpc_channel* channel) {
   elem->filter->start_transport_op(elem, op);
 
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
-
-  grpc_exec_ctx_finish();
 }
 
 grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel) {

@@ -55,9 +55,9 @@ static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
   while (state.KeepRunning()) {
     grpc_chttp2_hpack_compressor_init(&c);
     grpc_chttp2_hpack_compressor_destroy(&c);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
-  grpc_exec_ctx_finish();
+
   track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackEncoderInitDestroy);
@@ -65,7 +65,7 @@ BENCHMARK(BM_HpackEncoderInitDestroy);
 static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   TrackCounters track_counters;
   ExecCtx _local_exec_ctx;
-  grpc_millis saved_now = grpc_exec_ctx_now();
+  grpc_millis saved_now = ExecCtx::Get()->Now();
 
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
@@ -87,12 +87,11 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
     };
     grpc_chttp2_encode_header(&c, NULL, 0, &b, &hopt, &outbuf);
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
   grpc_metadata_batch_destroy(&b);
   grpc_chttp2_hpack_compressor_destroy(&c);
   grpc_slice_buffer_destroy_internal(&outbuf);
-  grpc_exec_ctx_finish();
 
   std::ostringstream label;
   label << "framing_bytes/iter:"
@@ -145,12 +144,11 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
       }
     }
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
   grpc_metadata_batch_destroy(&b);
   grpc_chttp2_hpack_compressor_destroy(&c);
   grpc_slice_buffer_destroy_internal(&outbuf);
-  grpc_exec_ctx_finish();
 
   std::ostringstream label;
   label << "framing_bytes/iter:"
@@ -432,9 +430,9 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
   while (state.KeepRunning()) {
     grpc_chttp2_hpack_parser_init(&p);
     grpc_chttp2_hpack_parser_destroy(&p);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
-  grpc_exec_ctx_finish();
+
   track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackParserInitDestroy);
@@ -460,12 +458,12 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     for (auto slice : benchmark_slices) {
       GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
     }
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
   grpc_chttp2_hpack_parser_destroy(&p);
-  grpc_exec_ctx_finish();
+
   track_counters.Finish(state);
 }
 

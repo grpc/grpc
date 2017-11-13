@@ -65,7 +65,6 @@ static void test_vector(grpc_chttp2_hpack_parser* parser,
     ExecCtx _local_exec_ctx;
     GPR_ASSERT(grpc_chttp2_hpack_parser_parse(parser, slices[i]) ==
                GRPC_ERROR_NONE);
-    grpc_exec_ctx_finish();
   }
 
   for (i = 0; i < nslices; i++) {
@@ -204,8 +203,6 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
-
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

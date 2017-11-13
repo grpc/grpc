@@ -211,7 +211,6 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
         new_args);
     // Clean up.
     grpc_channel_args_destroy(new_args);
-    grpc_exec_ctx_finish();
   }
   return channel != NULL ? channel
                          : grpc_lame_client_channel_create(

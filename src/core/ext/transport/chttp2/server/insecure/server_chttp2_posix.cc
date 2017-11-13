@@ -61,7 +61,6 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
 
   grpc_server_setup_transport(server, transport, NULL, server_args);
   grpc_chttp2_transport_start_reading(transport, NULL);
-  grpc_exec_ctx_finish();
 }
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD

@@ -138,13 +138,12 @@ static void test_create_channel_stack(void) {
   GPR_ASSERT(*channel_data == 1);
 
   GRPC_CALL_STACK_UNREF(call_stack, "done");
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(*channel_data == 2);
 
   GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
 
   grpc_slice_unref_internal(path);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

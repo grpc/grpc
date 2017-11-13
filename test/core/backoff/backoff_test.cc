@@ -34,19 +34,18 @@ static void test_constant_backoff(void) {
                     min_connect_timeout, max_backoff);
   ExecCtx _local_exec_ctx;
   grpc_backoff_result next_deadlines = grpc_backoff_begin(&backoff);
-  GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now() ==
+  GPR_ASSERT(next_deadlines.current_deadline - ExecCtx::Get()->Now() ==
              initial_backoff);
-  GPR_ASSERT(next_deadlines.next_attempt_start_time - grpc_exec_ctx_now() ==
+  GPR_ASSERT(next_deadlines.next_attempt_start_time - ExecCtx::Get()->Now() ==
              initial_backoff);
   for (int i = 0; i < 10000; i++) {
     next_deadlines = grpc_backoff_step(&backoff);
-    GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now() ==
+    GPR_ASSERT(next_deadlines.current_deadline - ExecCtx::Get()->Now() ==
                initial_backoff);
-    GPR_ASSERT(next_deadlines.next_attempt_start_time - grpc_exec_ctx_now() ==
+    GPR_ASSERT(next_deadlines.next_attempt_start_time - ExecCtx::Get()->Now() ==
                initial_backoff);
-    exec_ctx->now = next_deadlines.current_deadline;
+    ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   }
-  grpc_exec_ctx_finish();
 }
 
 static void test_min_connect(void) {
@@ -62,13 +61,12 @@ static void test_min_connect(void) {
   grpc_backoff_result next = grpc_backoff_begin(&backoff);
   // Because the min_connect_timeout > initial_backoff, current_deadline is used
   // as the deadline for the current attempt.
-  GPR_ASSERT(next.current_deadline - grpc_exec_ctx_now() ==
+  GPR_ASSERT(next.current_deadline - ExecCtx::Get()->Now() ==
              min_connect_timeout);
   // ... while, if the current attempt fails, the next one will happen after
   // initial_backoff.
-  GPR_ASSERT(next.next_attempt_start_time - grpc_exec_ctx_now() ==
+  GPR_ASSERT(next.next_attempt_start_time - ExecCtx::Get()->Now() ==
              initial_backoff);
-  grpc_exec_ctx_finish();
 }
 
 static void test_no_jitter_backoff(void) {
@@ -83,48 +81,46 @@ static void test_no_jitter_backoff(void) {
   // x_1 = 2
   // x_n = 2**i + x_{i-1} ( = 2**(n+1) - 2 )
   ExecCtx _local_exec_ctx;
-  exec_ctx->now = 0;
-  exec_ctx->now_is_valid = true;
+  ExecCtx::Get()->SetNow(0);
   grpc_backoff_result next_deadlines = grpc_backoff_begin(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline ==
              next_deadlines.next_attempt_start_time);
   GPR_ASSERT(next_deadlines.current_deadline == 2);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 6);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 14);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 30);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 62);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 126);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 254);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 510);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 1022);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   // Hit the maximum timeout. From this point onwards, retries will increase
   // only by max timeout.
   GPR_ASSERT(next_deadlines.current_deadline == 1535);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 2048);
-  exec_ctx->now = next_deadlines.current_deadline;
+  ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   next_deadlines = grpc_backoff_step(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline == 2561);
-  grpc_exec_ctx_finish();
 }
 
 static void test_jitter_backoff(void) {
@@ -142,9 +138,9 @@ static void test_jitter_backoff(void) {
 
   ExecCtx _local_exec_ctx;
   grpc_backoff_result next_deadlines = grpc_backoff_begin(&backoff);
-  GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now() ==
+  GPR_ASSERT(next_deadlines.current_deadline - ExecCtx::Get()->Now() ==
              initial_backoff);
-  GPR_ASSERT(next_deadlines.next_attempt_start_time - grpc_exec_ctx_now() ==
+  GPR_ASSERT(next_deadlines.next_attempt_start_time - ExecCtx::Get()->Now() ==
              initial_backoff);
 
   grpc_millis expected_next_lower_bound =
@@ -157,7 +153,7 @@ static void test_jitter_backoff(void) {
     // next-now must be within (jitter*100)% of the current backoff (which
     // increases by * multiplier up to max_backoff).
     const grpc_millis timeout_millis =
-        next_deadlines.current_deadline - grpc_exec_ctx_now();
+        next_deadlines.current_deadline - ExecCtx::Get()->Now();
     GPR_ASSERT(timeout_millis >= expected_next_lower_bound);
     GPR_ASSERT(timeout_millis <= expected_next_upper_bound);
     current_backoff = GPR_MIN(
@@ -166,9 +162,8 @@ static void test_jitter_backoff(void) {
         (grpc_millis)((double)current_backoff * (1 - jitter));
     expected_next_upper_bound =
         (grpc_millis)((double)current_backoff * (1 + jitter));
-    exec_ctx->now = next_deadlines.current_deadline;
+    ExecCtx::Get()->SetNow(next_deadlines.current_deadline);
   }
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

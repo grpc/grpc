@@ -128,20 +128,24 @@ grpc_combiner* grpc_combiner_ref(grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS) {
 }
 
 static void push_last_on_exec_ctx(grpc_combiner* lock) {
-  lock->next_combiner_on_this_exec_ctx = NULL;
-  if (exec_ctx->active_combiner == NULL) {
-    exec_ctx->active_combiner = exec_ctx->last_combiner = lock;
+  lock->next_combiner_on_this_exec_ctx = nullptr;
+  if (ExecCtx::Get()->combiner_data()->active_combiner == nullptr) {
+    ExecCtx::Get()->combiner_data()->active_combiner =
+        ExecCtx::Get()->combiner_data()->last_combiner = lock;
   } else {
-    exec_ctx->last_combiner->next_combiner_on_this_exec_ctx = lock;
-    exec_ctx->last_combiner = lock;
+    ExecCtx::Get()
+        ->combiner_data()
+        ->last_combiner->next_combiner_on_this_exec_ctx = lock;
+    ExecCtx::Get()->combiner_data()->last_combiner = lock;
   }
 }
 
 static void push_first_on_exec_ctx(grpc_combiner* lock) {
-  lock->next_combiner_on_this_exec_ctx = exec_ctx->active_combiner;
-  exec_ctx->active_combiner = lock;
+  lock->next_combiner_on_this_exec_ctx =
+      ExecCtx::Get()->combiner_data()->active_combiner;
+  ExecCtx::Get()->combiner_data()->active_combiner = lock;
   if (lock->next_combiner_on_this_exec_ctx == NULL) {
-    exec_ctx->last_combiner = lock;
+    ExecCtx::Get()->combiner_data()->last_combiner = lock;
   }
 }
 
@@ -161,7 +165,7 @@ static void combiner_exec(grpc_closure* cl, grpc_error* error) {
     GRPC_STATS_INC_COMBINER_LOCKS_INITIATED();
     GPR_TIMER_MARK("combiner.initiated", 0);
     gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null,
-                             (gpr_atm)exec_ctx);
+                             (gpr_atm)ExecCtx::Get());
     // first element on this list: add it to the list of combiner locks
     // executing within this exec_ctx
     push_last_on_exec_ctx(lock);
@@ -170,7 +174,7 @@ static void combiner_exec(grpc_closure* cl, grpc_error* error) {
     // offload for one or two actions, and that's fine
     gpr_atm initiator =
         gpr_atm_no_barrier_load(&lock->initiating_exec_ctx_or_null);
-    if (initiator != 0 && initiator != (gpr_atm)exec_ctx) {
+    if (initiator != 0 && initiator != (gpr_atm)ExecCtx::Get()) {
       gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 0);
     }
   }
@@ -182,10 +186,12 @@ static void combiner_exec(grpc_closure* cl, grpc_error* error) {
 }
 
 static void move_next() {
-  exec_ctx->active_combiner =
-      exec_ctx->active_combiner->next_combiner_on_this_exec_ctx;
-  if (exec_ctx->active_combiner == NULL) {
-    exec_ctx->last_combiner = NULL;
+  ExecCtx::Get()->combiner_data()->active_combiner =
+      ExecCtx::Get()
+          ->combiner_data()
+          ->active_combiner->next_combiner_on_this_exec_ctx;
+  if (ExecCtx::Get()->combiner_data()->active_combiner == NULL) {
+    ExecCtx::Get()->combiner_data()->last_combiner = NULL;
   }
 }
 
@@ -203,7 +209,7 @@ static void queue_offload(grpc_combiner* lock) {
 
 bool grpc_combiner_continue_exec_ctx() {
   GPR_TIMER_BEGIN("combiner.continue_exec_ctx", 0);
-  grpc_combiner* lock = exec_ctx->active_combiner;
+  grpc_combiner* lock = ExecCtx::Get()->combiner_data()->active_combiner;
   if (lock == NULL) {
     GPR_TIMER_END("combiner.continue_exec_ctx", 0);
     return false;
@@ -217,10 +223,11 @@ bool grpc_combiner_continue_exec_ctx() {
                               "contended=%d "
                               "exec_ctx_ready_to_finish=%d "
                               "time_to_execute_final_list=%d",
-                              lock, contended, grpc_exec_ctx_ready_to_finish(),
+                              lock, contended,
+                              ExecCtx::Get()->IsReadyToFinish(),
                               lock->time_to_execute_final_list));
 
-  if (contended && grpc_exec_ctx_ready_to_finish() &&
+  if (contended && ExecCtx::Get()->IsReadyToFinish() &&
       grpc_executor_is_threaded()) {
     GPR_TIMER_MARK("offload_from_finished_exec_ctx", 0);
     // this execution context wants to move on: schedule remaining work to be
@@ -326,11 +333,11 @@ static void combiner_finally_exec(grpc_closure* closure, grpc_error* error) {
   GRPC_STATS_INC_COMBINER_LOCKS_SCHEDULED_FINAL_ITEMS();
   grpc_combiner* lock =
       COMBINER_FROM_CLOSURE_SCHEDULER(closure, finally_scheduler);
-  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
-                              "C:%p grpc_combiner_execute_finally c=%p; ac=%p",
-                              lock, closure, exec_ctx->active_combiner));
+  GRPC_COMBINER_TRACE(
+      gpr_log(GPR_DEBUG, "C:%p grpc_combiner_execute_finally c=%p; ac=%p", lock,
+              closure, ExecCtx::Get()->combiner_data()->active_combiner));
   GPR_TIMER_BEGIN("combiner.execute_finally", 0);
-  if (exec_ctx->active_combiner != lock) {
+  if (ExecCtx::Get()->combiner_data()->active_combiner != lock) {
     GPR_TIMER_MARK("slowpath", 0);
     GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(enqueue_finally, closure,
                                            grpc_combiner_scheduler(lock)),

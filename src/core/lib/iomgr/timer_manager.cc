@@ -101,7 +101,6 @@ void grpc_timer_manager_tick() {
   ExecCtx _local_exec_ctx;
   grpc_millis next = GRPC_MILLIS_INF_FUTURE;
   grpc_timer_check(&next);
-  grpc_exec_ctx_finish();
 }
 
 static void run_some_timers() {
@@ -126,7 +125,7 @@ static void run_some_timers() {
   if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
     gpr_log(GPR_DEBUG, "flush exec_ctx");
   }
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   gpr_mu_lock(&g_mu);
   // garbage collect any threads hanging out that are dead
   gc_completed_threads();
@@ -179,7 +178,7 @@ static bool wait_until(grpc_millis next) {
         g_timed_waiter_deadline = next;
 
         if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
-          grpc_millis wait_time = next - grpc_exec_ctx_now();
+          grpc_millis wait_time = next - ExecCtx::Get()->Now();
           gpr_log(GPR_DEBUG, "sleep for a %" PRIdPTR " milliseconds",
                   wait_time);
         }
@@ -224,7 +223,7 @@ static bool wait_until(grpc_millis next) {
 static void timer_main_loop() {
   for (;;) {
     grpc_millis next = GRPC_MILLIS_INF_FUTURE;
-    grpc_exec_ctx_invalidate_now();
+    ExecCtx::Get()->InvalidateNow();
     // check timer state, updates next to the next time to run a check
     switch (grpc_timer_check(&next)) {
       case GRPC_TIMERS_FIRED:
@@ -274,9 +273,9 @@ static void timer_thread_cleanup(completed_thread* ct) {
 static void timer_thread(void* completed_thread_ptr) {
   // this threads exec_ctx: we try to run things through to completion here
   // since it's easy to spin up new threads
-  ExecCtx _local_exec_ctx(0, grpc_never_ready_to_finish, NULL);
+  ExecCtx _local_exec_ctx;
   timer_main_loop();
-  grpc_exec_ctx_finish();
+
   timer_thread_cleanup((completed_thread*)completed_thread_ptr);
 }
 

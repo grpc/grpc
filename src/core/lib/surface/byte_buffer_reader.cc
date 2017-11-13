@@ -70,7 +70,7 @@ int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
       reader->current.index = 0;
       break;
   }
-  grpc_exec_ctx_finish();
+
   return 1;
 }
 
@@ -118,6 +118,6 @@ grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader) {
     grpc_slice_unref_internal(in_slice);
     GPR_ASSERT(bytes_read <= input_size);
   }
-  grpc_exec_ctx_finish();
+
   return out_slice;
 }

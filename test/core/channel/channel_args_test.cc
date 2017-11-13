@@ -56,7 +56,6 @@ static void test_create(void) {
              0);
 
   grpc_channel_args_destroy(ch_args);
-  grpc_exec_ctx_finish();
 }
 
 static void test_set_compression_algorithm(void) {
@@ -71,7 +70,6 @@ static void test_set_compression_algorithm(void) {
   GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_INTEGER);
 
   grpc_channel_args_destroy(ch_args);
-  grpc_exec_ctx_finish();
 }
 
 static void test_compression_algorithm_states(void) {
@@ -123,7 +121,6 @@ static void test_compression_algorithm_states(void) {
   }
 
   grpc_channel_args_destroy(ch_args);
-  grpc_exec_ctx_finish();
 }
 
 static void test_set_socket_mutator(void) {
@@ -139,7 +136,6 @@ static void test_set_socket_mutator(void) {
   {
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(ch_args);
-    grpc_exec_ctx_finish();
   }
 }
 

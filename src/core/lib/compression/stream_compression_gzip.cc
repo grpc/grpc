@@ -58,7 +58,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
       if (r < 0 && r != Z_BUF_ERROR) {
         gpr_log(GPR_ERROR, "zlib error (%d)", r);
         grpc_slice_unref_internal(slice_out);
-        grpc_exec_ctx_finish();
+
         return false;
       } else if (r == Z_STREAM_END && ctx->flate == inflate) {
         eoc = true;
@@ -89,7 +89,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
           default:
             gpr_log(GPR_ERROR, "zlib error (%d)", r);
             grpc_slice_unref_internal(slice_out);
-            grpc_exec_ctx_finish();
+
             return false;
         }
       } else if (flush == Z_FINISH) {
@@ -105,7 +105,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
           default:
             gpr_log(GPR_ERROR, "zlib error (%d)", r);
             grpc_slice_unref_internal(slice_out);
-            grpc_exec_ctx_finish();
+
             return false;
         }
       }
@@ -121,7 +121,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
     }
     max_output_size -= (slice_size - ctx->zs.avail_out);
   }
-  grpc_exec_ctx_finish();
+
   if (end_of_context) {
     *end_of_context = eoc;
   }

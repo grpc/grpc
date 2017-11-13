@@ -167,7 +167,6 @@ static void test_no_op(void) {
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   grpc_tcp_server_unref(s);
-  grpc_exec_ctx_finish();
 }
 
 static void test_no_op_with_start(void) {
@@ -177,7 +176,6 @@ static void test_no_op_with_start(void) {
   LOG_TEST("test_no_op_with_start");
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
   grpc_tcp_server_unref(s);
-  grpc_exec_ctx_finish();
 }
 
 static void test_no_op_with_port(void) {
@@ -197,7 +195,6 @@ static void test_no_op_with_port(void) {
              port > 0);
 
   grpc_tcp_server_unref(s);
-  grpc_exec_ctx_finish();
 }
 
 static void test_no_op_with_port_and_start(void) {
@@ -219,7 +216,6 @@ static void test_no_op_with_port_and_start(void) {
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
 
   grpc_tcp_server_unref(s);
-  grpc_exec_ctx_finish();
 }
 
 static grpc_error* tcp_connect(const test_addr* remote,
@@ -247,7 +243,7 @@ static grpc_error* tcp_connect(const test_addr* remote,
     return GRPC_OS_ERROR(errno, "connect");
   }
   gpr_log(GPR_DEBUG, "wait");
-  while (g_nconnects == nconnects_before && deadline > grpc_exec_ctx_now()) {
+  while (g_nconnects == nconnects_before && deadline > ExecCtx::Get()->Now()) {
     grpc_pollset_worker* worker = NULL;
     grpc_error* err;
     if ((err = grpc_pollset_work(g_pollset, &worker, deadline)) !=
@@ -257,7 +253,7 @@ static grpc_error* tcp_connect(const test_addr* remote,
       return err;
     }
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish();
+
     gpr_mu_lock(g_mu);
   }
   gpr_log(GPR_DEBUG, "wait done");
@@ -413,7 +409,6 @@ static void test_connect(size_t num_connects,
   GPR_ASSERT(grpc_tcp_server_port_fd(s, 0, 0) >= 0);
 
   grpc_tcp_server_unref(s);
-  grpc_exec_ctx_finish();
 
   /* Weak ref lost. */
   GPR_ASSERT(weak_ref.server == NULL);
@@ -489,7 +484,7 @@ int main(int argc, char** argv) {
   GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, &destroyed);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
   gpr_free(dst_addrs);
   gpr_free(g_pollset);

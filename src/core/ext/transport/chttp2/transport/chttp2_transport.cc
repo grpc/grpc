@@ -530,7 +530,7 @@ static void init_transport(grpc_chttp2_transport* t,
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
     grpc_timer_init(&t->keepalive_ping_timer,
-                    grpc_exec_ctx_now() + t->keepalive_time,
+                    ExecCtx::Get()->Now() + t->keepalive_time,
                     &t->init_keepalive_ping_locked);
   } else {
     /* Use GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED to indicate there are no
@@ -2585,14 +2585,14 @@ static void init_keepalive_ping_locked(void* arg, grpc_error* error) {
     } else {
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
       grpc_timer_init(&t->keepalive_ping_timer,
-                      grpc_exec_ctx_now() + t->keepalive_time,
+                      ExecCtx::Get()->Now() + t->keepalive_time,
                       &t->init_keepalive_ping_locked);
     }
   } else if (error == GRPC_ERROR_CANCELLED) {
     /* The keepalive ping timer may be cancelled by bdp */
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
     grpc_timer_init(&t->keepalive_ping_timer,
-                    grpc_exec_ctx_now() + t->keepalive_time,
+                    ExecCtx::Get()->Now() + t->keepalive_time,
                     &t->init_keepalive_ping_locked);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "init keepalive ping");
@@ -2602,7 +2602,7 @@ static void start_keepalive_ping_locked(void* arg, grpc_error* error) {
   grpc_chttp2_transport* t = (grpc_chttp2_transport*)arg;
   GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
   grpc_timer_init(&t->keepalive_watchdog_timer,
-                  grpc_exec_ctx_now() + t->keepalive_time,
+                  ExecCtx::Get()->Now() + t->keepalive_time,
                   &t->keepalive_watchdog_fired_locked);
 }
 
@@ -2614,7 +2614,7 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error* error) {
       grpc_timer_cancel(&t->keepalive_watchdog_timer);
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
       grpc_timer_init(&t->keepalive_ping_timer,
-                      grpc_exec_ctx_now() + t->keepalive_time,
+                      ExecCtx::Get()->Now() + t->keepalive_time,
                       &t->init_keepalive_ping_locked);
     }
   }

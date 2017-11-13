@@ -115,7 +115,6 @@ static void uv_close_callback(uv_handle_t* handle) {
   ExecCtx _local_exec_ctx;
   grpc_tcp* tcp = (grpc_tcp*)handle->data;
   TCP_UNREF(tcp, "destroy");
-  grpc_exec_ctx_finish();
 }
 
 static grpc_slice alloc_read_slice(grpc_resource_user* resource_user) {
@@ -130,7 +129,6 @@ static void alloc_uv_buf(uv_handle_t* handle, size_t suggested_size,
   (void)suggested_size;
   buf->base = (char*)GRPC_SLICE_START_PTR(tcp->read_slice);
   buf->len = GRPC_SLICE_LENGTH(tcp->read_slice);
-  grpc_exec_ctx_finish();
 }
 
 static void read_callback(uv_stream_t* stream, ssize_t nread,
@@ -174,7 +172,6 @@ static void read_callback(uv_stream_t* stream, ssize_t nread,
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed");
   }
   GRPC_CLOSURE_SCHED(cb, error);
-  grpc_exec_ctx_finish();
 }
 
 static void uv_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
@@ -224,7 +221,6 @@ static void write_callback(uv_write_t* req, int status) {
   grpc_resource_user_free(tcp->resource_user,
                           sizeof(uv_buf_t) * tcp->write_slices->count);
   GRPC_CLOSURE_SCHED(cb, error);
-  grpc_exec_ctx_finish();
 }
 
 static void uv_endpoint_write(grpc_endpoint* ep,
@@ -384,7 +380,6 @@ grpc_endpoint* grpc_tcp_create(uv_tcp_t* handle,
   uv_unref((uv_handle_t*)handle);
 #endif
 
-  grpc_exec_ctx_finish();
   return &tcp->base;
 }
 

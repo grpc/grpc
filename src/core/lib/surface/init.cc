@@ -168,14 +168,14 @@ void grpc_init(void) {
     grpc_iomgr_start();
   }
   gpr_mu_unlock(&g_init_mu);
-  grpc_exec_ctx_finish();
+
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
 
 void grpc_shutdown(void) {
   int i;
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
-  ExecCtx _local_exec_ctx(0, grpc_never_ready_to_finish, NULL);
+  ExecCtx _local_exec_ctx;
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_executor_shutdown();
@@ -194,7 +194,6 @@ void grpc_shutdown(void) {
     grpc_stats_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
-  grpc_exec_ctx_finish();
 }
 
 int grpc_is_initialized(void) {

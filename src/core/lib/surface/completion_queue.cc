@@ -124,7 +124,7 @@ static grpc_error* non_polling_poller_work(grpc_pollset* pollset,
   while (!npp->shutdown && !w.kicked &&
          !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts))
     ;
-  grpc_exec_ctx_invalidate_now();
+  ExecCtx::Get()->InvalidateNow();
   if (&w == npp->root) {
     npp->root = w.next;
     if (&w == npp->root) {
@@ -371,7 +371,6 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
       gpr_mu_unlock(cq->mu);
       GRPC_CQ_INTERNAL_UNREF(cq, "shutting_down");
     }
-    grpc_exec_ctx_finish();
   }
   gpr_tls_set(&g_cached_event, (intptr_t)0);
   gpr_tls_set(&g_cached_cq, (intptr_t)0);
@@ -412,8 +411,6 @@ static grpc_cq_completion* cq_event_queue_pop(grpc_cq_event_queue* q) {
     GRPC_STATS_INC_CQ_EV_QUEUE_TRYLOCK_FAILURES();
   }
 
-  grpc_exec_ctx_finish();
-
   if (c) {
     gpr_atm_no_barrier_fetch_add(&q->num_queue_items, -1);
   }
@@ -445,7 +442,6 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
 
   ExecCtx _local_exec_ctx;
   GRPC_STATS_INC_CQS_CREATED();
-  grpc_exec_ctx_finish();
 
   cq = (grpc_completion_queue*)gpr_zalloc(sizeof(grpc_completion_queue) +
                                           vtable->data_size +
@@ -639,9 +635,9 @@ static void cq_end_op_for_next(grpc_completion_queue* cq, void* tag,
        error != GRPC_ERROR_NONE)) {
     const char* errmsg = grpc_error_string(error);
     GRPC_API_TRACE(
-        "cq_end_op_for_next(=%p, cq=%p, tag=%p, error=%s, "
+        "cq_end_op_for_next(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
-        7, (exec_ctx, cq, tag, errmsg, done, done_arg, storage));
+        6, (cq, tag, errmsg, done, done_arg, storage));
     if (GRPC_TRACER_ON(grpc_trace_operation_failures) &&
         error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
@@ -726,9 +722,9 @@ static void cq_end_op_for_pluck(grpc_completion_queue* cq, void* tag,
        error != GRPC_ERROR_NONE)) {
     const char* errmsg = grpc_error_string(error);
     GRPC_API_TRACE(
-        "cq_end_op_for_pluck(=%p, cq=%p, tag=%p, error=%s, "
+        "cq_end_op_for_pluck(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
-        7, (exec_ctx, cq, tag, errmsg, done, done_arg, storage));
+        6, (cq, tag, errmsg, done, done_arg, storage));
     if (GRPC_TRACER_ON(grpc_trace_operation_failures) &&
         error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
@@ -794,31 +790,40 @@ typedef struct {
   bool first_loop;
 } cq_is_finished_arg;
 
-static bool cq_is_next_finished(void* arg) {
-  cq_is_finished_arg* a = (cq_is_finished_arg*)arg;
-  grpc_completion_queue* cq = a->cq;
-  cq_next_data* cqd = (cq_next_data*)DATA_FROM_CQ(cq);
-  GPR_ASSERT(a->stolen_completion == NULL);
+class ExecCtxNext : public ExecCtx {
+ public:
+  ExecCtxNext(void* arg) : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
 
-  gpr_atm current_last_seen_things_queued_ever =
-      gpr_atm_no_barrier_load(&cqd->things_queued_ever);
+  bool CheckReadyToFinish() override {
+    cq_is_finished_arg* a = (cq_is_finished_arg*)check_ready_to_finish_arg_;
+    grpc_completion_queue* cq = a->cq;
+    cq_next_data* cqd = (cq_next_data*)DATA_FROM_CQ(cq);
+    GPR_ASSERT(a->stolen_completion == NULL);
 
-  if (current_last_seen_things_queued_ever != a->last_seen_things_queued_ever) {
-    a->last_seen_things_queued_ever =
+    gpr_atm current_last_seen_things_queued_ever =
         gpr_atm_no_barrier_load(&cqd->things_queued_ever);
 
-    /* Pop a cq_completion from the queue. Returns NULL if the queue is empty
-     * might return NULL in some cases even if the queue is not empty; but
-     * that
-     * is ok and doesn't affect correctness. Might effect the tail latencies a
-     * bit) */
-    a->stolen_completion = cq_event_queue_pop(&cqd->queue);
-    if (a->stolen_completion != NULL) {
-      return true;
+    if (current_last_seen_things_queued_ever !=
+        a->last_seen_things_queued_ever) {
+      a->last_seen_things_queued_ever =
+          gpr_atm_no_barrier_load(&cqd->things_queued_ever);
+
+      /* Pop a cq_completion from the queue. Returns NULL if the queue is empty
+       * might return NULL in some cases even if the queue is not empty; but
+       * that
+       * is ok and doesn't affect correctness. Might effect the tail latencies a
+       * bit) */
+      a->stolen_completion = cq_event_queue_pop(&cqd->queue);
+      if (a->stolen_completion != NULL) {
+        return true;
+      }
     }
+    return !a->first_loop && a->deadline < ExecCtx::Get()->Now();
   }
-  return !a->first_loop && a->deadline < grpc_exec_ctx_now();
-}
+
+ private:
+  void* check_ready_to_finish_arg_;
+};
 
 #ifndef NDEBUG
 static void dump_pending_tags(grpc_completion_queue* cq) {
@@ -873,7 +878,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       NULL,
       NULL,
       true};
-  ExecCtx _local_exec_ctx(0, cq_is_next_finished, &is_finished_arg);
+  ExecCtxNext _local_exec_ctx(&is_finished_arg);
   for (;;) {
     grpc_millis iteration_deadline = deadline_millis;
 
@@ -923,7 +928,8 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       break;
     }
 
-    if (!is_finished_arg.first_loop && grpc_exec_ctx_now() >= deadline_millis) {
+    if (!is_finished_arg.first_loop &&
+        ExecCtx::Get()->Now() >= deadline_millis) {
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
       dump_pending_tags(cq);
@@ -959,7 +965,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
 
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, &ret);
   GRPC_CQ_INTERNAL_UNREF(cq, "next");
-  grpc_exec_ctx_finish();
+
   GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
 
   GPR_TIMER_END("grpc_completion_queue_next", 0);
@@ -1039,37 +1045,46 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
   GPR_UNREACHABLE_CODE(return );
 }
 
-static bool cq_is_pluck_finished(void* arg) {
-  cq_is_finished_arg* a = (cq_is_finished_arg*)arg;
-  grpc_completion_queue* cq = a->cq;
-  cq_pluck_data* cqd = (cq_pluck_data*)DATA_FROM_CQ(cq);
+class ExecCtxPluck : public ExecCtx {
+ public:
+  ExecCtxPluck(void* arg) : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
 
-  GPR_ASSERT(a->stolen_completion == NULL);
-  gpr_atm current_last_seen_things_queued_ever =
-      gpr_atm_no_barrier_load(&cqd->things_queued_ever);
-  if (current_last_seen_things_queued_ever != a->last_seen_things_queued_ever) {
-    gpr_mu_lock(cq->mu);
-    a->last_seen_things_queued_ever =
+  bool CheckReadyToFinish() override {
+    cq_is_finished_arg* a = (cq_is_finished_arg*)check_ready_to_finish_arg_;
+    grpc_completion_queue* cq = a->cq;
+    cq_pluck_data* cqd = (cq_pluck_data*)DATA_FROM_CQ(cq);
+
+    GPR_ASSERT(a->stolen_completion == NULL);
+    gpr_atm current_last_seen_things_queued_ever =
         gpr_atm_no_barrier_load(&cqd->things_queued_ever);
-    grpc_cq_completion* c;
-    grpc_cq_completion* prev = &cqd->completed_head;
-    while ((c = (grpc_cq_completion*)(prev->next & ~(uintptr_t)1)) !=
-           &cqd->completed_head) {
-      if (c->tag == a->tag) {
-        prev->next = (prev->next & (uintptr_t)1) | (c->next & ~(uintptr_t)1);
-        if (c == cqd->completed_tail) {
-          cqd->completed_tail = prev;
+    if (current_last_seen_things_queued_ever !=
+        a->last_seen_things_queued_ever) {
+      gpr_mu_lock(cq->mu);
+      a->last_seen_things_queued_ever =
+          gpr_atm_no_barrier_load(&cqd->things_queued_ever);
+      grpc_cq_completion* c;
+      grpc_cq_completion* prev = &cqd->completed_head;
+      while ((c = (grpc_cq_completion*)(prev->next & ~(uintptr_t)1)) !=
+             &cqd->completed_head) {
+        if (c->tag == a->tag) {
+          prev->next = (prev->next & (uintptr_t)1) | (c->next & ~(uintptr_t)1);
+          if (c == cqd->completed_tail) {
+            cqd->completed_tail = prev;
+          }
+          gpr_mu_unlock(cq->mu);
+          a->stolen_completion = c;
+          return true;
         }
-        gpr_mu_unlock(cq->mu);
-        a->stolen_completion = c;
-        return true;
+        prev = c;
       }
-      prev = c;
+      gpr_mu_unlock(cq->mu);
     }
-    gpr_mu_unlock(cq->mu);
+    return !a->first_loop && a->deadline < ExecCtx::Get()->Now();
   }
-  return !a->first_loop && a->deadline < grpc_exec_ctx_now();
-}
+
+ private:
+  void* check_ready_to_finish_arg_;
+};
 
 static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
                            gpr_timespec deadline, void* reserved) {
@@ -1106,7 +1121,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       NULL,
       tag,
       true};
-  ExecCtx _local_exec_ctx(0, cq_is_pluck_finished, &is_finished_arg);
+  ExecCtxPluck _local_exec_ctx(&is_finished_arg);
   for (;;) {
     if (is_finished_arg.stolen_completion != NULL) {
       gpr_mu_unlock(cq->mu);
@@ -1153,7 +1168,8 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       dump_pending_tags(cq);
       break;
     }
-    if (!is_finished_arg.first_loop && grpc_exec_ctx_now() >= deadline_millis) {
+    if (!is_finished_arg.first_loop &&
+        ExecCtx::Get()->Now() >= deadline_millis) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
       memset(&ret, 0, sizeof(ret));
@@ -1182,7 +1198,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
 done:
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, &ret);
   GRPC_CQ_INTERNAL_UNREF(cq, "pluck");
-  grpc_exec_ctx_finish();
+
   GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
 
   GPR_TIMER_END("grpc_completion_queue_pluck", 0);
@@ -1238,7 +1254,7 @@ void grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
   GPR_TIMER_BEGIN("grpc_completion_queue_shutdown", 0);
   GRPC_API_TRACE("grpc_completion_queue_shutdown(cq=%p)", 1, (cq));
   cq->vtable->shutdown(cq);
-  grpc_exec_ctx_finish();
+
   GPR_TIMER_END("grpc_completion_queue_shutdown", 0);
 }
 
@@ -1249,7 +1265,7 @@ void grpc_completion_queue_destroy(grpc_completion_queue* cq) {
 
   ExecCtx _local_exec_ctx;
   GRPC_CQ_INTERNAL_UNREF(cq, "destroy");
-  grpc_exec_ctx_finish();
+
   GPR_TIMER_END("grpc_completion_queue_destroy", 0);
 }
 

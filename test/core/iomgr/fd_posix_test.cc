@@ -252,7 +252,7 @@ static void server_wait_and_shutdown(server* sv) {
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish();
+
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
@@ -367,7 +367,7 @@ static void client_wait_and_shutdown(client* cl) {
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish();
+
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
@@ -386,7 +386,7 @@ static void test_grpc_fd(void) {
   port = server_start(&sv);
   client_init(&cl);
   client_start(&cl, port);
-  grpc_exec_ctx_finish();
+
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   GPR_ASSERT(sv.read_bytes_total == cl.write_bytes_total);
@@ -469,7 +469,7 @@ static void test_grpc_fd_change(void) {
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish();
+
     gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(a.cb_that_ran == first_read_callback);
@@ -493,7 +493,7 @@ static void test_grpc_fd_change(void) {
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish();
+
     gpr_mu_lock(g_mu);
   }
   /* Except now we verify that second_read_callback ran instead */
@@ -501,7 +501,7 @@ static void test_grpc_fd_change(void) {
   gpr_mu_unlock(g_mu);
 
   grpc_fd_orphan(em_fd, NULL, NULL, false /* already_closed */, "d");
-  grpc_exec_ctx_finish();
+
   destroy_change_data(&a);
   destroy_change_data(&b);
   close(sv[1]);
@@ -523,9 +523,9 @@ int main(int argc, char** argv) {
   GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, &destroyed);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   gpr_free(g_pollset);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
   return 0;
 }

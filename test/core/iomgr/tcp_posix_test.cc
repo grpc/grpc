@@ -193,7 +193,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish();
+
     gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
@@ -201,7 +201,6 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
   grpc_slice_buffer_destroy_internal(&state.incoming);
   grpc_endpoint_destroy(ep);
-  grpc_exec_ctx_finish();
 }
 
 /* Write to a socket until it fills up, then read from it using the grpc_tcp
@@ -244,7 +243,7 @@ static void large_read_test(size_t slice_size) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish();
+
     gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
@@ -252,7 +251,6 @@ static void large_read_test(size_t slice_size) {
 
   grpc_slice_buffer_destroy_internal(&state.incoming);
   grpc_endpoint_destroy(ep);
-  grpc_exec_ctx_finish();
 }
 
 struct write_socket_state {
@@ -316,7 +314,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
                           grpc_timespec_to_millis_round_up(
                               grpc_timeout_milliseconds_to_deadline(10)))));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish();
+
     do {
       bytes_read =
           read(fd, buf, bytes_left > read_size ? read_size : bytes_left);
@@ -385,7 +383,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish();
+
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
@@ -393,7 +391,6 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   grpc_slice_buffer_destroy_internal(&outgoing);
   grpc_endpoint_destroy(ep);
   gpr_free(slices);
-  grpc_exec_ctx_finish();
 }
 
 void on_fd_released(void* arg, grpc_error* errors) {
@@ -453,7 +450,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
     gpr_log(GPR_DEBUG, "wakeup: read=%" PRIdPTR " target=%" PRIdPTR,
             state.read_bytes, state.target_read_bytes);
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
@@ -461,7 +458,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   grpc_slice_buffer_destroy_internal(&state.incoming);
   grpc_tcp_destroy_and_release_fd(ep, &fd, &fd_released_cb);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);
   while (!fd_released_done) {
     grpc_pollset_worker* worker = NULL;
@@ -472,7 +469,6 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   gpr_mu_unlock(g_mu);
   GPR_ASSERT(fd_released_done == 1);
   GPR_ASSERT(fd == sv[1]);
-  grpc_exec_ctx_finish();
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
   drain_socket_blocking(fd, written_bytes, written_bytes);
@@ -528,8 +524,6 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_add_to_pollset(f.server_ep, g_pollset);
 
-  grpc_exec_ctx_finish();
-
   return f;
 }
 
@@ -553,7 +547,7 @@ int main(int argc, char** argv) {
   GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, &destroyed);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
   gpr_free(g_pollset);
 

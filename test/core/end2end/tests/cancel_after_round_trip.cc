@@ -279,7 +279,6 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   if (args != NULL) {
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(args);
-    grpc_exec_ctx_finish();
   }
 
   cq_verifier_destroy(cqv);

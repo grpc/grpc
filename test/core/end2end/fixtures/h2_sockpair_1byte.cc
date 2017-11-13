@@ -49,7 +49,6 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   grpc_endpoint_add_to_pollset(sfd->server, grpc_cq_pollset(f->cq));
   grpc_server_setup_transport(f->server, transport, NULL,
                               grpc_server_get_channel_args(f->server));
-  grpc_exec_ctx_finish();
 }
 
 typedef struct {
@@ -103,7 +102,6 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   client_setup_transport(&cs, transport);
   GPR_ASSERT(f->client);
   grpc_chttp2_transport_start_reading(transport, NULL);
-  grpc_exec_ctx_finish();
 }
 
 static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
@@ -118,7 +116,6 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   transport = grpc_create_chttp2_transport(server_args, sfd->server, 0);
   server_setup_transport(f, transport);
   grpc_chttp2_transport_start_reading(transport, NULL);
-  grpc_exec_ctx_finish();
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {

@@ -42,7 +42,6 @@ static void test_succeeds(grpc_resolver_factory* factory, const char* string) {
   GPR_ASSERT(resolver != NULL);
   GRPC_RESOLVER_UNREF(resolver, "test_succeeds");
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish();
 }
 
 static void test_fails(grpc_resolver_factory* factory, const char* string) {
@@ -59,7 +58,6 @@ static void test_fails(grpc_resolver_factory* factory, const char* string) {
   resolver = grpc_resolver_factory_create_resolver(factory, &args);
   GPR_ASSERT(resolver == NULL);
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {
@@ -84,7 +82,6 @@ int main(int argc, char** argv) {
   {
     ExecCtx _local_exec_ctx;
     GRPC_COMBINER_UNREF(g_combiner, "test");
-    grpc_exec_ctx_finish();
   }
   grpc_shutdown();
 

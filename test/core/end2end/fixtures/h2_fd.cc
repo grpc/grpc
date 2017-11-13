@@ -75,8 +75,6 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   f->client = grpc_insecure_channel_create_from_fd(
       "fixture_client", sfd->fd_pair[0], client_args);
   GPR_ASSERT(f->client);
-
-  grpc_exec_ctx_finish();
 }
 
 static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
@@ -90,8 +88,6 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   grpc_server_start(f->server);
 
   grpc_server_add_insecure_channel_from_fd(f->server, NULL, sfd->fd_pair[1]);
-
-  grpc_exec_ctx_finish();
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {

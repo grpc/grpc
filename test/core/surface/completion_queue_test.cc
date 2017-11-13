@@ -151,7 +151,6 @@ static void test_cq_end_op(void) {
     GPR_ASSERT(ev.success);
 
     shutdown_and_destroy(cc);
-    grpc_exec_ctx_finish();
   }
 }
 
@@ -193,7 +192,6 @@ static void test_cq_tls_cache_full(void) {
     GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
 
     shutdown_and_destroy(cc);
-    grpc_exec_ctx_finish();
   }
 }
 
@@ -221,7 +219,6 @@ static void test_cq_tls_cache_empty(void) {
     GPR_ASSERT(
         grpc_completion_queue_thread_local_cache_flush(cc, &res_tag, &ok) == 0);
     shutdown_and_destroy(cc);
-    grpc_exec_ctx_finish();
   }
 }
 
@@ -322,7 +319,6 @@ static void test_pluck(void) {
     }
 
     shutdown_and_destroy(cc);
-    grpc_exec_ctx_finish();
   }
 }
 

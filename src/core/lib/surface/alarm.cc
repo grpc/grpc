@@ -51,7 +51,7 @@ static void alarm_unref(grpc_alarm* alarm) {
     if (alarm->cq != NULL) {
       GRPC_CQ_INTERNAL_UNREF(alarm->cq, "alarm");
     }
-    grpc_exec_ctx_finish();
+
     gpr_free(alarm);
   }
 }
@@ -126,13 +126,11 @@ void grpc_alarm_set(grpc_alarm* alarm, grpc_completion_queue* cq,
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
   grpc_timer_init(&alarm->alarm, grpc_timespec_to_millis_round_up(deadline),
                   &alarm->on_alarm);
-  grpc_exec_ctx_finish();
 }
 
 void grpc_alarm_cancel(grpc_alarm* alarm, void* reserved) {
   ExecCtx _local_exec_ctx;
   grpc_timer_cancel(&alarm->alarm);
-  grpc_exec_ctx_finish();
 }
 
 void grpc_alarm_destroy(grpc_alarm* alarm, void* reserved) {

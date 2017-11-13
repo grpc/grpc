@@ -141,7 +141,6 @@ static void on_md_processing_done(
   }
   grpc_metadata_array_destroy(&calld->md);
   GRPC_CALL_STACK_UNREF(calld->owning_call, "server_auth_metadata");
-  grpc_exec_ctx_finish();
 }
 
 static void cancel_call(void* arg, grpc_error* error) {

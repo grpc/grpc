@@ -39,6 +39,6 @@ int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
 
     GRPC_ERROR_UNREF(err);
   }
-  grpc_exec_ctx_finish();
+
   return port_num;
 }

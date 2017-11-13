@@ -142,7 +142,6 @@ static void handle_close_callback(uv_handle_t* handle) {
   if (sp->server->open_ports == 0 && sp->server->shutdown) {
     finish_shutdown(sp->server);
   }
-  grpc_exec_ctx_finish();
 }
 
 static void close_listener(grpc_tcp_listener* sp) {
@@ -177,14 +176,8 @@ void grpc_tcp_server_unref(grpc_tcp_server* s) {
     /* Complete shutdown_starting work before destroying. */
     ExecCtx _local_exec_ctx;
     GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);
-    if (exec_ctx == NULL) {
-      grpc_exec_ctx_flush();
-      tcp_server_destroy(s);
-      grpc_exec_ctx_finish();
-    } else {
-      grpc_exec_ctx_finish();
-      tcp_server_destroy(s);
-    }
+    ExecCtx::Get()->Flush();
+    tcp_server_destroy(s);
   }
 }
 
@@ -255,7 +248,6 @@ static void on_connect(uv_stream_t* server, int status) {
   } else {
     sp->has_pending_connection = true;
   }
-  grpc_exec_ctx_finish();
 }
 
 static grpc_error* add_socket_to_server(grpc_tcp_server* s, uv_tcp_t* handle,

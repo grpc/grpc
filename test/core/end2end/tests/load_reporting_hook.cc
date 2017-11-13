@@ -302,7 +302,6 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   {
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(lr_server_args);
-    grpc_exec_ctx_finish();
   }
   config.tear_down_data(&f);
 }

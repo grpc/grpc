@@ -116,7 +116,6 @@ static void test_too_many_plucks(void) {
   }
 
   shutdown_and_destroy(cc);
-  grpc_exec_ctx_finish();
 }
 
 #define TEST_THREAD_EVENTS 10000
@@ -165,12 +164,10 @@ static void producer_thread(void* arg) {
                    static_cast<grpc_cq_completion*>(
                        gpr_malloc(sizeof(grpc_cq_completion))));
     opt->events_triggered++;
-    grpc_exec_ctx_finish();
   }
 
   gpr_log(GPR_INFO, "producer %d phase 2 done", opt->id);
   gpr_event_set(&opt->on_finished, (void*)(intptr_t)1);
-  grpc_exec_ctx_finish();
 }
 
 static void consumer_thread(void* arg) {

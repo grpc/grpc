@@ -45,7 +45,6 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   f.server_ep = p.server;
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_add_to_pollset(f.server_ep, g_pollset);
-  grpc_exec_ctx_finish();
 
   return f;
 }
@@ -69,7 +68,7 @@ int main(int argc, char** argv) {
   GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, &destroyed);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
   gpr_free(g_pollset);
 

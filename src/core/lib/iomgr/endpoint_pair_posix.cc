@@ -65,7 +65,6 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
                              "socketpair-client");
   gpr_free(final_name);
 
-  grpc_exec_ctx_finish();
   return p;
 }
 

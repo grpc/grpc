@@ -134,7 +134,6 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   {
     ExecCtx _local_exec_ctx;
     GPR_ASSERT(grpc_msg_compress(algorithm, &sliceb_in, &sliceb_out));
-    grpc_exec_ctx_finish();
   }
 
   buffer = grpc_raw_compressed_byte_buffer_create(sliceb_out.slices,

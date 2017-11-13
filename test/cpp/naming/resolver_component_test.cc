@@ -171,7 +171,7 @@ void ArgsFinish(ArgsStruct* args) {
   grpc_pollset_shutdown(args->pollset, &DoNothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
   grpc_channel_args_destroy(args->channel_args);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
   GRPC_COMBINER_UNREF(args->lock, NULL);
@@ -202,7 +202,6 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
                                         grpc_timespec_to_millis_round_up(
                                             NSecondDeadline(1))));
     gpr_mu_unlock(args->mu);
-    grpc_exec_ctx_finish();
   }
   gpr_event_set(&args->ev, (void*)1);
 }
@@ -295,11 +294,10 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
                     (void*)&args, grpc_combiner_scheduler(args.lock));
   grpc_resolver_next_locked(resolver, &args.channel_args,
                             &on_resolver_result_changed);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   GRPC_RESOLVER_UNREF(resolver, NULL);
   ArgsFinish(&args);
-  grpc_exec_ctx_finish();
 }
 
 }  // namespace

@@ -133,7 +133,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
                                                        fake_result);
     grpc_channel_args_destroy(fake_result);
     grpc_lb_addresses_destroy(addresses);
-    grpc_exec_ctx_finish();
   }
 
   void ResetStub(const grpc::string& lb_policy_name = "") {

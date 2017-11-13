@@ -265,7 +265,7 @@ static void dns_ares_on_resolved_locked(void* arg, grpc_error* error) {
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
     grpc_millis next_try =
         grpc_backoff_step(&r->backoff_state).next_attempt_start_time;
-    grpc_millis timeout = next_try - grpc_exec_ctx_now();
+    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
     GPR_ASSERT(!r->have_retry_timer);

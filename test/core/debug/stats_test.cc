@@ -51,7 +51,6 @@ TEST(StatsTest, IncCounters) {
 
     ExecCtx _local_exec_ctx;
     GRPC_STATS_INC_COUNTER((grpc_stats_counters)i);
-    grpc_exec_ctx_finish();
 
     EXPECT_EQ(snapshot.delta().counters[i], 1);
   }
@@ -62,7 +61,6 @@ TEST(StatsTest, IncSpecificCounter) {
 
   ExecCtx _local_exec_ctx;
   GRPC_STATS_INC_SYSCALL_POLL();
-  grpc_exec_ctx_finish();
 
   EXPECT_EQ(snapshot.delta().counters[GRPC_STATS_COUNTER_SYSCALL_POLL], 1);
 }
@@ -96,7 +94,6 @@ TEST_P(HistogramTest, IncHistogram) {
 
       ExecCtx _local_exec_ctx;
       grpc_stats_inc_histogram[kHistogram](j);
-      grpc_exec_ctx_finish();
 
       auto delta = snapshot.delta();
 

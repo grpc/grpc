@@ -45,12 +45,11 @@ int main(int argc, char** argv) {
     p = grpc_iomgr_create_endpoint_pair("test", NULL);
     grpc_endpoint_destroy(p.client);
     grpc_endpoint_destroy(p.server);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
 
   grpc_resource_quota_unref(resource_quota);
 
-  grpc_exec_ctx_finish();
   grpc_shutdown();
   return 0;
 }

@@ -132,7 +132,6 @@ static void request_for_disabled_algorithm(
     ExecCtx _local_exec_ctx;
     server_args = grpc_channel_args_stream_compression_algorithm_set_state(
         &server_args, algorithm_to_disable, false);
-    grpc_exec_ctx_finish();
   }
 
   f = begin_test(config, test_name, client_args, server_args);
@@ -261,7 +260,6 @@ static void request_for_disabled_algorithm(
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(client_args);
     grpc_channel_args_destroy(server_args);
-    grpc_exec_ctx_finish();
   }
 
   end_test(&f);
@@ -547,7 +545,6 @@ static void request_with_payload_template(
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(client_args);
     grpc_channel_args_destroy(server_args);
-    grpc_exec_ctx_finish();
   }
 
   end_test(&f);

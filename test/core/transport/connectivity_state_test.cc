@@ -66,7 +66,6 @@ static void test_check(void) {
   GPR_ASSERT(grpc_connectivity_state_check(&tracker) == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_connectivity_state_destroy(&tracker);
-  grpc_exec_ctx_finish();
 }
 
 static void test_subscribe_then_unsubscribe(void) {
@@ -80,16 +79,15 @@ static void test_subscribe_then_unsubscribe(void) {
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
   GPR_ASSERT(grpc_connectivity_state_notify_on_state_change(&tracker, &state,
                                                             closure));
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(g_counter == 0);
   grpc_connectivity_state_notify_on_state_change(&tracker, NULL, closure);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(g_counter == 1);
 
   grpc_connectivity_state_destroy(&tracker);
-  grpc_exec_ctx_finish();
 }
 
 static void test_subscribe_then_destroy(void) {
@@ -103,11 +101,11 @@ static void test_subscribe_then_destroy(void) {
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
   GPR_ASSERT(grpc_connectivity_state_notify_on_state_change(&tracker, &state,
                                                             closure));
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(g_counter == 0);
   grpc_connectivity_state_destroy(&tracker);
-  grpc_exec_ctx_finish();
+
   GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(g_counter == 1);
 }
@@ -123,11 +121,11 @@ static void test_subscribe_with_failure_then_destroy(void) {
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_SHUTDOWN, "xxx");
   GPR_ASSERT(0 == grpc_connectivity_state_notify_on_state_change(
                       &tracker, &state, closure));
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(g_counter == 0);
   grpc_connectivity_state_destroy(&tracker);
-  grpc_exec_ctx_finish();
+
   GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(g_counter == 1);
 }

@@ -417,7 +417,6 @@ static void on_failed(bidirectional_stream* stream, int net_error) {
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
   GRPC_CRONET_STREAM_UNREF(s, "cronet transport");
-  grpc_exec_ctx_finish();
 }
 
 /*
@@ -444,7 +443,6 @@ static void on_canceled(bidirectional_stream* stream) {
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
   GRPC_CRONET_STREAM_UNREF(s, "cronet transport");
-  grpc_exec_ctx_finish();
 }
 
 /*
@@ -463,7 +461,6 @@ static void on_succeeded(bidirectional_stream* stream) {
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
   GRPC_CRONET_STREAM_UNREF(s, "cronet transport");
-  grpc_exec_ctx_finish();
 }
 
 /*
@@ -492,7 +489,6 @@ static void on_stream_ready(bidirectional_stream* stream) {
   }
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
-  grpc_exec_ctx_finish();
 }
 
 /*
@@ -548,7 +544,6 @@ static void on_response_headers_received(
   }
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
-  grpc_exec_ctx_finish();
 }
 
 /*
@@ -566,7 +561,6 @@ static void on_write_completed(bidirectional_stream* stream, const char* data) {
   s->state.state_callback_received[OP_SEND_MESSAGE] = true;
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
-  grpc_exec_ctx_finish();
 }
 
 /*
@@ -608,7 +602,6 @@ static void on_read_completed(bidirectional_stream* stream, char* data,
     gpr_mu_unlock(&s->mu);
     execute_from_storage(s);
   }
-  grpc_exec_ctx_finish();
 }
 
 /*
@@ -666,7 +659,6 @@ static void on_response_trailers_received(
     gpr_mu_unlock(&s->mu);
     execute_from_storage(s);
   }
-  grpc_exec_ctx_finish();
 }
 
 /*

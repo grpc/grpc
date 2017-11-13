@@ -280,7 +280,6 @@ static void test_invoke_request_response_with_payload(
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(client_args);
     grpc_channel_args_destroy(server_args);
-    grpc_exec_ctx_finish();
   }
 }
 

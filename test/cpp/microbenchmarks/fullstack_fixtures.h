@@ -205,8 +205,6 @@ class EndpointPairFixture : public BaseFixture {
 
       channel_ = CreateChannelInternal("", channel);
     }
-
-    grpc_exec_ctx_finish();
   }
 
   virtual ~EndpointPairFixture() {

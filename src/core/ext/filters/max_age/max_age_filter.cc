@@ -100,7 +100,7 @@ static void decrease_call_count(channel_data* chand) {
   if (gpr_atm_full_fetch_add(&chand->call_count, -1) == 1) {
     GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_idle_timer");
     grpc_timer_init(&chand->max_idle_timer,
-                    grpc_exec_ctx_now() + chand->max_connection_idle,
+                    ExecCtx::Get()->Now() + chand->max_connection_idle,
                     &chand->close_max_idle_channel);
   }
 }
@@ -121,7 +121,7 @@ static void start_max_age_timer_after_init(void* arg, grpc_error* error) {
   chand->max_age_timer_pending = true;
   GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_age_timer");
   grpc_timer_init(&chand->max_age_timer,
-                  grpc_exec_ctx_now() + chand->max_connection_age,
+                  ExecCtx::Get()->Now() + chand->max_connection_age,
                   &chand->close_max_age_channel);
   gpr_mu_unlock(&chand->max_age_timer_mu);
   grpc_transport_op* op = grpc_make_transport_op(NULL);
@@ -141,7 +141,7 @@ static void start_max_age_grace_timer_after_goaway_op(void* arg,
   grpc_timer_init(&chand->max_age_grace_timer,
                   chand->max_connection_age_grace == GRPC_MILLIS_INF_FUTURE
                       ? GRPC_MILLIS_INF_FUTURE
-                      : grpc_exec_ctx_now() + chand->max_connection_age_grace,
+                      : ExecCtx::Get()->Now() + chand->max_connection_age_grace,
                   &chand->force_close_max_age_channel);
   gpr_mu_unlock(&chand->max_age_timer_mu);
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack,

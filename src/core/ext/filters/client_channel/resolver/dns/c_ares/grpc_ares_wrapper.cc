@@ -101,18 +101,7 @@ static void grpc_ares_request_unref(grpc_ares_request* r) {
      request */
   if (gpr_unref(&r->pending_queries)) {
     /* TODO(zyc): Sort results with RFC6724 before invoking on_done. */
-    if (exec_ctx == NULL) {
-      /* A new exec_ctx is created here, as the c-ares interface does not
-         provide one in ares_host_callback. It's safe to schedule on_done with
-         the newly created exec_ctx, since the caller has been warned not to
-         acquire locks in on_done. ares_dns_resolver is using combiner to
-         protect resources needed by on_done. */
-      ExecCtx _local_exec_ctx;
-      GRPC_CLOSURE_SCHED(r->on_done, r->error);
-      grpc_exec_ctx_finish();
-    } else {
-      GRPC_CLOSURE_SCHED(r->on_done, r->error);
-    }
+    GRPC_CLOSURE_SCHED(r->on_done, r->error);
     gpr_mu_destroy(&r->mu);
     grpc_ares_ev_driver_destroy(r->ev_driver);
     gpr_free(r);
@@ -263,7 +252,6 @@ static void on_srv_query_done_cb(void* arg, int status, int timeouts,
     }
   }
   grpc_ares_request_unref(r);
-  grpc_exec_ctx_finish();
 }
 
 static const char g_service_config_attribute_prefix[] = "grpc_config=";

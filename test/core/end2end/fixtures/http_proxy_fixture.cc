@@ -391,7 +391,7 @@ static void on_read_request_done(void* arg, grpc_error* error) {
   GPR_ASSERT(resolved_addresses->naddrs >= 1);
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
-  const grpc_millis deadline = grpc_exec_ctx_now() + 10 * GPR_MS_PER_SEC;
+  const grpc_millis deadline = ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
                           conn->pollset_set, NULL,
                           &resolved_addresses->addrs[0], deadline);
@@ -449,13 +449,13 @@ static void thread_main(void* arg) {
     gpr_ref(&proxy->users);
     grpc_pollset_worker* worker = NULL;
     gpr_mu_lock(proxy->mu);
-    GRPC_LOG_IF_ERROR("grpc_pollset_work",
-                      grpc_pollset_work(proxy->pollset, &worker,
-                                        grpc_exec_ctx_now() + GPR_MS_PER_SEC));
+    GRPC_LOG_IF_ERROR(
+        "grpc_pollset_work",
+        grpc_pollset_work(proxy->pollset, &worker,
+                          ExecCtx::Get()->Now() + GPR_MS_PER_SEC));
     gpr_mu_unlock(proxy->mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   } while (!gpr_unref(&proxy->users));
-  grpc_exec_ctx_finish();
 }
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
@@ -489,7 +489,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   proxy->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(proxy->pollset, &proxy->mu);
   grpc_tcp_server_start(proxy->server, &proxy->pollset, 1, on_accept, proxy);
-  grpc_exec_ctx_finish();
+
   // Start proxy thread.
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
@@ -516,7 +516,6 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
                                             grpc_schedule_on_exec_ctx));
   GRPC_COMBINER_UNREF(proxy->combiner, "test");
   gpr_free(proxy);
-  grpc_exec_ctx_finish();
 }
 
 const char* grpc_end2end_http_proxy_get_proxy_name(

@@ -30,7 +30,6 @@ static void test_no_op(void) {
   gpr_log(GPR_DEBUG, "test_no_op");
   ExecCtx _local_exec_ctx;
   GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
-  grpc_exec_ctx_finish();
 }
 
 static void set_event_to_true(void* value, grpc_error* error) {
@@ -47,11 +46,10 @@ static void test_execute_one(void) {
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(set_event_to_true, &done,
                                          grpc_combiner_scheduler(lock)),
                      GRPC_ERROR_NONE);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
              NULL);
   GRPC_COMBINER_UNREF(lock, "test_execute_one");
-  grpc_exec_ctx_finish();
 }
 
 typedef struct {
@@ -84,7 +82,7 @@ static void execute_many_loop(void* a) {
       GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(
                              check_one, c, grpc_combiner_scheduler(args->lock)),
                          GRPC_ERROR_NONE);
-      grpc_exec_ctx_flush();
+      ExecCtx::Get()->Flush();
     }
     // sleep for a little bit, to test a combiner draining and another thread
     // picking it up
@@ -93,7 +91,6 @@ static void execute_many_loop(void* a) {
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(set_event_to_true, &args->done,
                                          grpc_combiner_scheduler(args->lock)),
                      GRPC_ERROR_NONE);
-  grpc_exec_ctx_finish();
 }
 
 static void test_execute_many(void) {
@@ -117,7 +114,6 @@ static void test_execute_many(void) {
   }
   ExecCtx _local_exec_ctx;
   GRPC_COMBINER_UNREF(lock, "test_execute_many");
-  grpc_exec_ctx_finish();
 }
 
 static gpr_event got_in_finally;
@@ -142,11 +138,10 @@ static void test_execute_finally(void) {
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_CREATE(add_finally, lock, grpc_combiner_scheduler(lock)),
       GRPC_ERROR_NONE);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&got_in_finally,
                             grpc_timeout_seconds_to_deadline(5)) != NULL);
   GRPC_COMBINER_UNREF(lock, "test_execute_finally");
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

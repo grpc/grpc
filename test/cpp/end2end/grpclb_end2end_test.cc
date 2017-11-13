@@ -470,7 +470,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_fake_resolver_response_generator_set_response(response_generator_,
                                                        &fake_result);
     grpc_lb_addresses_destroy(addresses);
-    grpc_exec_ctx_finish();
   }
 
   const std::vector<int> GetBackendPorts(const size_t start_index = 0) const {

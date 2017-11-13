@@ -68,7 +68,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     }
     return;
   }
-  grpc_millis now = grpc_exec_ctx_now();
+  grpc_millis now = ExecCtx::Get()->Now();
   grpc_millis next_allowed_ping =
       t->ping_state.last_ping_sent_time +
       t->ping_policy.min_sent_ping_interval_without_data;

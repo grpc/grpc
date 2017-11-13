@@ -56,7 +56,7 @@ static void finish_connection() {
   ExecCtx _local_exec_ctx;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
-  grpc_exec_ctx_finish();
+
   gpr_mu_unlock(g_mu);
 }
 
@@ -127,13 +127,11 @@ void test_succeeds(void) {
                           grpc_timespec_to_millis_round_up(
                               grpc_timeout_seconds_to_deadline(5)))));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
 
   gpr_mu_unlock(g_mu);
-
-  grpc_exec_ctx_finish();
 }
 
 void test_fails(void) {
@@ -177,12 +175,11 @@ void test_fails(void) {
         break;
     }
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
 
   gpr_mu_unlock(g_mu);
-  grpc_exec_ctx_finish();
 }
 
 static void destroy_pollset(void* p, grpc_error* error) {
@@ -198,7 +195,7 @@ int main(int argc, char** argv) {
   g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_pollset_set_add_pollset(g_pollset_set, g_pollset);
-  grpc_exec_ctx_finish();
+
   test_succeeds();
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
@@ -206,7 +203,7 @@ int main(int argc, char** argv) {
   GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, &destroyed);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
   gpr_free(g_pollset);
   return 0;

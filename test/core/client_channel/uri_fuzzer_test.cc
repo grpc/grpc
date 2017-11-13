@@ -38,7 +38,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if ((x = grpc_uri_parse(s, 1))) {
     grpc_uri_destroy(x);
   }
-  grpc_exec_ctx_finish();
+
   gpr_free(s);
   return 0;
 }

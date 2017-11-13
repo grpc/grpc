@@ -78,7 +78,6 @@ void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
       break;
   }
   gpr_free(bb);
-  grpc_exec_ctx_finish();
 }
 
 size_t grpc_byte_buffer_length(grpc_byte_buffer* bb) {

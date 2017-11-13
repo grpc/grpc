@@ -53,7 +53,6 @@ static void test_algorithm_mesh(void) {
     GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
     grpc_slice_unref_internal(mdstr);
     GRPC_MDELEM_UNREF(mdelem);
-    grpc_exec_ctx_finish();
   }
 
   /* test failure */
@@ -84,7 +83,6 @@ static void test_algorithm_failure(void) {
           static_cast<int>(GRPC_COMPRESS_ALGORITHMS_COUNT) + 1)),
       grpc_empty_slice()));
   grpc_slice_unref_internal(mdstr);
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

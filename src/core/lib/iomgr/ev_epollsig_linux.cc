@@ -1090,7 +1090,7 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
 
 static int poll_deadline_to_millis_timeout(grpc_millis millis) {
   if (millis == GRPC_MILLIS_INF_FUTURE) return -1;
-  grpc_millis delta = millis - grpc_exec_ctx_now();
+  grpc_millis delta = millis - ExecCtx::Get()->Now();
   if (delta > INT_MAX)
     return INT_MAX;
   else if (delta < 0)
@@ -1220,7 +1220,7 @@ static void pollset_work_and_unlock(grpc_pollset* pollset,
   GRPC_STATS_INC_SYSCALL_POLL();
   ep_rv =
       epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms, sig_mask);
-  GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX();
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (ep_rv < 0) {
     if (errno != EINTR) {
       gpr_asprintf(&err_msg,
@@ -1350,7 +1350,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
 
     pollset_work_and_unlock(pollset, &worker, timeout_ms, &g_orig_sigmask,
                             &error);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
 
     gpr_mu_lock(&pollset->po.mu);
 
@@ -1373,7 +1373,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     finish_shutdown_locked(pollset);
 
     gpr_mu_unlock(&pollset->po.mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     gpr_mu_lock(&pollset->po.mu);
   }
 

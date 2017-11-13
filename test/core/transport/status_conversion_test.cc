@@ -26,7 +26,7 @@
   do {                                                               \
     ExecCtx _local_exec_ctx;                                         \
     GPR_ASSERT(grpc_http2_error_to_grpc_status(a, deadline) == (b)); \
-    grpc_exec_ctx_finish();                                          \
+                                                                     \
   } while (0)
 #define GRPC_STATUS_TO_HTTP2_STATUS(a, b) \
   GPR_ASSERT(grpc_status_to_http2_status(a) == (b))

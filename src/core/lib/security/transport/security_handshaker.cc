@@ -266,7 +266,6 @@ static void on_handshake_next_done_grpc_wrapper(
   } else {
     gpr_mu_unlock(&h->mu);
   }
-  grpc_exec_ctx_finish();
 }
 
 static grpc_error* do_handshaker_next_locked(

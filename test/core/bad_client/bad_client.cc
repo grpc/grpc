@@ -60,7 +60,6 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   ExecCtx _local_exec_ctx;
   grpc_server_setup_transport(a->server, transport, NULL,
                               grpc_server_get_channel_args(a->server));
-  grpc_exec_ctx_finish();
 }
 
 static void read_done(void* arg, grpc_error* error) {
@@ -118,7 +117,6 @@ void grpc_run_bad_client_test(
   transport = grpc_create_chttp2_transport(NULL, sfd.server, 0);
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, NULL);
-  grpc_exec_ctx_finish();
 
   /* Bind everything into the same pollset */
   grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(a.cq));
@@ -137,7 +135,6 @@ void grpc_run_bad_client_test(
 
   /* Write data */
   grpc_endpoint_write(sfd.client, &outgoing, &done_write_closure);
-  grpc_exec_ctx_finish();
 
   /* Await completion, unless the request is large and write may not finish
    * before the peer shuts down. */
@@ -150,7 +147,7 @@ void grpc_run_bad_client_test(
     grpc_endpoint_shutdown(
         sfd.client, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
     grpc_endpoint_destroy(sfd.client);
-    grpc_exec_ctx_finish();
+
     sfd.client = NULL;
   }
 
@@ -170,7 +167,7 @@ void grpc_run_bad_client_test(
         GRPC_CLOSURE_INIT(&read_done_closure, read_done, &read_done_event,
                           grpc_schedule_on_exec_ctx);
         grpc_endpoint_read(sfd.client, &incoming, &read_done_closure);
-        grpc_exec_ctx_finish();
+
         do {
           GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
           GPR_ASSERT(grpc_completion_queue_next(
@@ -188,7 +185,6 @@ void grpc_run_bad_client_test(
     grpc_endpoint_shutdown(
         sfd.client, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
     grpc_endpoint_destroy(sfd.client);
-    grpc_exec_ctx_finish();
   }
 
   GPR_ASSERT(
@@ -203,6 +199,5 @@ void grpc_run_bad_client_test(
   grpc_completion_queue_destroy(a.cq);
   grpc_slice_buffer_destroy_internal(&outgoing);
 
-  grpc_exec_ctx_finish();
   grpc_shutdown();
 }

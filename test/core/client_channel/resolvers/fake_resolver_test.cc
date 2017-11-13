@@ -109,7 +109,7 @@ static void test_fake_resolver() {
                                                      results);
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_seconds_to_deadline(5)) != NULL);
 
@@ -144,7 +144,7 @@ static void test_fake_resolver() {
                                                      results_update);
   grpc_resolver_next_locked(resolver, &on_res_arg_update.resolver_result,
                             on_resolution);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg_update.ev,
                             grpc_timeout_seconds_to_deadline(5)) != NULL);
 
@@ -153,14 +153,14 @@ static void test_fake_resolver() {
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_milliseconds_to_deadline(100)) ==
              NULL);
 
   GRPC_COMBINER_UNREF(combiner, "test_fake_resolver");
   GRPC_RESOLVER_UNREF(resolver, "test_fake_resolver");
-  grpc_exec_ctx_finish();
+
   grpc_fake_resolver_response_generator_unref(response_generator);
 }
 

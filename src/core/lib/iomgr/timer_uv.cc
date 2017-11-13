@@ -51,7 +51,6 @@ void run_expired_timer(uv_timer_t* handle) {
   timer->pending = 0;
   GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_NONE);
   stop_uv_timer(handle);
-  grpc_exec_ctx_finish();
 }
 
 void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
@@ -60,13 +59,13 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
   uv_timer_t* uv_timer;
   GRPC_UV_ASSERT_SAME_THREAD();
   timer->closure = closure;
-  if (deadline <= grpc_exec_ctx_now()) {
+  if (deadline <= ExecCtx::Get()->Now()) {
     timer->pending = 0;
     GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_NONE);
     return;
   }
   timer->pending = 1;
-  timeout = (uint64_t)(deadline - grpc_exec_ctx_now());
+  timeout = (uint64_t)(deadline - ExecCtx::Get()->Now());
   uv_timer = (uv_timer_t*)gpr_malloc(sizeof(uv_timer_t));
   uv_timer_init(uv_default_loop(), uv_timer);
   uv_timer->data = timer;

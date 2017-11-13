@@ -75,7 +75,6 @@ void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
 void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
   ExecCtx _local_exec_ctx;
   grpc_slice_buffer_destroy_internal(sb);
-  grpc_exec_ctx_finish();
 }
 
 uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
@@ -175,7 +174,6 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb) {
 void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
   ExecCtx _local_exec_ctx;
   grpc_slice_buffer_reset_and_unref_internal(sb);
-  grpc_exec_ctx_finish();
 }
 
 void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {

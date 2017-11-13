@@ -160,7 +160,6 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
   grpc_channel_args_destroy(new_client_args);
   grpc_channel_credentials_release(ssl_creds);
   grpc_call_credentials_release(oauth2_creds);
-  grpc_exec_ctx_finish();
 }
 
 static int fail_server_auth_check(grpc_channel_args* server_args) {

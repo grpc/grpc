@@ -66,9 +66,8 @@ void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
-  grpc_exec_ctx_invalidate_now();
+  ExecCtx::Get()->InvalidateNow();
   estimator->CompletePing();
-  grpc_exec_ctx_finish();
 }
 
 void AddSample(BdpEstimator* estimator, int64_t sample) {

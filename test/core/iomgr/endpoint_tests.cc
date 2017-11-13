@@ -213,7 +213,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
      even when bytes_written is unsigned. */
   state.bytes_written -= state.current_write_size;
   read_and_write_test_write_handler(&state, GRPC_ERROR_NONE);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read);
 
@@ -225,24 +225,23 @@ static void read_and_write_test(grpc_endpoint_test_config config,
     grpc_endpoint_shutdown(
         state.write_ep, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   }
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   gpr_mu_lock(g_mu);
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker* worker = NULL;
-    GPR_ASSERT(grpc_exec_ctx_now() < deadline);
+    GPR_ASSERT(ExecCtx::Get()->Now() < deadline);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
   }
   gpr_mu_unlock(g_mu);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   end_test(config);
   grpc_slice_buffer_destroy_internal(&state.outgoing);
   grpc_slice_buffer_destroy_internal(&state.incoming);
   grpc_endpoint_destroy(state.read_ep);
   grpc_endpoint_destroy(state.write_ep);
-  grpc_exec_ctx_finish();
 }
 
 static void inc_on_failure(void* arg, grpc_error* error) {
@@ -253,16 +252,16 @@ static void inc_on_failure(void* arg, grpc_error* error) {
 }
 
 static void wait_for_fail_count(int* fail_count, int want_fail_count) {
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);
   grpc_millis deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
-  while (grpc_exec_ctx_now() < deadline && *fail_count < want_fail_count) {
+  while (ExecCtx::Get()->Now() < deadline && *fail_count < want_fail_count) {
     grpc_pollset_worker* worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(*fail_count == want_fail_count);
@@ -303,7 +302,6 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
 
   grpc_endpoint_destroy(f.client_ep);
   grpc_endpoint_destroy(f.server_ep);
-  grpc_exec_ctx_finish();
 }
 
 void grpc_endpoint_tests(grpc_endpoint_test_config config,

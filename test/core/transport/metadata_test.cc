@@ -80,7 +80,7 @@ static void test_create_metadata(bool intern_keys, bool intern_values) {
   GRPC_MDELEM_UNREF(m1);
   GRPC_MDELEM_UNREF(m2);
   GRPC_MDELEM_UNREF(m3);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
 }
 
@@ -103,7 +103,7 @@ static void test_create_many_ephemeral_metadata(bool intern_keys,
         maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
         maybe_intern(grpc_slice_from_copied_string(buffer), intern_values)));
   }
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
 }
 
@@ -138,7 +138,7 @@ static void test_create_many_persistant_metadata(void) {
   for (i = 0; i < MANY; i++) {
     GRPC_MDELEM_UNREF(created[i]);
   }
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
 
   gpr_free(created);
@@ -169,7 +169,7 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
     GPR_ASSERT(a.payload == b.payload);
     GPR_ASSERT(a.payload == c.payload);
   }
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
 }
 
@@ -209,7 +209,7 @@ static void test_identity_laws(bool intern_keys, bool intern_values) {
   GRPC_MDELEM_UNREF(a);
   GRPC_MDELEM_UNREF(b);
   GRPC_MDELEM_UNREF(c);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
 }
 
@@ -259,7 +259,6 @@ static void test_things_stick_around(void) {
     }
   }
 
-  grpc_exec_ctx_finish();
   grpc_shutdown();
   gpr_free(strs);
   gpr_free(shuf);
@@ -284,7 +283,7 @@ static void test_user_data_works(void) {
   grpc_mdelem_set_user_data(md, gpr_free, ud2);
   GPR_ASSERT(grpc_mdelem_get_user_data(md, gpr_free) == ud1);
   GRPC_MDELEM_UNREF(md);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
 }
 
@@ -340,7 +339,6 @@ static void test_mdelem_sizes_in_hpack(bool intern_key, bool intern_value) {
                               intern_value);
   }
 
-  grpc_exec_ctx_finish();
   grpc_shutdown();
 }
 
@@ -366,7 +364,6 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
     GRPC_MDELEM_UNREF(q);
   }
 
-  grpc_exec_ctx_finish();
   grpc_shutdown();
 }
 

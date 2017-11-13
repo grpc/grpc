@@ -49,7 +49,7 @@ void grpc_iomgr_init() {
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
-  grpc_exec_ctx_global_init();
+  ExecCtx::GlobalInit();
   grpc_executor_init();
   grpc_timer_list_init();
   g_root_object.next = g_root_object.prev = &g_root_object;
@@ -98,11 +98,10 @@ void grpc_iomgr_shutdown() {
       }
       last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
     }
-    exec_ctx->now_is_valid = true;
-    exec_ctx->now = GRPC_MILLIS_INF_FUTURE;
+    ExecCtx::Get()->SetNow(GRPC_MILLIS_INF_FUTURE);
     if (grpc_timer_check(NULL) == GRPC_TIMERS_FIRED) {
       gpr_mu_unlock(&g_mu);
-      grpc_exec_ctx_flush();
+      ExecCtx::Get()->Flush();
       grpc_iomgr_platform_flush();
       gpr_mu_lock(&g_mu);
       continue;
@@ -137,14 +136,14 @@ void grpc_iomgr_shutdown() {
   gpr_mu_unlock(&g_mu);
 
   grpc_timer_list_shutdown();
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   /* ensure all threads have left g_mu */
   gpr_mu_lock(&g_mu);
   gpr_mu_unlock(&g_mu);
 
   grpc_iomgr_platform_shutdown();
-  grpc_exec_ctx_global_shutdown();
+  ExecCtx::GlobalShutdown();
   grpc_network_status_shutdown();
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_rcv);

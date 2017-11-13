@@ -60,5 +60,4 @@ void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
   op->bind_pollset = grpc_cq_pollset(cq);
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
   top_elem->filter->start_transport_op(top_elem, op);
-  grpc_exec_ctx_finish();
 }

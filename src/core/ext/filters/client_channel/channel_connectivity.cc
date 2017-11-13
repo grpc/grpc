@@ -41,14 +41,14 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   if (client_channel_elem->filter == &grpc_client_channel_filter) {
     state = grpc_client_channel_check_connectivity_state(client_channel_elem,
                                                          try_to_connect);
-    grpc_exec_ctx_finish();
+
     return state;
   }
   gpr_log(GPR_ERROR,
           "grpc_channel_check_connectivity_state called on something that is "
           "not a client channel, but '%s'",
           client_channel_elem->filter->name);
-  grpc_exec_ctx_finish();
+
   return GRPC_CHANNEL_SHUTDOWN;
 }
 
@@ -241,6 +241,4 @@ void grpc_channel_watch_connectivity_state(
   } else {
     abort();
   }
-
-  grpc_exec_ctx_finish();
 }

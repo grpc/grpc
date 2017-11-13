@@ -78,7 +78,7 @@ static size_t run_closures(grpc_closure_list list) {
     GRPC_ERROR_UNREF(error);
     c = next;
     n++;
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
 
   return n;
@@ -145,7 +145,7 @@ static void executor_thread(void* arg) {
   thread_state* ts = (thread_state*)arg;
   gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
 
-  ExecCtx _local_exec_ctx(0, grpc_never_ready_to_finish, NULL);
+  ExecCtx _local_exec_ctx;
 
   size_t subtract_depth = 0;
   for (;;) {
@@ -175,10 +175,9 @@ static void executor_thread(void* arg) {
       gpr_log(GPR_DEBUG, "EXECUTOR[%d]: execute", (int)(ts - g_thread_state));
     }
 
-    grpc_exec_ctx_invalidate_now();
+    ExecCtx::Get()->InvalidateNow();
     subtract_depth = run_closures(exec);
   }
-  grpc_exec_ctx_finish();
 }
 
 static void executor_push(grpc_closure* closure, grpc_error* error,
@@ -201,12 +200,12 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
         gpr_log(GPR_DEBUG, "EXECUTOR: schedule %p inline", closure);
 #endif
       }
-      grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
+      grpc_closure_list_append(ExecCtx::Get()->closure_list(), closure, error);
       return;
     }
     thread_state* ts = (thread_state*)gpr_tls_get(&g_this_thread_state);
     if (ts == NULL) {
-      ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
+      ts = &g_thread_state[GPR_HASH_POINTER(ExecCtx::Get(), cur_thread_count)];
     } else {
       GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF();
     }

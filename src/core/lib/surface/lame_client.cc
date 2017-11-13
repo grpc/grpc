@@ -169,6 +169,6 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
   auto chand = reinterpret_cast<grpc_core::ChannelData*>(elem->channel_data);
   chand->error_code = error_code;
   chand->error_message = error_message;
-  grpc_exec_ctx_finish();
+
   return channel;
 }

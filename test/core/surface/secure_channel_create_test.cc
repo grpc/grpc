@@ -40,7 +40,6 @@ void test_unknown_scheme_target(void) {
   ExecCtx _local_exec_ctx;
   GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
   grpc_channel_credentials_unref(creds);
-  grpc_exec_ctx_finish();
 }
 
 void test_security_connector_already_in_arg(void) {
@@ -57,7 +56,6 @@ void test_security_connector_already_in_arg(void) {
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
   ExecCtx _local_exec_ctx;
   GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
-  grpc_exec_ctx_finish();
 }
 
 void test_null_creds(void) {
@@ -67,7 +65,6 @@ void test_null_creds(void) {
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
   ExecCtx _local_exec_ctx;
   GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

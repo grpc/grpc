@@ -114,13 +114,13 @@ static int is_stack_running_on_compute_engine() {
       grpc_resource_quota_create("google_default_credentials");
   grpc_httpcli_get(
       &context, &detector.pollent, resource_quota, &request,
-      grpc_exec_ctx_now() + max_detection_delay,
+      ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_compute_engine_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response);
   grpc_resource_quota_unref_internal(resource_quota);
 
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
@@ -144,7 +144,7 @@ static int is_stack_running_on_compute_engine() {
   grpc_pollset_shutdown(grpc_polling_entity_pollset(&detector.pollent),
                         &destroy_closure);
   g_polling_mu = NULL;
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   gpr_free(grpc_polling_entity_pollset(&detector.pollent));
   grpc_http_response_destroy(&detector.response);
@@ -285,7 +285,7 @@ end:
   } else {
     GRPC_ERROR_UNREF(error);
   }
-  grpc_exec_ctx_finish();
+
   return result;
 }
 
@@ -299,7 +299,6 @@ void grpc_flush_cached_google_default_credentials(void) {
   }
   compute_engine_detection_done = 0;
   gpr_mu_unlock(&g_state_mu);
-  grpc_exec_ctx_finish();
 }
 
 /* -- Well known credentials path. -- */

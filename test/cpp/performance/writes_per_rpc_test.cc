@@ -120,8 +120,6 @@ class EndpointPairFixture {
 
       channel_ = CreateChannelInternal("", channel);
     }
-
-    grpc_exec_ctx_finish();
   }
 
   virtual ~EndpointPairFixture() {

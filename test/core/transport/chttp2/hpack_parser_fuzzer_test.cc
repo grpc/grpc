@@ -43,7 +43,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   GRPC_ERROR_UNREF(grpc_chttp2_hpack_parser_parse(
       &parser, grpc_slice_from_static_buffer(data, size)));
   grpc_chttp2_hpack_parser_destroy(&parser);
-  grpc_exec_ctx_finish();
+
   grpc_shutdown();
   return 0;
 }

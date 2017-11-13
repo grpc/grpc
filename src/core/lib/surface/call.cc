@@ -595,7 +595,7 @@ void grpc_call_unref(grpc_call* c) {
     grpc_call_combiner_set_notify_on_cancel(&c->call_combiner, NULL);
   }
   GRPC_CALL_INTERNAL_UNREF(c, "destroy");
-  grpc_exec_ctx_finish();
+
   GPR_TIMER_END("grpc_call_unref", 0);
 }
 
@@ -604,7 +604,7 @@ grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
   GPR_ASSERT(!reserved);
   ExecCtx _local_exec_ctx;
   cancel_with_error(call, STATUS_FROM_API_OVERRIDE, GRPC_ERROR_CANCELLED);
-  grpc_exec_ctx_finish();
+
   return GRPC_CALL_OK;
 }
 
@@ -659,7 +659,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
       4, (c, (int)status, description, reserved));
   GPR_ASSERT(reserved == NULL);
   cancel_with_status(c, STATUS_FROM_API_OVERRIDE, status, description);
-  grpc_exec_ctx_finish();
+
   return GRPC_CALL_OK;
 }
 
@@ -2048,7 +2048,6 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
     err = call_start_batch(call, ops, nops, tag, 0);
   }
 
-  grpc_exec_ctx_finish();
   return err;
 }
 

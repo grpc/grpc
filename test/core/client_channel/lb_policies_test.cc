@@ -653,7 +653,6 @@ static void test_get_channel_info() {
   {
     ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(args);
-    grpc_exec_ctx_finish();
   }
   // Ensures that resolver returns.
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
@@ -1025,7 +1024,6 @@ int main(int argc, char** argv) {
   test_ping();
   test_get_channel_info();
 
-  grpc_exec_ctx_finish();
   grpc_shutdown();
   return 0;
 }

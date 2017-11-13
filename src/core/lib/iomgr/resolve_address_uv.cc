@@ -131,7 +131,7 @@ static void getaddrinfo_callback(uv_getaddrinfo_t* req, int status,
      original error probably has more interesting information */
   error = handle_addrinfo_result(status, res, r->addresses);
   GRPC_CLOSURE_SCHED(r->on_done, error);
-  grpc_exec_ctx_finish();
+
   gpr_free(r->hints);
   gpr_free(r->host);
   gpr_free(r->port);

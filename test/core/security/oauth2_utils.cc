@@ -92,7 +92,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
     on_oauth2_response(&request, error);
     GRPC_ERROR_UNREF(error);
   }
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   gpr_mu_lock(request.mu);
   while (!request.is_done) {
@@ -108,7 +108,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
 
   grpc_pollset_shutdown(grpc_polling_entity_pollset(&request.pops),
                         &do_nothing_closure);
-  grpc_exec_ctx_finish();
+
   gpr_free(grpc_polling_entity_pollset(&request.pops));
   return request.token;
 }

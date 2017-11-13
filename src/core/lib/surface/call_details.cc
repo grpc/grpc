@@ -37,5 +37,4 @@ void grpc_call_details_destroy(grpc_call_details* cd) {
   ExecCtx _local_exec_ctx;
   grpc_slice_unref_internal(cd->method);
   grpc_slice_unref_internal(cd->host);
-  grpc_exec_ctx_finish();
 }

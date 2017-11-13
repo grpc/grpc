@@ -60,8 +60,6 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   grpc_channel_args_destroy(final_args);
   grpc_chttp2_transport_start_reading(transport, NULL);
 
-  grpc_exec_ctx_finish();
-
   return channel != NULL ? channel
                          : grpc_lame_client_channel_create(
                                target, GRPC_STATUS_INTERNAL,

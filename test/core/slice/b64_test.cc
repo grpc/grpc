@@ -51,7 +51,7 @@ static void test_simple_encode_decode_b64(int url_safe, int multiline) {
                      GRPC_SLICE_LENGTH(hello_slice)) == 0);
 
   grpc_slice_unref_internal(hello_slice);
-  grpc_exec_ctx_finish();
+
   gpr_free(hello_b64);
 }
 
@@ -72,7 +72,6 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
                                  sizeof(orig) - i));
     grpc_slice_unref_internal(orig_decoded);
     gpr_free(b64);
-    grpc_exec_ctx_finish();
   }
 }
 
@@ -128,7 +127,6 @@ static void test_url_safe_unsafe_mismatch_failure(void) {
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(orig_decoded));
   gpr_free(b64);
   grpc_slice_unref_internal(orig_decoded);
-  grpc_exec_ctx_finish();
 }
 
 static void test_rfc4648_test_vectors(void) {
@@ -199,7 +197,6 @@ static void test_unpadded_decode(void) {
 
   decoded = grpc_base64_decode("", 0);
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(decoded));
-  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char** argv) {

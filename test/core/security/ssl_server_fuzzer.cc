@@ -83,7 +83,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_security_status status =
       grpc_server_credentials_create_security_connector(creds, &sc);
   GPR_ASSERT(status == GRPC_SECURITY_OK);
-  grpc_millis deadline = GPR_MS_PER_SEC + grpc_exec_ctx_now();
+  grpc_millis deadline = GPR_MS_PER_SEC + ExecCtx::Get()->Now();
 
   struct handshake_state state;
   state.done_callback_called = false;
@@ -92,7 +92,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_handshake_manager_do_handshake(
       handshake_mgr, mock_endpoint, NULL /* channel_args */, deadline,
       NULL /* acceptor */, on_handshake_done, &state);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   // If the given string happens to be part of the correct client hello, the
   // server will wait for more data. Explicitly fail the server by shutting down
@@ -100,7 +100,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (!state.done_callback_called) {
     grpc_endpoint_shutdown(
         mock_endpoint, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Explicit close"));
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
 
   GPR_ASSERT(state.done_callback_called);
@@ -111,7 +111,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_slice_unref(cert_slice);
   grpc_slice_unref(key_slice);
   grpc_slice_unref(ca_slice);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   grpc_shutdown();
   if (leak_check) {

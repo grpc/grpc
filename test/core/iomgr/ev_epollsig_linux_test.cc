@@ -77,11 +77,11 @@ static void test_fd_cleanup(test_fd* tfds, int num_fds) {
   for (i = 0; i < num_fds; i++) {
     grpc_fd_shutdown(tfds[i].fd,
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_fd_cleanup"));
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
 
     grpc_fd_orphan(tfds[i].fd, NULL, &release_fd, false /* already_closed */,
                    "test_fd_cleanup");
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
 
     GPR_ASSERT(release_fd == tfds[i].inner_fd);
     close(tfds[i].inner_fd);
@@ -110,7 +110,7 @@ static void test_pollset_cleanup(test_pollset* pollsets, int num_pollsets) {
                       grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(pollsets[i].pollset, &destroyed);
 
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
     gpr_free(pollsets[i].pollset);
   }
 }
@@ -168,32 +168,32 @@ static void test_add_fd_to_pollset() {
   /* == Step 1 == */
   for (i = 0; i <= 2; i++) {
     grpc_pollset_add_fd(pollsets[0].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
 
   for (i = 3; i <= 4; i++) {
     grpc_pollset_add_fd(pollsets[1].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
 
   for (i = 5; i <= 7; i++) {
     grpc_pollset_add_fd(pollsets[2].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
 
   /* == Step 2 == */
   for (i = 0; i <= 1; i++) {
     grpc_pollset_add_fd(pollsets[3].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush();
+    ExecCtx::Get()->Flush();
   }
 
   /* == Step 3 == */
   grpc_pollset_add_fd(pollsets[1].pollset, tfds[0].fd);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   /* == Step 4 == */
   grpc_pollset_add_fd(pollsets[2].pollset, tfds[3].fd);
-  grpc_exec_ctx_flush();
+  ExecCtx::Get()->Flush();
 
   /* All polling islands are merged at this point */
 
@@ -212,7 +212,6 @@ static void test_add_fd_to_pollset() {
 
   test_fd_cleanup(tfds, NUM_FDS);
   test_pollset_cleanup(pollsets, NUM_POLLSETS);
-  grpc_exec_ctx_finish();
 }
 
 #undef NUM_FDS
@@ -239,7 +238,6 @@ static void test_threading_loop(void* arg) {
         "pollset_work",
         grpc_pollset_work(shared->pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(shared->mu);
-    grpc_exec_ctx_finish();
   }
 }
 
@@ -279,7 +277,6 @@ static void test_threading(void) {
         shared.wakeup_desc,
         GRPC_CLOSURE_INIT(&shared.on_wakeup, test_threading_wakeup, &shared,
                           grpc_schedule_on_exec_ctx));
-    grpc_exec_ctx_finish();
   }
   GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_first",
                                grpc_wakeup_fd_wakeup(shared.wakeup_fd)));
@@ -296,7 +293,6 @@ static void test_threading(void) {
     grpc_pollset_shutdown(shared.pollset,
                           GRPC_CLOSURE_CREATE(destroy_pollset, shared.pollset,
                                               grpc_schedule_on_exec_ctx));
-    grpc_exec_ctx_finish();
   }
   gpr_free(shared.pollset);
 }
@@ -318,7 +314,6 @@ int main(int argc, char** argv) {
             poll_strategy);
   }
 
-  grpc_exec_ctx_finish();
   grpc_shutdown();
   return 0;
 }

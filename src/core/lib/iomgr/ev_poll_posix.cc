@@ -976,7 +976,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
       GRPC_SCHEDULING_START_BLOCKING_REGION;
       GRPC_STATS_INC_SYSCALL_POLL();
       r = grpc_poll_function(pfds, pfd_count, timeout);
-      GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX();
+      GRPC_SCHEDULING_END_BLOCKING_REGION;
 
       if (GRPC_TRACER_ON(grpc_polling_trace)) {
         gpr_log(GPR_DEBUG, "%p poll=%d", pollset, r);
@@ -1040,7 +1040,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
      worker list, which means nobody could ask us to re-evaluate polling). */
   done:
     if (!locked) {
-      queued_work |= grpc_exec_ctx_flush();
+      queued_work |= ExecCtx::Get()->Flush();
       gpr_mu_lock(&pollset->mu);
       locked = 1;
     }
@@ -1074,7 +1074,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
       pollset->called_shutdown = 1;
       gpr_mu_unlock(&pollset->mu);
       finish_shutdown(pollset);
-      grpc_exec_ctx_flush();
+      ExecCtx::Get()->Flush();
       /* Continuing to access pollset here is safe -- it is the caller's
        * responsibility to not destroy when it has outstanding calls to
        * pollset_work.
@@ -1083,7 +1083,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     } else if (!grpc_closure_list_empty(pollset->idle_jobs)) {
       GRPC_CLOSURE_LIST_SCHED(&pollset->idle_jobs);
       gpr_mu_unlock(&pollset->mu);
-      grpc_exec_ctx_flush();
+      ExecCtx::Get()->Flush();
       gpr_mu_lock(&pollset->mu);
     }
   }
@@ -1110,7 +1110,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 static int poll_deadline_to_millis_timeout(grpc_millis deadline) {
   if (deadline == GRPC_MILLIS_INF_FUTURE) return -1;
   if (deadline == 0) return 0;
-  grpc_millis n = deadline - grpc_exec_ctx_now();
+  grpc_millis n = deadline - ExecCtx::Get()->Now();
   if (n < 0) return 0;
   if (n > INT_MAX) return -1;
   return (int)n;
