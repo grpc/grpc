@@ -30,13 +30,15 @@ extern "C" {
 /// A utility function to get the status code and message to be returned
 /// to the application.  If not set in the top-level message, looks
 /// through child errors until it finds the first one with these attributes.
-/// All attributes are pulled from the same child error. If any of the
-/// attributes (code, msg, http_status) are unneeded, they can be passed as
+/// All attributes are pulled from the same child error. full_error_details will
+/// be populated with the entire error string. If any of the attributes (code,
+/// msg, http_status, full_error_details) are unneeded, they can be passed as
 /// NULL.
 void grpc_error_get_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
                            grpc_millis deadline, grpc_status_code* code,
                            grpc_slice* slice,
-                           grpc_http2_error_code* http_status);
+                           grpc_http2_error_code* http_status,
+                           const char** full_error_details);
 
 /// A utility function to check whether there is a clear status code that
 /// doesn't need to be guessed in \a error. This means that \a error or some

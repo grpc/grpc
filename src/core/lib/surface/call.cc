@@ -234,6 +234,7 @@ struct grpc_call {
     struct {
       grpc_status_code* status;
       grpc_slice* status_details;
+      const char** error_string;
     } client;
     struct {
       int* cancelled;
@@ -286,7 +287,8 @@ static void receiving_slice_ready(grpc_exec_ctx* exec_ctx, void* bctlp,
 static void get_final_status(grpc_exec_ctx* exec_ctx, grpc_call* call,
                              void (*set_value)(grpc_status_code code,
                                                void* user_data),
-                             void* set_value_user_data, grpc_slice* details);
+                             void* set_value_user_data, grpc_slice* details,
+                             const char** error_string);
 static void set_status_value_directly(grpc_status_code status, void* dest);
 static void set_status_from_error(grpc_exec_ctx* exec_ctx, grpc_call* call,
                                   status_source source, grpc_error* error);
@@ -548,7 +550,8 @@ static void destroy_call(grpc_exec_ctx* exec_ctx, void* call,
   }
 
   get_final_status(exec_ctx, c, set_status_value_directly,
-                   &c->final_info.final_status, NULL);
+                   &c->final_info.final_status, NULL,
+                   &c->final_info.error_string);
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
 
@@ -734,16 +737,15 @@ static void cancel_with_status(grpc_exec_ctx* exec_ctx, grpc_call* c,
  * FINAL STATUS CODE MANIPULATION
  */
 
-static bool get_final_status_from(grpc_exec_ctx* exec_ctx, grpc_call* call,
-                                  grpc_error* error, bool allow_ok_status,
-                                  void (*set_value)(grpc_status_code code,
-                                                    void* user_data),
-                                  void* set_value_user_data,
-                                  grpc_slice* details) {
+static bool get_final_status_from(
+    grpc_exec_ctx* exec_ctx, grpc_call* call, grpc_error* error,
+    bool allow_ok_status,
+    void (*set_value)(grpc_status_code code, void* user_data),
+    void* set_value_user_data, grpc_slice* details, const char** error_string) {
   grpc_status_code code;
   grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(exec_ctx, error, call->send_deadline, &code, &slice,
-                        NULL);
+                        NULL, error_string);
   if (code == GRPC_STATUS_OK && !allow_ok_status) {
     return false;
   }
@@ -758,7 +760,8 @@ static bool get_final_status_from(grpc_exec_ctx* exec_ctx, grpc_call* call,
 static void get_final_status(grpc_exec_ctx* exec_ctx, grpc_call* call,
                              void (*set_value)(grpc_status_code code,
                                                void* user_data),
-                             void* set_value_user_data, grpc_slice* details) {
+                             void* set_value_user_data, grpc_slice* details,
+                             const char** error_string) {
   int i;
   received_status status[STATUS_SOURCE_COUNT];
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
@@ -782,7 +785,7 @@ static void get_final_status(grpc_exec_ctx* exec_ctx, grpc_call* call,
           grpc_error_has_clear_grpc_status(status[i].error)) {
         if (get_final_status_from(exec_ctx, call, status[i].error,
                                   allow_ok_status != 0, set_value,
-                                  set_value_user_data, details)) {
+                                  set_value_user_data, details, error_string)) {
           return;
         }
       }
@@ -792,7 +795,7 @@ static void get_final_status(grpc_exec_ctx* exec_ctx, grpc_call* call,
       if (status[i].is_set) {
         if (get_final_status_from(exec_ctx, call, status[i].error,
                                   allow_ok_status != 0, set_value,
-                                  set_value_user_data, details)) {
+                                  set_value_user_data, details, error_string)) {
           return;
         }
       }
@@ -1333,10 +1336,11 @@ static void post_batch_completion(grpc_exec_ctx* exec_ctx,
     if (call->is_client) {
       get_final_status(exec_ctx, call, set_status_value_directly,
                        call->final_op.client.status,
-                       call->final_op.client.status_details);
+                       call->final_op.client.status_details,
+                       call->final_op.client.error_string);
     } else {
       get_final_status(exec_ctx, call, set_cancelled_value,
-                       call->final_op.server.cancelled, NULL);
+                       call->final_op.server.cancelled, NULL, NULL);
     }
 
     GRPC_ERROR_UNREF(error);
@@ -1993,6 +1997,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
         call->final_op.client.status = op->data.recv_status_on_client.status;
         call->final_op.client.status_details =
             op->data.recv_status_on_client.status_details;
+        call->final_op.client.error_string =
+            op->data.recv_status_on_client.error_string;
         stream_op->recv_trailing_metadata = true;
         stream_op->collect_stats = true;
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata =

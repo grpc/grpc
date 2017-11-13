@@ -579,6 +579,7 @@ class CallOpClientRecvStatus {
     op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &error_message_;
+    op->data.recv_status_on_client.error_string = &error_string_;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -605,6 +606,7 @@ class CallOpClientRecvStatus {
   Status* recv_status_;
   grpc_status_code status_code_;
   grpc_slice error_message_;
+  const char* error_string_;
 };
 
 /// An abstract collection of call ops, used to generate the

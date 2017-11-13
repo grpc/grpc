@@ -1756,7 +1756,7 @@ static void send_goaway(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
   grpc_http2_error_code http_error;
   grpc_slice slice;
   grpc_error_get_status(exec_ctx, error, GRPC_MILLIS_INF_FUTURE, NULL, &slice,
-                        &http_error);
+                        &http_error, NULL);
   grpc_chttp2_goaway_append(t->last_new_stream_id, (uint32_t)http_error,
                             grpc_slice_ref_internal(slice), &t->qbuf);
   grpc_chttp2_initiate_write(exec_ctx, t,
@@ -2059,7 +2059,7 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx* exec_ctx,
     if (s->id != 0) {
       grpc_http2_error_code http_error;
       grpc_error_get_status(exec_ctx, due_to_error, s->deadline, NULL, NULL,
-                            &http_error);
+                            &http_error, NULL);
       grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(s->id, (uint32_t)http_error,
                                                   &s->stats.outgoing));
@@ -2077,7 +2077,8 @@ void grpc_chttp2_fake_status(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
                              grpc_chttp2_stream* s, grpc_error* error) {
   grpc_status_code status;
   grpc_slice slice;
-  grpc_error_get_status(exec_ctx, error, s->deadline, &status, &slice, NULL);
+  grpc_error_get_status(exec_ctx, error, s->deadline, &status, &slice, NULL,
+                        NULL);
 
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
@@ -2243,7 +2244,7 @@ static void close_from_api(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
   grpc_status_code grpc_status;
   grpc_slice slice;
   grpc_error_get_status(exec_ctx, error, s->deadline, &grpc_status, &slice,
-                        NULL);
+                        NULL, NULL);
 
   GPR_ASSERT(grpc_status >= 0 && (int)grpc_status < 100);
 
