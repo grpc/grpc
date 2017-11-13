@@ -33,6 +33,10 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
   native.cc_library(
     name = name,
     srcs = srcs,
+    defines = select({
+        "//:grpc_no_ares": ["GRPC_ARES=0"],
+	"//conditions:default": [],
+    }),
     hdrs = hdrs + public_hdrs,
     deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,

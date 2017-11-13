@@ -33,6 +33,11 @@ load(
     "grpc_generate_one_off_targets",
 )
 
+config_setting(
+    name = "grpc_no_ares",
+    values = {"define": "grpc_no_ares=true"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "generous"
 
