@@ -4526,6 +4526,24 @@ targets:
   - mac
   - linux
   - posix
+- name: serialization_traits_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/messages.proto
+  - test/cpp/codegen/serialization_traits_test.cc
+  deps:
+  - grpc_plugin_support
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_codegen_base
+  - grpc++_codegen_proto
 - name: server_builder_plugin_test
   gtest: true
   build: test

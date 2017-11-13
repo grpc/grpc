@@ -1163,6 +1163,7 @@ reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
 reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
 secure_auth_context_test: $(BINDIR)/$(CONFIG)/secure_auth_context_test
 secure_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
+serialization_traits_test: $(BINDIR)/$(CONFIG)/serialization_traits_test
 server_builder_plugin_test: $(BINDIR)/$(CONFIG)/server_builder_plugin_test
 server_builder_test: $(BINDIR)/$(CONFIG)/server_builder_test
 server_context_test_spouse_test: $(BINDIR)/$(CONFIG)/server_context_test_spouse_test
@@ -1596,6 +1597,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
+  $(BINDIR)/$(CONFIG)/serialization_traits_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
   $(BINDIR)/$(CONFIG)/server_builder_test \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
@@ -1721,6 +1723,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
+  $(BINDIR)/$(CONFIG)/serialization_traits_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
   $(BINDIR)/$(CONFIG)/server_builder_test \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
@@ -2120,6 +2123,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/secure_auth_context_test || ( echo test secure_auth_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_sync_unary_ping_pong_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test || ( echo test secure_sync_unary_ping_pong_test failed ; exit 1 )
+	$(E) "[RUN]     Testing serialization_traits_test"
+	$(Q) $(BINDIR)/$(CONFIG)/serialization_traits_test || ( echo test serialization_traits_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_builder_plugin_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_builder_plugin_test || ( echo test server_builder_plugin_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_builder_test"
@@ -16442,6 +16447,53 @@ ifneq ($(NO_DEPS),true)
 -include $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
 endif
 endif
+
+
+SERIALIZATION_TRAITS_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    test/cpp/codegen/serialization_traits_test.cc \
+
+SERIALIZATION_TRAITS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERIALIZATION_TRAITS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/serialization_traits_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/serialization_traits_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/serialization_traits_test: $(PROTOBUF_DEP) $(SERIALIZATION_TRAITS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERIALIZATION_TRAITS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/serialization_traits_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/codegen/serialization_traits_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_serialization_traits_test: $(SERIALIZATION_TRAITS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERIALIZATION_TRAITS_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/codegen/serialization_traits_test.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc
 
 
 SERVER_BUILDER_PLUGIN_TEST_SRC = \
