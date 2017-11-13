@@ -40,8 +40,7 @@
 #ifndef NDEBUG
 grpc_tracer_flag grpc_trace_error_refcount =
     GRPC_TRACER_INITIALIZER(false, "error_refcount");
-grpc_tracer_flag grpc_trace_closure =
-    GRPC_TRACER_INITIALIZER(false, "closure");
+grpc_tracer_flag grpc_trace_closure = GRPC_TRACER_INITIALIZER(false, "closure");
 #endif
 
 static const char* error_int_name(grpc_error_ints key) {
