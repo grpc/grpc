@@ -30,9 +30,6 @@ ps -C dotnet -o pid=,cmd= | grep QpsWorker | awk '{print $1}' | xargs kill -9 ||
 # Ruby
 ps -C ruby -o pid=,cmd= | grep 'qps/worker.rb' | awk '{print $1}' | xargs kill -9 || true
 
-# Node
-ps -C node -o pid=,cmd= | grep 'performance/worker.js' | awk '{print $1}' | xargs kill -9 || true
-
 # Python
 ps -C python -o pid=,cmd= | grep 'qps_worker.py' | awk '{print $1}' | xargs kill -9 || true
 

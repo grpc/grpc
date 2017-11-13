@@ -30,7 +30,7 @@
 
 struct gpr_gcc_thread_local {
   intptr_t value;
-  bool *inited;
+  bool* inited;
 };
 
 #define GPR_TLS_DECL(name)           \

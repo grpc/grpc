@@ -25,7 +25,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
-static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
+static void add_metadata(gpr_strvec* b, const grpc_metadata* md, size_t count) {
   size_t i;
   if (md == NULL) {
     gpr_strvec_add(b, gpr_strdup("(nil)"));
@@ -41,9 +41,9 @@ static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
   }
 }
 
-char *grpc_op_string(const grpc_op *op) {
-  char *tmp;
-  char *out;
+char* grpc_op_string(const grpc_op* op) {
+  char* tmp;
+  char* out;
 
   gpr_strvec b;
   gpr_strvec_init(&b);
@@ -105,10 +105,10 @@ char *grpc_op_string(const grpc_op *op) {
   return out;
 }
 
-void grpc_call_log_batch(const char *file, int line, gpr_log_severity severity,
-                         grpc_call *call, const grpc_op *ops, size_t nops,
-                         void *tag) {
-  char *tmp;
+void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
+                         grpc_call* call, const grpc_op* ops, size_t nops,
+                         void* tag) {
+  char* tmp;
   size_t i;
   for (i = 0; i < nops; i++) {
     tmp = grpc_op_string(&ops[i]);

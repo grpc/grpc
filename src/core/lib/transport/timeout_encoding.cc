@@ -41,15 +41,15 @@ static int64_t round_up_to_three_sig_figs(int64_t x) {
 }
 
 /* encode our minimum viable timeout value */
-static void enc_tiny(char *buffer) { memcpy(buffer, "1n", 3); }
+static void enc_tiny(char* buffer) { memcpy(buffer, "1n", 3); }
 
-static void enc_ext(char *buffer, int64_t value, char ext) {
+static void enc_ext(char* buffer, int64_t value, char ext) {
   int n = int64_ttoa(value, buffer);
   buffer[n] = ext;
   buffer[n + 1] = 0;
 }
 
-static void enc_seconds(char *buffer, int64_t sec) {
+static void enc_seconds(char* buffer, int64_t sec) {
   if (sec % 3600 == 0) {
     enc_ext(buffer, sec / 3600, 'H');
   } else if (sec % 60 == 0) {
@@ -59,7 +59,7 @@ static void enc_seconds(char *buffer, int64_t sec) {
   }
 }
 
-static void enc_millis(char *buffer, int64_t x) {
+static void enc_millis(char* buffer, int64_t x) {
   x = round_up_to_three_sig_figs(x);
   if (x < GPR_MS_PER_SEC) {
     enc_ext(buffer, x, 'm');
@@ -72,7 +72,7 @@ static void enc_millis(char *buffer, int64_t x) {
   }
 }
 
-void grpc_http2_encode_timeout(grpc_millis timeout, char *buffer) {
+void grpc_http2_encode_timeout(grpc_millis timeout, char* buffer) {
   if (timeout <= 0) {
     enc_tiny(buffer);
   } else if (timeout < 1000 * GPR_MS_PER_SEC) {
@@ -83,15 +83,15 @@ void grpc_http2_encode_timeout(grpc_millis timeout, char *buffer) {
   }
 }
 
-static int is_all_whitespace(const char *p, const char *end) {
+static int is_all_whitespace(const char* p, const char* end) {
   while (p != end && *p == ' ') p++;
   return p == end;
 }
 
-int grpc_http2_decode_timeout(grpc_slice text, grpc_millis *timeout) {
+int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
   grpc_millis x = 0;
-  const uint8_t *p = GRPC_SLICE_START_PTR(text);
-  const uint8_t *end = GRPC_SLICE_END_PTR(text);
+  const uint8_t* p = GRPC_SLICE_START_PTR(text);
+  const uint8_t* end = GRPC_SLICE_END_PTR(text);
   int have_digit = 0;
   /* skip whitespace */
   for (; p != end && *p == ' '; p++)
@@ -138,5 +138,5 @@ int grpc_http2_decode_timeout(grpc_slice text, grpc_millis *timeout) {
       return 0;
   }
   p++;
-  return is_all_whitespace((const char *)p, (const char *)end);
+  return is_all_whitespace((const char*)p, (const char*)end);
 }

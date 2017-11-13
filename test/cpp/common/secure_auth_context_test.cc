@@ -22,9 +22,7 @@
 #include <gtest/gtest.h>
 #include "test/cpp/util/string_ref_helper.h"
 
-extern "C" {
 #include "src/core/lib/security/context/security_context.h"
-}
 
 using grpc::testing::ToString;
 

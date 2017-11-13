@@ -43,10 +43,12 @@
 namespace grpc {
 
 class ByteBuffer;
-class Call;
-class CallHook;
 class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
+
+namespace internal {
+class Call;
+class CallHook;
 
 const char kBinaryErrorDetailsKey[] = "grpc-status-details-bin";
 
@@ -75,6 +77,7 @@ inline grpc_metadata* FillMetadataArray(
   }
   return metadata_array;
 }
+}  // namespace internal
 
 /// Per-message write options.
 class WriteOptions {
@@ -199,6 +202,7 @@ class WriteOptions {
   bool last_message_;
 };
 
+namespace internal {
 /// Default argument for CallOpSet. I is unused by the class, but can be
 /// used for generating multiple names for the same thing.
 template <int I>
@@ -387,7 +391,6 @@ class CallOpRecvMessage {
   bool allow_not_getting_message_;
 };
 
-namespace CallOpGenericRecvMessageHelper {
 class DeserializeFunc {
  public:
   virtual Status Deserialize(ByteBuffer* buf) = 0;
@@ -407,7 +410,6 @@ class DeserializeFuncType final : public DeserializeFunc {
  private:
   R* message_;  // Not a managed pointer because management is external to this
 };
-}  // namespace CallOpGenericRecvMessageHelper
 
 class CallOpGenericRecvMessage {
  public:
@@ -418,8 +420,7 @@ class CallOpGenericRecvMessage {
   void RecvMessage(R* message) {
     // Use an explicit base class pointer to avoid resolution error in the
     // following unique_ptr::reset for some old implementations.
-    CallOpGenericRecvMessageHelper::DeserializeFunc* func =
-        new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message);
+    DeserializeFunc* func = new DeserializeFuncType<R>(message);
     deserialize_.reset(func);
   }
 
@@ -459,7 +460,7 @@ class CallOpGenericRecvMessage {
   }
 
  private:
-  std::unique_ptr<CallOpGenericRecvMessageHelper::DeserializeFunc> deserialize_;
+  std::unique_ptr<DeserializeFunc> deserialize_;
   ByteBuffer recv_buf_;
   bool allow_not_getting_message_;
 };
@@ -714,7 +715,7 @@ class Call final {
   grpc_call* call_;
   int max_receive_message_size_;
 };
-
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_CALL_H
