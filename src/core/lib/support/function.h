@@ -99,7 +99,7 @@ class Traits<R(Args...), F, true> {
 template <typename R, typename... Args, typename F>
 const VTable<R, Args...> Traits<R(Args...), F, true>::vtable_ = {
     CopyConstruct, MoveConstruct, Destruct, Invoke};
-}
+}  // namespace function_impl
 
 template <typename T,
           size_t kInplaceStorage = function_impl::kDefaultInplaceStorage>
@@ -112,6 +112,9 @@ class InplaceFunction;
 template <typename T,
           size_t kInplaceStorage = function_impl::kDefaultInplaceStorage>
 class TrivialInplaceFunction;
+
+template <typename T>
+class FunctionView;
 
 // Function<> is roughly a std::function work-alike
 // Differences:
@@ -286,6 +289,37 @@ class TrivialInplaceFunction<R(Args...), kInplaceStorage> {
  private:
   R (*invoke_)(void* storage, Args&&... args);
   typename std::aligned_storage<kInplaceStorage>::type storage_;
+};
+
+// FunctionView<> is a non-owning functor reference (like string_view, but for
+// functions)
+template <typename R, typename... Args>
+class FunctionView<R(Args...)> {
+ public:
+  template <class F>
+  FunctionView(F* f) : execute_(Impl<F>::Fn), p_(reinterpret_cast<void*>(f)) {}
+  FunctionView(const FunctionView& f) : execute_(f.execute_), p_(f.p_) {}
+
+  FunctionView& operator=(const FunctionView& other) {
+    execute_ = other.execute_;
+    p_ = other.p_;
+    return *this;
+  }
+
+  R operator()(Args&&... args) {
+    return execute_(p_, std::forward<Args>(args)...);
+  }
+
+ private:
+  template <class F>
+  struct Impl {
+    static R Fn(void* p, Args&&... args) {
+      return (*reinterpret_cast<F*>(p))(std::forward<Args>(args)...);
+    }
+  };
+
+  R (*execute_)(void* p, Args&&... args);
+  void* p_;
 };
 
 }  // namespace grpc_core

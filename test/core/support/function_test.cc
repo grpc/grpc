@@ -201,6 +201,17 @@ TYPED_TEST(FuncTest, LargeLambda) {
                      TypeParam::kAllowsLargeFunctions>::LargeLambda();
 }
 
+TEST(FunctionViewTest, SimpleTests) {
+  FunctionView<int()> f = &CAnswer;
+  EXPECT_EQ(42, f());
+  FunctionView<int()> g = f;
+  EXPECT_EQ(42, g());
+  auto lambda = []() { return 43; };
+  g = &lambda;
+  EXPECT_EQ(43, g());
+  EXPECT_EQ(42, f());
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
