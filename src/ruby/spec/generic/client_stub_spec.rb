@@ -228,7 +228,7 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'should receive UNAUTHENTICATED if call credentials plugin fails' do
+      it 'should receive UNAVAILABLE if call credentials plugin fails' do
         server_port = create_secure_test_server
         th = run_request_response(@sent_msg, @resp, @pass)
 
@@ -252,7 +252,7 @@ describe 'ClientStub' do
         unauth_error_occured = false
         begin
           get_response(stub, credentials: creds)
-        rescue GRPC::Unauthenticated => e
+        rescue GRPC::Unavailable => e
           unauth_error_occured = true
           expect(e.details.include?(error_message)).to be true
         end
