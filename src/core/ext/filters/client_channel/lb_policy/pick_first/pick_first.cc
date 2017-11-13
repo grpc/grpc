@@ -73,6 +73,7 @@ static void pf_destroy(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
 
 static void pf_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_DEBUG, "Pick First %p Shutting down", p);
   }
@@ -81,14 +82,12 @@ static void pf_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   while ((pp = p->pending_picks) != NULL) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
-    GRPC_CLOSURE_SCHED(
-        exec_ctx, pp->on_complete,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown"));
+    GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_REF(error));
     gpr_free(pp);
   }
-  grpc_connectivity_state_set(
-      exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown"), "shutdown");
+  grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                              GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
+                              "shutdown");
   if (p->subchannel_list != NULL) {
     grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
                                                "pf_shutdown");
@@ -101,6 +100,7 @@ static void pf_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   }
   grpc_lb_policy_try_reresolve(exec_ctx, &p->base, &grpc_lb_pick_first_trace,
                                GRPC_ERROR_CANCELLED);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void pf_cancel_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,

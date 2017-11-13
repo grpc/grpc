@@ -983,6 +983,7 @@ static void glb_destroy(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
 
 static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)pol;
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   glb_policy->shutting_down = true;
 
   /* We need a copy of the lb_call pointer because we can't cancell the call
@@ -1025,28 +1026,27 @@ static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
     grpc_channel_destroy(glb_policy->lb_channel);
     glb_policy->lb_channel = NULL;
   }
-  grpc_connectivity_state_set(
-      exec_ctx, &glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"), "glb_shutdown");
+  grpc_connectivity_state_set(exec_ctx, &glb_policy->state_tracker,
+                              GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
+                              "glb_shutdown");
 
   while (pp != NULL) {
     pending_pick* next = pp->next;
     *pp->target = NULL;
-    GRPC_CLOSURE_SCHED(
-        exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
+    GRPC_CLOSURE_SCHED(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
+                       GRPC_ERROR_REF(error));
     gpr_free(pp);
     pp = next;
   }
 
   while (pping != NULL) {
     pending_ping* next = pping->next;
-    GRPC_CLOSURE_SCHED(
-        exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
+    GRPC_CLOSURE_SCHED(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
+                       GRPC_ERROR_REF(error));
     gpr_free(pping);
     pping = next;
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 // Cancel a specific pending pick.
