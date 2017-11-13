@@ -27,14 +27,14 @@
 namespace grpc_php_generator {
 
 inline grpc::string GetPHPServiceClassname(
-    const grpc::protobuf::ServiceDescriptor *service,
-    const grpc::string &class_suffix) {
+    const grpc::protobuf::ServiceDescriptor* service,
+    const grpc::string& class_suffix) {
   return service->name() + (class_suffix == "" ? "Client" : class_suffix);
 }
 
 // ReplaceAll replaces all instances of search with replace in s.
-inline grpc::string ReplaceAll(grpc::string s, const grpc::string &search,
-                               const grpc::string &replace) {
+inline grpc::string ReplaceAll(grpc::string s, const grpc::string& search,
+                               const grpc::string& replace) {
   size_t pos = 0;
   while ((pos = s.find(search, pos)) != grpc::string::npos) {
     s.replace(pos, search.length(), replace);
@@ -44,9 +44,9 @@ inline grpc::string ReplaceAll(grpc::string s, const grpc::string &search,
 }
 
 inline grpc::string GetPHPServiceFilename(
-    const grpc::protobuf::FileDescriptor *file,
-    const grpc::protobuf::ServiceDescriptor *service,
-    const grpc::string &class_suffix) {
+    const grpc::protobuf::FileDescriptor* file,
+    const grpc::protobuf::ServiceDescriptor* service,
+    const grpc::string& class_suffix) {
   std::ostringstream oss;
   if (file->options().has_php_namespace()) {
     oss << ReplaceAll(file->options().php_namespace(), "\\", "/");
@@ -65,7 +65,7 @@ inline grpc::string GetPHPServiceFilename(
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in in front of leading comments.
 template <typename DescriptorType>
-inline grpc::string GetPHPComments(const DescriptorType *desc,
+inline grpc::string GetPHPComments(const DescriptorType* desc,
                                    grpc::string prefix) {
   return ReplaceAll(grpc_generator::GetPrefixedComments(desc, true, prefix),
                     "*/", "&#42;/");

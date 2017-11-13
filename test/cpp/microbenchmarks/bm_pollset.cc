@@ -23,12 +23,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-extern "C" {
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-}
 
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"

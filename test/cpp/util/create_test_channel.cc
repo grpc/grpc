@@ -74,7 +74,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   ChannelArguments channel_args(args);
   std::shared_ptr<ChannelCredentials> channel_creds;
   if (cred_type.empty()) {
-    return CreateChannel(server, InsecureChannelCredentials());
+    return CreateCustomChannel(server, InsecureChannelCredentials(), args);
   } else if (cred_type == testing::kTlsCredentialsType) {  // cred_type == "ssl"
     if (use_prod_roots) {
       gpr_once_init(&g_once_init_add_prod_ssl_provider, &AddProdSslType);
@@ -101,7 +101,7 @@ std::shared_ptr<Channel> CreateTestChannel(
         cred_type, &channel_args);
     GPR_ASSERT(channel_creds != nullptr);
 
-    return CreateChannel(server, channel_creds);
+    return CreateCustomChannel(server, channel_creds, args);
   }
 }
 

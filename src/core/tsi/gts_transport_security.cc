@@ -22,7 +22,7 @@
 
 static gts_shared_resource g_gts_resource;
 
-gts_shared_resource *gts_get_shared_resource(void) { return &g_gts_resource; }
+gts_shared_resource* gts_get_shared_resource(void) { return &g_gts_resource; }
 
 extern "C" void grpc_tsi_gts_init() {
   memset(&g_gts_resource, 0, sizeof(gts_shared_resource));

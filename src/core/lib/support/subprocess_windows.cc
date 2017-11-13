@@ -36,16 +36,16 @@ struct gpr_subprocess {
   int interrupted;
 };
 
-const char *gpr_subprocess_binary_extension() { return ".exe"; }
+const char* gpr_subprocess_binary_extension() { return ".exe"; }
 
-gpr_subprocess *gpr_subprocess_create(int argc, const char **argv) {
-  gpr_subprocess *r;
+gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
+  gpr_subprocess* r;
 
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
 
-  char *args = gpr_strjoin_sep(argv, (size_t)argc, " ", NULL);
-  TCHAR *args_tchar;
+  char* args = gpr_strjoin_sep(argv, (size_t)argc, " ", NULL);
+  TCHAR* args_tchar;
 
   args_tchar = gpr_char_to_tchar(args);
   gpr_free(args);
@@ -61,13 +61,13 @@ gpr_subprocess *gpr_subprocess_create(int argc, const char **argv) {
   }
   gpr_free(args_tchar);
 
-  r = (gpr_subprocess *)gpr_malloc(sizeof(gpr_subprocess));
+  r = (gpr_subprocess*)gpr_malloc(sizeof(gpr_subprocess));
   memset(r, 0, sizeof(*r));
   r->pi = pi;
   return r;
 }
 
-void gpr_subprocess_destroy(gpr_subprocess *p) {
+void gpr_subprocess_destroy(gpr_subprocess* p) {
   if (p) {
     if (!p->joined) {
       gpr_subprocess_interrupt(p);
@@ -83,7 +83,7 @@ void gpr_subprocess_destroy(gpr_subprocess *p) {
   }
 }
 
-int gpr_subprocess_join(gpr_subprocess *p) {
+int gpr_subprocess_join(gpr_subprocess* p) {
   DWORD dwExitCode;
   if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {
     if (dwExitCode == STILL_ACTIVE) {
@@ -110,7 +110,7 @@ getExitCode:
   }
 }
 
-void gpr_subprocess_interrupt(gpr_subprocess *p) {
+void gpr_subprocess_interrupt(gpr_subprocess* p) {
   DWORD dwExitCode;
   if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {
     if (dwExitCode == STILL_ACTIVE) {

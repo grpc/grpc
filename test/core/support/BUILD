@@ -20,8 +20,8 @@ grpc_package(name = "test/core/support")
 
 grpc_cc_test(
     name = "alloc_test",
-    srcs = ["alloc_test.c"],
-    language = "C",
+    srcs = ["alloc_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -30,8 +30,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "avl_test",
-    srcs = ["avl_test.c"],
-    language = "C",
+    srcs = ["avl_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -40,8 +40,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "cmdline_test",
-    srcs = ["cmdline_test.c"],
-    language = "C",
+    srcs = ["cmdline_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -50,8 +50,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "cpu_test",
-    srcs = ["cpu_test.c"],
-    language = "C",
+    srcs = ["cpu_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -60,8 +60,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "env_test",
-    srcs = ["env_test.c"],
-    language = "C",
+    srcs = ["env_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -70,8 +70,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "histogram_test",
-    srcs = ["histogram_test.c"],
-    language = "C",
+    srcs = ["histogram_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -80,8 +80,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "host_port_test",
-    srcs = ["host_port_test.c"],
-    language = "C",
+    srcs = ["host_port_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -90,8 +90,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "log_test",
-    srcs = ["log_test.c"],
-    language = "C",
+    srcs = ["log_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -100,8 +100,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "mpscq_test",
-    srcs = ["mpscq_test.c"],
-    language = "C",
+    srcs = ["mpscq_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -110,8 +110,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "murmur_hash_test",
-    srcs = ["murmur_hash_test.c"],
-    language = "C",
+    srcs = ["murmur_hash_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -120,8 +120,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "stack_lockfree_test",
-    srcs = ["stack_lockfree_test.c"],
-    language = "C",
+    srcs = ["stack_lockfree_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -130,8 +130,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "string_test",
-    srcs = ["string_test.c"],
-    language = "C",
+    srcs = ["string_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -140,8 +140,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "spinlock_test",
-    srcs = ["spinlock_test.c"],
-    language = "C",
+    srcs = ["spinlock_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -150,8 +150,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "sync_test",
-    srcs = ["sync_test.c"],
-    language = "C",
+    srcs = ["sync_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -160,8 +160,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "thd_test",
-    srcs = ["thd_test.c"],
-    language = "C",
+    srcs = ["thd_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -170,8 +170,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "time_test",
-    srcs = ["time_test.c"],
-    language = "C",
+    srcs = ["time_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -180,8 +180,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "tls_test",
-    srcs = ["tls_test.c"],
-    language = "C",
+    srcs = ["tls_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -190,8 +190,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "useful_test",
-    srcs = ["useful_test.c"],
-    language = "C",
+    srcs = ["useful_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",

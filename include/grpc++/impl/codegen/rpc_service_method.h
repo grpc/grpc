@@ -32,8 +32,8 @@
 
 namespace grpc {
 class ServerContext;
-class StreamContextInterface;
 
+namespace internal {
 /// Base class for running an RPC handler.
 class MethodHandler {
  public:
@@ -71,6 +71,7 @@ class RpcServiceMethod : public RpcMethod {
   void* server_tag_;
   std::unique_ptr<MethodHandler> handler_;
 };
+}  // namespace internal
 
 }  // namespace grpc
 
