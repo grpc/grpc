@@ -131,6 +131,31 @@ class ClientChannelStressTest {
  public:
   void Run() {
     Start();
+    // Keep updating resolution for the test duration.
+    gpr_log(GPR_INFO, "Start updating resolution.");
+    const auto wait_duration =
+            std::chrono::milliseconds(kResolutionUpdateIntervalMs);
+    std::vector<AddressData> addresses;
+    auto start_time = std::chrono::steady_clock::now();
+    while (true) {
+      if (std::chrono::duration_cast<std::chrono::seconds>(
+              std::chrono::steady_clock::now() - start_time)
+                  .count() > kTestDurationSec) {
+        break;
+      }
+      // Generate a random subset of balancers.
+      addresses.clear();
+      for (const auto& balancer_server : balancer_servers_) {
+        // Select each address with probability of 0.8.
+        if (std::rand() % 10 < 8) {
+          addresses.emplace_back(AddressData{balancer_server.port_, true, ""});
+        }
+      }
+      std::random_shuffle(addresses.begin(), addresses.end());
+      SetNextResolution(addresses);
+      std::this_thread::sleep_for(wait_duration);
+    }
+    gpr_log(GPR_INFO, "Finish updating resolution.");
     Shutdown();
   }
 
@@ -260,31 +285,6 @@ class ClientChannelStressTest {
       client_threads_.emplace_back(
           std::thread(&ClientChannelStressTest::KeepSendingRequests, this));
     }
-    // Start updating resolution.
-    gpr_log(GPR_INFO, "Start updating resolution.");
-    const auto wait_duration =
-        std::chrono::milliseconds(kResolutionUpdateIntervalMs);
-    std::vector<AddressData> addresses;
-    auto start_time = std::chrono::steady_clock::now();
-    while (true) {
-      if (std::chrono::duration_cast<std::chrono::seconds>(
-              std::chrono::steady_clock::now() - start_time)
-              .count() > kTestDurationSec) {
-        break;
-      }
-      // Generate a random subset of balancers.
-      addresses.clear();
-      for (const auto& balancer_server : balancer_servers_) {
-        // Select each address with probability of 0.8.
-        if (std::rand() % 10 < 8) {
-          addresses.emplace_back(AddressData{balancer_server.port_, true, ""});
-        }
-      }
-      std::random_shuffle(addresses.begin(), addresses.end());
-      SetNextResolution(addresses);
-      std::this_thread::sleep_for(wait_duration);
-    }
-    gpr_log(GPR_INFO, "Finish updating resolution.");
   }
 
   void Shutdown() {
