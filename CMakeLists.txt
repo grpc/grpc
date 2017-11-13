@@ -779,8 +779,12 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx resolver_component_tests_runner_invoker)
 endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx address_sorting_test_unsecure)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx address_sorting_test)
+endif()
 
 add_custom_target(buildtests
   DEPENDS buildtests_c buildtests_cxx)
@@ -15009,6 +15013,7 @@ target_link_libraries(resolver_component_tests_runner_invoker
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(address_sorting_test_unsecure
   test/cpp/naming/address_sorting_test.cc
@@ -15050,8 +15055,10 @@ target_link_libraries(address_sorting_test_unsecure
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(address_sorting_test
   test/cpp/naming/address_sorting_test.cc
@@ -15093,6 +15100,7 @@ target_link_libraries(address_sorting_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
