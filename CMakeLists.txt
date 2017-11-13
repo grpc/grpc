@@ -151,6 +151,9 @@ elseif("${gRPC_CARES_PROVIDER}" STREQUAL "package")
   set(_gRPC_FIND_CARES "if(NOT c-ares_FOUND)\n  find_package(c-ares CONFIG)\nendif()")
 endif()
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/address_sorting)
+set(_gRPC_ADDRESS_SORTING_LIBRARIES address_sorting)
+
 if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
   # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
   # Disable them unless they are explicitly requested from the cmake command line (when we assume
@@ -806,6 +809,7 @@ target_include_directories(address_sorting
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -887,6 +891,7 @@ target_include_directories(gpr
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -980,6 +985,7 @@ target_include_directories(gpr_test_util
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -1267,6 +1273,7 @@ target_include_directories(grpc
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -1279,6 +1286,7 @@ target_link_libraries(grpc
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_CARES_LIBRARIES}
+  ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
@@ -1579,6 +1587,7 @@ target_include_directories(grpc_cronet
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -1591,6 +1600,7 @@ target_link_libraries(grpc_cronet
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_CARES_LIBRARIES}
+  ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
@@ -1863,6 +1873,7 @@ target_include_directories(grpc_test_util
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -2129,6 +2140,7 @@ target_include_directories(grpc_test_util_unsecure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -2416,6 +2428,7 @@ target_include_directories(grpc_unsecure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -2427,6 +2440,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_CARES_LIBRARIES}
+  ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
@@ -2507,6 +2521,7 @@ target_include_directories(reconnect_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -2550,6 +2565,7 @@ target_include_directories(test_tcp_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -2632,6 +2648,7 @@ target_include_directories(grpc++
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -2835,6 +2852,7 @@ target_include_directories(grpc++_core_stats
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -3117,6 +3135,7 @@ target_include_directories(grpc++_cronet
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -3319,6 +3338,7 @@ target_include_directories(grpc++_error_details
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -3385,6 +3405,7 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -3447,6 +3468,7 @@ target_include_directories(grpc++_reflection
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -3506,6 +3528,7 @@ target_include_directories(grpc++_test_config
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -3585,6 +3608,7 @@ target_include_directories(grpc++_test_util
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -3726,6 +3750,7 @@ target_include_directories(grpc++_test_util_unsecure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -3869,6 +3894,7 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4062,6 +4088,7 @@ target_include_directories(grpc_benchmark
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4122,6 +4149,7 @@ target_include_directories(grpc_cli_libs
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4183,6 +4211,7 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4262,6 +4291,7 @@ target_include_directories(http2_client_main
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4318,6 +4348,7 @@ target_include_directories(interop_client_helper
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4389,6 +4420,7 @@ target_include_directories(interop_client_main
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4441,6 +4473,7 @@ target_include_directories(interop_server_helper
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4511,6 +4544,7 @@ target_include_directories(interop_server_lib
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4563,6 +4597,7 @@ target_include_directories(interop_server_main
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4652,6 +4687,7 @@ target_include_directories(qps
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4700,6 +4736,7 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4796,6 +4833,7 @@ target_include_directories(ares
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4835,6 +4873,7 @@ target_include_directories(bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4877,6 +4916,7 @@ target_include_directories(bad_ssl_test_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -4979,6 +5019,7 @@ target_include_directories(end2end_tests
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5081,6 +5122,7 @@ target_include_directories(end2end_nosec_tests
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5113,6 +5155,7 @@ target_include_directories(alarm_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5143,6 +5186,7 @@ target_include_directories(algorithm_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5173,6 +5217,7 @@ target_include_directories(alloc_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5201,6 +5246,7 @@ target_include_directories(alpn_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5231,6 +5277,7 @@ target_include_directories(arena_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5259,6 +5306,7 @@ target_include_directories(backoff_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5289,6 +5337,7 @@ target_include_directories(bad_server_response_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5320,6 +5369,7 @@ target_include_directories(bin_decoder_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5348,6 +5398,7 @@ target_include_directories(bin_encoder_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5376,6 +5427,7 @@ target_include_directories(byte_stream_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5406,6 +5458,7 @@ target_include_directories(channel_create_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5435,6 +5488,7 @@ target_include_directories(check_epollexclusive
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5471,6 +5525,7 @@ target_include_directories(chttp2_hpack_encoder_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5501,6 +5556,7 @@ target_include_directories(chttp2_stream_map_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5531,6 +5587,7 @@ target_include_directories(chttp2_varint_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5561,6 +5618,7 @@ target_include_directories(combiner_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5591,6 +5649,7 @@ target_include_directories(compression_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5621,6 +5680,7 @@ target_include_directories(concurrent_connectivity_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5651,6 +5711,7 @@ target_include_directories(connection_refused_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5681,6 +5742,7 @@ target_include_directories(dns_resolver_connectivity_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5711,6 +5773,7 @@ target_include_directories(dns_resolver_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5742,6 +5805,7 @@ target_include_directories(dualstack_socket_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5773,6 +5837,7 @@ target_include_directories(endpoint_pair_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5803,6 +5868,7 @@ target_include_directories(error_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5834,6 +5900,7 @@ target_include_directories(ev_epollsig_linux_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5865,6 +5932,7 @@ target_include_directories(fake_resolver_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5897,6 +5965,7 @@ target_include_directories(fake_transport_security_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5928,6 +5997,7 @@ target_include_directories(fd_conservation_posix_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5960,6 +6030,7 @@ target_include_directories(fd_posix_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -5991,6 +6062,7 @@ target_include_directories(fling_client
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6021,6 +6093,7 @@ target_include_directories(fling_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6052,6 +6125,7 @@ target_include_directories(fling_stream_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6084,6 +6158,7 @@ target_include_directories(fling_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6114,6 +6189,7 @@ target_include_directories(gen_hpack_tables
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6149,6 +6225,7 @@ target_include_directories(gen_legal_metadata_characters
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6182,6 +6259,7 @@ target_include_directories(gen_percent_encoding_tables
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6217,6 +6295,7 @@ target_include_directories(goaway_server_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6248,6 +6327,7 @@ target_include_directories(gpr_avl_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6276,6 +6356,7 @@ target_include_directories(gpr_cmdline_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6304,6 +6385,7 @@ target_include_directories(gpr_cpu_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6332,6 +6414,7 @@ target_include_directories(gpr_env_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6360,6 +6443,7 @@ target_include_directories(gpr_histogram_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6388,6 +6472,7 @@ target_include_directories(gpr_host_port_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6416,6 +6501,7 @@ target_include_directories(gpr_log_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6444,6 +6530,7 @@ target_include_directories(gpr_mpscq_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6472,6 +6559,7 @@ target_include_directories(gpr_spinlock_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6500,6 +6588,7 @@ target_include_directories(gpr_stack_lockfree_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6528,6 +6617,7 @@ target_include_directories(gpr_string_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6556,6 +6646,7 @@ target_include_directories(gpr_sync_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6584,6 +6675,7 @@ target_include_directories(gpr_thd_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6612,6 +6704,7 @@ target_include_directories(gpr_time_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6640,6 +6733,7 @@ target_include_directories(gpr_tls_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6668,6 +6762,7 @@ target_include_directories(gpr_useful_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6696,6 +6791,7 @@ target_include_directories(grpc_auth_context_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6726,6 +6822,7 @@ target_include_directories(grpc_b64_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6756,6 +6853,7 @@ target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6786,6 +6884,7 @@ target_include_directories(grpc_channel_args_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6816,6 +6915,7 @@ target_include_directories(grpc_channel_stack_builder_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6846,6 +6946,7 @@ target_include_directories(grpc_channel_stack_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6876,6 +6977,7 @@ target_include_directories(grpc_completion_queue_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6906,6 +7008,7 @@ target_include_directories(grpc_completion_queue_threading_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6935,6 +7038,7 @@ target_include_directories(grpc_create_jwt
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -6972,6 +7076,7 @@ target_include_directories(grpc_credentials_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7002,6 +7107,7 @@ target_include_directories(grpc_fetch_oauth2
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7032,6 +7138,7 @@ target_include_directories(grpc_invalid_channel_args_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7063,6 +7170,7 @@ target_include_directories(grpc_json_token_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7094,6 +7202,7 @@ target_include_directories(grpc_jwt_verifier_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7123,6 +7232,7 @@ target_include_directories(grpc_print_google_default_creds_token
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7159,6 +7269,7 @@ target_include_directories(grpc_security_connector_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7189,6 +7300,7 @@ target_include_directories(grpc_ssl_credentials_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7218,6 +7330,7 @@ target_include_directories(grpc_verify_jwt
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7255,6 +7368,7 @@ target_include_directories(handshake_client
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7288,6 +7402,7 @@ target_include_directories(handshake_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7320,6 +7435,7 @@ target_include_directories(hpack_parser_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7350,6 +7466,7 @@ target_include_directories(hpack_table_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7380,6 +7497,7 @@ target_include_directories(http_parser_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7410,6 +7528,7 @@ target_include_directories(httpcli_format_request_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7441,6 +7560,7 @@ target_include_directories(httpcli_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7473,6 +7593,7 @@ target_include_directories(httpscli_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7504,6 +7625,7 @@ target_include_directories(init_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7534,6 +7656,7 @@ target_include_directories(invalid_call_argument_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7564,6 +7687,7 @@ target_include_directories(json_rewrite
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7592,6 +7716,7 @@ target_include_directories(json_rewrite_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7622,6 +7747,7 @@ target_include_directories(json_stream_error_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7652,6 +7778,7 @@ target_include_directories(json_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7682,6 +7809,7 @@ target_include_directories(lame_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7712,6 +7840,7 @@ target_include_directories(lb_policies_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7742,6 +7871,7 @@ target_include_directories(load_file_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7772,6 +7902,7 @@ target_include_directories(memory_profile_client
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7802,6 +7933,7 @@ target_include_directories(memory_profile_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7833,6 +7965,7 @@ target_include_directories(memory_profile_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7864,6 +7997,7 @@ target_include_directories(message_compress_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7894,6 +8028,7 @@ target_include_directories(minimal_stack_is_minimal_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7924,6 +8059,7 @@ target_include_directories(multiple_server_queues_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7954,6 +8090,7 @@ target_include_directories(murmur_hash_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -7982,6 +8119,7 @@ target_include_directories(no_server_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8012,6 +8150,7 @@ target_include_directories(num_external_connectivity_watchers_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8042,6 +8181,7 @@ target_include_directories(parse_address_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8072,6 +8212,7 @@ target_include_directories(percent_encoding_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8103,6 +8244,7 @@ target_include_directories(pollset_set_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8135,6 +8277,7 @@ target_include_directories(resolve_address_posix_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8166,6 +8309,7 @@ target_include_directories(resolve_address_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8196,6 +8340,7 @@ target_include_directories(resource_quota_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8226,6 +8371,7 @@ target_include_directories(secure_channel_create_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8256,6 +8402,7 @@ target_include_directories(secure_endpoint_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8286,6 +8433,7 @@ target_include_directories(sequential_connectivity_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8316,6 +8464,7 @@ target_include_directories(server_chttp2_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8346,6 +8495,7 @@ target_include_directories(server_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8376,6 +8526,7 @@ target_include_directories(slice_buffer_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8406,6 +8557,7 @@ target_include_directories(slice_hash_table_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8436,6 +8588,7 @@ target_include_directories(slice_string_helpers_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8466,6 +8619,7 @@ target_include_directories(slice_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8496,6 +8650,7 @@ target_include_directories(sockaddr_resolver_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8526,6 +8681,7 @@ target_include_directories(sockaddr_utils_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8557,6 +8713,7 @@ target_include_directories(socket_utils_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8590,6 +8747,7 @@ target_include_directories(ssl_transport_security_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8620,6 +8778,7 @@ target_include_directories(status_conversion_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8650,6 +8809,7 @@ target_include_directories(stream_compression_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8680,6 +8840,7 @@ target_include_directories(stream_owned_slice_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8711,6 +8872,7 @@ target_include_directories(tcp_client_posix_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8742,6 +8904,7 @@ target_include_directories(tcp_client_uv_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8773,6 +8936,7 @@ target_include_directories(tcp_posix_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8805,6 +8969,7 @@ target_include_directories(tcp_server_posix_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8836,6 +9001,7 @@ target_include_directories(tcp_server_uv_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8866,6 +9032,7 @@ target_include_directories(time_averaged_stats_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8896,6 +9063,7 @@ target_include_directories(timeout_encoding_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8926,6 +9094,7 @@ target_include_directories(timer_heap_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8956,6 +9125,7 @@ target_include_directories(timer_list_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -8986,6 +9156,7 @@ target_include_directories(transport_connectivity_state_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9016,6 +9187,7 @@ target_include_directories(transport_metadata_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9047,6 +9219,7 @@ target_include_directories(transport_security_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9079,6 +9252,7 @@ target_include_directories(udp_server_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9110,6 +9284,7 @@ target_include_directories(uri_parser_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9141,6 +9316,7 @@ target_include_directories(wakeup_fd_cv_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9174,6 +9350,7 @@ target_include_directories(alarm_cpp_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9215,6 +9392,7 @@ target_include_directories(async_end2end_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9256,6 +9434,7 @@ target_include_directories(auth_property_iterator_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9297,6 +9476,7 @@ target_include_directories(bdp_estimator_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9339,6 +9519,7 @@ target_include_directories(bm_arena
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9384,6 +9565,7 @@ target_include_directories(bm_call_create
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9429,6 +9611,7 @@ target_include_directories(bm_chttp2_hpack
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9474,6 +9657,7 @@ target_include_directories(bm_chttp2_transport
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9519,6 +9703,7 @@ target_include_directories(bm_closure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9564,6 +9749,7 @@ target_include_directories(bm_cq
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9609,6 +9795,7 @@ target_include_directories(bm_cq_multiple_threads
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9654,6 +9841,7 @@ target_include_directories(bm_error
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9699,6 +9887,7 @@ target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9744,6 +9933,7 @@ target_include_directories(bm_fullstack_streaming_pump
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9789,6 +9979,7 @@ target_include_directories(bm_fullstack_trickle
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9835,6 +10026,7 @@ target_include_directories(bm_fullstack_unary_ping_pong
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9880,6 +10072,7 @@ target_include_directories(bm_metadata
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9925,6 +10118,7 @@ target_include_directories(bm_pollset
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -9969,6 +10163,7 @@ target_include_directories(channel_arguments_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10007,6 +10202,7 @@ target_include_directories(channel_filter_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10045,6 +10241,7 @@ target_include_directories(cli_call_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10088,6 +10285,7 @@ target_include_directories(client_crash_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10130,6 +10328,7 @@ target_include_directories(client_crash_test_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10171,6 +10370,7 @@ target_include_directories(client_lb_end2end_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10247,6 +10447,7 @@ target_include_directories(codegen_test_full
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10322,6 +10523,7 @@ target_include_directories(codegen_test_minimal
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10360,6 +10562,7 @@ target_include_directories(credentials_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10398,6 +10601,7 @@ target_include_directories(cxx_byte_buffer_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10438,6 +10642,7 @@ target_include_directories(cxx_slice_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10478,6 +10683,7 @@ target_include_directories(cxx_string_ref_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10515,6 +10721,7 @@ target_include_directories(cxx_time_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10555,6 +10762,7 @@ target_include_directories(end2end_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10603,6 +10811,7 @@ target_include_directories(error_details_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10640,6 +10849,7 @@ target_include_directories(filter_end2end_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10681,6 +10891,7 @@ target_include_directories(generic_end2end_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10729,6 +10940,7 @@ target_include_directories(golden_file_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10767,6 +10979,7 @@ target_include_directories(grpc_cli
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10805,6 +11018,7 @@ target_include_directories(grpc_cpp_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10842,6 +11056,7 @@ target_include_directories(grpc_csharp_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10879,6 +11094,7 @@ target_include_directories(grpc_node_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10916,6 +11132,7 @@ target_include_directories(grpc_objective_c_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10953,6 +11170,7 @@ target_include_directories(grpc_php_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -10990,6 +11208,7 @@ target_include_directories(grpc_python_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11027,6 +11246,7 @@ target_include_directories(grpc_ruby_plugin
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11081,6 +11301,7 @@ target_include_directories(grpc_tool_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11132,6 +11353,7 @@ target_include_directories(grpclb_api_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11178,6 +11400,7 @@ target_include_directories(grpclb_end2end_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11226,6 +11449,7 @@ target_include_directories(grpclb_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11267,6 +11491,7 @@ target_include_directories(h2_ssl_cert_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11307,6 +11532,7 @@ target_include_directories(health_service_end2end_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11348,6 +11574,7 @@ target_include_directories(http2_client
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11390,6 +11617,7 @@ target_include_directories(hybrid_end2end_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11432,6 +11660,7 @@ target_include_directories(inproc_sync_unary_ping_pong_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11477,6 +11706,7 @@ target_include_directories(interop_client
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11522,6 +11752,7 @@ target_include_directories(interop_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11569,6 +11800,7 @@ target_include_directories(interop_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11611,6 +11843,7 @@ target_include_directories(json_run_localhost
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11654,6 +11887,7 @@ target_include_directories(memory_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11701,6 +11935,7 @@ target_include_directories(metrics_client
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11740,6 +11975,7 @@ target_include_directories(mock_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11781,6 +12017,7 @@ target_include_directories(noop-benchmark
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11817,6 +12054,7 @@ target_include_directories(proto_server_reflection_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11860,6 +12098,7 @@ target_include_directories(proto_utils_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11898,6 +12137,7 @@ target_include_directories(qps_interarrival_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11942,6 +12182,7 @@ target_include_directories(qps_json_driver
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -11987,6 +12228,7 @@ target_include_directories(qps_openloop_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12032,6 +12274,7 @@ target_include_directories(qps_worker
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12097,6 +12340,7 @@ target_include_directories(reconnect_interop_client
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12160,6 +12404,7 @@ target_include_directories(reconnect_interop_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12204,6 +12449,7 @@ target_include_directories(secure_auth_context_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12246,6 +12492,7 @@ target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12291,6 +12538,7 @@ target_include_directories(server_builder_plugin_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12346,6 +12594,7 @@ target_include_directories(server_builder_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12387,6 +12636,7 @@ target_include_directories(server_context_test_spouse_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12428,6 +12678,7 @@ target_include_directories(server_crash_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12470,6 +12721,7 @@ target_include_directories(server_crash_test_client
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12525,6 +12777,7 @@ target_include_directories(server_request_call_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12566,6 +12819,7 @@ target_include_directories(shutdown_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12607,6 +12861,7 @@ target_include_directories(stats_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12647,6 +12902,7 @@ target_include_directories(status_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12688,6 +12944,7 @@ target_include_directories(streaming_throughput_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12761,6 +13018,7 @@ target_include_directories(stress_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12803,6 +13061,7 @@ target_include_directories(thread_manager_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12842,6 +13101,7 @@ target_include_directories(thread_stress_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12883,6 +13143,7 @@ target_include_directories(transport_pid_controller_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12924,6 +13185,7 @@ target_include_directories(vector_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -12965,6 +13227,7 @@ target_include_directories(writes_per_rpc_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13005,6 +13268,7 @@ target_include_directories(public_headers_must_be_c89
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13033,6 +13297,7 @@ target_include_directories(badreq_bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13065,6 +13330,7 @@ target_include_directories(connection_prefix_bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13097,6 +13363,7 @@ target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13129,6 +13396,7 @@ target_include_directories(headers_bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13161,6 +13429,7 @@ target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13193,6 +13462,7 @@ target_include_directories(server_registered_method_bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13225,6 +13495,7 @@ target_include_directories(simple_request_bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13257,6 +13528,7 @@ target_include_directories(unknown_frame_bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13289,6 +13561,7 @@ target_include_directories(window_overflow_bad_client_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13322,6 +13595,7 @@ target_include_directories(bad_ssl_cert_server
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13355,6 +13629,7 @@ target_include_directories(bad_ssl_cert_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13386,6 +13661,7 @@ target_include_directories(h2_census_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13417,6 +13693,7 @@ target_include_directories(h2_compress_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13448,6 +13725,7 @@ target_include_directories(h2_fakesec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13480,6 +13758,7 @@ target_include_directories(h2_fd_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13512,6 +13791,7 @@ target_include_directories(h2_full_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13544,6 +13824,7 @@ target_include_directories(h2_full+pipe_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13576,6 +13857,7 @@ target_include_directories(h2_full+trace_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13607,6 +13889,7 @@ target_include_directories(h2_full+workarounds_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13638,6 +13921,7 @@ target_include_directories(h2_http_proxy_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13669,6 +13953,7 @@ target_include_directories(h2_load_reporting_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13700,6 +13985,7 @@ target_include_directories(h2_oauth2_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13731,6 +14017,7 @@ target_include_directories(h2_proxy_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13762,6 +14049,7 @@ target_include_directories(h2_sockpair_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13793,6 +14081,7 @@ target_include_directories(h2_sockpair+trace_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13824,6 +14113,7 @@ target_include_directories(h2_sockpair_1byte_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13855,6 +14145,7 @@ target_include_directories(h2_ssl_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13886,6 +14177,7 @@ target_include_directories(h2_ssl_proxy_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13918,6 +14210,7 @@ target_include_directories(h2_uds_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13950,6 +14243,7 @@ target_include_directories(inproc_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -13981,6 +14275,7 @@ target_include_directories(h2_census_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14012,6 +14307,7 @@ target_include_directories(h2_compress_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14044,6 +14340,7 @@ target_include_directories(h2_fd_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14076,6 +14373,7 @@ target_include_directories(h2_full_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14108,6 +14406,7 @@ target_include_directories(h2_full+pipe_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14140,6 +14439,7 @@ target_include_directories(h2_full+trace_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14171,6 +14471,7 @@ target_include_directories(h2_full+workarounds_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14202,6 +14503,7 @@ target_include_directories(h2_http_proxy_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14233,6 +14535,7 @@ target_include_directories(h2_load_reporting_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14264,6 +14567,7 @@ target_include_directories(h2_proxy_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14295,6 +14599,7 @@ target_include_directories(h2_sockpair_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14326,6 +14631,7 @@ target_include_directories(h2_sockpair+trace_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14357,6 +14663,7 @@ target_include_directories(h2_sockpair_1byte_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14389,6 +14696,7 @@ target_include_directories(h2_uds_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14421,6 +14729,7 @@ target_include_directories(inproc_nosec_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14455,6 +14764,7 @@ target_include_directories(resolver_component_test_unsecure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14499,6 +14809,7 @@ target_include_directories(resolver_component_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14543,6 +14854,7 @@ target_include_directories(resolver_component_tests_runner_invoker_unsecure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14587,6 +14899,7 @@ target_include_directories(resolver_component_tests_runner_invoker
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14630,6 +14943,7 @@ target_include_directories(address_sorting_test_unsecure
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14672,6 +14986,7 @@ target_include_directories(address_sorting_test
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14713,6 +15028,7 @@ target_include_directories(api_fuzzer_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14744,6 +15060,7 @@ target_include_directories(client_fuzzer_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14775,6 +15092,7 @@ target_include_directories(hpack_parser_fuzzer_test_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14806,6 +15124,7 @@ target_include_directories(http_request_fuzzer_test_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14837,6 +15156,7 @@ target_include_directories(http_response_fuzzer_test_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14868,6 +15188,7 @@ target_include_directories(json_fuzzer_test_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14899,6 +15220,7 @@ target_include_directories(nanopb_fuzzer_response_test_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14930,6 +15252,7 @@ target_include_directories(nanopb_fuzzer_serverlist_test_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14961,6 +15284,7 @@ target_include_directories(percent_decode_fuzzer_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -14992,6 +15316,7 @@ target_include_directories(percent_encode_fuzzer_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -15023,6 +15348,7 @@ target_include_directories(server_fuzzer_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -15054,6 +15380,7 @@ target_include_directories(ssl_server_fuzzer_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
@@ -15085,6 +15412,7 @@ target_include_directories(uri_fuzzer_test_one_entry
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
   PRIVATE ${CARES_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares

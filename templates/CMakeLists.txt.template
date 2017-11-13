@@ -46,6 +46,7 @@
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
+      deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       deps.append(d)
@@ -195,6 +196,9 @@
     endif()
     set(_gRPC_FIND_CARES "if(NOT c-ares_FOUND)\n  find_package(c-ares CONFIG)\nendif()")
   endif()
+
+  include_directories(<%text>${CMAKE_CURRENT_SOURCE_DIR}/third_party/address_sorting</%text>)
+  set(_gRPC_ADDRESS_SORTING_LIBRARIES address_sorting)
 
   if("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "module")
     # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
@@ -518,6 +522,7 @@
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
     PRIVATE <%text>${ZLIB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${BENCHMARK}</%text>/include
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/address_sorting
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
@@ -590,6 +595,7 @@
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
     PRIVATE <%text>${BENCHMARK_ROOT_DIR}</%text>/include
     PRIVATE <%text>${ZLIB_ROOT_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/address_sorting
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
