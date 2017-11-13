@@ -44,6 +44,7 @@
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #include <winsock2.h>
 #include <ws2tcpip.h>
+// comment to prevent formatter from moving mswock.h upwards
 #include <mswsock.h>
 #define ADDRESS_SORTING_WINDOWS 1
 #else
