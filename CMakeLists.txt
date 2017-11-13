@@ -786,7 +786,6 @@ add_custom_target(buildtests
   DEPENDS buildtests_c buildtests_cxx)
 endif (gRPC_BUILD_TESTS)
 
-if (gRPC_BUILD_TESTS)
 
 add_library(address_sorting
   third_party/address_sorting/address_sorting.c
@@ -826,7 +825,15 @@ target_link_libraries(address_sorting
 )
 
 
-endif (gRPC_BUILD_TESTS)
+
+if (gRPC_INSTALL)
+  install(TARGETS address_sorting EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
 
 add_library(gpr
   src/core/lib/profiling/basic_timers.cc
