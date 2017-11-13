@@ -54,8 +54,8 @@ unsigned gpr_cpu_current_cpu(void) {
      most code that's using this is using it to shard across work queues though,
      so here we use thread identity instead to achieve a similar though not
      identical effect */
-  static auto DeleteValue = [](void *value_ptr) {
-    unsigned int *value = static_cast<unsigned int *>(value_ptr);
+  static auto DeleteValue = [](void* value_ptr) {
+    unsigned int* value = static_cast<unsigned int*>(value_ptr);
     if (value) {
       gpr_free(value);
     }
@@ -67,10 +67,10 @@ unsigned gpr_cpu_current_cpu(void) {
   // of thread identity explicitly so hashing works reliably.
   static std::atomic<unsigned int> thread_counter(0);
 
-  unsigned int *thread_id =
-      static_cast<unsigned int *>(pthread_getspecific(thread_id_key));
+  unsigned int* thread_id =
+      static_cast<unsigned int*>(pthread_getspecific(thread_id_key));
   if (thread_id == nullptr) {
-    thread_id = static_cast<unsigned int *>(gpr_malloc(sizeof(unsigned int)));
+    thread_id = static_cast<unsigned int*>(gpr_malloc(sizeof(unsigned int)));
     *thread_id = thread_counter++;
     pthread_setspecific(thread_id_key, thread_id);
   }
