@@ -66,7 +66,7 @@ unsigned gpr_cpu_current_cpu(void) {
   // pthread_t isn't portably defined to map to an integral type. So keep track
   // of thread identity explicitly so hashing works reliably.
   static std::atomic<unsigned int> thread_counter(0);
-
+  
   unsigned int* thread_id =
       static_cast<unsigned int*>(pthread_getspecific(thread_id_key));
   if (thread_id == nullptr) {
