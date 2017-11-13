@@ -48,7 +48,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 /* TODO : Fill in these functions; get address sorting functionality to work on
  * windows. */
