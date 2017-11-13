@@ -32,6 +32,12 @@ struct grpc_chttp2_stream;
 
 extern "C" grpc_tracer_flag grpc_flowctl_trace;
 
+namespace grpc {
+namespace testing {
+class TrickledCHTTP2;  // to make this a friend
+}  // namespace testing
+}  // namespace grpc
+
 namespace grpc_core {
 namespace chttp2 {
 
@@ -203,6 +209,7 @@ class TransportFlowControl {
   }
 
  private:
+  friend class ::grpc::testing::TrickledCHTTP2;
   double TargetLogBdp();
   double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
   FlowControlAction::Urgency DeltaUrgency(int32_t value,
@@ -297,6 +304,7 @@ class StreamFlowControl {
   }
 
  private:
+  friend class ::grpc::testing::TrickledCHTTP2;
   TransportFlowControl* const tfc_;
   const grpc_chttp2_stream* const s_;
 

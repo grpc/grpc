@@ -23,9 +23,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-const char *grpc_json_get_string_property(const grpc_json *json,
-                                          const char *prop_name) {
-  grpc_json *child;
+const char* grpc_json_get_string_property(const grpc_json* json,
+                                          const char* prop_name) {
+  grpc_json* child;
   for (child = json->child; child != NULL; child = child->next) {
     if (strcmp(child->key, prop_name) == 0) break;
   }
@@ -36,10 +36,10 @@ const char *grpc_json_get_string_property(const grpc_json *json,
   return child->value;
 }
 
-bool grpc_copy_json_string_property(const grpc_json *json,
-                                    const char *prop_name,
-                                    char **copied_value) {
-  const char *prop_value = grpc_json_get_string_property(json, prop_name);
+bool grpc_copy_json_string_property(const grpc_json* json,
+                                    const char* prop_name,
+                                    char** copied_value) {
+  const char* prop_value = grpc_json_get_string_property(json, prop_name);
   if (prop_value == NULL) return false;
   *copied_value = gpr_strdup(prop_value);
   return true;

@@ -28,7 +28,7 @@ extern "C" {
 
 // a polling engine that utilizes a singleton epoll set and turnstile polling
 
-const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request);
+const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request);
 
 #ifdef __cplusplus
 }

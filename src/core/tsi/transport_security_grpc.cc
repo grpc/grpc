@@ -20,9 +20,9 @@
 
 /* This method creates a tsi_zero_copy_grpc_protector object.  */
 tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
-    grpc_exec_ctx *exec_ctx, const tsi_handshaker_result *self,
-    size_t *max_output_protected_frame_size,
-    tsi_zero_copy_grpc_protector **protector) {
+    grpc_exec_ctx* exec_ctx, const tsi_handshaker_result* self,
+    size_t* max_output_protected_frame_size,
+    tsi_zero_copy_grpc_protector** protector) {
   if (exec_ctx == NULL || self == NULL || self->vtable == NULL ||
       protector == NULL) {
     return TSI_INVALID_ARGUMENT;
@@ -39,9 +39,9 @@ tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
    Calls specific implementation after state/input validation. */
 
 tsi_result tsi_zero_copy_grpc_protector_protect(
-    grpc_exec_ctx *exec_ctx, tsi_zero_copy_grpc_protector *self,
-    grpc_slice_buffer *unprotected_slices,
-    grpc_slice_buffer *protected_slices) {
+    grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self,
+    grpc_slice_buffer* unprotected_slices,
+    grpc_slice_buffer* protected_slices) {
   if (exec_ctx == NULL || self == NULL || self->vtable == NULL ||
       unprotected_slices == NULL || protected_slices == NULL) {
     return TSI_INVALID_ARGUMENT;
@@ -52,9 +52,9 @@ tsi_result tsi_zero_copy_grpc_protector_protect(
 }
 
 tsi_result tsi_zero_copy_grpc_protector_unprotect(
-    grpc_exec_ctx *exec_ctx, tsi_zero_copy_grpc_protector *self,
-    grpc_slice_buffer *protected_slices,
-    grpc_slice_buffer *unprotected_slices) {
+    grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self,
+    grpc_slice_buffer* protected_slices,
+    grpc_slice_buffer* unprotected_slices) {
   if (exec_ctx == NULL || self == NULL || self->vtable == NULL ||
       protected_slices == NULL || unprotected_slices == NULL) {
     return TSI_INVALID_ARGUMENT;
@@ -64,8 +64,8 @@ tsi_result tsi_zero_copy_grpc_protector_unprotect(
                                  unprotected_slices);
 }
 
-void tsi_zero_copy_grpc_protector_destroy(grpc_exec_ctx *exec_ctx,
-                                          tsi_zero_copy_grpc_protector *self) {
+void tsi_zero_copy_grpc_protector_destroy(grpc_exec_ctx* exec_ctx,
+                                          tsi_zero_copy_grpc_protector* self) {
   if (self == NULL) return;
   self->vtable->destroy(exec_ctx, self);
 }

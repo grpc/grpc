@@ -19,13 +19,17 @@
 #ifndef MOCK_ENDPOINT_H
 #define MOCK_ENDPOINT_H
 
+#include <grpc/support/atm.h>
+
 #include "src/core/lib/iomgr/endpoint.h"
 
-typedef struct { int num_writes; } grpc_passthru_endpoint_stats;
+typedef struct {
+  gpr_atm num_writes;
+} grpc_passthru_endpoint_stats;
 
-void grpc_passthru_endpoint_create(grpc_endpoint **client,
-                                   grpc_endpoint **server,
-                                   grpc_resource_quota *resource_quota,
-                                   grpc_passthru_endpoint_stats *stats);
+void grpc_passthru_endpoint_create(grpc_endpoint** client,
+                                   grpc_endpoint** server,
+                                   grpc_resource_quota* resource_quota,
+                                   grpc_passthru_endpoint_stats* stats);
 
 #endif

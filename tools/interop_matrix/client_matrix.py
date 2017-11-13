@@ -27,6 +27,11 @@ LANG_RUNTIME_MATRIX = {
     'cxx': ['cxx'],             # This is actually debian8.
     'go': ['go1.7', 'go1.8'],
     'java': ['java_oracle8'],
+    #'python': ['python'],  # All python versions fail the tests due to timeout.
+    'node': ['node'],
+    'ruby': ['ruby'],
+    'php': ['php', 'php7'],
+    'csharp': ['csharp', 'csharpcoreclr'],
 }
 
 # Dictionary of releases per language.  For each language, we need to provide
@@ -58,5 +63,45 @@ LANG_RELEASE_MATRIX = {
         'v1.5.0',
         'v1.6.1',
         'v1.7.0',
+    ],
+    #'python': [
+        #'v1.0.x',  #Fail to run the test. #13230.
+    #    'v1.1.4',
+    #    'v1.2.5',
+    #    'v1.3.9',
+    #    'v1.4.2',
+    #    'v1.6.6',
+    #],
+    'node': [
+        'v1.0.1',
+        'v1.1.4',
+        'v1.2.5',
+        'v1.3.9',
+        'v1.4.2',
+        'v1.6.6',
+    ],
+    'ruby': [
+        # Ruby v1.0.x doesn't have the fix #8914, therefore not supported.
+        'v1.1.4',
+        'v1.2.5',
+        'v1.3.9',
+        'v1.4.2',
+        'v1.6.6',
+    ],
+    'php': [
+        'v1.0.1',
+        'v1.1.4',
+        'v1.2.5',
+        'v1.3.9',
+        'v1.4.2',
+        'v1.6.6',
+    ],
+   'csharp': [
+        #'v1.0.1',
+        #'v1.1.4',  Fail to build.
+        #'v1.2.5',  Fail to run test with csharp image.
+        'v1.3.9',
+        'v1.4.2',
+        'v1.6.6',
     ],
 }

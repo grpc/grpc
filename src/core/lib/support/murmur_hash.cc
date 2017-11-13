@@ -29,8 +29,8 @@
   (h) *= 0xc2b2ae35; \
   (h) ^= (h) >> 16;
 
-uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed) {
-  const uint8_t *data = (const uint8_t *)key;
+uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
+  const uint8_t* data = (const uint8_t*)key;
   const size_t nblocks = len / 4;
   int i;
 
@@ -40,8 +40,8 @@ uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed) {
   const uint32_t c1 = 0xcc9e2d51;
   const uint32_t c2 = 0x1b873593;
 
-  const uint32_t *blocks = ((const uint32_t *)key) + nblocks;
-  const uint8_t *tail = (const uint8_t *)(data + nblocks * 4);
+  const uint32_t* blocks = ((const uint32_t*)key) + nblocks;
+  const uint8_t* tail = (const uint8_t*)(data + nblocks * 4);
 
   /* body */
   for (i = -(int)nblocks; i; i++) {

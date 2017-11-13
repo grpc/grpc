@@ -23,7 +23,7 @@
 
 namespace grpc_node_generator {
 
-grpc::string GenerateFile(const grpc::protobuf::FileDescriptor *file);
+grpc::string GenerateFile(const grpc::protobuf::FileDescriptor* file);
 
 }  // namespace grpc_node_generator
 

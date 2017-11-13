@@ -27,11 +27,11 @@
 #include <stdio.h>
 #include <string.h>
 
-extern "C" void gpr_default_log(gpr_log_func_args *args);
+extern "C" void gpr_default_log(gpr_log_func_args* args);
 static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
 static gpr_atm g_min_severity_to_print = GPR_LOG_VERBOSITY_UNSET;
 
-const char *gpr_log_severity_string(gpr_log_severity severity) {
+const char* gpr_log_severity_string(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
       return "D";
@@ -43,8 +43,8 @@ const char *gpr_log_severity_string(gpr_log_severity severity) {
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
-void gpr_log_message(const char *file, int line, gpr_log_severity severity,
-                     const char *message) {
+void gpr_log_message(const char* file, int line, gpr_log_severity severity,
+                     const char* message) {
   if ((gpr_atm)severity < gpr_atm_no_barrier_load(&g_min_severity_to_print)) {
     return;
   }
@@ -64,8 +64,8 @@ void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
 }
 
 void gpr_log_verbosity_init() {
-  char *verbosity = NULL;
-  const char *insecure_getenv = gpr_getenv_silent("GRPC_VERBOSITY", &verbosity);
+  char* verbosity = NULL;
+  const char* insecure_getenv = gpr_getenv_silent("GRPC_VERBOSITY", &verbosity);
 
   gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
   if (verbosity != NULL) {

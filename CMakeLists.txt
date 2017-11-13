@@ -384,10 +384,6 @@ add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
 add_dependencies(buildtests_c byte_stream_test)
-add_dependencies(buildtests_c census_context_test)
-add_dependencies(buildtests_c census_intrusive_hash_map_test)
-add_dependencies(buildtests_c census_resource_test)
-add_dependencies(buildtests_c census_trace_context_test)
 add_dependencies(buildtests_c channel_create_test)
 add_dependencies(buildtests_c chttp2_hpack_encoder_test)
 add_dependencies(buildtests_c chttp2_stream_map_test)
@@ -492,7 +488,6 @@ add_dependencies(buildtests_c memory_profile_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
 add_dependencies(buildtests_c minimal_stack_is_minimal_test)
-add_dependencies(buildtests_c mlog_test)
 add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
 add_dependencies(buildtests_c no_server_test)
@@ -921,7 +916,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_library(gpr_test_util
-  test/core/util/test_config.c
+  test/core/util/test_config.cc
 )
 
 if(WIN32 AND MSVC)
@@ -1153,6 +1148,7 @@ add_library(grpc
   src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -1192,6 +1188,7 @@ add_library(grpc
   third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
+  src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1201,21 +1198,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
   src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
-  src/core/ext/census/base_resources.cc
-  src/core/ext/census/context.cc
-  src/core/ext/census/gen/census.pb.c
-  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.cc
-  src/core/ext/census/grpc_filter.cc
-  src/core/ext/census/grpc_plugin.cc
-  src/core/ext/census/initialize.cc
-  src/core/ext/census/intrusive_hash_map.cc
-  src/core/ext/census/mlog.cc
-  src/core/ext/census/operation.cc
-  src/core/ext/census/placeholders.cc
-  src/core/ext/census/resource.cc
-  src/core/ext/census/trace_context.cc
-  src/core/ext/census/tracing.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
@@ -1477,6 +1460,7 @@ add_library(grpc_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -1614,26 +1598,26 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
-  test/core/end2end/data/client_certs.c
-  test/core/end2end/data/server1_cert.c
-  test/core/end2end/data/server1_key.c
-  test/core/end2end/data/test_root_cert.c
-  test/core/security/oauth2_utils.c
+  test/core/end2end/data/client_certs.cc
+  test/core/end2end/data/server1_cert.cc
+  test/core/end2end/data/server1_key.cc
+  test/core/end2end/data/test_root_cert.cc
+  test/core/security/oauth2_utils.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
-  test/core/end2end/cq_verifier.c
-  test/core/end2end/fixtures/http_proxy_fixture.c
-  test/core/end2end/fixtures/proxy.c
-  test/core/iomgr/endpoint_tests.c
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/fixtures/http_proxy_fixture.cc
+  test/core/end2end/fixtures/proxy.cc
+  test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
-  test/core/util/grpc_profiler.c
-  test/core/util/memory_counters.c
-  test/core/util/mock_endpoint.c
-  test/core/util/parse_hexstring.c
-  test/core/util/passthru_endpoint.c
-  test/core/util/port.c
-  test/core/util/port_server_client.c
-  test/core/util/slice_splitter.c
-  test/core/util/trickle_endpoint.c
+  test/core/util/grpc_profiler.cc
+  test/core/util/memory_counters.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/port.cc
+  test/core/util/port_server_client.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1767,6 +1751,7 @@ add_library(grpc_test_util
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -1885,20 +1870,20 @@ if (gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
-  test/core/end2end/cq_verifier.c
-  test/core/end2end/fixtures/http_proxy_fixture.c
-  test/core/end2end/fixtures/proxy.c
-  test/core/iomgr/endpoint_tests.c
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/fixtures/http_proxy_fixture.cc
+  test/core/end2end/fixtures/proxy.cc
+  test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
-  test/core/util/grpc_profiler.c
-  test/core/util/memory_counters.c
-  test/core/util/mock_endpoint.c
-  test/core/util/parse_hexstring.c
-  test/core/util/passthru_endpoint.c
-  test/core/util/port.c
-  test/core/util/port_server_client.c
-  test/core/util/slice_splitter.c
-  test/core/util/trickle_endpoint.c
+  test/core/util/grpc_profiler.cc
+  test/core/util/memory_counters.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/port.cc
+  test/core/util/port_server_client.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -2032,6 +2017,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -2316,6 +2302,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -2358,22 +2345,9 @@ add_library(grpc_unsecure
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
+  src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  src/core/ext/census/base_resources.cc
-  src/core/ext/census/context.cc
-  src/core/ext/census/gen/census.pb.c
-  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.cc
-  src/core/ext/census/grpc_filter.cc
-  src/core/ext/census/grpc_plugin.cc
-  src/core/ext/census/initialize.cc
-  src/core/ext/census/intrusive_hash_map.cc
-  src/core/ext/census/mlog.cc
-  src/core/ext/census/operation.cc
-  src/core/ext/census/placeholders.cc
-  src/core/ext/census/resource.cc
-  src/core/ext/census/trace_context.cc
-  src/core/ext/census/tracing.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
@@ -2469,7 +2443,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_library(reconnect_server
-  test/core/util/reconnect_server.c
+  test/core/util/reconnect_server.cc
 )
 
 if(WIN32 AND MSVC)
@@ -2512,7 +2486,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(test_tcp_server
-  test/core/util/test_tcp_server.c
+  test/core/util/test_tcp_server.cc
 )
 
 if(WIN32 AND MSVC)
@@ -3051,6 +3025,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -3075,21 +3050,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/census/base_resources.cc
-  src/core/ext/census/context.cc
-  src/core/ext/census/gen/census.pb.c
-  src/core/ext/census/gen/trace_context.pb.c
   src/core/ext/census/grpc_context.cc
-  src/core/ext/census/grpc_filter.cc
-  src/core/ext/census/grpc_plugin.cc
-  src/core/ext/census/initialize.cc
-  src/core/ext/census/intrusive_hash_map.cc
-  src/core/ext/census/mlog.cc
-  src/core/ext/census/operation.cc
-  src/core/ext/census/placeholders.cc
-  src/core/ext/census/resource.cc
-  src/core/ext/census/trace_context.cc
-  src/core/ext/census/tracing.cc
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -4810,7 +4771,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
-  test/core/bad_client/bad_client.c
+  test/core/bad_client/bad_client.cc
 )
 
 if(WIN32 AND MSVC)
@@ -4852,7 +4813,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_ssl_test_server
-  test/core/bad_ssl/server_common.c
+  test/core/bad_ssl/server_common.cc
 )
 
 if(WIN32 AND MSVC)
@@ -4894,67 +4855,67 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(end2end_tests
-  test/core/end2end/end2end_tests.c
-  test/core/end2end/end2end_test_utils.c
-  test/core/end2end/tests/authority_not_supported.c
-  test/core/end2end/tests/bad_hostname.c
-  test/core/end2end/tests/bad_ping.c
-  test/core/end2end/tests/binary_metadata.c
-  test/core/end2end/tests/call_creds.c
-  test/core/end2end/tests/cancel_after_accept.c
-  test/core/end2end/tests/cancel_after_client_done.c
-  test/core/end2end/tests/cancel_after_invoke.c
-  test/core/end2end/tests/cancel_after_round_trip.c
-  test/core/end2end/tests/cancel_before_invoke.c
-  test/core/end2end/tests/cancel_in_a_vacuum.c
-  test/core/end2end/tests/cancel_with_status.c
-  test/core/end2end/tests/compressed_payload.c
-  test/core/end2end/tests/connectivity.c
-  test/core/end2end/tests/default_host.c
-  test/core/end2end/tests/disappearing_server.c
-  test/core/end2end/tests/empty_batch.c
-  test/core/end2end/tests/filter_call_init_fails.c
-  test/core/end2end/tests/filter_causes_close.c
-  test/core/end2end/tests/filter_latency.c
-  test/core/end2end/tests/graceful_server_shutdown.c
-  test/core/end2end/tests/high_initial_seqno.c
-  test/core/end2end/tests/hpack_size.c
-  test/core/end2end/tests/idempotent_request.c
-  test/core/end2end/tests/invoke_large_request.c
-  test/core/end2end/tests/keepalive_timeout.c
-  test/core/end2end/tests/large_metadata.c
-  test/core/end2end/tests/load_reporting_hook.c
-  test/core/end2end/tests/max_concurrent_streams.c
-  test/core/end2end/tests/max_connection_age.c
-  test/core/end2end/tests/max_connection_idle.c
-  test/core/end2end/tests/max_message_length.c
-  test/core/end2end/tests/negative_deadline.c
-  test/core/end2end/tests/network_status_change.c
-  test/core/end2end/tests/no_logging.c
-  test/core/end2end/tests/no_op.c
-  test/core/end2end/tests/payload.c
-  test/core/end2end/tests/ping.c
-  test/core/end2end/tests/ping_pong_streaming.c
-  test/core/end2end/tests/proxy_auth.c
-  test/core/end2end/tests/registered_call.c
-  test/core/end2end/tests/request_with_flags.c
-  test/core/end2end/tests/request_with_payload.c
-  test/core/end2end/tests/resource_quota_server.c
-  test/core/end2end/tests/server_finishes_request.c
-  test/core/end2end/tests/shutdown_finishes_calls.c
-  test/core/end2end/tests/shutdown_finishes_tags.c
-  test/core/end2end/tests/simple_cacheable_request.c
-  test/core/end2end/tests/simple_delayed_request.c
-  test/core/end2end/tests/simple_metadata.c
-  test/core/end2end/tests/simple_request.c
-  test/core/end2end/tests/stream_compression_compressed_payload.c
-  test/core/end2end/tests/stream_compression_payload.c
-  test/core/end2end/tests/stream_compression_ping_pong_streaming.c
-  test/core/end2end/tests/streaming_error_response.c
-  test/core/end2end/tests/trailing_metadata.c
-  test/core/end2end/tests/workaround_cronet_compression.c
-  test/core/end2end/tests/write_buffering.c
-  test/core/end2end/tests/write_buffering_at_end.c
+  test/core/end2end/end2end_tests.cc
+  test/core/end2end/end2end_test_utils.cc
+  test/core/end2end/tests/authority_not_supported.cc
+  test/core/end2end/tests/bad_hostname.cc
+  test/core/end2end/tests/bad_ping.cc
+  test/core/end2end/tests/binary_metadata.cc
+  test/core/end2end/tests/call_creds.cc
+  test/core/end2end/tests/cancel_after_accept.cc
+  test/core/end2end/tests/cancel_after_client_done.cc
+  test/core/end2end/tests/cancel_after_invoke.cc
+  test/core/end2end/tests/cancel_after_round_trip.cc
+  test/core/end2end/tests/cancel_before_invoke.cc
+  test/core/end2end/tests/cancel_in_a_vacuum.cc
+  test/core/end2end/tests/cancel_with_status.cc
+  test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connectivity.cc
+  test/core/end2end/tests/default_host.cc
+  test/core/end2end/tests/disappearing_server.cc
+  test/core/end2end/tests/empty_batch.cc
+  test/core/end2end/tests/filter_call_init_fails.cc
+  test/core/end2end/tests/filter_causes_close.cc
+  test/core/end2end/tests/filter_latency.cc
+  test/core/end2end/tests/graceful_server_shutdown.cc
+  test/core/end2end/tests/high_initial_seqno.cc
+  test/core/end2end/tests/hpack_size.cc
+  test/core/end2end/tests/idempotent_request.cc
+  test/core/end2end/tests/invoke_large_request.cc
+  test/core/end2end/tests/keepalive_timeout.cc
+  test/core/end2end/tests/large_metadata.cc
+  test/core/end2end/tests/load_reporting_hook.cc
+  test/core/end2end/tests/max_concurrent_streams.cc
+  test/core/end2end/tests/max_connection_age.cc
+  test/core/end2end/tests/max_connection_idle.cc
+  test/core/end2end/tests/max_message_length.cc
+  test/core/end2end/tests/negative_deadline.cc
+  test/core/end2end/tests/network_status_change.cc
+  test/core/end2end/tests/no_logging.cc
+  test/core/end2end/tests/no_op.cc
+  test/core/end2end/tests/payload.cc
+  test/core/end2end/tests/ping.cc
+  test/core/end2end/tests/ping_pong_streaming.cc
+  test/core/end2end/tests/proxy_auth.cc
+  test/core/end2end/tests/registered_call.cc
+  test/core/end2end/tests/request_with_flags.cc
+  test/core/end2end/tests/request_with_payload.cc
+  test/core/end2end/tests/resource_quota_server.cc
+  test/core/end2end/tests/server_finishes_request.cc
+  test/core/end2end/tests/shutdown_finishes_calls.cc
+  test/core/end2end/tests/shutdown_finishes_tags.cc
+  test/core/end2end/tests/simple_cacheable_request.cc
+  test/core/end2end/tests/simple_delayed_request.cc
+  test/core/end2end/tests/simple_metadata.cc
+  test/core/end2end/tests/simple_request.cc
+  test/core/end2end/tests/stream_compression_compressed_payload.cc
+  test/core/end2end/tests/stream_compression_payload.cc
+  test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
+  test/core/end2end/tests/streaming_error_response.cc
+  test/core/end2end/tests/trailing_metadata.cc
+  test/core/end2end/tests/workaround_cronet_compression.cc
+  test/core/end2end/tests/write_buffering.cc
+  test/core/end2end/tests/write_buffering_at_end.cc
 )
 
 if(WIN32 AND MSVC)
@@ -4997,66 +4958,66 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(end2end_nosec_tests
-  test/core/end2end/end2end_nosec_tests.c
-  test/core/end2end/end2end_test_utils.c
-  test/core/end2end/tests/authority_not_supported.c
-  test/core/end2end/tests/bad_hostname.c
-  test/core/end2end/tests/bad_ping.c
-  test/core/end2end/tests/binary_metadata.c
-  test/core/end2end/tests/cancel_after_accept.c
-  test/core/end2end/tests/cancel_after_client_done.c
-  test/core/end2end/tests/cancel_after_invoke.c
-  test/core/end2end/tests/cancel_after_round_trip.c
-  test/core/end2end/tests/cancel_before_invoke.c
-  test/core/end2end/tests/cancel_in_a_vacuum.c
-  test/core/end2end/tests/cancel_with_status.c
-  test/core/end2end/tests/compressed_payload.c
-  test/core/end2end/tests/connectivity.c
-  test/core/end2end/tests/default_host.c
-  test/core/end2end/tests/disappearing_server.c
-  test/core/end2end/tests/empty_batch.c
-  test/core/end2end/tests/filter_call_init_fails.c
-  test/core/end2end/tests/filter_causes_close.c
-  test/core/end2end/tests/filter_latency.c
-  test/core/end2end/tests/graceful_server_shutdown.c
-  test/core/end2end/tests/high_initial_seqno.c
-  test/core/end2end/tests/hpack_size.c
-  test/core/end2end/tests/idempotent_request.c
-  test/core/end2end/tests/invoke_large_request.c
-  test/core/end2end/tests/keepalive_timeout.c
-  test/core/end2end/tests/large_metadata.c
-  test/core/end2end/tests/load_reporting_hook.c
-  test/core/end2end/tests/max_concurrent_streams.c
-  test/core/end2end/tests/max_connection_age.c
-  test/core/end2end/tests/max_connection_idle.c
-  test/core/end2end/tests/max_message_length.c
-  test/core/end2end/tests/negative_deadline.c
-  test/core/end2end/tests/network_status_change.c
-  test/core/end2end/tests/no_logging.c
-  test/core/end2end/tests/no_op.c
-  test/core/end2end/tests/payload.c
-  test/core/end2end/tests/ping.c
-  test/core/end2end/tests/ping_pong_streaming.c
-  test/core/end2end/tests/proxy_auth.c
-  test/core/end2end/tests/registered_call.c
-  test/core/end2end/tests/request_with_flags.c
-  test/core/end2end/tests/request_with_payload.c
-  test/core/end2end/tests/resource_quota_server.c
-  test/core/end2end/tests/server_finishes_request.c
-  test/core/end2end/tests/shutdown_finishes_calls.c
-  test/core/end2end/tests/shutdown_finishes_tags.c
-  test/core/end2end/tests/simple_cacheable_request.c
-  test/core/end2end/tests/simple_delayed_request.c
-  test/core/end2end/tests/simple_metadata.c
-  test/core/end2end/tests/simple_request.c
-  test/core/end2end/tests/stream_compression_compressed_payload.c
-  test/core/end2end/tests/stream_compression_payload.c
-  test/core/end2end/tests/stream_compression_ping_pong_streaming.c
-  test/core/end2end/tests/streaming_error_response.c
-  test/core/end2end/tests/trailing_metadata.c
-  test/core/end2end/tests/workaround_cronet_compression.c
-  test/core/end2end/tests/write_buffering.c
-  test/core/end2end/tests/write_buffering_at_end.c
+  test/core/end2end/end2end_nosec_tests.cc
+  test/core/end2end/end2end_test_utils.cc
+  test/core/end2end/tests/authority_not_supported.cc
+  test/core/end2end/tests/bad_hostname.cc
+  test/core/end2end/tests/bad_ping.cc
+  test/core/end2end/tests/binary_metadata.cc
+  test/core/end2end/tests/cancel_after_accept.cc
+  test/core/end2end/tests/cancel_after_client_done.cc
+  test/core/end2end/tests/cancel_after_invoke.cc
+  test/core/end2end/tests/cancel_after_round_trip.cc
+  test/core/end2end/tests/cancel_before_invoke.cc
+  test/core/end2end/tests/cancel_in_a_vacuum.cc
+  test/core/end2end/tests/cancel_with_status.cc
+  test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connectivity.cc
+  test/core/end2end/tests/default_host.cc
+  test/core/end2end/tests/disappearing_server.cc
+  test/core/end2end/tests/empty_batch.cc
+  test/core/end2end/tests/filter_call_init_fails.cc
+  test/core/end2end/tests/filter_causes_close.cc
+  test/core/end2end/tests/filter_latency.cc
+  test/core/end2end/tests/graceful_server_shutdown.cc
+  test/core/end2end/tests/high_initial_seqno.cc
+  test/core/end2end/tests/hpack_size.cc
+  test/core/end2end/tests/idempotent_request.cc
+  test/core/end2end/tests/invoke_large_request.cc
+  test/core/end2end/tests/keepalive_timeout.cc
+  test/core/end2end/tests/large_metadata.cc
+  test/core/end2end/tests/load_reporting_hook.cc
+  test/core/end2end/tests/max_concurrent_streams.cc
+  test/core/end2end/tests/max_connection_age.cc
+  test/core/end2end/tests/max_connection_idle.cc
+  test/core/end2end/tests/max_message_length.cc
+  test/core/end2end/tests/negative_deadline.cc
+  test/core/end2end/tests/network_status_change.cc
+  test/core/end2end/tests/no_logging.cc
+  test/core/end2end/tests/no_op.cc
+  test/core/end2end/tests/payload.cc
+  test/core/end2end/tests/ping.cc
+  test/core/end2end/tests/ping_pong_streaming.cc
+  test/core/end2end/tests/proxy_auth.cc
+  test/core/end2end/tests/registered_call.cc
+  test/core/end2end/tests/request_with_flags.cc
+  test/core/end2end/tests/request_with_payload.cc
+  test/core/end2end/tests/resource_quota_server.cc
+  test/core/end2end/tests/server_finishes_request.cc
+  test/core/end2end/tests/shutdown_finishes_calls.cc
+  test/core/end2end/tests/shutdown_finishes_tags.cc
+  test/core/end2end/tests/simple_cacheable_request.cc
+  test/core/end2end/tests/simple_delayed_request.cc
+  test/core/end2end/tests/simple_metadata.cc
+  test/core/end2end/tests/simple_request.cc
+  test/core/end2end/tests/stream_compression_compressed_payload.cc
+  test/core/end2end/tests/stream_compression_payload.cc
+  test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
+  test/core/end2end/tests/streaming_error_response.cc
+  test/core/end2end/tests/trailing_metadata.cc
+  test/core/end2end/tests/workaround_cronet_compression.cc
+  test/core/end2end/tests/write_buffering.cc
+  test/core/end2end/tests/write_buffering_at_end.cc
 )
 
 if(WIN32 AND MSVC)
@@ -5099,7 +5060,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(alarm_test
-  test/core/surface/alarm_test.c
+  test/core/surface/alarm_test.cc
 )
 
 
@@ -5129,7 +5090,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(algorithm_test
-  test/core/compression/algorithm_test.c
+  test/core/compression/algorithm_test.cc
 )
 
 
@@ -5159,7 +5120,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(alloc_test
-  test/core/support/alloc_test.c
+  test/core/support/alloc_test.cc
 )
 
 
@@ -5187,7 +5148,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(alpn_test
-  test/core/transport/chttp2/alpn_test.c
+  test/core/transport/chttp2/alpn_test.cc
 )
 
 
@@ -5217,7 +5178,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(arena_test
-  test/core/support/arena_test.c
+  test/core/support/arena_test.cc
 )
 
 
@@ -5245,7 +5206,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(backoff_test
-  test/core/backoff/backoff_test.c
+  test/core/backoff/backoff_test.cc
 )
 
 
@@ -5275,7 +5236,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(bad_server_response_test
-  test/core/end2end/bad_server_response_test.c
+  test/core/end2end/bad_server_response_test.cc
 )
 
 
@@ -5306,7 +5267,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(bin_decoder_test
-  test/core/transport/chttp2/bin_decoder_test.c
+  test/core/transport/chttp2/bin_decoder_test.cc
 )
 
 
@@ -5334,7 +5295,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(bin_encoder_test
-  test/core/transport/chttp2/bin_encoder_test.c
+  test/core/transport/chttp2/bin_encoder_test.cc
 )
 
 
@@ -5362,7 +5323,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(byte_stream_test
-  test/core/transport/byte_stream_test.c
+  test/core/transport/byte_stream_test.cc
 )
 
 
@@ -5391,128 +5352,8 @@ target_link_libraries(byte_stream_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(census_context_test
-  test/core/census/context_test.c
-)
-
-
-target_include_directories(census_context_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
-)
-
-target_link_libraries(census_context_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(census_intrusive_hash_map_test
-  test/core/census/intrusive_hash_map_test.c
-)
-
-
-target_include_directories(census_intrusive_hash_map_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
-)
-
-target_link_libraries(census_intrusive_hash_map_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(census_resource_test
-  test/core/census/resource_test.c
-)
-
-
-target_include_directories(census_resource_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
-)
-
-target_link_libraries(census_resource_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(census_trace_context_test
-  test/core/census/trace_context_test.c
-)
-
-
-target_include_directories(census_trace_context_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
-)
-
-target_link_libraries(census_trace_context_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(channel_create_test
-  test/core/surface/channel_create_test.c
+  test/core/surface/channel_create_test.cc
 )
 
 
@@ -5577,7 +5418,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_hpack_encoder_test
-  test/core/transport/chttp2/hpack_encoder_test.c
+  test/core/transport/chttp2/hpack_encoder_test.cc
 )
 
 
@@ -5607,7 +5448,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_stream_map_test
-  test/core/transport/chttp2/stream_map_test.c
+  test/core/transport/chttp2/stream_map_test.cc
 )
 
 
@@ -5637,7 +5478,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_varint_test
-  test/core/transport/chttp2/varint_test.c
+  test/core/transport/chttp2/varint_test.cc
 )
 
 
@@ -5667,7 +5508,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(combiner_test
-  test/core/iomgr/combiner_test.c
+  test/core/iomgr/combiner_test.cc
 )
 
 
@@ -5697,7 +5538,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(compression_test
-  test/core/compression/compression_test.c
+  test/core/compression/compression_test.cc
 )
 
 
@@ -5727,7 +5568,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(concurrent_connectivity_test
-  test/core/surface/concurrent_connectivity_test.c
+  test/core/surface/concurrent_connectivity_test.cc
 )
 
 
@@ -5757,7 +5598,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(connection_refused_test
-  test/core/end2end/connection_refused_test.c
+  test/core/end2end/connection_refused_test.cc
 )
 
 
@@ -5787,7 +5628,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(dns_resolver_connectivity_test
-  test/core/client_channel/resolvers/dns_resolver_connectivity_test.c
+  test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
 )
 
 
@@ -5817,7 +5658,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(dns_resolver_test
-  test/core/client_channel/resolvers/dns_resolver_test.c
+  test/core/client_channel/resolvers/dns_resolver_test.cc
 )
 
 
@@ -5848,7 +5689,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(dualstack_socket_test
-  test/core/end2end/dualstack_socket_test.c
+  test/core/end2end/dualstack_socket_test.cc
 )
 
 
@@ -5879,7 +5720,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(endpoint_pair_test
-  test/core/iomgr/endpoint_pair_test.c
+  test/core/iomgr/endpoint_pair_test.cc
 )
 
 
@@ -5909,7 +5750,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(error_test
-  test/core/iomgr/error_test.c
+  test/core/iomgr/error_test.cc
 )
 
 
@@ -5940,7 +5781,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(ev_epollsig_linux_test
-  test/core/iomgr/ev_epollsig_linux_test.c
+  test/core/iomgr/ev_epollsig_linux_test.cc
 )
 
 
@@ -5971,7 +5812,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(fake_resolver_test
-  test/core/client_channel/resolvers/fake_resolver_test.c
+  test/core/client_channel/resolvers/fake_resolver_test.cc
 )
 
 
@@ -6002,8 +5843,8 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fake_transport_security_test
-  test/core/tsi/fake_transport_security_test.c
-  test/core/tsi/transport_security_test_lib.c
+  test/core/tsi/fake_transport_security_test.cc
+  test/core/tsi/transport_security_test_lib.cc
 )
 
 
@@ -6034,7 +5875,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fd_conservation_posix_test
-  test/core/iomgr/fd_conservation_posix_test.c
+  test/core/iomgr/fd_conservation_posix_test.cc
 )
 
 
@@ -6066,7 +5907,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fd_posix_test
-  test/core/iomgr/fd_posix_test.c
+  test/core/iomgr/fd_posix_test.cc
 )
 
 
@@ -6097,7 +5938,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(fling_client
-  test/core/fling/client.c
+  test/core/fling/client.cc
 )
 
 
@@ -6127,7 +5968,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(fling_server
-  test/core/fling/server.c
+  test/core/fling/server.cc
 )
 
 
@@ -6158,7 +5999,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fling_stream_test
-  test/core/fling/fling_stream_test.c
+  test/core/fling/fling_stream_test.cc
 )
 
 
@@ -6190,7 +6031,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(fling_test
-  test/core/fling/fling_test.c
+  test/core/fling/fling_test.cc
 )
 
 
@@ -6323,7 +6164,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(goaway_server_test
-  test/core/end2end/goaway_server_test.c
+  test/core/end2end/goaway_server_test.cc
 )
 
 
@@ -6354,7 +6195,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_avl_test
-  test/core/support/avl_test.c
+  test/core/support/avl_test.cc
 )
 
 
@@ -6382,7 +6223,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_cmdline_test
-  test/core/support/cmdline_test.c
+  test/core/support/cmdline_test.cc
 )
 
 
@@ -6410,7 +6251,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_cpu_test
-  test/core/support/cpu_test.c
+  test/core/support/cpu_test.cc
 )
 
 
@@ -6438,7 +6279,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_env_test
-  test/core/support/env_test.c
+  test/core/support/env_test.cc
 )
 
 
@@ -6466,7 +6307,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_histogram_test
-  test/core/support/histogram_test.c
+  test/core/support/histogram_test.cc
 )
 
 
@@ -6494,7 +6335,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_host_port_test
-  test/core/support/host_port_test.c
+  test/core/support/host_port_test.cc
 )
 
 
@@ -6522,7 +6363,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_log_test
-  test/core/support/log_test.c
+  test/core/support/log_test.cc
 )
 
 
@@ -6550,7 +6391,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_mpscq_test
-  test/core/support/mpscq_test.c
+  test/core/support/mpscq_test.cc
 )
 
 
@@ -6578,7 +6419,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_spinlock_test
-  test/core/support/spinlock_test.c
+  test/core/support/spinlock_test.cc
 )
 
 
@@ -6606,7 +6447,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_stack_lockfree_test
-  test/core/support/stack_lockfree_test.c
+  test/core/support/stack_lockfree_test.cc
 )
 
 
@@ -6634,7 +6475,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_string_test
-  test/core/support/string_test.c
+  test/core/support/string_test.cc
 )
 
 
@@ -6662,7 +6503,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_sync_test
-  test/core/support/sync_test.c
+  test/core/support/sync_test.cc
 )
 
 
@@ -6690,7 +6531,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_thd_test
-  test/core/support/thd_test.c
+  test/core/support/thd_test.cc
 )
 
 
@@ -6718,7 +6559,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_time_test
-  test/core/support/time_test.c
+  test/core/support/time_test.cc
 )
 
 
@@ -6746,7 +6587,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_tls_test
-  test/core/support/tls_test.c
+  test/core/support/tls_test.cc
 )
 
 
@@ -6774,7 +6615,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_useful_test
-  test/core/support/useful_test.c
+  test/core/support/useful_test.cc
 )
 
 
@@ -6802,7 +6643,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_auth_context_test
-  test/core/security/auth_context_test.c
+  test/core/security/auth_context_test.cc
 )
 
 
@@ -6832,7 +6673,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_b64_test
-  test/core/slice/b64_test.c
+  test/core/slice/b64_test.cc
 )
 
 
@@ -6862,7 +6703,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_byte_buffer_reader_test
-  test/core/surface/byte_buffer_reader_test.c
+  test/core/surface/byte_buffer_reader_test.cc
 )
 
 
@@ -6892,7 +6733,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_channel_args_test
-  test/core/channel/channel_args_test.c
+  test/core/channel/channel_args_test.cc
 )
 
 
@@ -6922,7 +6763,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_channel_stack_builder_test
-  test/core/channel/channel_stack_builder_test.c
+  test/core/channel/channel_stack_builder_test.cc
 )
 
 
@@ -6952,7 +6793,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_channel_stack_test
-  test/core/channel/channel_stack_test.c
+  test/core/channel/channel_stack_test.cc
 )
 
 
@@ -6982,7 +6823,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_completion_queue_test
-  test/core/surface/completion_queue_test.c
+  test/core/surface/completion_queue_test.cc
 )
 
 
@@ -7012,7 +6853,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_completion_queue_threading_test
-  test/core/surface/completion_queue_threading_test.c
+  test/core/surface/completion_queue_threading_test.cc
 )
 
 
@@ -7041,7 +6882,7 @@ target_link_libraries(grpc_completion_queue_threading_test
 endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_create_jwt
-  test/core/security/create_jwt.c
+  test/core/security/create_jwt.cc
 )
 
 
@@ -7078,7 +6919,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_credentials_test
-  test/core/security/credentials_test.c
+  test/core/security/credentials_test.cc
 )
 
 
@@ -7108,7 +6949,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_fetch_oauth2
-  test/core/security/fetch_oauth2.c
+  test/core/security/fetch_oauth2.cc
 )
 
 
@@ -7138,7 +6979,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_invalid_channel_args_test
-  test/core/surface/invalid_channel_args_test.c
+  test/core/surface/invalid_channel_args_test.cc
 )
 
 
@@ -7169,7 +7010,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(grpc_json_token_test
-  test/core/security/json_token_test.c
+  test/core/security/json_token_test.cc
 )
 
 
@@ -7200,7 +7041,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_jwt_verifier_test
-  test/core/security/jwt_verifier_test.c
+  test/core/security/jwt_verifier_test.cc
 )
 
 
@@ -7229,7 +7070,7 @@ target_link_libraries(grpc_jwt_verifier_test
 endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_print_google_default_creds_token
-  test/core/security/print_google_default_creds_token.c
+  test/core/security/print_google_default_creds_token.cc
 )
 
 
@@ -7265,7 +7106,7 @@ endif()
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_security_connector_test
-  test/core/security/security_connector_test.c
+  test/core/security/security_connector_test.cc
 )
 
 
@@ -7295,7 +7136,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_ssl_credentials_test
-  test/core/security/ssl_credentials_test.c
+  test/core/security/ssl_credentials_test.cc
 )
 
 
@@ -7324,7 +7165,7 @@ target_link_libraries(grpc_ssl_credentials_test
 endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_verify_jwt
-  test/core/security/verify_jwt.c
+  test/core/security/verify_jwt.cc
 )
 
 
@@ -7361,7 +7202,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(handshake_client
-  test/core/handshake/client_ssl.c
+  test/core/handshake/client_ssl.cc
 )
 
 
@@ -7394,7 +7235,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(handshake_server
-  test/core/handshake/server_ssl.c
+  test/core/handshake/server_ssl.cc
 )
 
 
@@ -7426,7 +7267,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_test
-  test/core/transport/chttp2/hpack_parser_test.c
+  test/core/transport/chttp2/hpack_parser_test.cc
 )
 
 
@@ -7456,7 +7297,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(hpack_table_test
-  test/core/transport/chttp2/hpack_table_test.c
+  test/core/transport/chttp2/hpack_table_test.cc
 )
 
 
@@ -7486,7 +7327,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(http_parser_test
-  test/core/http/parser_test.c
+  test/core/http/parser_test.cc
 )
 
 
@@ -7516,7 +7357,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(httpcli_format_request_test
-  test/core/http/format_request_test.c
+  test/core/http/format_request_test.cc
 )
 
 
@@ -7547,7 +7388,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(httpcli_test
-  test/core/http/httpcli_test.c
+  test/core/http/httpcli_test.cc
 )
 
 
@@ -7579,7 +7420,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(httpscli_test
-  test/core/http/httpscli_test.c
+  test/core/http/httpscli_test.cc
 )
 
 
@@ -7610,7 +7451,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(init_test
-  test/core/surface/init_test.c
+  test/core/surface/init_test.cc
 )
 
 
@@ -7640,7 +7481,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(invalid_call_argument_test
-  test/core/end2end/invalid_call_argument_test.c
+  test/core/end2end/invalid_call_argument_test.cc
 )
 
 
@@ -7670,7 +7511,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_rewrite
-  test/core/json/json_rewrite.c
+  test/core/json/json_rewrite.cc
 )
 
 
@@ -7698,7 +7539,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_rewrite_test
-  test/core/json/json_rewrite_test.c
+  test/core/json/json_rewrite_test.cc
 )
 
 
@@ -7728,7 +7569,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_stream_error_test
-  test/core/json/json_stream_error_test.c
+  test/core/json/json_stream_error_test.cc
 )
 
 
@@ -7758,7 +7599,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_test
-  test/core/json/json_test.c
+  test/core/json/json_test.cc
 )
 
 
@@ -7788,7 +7629,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(lame_client_test
-  test/core/surface/lame_client_test.c
+  test/core/surface/lame_client_test.cc
 )
 
 
@@ -7818,7 +7659,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(lb_policies_test
-  test/core/client_channel/lb_policies_test.c
+  test/core/client_channel/lb_policies_test.cc
 )
 
 
@@ -7848,7 +7689,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(load_file_test
-  test/core/iomgr/load_file_test.c
+  test/core/iomgr/load_file_test.cc
 )
 
 
@@ -7878,7 +7719,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(memory_profile_client
-  test/core/memory_usage/client.c
+  test/core/memory_usage/client.cc
 )
 
 
@@ -7908,7 +7749,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(memory_profile_server
-  test/core/memory_usage/server.c
+  test/core/memory_usage/server.cc
 )
 
 
@@ -7939,7 +7780,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(memory_profile_test
-  test/core/memory_usage/memory_usage_test.c
+  test/core/memory_usage/memory_usage_test.cc
 )
 
 
@@ -7970,7 +7811,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(message_compress_test
-  test/core/compression/message_compress_test.c
+  test/core/compression/message_compress_test.cc
 )
 
 
@@ -8000,7 +7841,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(minimal_stack_is_minimal_test
-  test/core/channel/minimal_stack_is_minimal_test.c
+  test/core/channel/minimal_stack_is_minimal_test.cc
 )
 
 
@@ -8029,38 +7870,8 @@ target_link_libraries(minimal_stack_is_minimal_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(mlog_test
-  test/core/census/mlog_test.c
-)
-
-
-target_include_directories(mlog_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
-)
-
-target_link_libraries(mlog_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(multiple_server_queues_test
-  test/core/end2end/multiple_server_queues_test.c
+  test/core/end2end/multiple_server_queues_test.cc
 )
 
 
@@ -8090,7 +7901,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(murmur_hash_test
-  test/core/support/murmur_hash_test.c
+  test/core/support/murmur_hash_test.cc
 )
 
 
@@ -8118,7 +7929,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(no_server_test
-  test/core/end2end/no_server_test.c
+  test/core/end2end/no_server_test.cc
 )
 
 
@@ -8148,7 +7959,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(num_external_connectivity_watchers_test
-  test/core/surface/num_external_connectivity_watchers_test.c
+  test/core/surface/num_external_connectivity_watchers_test.cc
 )
 
 
@@ -8178,7 +7989,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(parse_address_test
-  test/core/client_channel/parse_address_test.c
+  test/core/client_channel/parse_address_test.cc
 )
 
 
@@ -8208,7 +8019,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(percent_encoding_test
-  test/core/slice/percent_encoding_test.c
+  test/core/slice/percent_encoding_test.cc
 )
 
 
@@ -8239,7 +8050,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(pollset_set_test
-  test/core/iomgr/pollset_set_test.c
+  test/core/iomgr/pollset_set_test.cc
 )
 
 
@@ -8271,7 +8082,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(resolve_address_posix_test
-  test/core/iomgr/resolve_address_posix_test.c
+  test/core/iomgr/resolve_address_posix_test.cc
 )
 
 
@@ -8302,7 +8113,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(resolve_address_test
-  test/core/iomgr/resolve_address_test.c
+  test/core/iomgr/resolve_address_test.cc
 )
 
 
@@ -8332,7 +8143,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(resource_quota_test
-  test/core/iomgr/resource_quota_test.c
+  test/core/iomgr/resource_quota_test.cc
 )
 
 
@@ -8362,7 +8173,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(secure_channel_create_test
-  test/core/surface/secure_channel_create_test.c
+  test/core/surface/secure_channel_create_test.cc
 )
 
 
@@ -8392,7 +8203,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(secure_endpoint_test
-  test/core/security/secure_endpoint_test.c
+  test/core/security/secure_endpoint_test.cc
 )
 
 
@@ -8422,7 +8233,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(sequential_connectivity_test
-  test/core/surface/sequential_connectivity_test.c
+  test/core/surface/sequential_connectivity_test.cc
 )
 
 
@@ -8452,7 +8263,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_chttp2_test
-  test/core/surface/server_chttp2_test.c
+  test/core/surface/server_chttp2_test.cc
 )
 
 
@@ -8482,7 +8293,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_test
-  test/core/surface/server_test.c
+  test/core/surface/server_test.cc
 )
 
 
@@ -8512,7 +8323,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(slice_buffer_test
-  test/core/slice/slice_buffer_test.c
+  test/core/slice/slice_buffer_test.cc
 )
 
 
@@ -8542,7 +8353,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(slice_hash_table_test
-  test/core/slice/slice_hash_table_test.c
+  test/core/slice/slice_hash_table_test.cc
 )
 
 
@@ -8572,7 +8383,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(slice_string_helpers_test
-  test/core/slice/slice_string_helpers_test.c
+  test/core/slice/slice_string_helpers_test.cc
 )
 
 
@@ -8602,7 +8413,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(slice_test
-  test/core/slice/slice_test.c
+  test/core/slice/slice_test.cc
 )
 
 
@@ -8632,7 +8443,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(sockaddr_resolver_test
-  test/core/client_channel/resolvers/sockaddr_resolver_test.c
+  test/core/client_channel/resolvers/sockaddr_resolver_test.cc
 )
 
 
@@ -8662,7 +8473,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(sockaddr_utils_test
-  test/core/iomgr/sockaddr_utils_test.c
+  test/core/iomgr/sockaddr_utils_test.cc
 )
 
 
@@ -8693,7 +8504,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(socket_utils_test
-  test/core/iomgr/socket_utils_test.c
+  test/core/iomgr/socket_utils_test.cc
 )
 
 
@@ -8725,8 +8536,8 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(ssl_transport_security_test
-  test/core/tsi/ssl_transport_security_test.c
-  test/core/tsi/transport_security_test_lib.c
+  test/core/tsi/ssl_transport_security_test.cc
+  test/core/tsi/transport_security_test_lib.cc
 )
 
 
@@ -8756,7 +8567,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(status_conversion_test
-  test/core/transport/status_conversion_test.c
+  test/core/transport/status_conversion_test.cc
 )
 
 
@@ -8786,7 +8597,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(stream_compression_test
-  test/core/compression/stream_compression_test.c
+  test/core/compression/stream_compression_test.cc
 )
 
 
@@ -8816,7 +8627,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(stream_owned_slice_test
-  test/core/transport/stream_owned_slice_test.c
+  test/core/transport/stream_owned_slice_test.cc
 )
 
 
@@ -8847,7 +8658,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(tcp_client_posix_test
-  test/core/iomgr/tcp_client_posix_test.c
+  test/core/iomgr/tcp_client_posix_test.cc
 )
 
 
@@ -8878,7 +8689,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(tcp_client_uv_test
-  test/core/iomgr/tcp_client_uv_test.c
+  test/core/iomgr/tcp_client_uv_test.cc
 )
 
 
@@ -8909,7 +8720,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(tcp_posix_test
-  test/core/iomgr/tcp_posix_test.c
+  test/core/iomgr/tcp_posix_test.cc
 )
 
 
@@ -8941,7 +8752,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(tcp_server_posix_test
-  test/core/iomgr/tcp_server_posix_test.c
+  test/core/iomgr/tcp_server_posix_test.cc
 )
 
 
@@ -8972,7 +8783,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(tcp_server_uv_test
-  test/core/iomgr/tcp_server_uv_test.c
+  test/core/iomgr/tcp_server_uv_test.cc
 )
 
 
@@ -9002,7 +8813,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(time_averaged_stats_test
-  test/core/iomgr/time_averaged_stats_test.c
+  test/core/iomgr/time_averaged_stats_test.cc
 )
 
 
@@ -9032,7 +8843,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(timeout_encoding_test
-  test/core/transport/timeout_encoding_test.c
+  test/core/transport/timeout_encoding_test.cc
 )
 
 
@@ -9062,7 +8873,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(timer_heap_test
-  test/core/iomgr/timer_heap_test.c
+  test/core/iomgr/timer_heap_test.cc
 )
 
 
@@ -9092,7 +8903,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(timer_list_test
-  test/core/iomgr/timer_list_test.c
+  test/core/iomgr/timer_list_test.cc
 )
 
 
@@ -9122,7 +8933,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(transport_connectivity_state_test
-  test/core/transport/connectivity_state_test.c
+  test/core/transport/connectivity_state_test.cc
 )
 
 
@@ -9152,7 +8963,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(transport_metadata_test
-  test/core/transport/metadata_test.c
+  test/core/transport/metadata_test.cc
 )
 
 
@@ -9183,7 +8994,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(transport_security_test
-  test/core/tsi/transport_security_test.c
+  test/core/tsi/transport_security_test.cc
 )
 
 
@@ -9215,7 +9026,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(udp_server_test
-  test/core/iomgr/udp_server_test.c
+  test/core/iomgr/udp_server_test.cc
 )
 
 
@@ -9246,7 +9057,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(uri_parser_test
-  test/core/client_channel/uri_parser_test.c
+  test/core/client_channel/uri_parser_test.cc
 )
 
 
@@ -9277,7 +9088,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(wakeup_fd_cv_test
-  test/core/iomgr/wakeup_fd_cv_test.c
+  test/core/iomgr/wakeup_fd_cv_test.cc
 )
 
 
@@ -13169,7 +12980,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(badreq_bad_client_test
-  test/core/bad_client/tests/badreq.c
+  test/core/bad_client/tests/badreq.cc
 )
 
 
@@ -13201,7 +13012,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(connection_prefix_bad_client_test
-  test/core/bad_client/tests/connection_prefix.c
+  test/core/bad_client/tests/connection_prefix.cc
 )
 
 
@@ -13233,7 +13044,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(head_of_line_blocking_bad_client_test
-  test/core/bad_client/tests/head_of_line_blocking.c
+  test/core/bad_client/tests/head_of_line_blocking.cc
 )
 
 
@@ -13265,7 +13076,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(headers_bad_client_test
-  test/core/bad_client/tests/headers.c
+  test/core/bad_client/tests/headers.cc
 )
 
 
@@ -13297,7 +13108,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(initial_settings_frame_bad_client_test
-  test/core/bad_client/tests/initial_settings_frame.c
+  test/core/bad_client/tests/initial_settings_frame.cc
 )
 
 
@@ -13329,7 +13140,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_registered_method_bad_client_test
-  test/core/bad_client/tests/server_registered_method.c
+  test/core/bad_client/tests/server_registered_method.cc
 )
 
 
@@ -13361,7 +13172,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(simple_request_bad_client_test
-  test/core/bad_client/tests/simple_request.c
+  test/core/bad_client/tests/simple_request.cc
 )
 
 
@@ -13393,7 +13204,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(unknown_frame_bad_client_test
-  test/core/bad_client/tests/unknown_frame.c
+  test/core/bad_client/tests/unknown_frame.cc
 )
 
 
@@ -13425,7 +13236,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(window_overflow_bad_client_test
-  test/core/bad_client/tests/window_overflow.c
+  test/core/bad_client/tests/window_overflow.cc
 )
 
 
@@ -13458,7 +13269,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bad_ssl_cert_server
-  test/core/bad_ssl/servers/cert.c
+  test/core/bad_ssl/servers/cert.cc
 )
 
 
@@ -13491,7 +13302,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(bad_ssl_cert_test
-  test/core/bad_ssl/bad_ssl_test.c
+  test/core/bad_ssl/bad_ssl_test.cc
 )
 
 
@@ -13522,7 +13333,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_census_test
-  test/core/end2end/fixtures/h2_census.c
+  test/core/end2end/fixtures/h2_census.cc
 )
 
 
@@ -13553,7 +13364,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_compress_test
-  test/core/end2end/fixtures/h2_compress.c
+  test/core/end2end/fixtures/h2_compress.cc
 )
 
 
@@ -13584,7 +13395,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_fakesec_test
-  test/core/end2end/fixtures/h2_fakesec.c
+  test/core/end2end/fixtures/h2_fakesec.cc
 )
 
 
@@ -13616,7 +13427,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_fd_test
-  test/core/end2end/fixtures/h2_fd.c
+  test/core/end2end/fixtures/h2_fd.cc
 )
 
 
@@ -13648,7 +13459,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full_test
-  test/core/end2end/fixtures/h2_full.c
+  test/core/end2end/fixtures/h2_full.cc
 )
 
 
@@ -13680,7 +13491,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(h2_full+pipe_test
-  test/core/end2end/fixtures/h2_full+pipe.c
+  test/core/end2end/fixtures/h2_full+pipe.cc
 )
 
 
@@ -13712,7 +13523,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full+trace_test
-  test/core/end2end/fixtures/h2_full+trace.c
+  test/core/end2end/fixtures/h2_full+trace.cc
 )
 
 
@@ -13743,7 +13554,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full+workarounds_test
-  test/core/end2end/fixtures/h2_full+workarounds.c
+  test/core/end2end/fixtures/h2_full+workarounds.cc
 )
 
 
@@ -13774,7 +13585,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_http_proxy_test
-  test/core/end2end/fixtures/h2_http_proxy.c
+  test/core/end2end/fixtures/h2_http_proxy.cc
 )
 
 
@@ -13805,7 +13616,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_load_reporting_test
-  test/core/end2end/fixtures/h2_load_reporting.c
+  test/core/end2end/fixtures/h2_load_reporting.cc
 )
 
 
@@ -13836,7 +13647,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_oauth2_test
-  test/core/end2end/fixtures/h2_oauth2.c
+  test/core/end2end/fixtures/h2_oauth2.cc
 )
 
 
@@ -13867,7 +13678,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_proxy_test
-  test/core/end2end/fixtures/h2_proxy.c
+  test/core/end2end/fixtures/h2_proxy.cc
 )
 
 
@@ -13898,7 +13709,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair_test
-  test/core/end2end/fixtures/h2_sockpair.c
+  test/core/end2end/fixtures/h2_sockpair.cc
 )
 
 
@@ -13929,7 +13740,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair+trace_test
-  test/core/end2end/fixtures/h2_sockpair+trace.c
+  test/core/end2end/fixtures/h2_sockpair+trace.cc
 )
 
 
@@ -13960,7 +13771,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair_1byte_test
-  test/core/end2end/fixtures/h2_sockpair_1byte.c
+  test/core/end2end/fixtures/h2_sockpair_1byte.cc
 )
 
 
@@ -13991,7 +13802,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_test
-  test/core/end2end/fixtures/h2_ssl.c
+  test/core/end2end/fixtures/h2_ssl.cc
 )
 
 
@@ -14022,7 +13833,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_proxy_test
-  test/core/end2end/fixtures/h2_ssl_proxy.c
+  test/core/end2end/fixtures/h2_ssl_proxy.cc
 )
 
 
@@ -14054,7 +13865,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_uds_test
-  test/core/end2end/fixtures/h2_uds.c
+  test/core/end2end/fixtures/h2_uds.cc
 )
 
 
@@ -14086,7 +13897,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(inproc_test
-  test/core/end2end/fixtures/inproc.c
+  test/core/end2end/fixtures/inproc.cc
 )
 
 
@@ -14117,7 +13928,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_census_nosec_test
-  test/core/end2end/fixtures/h2_census.c
+  test/core/end2end/fixtures/h2_census.cc
 )
 
 
@@ -14148,7 +13959,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_compress_nosec_test
-  test/core/end2end/fixtures/h2_compress.c
+  test/core/end2end/fixtures/h2_compress.cc
 )
 
 
@@ -14180,7 +13991,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_fd_nosec_test
-  test/core/end2end/fixtures/h2_fd.c
+  test/core/end2end/fixtures/h2_fd.cc
 )
 
 
@@ -14212,7 +14023,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full_nosec_test
-  test/core/end2end/fixtures/h2_full.c
+  test/core/end2end/fixtures/h2_full.cc
 )
 
 
@@ -14244,7 +14055,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(h2_full+pipe_nosec_test
-  test/core/end2end/fixtures/h2_full+pipe.c
+  test/core/end2end/fixtures/h2_full+pipe.cc
 )
 
 
@@ -14276,7 +14087,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full+trace_nosec_test
-  test/core/end2end/fixtures/h2_full+trace.c
+  test/core/end2end/fixtures/h2_full+trace.cc
 )
 
 
@@ -14307,7 +14118,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_full+workarounds_nosec_test
-  test/core/end2end/fixtures/h2_full+workarounds.c
+  test/core/end2end/fixtures/h2_full+workarounds.cc
 )
 
 
@@ -14338,7 +14149,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_http_proxy_nosec_test
-  test/core/end2end/fixtures/h2_http_proxy.c
+  test/core/end2end/fixtures/h2_http_proxy.cc
 )
 
 
@@ -14369,7 +14180,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_load_reporting_nosec_test
-  test/core/end2end/fixtures/h2_load_reporting.c
+  test/core/end2end/fixtures/h2_load_reporting.cc
 )
 
 
@@ -14400,7 +14211,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_proxy_nosec_test
-  test/core/end2end/fixtures/h2_proxy.c
+  test/core/end2end/fixtures/h2_proxy.cc
 )
 
 
@@ -14431,7 +14242,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair_nosec_test
-  test/core/end2end/fixtures/h2_sockpair.c
+  test/core/end2end/fixtures/h2_sockpair.cc
 )
 
 
@@ -14462,7 +14273,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair+trace_nosec_test
-  test/core/end2end/fixtures/h2_sockpair+trace.c
+  test/core/end2end/fixtures/h2_sockpair+trace.cc
 )
 
 
@@ -14493,7 +14304,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(h2_sockpair_1byte_nosec_test
-  test/core/end2end/fixtures/h2_sockpair_1byte.c
+  test/core/end2end/fixtures/h2_sockpair_1byte.cc
 )
 
 
@@ -14525,7 +14336,7 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(h2_uds_nosec_test
-  test/core/end2end/fixtures/h2_uds.c
+  test/core/end2end/fixtures/h2_uds.cc
 )
 
 
@@ -14557,7 +14368,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(inproc_nosec_test
-  test/core/end2end/fixtures/inproc.c
+  test/core/end2end/fixtures/inproc.cc
 )
 
 
@@ -14764,8 +14575,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(api_fuzzer_one_entry
-  test/core/end2end/fuzzers/api_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/end2end/fuzzers/api_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14795,8 +14606,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(client_fuzzer_one_entry
-  test/core/end2end/fuzzers/client_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/end2end/fuzzers/client_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14826,8 +14637,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_fuzzer_test_one_entry
-  test/core/transport/chttp2/hpack_parser_fuzzer_test.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14857,8 +14668,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(http_request_fuzzer_test_one_entry
-  test/core/http/request_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/http/request_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14888,8 +14699,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(http_response_fuzzer_test_one_entry
-  test/core/http/response_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/http/response_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14919,8 +14730,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(json_fuzzer_test_one_entry
-  test/core/json/fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/json/fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14950,8 +14761,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(nanopb_fuzzer_response_test_one_entry
-  test/core/nanopb/fuzzer_response.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/nanopb/fuzzer_response.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14981,8 +14792,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(nanopb_fuzzer_serverlist_test_one_entry
-  test/core/nanopb/fuzzer_serverlist.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/nanopb/fuzzer_serverlist.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15012,8 +14823,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(percent_decode_fuzzer_one_entry
-  test/core/slice/percent_decode_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/slice/percent_decode_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15043,8 +14854,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(percent_encode_fuzzer_one_entry
-  test/core/slice/percent_encode_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/slice/percent_encode_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15074,8 +14885,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_fuzzer_one_entry
-  test/core/end2end/fuzzers/server_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/end2end/fuzzers/server_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15105,8 +14916,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(ssl_server_fuzzer_one_entry
-  test/core/security/ssl_server_fuzzer.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/security/ssl_server_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15136,8 +14947,8 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(uri_fuzzer_test_one_entry
-  test/core/client_channel/uri_fuzzer_test.c
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/client_channel/uri_fuzzer_test.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 

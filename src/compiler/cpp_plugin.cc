@@ -33,10 +33,10 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   CppGrpcGenerator() {}
   virtual ~CppGrpcGenerator() {}
 
-  virtual bool Generate(const grpc::protobuf::FileDescriptor *file,
-                        const grpc::string &parameter,
-                        grpc::protobuf::compiler::GeneratorContext *context,
-                        grpc::string *error) const {
+  virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
+                        const grpc::string& parameter,
+                        grpc::protobuf::compiler::GeneratorContext* context,
+                        grpc::string* error) const {
     if (file->options().cc_generic_services()) {
       *error =
           "cpp grpc proto compiler plugin does not work with generic "
@@ -125,9 +125,9 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
  private:
   // Insert the given code into the given file at the given insertion point.
-  void Insert(grpc::protobuf::compiler::GeneratorContext *context,
-              const grpc::string &filename, const grpc::string &insertion_point,
-              const grpc::string &code) const {
+  void Insert(grpc::protobuf::compiler::GeneratorContext* context,
+              const grpc::string& filename, const grpc::string& insertion_point,
+              const grpc::string& code) const {
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
         context->OpenForInsert(filename, insertion_point));
     grpc::protobuf::io::CodedOutputStream coded_out(output.get());
@@ -135,7 +135,7 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   CppGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }
