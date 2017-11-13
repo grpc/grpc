@@ -24,8 +24,8 @@
 
 #ifdef GRPC_TIMERS_RDTSC
 #if defined(__i386__)
-static void gpr_get_cycle_counter(int64_t int* clk) {
-  int64_t int ret;
+static void gpr_get_cycle_counter(int64_t* clk) {
+  int64_t ret;
   __asm__ volatile("rdtsc" : "=A"(ret));
   *clk = ret;
 }
