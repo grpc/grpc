@@ -18,6 +18,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <grpc/support/log.h>
+
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
@@ -34,7 +36,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
@@ -46,6 +47,7 @@
 #include "src/core/lib/iomgr/lockfree_event.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/support/string.h"
 
 static grpc_wakeup_fd global_wakeup_fd;
@@ -111,8 +113,8 @@ static void epoll_set_shutdown() {
 struct grpc_fd {
   int fd;
 
-  gpr_atm read_closure;
-  gpr_atm write_closure;
+  grpc_core::ManualConstructor<grpc_core::LockfreeEvent> read_closure;
+  grpc_core::ManualConstructor<grpc_core::LockfreeEvent> write_closure;
 
   struct grpc_fd* freelist_next;
 
@@ -264,8 +266,8 @@ static grpc_fd* fd_create(int fd, const char* name) {
   }
 
   new_fd->fd = fd;
-  grpc_lfev_init(&new_fd->read_closure);
-  grpc_lfev_init(&new_fd->write_closure);
+  new_fd->read_closure.Init();
+  new_fd->write_closure.Init();
   gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = NULL;
@@ -297,12 +299,11 @@ static int fd_wrapped_fd(grpc_fd* fd) { return fd->fd; }
  * shutdown() syscall on that fd) */
 static void fd_shutdown_internal(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                                  grpc_error* why, bool releasing_fd) {
-  if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
-                             GRPC_ERROR_REF(why))) {
+  if (fd->read_closure->SetShutdown(exec_ctx, GRPC_ERROR_REF(why))) {
     if (!releasing_fd) {
       shutdown(fd->fd, SHUT_RDWR);
     }
-    grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
+    fd->write_closure->SetShutdown(exec_ctx, GRPC_ERROR_REF(why));
   }
   GRPC_ERROR_UNREF(why);
 }
@@ -318,7 +319,7 @@ static void fd_orphan(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
   grpc_error* error = GRPC_ERROR_NONE;
   bool is_release_fd = (release_fd != NULL);
 
-  if (!grpc_lfev_is_shutdown(&fd->read_closure)) {
+  if (!fd->read_closure->IsShutdown()) {
     fd_shutdown_internal(exec_ctx, fd,
                          GRPC_ERROR_CREATE_FROM_COPIED_STRING(reason),
                          is_release_fd);
@@ -335,8 +336,8 @@ static void fd_orphan(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
   GRPC_CLOSURE_SCHED(exec_ctx, on_done, GRPC_ERROR_REF(error));
 
   grpc_iomgr_unregister_object(&fd->iomgr_object);
-  grpc_lfev_destroy(&fd->read_closure);
-  grpc_lfev_destroy(&fd->write_closure);
+  fd->read_closure.Destroy();
+  fd->write_closure.Destroy();
 
   gpr_mu_lock(&fd_freelist_mu);
   fd->freelist_next = fd_freelist;
@@ -351,28 +352,28 @@ static grpc_pollset* fd_get_read_notifier_pollset(grpc_exec_ctx* exec_ctx,
 }
 
 static bool fd_is_shutdown(grpc_fd* fd) {
-  return grpc_lfev_is_shutdown(&fd->read_closure);
+  return fd->read_closure->IsShutdown();
 }
 
 static void fd_notify_on_read(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                               grpc_closure* closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
+  fd->read_closure->NotifyOn(exec_ctx, closure);
 }
 
 static void fd_notify_on_write(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                                grpc_closure* closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
+  fd->write_closure->NotifyOn(exec_ctx, closure);
 }
 
 static void fd_become_readable(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                                grpc_pollset* notifier) {
-  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
+  fd->read_closure->SetReady(exec_ctx);
   /* Use release store to match with acquire load in fd_get_read_notifier */
   gpr_atm_rel_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
 }
 
 static void fd_become_writable(grpc_exec_ctx* exec_ctx, grpc_fd* fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
+  fd->write_closure->SetReady(exec_ctx);
 }
 
 /*******************************************************************************
@@ -1230,6 +1231,7 @@ static const grpc_event_engine_vtable vtable = {
  * support is available */
 const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
   if (!grpc_has_wakeup_fd()) {
+    gpr_log(GPR_ERROR, "Skipping epoll1 because of no wakeup fd.");
     return NULL;
   }
 
@@ -1254,6 +1256,8 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
 const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
+  gpr_log(GPR_ERROR,
+          "Skipping epoll1 becuase GRPC_LINUX_EPOLL is not defined.");
   return NULL;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */

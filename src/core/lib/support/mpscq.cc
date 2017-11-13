@@ -31,11 +31,12 @@ void gpr_mpscq_destroy(gpr_mpscq* q) {
   GPR_ASSERT(q->tail == &q->stub);
 }
 
-void gpr_mpscq_push(gpr_mpscq* q, gpr_mpscq_node* n) {
+bool gpr_mpscq_push(gpr_mpscq* q, gpr_mpscq_node* n) {
   gpr_atm_no_barrier_store(&n->next, (gpr_atm)NULL);
   gpr_mpscq_node* prev =
       (gpr_mpscq_node*)gpr_atm_full_xchg(&q->head, (gpr_atm)n);
   gpr_atm_rel_store(&prev->next, (gpr_atm)n);
+  return prev == &q->stub;
 }
 
 gpr_mpscq_node* gpr_mpscq_pop(gpr_mpscq* q) {
@@ -76,4 +77,38 @@ gpr_mpscq_node* gpr_mpscq_pop_and_check_end(gpr_mpscq* q, bool* empty) {
   // indicates a retry is in order: we're still adding
   *empty = false;
   return NULL;
+}
+
+void gpr_locked_mpscq_init(gpr_locked_mpscq* q) {
+  gpr_mpscq_init(&q->queue);
+  gpr_mu_init(&q->mu);
+}
+
+void gpr_locked_mpscq_destroy(gpr_locked_mpscq* q) {
+  gpr_mpscq_destroy(&q->queue);
+  gpr_mu_destroy(&q->mu);
+}
+
+bool gpr_locked_mpscq_push(gpr_locked_mpscq* q, gpr_mpscq_node* n) {
+  return gpr_mpscq_push(&q->queue, n);
+}
+
+gpr_mpscq_node* gpr_locked_mpscq_try_pop(gpr_locked_mpscq* q) {
+  if (gpr_mu_trylock(&q->mu)) {
+    gpr_mpscq_node* n = gpr_mpscq_pop(&q->queue);
+    gpr_mu_unlock(&q->mu);
+    return n;
+  }
+  return NULL;
+}
+
+gpr_mpscq_node* gpr_locked_mpscq_pop(gpr_locked_mpscq* q) {
+  gpr_mu_lock(&q->mu);
+  bool empty = false;
+  gpr_mpscq_node* n;
+  do {
+    n = gpr_mpscq_pop_and_check_end(&q->queue, &empty);
+  } while (n == NULL && !empty);
+  gpr_mu_unlock(&q->mu);
+  return n;
 }

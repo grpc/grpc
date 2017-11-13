@@ -1712,6 +1712,7 @@ static const grpc_event_engine_vtable vtable = {
 
 const grpc_event_engine_vtable* grpc_init_poll_posix(bool explicit_request) {
   if (!grpc_has_wakeup_fd()) {
+    gpr_log(GPR_ERROR, "Skipping poll because of no wakeup fd.");
     return NULL;
   }
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {

@@ -590,7 +590,11 @@ static grpc_error* init_header_frame_parser(grpc_exec_ctx* exec_ctx,
         GRPC_CHTTP2_IF_TRACING(gpr_log(
             GPR_ERROR, "ignoring new grpc_chttp2_stream creation on client"));
       }
-      return init_skip_frame_parser(exec_ctx, t, 1);
+      grpc_error* err = init_skip_frame_parser(exec_ctx, t, 1);
+      if (t->incoming_frame_flags & GRPC_CHTTP2_FLAG_HAS_PRIORITY) {
+        grpc_chttp2_hpack_parser_set_has_priority(&t->hpack_parser);
+      }
+      return err;
     } else if (t->last_new_stream_id >= t->incoming_stream_id) {
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_ERROR,

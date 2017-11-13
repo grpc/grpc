@@ -21,10 +21,8 @@
 #include <benchmark/benchmark.h>
 #include <memory>
 
-extern "C" {
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/error_utils.h"
-}
 
 #include "test/cpp/microbenchmarks/helpers.h"
 

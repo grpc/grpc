@@ -25,11 +25,9 @@
 #include <grpc/support/log.h>
 #include "test/cpp/microbenchmarks/helpers.h"
 
-extern "C" {
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/completion_queue.h"
-}
 
 struct grpc_pollset {
   gpr_mu mu;

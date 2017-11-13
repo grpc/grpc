@@ -105,7 +105,7 @@ void gpr_cmdline_add_flag(gpr_cmdline* cl, const char* name, const char* help,
 }
 
 void gpr_cmdline_add_string(gpr_cmdline* cl, const char* name, const char* help,
-                            char** value) {
+                            const char** value) {
   add_arg(cl, name, help, ARGTYPE_STRING, value);
 }
 
