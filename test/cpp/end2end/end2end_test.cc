@@ -1609,7 +1609,7 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
-  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(s.error_code(), StatusCode::UNAVAILABLE);
 }
 
 TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
@@ -1626,7 +1626,7 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
-  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(s.error_code(), StatusCode::UNAVAILABLE);
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
@@ -1644,7 +1644,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
-  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(s.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(s.error_message(),
             grpc::string("Getting metadata from plugin failed with error: ") +
                 kTestCredsPluginErrorMsg);
@@ -1705,7 +1705,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
-  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(s.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(s.error_message(),
             grpc::string("Getting metadata from plugin failed with error: ") +
                 kTestCredsPluginErrorMsg);
