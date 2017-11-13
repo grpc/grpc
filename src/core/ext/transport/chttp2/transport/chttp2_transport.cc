@@ -91,7 +91,8 @@ static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_core::TraceFlag grpc_http_trace(false, "http");
-grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false, "chttp2_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
+                                                         "chttp2_refcount");
 
 /* forward declarations of various callbacks that we'll build closures around */
 static void write_action_begin_locked(grpc_exec_ctx* exec_ctx, void* t,
@@ -3112,8 +3113,7 @@ static void benign_reclaimer_locked(grpc_exec_ctx* exec_ctx, void* arg,
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
-  } else if (error == GRPC_ERROR_NONE &&
-             grpc_resource_quota_trace.enabled()) {
+  } else if (error == GRPC_ERROR_NONE && grpc_resource_quota_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",

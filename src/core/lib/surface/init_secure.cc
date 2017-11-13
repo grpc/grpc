@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"
@@ -32,7 +33,6 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/tsi/transport_security_interface.h"
-#include "src/core/lib/security/context/security_context.h"
 
 void grpc_security_pre_init(void) {}
 

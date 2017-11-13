@@ -32,8 +32,8 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#define INPROC_LOG(...)                                          \
-  do {                                                           \
+#define INPROC_LOG(...)                                    \
+  do {                                                     \
     if (grpc_inproc_trace.enabled()) gpr_log(__VA_ARGS__); \
   } while (0)
 

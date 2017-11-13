@@ -54,9 +54,9 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 
-#define GRPC_POLLING_TRACE(...)             \
+#define GRPC_POLLING_TRACE(...)       \
   if (grpc_polling_trace.enabled()) { \
-    gpr_log(GPR_INFO, __VA_ARGS__);         \
+    gpr_log(GPR_INFO, __VA_ARGS__);   \
   }
 
 static int grpc_wakeup_signal = -1;

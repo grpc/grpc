@@ -677,10 +677,10 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx* exec_ctx,
 // extern grpc_core::TraceFlag grpc_http_trace;
 // extern grpc_core::TraceFlag grpc_flowctl_trace;
 
-#define GRPC_CHTTP2_IF_TRACING(stmt)      \
-  if (!(grpc_http_trace.enabled())) \
-    ;                                     \
-  else                                    \
+#define GRPC_CHTTP2_IF_TRACING(stmt) \
+  if (!(grpc_http_trace.enabled()))  \
+    ;                                \
+  else                               \
     stmt
 
 void grpc_chttp2_fake_status(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,

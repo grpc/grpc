@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-void grpc_tracer_init(const char *env_var_name);
+void grpc_tracer_init(const char* env_var_name);
 void grpc_tracer_shutdown(void);
 
 #ifdef __cplusplus
@@ -46,10 +46,10 @@ namespace grpc_core {
 
 class TraceFlag {
  public:
-  TraceFlag(bool default_enabled, const char *name);
-  ~TraceFlag() { }
+  TraceFlag(bool default_enabled, const char* name);
+  ~TraceFlag() {}
 
-  static bool Set(const char *tracer, bool enabled);
+  static bool Set(const char* tracer, bool enabled);
 
   const char* name() const { return name_; }
 
@@ -74,9 +74,9 @@ class TraceFlag {
  private:
   static void LogAllTracers();
 
-  static TraceFlag *root_tracer_;
-  TraceFlag *next_tracer_;
-  const char *const name_;
+  static TraceFlag* root_tracer_;
+  TraceFlag* next_tracer_;
+  const char* const name_;
 #ifdef GRPC_THREADSAFE_TRACER
   gpr_atm value_;
 #else
@@ -89,7 +89,7 @@ typedef TraceFlag DebugOnlyTraceFlag;
 #else
 class DebugOnlyTraceFlag {
  public:
-  DebugOnlyTraceFlag(bool default_enabled, const char *name) {}
+  DebugOnlyTraceFlag(bool default_enabled, const char* name) {}
   bool enabled() { return false; }
 };
 #endif
