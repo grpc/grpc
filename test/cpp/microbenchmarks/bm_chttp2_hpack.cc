@@ -85,7 +85,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
         (size_t)1024,
         &stats,
     };
-    grpc_chttp2_encode_header(&exec_ctx, &c, NULL, 0, &b, &hopt, &outbuf);
+    grpc_chttp2_encode_header(&exec_ctx, &c, nullptr, 0, &b, &hopt, &outbuf);
     grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, &outbuf);
     grpc_exec_ctx_flush(&exec_ctx);
   }
@@ -136,7 +136,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
         (size_t)state.range(1),
         &stats,
     };
-    grpc_chttp2_encode_header(&exec_ctx, &c, NULL, 0, &b, &hopt, &outbuf);
+    grpc_chttp2_encode_header(&exec_ctx, &c, nullptr, 0, &b, &hopt, &outbuf);
     if (!logged_representative_output && state.iterations() > 3) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
@@ -775,7 +775,7 @@ static void OnHeaderNew(grpc_exec_ctx* exec_ctx, void* user_data,
     grpc_millis* cached_timeout =
         static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
     grpc_millis timeout;
-    if (cached_timeout != NULL) {
+    if (cached_timeout != nullptr) {
       timeout = *cached_timeout;
     } else {
       if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout)) {

@@ -49,9 +49,9 @@ static grpc_channel* client_channel_factory_create_channel(
     grpc_exec_ctx* exec_ctx, grpc_client_channel_factory* cc_factory,
     const char* target, grpc_client_channel_type type,
     const grpc_channel_args* args) {
-  if (target == NULL) {
+  if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
-    return NULL;
+    return nullptr;
   }
   // Add channel arg containing the server URI.
   grpc_arg arg = grpc_channel_arg_string_create(
@@ -62,7 +62,7 @@ static grpc_channel* client_channel_factory_create_channel(
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
   gpr_free(arg.value.string);
   grpc_channel* channel = grpc_channel_create(exec_ctx, target, new_args,
-                                              GRPC_CLIENT_CHANNEL, NULL);
+                                              GRPC_CLIENT_CHANNEL, nullptr);
   grpc_channel_args_destroy(exec_ctx, new_args);
   return channel;
 }
@@ -86,7 +86,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
       (target, args, reserved));
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
   // Add channel arg containing the client channel factory.
   grpc_arg arg =
       grpc_client_channel_factory_create_channel_arg(&client_channel_factory);
@@ -98,8 +98,8 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
   // Clean up.
   grpc_channel_args_destroy(&exec_ctx, new_args);
   grpc_exec_ctx_finish(&exec_ctx);
-  return channel != NULL ? channel
-                         : grpc_lame_client_channel_create(
-                               target, GRPC_STATUS_INTERNAL,
-                               "Failed to create client channel");
+  return channel != nullptr ? channel
+                            : grpc_lame_client_channel_create(
+                                  target, GRPC_STATUS_INTERNAL,
+                                  "Failed to create client channel");
 }

@@ -21,6 +21,10 @@
 
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_WINSOCK_SOCKET
+
 #include "src/core/lib/iomgr/socket_windows.h"
 
 #ifdef __cplusplus
@@ -43,6 +47,8 @@ void grpc_iocp_add_socket(grpc_winsocket*);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOCP_WINDOWS_H */

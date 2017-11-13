@@ -100,7 +100,7 @@ typedef struct round_robin_lb_policy {
  * The caller must do that if it returns a pick. */
 static size_t get_next_ready_subchannel_index_locked(
     const round_robin_lb_policy* p) {
-  GPR_ASSERT(p->subchannel_list != NULL);
+  GPR_ASSERT(p->subchannel_list != nullptr);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p] getting next ready subchannel (out of %lu), "
@@ -161,8 +161,8 @@ static void rr_destroy(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
     gpr_log(GPR_DEBUG, "[RR %p] Destroying Round Robin policy at %p",
             (void*)pol, (void*)pol);
   }
-  GPR_ASSERT(p->subchannel_list == NULL);
-  GPR_ASSERT(p->latest_pending_subchannel_list == NULL);
+  GPR_ASSERT(p->subchannel_list == nullptr);
+  GPR_ASSERT(p->latest_pending_subchannel_list == nullptr);
   grpc_connectivity_state_destroy(exec_ctx, &p->state_tracker);
   grpc_subchannel_index_unref();
   gpr_free(p);
@@ -175,25 +175,25 @@ static void shutdown_locked(grpc_exec_ctx* exec_ctx, round_robin_lb_policy* p,
   }
   p->shutdown = true;
   pending_pick* pp;
-  while ((pp = p->pending_picks) != NULL) {
+  while ((pp = p->pending_picks) != nullptr) {
     p->pending_picks = pp->next;
-    *pp->target = NULL;
+    *pp->target = nullptr;
     GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_REF(error));
     gpr_free(pp);
   }
   grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                               GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
                               "rr_shutdown");
-  if (p->subchannel_list != NULL) {
+  if (p->subchannel_list != nullptr) {
     grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
                                                "sl_shutdown_rr_shutdown");
-    p->subchannel_list = NULL;
+    p->subchannel_list = nullptr;
   }
-  if (p->latest_pending_subchannel_list != NULL) {
+  if (p->latest_pending_subchannel_list != nullptr) {
     grpc_lb_subchannel_list_shutdown_and_unref(
         exec_ctx, p->latest_pending_subchannel_list,
         "sl_shutdown_pending_rr_shutdown");
-    p->latest_pending_subchannel_list = NULL;
+    p->latest_pending_subchannel_list = nullptr;
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -209,11 +209,11 @@ static void rr_cancel_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
                                   grpc_error* error) {
   round_robin_lb_policy* p = (round_robin_lb_policy*)pol;
   pending_pick* pp = p->pending_picks;
-  p->pending_picks = NULL;
-  while (pp != NULL) {
+  p->pending_picks = nullptr;
+  while (pp != nullptr) {
     pending_pick* next = pp->next;
     if (pp->target == target) {
-      *target = NULL;
+      *target = nullptr;
       GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick cancelled", &error, 1));
@@ -233,12 +233,12 @@ static void rr_cancel_picks_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
                                    grpc_error* error) {
   round_robin_lb_policy* p = (round_robin_lb_policy*)pol;
   pending_pick* pp = p->pending_picks;
-  p->pending_picks = NULL;
-  while (pp != NULL) {
+  p->pending_picks = nullptr;
+  while (pp != nullptr) {
     pending_pick* next = pp->next;
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      *pp->target = NULL;
+      *pp->target = nullptr;
       GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick cancelled", &error, 1));
@@ -281,7 +281,7 @@ static int rr_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
             p->shutdown);
   }
   GPR_ASSERT(!p->shutdown);
-  if (p->subchannel_list != NULL) {
+  if (p->subchannel_list != nullptr) {
     const size_t next_ready_index = get_next_ready_subchannel_index_locked(p);
     if (next_ready_index < p->subchannel_list->num_subchannels) {
       /* readily available, report right away */
@@ -289,7 +289,7 @@ static int rr_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
           &p->subchannel_list->subchannels[next_ready_index];
       *target =
           GRPC_CONNECTED_SUBCHANNEL_REF(sd->connected_subchannel, "rr_picked");
-      if (user_data != NULL) {
+      if (user_data != nullptr) {
         *user_data = sd->user_data;
       }
       if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
@@ -472,7 +472,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
     }
   } else {  // sd not in SHUTDOWN
     if (sd->curr_connectivity_state == GRPC_CHANNEL_READY) {
-      if (sd->connected_subchannel == NULL) {
+      if (sd->connected_subchannel == nullptr) {
         sd->connected_subchannel = GRPC_CONNECTED_SUBCHANNEL_REF(
             grpc_subchannel_get_connected_subchannel(sd->subchannel),
             "connected");
@@ -486,7 +486,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         GPR_ASSERT(!sd->subchannel_list->shutting_down);
         if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
           const unsigned long num_subchannels =
-              p->subchannel_list != NULL
+              p->subchannel_list != nullptr
                   ? (unsigned long)p->subchannel_list->num_subchannels
                   : 0;
           gpr_log(GPR_DEBUG,
@@ -495,13 +495,13 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
                   (void*)p, (void*)p->subchannel_list, num_subchannels,
                   (void*)sd->subchannel_list, num_subchannels);
         }
-        if (p->subchannel_list != NULL) {
+        if (p->subchannel_list != nullptr) {
           // dispose of the current subchannel_list
           grpc_lb_subchannel_list_shutdown_and_unref(
               exec_ctx, p->subchannel_list, "sl_phase_out_shutdown");
         }
         p->subchannel_list = p->latest_pending_subchannel_list;
-        p->latest_pending_subchannel_list = NULL;
+        p->latest_pending_subchannel_list = nullptr;
       }
       /* at this point we know there's at least one suitable subchannel. Go
        * ahead and pick one and notify the pending suitors in
@@ -510,7 +510,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
       GPR_ASSERT(next_ready_index < p->subchannel_list->num_subchannels);
       grpc_lb_subchannel_data* selected =
           &p->subchannel_list->subchannels[next_ready_index];
-      if (p->pending_picks != NULL) {
+      if (p->pending_picks != nullptr) {
         // if the selected subchannel is going to be used for the pending
         // picks, update the last picked pointer
         update_last_ready_subchannel_index_locked(p, next_ready_index);
@@ -520,7 +520,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         p->pending_picks = pp->next;
         *pp->target = GRPC_CONNECTED_SUBCHANNEL_REF(
             selected->connected_subchannel, "rr_picked");
-        if (pp->user_data != NULL) {
+        if (pp->user_data != nullptr) {
           *pp->user_data = selected->user_data;
         }
         if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
@@ -577,11 +577,11 @@ static void rr_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
   round_robin_lb_policy* p = (round_robin_lb_policy*)policy;
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
-  if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "[RR %p] update provided no addresses; ignoring", p);
     // If we don't have a current subchannel list, go into TRANSIENT_FAILURE.
     // Otherwise, keep using the current subchannel list (ignore this update).
-    if (p->subchannel_list == NULL) {
+    if (p->subchannel_list == nullptr) {
       grpc_connectivity_state_set(
           exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
@@ -602,7 +602,7 @@ static void rr_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
         exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
         "rr_update_empty");
-    if (p->subchannel_list != NULL) {
+    if (p->subchannel_list != nullptr) {
       grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
                                                  "sl_shutdown_empty_update");
     }
@@ -610,7 +610,7 @@ static void rr_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
     return;
   }
   if (p->started_picking) {
-    if (p->latest_pending_subchannel_list != NULL) {
+    if (p->latest_pending_subchannel_list != nullptr) {
       if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
         gpr_log(GPR_DEBUG,
                 "[RR %p] Shutting down latest pending subchannel list %p, "
@@ -635,7 +635,7 @@ static void rr_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
   } else {
     // The policy isn't picking yet. Save the update for later, disposing of
     // previous version if any.
-    if (p->subchannel_list != NULL) {
+    if (p->subchannel_list != nullptr) {
       grpc_lb_subchannel_list_shutdown_and_unref(
           exec_ctx, p->subchannel_list, "rr_update_before_started_picking");
     }
@@ -662,7 +662,7 @@ static void round_robin_factory_unref(grpc_lb_policy_factory* factory) {}
 static grpc_lb_policy* round_robin_create(grpc_exec_ctx* exec_ctx,
                                           grpc_lb_policy_factory* factory,
                                           grpc_lb_policy_args* args) {
-  GPR_ASSERT(args->client_channel_factory != NULL);
+  GPR_ASSERT(args->client_channel_factory != nullptr);
   round_robin_lb_policy* p = (round_robin_lb_policy*)gpr_zalloc(sizeof(*p));
   grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
   grpc_subchannel_index_ref();

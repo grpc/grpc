@@ -108,7 +108,7 @@ static void proxy_connection_unref(grpc_exec_ctx* exec_ctx,
     gpr_log(GPR_DEBUG, "endpoints: %p %p", conn->client_endpoint,
             conn->server_endpoint);
     grpc_endpoint_destroy(exec_ctx, conn->client_endpoint);
-    if (conn->server_endpoint != NULL) {
+    if (conn->server_endpoint != nullptr) {
       grpc_endpoint_destroy(exec_ctx, conn->server_endpoint);
     }
     grpc_pollset_set_destroy(exec_ctx, conn->pollset_set);
@@ -137,7 +137,7 @@ static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
 
   grpc_endpoint_shutdown(exec_ctx, conn->client_endpoint,
                          GRPC_ERROR_REF(error));
-  if (conn->server_endpoint != NULL) {
+  if (conn->server_endpoint != nullptr) {
     grpc_endpoint_shutdown(exec_ctx, conn->server_endpoint,
                            GRPC_ERROR_REF(error));
   }
@@ -315,8 +315,8 @@ static void on_server_connect_done(grpc_exec_ctx* exec_ctx, void* arg,
 static bool proxy_auth_header_matches(grpc_exec_ctx* exec_ctx,
                                       char* proxy_auth_header_val,
                                       char* expected_cred) {
-  GPR_ASSERT(proxy_auth_header_val != NULL);
-  GPR_ASSERT(expected_cred != NULL);
+  GPR_ASSERT(proxy_auth_header_val != nullptr);
+  GPR_ASSERT(expected_cred != nullptr);
   if (strncmp(proxy_auth_header_val, "Basic ", 6) != 0) {
     return false;
   }
@@ -348,8 +348,8 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   // Read request and feed it to the parser.
   for (size_t i = 0; i < conn->client_read_buffer.count; ++i) {
     if (GRPC_SLICE_LENGTH(conn->client_read_buffer.slices[i]) > 0) {
-      error = grpc_http_parser_parse(&conn->http_parser,
-                                     conn->client_read_buffer.slices[i], NULL);
+      error = grpc_http_parser_parse(
+          &conn->http_parser, conn->client_read_buffer.slices[i], nullptr);
       if (error != GRPC_ERROR_NONE) {
         proxy_connection_failed(exec_ctx, conn, true /* is_client */,
                                 "HTTP proxy request parse", error);
@@ -380,7 +380,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   // If proxy auth is being used, check if the header is present and as expected
   const grpc_arg* proxy_auth_arg = grpc_channel_args_find(
       conn->proxy->channel_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  if (proxy_auth_arg != NULL && proxy_auth_arg->type == GRPC_ARG_STRING) {
+  if (proxy_auth_arg != nullptr && proxy_auth_arg->type == GRPC_ARG_STRING) {
     bool client_authenticated = false;
     for (size_t i = 0; i < conn->http_request.hdr_count; i++) {
       if (strcmp(conn->http_request.hdrs[i].key, "Proxy-Authorization") == 0) {
@@ -400,7 +400,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
     }
   }
   // Resolve address.
-  grpc_resolved_addresses* resolved_addresses = NULL;
+  grpc_resolved_addresses* resolved_addresses = nullptr;
   error = grpc_blocking_resolve_address(conn->http_request.path, "80",
                                         &resolved_addresses);
   if (error != GRPC_ERROR_NONE) {
@@ -415,7 +415,7 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
   const grpc_millis deadline =
       grpc_exec_ctx_now(exec_ctx) + 10 * GPR_MS_PER_SEC;
   grpc_tcp_client_connect(exec_ctx, &conn->on_server_connect_done,
-                          &conn->server_endpoint, conn->pollset_set, NULL,
+                          &conn->server_endpoint, conn->pollset_set, nullptr,
                           &resolved_addresses->addrs[0], deadline);
   grpc_resolved_addresses_destroy(resolved_addresses);
 }
@@ -469,7 +469,7 @@ static void thread_main(void* arg) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   do {
     gpr_ref(&proxy->users);
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(proxy->mu);
     GRPC_LOG_IF_ERROR(
         "grpc_pollset_work",
@@ -496,7 +496,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   // Create TCP server.
   proxy->channel_args = grpc_channel_args_copy(args);
   grpc_error* error = grpc_tcp_server_create(
-      &exec_ctx, NULL, proxy->channel_args, &proxy->server);
+      &exec_ctx, nullptr, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
   grpc_resolved_address resolved_addr;

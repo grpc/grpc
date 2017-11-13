@@ -203,7 +203,7 @@ static void install_crash_handler() {
 #define SIGNAL_NAMES_LENGTH 32
 
 static const char* const signal_names[] = {
-    NULL,      "SIGHUP",  "SIGINT",    "SIGQUIT", "SIGILL",    "SIGTRAP",
+    nullptr,   "SIGHUP",  "SIGINT",    "SIGQUIT", "SIGILL",    "SIGTRAP",
     "SIGABRT", "SIGBUS",  "SIGFPE",    "SIGKILL", "SIGUSR1",   "SIGSEGV",
     "SIGUSR2", "SIGPIPE", "SIGALRM",   "SIGTERM", "SIGSTKFLT", "SIGCHLD",
     "SIGCONT", "SIGSTOP", "SIGTSTP",   "SIGTTIN", "SIGTTOU",   "SIGURG",
@@ -263,15 +263,15 @@ static void install_crash_handler() {
   memset(&sa, 0, sizeof(sa));
   ss.ss_size = sizeof(g_alt_stack);
   ss.ss_sp = g_alt_stack;
-  GPR_ASSERT(sigaltstack(&ss, NULL) == 0);
+  GPR_ASSERT(sigaltstack(&ss, nullptr) == 0);
   sa.sa_flags = (int)(SA_SIGINFO | SA_ONSTACK | SA_RESETHAND);
   sa.sa_sigaction = crash_handler;
-  GPR_ASSERT(sigaction(SIGILL, &sa, NULL) == 0);
-  GPR_ASSERT(sigaction(SIGABRT, &sa, NULL) == 0);
-  GPR_ASSERT(sigaction(SIGBUS, &sa, NULL) == 0);
-  GPR_ASSERT(sigaction(SIGSEGV, &sa, NULL) == 0);
-  GPR_ASSERT(sigaction(SIGTERM, &sa, NULL) == 0);
-  GPR_ASSERT(sigaction(SIGQUIT, &sa, NULL) == 0);
+  GPR_ASSERT(sigaction(SIGILL, &sa, nullptr) == 0);
+  GPR_ASSERT(sigaction(SIGABRT, &sa, nullptr) == 0);
+  GPR_ASSERT(sigaction(SIGBUS, &sa, nullptr) == 0);
+  GPR_ASSERT(sigaction(SIGSEGV, &sa, nullptr) == 0);
+  GPR_ASSERT(sigaction(SIGTERM, &sa, nullptr) == 0);
+  GPR_ASSERT(sigaction(SIGQUIT, &sa, nullptr) == 0);
 }
 #else
 static void install_crash_handler() {}
@@ -380,7 +380,7 @@ void grpc_test_init(int argc, char** argv) {
   install_crash_handler();
   { /* poll-cv poll strategy runs much more slowly than anything else */
     char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-    if (s != NULL && 0 == strcmp(s, "poll-cv")) {
+    if (s != nullptr && 0 == strcmp(s, "poll-cv")) {
       g_poller_slowdown_factor = 5;
     }
     gpr_free(s);

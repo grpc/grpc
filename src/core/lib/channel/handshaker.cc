@@ -93,8 +93,8 @@ grpc_handshake_manager* grpc_handshake_manager_create() {
 
 void grpc_handshake_manager_pending_list_add(grpc_handshake_manager** head,
                                              grpc_handshake_manager* mgr) {
-  GPR_ASSERT(mgr->prev == NULL);
-  GPR_ASSERT(mgr->next == NULL);
+  GPR_ASSERT(mgr->prev == nullptr);
+  GPR_ASSERT(mgr->next == nullptr);
   mgr->next = *head;
   if (*head) {
     (*head)->prev = mgr;
@@ -104,10 +104,10 @@ void grpc_handshake_manager_pending_list_add(grpc_handshake_manager** head,
 
 void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
                                                 grpc_handshake_manager* mgr) {
-  if (mgr->next != NULL) {
+  if (mgr->next != nullptr) {
     mgr->next->prev = mgr->prev;
   }
-  if (mgr->prev != NULL) {
+  if (mgr->prev != nullptr) {
     mgr->prev->next = mgr->next;
   } else {
     GPR_ASSERT(*head == mgr);
@@ -117,7 +117,7 @@ void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
 
 void grpc_handshake_manager_pending_list_shutdown_all(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why) {
-  while (head != NULL) {
+  while (head != nullptr) {
     grpc_handshake_manager_shutdown(exec_ctx, head, GRPC_ERROR_REF(why));
     head = head->next;
   }

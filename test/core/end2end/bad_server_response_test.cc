@@ -135,8 +135,8 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   test_tcp_server* server = (test_tcp_server*)arg;
-  GRPC_CLOSURE_INIT(&on_read, handle_read, NULL, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_write, done_write, NULL, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_read, handle_read, nullptr, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_write, done_write, nullptr, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
   grpc_slice_buffer_init(&state.outgoing_buffer);
   state.tcp = tcp;
@@ -161,15 +161,15 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cq_verifier* cqv;
   grpc_slice details;
 
-  state.cq = grpc_completion_queue_create_for_next(NULL);
+  state.cq = grpc_completion_queue_create_for_next(nullptr);
   cqv = cq_verifier_create(state.cq);
   gpr_join_host_port(&state.target, "127.0.0.1", target_port);
-  state.channel = grpc_insecure_channel_create(state.target, NULL, NULL);
+  state.channel = grpc_insecure_channel_create(state.target, nullptr, nullptr);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   state.call = grpc_channel_create_call(
-      state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq,
+      state.channel, nullptr, GRPC_PROPAGATE_DEFAULTS, state.cq,
       grpc_slice_from_static_string("/Service/Method"), &host,
-      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -179,26 +179,26 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error =
-      grpc_call_start_batch(state.call, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(state.call, ops, (size_t)(op - ops), tag(1),
+                                nullptr);
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -206,7 +206,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cq_verify(cqv);
 
   GPR_ASSERT(status == expected_status);
-  if (expected_detail != NULL) {
+  if (expected_detail != nullptr) {
     GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
                                                    expected_detail)));
   }
@@ -224,7 +224,7 @@ static void cleanup_rpc(grpc_exec_ctx* exec_ctx) {
   grpc_call_unref(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
-    ev = grpc_completion_queue_next(state.cq, n_sec_deadline(1), NULL);
+    ev = grpc_completion_queue_next(state.cq, n_sec_deadline(1), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(state.cq);
   grpc_channel_destroy(state.channel);
@@ -262,7 +262,7 @@ static void poll_server_until_read_done(test_tcp_server* server,
   poll_args* pa = (poll_args*)gpr_malloc(sizeof(*pa));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
-  gpr_thd_new(&id, actually_poll_server, pa, NULL);
+  gpr_thd_new(&id, actually_poll_server, pa, nullptr);
 }
 
 static void run_test(const char* response_payload,
@@ -331,7 +331,7 @@ int main(int argc, char** argv) {
 
   /* unparseable response */
   run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1, GRPC_STATUS_UNKNOWN,
-           NULL);
+           nullptr);
 
   /* http1 response */
   run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,

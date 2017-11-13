@@ -395,7 +395,7 @@ TEST_F(GrpcToolTest, CallCommand) {
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
   // Expected output: "message: \"Hello\""
-  EXPECT_TRUE(NULL !=
+  EXPECT_TRUE(nullptr !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
   ShutdownServer();
 }
@@ -421,9 +421,9 @@ TEST_F(GrpcToolTest, CallCommandBatch) {
 
   // Expected output: "message: "Hello0"\nmessage: "Hello1"\nmessage:
   // "Hello2"\n"
-  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
-                             "message: \"Hello0\"\nmessage: "
-                             "\"Hello1\"\nmessage: \"Hello2\"\n"));
+  EXPECT_TRUE(nullptr != strstr(output_stream.str().c_str(),
+                                "message: \"Hello0\"\nmessage: "
+                                "\"Hello1\"\nmessage: \"Hello2\"\n"));
   std::cin.rdbuf(orig);
   ShutdownServer();
 }
@@ -448,8 +448,8 @@ TEST_F(GrpcToolTest, CallCommandBatchWithBadRequest) {
   FLAGS_batch = false;
 
   // Expected output: "message: "Hello0"\nmessage: "Hello2"\n"
-  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
-                             "message: \"Hello0\"\nmessage: \"Hello2\"\n"));
+  EXPECT_TRUE(nullptr != strstr(output_stream.str().c_str(),
+                                "message: \"Hello0\"\nmessage: \"Hello2\"\n"));
   std::cin.rdbuf(orig);
   ShutdownServer();
 }
@@ -473,8 +473,8 @@ TEST_F(GrpcToolTest, CallCommandRequestStream) {
                                              std::placeholders::_1)));
 
   // Expected output: "message: \"Hello0Hello1Hello2\""
-  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
-                             "message: \"Hello0Hello1Hello2\""));
+  EXPECT_TRUE(nullptr != strstr(output_stream.str().c_str(),
+                                "message: \"Hello0Hello1Hello2\""));
   std::cin.rdbuf(orig);
   ShutdownServer();
 }
@@ -498,7 +498,7 @@ TEST_F(GrpcToolTest, CallCommandRequestStreamWithBadRequest) {
                                              std::placeholders::_1)));
 
   // Expected output: "message: \"Hello0Hello2\""
-  EXPECT_TRUE(NULL !=
+  EXPECT_TRUE(nullptr !=
               strstr(output_stream.str().c_str(), "message: \"Hello0Hello2\""));
   std::cin.rdbuf(orig);
   ShutdownServer();
@@ -521,8 +521,8 @@ TEST_F(GrpcToolTest, CallCommandResponseStream) {
   for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
     grpc::string expected_response_text =
         "message: \"Hello" + grpc::to_string(i) + "\"\n";
-    EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
-                               expected_response_text.c_str()));
+    EXPECT_TRUE(nullptr != strstr(output_stream.str().c_str(),
+                                  expected_response_text.c_str()));
   }
 
   ShutdownServer();
@@ -547,9 +547,9 @@ TEST_F(GrpcToolTest, CallCommandBidiStream) {
 
   // Expected output: "message: \"Hello0\"\nmessage: \"Hello1\"\nmessage:
   // \"Hello2\"\n\n"
-  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
-                             "message: \"Hello0\"\nmessage: "
-                             "\"Hello1\"\nmessage: \"Hello2\"\n"));
+  EXPECT_TRUE(nullptr != strstr(output_stream.str().c_str(),
+                                "message: \"Hello0\"\nmessage: "
+                                "\"Hello1\"\nmessage: \"Hello2\"\n"));
   std::cin.rdbuf(orig);
   ShutdownServer();
 }
@@ -573,8 +573,8 @@ TEST_F(GrpcToolTest, CallCommandBidiStreamWithBadRequest) {
 
   // Expected output: "message: \"Hello0\"\nmessage: \"Hello1\"\nmessage:
   // \"Hello2\"\n\n"
-  EXPECT_TRUE(NULL != strstr(output_stream.str().c_str(),
-                             "message: \"Hello0\"\nmessage: \"Hello2\"\n"));
+  EXPECT_TRUE(nullptr != strstr(output_stream.str().c_str(),
+                                "message: \"Hello0\"\nmessage: \"Hello2\"\n"));
   std::cin.rdbuf(orig);
 
   ShutdownServer();
