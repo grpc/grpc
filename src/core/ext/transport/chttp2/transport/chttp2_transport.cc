@@ -1997,9 +1997,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
         s->recv_trailing_metadata_finished != NULL) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           exec_ctx, &s->metadata_buffer[1], s->recv_trailing_metadata);
-      gpr_log(GPR_ERROR, "CALLED %p %p", s->cancel_error, s);
       grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->recv_trailing_metadata_finished, s->cancel_error,
+          exec_ctx, t, s, &s->recv_trailing_metadata_finished, GRPC_ERROR_NONE,
           "recv_trailing_metadata_finished");
     }
   }

@@ -114,6 +114,7 @@ typedef struct batch_control {
   gpr_refcount steps_to_complete;
 
   grpc_error *error;
+  bool singleton_error;
 
   grpc_transport_stream_op_batch op;
 } batch_control;
@@ -1501,6 +1502,17 @@ static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
   if(!has_cancelled) {
     cancel_with_error(exec_ctx, bctl->call, STATUS_FROM_CORE,
                       GRPC_ERROR_REF(error));
+  }
+  if (bctl->error == GRPC_ERROR_NONE) {
+    bctl->error = GRPC_ERROR_REF(error);
+    bctl->singleton_error = true;
+  } else if(bctl->singleton_error && error != bctl->error) {
+    bctl->singleton_error = false;
+    grpc_error* old_error = bctl->error;
+    bctl->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Call batch failed");
+    bctl->error = grpc_error_add_child(bctl->error, error);
+    bctl->error = grpc_error_add_child(bctl->error, old_error);
+    GRPC_ERROR_UNREF(old_error);
   }
 }
 
