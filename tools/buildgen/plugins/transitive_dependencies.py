@@ -38,17 +38,16 @@ def transitive_deps(lib, libs):
 def mako_plugin(dictionary):
   """The exported plugin code for transitive_dependencies.
 
-  Each item in libs, node_modules, and targets can have a deps list.
-  We add a transitive_deps property to each with the transitive closure
-  of those dependency lists.
+  Iterate over each list and check each item for a deps list. We add a
+  transitive_deps property to each with the transitive closure of those
+  dependency lists.
   """
   libs = dictionary.get('libs')
-  node_modules = dictionary.get('node_modules')
-  targets = dictionary.get('targets')
 
-  for target_list in (libs, targets, node_modules):
+  for target_name, target_list in dictionary.items():
     for target in target_list:
-      target['transitive_deps'] = transitive_deps(target, libs)
+      if isinstance(target, dict) and 'deps' in target:
+        target['transitive_deps'] = transitive_deps(target, libs)
 
   python_dependencies = dictionary.get('python_dependencies')
   python_dependencies['transitive_deps'] = (

@@ -81,10 +81,14 @@ class ChannelTest extends PHPUnit_Framework_TestCase
     {
         $this->channel = new Grpc\Channel('localhost:0',
              ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
-        $time = new Grpc\Timeval(1000);
-        $state = $this->channel->watchConnectivityState(1, $time);
+        $now = Grpc\Timeval::now();
+        $deadline = $now->add(new Grpc\Timeval(100*1000));  // 100ms
+        // we act as if 'CONNECTING'(=1) was the last state
+        // we saw, so the default state of 'IDLE' should be delivered instantly
+        $state = $this->channel->watchConnectivityState(1, $deadline);
         $this->assertTrue($state);
-        unset($time);
+        unset($now);
+        unset($deadline);
     }
 
     public function testClose()

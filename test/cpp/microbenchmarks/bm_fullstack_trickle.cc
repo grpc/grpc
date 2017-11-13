@@ -21,6 +21,7 @@
 #include <benchmark/benchmark.h>
 #include <gflags/gflags.h>
 #include <fstream>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -134,25 +135,26 @@ class TrickledCHTTP2 : public EndpointPairFixture {
             ? static_cast<grpc_chttp2_stream*>(server->stream_map.values[0])
             : nullptr;
     write_csv(
-        log_.get(), static_cast<double>(now.tv_sec) +
-                        1e-9 * static_cast<double>(now.tv_nsec),
+        log_.get(),
+        static_cast<double>(now.tv_sec) +
+            1e-9 * static_cast<double>(now.tv_nsec),
         iteration, grpc_trickle_get_backlog(endpoint_pair_.client),
         grpc_trickle_get_backlog(endpoint_pair_.server),
         client->lists[GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT].head != nullptr,
         client->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != nullptr,
         server->lists[GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT].head != nullptr,
         server->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != nullptr,
-        client->flow_control->remote_window(),
-        server->flow_control->remote_window(),
-        client->flow_control->announced_window(),
-        server->flow_control->announced_window(),
-        client_stream ? client_stream->flow_control->remote_window_delta() : -1,
-        server_stream ? server_stream->flow_control->remote_window_delta() : -1,
-        client_stream ? client_stream->flow_control->local_window_delta() : -1,
-        server_stream ? server_stream->flow_control->local_window_delta() : -1,
-        client_stream ? client_stream->flow_control->announced_window_delta()
+        client->flow_control->remote_window_,
+        server->flow_control->remote_window_,
+        client->flow_control->announced_window_,
+        server->flow_control->announced_window_,
+        client_stream ? client_stream->flow_control->remote_window_delta_ : -1,
+        server_stream ? server_stream->flow_control->remote_window_delta_ : -1,
+        client_stream ? client_stream->flow_control->local_window_delta_ : -1,
+        server_stream ? server_stream->flow_control->local_window_delta_ : -1,
+        client_stream ? client_stream->flow_control->announced_window_delta_
                       : -1,
-        server_stream ? server_stream->flow_control->announced_window_delta()
+        server_stream ? server_stream->flow_control->announced_window_delta_
                       : -1,
         client->settings[GRPC_PEER_SETTINGS]
                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
@@ -440,8 +442,8 @@ static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
   }
 }
 BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
-}
-}
+}  // namespace testing
+}  // namespace grpc
 
 extern "C" gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 

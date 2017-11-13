@@ -33,24 +33,24 @@ extern "C" {
 /** Parses the \a slice as a grpc_compression_algorithm instance and updating \a
  * algorithm. Returns 1 upon success, 0 otherwise. */
 GRPCAPI int grpc_compression_algorithm_parse(
-    grpc_slice value, grpc_compression_algorithm *algorithm);
+    grpc_slice value, grpc_compression_algorithm* algorithm);
 
 /** Parses the \a slice as a grpc_stream_compression_algorithm instance and
  * updating \a algorithm. Returns 1 upon success, 0 otherwise. */
 int grpc_stream_compression_algorithm_parse(
-    grpc_slice name, grpc_stream_compression_algorithm *algorithm);
+    grpc_slice name, grpc_stream_compression_algorithm* algorithm);
 
 /** Updates \a name with the encoding name corresponding to a valid \a
  * algorithm. Note that \a name is statically allocated and must *not* be freed.
  * Returns 1 upon success, 0 otherwise. */
 GRPCAPI int grpc_compression_algorithm_name(
-    grpc_compression_algorithm algorithm, const char **name);
+    grpc_compression_algorithm algorithm, const char** name);
 
 /** Updates \a name with the encoding name corresponding to a valid \a
  * algorithm. Note that \a name is statically allocated and must *not* be freed.
  * Returns 1 upon success, 0 otherwise. */
 GRPCAPI int grpc_stream_compression_algorithm_name(
-    grpc_stream_compression_algorithm algorithm, const char **name);
+    grpc_stream_compression_algorithm algorithm, const char** name);
 
 /** Returns the compression algorithm corresponding to \a level for the
  * compression algorithms encoded in the \a accepted_encodings bitset.
@@ -66,23 +66,23 @@ GRPCAPI grpc_stream_compression_algorithm
 grpc_stream_compression_algorithm_for_level(grpc_stream_compression_level level,
                                             uint32_t accepted_stream_encodings);
 
-GRPCAPI void grpc_compression_options_init(grpc_compression_options *opts);
+GRPCAPI void grpc_compression_options_init(grpc_compression_options* opts);
 
 /** Mark \a algorithm as enabled in \a opts. */
 GRPCAPI void grpc_compression_options_enable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm);
+    grpc_compression_options* opts, grpc_compression_algorithm algorithm);
 
 /** Mark \a algorithm as disabled in \a opts. */
 GRPCAPI void grpc_compression_options_disable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm);
+    grpc_compression_options* opts, grpc_compression_algorithm algorithm);
 
 /** Returns true if \a algorithm is marked as enabled in \a opts. */
 GRPCAPI int grpc_compression_options_is_algorithm_enabled(
-    const grpc_compression_options *opts, grpc_compression_algorithm algorithm);
+    const grpc_compression_options* opts, grpc_compression_algorithm algorithm);
 
 /** Returns true if \a algorithm is marked as enabled in \a opts. */
 GRPCAPI int grpc_compression_options_is_stream_compression_algorithm_enabled(
-    const grpc_compression_options *opts,
+    const grpc_compression_options* opts,
     grpc_stream_compression_algorithm algorithm);
 
 #ifdef __cplusplus

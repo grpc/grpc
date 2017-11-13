@@ -25,6 +25,7 @@ cp -R ./ /Users/kbuilder/workspace/grpc
 cd /Users/kbuilder/workspace/grpc
 
 # Needed for identifying Docker image sha1
+brew update
 brew install md5sha1sum
 
 # Set up gRPC-Go and gRPC-Java to test

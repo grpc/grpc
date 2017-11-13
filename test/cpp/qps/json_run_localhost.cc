@@ -117,8 +117,14 @@ int main(int argc, char** argv) {
     }
   }
 
-  delete g_driver;
-  g_driver = NULL;
-  for (int i = 0; i < kNumWorkers; ++i) delete g_workers[i];
+  if (g_driver != nullptr) {
+    delete g_driver;
+  }
+  g_driver = nullptr;
+  for (int i = 0; i < kNumWorkers; ++i) {
+    if (g_workers[i] != nullptr) {
+      delete g_workers[i];
+    }
+  }
   GPR_ASSERT(driver_join_status == 0);
 }

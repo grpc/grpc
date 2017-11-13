@@ -48,6 +48,13 @@ typedef enum {
   GRPC_SSL_ROOTS_OVERRIDE_FAIL
 } grpc_ssl_roots_override_result;
 
+/** Callback results for dynamically loading a SSL certificate config. */
+typedef enum {
+  GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED,
+  GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW,
+  GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+} grpc_ssl_certificate_config_reload_status;
+
 typedef enum {
   /** Server does not request client certificate. A client can present a self
      signed or signed certificates if it wishes to do so and they would be

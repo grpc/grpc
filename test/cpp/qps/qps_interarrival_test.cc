@@ -25,13 +25,13 @@
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/util/test_config.h"
 
-using grpc::testing::RandomDistInterface;
 using grpc::testing::InterarrivalTimer;
+using grpc::testing::RandomDistInterface;
 
-static void RunTest(RandomDistInterface &&r, int threads, std::string title) {
+static void RunTest(RandomDistInterface&& r, int threads, std::string title) {
   InterarrivalTimer timer;
   timer.init(r, threads);
-  gpr_histogram *h(gpr_histogram_create(0.01, 60e9));
+  gpr_histogram* h(gpr_histogram_create(0.01, 60e9));
 
   for (int i = 0; i < 10000000; i++) {
     for (int j = 0; j < threads; j++) {
@@ -50,7 +50,7 @@ static void RunTest(RandomDistInterface &&r, int threads, std::string title) {
 
 using grpc::testing::ExpDist;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
   RunTest(ExpDist(10.0), 5, std::string("Exponential(10)"));

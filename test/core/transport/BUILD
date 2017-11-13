@@ -35,8 +35,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "byte_stream_test",
-    srcs = ["byte_stream_test.c"],
-    language = "C",
+    srcs = ["byte_stream_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -47,8 +47,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "connectivity_state_test",
-    srcs = ["connectivity_state_test.c"],
-    language = "C",
+    srcs = ["connectivity_state_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -59,8 +59,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "metadata_test",
-    srcs = ["metadata_test.c"],
-    language = "C",
+    srcs = ["metadata_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -86,8 +86,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "status_conversion_test",
-    srcs = ["status_conversion_test.c"],
-    language = "C",
+    srcs = ["status_conversion_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -98,8 +98,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "stream_owned_slice_test",
-    srcs = ["stream_owned_slice_test.c"],
-    language = "C",
+    srcs = ["stream_owned_slice_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -110,8 +110,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "timeout_encoding_test",
-    srcs = ["timeout_encoding_test.c"],
-    language = "C",
+    srcs = ["timeout_encoding_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
