@@ -89,8 +89,8 @@ struct grpc_closure {
   /** Arguments to be passed to "cb". */
   void* cb_arg;
 
-  /** Scheduler to schedule against: nullptr to schedule against current execution
-      context */
+  /** Scheduler to schedule against: nullptr to schedule against current
+     execution context */
   grpc_closure_scheduler* scheduler;
 
   /** Once queued, the result of the closure. Before then: scratch space */
