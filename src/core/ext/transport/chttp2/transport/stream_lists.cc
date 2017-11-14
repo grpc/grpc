@@ -46,7 +46,7 @@ grpc_tracer_flag grpc_trace_http2_stream_state =
 
 static bool stream_list_empty(grpc_chttp2_transport* t,
                               grpc_chttp2_stream_list_id id) {
-  return t->lists[id].head == NULL;
+  return t->lists[id].head == nullptr;
 }
 
 static bool stream_list_pop(grpc_chttp2_transport* t,
@@ -58,10 +58,10 @@ static bool stream_list_pop(grpc_chttp2_transport* t,
     GPR_ASSERT(s->included[id]);
     if (new_head) {
       t->lists[id].head = new_head;
-      new_head->links[id].prev = NULL;
+      new_head->links[id].prev = nullptr;
     } else {
-      t->lists[id].head = NULL;
-      t->lists[id].tail = NULL;
+      t->lists[id].head = nullptr;
+      t->lists[id].tail = nullptr;
     }
     s->included[id] = 0;
   }
@@ -70,7 +70,7 @@ static bool stream_list_pop(grpc_chttp2_transport* t,
     gpr_log(GPR_DEBUG, "%p[%d][%s]: pop from %s", t, s->id,
             t->is_client ? "cli" : "svr", stream_list_id_string(id));
   }
-  return s != 0;
+  return s != nullptr;
 }
 
 static void stream_list_remove(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
@@ -111,7 +111,7 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
   grpc_chttp2_stream* old_tail;
   GPR_ASSERT(!s->included[id]);
   old_tail = t->lists[id].tail;
-  s->links[id].next = NULL;
+  s->links[id].next = nullptr;
   s->links[id].prev = old_tail;
   if (old_tail) {
     old_tail->links[id].next = s;

@@ -56,8 +56,8 @@ static grpc_metadata_array metadata_batch_to_md_array(
   grpc_linked_mdelem* l;
   grpc_metadata_array result;
   grpc_metadata_array_init(&result);
-  for (l = batch->list.head; l != NULL; l = l->next) {
-    grpc_metadata* usr_md = NULL;
+  for (l = batch->list.head; l != nullptr; l = l->next) {
+    grpc_metadata* usr_md = nullptr;
     grpc_mdelem md = l->md;
     grpc_slice key = GRPC_MDKEY(md);
     grpc_slice value = GRPC_MDVALUE(md);
@@ -98,7 +98,7 @@ static void on_md_processing_done_inner(grpc_exec_ctx* exec_ctx,
   call_data* calld = (call_data*)elem->call_data;
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
   /* TODO(jboeuf): Implement support for response_md. */
-  if (response_md != NULL && num_response_md > 0) {
+  if (response_md != nullptr && num_response_md > 0) {
     gpr_log(GPR_INFO,
             "response_md in auth metadata processing not supported for now. "
             "Ignoring...");
@@ -127,7 +127,7 @@ static void on_md_processing_done(
                        (gpr_atm)STATE_DONE)) {
     grpc_error* error = GRPC_ERROR_NONE;
     if (status != GRPC_STATUS_OK) {
-      if (error_details == NULL) {
+      if (error_details == nullptr) {
         error_details = "Authentication metadata processing failed.";
       }
       error = grpc_error_set_int(
@@ -154,7 +154,7 @@ static void cancel_call(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   if (error != GRPC_ERROR_NONE &&
       gpr_atm_full_cas(&calld->state, (gpr_atm)STATE_INIT,
                        (gpr_atm)STATE_CANCELLED)) {
-    on_md_processing_done_inner(exec_ctx, elem, NULL, 0, NULL, 0,
+    on_md_processing_done_inner(exec_ctx, elem, nullptr, 0, nullptr, 0,
                                 GRPC_ERROR_REF(error));
   }
   GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "cancel_call");
@@ -167,7 +167,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
   call_data* calld = (call_data*)elem->call_data;
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
   if (error == GRPC_ERROR_NONE) {
-    if (chand->creds != NULL && chand->creds->processor.process != NULL) {
+    if (chand->creds != nullptr && chand->creds->processor.process != nullptr) {
       // We're calling out to the application, so we need to make sure
       // to drop the call combiner early if we get cancelled.
       GRPC_CALL_STACK_REF(calld->owning_call, "cancel_call");
@@ -220,7 +220,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
       grpc_server_security_context_create();
   server_ctx->auth_context = grpc_auth_context_create(chand->auth_context);
   calld->auth_context = server_ctx->auth_context;
-  if (args->context[GRPC_CONTEXT_SECURITY].value != NULL) {
+  if (args->context[GRPC_CONTEXT_SECURITY].value != nullptr) {
     args->context[GRPC_CONTEXT_SECURITY].destroy(
         args->context[GRPC_CONTEXT_SECURITY].value);
   }
@@ -243,7 +243,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   channel_data* chand = (channel_data*)elem->channel_data;
   grpc_auth_context* auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
-  GPR_ASSERT(auth_context != NULL);
+  GPR_ASSERT(auth_context != nullptr);
   chand->auth_context =
       GRPC_AUTH_CONTEXT_REF(auth_context, "server_auth_filter");
   grpc_server_credentials* creds =

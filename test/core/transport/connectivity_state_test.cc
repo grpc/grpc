@@ -84,7 +84,7 @@ static void test_subscribe_then_unsubscribe(void) {
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(g_counter == 0);
-  grpc_connectivity_state_notify_on_state_change(&exec_ctx, &tracker, NULL,
+  grpc_connectivity_state_notify_on_state_change(&exec_ctx, &tracker, nullptr,
                                                  closure);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(state == GRPC_CHANNEL_IDLE);

@@ -48,7 +48,7 @@ static void alarm_ref(grpc_alarm* alarm) { gpr_ref(&alarm->refs); }
 static void alarm_unref(grpc_alarm* alarm) {
   if (gpr_unref(&alarm->refs)) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    if (alarm->cq != NULL) {
+    if (alarm->cq != nullptr) {
       GRPC_CQ_INTERNAL_UNREF(&exec_ctx, alarm->cq, "alarm");
     }
     grpc_exec_ctx_finish(&exec_ctx);
@@ -110,7 +110,7 @@ grpc_alarm* grpc_alarm_create(void* reserved) {
 
   gpr_ref_init(&alarm->refs, 1);
   grpc_timer_init_unset(&alarm->alarm);
-  alarm->cq = NULL;
+  alarm->cq = nullptr;
   GRPC_CLOSURE_INIT(&alarm->on_alarm, alarm_cb, alarm,
                     grpc_schedule_on_exec_ctx);
   return alarm;

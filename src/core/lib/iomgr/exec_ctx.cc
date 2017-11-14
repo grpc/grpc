@@ -50,7 +50,7 @@ bool grpc_always_ready_to_finish(grpc_exec_ctx* exec_ctx, void* arg_ignored) {
 }
 
 bool grpc_exec_ctx_has_work(grpc_exec_ctx* exec_ctx) {
-  return exec_ctx->active_combiner != NULL ||
+  return exec_ctx->active_combiner != nullptr ||
          !grpc_closure_list_empty(exec_ctx->closure_list);
 }
 
@@ -85,8 +85,8 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx* exec_ctx) {
   for (;;) {
     if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
       grpc_closure* c = exec_ctx->closure_list.head;
-      exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
-      while (c != NULL) {
+      exec_ctx->closure_list.head = exec_ctx->closure_list.tail = nullptr;
+      while (c != nullptr) {
         grpc_closure* next = c->next_data.next;
         grpc_error* error = c->error_data.error;
         did_something = true;
@@ -97,7 +97,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx* exec_ctx) {
       break;
     }
   }
-  GPR_ASSERT(exec_ctx->active_combiner == NULL);
+  GPR_ASSERT(exec_ctx->active_combiner == nullptr);
   GPR_TIMER_END("grpc_exec_ctx_flush", 0);
   return did_something;
 }

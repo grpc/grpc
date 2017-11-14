@@ -50,16 +50,16 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
 
   pid = fork();
   if (pid == -1) {
-    return NULL;
+    return nullptr;
   } else if (pid == 0) {
     exec_args = (char**)gpr_malloc(((size_t)argc + 1) * sizeof(char*));
     memcpy(exec_args, argv, (size_t)argc * sizeof(char*));
-    exec_args[argc] = NULL;
+    exec_args[argc] = nullptr;
     execv(exec_args[0], exec_args);
     /* if we reach here, an error has occurred */
     gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0], strerror(errno));
     _exit(1);
-    return NULL;
+    return nullptr;
   } else {
     r = (gpr_subprocess*)gpr_zalloc(sizeof(gpr_subprocess));
     r->pid = pid;

@@ -71,25 +71,25 @@ static void do_basic_init(void) {
 static bool append_filter(grpc_exec_ctx* exec_ctx,
                           grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter*)arg, NULL, NULL);
+      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
 }
 
 static bool prepend_filter(grpc_exec_ctx* exec_ctx,
                            grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, (const grpc_channel_filter*)arg, NULL, NULL);
+      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
 }
 
 static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, NULL);
+                                   grpc_add_connected_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, NULL);
+                                   grpc_add_connected_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, NULL);
+                                   grpc_add_connected_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    append_filter, (void*)&grpc_lame_filter);
@@ -156,7 +156,7 @@ void grpc_init(void) {
     grpc_handshaker_factory_registry_init();
     grpc_security_init();
     for (i = 0; i < g_number_of_plugins; i++) {
-      if (g_all_of_the_plugins[i].init != NULL) {
+      if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
       }
     }
@@ -178,13 +178,13 @@ void grpc_shutdown(void) {
   int i;
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
   grpc_exec_ctx exec_ctx =
-      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
+      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, nullptr);
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_executor_shutdown(&exec_ctx);
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     for (i = g_number_of_plugins; i >= 0; i--) {
-      if (g_all_of_the_plugins[i].destroy != NULL) {
+      if (g_all_of_the_plugins[i].destroy != nullptr) {
         g_all_of_the_plugins[i].destroy();
       }
     }

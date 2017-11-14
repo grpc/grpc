@@ -34,33 +34,33 @@ int main(int argc, char** argv) {
   attr.cq_completion_type = GRPC_CQ_NEXT;
   attr.cq_polling_type = GRPC_CQ_DEFAULT_POLLING;
   cq1 = grpc_completion_queue_create(
-      grpc_completion_queue_factory_lookup(&attr), &attr, NULL);
+      grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
   attr.cq_polling_type = GRPC_CQ_NON_LISTENING;
   cq2 = grpc_completion_queue_create(
-      grpc_completion_queue_factory_lookup(&attr), &attr, NULL);
+      grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
   attr.cq_polling_type = GRPC_CQ_NON_POLLING;
   cq3 = grpc_completion_queue_create(
-      grpc_completion_queue_factory_lookup(&attr), &attr, NULL);
+      grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
-  server = grpc_server_create(NULL, NULL);
-  grpc_server_register_completion_queue(server, cq1, NULL);
+  server = grpc_server_create(nullptr, nullptr);
+  grpc_server_register_completion_queue(server, cq1, nullptr);
   grpc_server_add_insecure_http2_port(server, "[::]:0");
-  grpc_server_register_completion_queue(server, cq2, NULL);
-  grpc_server_register_completion_queue(server, cq3, NULL);
+  grpc_server_register_completion_queue(server, cq2, nullptr);
+  grpc_server_register_completion_queue(server, cq3, nullptr);
 
   grpc_server_start(server);
-  grpc_server_shutdown_and_notify(server, cq2, NULL);
+  grpc_server_shutdown_and_notify(server, cq2, nullptr);
   grpc_completion_queue_next(cq2, gpr_inf_future(GPR_CLOCK_REALTIME),
-                             NULL); /* cue queue hang */
+                             nullptr); /* cue queue hang */
   grpc_completion_queue_shutdown(cq1);
   grpc_completion_queue_shutdown(cq2);
   grpc_completion_queue_shutdown(cq3);
 
-  grpc_completion_queue_next(cq1, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  grpc_completion_queue_next(cq2, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  grpc_completion_queue_next(cq3, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_completion_queue_next(cq1, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_completion_queue_next(cq2, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_completion_queue_next(cq3, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq1);

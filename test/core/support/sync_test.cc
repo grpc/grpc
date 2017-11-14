@@ -189,7 +189,7 @@ static void test_create_threads(struct test* m, void (*body)(void* arg)) {
   gpr_thd_id id;
   int i;
   for (i = 0; i != m->threads; i++) {
-    GPR_ASSERT(gpr_thd_new(&id, body, m, NULL));
+    GPR_ASSERT(gpr_thd_new(&id, body, m, nullptr));
   }
 }
 
@@ -242,9 +242,9 @@ static void test(const char* name, void (*body)(void* m),
     iterations <<= 1;
     fprintf(stderr, " %ld", (long)iterations);
     m = test_new(10, iterations, incr_step);
-    if (extra != NULL) {
+    if (extra != nullptr) {
       gpr_thd_id id;
-      GPR_ASSERT(gpr_thd_new(&id, extra, m, NULL));
+      GPR_ASSERT(gpr_thd_new(&id, extra, m, nullptr));
       m->done++; /* one more thread to wait for */
     }
     test_create_threads(m, body);
@@ -333,7 +333,7 @@ static void inc_with_1ms_delay_event(void* v /*=m*/) {
     gpr_timespec deadline;
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                             gpr_time_from_micros(1000, GPR_TIMESPAN));
-    GPR_ASSERT(gpr_event_wait(&m->event, deadline) == NULL);
+    GPR_ASSERT(gpr_event_wait(&m->event, deadline) == nullptr);
     gpr_mu_lock(&m->mu);
     m->counter++;
     gpr_mu_unlock(&m->mu);
@@ -438,16 +438,16 @@ static void refcheck(void* v /*=m*/) {
 
 int main(int argc, char* argv[]) {
   grpc_test_init(argc, argv);
-  test("mutex", &inc, NULL, 1, 1);
-  test("mutex try", &inctry, NULL, 1, 1);
-  test("cv", &inc_by_turns, NULL, 1, 1);
-  test("timedcv", &inc_with_1ms_delay, NULL, 1, 1);
+  test("mutex", &inc, nullptr, 1, 1);
+  test("mutex try", &inctry, nullptr, 1, 1);
+  test("cv", &inc_by_turns, nullptr, 1, 1);
+  test("timedcv", &inc_with_1ms_delay, nullptr, 1, 1);
   test("queue", &many_producers, &consumer, 10, 1);
-  test("stats_counter", &statsinc, NULL, 1, 1);
+  test("stats_counter", &statsinc, nullptr, 1, 1);
   test("refcount by 1", &refinc, &refcheck, 1, 1);
   test("refcount by 3", &refinc, &refcheck, 1, 3); /* incr_step of 3 is an
                                                       arbitrary choice. Any
                                                       number > 1 is okay here */
-  test("timedevent", &inc_with_1ms_delay_event, NULL, 1, 1);
+  test("timedevent", &inc_with_1ms_delay_event, nullptr, 1, 1);
   return 0;
 }

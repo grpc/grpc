@@ -226,8 +226,8 @@ int rewrite_and_compare(FILE* in, FILE* cmp, int indent) {
 
   reader_user.writer = &writer;
   reader_user.in = in;
-  reader_user.top = NULL;
-  reader_user.scratchpad = NULL;
+  reader_user.top = nullptr;
+  reader_user.scratchpad = nullptr;
   reader_user.string_len = 0;
   reader_user.free_space = 0;
   reader_user.allocated = 0;

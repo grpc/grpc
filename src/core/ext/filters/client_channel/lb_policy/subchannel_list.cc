@@ -31,7 +31,7 @@
 void grpc_lb_subchannel_data_unref_subchannel(grpc_exec_ctx* exec_ctx,
                                               grpc_lb_subchannel_data* sd,
                                               const char* reason) {
-  if (sd->subchannel != NULL) {
+  if (sd->subchannel != nullptr) {
     if (GRPC_TRACER_ON(*sd->subchannel_list->tracer)) {
       gpr_log(GPR_DEBUG,
               "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
@@ -42,16 +42,16 @@ void grpc_lb_subchannel_data_unref_subchannel(grpc_exec_ctx* exec_ctx,
               sd->subchannel_list->num_subchannels, sd->subchannel);
     }
     GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, reason);
-    sd->subchannel = NULL;
-    if (sd->connected_subchannel != NULL) {
+    sd->subchannel = nullptr;
+    if (sd->connected_subchannel != nullptr) {
       GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, sd->connected_subchannel,
                                       reason);
-      sd->connected_subchannel = NULL;
+      sd->connected_subchannel = nullptr;
     }
-    if (sd->user_data != NULL) {
-      GPR_ASSERT(sd->user_data_vtable != NULL);
+    if (sd->user_data != nullptr) {
+      GPR_ASSERT(sd->user_data_vtable != nullptr);
       sd->user_data_vtable->destroy(exec_ctx, sd->user_data);
-      sd->user_data = NULL;
+      sd->user_data = nullptr;
     }
   }
 }
@@ -126,7 +126,7 @@ grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
     grpc_subchannel* subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
     grpc_channel_args_destroy(exec_ctx, new_args);
-    if (subchannel == NULL) {
+    if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GRPC_TRACER_ON(*tracer)) {
         char* address_uri =
@@ -162,7 +162,7 @@ grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
     sd->curr_connectivity_state = GRPC_CHANNEL_IDLE;
     sd->pending_connectivity_state_unsafe = GRPC_CHANNEL_IDLE;
     sd->user_data_vtable = addresses->user_data_vtable;
-    if (sd->user_data_vtable != NULL) {
+    if (sd->user_data_vtable != nullptr) {
       sd->user_data =
           sd->user_data_vtable->copy(addresses->addresses[i].user_data);
     }
@@ -240,7 +240,8 @@ static void subchannel_data_cancel_connectivity_watch(
             (size_t)(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel, reason);
   }
-  grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel, NULL, NULL,
+  grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel, nullptr,
+                                         nullptr,
                                          &sd->connectivity_changed_closure);
 }
 
@@ -261,7 +262,7 @@ void grpc_lb_subchannel_list_shutdown_and_unref(
     // Otherwise, unref the subchannel directly.
     if (sd->connectivity_notification_pending) {
       subchannel_data_cancel_connectivity_watch(exec_ctx, sd, reason);
-    } else if (sd->subchannel != NULL) {
+    } else if (sd->subchannel != nullptr) {
       grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd, reason);
     }
   }

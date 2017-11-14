@@ -51,10 +51,10 @@
 /* don't consider adding anything bigger than this to the hpack table */
 #define MAX_DECODER_SPACE_USAGE 512
 
-static grpc_slice_refcount terminal_slice_refcount = {NULL, NULL};
+static grpc_slice_refcount terminal_slice_refcount = {nullptr, nullptr};
 static const grpc_slice terminal_slice = {
     &terminal_slice_refcount, /* refcount */
-    {{0, 0}}                  /* data.refcounted */
+    {{nullptr, 0}}            /* data.refcounted */
 };
 
 extern "C" grpc_tracer_flag grpc_http_trace;
@@ -477,7 +477,7 @@ static void hpack_enc(grpc_exec_ctx* exec_ctx, grpc_chttp2_hpack_compressor* c,
 
   if (GRPC_TRACER_ON(grpc_http_trace)) {
     char* k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
-    char* v = NULL;
+    char* v = nullptr;
     if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
       v = grpc_dump_slice(GRPC_MDVALUE(elem), GPR_DUMP_HEX);
     } else {
