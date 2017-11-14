@@ -93,8 +93,8 @@ http_archive(
 new_http_archive(
     name = "com_github_google_benchmark",
     build_file = "third_party/benchmark.BUILD",
-    strip_prefix = "benchmark-44c25c892a6229b20db7cd9dc05584ea865896de",
-    url = "https://github.com/google/benchmark/archive/44c25c892a6229b20db7cd9dc05584ea865896de.tar.gz",
+    strip_prefix = "benchmark-5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8",
+    url = "https://github.com/google/benchmark/archive/5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8.tar.gz",
 )
 
 new_local_repository(
