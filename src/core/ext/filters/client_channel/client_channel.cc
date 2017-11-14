@@ -265,7 +265,8 @@ static void on_lb_policy_state_changed_locked(grpc_exec_ctx* exec_ctx,
       gpr_log(GPR_DEBUG, "chand=%p: lb_policy=%p state changed to %s", w->chand,
               w->lb_policy, grpc_connectivity_state_name(w->state));
     }
-    if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != nullptr) {
+    if (publish_state == GRPC_CHANNEL_SHUTDOWN &&
+        w->chand->resolver != nullptr) {
       publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
       grpc_resolver_channel_saw_error_locked(exec_ctx, w->chand->resolver);
       GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
@@ -407,7 +408,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
         }
       }
       if (found_balancer_address) {
-        if (lb_policy_name != nullptr && strcmp(lb_policy_name, "grpclb") != 0) {
+        if (lb_policy_name != nullptr &&
+            strcmp(lb_policy_name, "grpclb") != 0) {
           gpr_log(GPR_INFO,
                   "resolver requested LB policy %s but provided at least one "
                   "balancer address -- forcing use of grpclb LB policy",

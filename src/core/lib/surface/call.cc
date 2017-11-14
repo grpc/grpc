@@ -599,7 +599,8 @@ void grpc_call_unref(grpc_call* c) {
     // effect of scheduling the previously set cancellation closure, if
     // any, so that it can release any internal references it may be
     // holding to the call stack.
-    grpc_call_combiner_set_notify_on_cancel(&exec_ctx, &c->call_combiner, nullptr);
+    grpc_call_combiner_set_notify_on_cancel(&exec_ctx, &c->call_combiner,
+                                            nullptr);
   }
   GRPC_CALL_INTERNAL_UNREF(&exec_ctx, c, "destroy");
   grpc_exec_ctx_finish(&exec_ctx);
