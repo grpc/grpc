@@ -15,9 +15,15 @@
 @rem enter this directory
 cd /d %~dp0\..\..\..
 
-@rem TODO(jtattermusch): use better install directory
-@rem set INSTALL_DIR=%cd%/testinstall
-set INSTALL_DIR=C:/testinstall
+@rem Install into ./testinstall, but use absolute path and foward slashes
+set INSTALL_DIR=%cd:\=/%/testinstall
+
+@rem Download OpenSSL-Win32 originally installed from https://slproweb.com/products/Win32OpenSSL.html
+powershell -Command "(New-Object Net.WebClient).DownloadFile('https://storage.googleapis.com/grpc-testing.appspot.com/OpenSSL-Win32-1_1_0g.zip', 'OpenSSL-Win32.zip')"
+powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::ExtractToDirectory('OpenSSL-Win32.zip', '.');"
+
+@rem set absolute path to OpenSSL with forward slashes
+set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
 cd third_party/zlib
 mkdir cmake
@@ -48,12 +54,11 @@ cd ../../../..
 @rem cmake --build . --config Release --target install || goto :error
 @rem cd ../../../..
 
-
 @rem OpenSSL-Win32 and OpenSSL-Win64 can be downloaded from https://slproweb.com/products/Win32OpenSSL.html
 cd cmake
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=C:/OpenSSL-Win32 -DOPENSSL_INCLUDE_DIR=C:/OpenSSL-Win32/include -DZLIB_LIBRARY=%INSTALL_DIR%/lib/zlibstatic.lib -DZLIB_INCLUDE_DIR=%INSTALL_DIR%/include -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_CARES_PROVIDER=package -DgRPC_SSL_PROVIDER=package -DCMAKE_BUILD_TYPE=Release ../.. || goto :error
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% -DOPENSSL_INCLUDE_DIR=%OPENSSL_DIR%/include -DZLIB_LIBRARY=%INSTALL_DIR%/lib/zlibstatic.lib -DZLIB_INCLUDE_DIR=%INSTALL_DIR%/include -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_CARES_PROVIDER=package -DgRPC_SSL_PROVIDER=package -DCMAKE_BUILD_TYPE=Release ../.. || goto :error
 cmake --build . --config Release --target install || goto :error
 cd ../..
 
