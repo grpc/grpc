@@ -66,7 +66,7 @@ grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) {
           bb->data.raw.slice_buffer.slices, bb->data.raw.slice_buffer.count,
           bb->data.raw.compression);
   }
-  GPR_UNREACHABLE_CODE(return NULL);
+  GPR_UNREACHABLE_CODE(return nullptr);
 }
 
 void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {

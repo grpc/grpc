@@ -42,10 +42,10 @@ void create_jwt(const char* json_key_file_path, const char* service_url,
     exit(1);
   }
   jwt = grpc_jwt_encode_and_sign(
-      &key, service_url == NULL ? GRPC_JWT_OAUTH2_AUDIENCE : service_url,
+      &key, service_url == nullptr ? GRPC_JWT_OAUTH2_AUDIENCE : service_url,
       grpc_max_auth_token_lifetime(), scope);
   grpc_auth_json_key_destruct(&key);
-  if (jwt == NULL) {
+  if (jwt == nullptr) {
     fprintf(stderr, "Could not create JWT.\n");
     exit(1);
   }
@@ -54,9 +54,9 @@ void create_jwt(const char* json_key_file_path, const char* service_url,
 }
 
 int main(int argc, char** argv) {
-  const char* scope = NULL;
-  const char* json_key_file_path = NULL;
-  const char* service_url = NULL;
+  const char* scope = nullptr;
+  const char* json_key_file_path = nullptr;
+  const char* service_url = nullptr;
   grpc_init();
   gpr_cmdline* cl = gpr_cmdline_create("create_jwt");
   gpr_cmdline_add_string(cl, "json_key", "File path of the json key.",
@@ -70,17 +70,17 @@ int main(int argc, char** argv) {
                          &service_url);
   gpr_cmdline_parse(cl, argc, argv);
 
-  if (json_key_file_path == NULL) {
+  if (json_key_file_path == nullptr) {
     fprintf(stderr, "Missing --json_key option.\n");
     exit(1);
   }
-  if (scope != NULL) {
-    if (service_url != NULL) {
+  if (scope != nullptr) {
+    if (service_url != nullptr) {
       fprintf(stderr,
               "Options --scope and --service_url are mutually exclusive.\n");
       exit(1);
     }
-  } else if (service_url == NULL) {
+  } else if (service_url == nullptr) {
     fprintf(stderr, "Need one of --service_url or --scope options.\n");
     exit(1);
   }

@@ -51,20 +51,20 @@ static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    NULL);
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_destroy(f->server);
-  f->server = NULL;
+  f->server = nullptr;
 }
 
 static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
-  f->client = NULL;
+  f->client = nullptr;
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
@@ -78,7 +78,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
+  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_arg server_a[3];
   server_a[0].type = GRPC_ARG_INTEGER;
@@ -92,7 +92,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   server_a[2].value.integer = MAX_CONNECTION_IDLE_MS;
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
-  config.init_client(&f, NULL);
+  config.init_client(&f, nullptr);
   config.init_server(&f, &server_args);
 
   grpc_call* c;
@@ -110,10 +110,10 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
       get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      NULL);
+      nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -125,27 +125,27 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->data.send_initial_metadata.metadata = NULL;
+  op->data.send_initial_metadata.metadata = nullptr;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -175,7 +175,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
@@ -183,14 +183,14 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
   cq_verify(cqv);
@@ -221,7 +221,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
 }
 
 static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
+  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_arg server_a[3];
   server_a[0].type = GRPC_ARG_INTEGER;
@@ -235,7 +235,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   server_a[2].value.integer = MAX_CONNECTION_IDLE_MS;
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
-  config.init_client(&f, NULL);
+  config.init_client(&f, nullptr);
   config.init_server(&f, &server_args);
 
   grpc_call* c;
@@ -253,10 +253,10 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
       get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      NULL);
+      nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -268,27 +268,27 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->data.send_initial_metadata.metadata = NULL;
+  op->data.send_initial_metadata.metadata = nullptr;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -310,7 +310,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
@@ -318,14 +318,14 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);

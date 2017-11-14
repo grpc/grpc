@@ -61,9 +61,9 @@ grpc_call_credentials* grpc_google_iam_credentials_create(
       "grpc_iam_credentials_create(token=%s, authority_selector=%s, "
       "reserved=%p)",
       3, (token, authority_selector, reserved));
-  GPR_ASSERT(reserved == NULL);
-  GPR_ASSERT(token != NULL);
-  GPR_ASSERT(authority_selector != NULL);
+  GPR_ASSERT(reserved == nullptr);
+  GPR_ASSERT(token != nullptr);
+  GPR_ASSERT(authority_selector != nullptr);
   grpc_google_iam_credentials* c =
       (grpc_google_iam_credentials*)gpr_zalloc(sizeof(*c));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_IAM;

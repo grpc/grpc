@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
         "goaway",         "max_streams",      "ping",
         "rst_after_data", "rst_after_header", "rst_during_data"};
     char* joined_testcases =
-        gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", NULL);
+        gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", nullptr);
 
     gpr_log(GPR_ERROR, "Unsupported test case %s. Valid options are\n%s",
             FLAGS_test_case.c_str(), joined_testcases);

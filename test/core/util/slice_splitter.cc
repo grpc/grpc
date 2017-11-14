@@ -105,7 +105,7 @@ void grpc_split_slice_buffer(grpc_slice_split_mode mode, grpc_slice_buffer* src,
 }
 
 grpc_slice grpc_slice_merge(grpc_slice* slices, size_t nslices) {
-  uint8_t* out = NULL;
+  uint8_t* out = nullptr;
   size_t length = 0;
   size_t capacity = 0;
   size_t i;

@@ -41,12 +41,12 @@ static void fake_test_setup_handshakers(tsi_test_fixture* fixture) {
 }
 
 static void validate_handshaker_peers(tsi_handshaker_result* result) {
-  GPR_ASSERT(result != NULL);
+  GPR_ASSERT(result != nullptr);
   tsi_peer peer;
   GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) == TSI_OK);
   const tsi_peer_property* property =
       tsi_peer_get_property_by_name(&peer, TSI_CERTIFICATE_TYPE_PEER_PROPERTY);
-  GPR_ASSERT(property != NULL);
+  GPR_ASSERT(property != nullptr);
   GPR_ASSERT(memcmp(property->value.data, TSI_FAKE_CERTIFICATE_TYPE,
                     property->value.length) == 0);
   tsi_peer_destruct(&peer);

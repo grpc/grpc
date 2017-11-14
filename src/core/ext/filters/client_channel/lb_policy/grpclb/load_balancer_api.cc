@@ -89,7 +89,7 @@ static bool encode_drops(pb_ostream_t* stream, const pb_field_t* field,
                          void* const* arg) {
   grpc_grpclb_dropped_call_counts* drop_entries =
       (grpc_grpclb_dropped_call_counts*)*arg;
-  if (drop_entries == NULL) return true;
+  if (drop_entries == nullptr) return true;
   for (size_t i = 0; i < drop_entries->num_entries; ++i) {
     if (!pb_encode_tag_for_field(stream, field)) return false;
     grpc_lb_v1_ClientStatsPerToken drop_message;
@@ -165,10 +165,10 @@ grpc_grpclb_initial_response* grpc_grpclb_initial_response_parse(
   memset(&res, 0, sizeof(grpc_grpclb_response));
   if (!pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res)) {
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return NULL;
+    return nullptr;
   }
 
-  if (!res.has_initial_response) return NULL;
+  if (!res.has_initial_response) return nullptr;
 
   grpc_grpclb_initial_response* initial_res =
       (grpc_grpclb_initial_response*)gpr_malloc(
@@ -196,7 +196,7 @@ grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
   if (!status) {
     gpr_free(sl);
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return NULL;
+    return nullptr;
   }
   // Second pass: populate servers.
   if (sl->num_servers > 0) {
@@ -212,7 +212,7 @@ grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
     if (!status) {
       grpc_grpclb_destroy_serverlist(sl);
       gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-      return NULL;
+      return nullptr;
     }
   }
   if (res.server_list.has_expiration_interval) {
@@ -222,7 +222,7 @@ grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
 }
 
 void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist* serverlist) {
-  if (serverlist == NULL) {
+  if (serverlist == nullptr) {
     return;
   }
   for (size_t i = 0; i < serverlist->num_servers; i++) {
@@ -251,7 +251,7 @@ grpc_grpclb_serverlist* grpc_grpclb_serverlist_copy(
 
 bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist* lhs,
                                    const grpc_grpclb_serverlist* rhs) {
-  if (lhs == NULL || rhs == NULL) {
+  if (lhs == nullptr || rhs == nullptr) {
     return false;
   }
   if (lhs->num_servers != rhs->num_servers) {

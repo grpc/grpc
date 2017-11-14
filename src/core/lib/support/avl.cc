@@ -28,7 +28,7 @@
 gpr_avl gpr_avl_create(const gpr_avl_vtable* vtable) {
   gpr_avl out;
   out.vtable = vtable;
-  out.root = NULL;
+  out.root = nullptr;
   return out;
 }
 
@@ -41,7 +41,7 @@ static gpr_avl_node* ref_node(gpr_avl_node* node) {
 
 static void unref_node(const gpr_avl_vtable* vtable, gpr_avl_node* node,
                        void* user_data) {
-  if (node == NULL) {
+  if (node == nullptr) {
     return;
   }
   if (gpr_unref(&node->refs)) {
@@ -54,18 +54,18 @@ static void unref_node(const gpr_avl_vtable* vtable, gpr_avl_node* node,
 }
 
 static long node_height(gpr_avl_node* node) {
-  return node == NULL ? 0 : node->height;
+  return node == nullptr ? 0 : node->height;
 }
 
 #ifndef NDEBUG
 static long calculate_height(gpr_avl_node* node) {
-  return node == NULL ? 0
-                      : 1 + GPR_MAX(calculate_height(node->left),
-                                    calculate_height(node->right));
+  return node == nullptr ? 0
+                         : 1 + GPR_MAX(calculate_height(node->left),
+                                       calculate_height(node->right));
 }
 
 static gpr_avl_node* assert_invariants(gpr_avl_node* n) {
-  if (n == NULL) return NULL;
+  if (n == nullptr) return nullptr;
   assert_invariants(n->left);
   assert_invariants(n->right);
   assert(calculate_height(n) == n->height);
@@ -92,8 +92,8 @@ static gpr_avl_node* get(const gpr_avl_vtable* vtable, gpr_avl_node* node,
                          void* key, void* user_data) {
   long cmp;
 
-  if (node == NULL) {
-    return NULL;
+  if (node == nullptr) {
+    return nullptr;
   }
 
   cmp = vtable->compare_keys(node->key, key, user_data);
@@ -108,12 +108,12 @@ static gpr_avl_node* get(const gpr_avl_vtable* vtable, gpr_avl_node* node,
 
 void* gpr_avl_get(gpr_avl avl, void* key, void* user_data) {
   gpr_avl_node* node = get(avl.vtable, avl.root, key, user_data);
-  return node ? node->value : NULL;
+  return node ? node->value : nullptr;
 }
 
 int gpr_avl_maybe_get(gpr_avl avl, void* key, void** value, void* user_data) {
   gpr_avl_node* node = get(avl.vtable, avl.root, key, user_data);
-  if (node != NULL) {
+  if (node != nullptr) {
     *value = node->value;
     return 1;
   }
@@ -200,8 +200,8 @@ static gpr_avl_node* rebalance(const gpr_avl_vtable* vtable, void* key,
 static gpr_avl_node* add_key(const gpr_avl_vtable* vtable, gpr_avl_node* node,
                              void* key, void* value, void* user_data) {
   long cmp;
-  if (node == NULL) {
-    return new_node(key, value, NULL, NULL);
+  if (node == nullptr) {
+    return new_node(key, value, nullptr, nullptr);
   }
   cmp = vtable->compare_keys(node->key, key, user_data);
   if (cmp == 0) {
@@ -228,14 +228,14 @@ gpr_avl gpr_avl_add(gpr_avl avl, void* key, void* value, void* user_data) {
 }
 
 static gpr_avl_node* in_order_head(gpr_avl_node* node) {
-  while (node->left != NULL) {
+  while (node->left != nullptr) {
     node = node->left;
   }
   return node;
 }
 
 static gpr_avl_node* in_order_tail(gpr_avl_node* node) {
-  while (node->right != NULL) {
+  while (node->right != nullptr) {
     node = node->right;
   }
   return node;
@@ -245,14 +245,14 @@ static gpr_avl_node* remove_key(const gpr_avl_vtable* vtable,
                                 gpr_avl_node* node, void* key,
                                 void* user_data) {
   long cmp;
-  if (node == NULL) {
-    return NULL;
+  if (node == nullptr) {
+    return nullptr;
   }
   cmp = vtable->compare_keys(node->key, key, user_data);
   if (cmp == 0) {
-    if (node->left == NULL) {
+    if (node->left == nullptr) {
       return ref_node(node->right);
-    } else if (node->right == NULL) {
+    } else if (node->right == nullptr) {
       return ref_node(node->left);
     } else if (node->left->height < node->right->height) {
       gpr_avl_node* h = in_order_head(node->right);
@@ -297,4 +297,4 @@ void gpr_avl_unref(gpr_avl avl, void* user_data) {
   unref_node(avl.vtable, avl.root, user_data);
 }
 
-int gpr_avl_is_empty(gpr_avl avl) { return avl.root == NULL; }
+int gpr_avl_is_empty(gpr_avl avl) { return avl.root == nullptr; }

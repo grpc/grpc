@@ -46,7 +46,7 @@ static void check_values(const test_entry* input, size_t num_entries,
     grpc_slice key = grpc_slice_from_static_string(input[i].key);
     const char* actual =
         static_cast<const char*>(grpc_slice_hash_table_get(table, key));
-    GPR_ASSERT(actual != NULL);
+    GPR_ASSERT(actual != nullptr);
     GPR_ASSERT(strcmp(actual, input[i].value) == 0);
     grpc_slice_unref(key);
   }
@@ -55,7 +55,7 @@ static void check_values(const test_entry* input, size_t num_entries,
 static void check_non_existent_value(const char* key_string,
                                      grpc_slice_hash_table* table) {
   grpc_slice key = grpc_slice_from_static_string(key_string);
-  GPR_ASSERT(grpc_slice_hash_table_get(table, key) == NULL);
+  GPR_ASSERT(grpc_slice_hash_table_get(table, key) == nullptr);
   grpc_slice_unref(key);
 }
 
@@ -116,7 +116,7 @@ static void test_slice_hash_table() {
   };
   const size_t num_entries = GPR_ARRAY_SIZE(test_entries);
   grpc_slice_hash_table* table =
-      create_table_from_entries(test_entries, num_entries, NULL);
+      create_table_from_entries(test_entries, num_entries, nullptr);
   // Check contents of table.
   check_values(test_entries, num_entries, table);
   check_non_existent_value("XX", table);

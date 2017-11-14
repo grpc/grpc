@@ -64,7 +64,7 @@ struct cq_verifier {
 cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
   cq_verifier* v = (cq_verifier*)gpr_malloc(sizeof(cq_verifier));
   v->cq = cq;
-  v->first_expectation = NULL;
+  v->first_expectation = nullptr;
   return v;
 }
 
@@ -203,7 +203,7 @@ static void expectation_to_strvec(gpr_strvec* buf, expectation* e) {
 static void expectations_to_strvec(gpr_strvec* buf, cq_verifier* v) {
   expectation* e;
 
-  for (e = v->first_expectation; e != NULL; e = e->next) {
+  for (e = v->first_expectation; e != nullptr; e = e->next) {
     expectation_to_strvec(buf, e);
     gpr_strvec_add(buf, gpr_strdup("\n"));
   }
@@ -215,7 +215,7 @@ static void fail_no_event_received(cq_verifier* v) {
   gpr_strvec_init(&buf);
   gpr_strvec_add(&buf, gpr_strdup("no event received, but expected:\n"));
   expectations_to_strvec(&buf, v);
-  msg = gpr_strvec_flatten(&buf, NULL);
+  msg = gpr_strvec_flatten(&buf, nullptr);
   gpr_log(GPR_ERROR, "%s", msg);
   gpr_strvec_destroy(&buf);
   gpr_free(msg);
@@ -230,7 +230,7 @@ static void verify_matches(expectation* e, grpc_event* ev) {
         gpr_strvec expected;
         gpr_strvec_init(&expected);
         expectation_to_strvec(&expected, e);
-        char* s = gpr_strvec_flatten(&expected, NULL);
+        char* s = gpr_strvec_flatten(&expected, nullptr);
         gpr_strvec_destroy(&expected);
         gpr_log(GPR_ERROR, "actual success does not match expected: %s", s);
         gpr_free(s);
@@ -250,32 +250,32 @@ static void verify_matches(expectation* e, grpc_event* ev) {
 
 void cq_verify(cq_verifier* v) {
   const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  while (v->first_expectation != NULL) {
-    grpc_event ev = grpc_completion_queue_next(v->cq, deadline, NULL);
+  while (v->first_expectation != nullptr) {
+    grpc_event ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;
     }
     expectation* e;
-    expectation* prev = NULL;
-    for (e = v->first_expectation; e != NULL; e = e->next) {
+    expectation* prev = nullptr;
+    for (e = v->first_expectation; e != nullptr; e = e->next) {
       if (e->tag == ev.tag) {
         verify_matches(e, &ev);
         if (e == v->first_expectation) v->first_expectation = e->next;
-        if (prev != NULL) prev->next = e->next;
+        if (prev != nullptr) prev->next = e->next;
         gpr_free(e);
         break;
       }
       prev = e;
     }
-    if (e == NULL) {
+    if (e == nullptr) {
       char* s = grpc_event_string(&ev);
       gpr_log(GPR_ERROR, "cq returned unexpected event: %s", s);
       gpr_free(s);
       gpr_strvec expectations;
       gpr_strvec_init(&expectations);
       expectations_to_strvec(&expectations, v);
-      s = gpr_strvec_flatten(&expectations, NULL);
+      s = gpr_strvec_flatten(&expectations, nullptr);
       gpr_strvec_destroy(&expectations);
       gpr_log(GPR_ERROR, "expected tags:\n%s", s);
       gpr_free(s);
@@ -290,9 +290,10 @@ void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
                    gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
   grpc_event ev;
 
-  GPR_ASSERT(v->first_expectation == NULL && "expectation queue must be empty");
+  GPR_ASSERT(v->first_expectation == nullptr &&
+             "expectation queue must be empty");
 
-  ev = grpc_completion_queue_next(v->cq, deadline, NULL);
+  ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     char* s = grpc_event_string(&ev);
     gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s", s);

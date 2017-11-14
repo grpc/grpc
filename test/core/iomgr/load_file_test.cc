@@ -33,7 +33,7 @@
 static const char prefix[] = "file_test";
 
 static void test_load_empty_file(void) {
-  FILE* tmp = NULL;
+  FILE* tmp = nullptr;
   grpc_slice slice;
   grpc_slice slice_with_null_term;
   grpc_error* error;
@@ -42,8 +42,8 @@ static void test_load_empty_file(void) {
   LOG_TEST_NAME("test_load_empty_file");
 
   tmp = gpr_tmpfile(prefix, &tmp_name);
-  GPR_ASSERT(tmp_name != NULL);
-  GPR_ASSERT(tmp != NULL);
+  GPR_ASSERT(tmp_name != nullptr);
+  GPR_ASSERT(tmp != nullptr);
   fclose(tmp);
 
   error = grpc_load_file(tmp_name, 0, &slice);
@@ -62,7 +62,7 @@ static void test_load_empty_file(void) {
 }
 
 static void test_load_failure(void) {
-  FILE* tmp = NULL;
+  FILE* tmp = nullptr;
   grpc_slice slice;
   grpc_error* error;
   char* tmp_name;
@@ -70,8 +70,8 @@ static void test_load_failure(void) {
   LOG_TEST_NAME("test_load_failure");
 
   tmp = gpr_tmpfile(prefix, &tmp_name);
-  GPR_ASSERT(tmp_name != NULL);
-  GPR_ASSERT(tmp != NULL);
+  GPR_ASSERT(tmp_name != nullptr);
+  GPR_ASSERT(tmp != nullptr);
   fclose(tmp);
   remove(tmp_name);
 
@@ -84,7 +84,7 @@ static void test_load_failure(void) {
 }
 
 static void test_load_small_file(void) {
-  FILE* tmp = NULL;
+  FILE* tmp = nullptr;
   grpc_slice slice;
   grpc_slice slice_with_null_term;
   grpc_error* error;
@@ -94,8 +94,8 @@ static void test_load_small_file(void) {
   LOG_TEST_NAME("test_load_small_file");
 
   tmp = gpr_tmpfile(prefix, &tmp_name);
-  GPR_ASSERT(tmp_name != NULL);
-  GPR_ASSERT(tmp != NULL);
+  GPR_ASSERT(tmp_name != nullptr);
+  GPR_ASSERT(tmp != nullptr);
   GPR_ASSERT(fwrite(blah, 1, strlen(blah), tmp) == strlen(blah));
   fclose(tmp);
 
@@ -117,7 +117,7 @@ static void test_load_small_file(void) {
 }
 
 static void test_load_big_file(void) {
-  FILE* tmp = NULL;
+  FILE* tmp = nullptr;
   grpc_slice slice;
   grpc_error* error;
   char* tmp_name;
@@ -131,8 +131,8 @@ static void test_load_big_file(void) {
   memset(buffer, 42, buffer_size);
 
   tmp = gpr_tmpfile(prefix, &tmp_name);
-  GPR_ASSERT(tmp != NULL);
-  GPR_ASSERT(tmp_name != NULL);
+  GPR_ASSERT(tmp != nullptr);
+  GPR_ASSERT(tmp_name != nullptr);
   GPR_ASSERT(fwrite(buffer, 1, buffer_size, tmp) == buffer_size);
   fclose(tmp);
 
