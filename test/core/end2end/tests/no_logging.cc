@@ -34,7 +34,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 extern "C" void gpr_default_log(gpr_log_func_args* args);
 

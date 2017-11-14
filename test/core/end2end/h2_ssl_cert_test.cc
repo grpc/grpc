@@ -256,7 +256,7 @@ static grpc_end2end_test_config_wrapper configs[] = {
              BAD_CERT_PAIR, FAIL),
 };
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static gpr_timespec n_seconds_time(int n) {
   return grpc_timeout_seconds_to_deadline(n);

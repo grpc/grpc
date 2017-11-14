@@ -49,7 +49,7 @@ static grpc_byte_buffer* payload_buffer = nullptr;
 static grpc_byte_buffer* terminal_buffer = nullptr;
 static int was_cancelled = 2;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,

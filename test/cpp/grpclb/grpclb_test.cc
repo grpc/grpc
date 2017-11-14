@@ -111,7 +111,7 @@ typedef struct test_fixture {
   int lb_server_update_delay_ms;
 } test_fixture;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_slice build_response_payload_slice(
     const char* host, int* ports, size_t nports,

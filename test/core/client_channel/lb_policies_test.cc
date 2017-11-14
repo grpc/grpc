@@ -116,7 +116,7 @@ static void test_spec_destroy(test_spec* spec) {
   gpr_free(spec);
 }
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static gpr_timespec n_millis_time(int n) {
   return gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),

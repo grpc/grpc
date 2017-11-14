@@ -89,7 +89,7 @@ static struct rpc_state state;
 static grpc_closure on_read;
 static grpc_closure on_write;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void done_write(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);

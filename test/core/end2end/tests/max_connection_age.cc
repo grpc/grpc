@@ -45,7 +45,7 @@
 /* The grace period for the test to observe the channel shutdown process */
 #define IMMEDIATE_SHUTDOWN_GRACE_TIME_MS 3000
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
