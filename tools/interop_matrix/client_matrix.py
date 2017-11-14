@@ -99,7 +99,7 @@ LANG_RELEASE_MATRIX = {
    'csharp': [
         #'v1.0.1',
         #'v1.1.4',  Fail to build.
-        #'v1.2.5',  Fail to run test with csharp image.
+        'v1.2.5',
         'v1.3.9',
         'v1.4.2',
         'v1.6.6',
