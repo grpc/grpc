@@ -24,6 +24,11 @@ bind(
 )
 
 bind(
+    name = "protobuf_headers",
+    actual = "@com_google_protobuf//:protobuf_headers",
+)
+
+bind(
     name = "protocol_compiler",
     actual = "@com_google_protobuf//:protoc",
 )

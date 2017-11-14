@@ -33,10 +33,9 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
-extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
-}
+#include "src/core/lib/support/env.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -86,7 +85,11 @@ class MyTestServiceImpl : public TestServiceImpl {
 class ClientLbEnd2endTest : public ::testing::Test {
  protected:
   ClientLbEnd2endTest()
-      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {}
+      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {
+    // Make the backup poller poll very frequently in order to pick up
+    // updates from all the subchannels's FDs.
+    gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
+  }
 
   void SetUp() override {
     response_generator_ = grpc_fake_resolver_response_generator_create();
@@ -110,22 +113,23 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   void SetNextResolution(const std::vector<int>& ports) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_lb_addresses* addresses = grpc_lb_addresses_create(ports.size(), NULL);
+    grpc_lb_addresses* addresses =
+        grpc_lb_addresses_create(ports.size(), nullptr);
     for (size_t i = 0; i < ports.size(); ++i) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", ports[i]);
       grpc_uri* lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
-      GPR_ASSERT(lb_uri != NULL);
+      GPR_ASSERT(lb_uri != nullptr);
       grpc_lb_addresses_set_address_from_uri(addresses, i, lb_uri,
                                              false /* is balancer */,
-                                             "" /* balancer name */, NULL);
+                                             "" /* balancer name */, nullptr);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
     const grpc_arg fake_addresses =
         grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args* fake_result =
-        grpc_channel_args_copy_and_add(NULL, &fake_addresses, 1);
+        grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
     grpc_fake_resolver_response_generator_set_response(
         &exec_ctx, response_generator_, fake_result);
     grpc_channel_args_destroy(&exec_ctx, fake_result);
@@ -305,7 +309,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   ports.clear();
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET none *******");
-  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  grpc_connectivity_state channel_state;
   do {
     channel_state = channel_->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);
@@ -481,7 +485,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
   ports.clear();
   SetNextResolution(ports);
-  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  grpc_connectivity_state channel_state;
   do {
     channel_state = channel_->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);

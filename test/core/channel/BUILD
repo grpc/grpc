@@ -20,8 +20,8 @@ licenses(["notice"])  # Apache v2
 
 grpc_cc_test(
     name = "channel_args_test",
-    srcs = ["channel_args_test.c"],
-    language = "C",
+    srcs = ["channel_args_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -32,8 +32,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "channel_stack_test",
-    srcs = ["channel_stack_test.c"],
-    language = "C",
+    srcs = ["channel_stack_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -44,8 +44,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "channel_stack_builder_test",
-    srcs = ["channel_stack_builder_test.c"],
-    language = "C",
+    srcs = ["channel_stack_builder_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

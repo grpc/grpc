@@ -33,10 +33,9 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
-extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-}
+#include "src/core/lib/support/env.h"
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -332,8 +331,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
         num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds),
-        kRequestMessage_("Live long and prosper.") {}
+            client_load_reporting_interval_seconds) {
+    // Make the backup poller poll very frequently in order to pick up
+    // updates from all the subchannels's FDs.
+    gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
+  }
 
   void SetUp() override {
     response_generator_ = grpc_fake_resolver_response_generator_create();
@@ -559,7 +561,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     std::unique_ptr<std::thread> thread_;
   };
 
-  const grpc::string kMessage_ = "Live long and prosper.";
   const grpc::string server_host_;
   const size_t num_backends_;
   const size_t num_balancers_;
@@ -571,7 +572,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   std::vector<ServerThread<BackendService>> backend_servers_;
   std::vector<ServerThread<BalancerService>> balancer_servers_;
   grpc_fake_resolver_response_generator* response_generator_;
-  const grpc::string kRequestMessage_;
+  const grpc::string kRequestMessage_ = "Live long and prosper.";
 };
 
 class SingleBalancerTest : public GrpclbEnd2endTest {
@@ -658,8 +659,9 @@ TEST_F(SingleBalancerTest, Fallback) {
 
   // Send non-empty serverlist only after kServerlistDelayMs.
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(kNumBackendInResolution /* start_index */), {}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumBackendInResolution /* start_index */), {}),
       kServerlistDelayMs);
 
   // Wait until all the fallback backends are reachable.
@@ -724,10 +726,11 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
 
   // Send non-empty serverlist only after kServerlistDelayMs.
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(kNumBackendInResolution +
-                             kNumBackendInResolutionUpdate /* start_index */),
-             {}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumBackendInResolution +
+                          kNumBackendInResolutionUpdate /* start_index */),
+          {}),
       kServerlistDelayMs);
 
   // Wait until all the fallback backends are reachable.
@@ -1068,10 +1071,11 @@ TEST_F(SingleBalancerTest, Drop) {
                                     num_of_drop_by_load_balancing_addresses;
   const int num_total_addresses = num_backends_ + num_of_drop_addresses;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(),
-             {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
-              {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(),
+          {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+           {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
   // Wait until all backends are ready.
   WaitForAllBackends();
@@ -1086,7 +1090,7 @@ TEST_F(SingleBalancerTest, Drop) {
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                << " message=" << status.error_message();
-      EXPECT_EQ(response.message(), kMessage_);
+      EXPECT_EQ(response.message(), kRequestMessage_);
     }
   }
   EXPECT_EQ(kNumRpcsPerAddress * num_of_drop_addresses, num_drops);
@@ -1107,9 +1111,10 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
   const int num_of_drop_by_rate_limiting_addresses = 1;
   const int num_of_drop_by_load_balancing_addresses = 1;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
-                  {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+               {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
   const Status status = SendRpc();
   EXPECT_FALSE(status.ok());
@@ -1123,9 +1128,10 @@ TEST_F(SingleBalancerTest, DropAll) {
   const int num_of_drop_by_rate_limiting_addresses = 1;
   const int num_of_drop_by_load_balancing_addresses = 1;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
-                  {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+               {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       1000);
 
   // First call succeeds.
@@ -1187,10 +1193,11 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
                                     num_of_drop_by_load_balancing_addresses;
   const int num_total_addresses = num_backends_ + num_of_drop_addresses;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(),
-             {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
-              {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(),
+          {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+           {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
   // Wait until all backends are ready.
   int num_warmup_ok = 0;
@@ -1210,7 +1217,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
     } else {
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                << " message=" << status.error_message();
-      EXPECT_EQ(response.message(), kMessage_);
+      EXPECT_EQ(response.message(), kRequestMessage_);
     }
   }
   EXPECT_EQ(kNumRpcsPerAddress * num_of_drop_addresses, num_drops);

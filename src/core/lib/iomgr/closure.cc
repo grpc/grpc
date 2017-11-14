@@ -29,21 +29,21 @@ grpc_tracer_flag grpc_trace_closure = GRPC_TRACER_INITIALIZER(false, "closure");
 #endif
 
 #ifndef NDEBUG
-grpc_closure *grpc_closure_init(const char *file, int line,
-                                grpc_closure *closure, grpc_iomgr_cb_func cb,
-                                void *cb_arg,
-                                grpc_closure_scheduler *scheduler) {
+grpc_closure* grpc_closure_init(const char* file, int line,
+                                grpc_closure* closure, grpc_iomgr_cb_func cb,
+                                void* cb_arg,
+                                grpc_closure_scheduler* scheduler) {
 #else
-grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
-                                void *cb_arg,
-                                grpc_closure_scheduler *scheduler) {
+grpc_closure* grpc_closure_init(grpc_closure* closure, grpc_iomgr_cb_func cb,
+                                void* cb_arg,
+                                grpc_closure_scheduler* scheduler) {
 #endif
   closure->cb = cb;
   closure->cb_arg = cb_arg;
   closure->scheduler = scheduler;
 #ifndef NDEBUG
   closure->scheduled = false;
-  closure->file_initiated = NULL;
+  closure->file_initiated = nullptr;
   closure->line_initiated = 0;
   closure->run = false;
   closure->file_created = file;
@@ -52,19 +52,19 @@ grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
   return closure;
 }
 
-void grpc_closure_list_init(grpc_closure_list *closure_list) {
-  closure_list->head = closure_list->tail = NULL;
+void grpc_closure_list_init(grpc_closure_list* closure_list) {
+  closure_list->head = closure_list->tail = nullptr;
 }
 
-bool grpc_closure_list_append(grpc_closure_list *closure_list,
-                              grpc_closure *closure, grpc_error *error) {
-  if (closure == NULL) {
+bool grpc_closure_list_append(grpc_closure_list* closure_list,
+                              grpc_closure* closure, grpc_error* error) {
+  if (closure == nullptr) {
     GRPC_ERROR_UNREF(error);
     return false;
   }
   closure->error_data.error = error;
-  closure->next_data.next = NULL;
-  bool was_empty = (closure_list->head == NULL);
+  closure->next_data.next = nullptr;
+  bool was_empty = (closure_list->head == nullptr);
   if (was_empty) {
     closure_list->head = closure;
   } else {
@@ -74,9 +74,9 @@ bool grpc_closure_list_append(grpc_closure_list *closure_list,
   return was_empty;
 }
 
-void grpc_closure_list_fail_all(grpc_closure_list *list,
-                                grpc_error *forced_failure) {
-  for (grpc_closure *c = list->head; c != NULL; c = c->next_data.next) {
+void grpc_closure_list_fail_all(grpc_closure_list* list,
+                                grpc_error* forced_failure) {
+  for (grpc_closure* c = list->head; c != nullptr; c = c->next_data.next) {
     if (c->error_data.error == GRPC_ERROR_NONE) {
       c->error_data.error = GRPC_ERROR_REF(forced_failure);
     }
@@ -85,46 +85,46 @@ void grpc_closure_list_fail_all(grpc_closure_list *list,
 }
 
 bool grpc_closure_list_empty(grpc_closure_list closure_list) {
-  return closure_list.head == NULL;
+  return closure_list.head == nullptr;
 }
 
-void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
-  if (src->head == NULL) {
+void grpc_closure_list_move(grpc_closure_list* src, grpc_closure_list* dst) {
+  if (src->head == nullptr) {
     return;
   }
-  if (dst->head == NULL) {
+  if (dst->head == nullptr) {
     *dst = *src;
   } else {
     dst->tail->next_data.next = src->head;
     dst->tail = src->tail;
   }
-  src->head = src->tail = NULL;
+  src->head = src->tail = nullptr;
 }
 
 typedef struct {
   grpc_iomgr_cb_func cb;
-  void *cb_arg;
+  void* cb_arg;
   grpc_closure wrapper;
 } wrapped_closure;
 
-static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg,
-                            grpc_error *error) {
-  wrapped_closure *wc = (wrapped_closure *)arg;
+static void closure_wrapper(grpc_exec_ctx* exec_ctx, void* arg,
+                            grpc_error* error) {
+  wrapped_closure* wc = (wrapped_closure*)arg;
   grpc_iomgr_cb_func cb = wc->cb;
-  void *cb_arg = wc->cb_arg;
+  void* cb_arg = wc->cb_arg;
   gpr_free(wc);
   cb(exec_ctx, cb_arg, error);
 }
 
 #ifndef NDEBUG
-grpc_closure *grpc_closure_create(const char *file, int line,
-                                  grpc_iomgr_cb_func cb, void *cb_arg,
-                                  grpc_closure_scheduler *scheduler) {
+grpc_closure* grpc_closure_create(const char* file, int line,
+                                  grpc_iomgr_cb_func cb, void* cb_arg,
+                                  grpc_closure_scheduler* scheduler) {
 #else
-grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
-                                  grpc_closure_scheduler *scheduler) {
+grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg,
+                                  grpc_closure_scheduler* scheduler) {
 #endif
-  wrapped_closure *wc = (wrapped_closure *)gpr_malloc(sizeof(*wc));
+  wrapped_closure* wc = (wrapped_closure*)gpr_malloc(sizeof(*wc));
   wc->cb = cb;
   wc->cb_arg = cb_arg;
 #ifndef NDEBUG
@@ -136,14 +136,14 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
 }
 
 #ifndef NDEBUG
-void grpc_closure_run(const char *file, int line, grpc_exec_ctx *exec_ctx,
-                      grpc_closure *c, grpc_error *error) {
+void grpc_closure_run(const char* file, int line, grpc_exec_ctx* exec_ctx,
+                      grpc_closure* c, grpc_error* error) {
 #else
-void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
-                      grpc_error *error) {
+void grpc_closure_run(grpc_exec_ctx* exec_ctx, grpc_closure* c,
+                      grpc_error* error) {
 #endif
   GPR_TIMER_BEGIN("grpc_closure_run", 0);
-  if (c != NULL) {
+  if (c != nullptr) {
 #ifndef NDEBUG
     c->file_initiated = file;
     c->line_initiated = line;
@@ -158,14 +158,14 @@ void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
 }
 
 #ifndef NDEBUG
-void grpc_closure_sched(const char *file, int line, grpc_exec_ctx *exec_ctx,
-                        grpc_closure *c, grpc_error *error) {
+void grpc_closure_sched(const char* file, int line, grpc_exec_ctx* exec_ctx,
+                        grpc_closure* c, grpc_error* error) {
 #else
-void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
-                        grpc_error *error) {
+void grpc_closure_sched(grpc_exec_ctx* exec_ctx, grpc_closure* c,
+                        grpc_error* error) {
 #endif
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
-  if (c != NULL) {
+  if (c != nullptr) {
 #ifndef NDEBUG
     if (c->scheduled) {
       gpr_log(GPR_ERROR,
@@ -189,14 +189,14 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
 }
 
 #ifndef NDEBUG
-void grpc_closure_list_sched(const char *file, int line,
-                             grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
+void grpc_closure_list_sched(const char* file, int line,
+                             grpc_exec_ctx* exec_ctx, grpc_closure_list* list) {
 #else
-void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
+void grpc_closure_list_sched(grpc_exec_ctx* exec_ctx, grpc_closure_list* list) {
 #endif
-  grpc_closure *c = list->head;
-  while (c != NULL) {
-    grpc_closure *next = c->next_data.next;
+  grpc_closure* c = list->head;
+  while (c != nullptr) {
+    grpc_closure* next = c->next_data.next;
 #ifndef NDEBUG
     if (c->scheduled) {
       gpr_log(GPR_ERROR,
@@ -215,5 +215,5 @@ void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
     c->scheduler->vtable->sched(exec_ctx, c, c->error_data.error);
     c = next;
   }
-  list->head = list->tail = NULL;
+  list->head = list->tail = nullptr;
 }

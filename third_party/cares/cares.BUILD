@@ -3,6 +3,37 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+# Android is not officially supported through C++.
+# This just helps with the build for now.
+config_setting(
+    name = "android",
+    values = {
+        "crosstool_top": "//external:android/crosstool",
+    },
+)
+
+# iOS is not officially supported through C++.
+# This just helps with the build for now.
+config_setting(
+    name = "ios_x86_64",
+    values = {"cpu": "ios_x86_64"},
+)
+
+config_setting(
+    name = "ios_armv7",
+    values = {"cpu": "ios_armv7"},
+)
+
+config_setting(
+    name = "ios_armv7s",
+    values = {"cpu": "ios_armv7s"},
+)
+
+config_setting(
+    name = "ios_arm64",
+    values = {"cpu": "ios_arm64"},
+)
+
 genrule(
     name = "ares_build",
     srcs = ["@cares_local_files//:ares_build_h"],
@@ -10,12 +41,12 @@ genrule(
     cmd = "cat $(location @cares_local_files//:ares_build_h) > $@",
 )
 
-cc_library(
-    name = "ares_build_h",
-    hdrs = ["ares_build.h"],
-    data = [":ares_build"],
-    includes = ["."],
-)
+# cc_library(
+#     name = "ares_build_h",
+#     hdrs = ["ares_build.h"],
+#     data = [":ares_build"],
+#     includes = ["."],
+# )
 
 genrule(
     name = "ares_config",
@@ -24,12 +55,12 @@ genrule(
     cmd = "cat $(location @cares_local_files//:ares_config_h) > $@",
 )
 
-cc_library(
-    name = "ares_config_h",
-    hdrs = ["ares_config.h"],
-    data = [":ares_config"],
-    includes = ["."],
-)
+# cc_library(
+#     name = "ares_config_h",
+#     hdrs = ["ares_config.h"],
+#     data = [":ares_config"],
+#     includes = ["."],
+# )
 
 cc_library(
     name = "ares",

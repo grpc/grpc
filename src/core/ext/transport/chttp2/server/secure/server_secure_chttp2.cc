@@ -34,20 +34,20 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
-                                      grpc_server_credentials *creds) {
+int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
+                                      grpc_server_credentials* creds) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_error *err = GRPC_ERROR_NONE;
-  grpc_server_security_connector *sc = NULL;
+  grpc_error* err = GRPC_ERROR_NONE;
+  grpc_server_security_connector* sc = nullptr;
   int port_num = 0;
   grpc_security_status status;
-  grpc_channel_args *args = NULL;
+  grpc_channel_args* args = nullptr;
   GRPC_API_TRACE(
       "grpc_server_add_secure_http2_port("
       "server=%p, addr=%s, creds=%p)",
       3, (server, addr, creds));
   // Create security context.
-  if (creds == NULL) {
+  if (creds == nullptr) {
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No credentials specified for secure server port (creds==NULL)");
     goto done;
@@ -55,7 +55,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   status =
       grpc_server_credentials_create_security_connector(&exec_ctx, creds, &sc);
   if (status != GRPC_SECURITY_OK) {
-    char *msg;
+    char* msg;
     gpr_asprintf(&msg,
                  "Unable to create secure server with credentials of type %s.",
                  creds->type);
@@ -74,12 +74,12 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   // Add server port.
   err = grpc_chttp2_server_add_port(&exec_ctx, server, addr, args, &port_num);
 done:
-  if (sc != NULL) {
+  if (sc != nullptr) {
     GRPC_SECURITY_CONNECTOR_UNREF(&exec_ctx, &sc->base, "server");
   }
   grpc_exec_ctx_finish(&exec_ctx);
   if (err != GRPC_ERROR_NONE) {
-    const char *msg = grpc_error_string(err);
+    const char* msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);
 
     GRPC_ERROR_UNREF(err);

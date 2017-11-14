@@ -29,9 +29,6 @@
 #include "src/compiler/python_generator.h"
 #include "src/compiler/python_private_generator.h"
 
-using std::vector;
-using grpc_generator::StringReplace;
-using grpc_generator::StripProto;
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::MethodDescriptor;
@@ -41,6 +38,9 @@ using grpc::protobuf::io::CodedOutputStream;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
 using grpc::protobuf::io::ZeroCopyOutputStream;
+using grpc_generator::StringReplace;
+using grpc_generator::StripProto;
+using std::vector;
 
 namespace grpc_python_generator {
 

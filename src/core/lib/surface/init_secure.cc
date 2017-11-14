@@ -47,14 +47,14 @@ void grpc_security_pre_init(void) {
 }
 
 static bool maybe_prepend_client_auth_filter(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder, void *arg) {
-  const grpc_channel_args *args =
+    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
+  const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
       if (0 == strcmp(GRPC_ARG_SECURITY_CONNECTOR, args->args[i].key)) {
         return grpc_channel_stack_builder_prepend_filter(
-            builder, &grpc_client_auth_filter, NULL, NULL);
+            builder, &grpc_client_auth_filter, nullptr, nullptr);
       }
     }
   }
@@ -62,14 +62,14 @@ static bool maybe_prepend_client_auth_filter(
 }
 
 static bool maybe_prepend_server_auth_filter(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder, void *arg) {
-  const grpc_channel_args *args =
+    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
+  const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
       if (0 == strcmp(GRPC_SERVER_CREDENTIALS_ARG, args->args[i].key)) {
         return grpc_channel_stack_builder_prepend_filter(
-            builder, &grpc_server_auth_filter, NULL, NULL);
+            builder, &grpc_server_auth_filter, nullptr, nullptr);
       }
     }
   }
@@ -78,11 +78,11 @@ static bool maybe_prepend_server_auth_filter(
 
 void grpc_register_security_filters(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                   maybe_prepend_client_auth_filter, NULL);
+                                   maybe_prepend_client_auth_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   maybe_prepend_client_auth_filter, NULL);
+                                   maybe_prepend_client_auth_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_prepend_server_auth_filter, NULL);
+                                   maybe_prepend_server_auth_filter, nullptr);
 }
 
 void grpc_security_init() {

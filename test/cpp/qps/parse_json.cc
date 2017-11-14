@@ -61,5 +61,5 @@ grpc::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
   return json_string;
 }
 
-}  // testing
-}  // grpc
+}  // namespace testing
+}  // namespace grpc
