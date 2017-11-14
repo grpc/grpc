@@ -54,7 +54,7 @@ bool TraceFlag::Set(const char* name, bool enabled) {
     LogAllTracers();
   } else if (0 == strcmp(name, "refcount")) {
     for (t = root_tracer_; t; t = t->next_tracer_) {
-      if (strstr(t->name_, "refcount") != NULL) {
+      if (strstr(t->name_, "refcount") != nullptr) {
         t->set_enabled(enabled);
       }
     }
@@ -93,7 +93,7 @@ static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
 
 static void split(const char* s, char*** ss, size_t* ns) {
   const char* c = strchr(s, ',');
-  if (c == NULL) {
+  if (c == nullptr) {
     add(s, s + strlen(s), ss, ns);
   } else {
     add(s, c, ss, ns);
@@ -102,7 +102,7 @@ static void split(const char* s, char*** ss, size_t* ns) {
 }
 
 static void parse(const char* s) {
-  char** strings = NULL;
+  char** strings = nullptr;
   size_t nstrings = 0;
   size_t i;
   split(s, &strings, &nstrings);
@@ -123,7 +123,7 @@ static void parse(const char* s) {
 
 void grpc_tracer_init(const char* env_var) {
   char* e = gpr_getenv(env_var);
-  if (e != NULL) {
+  if (e != nullptr) {
     parse(e);
     gpr_free(e);
   }

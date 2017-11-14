@@ -252,10 +252,10 @@ grpc_error* grpc_chttp2_perform_read(grpc_exec_ctx* exec_ctx,
         t->incoming_frame_size -= (uint32_t)(end - cur);
         return GRPC_ERROR_NONE;
       }
-      GPR_UNREACHABLE_CODE(return 0);
+      GPR_UNREACHABLE_CODE(return nullptr);
   }
 
-  GPR_UNREACHABLE_CODE(return 0);
+  GPR_UNREACHABLE_CODE(return nullptr);
 }
 
 static grpc_error* init_frame_parser(grpc_exec_ctx* exec_ctx,
