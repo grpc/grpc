@@ -33,16 +33,6 @@
 namespace grpc_core {
 namespace internal {
 
-namespace {
-
-void retry_policy_params_free(retry_policy_params* retry_policy) {
-  if (retry_policy != NULL) {
-    gpr_free(retry_policy);
-  }
-}
-
-}  // namespace
-
 method_parameters* method_parameters_ref(method_parameters* method_params) {
   gpr_ref(&method_params->refs);
   return method_params;
@@ -50,7 +40,7 @@ method_parameters* method_parameters_ref(method_parameters* method_params) {
 
 void method_parameters_unref(method_parameters* method_params) {
   if (gpr_unref(&method_params->refs)) {
-    retry_policy_params_free(method_params->retry_policy);
+    gpr_free(method_params->retry_policy);
     gpr_free(method_params);
   }
 }
@@ -143,7 +133,9 @@ bool parse_retry_policy(grpc_json* field, retry_policy_params* retry_policy) {
            element = element->next) {
         if (element->type != GRPC_JSON_STRING) return false;
         grpc_status_code status;
-        if (!grpc_status_from_string(element->value, &status)) return false;
+        if (!grpc_status_code_from_string(element->value, &status)) {
+          return false;
+        }
         retry_policy->retryable_status_codes.Add(status);
       }
       if (retry_policy->retryable_status_codes.Empty()) return false;
@@ -188,7 +180,7 @@ void* method_parameters_create_from_json(const grpc_json* json,
   value->retry_policy = retry_policy;
   return value;
 error:
-  retry_policy_params_free(retry_policy);
+  gpr_free(retry_policy);
   return NULL;
 }
 

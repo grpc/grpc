@@ -52,6 +52,9 @@ method_parameters* method_parameters_ref(
 
 void method_parameters_unref(method_parameters* method_params);
 
+/// Creates a method_parameters object from \a json.
+/// \a user_data points to a bool indicating whether retries are enabled.
+/// Intended for use with grpc_service_config_create_method_config_table().
 void* method_parameters_create_from_json(const grpc_json* json,
                                          void* user_data);
 

@@ -998,51 +998,62 @@ static void pending_batches_add(grpc_exec_ctx* exec_ctx,
   GPR_ASSERT(pending->batch == NULL);
   pending->batch = batch;
   pending->send_ops_cached = false;
-  // Update state in calld about pending batches.
-  // Also check if the batch takes us over the retry buffer limit.
-  // Note: We don't check the size of trailing metadata here, because
-  // gRPC clients do not send trailing metadata.
-  if (batch->send_initial_metadata) {
-    calld->pending_send_initial_metadata = true;
-    calld->bytes_buffered_for_retry += grpc_metadata_batch_size(
-        batch->payload->send_initial_metadata.send_initial_metadata);
-  }
-  if (batch->send_message) {
-    calld->pending_send_message = true;
-    calld->bytes_buffered_for_retry +=
-        batch->payload->send_message.send_message->length;
-  }
-  if (batch->send_trailing_metadata) {
-    calld->pending_send_trailing_metadata = true;
-  }
-  if (calld->bytes_buffered_for_retry > chand->per_rpc_retry_buffer_size) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: exceeded retry buffer size, committing",
-              chand, calld);
+  if (calld->enable_retries) {
+    // Update state in calld about pending batches.
+    // Also check if the batch takes us over the retry buffer limit.
+    // Note: We don't check the size of trailing metadata here, because
+    // gRPC clients do not send trailing metadata.
+    if (batch->send_initial_metadata) {
+      calld->pending_send_initial_metadata = true;
+      calld->bytes_buffered_for_retry += grpc_metadata_batch_size(
+          batch->payload->send_initial_metadata.send_initial_metadata);
     }
-    subchannel_call_retry_state* retry_state =
-        calld->subchannel_call == NULL
-            ? NULL
-            : (subchannel_call_retry_state*)
-                  grpc_connected_subchannel_call_get_parent_data(
-                      calld->subchannel_call);
-    retry_commit(exec_ctx, elem, retry_state);
-    // If we are not going to retry and have not yet started, pretend
-    // retries are disabled so that we don't bother with retry overhead.
-    if (calld->num_attempts_completed == 0) calld->enable_retries = false;
+    if (batch->send_message) {
+      calld->pending_send_message = true;
+      calld->bytes_buffered_for_retry +=
+          batch->payload->send_message.send_message->length;
+    }
+    if (batch->send_trailing_metadata) {
+      calld->pending_send_trailing_metadata = true;
+    }
+    if (calld->bytes_buffered_for_retry > chand->per_rpc_retry_buffer_size) {
+      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+        gpr_log(GPR_DEBUG,
+                "chand=%p calld=%p: exceeded retry buffer size, committing",
+                chand, calld);
+      }
+      subchannel_call_retry_state* retry_state =
+          calld->subchannel_call == NULL
+              ? NULL
+              : (subchannel_call_retry_state*)
+                    grpc_connected_subchannel_call_get_parent_data(
+                        calld->subchannel_call);
+      retry_commit(exec_ctx, elem, retry_state);
+      // If we are not going to retry and have not yet started, pretend
+      // retries are disabled so that we don't bother with retry overhead.
+      if (calld->num_attempts_completed == 0) {
+        if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+          gpr_log(GPR_DEBUG,
+                  "chand=%p calld=%p: disabling retries before first attempt",
+                  chand, calld);
+        }
+        calld->enable_retries = false;
+      }
+    }
   }
 }
 
 static void pending_batch_clear(call_data* calld, pending_batch* pending) {
-  if (pending->batch->send_initial_metadata) {
-    calld->pending_send_initial_metadata = false;
-  }
-  if (pending->batch->send_message) {
-    calld->pending_send_message = false;
-  }
-  if (pending->batch->send_trailing_metadata) {
-    calld->pending_send_trailing_metadata = false;
+  if (calld->enable_retries) {
+    if (pending->batch->send_initial_metadata) {
+      calld->pending_send_initial_metadata = false;
+    }
+    if (pending->batch->send_message) {
+      calld->pending_send_message = false;
+    }
+    if (pending->batch->send_trailing_metadata) {
+      calld->pending_send_trailing_metadata = false;
+    }
   }
   pending->batch = NULL;
 }
@@ -1362,7 +1373,7 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: status %s not configured as retryable", chand,
-              calld, grpc_status_string(status));
+              calld, grpc_status_code_to_string(status));
     }
     return false;
   }
@@ -1814,14 +1825,15 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
         batch_data->batch.payload->recv_trailing_metadata
             .recv_trailing_metadata;
     GPR_ASSERT(md_batch->idx.named.grpc_status != NULL);
-    status = grpc_get_status_from_metadata(md_batch->idx.named.grpc_status->md);
+    status =
+        grpc_get_status_code_from_metadata(md_batch->idx.named.grpc_status->md);
     if (md_batch->idx.named.grpc_retry_pushback_ms != NULL) {
       server_pushback_md = &md_batch->idx.named.grpc_retry_pushback_ms->md;
     }
   }
   if (call_finished && GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: call finished, status=%s", chand,
-            calld, grpc_status_string(status));
+            calld, grpc_status_code_to_string(status));
   }
   // If the call is finished, check if we should retry.
   if (call_finished &&

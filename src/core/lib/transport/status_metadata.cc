@@ -28,7 +28,7 @@
 
 static void destroy_status(void* ignored) {}
 
-grpc_status_code grpc_get_status_from_metadata(grpc_mdelem md) {
+grpc_status_code grpc_get_status_code_from_metadata(grpc_mdelem md) {
   if (grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
     return GRPC_STATUS_OK;
   }

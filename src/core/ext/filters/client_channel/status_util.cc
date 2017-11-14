@@ -45,7 +45,8 @@ static const status_string_entry g_status_string_entries[] = {
     {"DATA_LOSS", GRPC_STATUS_DATA_LOSS},
 };
 
-bool grpc_status_from_string(const char* status_str, grpc_status_code* status) {
+bool grpc_status_code_from_string(const char* status_str,
+                                  grpc_status_code* status) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_status_string_entries); ++i) {
     if (strcmp(status_str, g_status_string_entries[i].str) == 0) {
       *status = g_status_string_entries[i].status;
@@ -55,7 +56,7 @@ bool grpc_status_from_string(const char* status_str, grpc_status_code* status) {
   return false;
 }
 
-const char* grpc_status_string(grpc_status_code status) {
+const char* grpc_status_code_to_string(grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK: return "OK";
     case GRPC_STATUS_CANCELLED: return "CANCELLED";

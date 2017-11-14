@@ -25,27 +25,27 @@
 
 namespace {
 
-TEST(GetStatusFromMetadata, OK) {
+TEST(GetStatusCodeFromMetadata, OK) {
   EXPECT_EQ(GRPC_STATUS_OK,
-            grpc_get_status_from_metadata(GRPC_MDELEM_GRPC_STATUS_0));
+            grpc_get_status_code_from_metadata(GRPC_MDELEM_GRPC_STATUS_0));
 }
 
-TEST(GetStatusFromMetadata, CANCELLED) {
+TEST(GetStatusCodeFromMetadata, CANCELLED) {
   EXPECT_EQ(GRPC_STATUS_CANCELLED,
-            grpc_get_status_from_metadata(GRPC_MDELEM_GRPC_STATUS_1));
+            grpc_get_status_code_from_metadata(GRPC_MDELEM_GRPC_STATUS_1));
 }
 
-TEST(GetStatusFromMetadata, UNKNOWN) {
+TEST(GetStatusCodeFromMetadata, UNKNOWN) {
   EXPECT_EQ(GRPC_STATUS_UNKNOWN,
-            grpc_get_status_from_metadata(GRPC_MDELEM_GRPC_STATUS_2));
+            grpc_get_status_code_from_metadata(GRPC_MDELEM_GRPC_STATUS_2));
 }
 
-TEST(GetStatusFromMetadata, Other) {
+TEST(GetStatusCodeFromMetadata, Other) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem status_md =
       grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_GRPC_STATUS,
                               grpc_slice_from_static_string("10"));
-  EXPECT_EQ(GRPC_STATUS_ABORTED, grpc_get_status_from_metadata(status_md));
+  EXPECT_EQ(GRPC_STATUS_ABORTED, grpc_get_status_code_from_metadata(status_md));
   GRPC_MDELEM_UNREF(&exec_ctx, status_md);
   grpc_exec_ctx_finish(&exec_ctx);
 }

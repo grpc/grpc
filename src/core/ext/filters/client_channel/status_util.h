@@ -26,10 +26,11 @@
 
 /// If \a status_str is a valid status string, sets \a status to the
 /// corresponding status value and returns true.
-bool grpc_status_from_string(const char* status_str, grpc_status_code* status);
+bool grpc_status_code_from_string(const char* status_str,
+                                  grpc_status_code* status);
 
 /// Returns the string form of \a status, or "UNKNOWN" if invalid.
-const char* grpc_status_string(grpc_status_code status);
+const char* grpc_status_code_to_string(grpc_status_code status);
 
 namespace grpc_core {
 namespace internal {

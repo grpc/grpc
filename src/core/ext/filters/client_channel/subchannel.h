@@ -119,6 +119,9 @@ grpc_error* grpc_connected_subchannel_create_call(
     const grpc_connected_subchannel_call_args* args,
     grpc_subchannel_call** subchannel_call);
 
+/** Returns a pointer to the parent data associated with \a subchannel_call.
+    The data will be of the size specified in \a parent_data_size
+    field of the args passed to \a grpc_connected_subchannel_create_call(). */
 void* grpc_connected_subchannel_call_get_parent_data(
     grpc_subchannel_call* subchannel_call);
 

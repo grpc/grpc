@@ -1137,7 +1137,7 @@ static void recv_trailing_filter(grpc_exec_ctx* exec_ctx, void* args,
   grpc_call* call = (grpc_call*)args;
   if (b->idx.named.grpc_status != NULL) {
     grpc_status_code status_code =
-        grpc_get_status_from_metadata(b->idx.named.grpc_status->md);
+        grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
     grpc_error* error =
         status_code == GRPC_STATUS_OK
             ? GRPC_ERROR_NONE

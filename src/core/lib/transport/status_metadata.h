@@ -23,6 +23,6 @@
 
 #include "src/core/lib/transport/metadata.h"
 
-grpc_status_code grpc_get_status_from_metadata(grpc_mdelem md);
+grpc_status_code grpc_get_status_code_from_metadata(grpc_mdelem md);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_STATUS_METADATA_H */
