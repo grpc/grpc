@@ -35,7 +35,7 @@ static grpc_completion_queue* default_create(
 static grpc_completion_queue_factory_vtable default_vtable = {default_create};
 
 static const grpc_completion_queue_factory g_default_cq_factory = {
-    "Default Factory", NULL, &default_vtable};
+    "Default Factory", nullptr, &default_vtable};
 
 /*
  * == Completion queue factory APIs

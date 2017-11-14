@@ -47,15 +47,15 @@ static grpc_end2end_test_fixture inproc_create_fixture(
   memset(&f, 0, sizeof(f));
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(NULL);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
 
 void inproc_init_client(grpc_end2end_test_fixture* f,
                         grpc_channel_args* client_args) {
-  f->client = grpc_inproc_channel_create(f->server, client_args, NULL);
+  f->client = grpc_inproc_channel_create(f->server, client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
@@ -64,8 +64,8 @@ void inproc_init_server(grpc_end2end_test_fixture* f,
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(server_args, NULL);
-  grpc_server_register_completion_queue(f->server, f->cq, NULL);
+  f->server = grpc_server_create(server_args, nullptr);
+  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
 }
 

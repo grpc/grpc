@@ -35,7 +35,7 @@ grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
   grpc_channel_args* new_args = args;
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args);
-  if (channel_credentials != NULL) {
+  if (channel_credentials != nullptr) {
     /* Substitute the channel credentials with a version without call
      * credentials: the load balancer is not necessarily trusted to handle
      * bearer token credentials */
@@ -43,7 +43,7 @@ grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
     grpc_channel_credentials* creds_sans_call_creds =
         grpc_channel_credentials_duplicate_without_call_credentials(
             channel_credentials);
-    GPR_ASSERT(creds_sans_call_creds != NULL);
+    GPR_ASSERT(creds_sans_call_creds != nullptr);
     grpc_arg args_to_add[] = {
         grpc_channel_credentials_to_arg(creds_sans_call_creds)};
     /* Create the new set of channel args */
@@ -55,7 +55,7 @@ grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
   grpc_channel* lb_channel = grpc_client_channel_factory_create_channel(
       exec_ctx, client_channel_factory, lb_service_target_addresses,
       GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, new_args);
-  if (channel_credentials != NULL) {
+  if (channel_credentials != nullptr) {
     grpc_channel_args_destroy(exec_ctx, new_args);
   }
   return lb_channel;

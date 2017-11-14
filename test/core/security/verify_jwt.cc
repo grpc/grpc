@@ -52,14 +52,14 @@ static void on_jwt_verification_done(grpc_exec_ctx* exec_ctx, void* user_data,
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
   if (sync->success) {
     char* claims_str;
-    GPR_ASSERT(claims != NULL);
+    GPR_ASSERT(claims != nullptr);
     claims_str =
         grpc_json_dump_to_string((grpc_json*)grpc_jwt_claims_json(claims), 2);
     printf("Claims: \n\n%s\n", claims_str);
     gpr_free(claims_str);
     grpc_jwt_claims_destroy(exec_ctx, claims);
   } else {
-    GPR_ASSERT(claims == NULL);
+    GPR_ASSERT(claims == nullptr);
     fprintf(stderr, "Verification failed with error %s\n",
             grpc_jwt_verifier_status_to_string(status));
   }
@@ -67,7 +67,7 @@ static void on_jwt_verification_done(grpc_exec_ctx* exec_ctx, void* user_data,
   gpr_mu_lock(sync->mu);
   sync->is_done = 1;
   GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(exec_ctx, sync->pollset, NULL));
+                    grpc_pollset_kick(exec_ctx, sync->pollset, nullptr));
   gpr_mu_unlock(sync->mu);
 }
 
@@ -75,8 +75,8 @@ int main(int argc, char** argv) {
   synchronizer sync;
   grpc_jwt_verifier* verifier;
   gpr_cmdline* cl;
-  const char* jwt = NULL;
-  const char* aud = NULL;
+  const char* jwt = nullptr;
+  const char* aud = nullptr;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   grpc_init();
@@ -84,11 +84,11 @@ int main(int argc, char** argv) {
   gpr_cmdline_add_string(cl, "jwt", "JSON web token to verify", &jwt);
   gpr_cmdline_add_string(cl, "aud", "Audience for the JWT", &aud);
   gpr_cmdline_parse(cl, argc, argv);
-  if (jwt == NULL || aud == NULL) {
+  if (jwt == nullptr || aud == nullptr) {
     print_usage_and_exit(cl, argv[0]);
   }
 
-  verifier = grpc_jwt_verifier_create(NULL, 0);
+  verifier = grpc_jwt_verifier_create(nullptr, 0);
 
   grpc_init();
 
@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR("pollset_work",
                            grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
                                              GRPC_MILLIS_INF_FUTURE)))

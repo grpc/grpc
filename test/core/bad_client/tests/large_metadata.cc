@@ -154,8 +154,8 @@ static void server_verifier_sends_too_much_metadata(grpc_server* server,
   op.data.send_initial_metadata.count = 1;
   op.data.send_initial_metadata.metadata = &meta;
   op.flags = 0;
-  op.reserved = NULL;
-  error = grpc_call_start_batch(s, &op, 1, tag(102), NULL);
+  op.reserved = nullptr;
+  error = grpc_call_start_batch(s, &op, 1, tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(102), 0);  // Operation fails.
   cq_verify(cqv);

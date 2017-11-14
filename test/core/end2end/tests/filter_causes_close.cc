@@ -58,7 +58,7 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -67,16 +67,16 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
                                          grpc_timeout_seconds_to_deadline(5),
-                                         NULL)
+                                         nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
-  f->server = NULL;
+  f->server = nullptr;
 }
 
 static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
-  f->client = NULL;
+  f->client = nullptr;
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
@@ -98,14 +98,14 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_end2end_test_fixture f =
-      begin_test(config, "filter_causes_close", NULL, NULL);
+      begin_test(config, "filter_causes_close", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = NULL;
+  grpc_byte_buffer* request_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
@@ -113,10 +113,10 @@ static void test_request(grpc_end2end_test_config config) {
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
       get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      NULL);
+      nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -128,32 +128,32 @@ static void test_request(grpc_end2end_test_config config) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->data.send_initial_metadata.metadata = NULL;
+  op->data.send_initial_metadata.metadata = nullptr;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -262,7 +262,7 @@ static bool maybe_add_filter(grpc_exec_ctx* exec_ctx,
                              grpc_channel_stack_builder* builder, void* arg) {
   if (g_enable_filter) {
     return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
-                                                     NULL, NULL);
+                                                     nullptr, nullptr);
   } else {
     return true;
   }
@@ -270,7 +270,7 @@ static bool maybe_add_filter(grpc_exec_ctx* exec_ctx,
 
 static void init_plugin(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0, maybe_add_filter,
-                                   NULL);
+                                   nullptr);
 }
 
 static void destroy_plugin(void) {}

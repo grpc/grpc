@@ -25,7 +25,7 @@
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-static const grpc_wakeup_fd_vtable* wakeup_fd_vtable = NULL;
+static const grpc_wakeup_fd_vtable* wakeup_fd_vtable = nullptr;
 
 int grpc_allow_specialized_wakeup_fd = 1;
 int grpc_allow_pipe_wakeup_fd = 1;
@@ -45,7 +45,7 @@ void grpc_wakeup_fd_global_init(void) {
   }
 }
 
-void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = NULL; }
+void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = nullptr; }
 
 int grpc_has_wakeup_fd(void) { return has_real_wakeup_fd; }
 

@@ -325,7 +325,7 @@ grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
       (uint8_t)(num_referencing * SLOTS_PER_LINKED_ERROR) + SURPLUS_CAPACITY);
   grpc_error* err = (grpc_error*)gpr_malloc(
       sizeof(*err) + initial_arena_capacity * sizeof(intptr_t));
-  if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
+  if (err == nullptr) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
   }
 #ifndef NDEBUG
@@ -457,7 +457,7 @@ bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
     if (which == GRPC_ERROR_INT_GRPC_STATUS) {
       for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
         if (error_status_map[i].error == err) {
-          if (p != NULL) *p = error_status_map[i].code;
+          if (p != nullptr) *p = error_status_map[i].code;
           GPR_TIMER_END("grpc_error_get_int", 0);
           return true;
         }
@@ -468,7 +468,7 @@ bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
   }
   uint8_t slot = err->ints[which];
   if (slot != UINT8_MAX) {
-    if (p != NULL) *p = err->arena[slot];
+    if (p != nullptr) *p = err->arena[slot];
     GPR_TIMER_END("grpc_error_get_int", 0);
     return true;
   }
@@ -618,7 +618,7 @@ static char* key_str(grpc_error_strs which) {
 }
 
 static char* fmt_str(grpc_slice slice) {
-  char* s = NULL;
+  char* s = nullptr;
   size_t sz = 0;
   size_t cap = 0;
   append_esc_str((const uint8_t*)GRPC_SLICE_START_PTR(slice),
@@ -688,7 +688,7 @@ static void add_errs(grpc_error* err, char** s, size_t* sz, size_t* cap) {
 }
 
 static char* errs_string(grpc_error* err) {
-  char* s = NULL;
+  char* s = nullptr;
   size_t sz = 0;
   size_t cap = 0;
   append_chr('[', &s, &sz, &cap);
@@ -705,7 +705,7 @@ static int cmp_kvs(const void* a, const void* b) {
 }
 
 static char* finish_kvs(kv_pairs* kvs) {
-  char* s = NULL;
+  char* s = nullptr;
   size_t sz = 0;
   size_t cap = 0;
 
@@ -733,7 +733,7 @@ const char* grpc_error_string(grpc_error* err) {
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
 
   void* p = (void*)gpr_atm_acq_load(&err->atomics.error_string);
-  if (p != NULL) {
+  if (p != nullptr) {
     GPR_TIMER_END("grpc_error_string", 0);
     return (const char*)p;
   }
@@ -767,8 +767,8 @@ grpc_error* grpc_os_error(const char* file, int line, int err,
       grpc_error_set_str(
           grpc_error_set_int(
               grpc_error_create(file, line,
-                                grpc_slice_from_static_string("OS Error"), NULL,
-                                0),
+                                grpc_slice_from_static_string("OS Error"),
+                                nullptr, 0),
               GRPC_ERROR_INT_ERRNO, err),
           GRPC_ERROR_STR_OS_ERROR,
           grpc_slice_from_static_string(strerror(err))),

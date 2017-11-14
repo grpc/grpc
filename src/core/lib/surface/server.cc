@@ -319,7 +319,7 @@ static void request_matcher_init(request_matcher* rm, grpc_server* server) {
 
 static void request_matcher_destroy(request_matcher* rm) {
   for (size_t i = 0; i < rm->server->cq_count; i++) {
-    GPR_ASSERT(gpr_locked_mpscq_pop(&rm->requests_per_cq[i]) == NULL);
+    GPR_ASSERT(gpr_locked_mpscq_pop(&rm->requests_per_cq[i]) == nullptr);
     gpr_locked_mpscq_destroy(&rm->requests_per_cq[i]);
   }
   gpr_free(rm->requests_per_cq);
@@ -357,7 +357,7 @@ static void request_matcher_kill_requests(grpc_exec_ctx* exec_ctx,
        So, we can ignore the queue lock and just pop, with the guarantee that a
        NULL returned here truly means that the queue is empty */
     while ((rc = (requested_call*)gpr_mpscq_pop(
-                &rm->requests_per_cq[i].queue)) != NULL) {
+                &rm->requests_per_cq[i].queue)) != nullptr) {
       fail_call(exec_ctx, server, i, rc, GRPC_ERROR_REF(error));
     }
   }
@@ -379,7 +379,7 @@ static void server_delete(grpc_exec_ctx* exec_ctx, grpc_server* server) {
   gpr_mu_destroy(&server->mu_global);
   gpr_mu_destroy(&server->mu_call);
   gpr_cv_destroy(&server->starting_cv);
-  while ((rm = server->registered_methods) != NULL) {
+  while ((rm = server->registered_methods) != nullptr) {
     server->registered_methods = rm->next;
     if (server->started) {
       request_matcher_destroy(&rm->matcher);
@@ -427,7 +427,7 @@ static void finish_destroy_channel(grpc_exec_ctx* exec_ctx, void* cd,
 static void destroy_channel(grpc_exec_ctx* exec_ctx, channel_data* chand,
                             grpc_error* error) {
   if (is_channel_orphaned(chand)) return;
-  GPR_ASSERT(chand->server != NULL);
+  GPR_ASSERT(chand->server != nullptr);
   orphan_channel(chand);
   server_ref(chand->server);
   maybe_finish_shutdown(exec_ctx, chand->server);
@@ -476,7 +476,7 @@ static void publish_call(grpc_exec_ctx* exec_ctx, grpc_server* server,
           grpc_millis_to_timespec(calld->deadline, GPR_CLOCK_MONOTONIC);
       if (rc->data.registered.optional_payload) {
         *rc->data.registered.optional_payload = calld->payload;
-        calld->payload = NULL;
+        calld->payload = nullptr;
       }
       break;
     default:
@@ -510,7 +510,7 @@ static void publish_new_rpc(grpc_exec_ctx* exec_ctx, void* arg,
     size_t cq_idx = (chand->cq_idx + i) % server->cq_count;
     requested_call* rc =
         (requested_call*)gpr_locked_mpscq_try_pop(&rm->requests_per_cq[cq_idx]);
-    if (rc == NULL) {
+    if (rc == nullptr) {
       continue;
     } else {
       GRPC_STATS_INC_SERVER_CQS_CHECKED(exec_ctx, i);
@@ -532,7 +532,7 @@ static void publish_new_rpc(grpc_exec_ctx* exec_ctx, void* arg,
     size_t cq_idx = (chand->cq_idx + i) % server->cq_count;
     requested_call* rc =
         (requested_call*)gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]);
-    if (rc == NULL) {
+    if (rc == nullptr) {
       continue;
     } else {
       gpr_mu_unlock(&server->mu_call);
@@ -544,13 +544,13 @@ static void publish_new_rpc(grpc_exec_ctx* exec_ctx, void* arg,
   }
 
   gpr_atm_no_barrier_store(&calld->state, PENDING);
-  if (rm->pending_head == NULL) {
+  if (rm->pending_head == nullptr) {
     rm->pending_tail = rm->pending_head = calld;
   } else {
     rm->pending_tail->pending_next = calld;
     rm->pending_tail = calld;
   }
-  calld->pending_next = NULL;
+  calld->pending_next = nullptr;
   gpr_mu_unlock(&server->mu_call);
 }
 
@@ -727,8 +727,8 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx* exec_ctx, void* ptr,
   grpc_millis op_deadline;
 
   if (error == GRPC_ERROR_NONE) {
-    GPR_ASSERT(calld->recv_initial_metadata->idx.named.path != NULL);
-    GPR_ASSERT(calld->recv_initial_metadata->idx.named.authority != NULL);
+    GPR_ASSERT(calld->recv_initial_metadata->idx.named.path != nullptr);
+    GPR_ASSERT(calld->recv_initial_metadata->idx.named.authority != nullptr);
     calld->path = grpc_slice_ref_internal(
         GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.path->md));
     calld->host = grpc_slice_ref_internal(
@@ -764,7 +764,7 @@ static void server_mutate_op(grpc_call_element* elem,
   call_data* calld = (call_data*)elem->call_data;
 
   if (op->recv_initial_metadata) {
-    GPR_ASSERT(op->payload->recv_initial_metadata.recv_flags == NULL);
+    GPR_ASSERT(op->payload->recv_initial_metadata.recv_flags == nullptr);
     calld->recv_initial_metadata =
         op->payload->recv_initial_metadata.recv_initial_metadata;
     calld->on_done_recv_initial_metadata =
@@ -838,7 +838,7 @@ static void channel_connectivity_changed(grpc_exec_ctx* exec_ctx, void* cd,
   channel_data* chand = (channel_data*)cd;
   grpc_server* server = chand->server;
   if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
-    grpc_transport_op* op = grpc_make_transport_op(NULL);
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->on_connectivity_state_change = &chand->channel_connectivity_changed,
     op->connectivity_state = &chand->connectivity_state;
     grpc_channel_next_op(exec_ctx,
@@ -896,10 +896,10 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   channel_data* chand = (channel_data*)elem->channel_data;
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(!args->is_last);
-  chand->server = NULL;
-  chand->channel = NULL;
+  chand->server = nullptr;
+  chand->channel = nullptr;
   chand->next = chand->prev = chand;
-  chand->registered_methods = NULL;
+  chand->registered_methods = nullptr;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
   GRPC_CLOSURE_INIT(&chand->channel_connectivity_changed,
                     channel_connectivity_changed, chand,
@@ -999,9 +999,9 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
 }
 
 static int streq(const char* a, const char* b) {
-  if (a == NULL && b == NULL) return 1;
-  if (a == NULL) return 0;
-  if (b == NULL) return 0;
+  if (a == nullptr && b == nullptr) return 1;
+  if (a == nullptr) return 0;
+  if (b == nullptr) return 0;
   return 0 == strcmp(a, b);
 }
 
@@ -1017,19 +1017,19 @@ void* grpc_server_register_method(
   if (!method) {
     gpr_log(GPR_ERROR,
             "grpc_server_register_method method string cannot be NULL");
-    return NULL;
+    return nullptr;
   }
   for (m = server->registered_methods; m; m = m->next) {
     if (streq(m->method, method) && streq(m->host, host)) {
       gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
               host ? host : "*");
-      return NULL;
+      return nullptr;
     }
   }
   if ((flags & ~GRPC_INITIAL_METADATA_USED_MASK) != 0) {
     gpr_log(GPR_ERROR, "grpc_server_register_method invalid flags 0x%08x",
             flags);
-    return NULL;
+    return nullptr;
   }
   m = (registered_method*)gpr_zalloc(sizeof(registered_method));
   m->method = gpr_strdup(method);
@@ -1108,10 +1108,10 @@ void grpc_server_setup_transport(grpc_exec_ctx* exec_ctx, grpc_server* s,
   size_t slots;
   uint32_t probes;
   uint32_t max_probes = 0;
-  grpc_transport_op* op = NULL;
+  grpc_transport_op* op = nullptr;
 
-  channel =
-      grpc_channel_create(exec_ctx, NULL, args, GRPC_SERVER_CHANNEL, transport);
+  channel = grpc_channel_create(exec_ctx, nullptr, args, GRPC_SERVER_CHANNEL,
+                                transport);
   chand = (channel_data*)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)
               ->channel_data;
@@ -1143,7 +1143,7 @@ void grpc_server_setup_transport(grpc_exec_ctx* exec_ctx, grpc_server* s,
       grpc_slice host;
       bool has_host;
       grpc_slice method;
-      if (rm->host != NULL) {
+      if (rm->host != nullptr) {
         host = grpc_slice_intern(grpc_slice_from_static_string(rm->host));
         has_host = true;
       } else {
@@ -1153,7 +1153,7 @@ void grpc_server_setup_transport(grpc_exec_ctx* exec_ctx, grpc_server* s,
       hash = GRPC_MDSTR_KV_HASH(has_host ? grpc_slice_hash(host) : 0,
                                 grpc_slice_hash(method));
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
-                           .server_registered_method != NULL;
+                           .server_registered_method != nullptr;
            probes++)
         ;
       if (probes > max_probes) max_probes = probes;
@@ -1178,7 +1178,7 @@ void grpc_server_setup_transport(grpc_exec_ctx* exec_ctx, grpc_server* s,
   gpr_mu_unlock(&s->mu_global);
 
   GRPC_CHANNEL_INTERNAL_REF(channel, "connectivity");
-  op = grpc_make_transport_op(NULL);
+  op = grpc_make_transport_op(nullptr);
   op->set_accept_stream = true;
   op->set_accept_stream_fn = accept_stream;
   op->set_accept_stream_user_data = chand;
@@ -1227,7 +1227,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
   if (server->shutdown_published) {
     grpc_cq_end_op(&exec_ctx, cq, tag, GRPC_ERROR_NONE, done_published_shutdown,
-                   NULL,
+                   nullptr,
                    (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
     gpr_mu_unlock(&server->mu_global);
     goto done;
@@ -1328,8 +1328,8 @@ void grpc_server_add_listener(
 static grpc_call_error queue_call_request(grpc_exec_ctx* exec_ctx,
                                           grpc_server* server, size_t cq_idx,
                                           requested_call* rc) {
-  call_data* calld = NULL;
-  request_matcher* rm = NULL;
+  call_data* calld = nullptr;
+  request_matcher* rm = nullptr;
   if (gpr_atm_acq_load(&server->shutdown_flag)) {
     fail_call(exec_ctx, server, cq_idx, rc,
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
@@ -1347,9 +1347,9 @@ static grpc_call_error queue_call_request(grpc_exec_ctx* exec_ctx,
     /* this was the first queued request: we need to lock and start
        matching calls */
     gpr_mu_lock(&server->mu_call);
-    while ((calld = rm->pending_head) != NULL) {
+    while ((calld = rm->pending_head) != nullptr) {
       rc = (requested_call*)gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]);
-      if (rc == NULL) break;
+      if (rc == nullptr) break;
       rm->pending_head = calld->pending_next;
       gpr_mu_unlock(&server->mu_call);
       if (!gpr_atm_full_cas(&calld->state, PENDING, ACTIVATED)) {
@@ -1402,7 +1402,7 @@ grpc_call_error grpc_server_request_call(
     error = GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
     goto done;
   }
-  details->reserved = NULL;
+  details->reserved = nullptr;
   rc->cq_idx = cq_idx;
   rc->type = BATCH_CALL;
   rc->server = server;
@@ -1447,7 +1447,7 @@ grpc_call_error grpc_server_request_registered_call(
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
     goto done;
   }
-  if ((optional_payload == NULL) !=
+  if ((optional_payload == nullptr) !=
       (rm->payload_handling == GRPC_SRM_PAYLOAD_NONE)) {
     gpr_free(rc);
     error = GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
@@ -1476,7 +1476,7 @@ done:
 
 static void fail_call(grpc_exec_ctx* exec_ctx, grpc_server* server,
                       size_t cq_idx, requested_call* rc, grpc_error* error) {
-  *rc->call = NULL;
+  *rc->call = nullptr;
   rc->initial_metadata->count = 0;
   GPR_ASSERT(error != GRPC_ERROR_NONE);
 

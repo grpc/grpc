@@ -140,7 +140,7 @@ static void call_read_cb(grpc_exec_ctx* exec_ctx, secure_endpoint* ep,
       gpr_free(data);
     }
   }
-  ep->read_buffer = NULL;
+  ep->read_buffer = nullptr;
   GRPC_CLOSURE_SCHED(exec_ctx, ep->read_cb, error);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
@@ -162,7 +162,7 @@ static void on_read(grpc_exec_ctx* exec_ctx, void* user_data,
     return;
   }
 
-  if (ep->zero_copy_protector != NULL) {
+  if (ep->zero_copy_protector != nullptr) {
     // Use zero-copy grpc protector to unprotect.
     result = tsi_zero_copy_grpc_protector_unprotect(
         exec_ctx, ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer);
@@ -280,7 +280,7 @@ static void endpoint_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* secure_ep,
     }
   }
 
-  if (ep->zero_copy_protector != NULL) {
+  if (ep->zero_copy_protector != nullptr) {
     // Use zero-copy grpc protector to protect.
     result = tsi_zero_copy_grpc_protector_protect(
         exec_ctx, ep->zero_copy_protector, slices, &ep->output_buffer);
@@ -434,7 +434,7 @@ grpc_endpoint* grpc_secure_endpoint_create(
   ep->read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   grpc_slice_buffer_init(&ep->output_buffer);
   grpc_slice_buffer_init(&ep->source_buffer);
-  ep->read_buffer = NULL;
+  ep->read_buffer = nullptr;
   GRPC_CLOSURE_INIT(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
   gpr_mu_init(&ep->protector_mu);
   gpr_ref_init(&ep->ref, 1);

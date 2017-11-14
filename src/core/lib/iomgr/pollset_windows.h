@@ -21,6 +21,9 @@
 
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_WINSOCK_SOCKET
 #include "src/core/lib/iomgr/socket_windows.h"
 
 #ifdef __cplusplus
@@ -66,6 +69,8 @@ void grpc_pollset_global_shutdown(void);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H */
