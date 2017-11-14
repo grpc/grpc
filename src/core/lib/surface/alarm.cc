@@ -126,7 +126,9 @@ void grpc_alarm_set(grpc_alarm* alarm, grpc_completion_queue* cq,
 
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
   grpc_timer_init(&exec_ctx, &alarm->alarm,
-                  grpc_timespec_to_millis_round_up(deadline), &alarm->on_alarm);
+                  grpc_timespec_to_millis_round_up(
+                      gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC)),
+                  &alarm->on_alarm);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

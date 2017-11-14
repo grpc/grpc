@@ -234,7 +234,7 @@ void grpc_channel_watch_connectivity_state(
   watcher_timer_init_arg* wa =
       (watcher_timer_init_arg*)gpr_malloc(sizeof(watcher_timer_init_arg));
   wa->w = w;
-  wa->deadline = deadline;
+  wa->deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
   GRPC_CLOSURE_INIT(&w->watcher_timer_init, watcher_timer_init, wa,
                     grpc_schedule_on_exec_ctx);
 
