@@ -67,18 +67,18 @@ typedef struct {
 
 void grpc_auth_metadata_context_reset(
     grpc_auth_metadata_context* auth_md_context) {
-  if (auth_md_context->service_url != NULL) {
+  if (auth_md_context->service_url != nullptr) {
     gpr_free((char*)auth_md_context->service_url);
-    auth_md_context->service_url = NULL;
+    auth_md_context->service_url = nullptr;
   }
-  if (auth_md_context->method_name != NULL) {
+  if (auth_md_context->method_name != nullptr) {
     gpr_free((char*)auth_md_context->method_name);
-    auth_md_context->method_name = NULL;
+    auth_md_context->method_name = nullptr;
   }
   GRPC_AUTH_CONTEXT_UNREF(
       (grpc_auth_context*)auth_md_context->channel_auth_context,
       "grpc_auth_metadata_context");
-  auth_md_context->channel_auth_context = NULL;
+  auth_md_context->channel_auth_context = nullptr;
 }
 
 static void add_error(grpc_error** combined, grpc_error* error) {
@@ -125,10 +125,10 @@ void grpc_auth_metadata_context_build(
     grpc_auth_metadata_context* auth_md_context) {
   char* service = grpc_slice_to_c_string(call_method);
   char* last_slash = strrchr(service, '/');
-  char* method_name = NULL;
-  char* service_url = NULL;
+  char* method_name = nullptr;
+  char* service_url = nullptr;
   grpc_auth_metadata_context_reset(auth_md_context);
-  if (last_slash == NULL) {
+  if (last_slash == nullptr) {
     gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
     service[0] = '\0';
     method_name = gpr_strdup("");
@@ -139,15 +139,15 @@ void grpc_auth_metadata_context_build(
     method_name = gpr_strdup(last_slash + 1);
   }
   char* host_and_port = grpc_slice_to_c_string(call_host);
-  if (url_scheme != NULL && strcmp(url_scheme, GRPC_SSL_URL_SCHEME) == 0) {
+  if (url_scheme != nullptr && strcmp(url_scheme, GRPC_SSL_URL_SCHEME) == 0) {
     /* Remove the port if it is 443. */
     char* port_delimiter = strrchr(host_and_port, ':');
-    if (port_delimiter != NULL && strcmp(port_delimiter + 1, "443") == 0) {
+    if (port_delimiter != nullptr && strcmp(port_delimiter + 1, "443") == 0) {
       *port_delimiter = '\0';
     }
   }
-  gpr_asprintf(&service_url, "%s://%s%s", url_scheme == NULL ? "" : url_scheme,
-               host_and_port, service);
+  gpr_asprintf(&service_url, "%s://%s%s",
+               url_scheme == nullptr ? "" : url_scheme, host_and_port, service);
   auth_md_context->service_url = service_url;
   auth_md_context->method_name = method_name;
   auth_md_context->channel_auth_context =
@@ -179,18 +179,18 @@ static void send_security_metadata(grpc_exec_ctx* exec_ctx,
           .value;
   grpc_call_credentials* channel_call_creds =
       chand->security_connector->request_metadata_creds;
-  int call_creds_has_md = (ctx != NULL) && (ctx->creds != NULL);
+  int call_creds_has_md = (ctx != nullptr) && (ctx->creds != nullptr);
 
-  if (channel_call_creds == NULL && !call_creds_has_md) {
+  if (channel_call_creds == nullptr && !call_creds_has_md) {
     /* Skip sending metadata altogether. */
     grpc_call_next_op(exec_ctx, elem, batch);
     return;
   }
 
-  if (channel_call_creds != NULL && call_creds_has_md) {
+  if (channel_call_creds != nullptr && call_creds_has_md) {
     calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
-                                                          ctx->creds, NULL);
-    if (calld->creds == NULL) {
+                                                          ctx->creds, nullptr);
+    if (calld->creds == nullptr) {
       grpc_transport_stream_op_batch_finish_with_failure(
           exec_ctx, batch,
           grpc_error_set_int(
@@ -209,7 +209,7 @@ static void send_security_metadata(grpc_exec_ctx* exec_ctx,
       chand->security_connector->base.url_scheme, calld->host, calld->method,
       chand->auth_context, &calld->auth_md_context);
 
-  GPR_ASSERT(calld->pollent != NULL);
+  GPR_ASSERT(calld->pollent != nullptr);
 
   GRPC_CLOSURE_INIT(&calld->async_result_closure, on_credentials_metadata,
                     batch, grpc_schedule_on_exec_ctx);
@@ -278,8 +278,8 @@ static void auth_start_transport_stream_op_batch(
   channel_data* chand = (channel_data*)elem->channel_data;
 
   if (!batch->cancel_stream) {
-    GPR_ASSERT(batch->payload->context != NULL);
-    if (batch->payload->context[GRPC_CONTEXT_SECURITY].value == NULL) {
+    GPR_ASSERT(batch->payload->context != nullptr);
+    if (batch->payload->context[GRPC_CONTEXT_SECURITY].value == nullptr) {
       batch->payload->context[GRPC_CONTEXT_SECURITY].value =
           grpc_client_security_context_create();
       batch->payload->context[GRPC_CONTEXT_SECURITY].destroy =
@@ -297,7 +297,7 @@ static void auth_start_transport_stream_op_batch(
   if (batch->send_initial_metadata) {
     for (grpc_linked_mdelem* l = batch->payload->send_initial_metadata
                                      .send_initial_metadata->list.head;
-         l != NULL; l = l->next) {
+         l != nullptr; l = l->next) {
       grpc_mdelem md = l->md;
       /* Pointer comparison is OK for md_elems created from the same context.
        */
@@ -386,13 +386,13 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element_args* args) {
   grpc_security_connector* sc =
       grpc_security_connector_find_in_args(args->channel_args);
-  if (sc == NULL) {
+  if (sc == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Security connector missing from client auth filter args");
   }
   grpc_auth_context* auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
-  if (auth_context == NULL) {
+  if (auth_context == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Auth context missing from client auth filter args");
   }
@@ -420,7 +420,7 @@ static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
   /* grab pointers to our data from the channel element */
   channel_data* chand = (channel_data*)elem->channel_data;
   grpc_channel_security_connector* sc = chand->security_connector;
-  if (sc != NULL) {
+  if (sc != nullptr) {
     GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, &sc->base, "client_auth_filter");
   }
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "client_auth_filter");

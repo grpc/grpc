@@ -79,7 +79,7 @@ grpc_error* grpc_chttp2_window_update_parser_parse(
     p->byte++;
   }
 
-  if (s != NULL) {
+  if (s != nullptr) {
     s->stats.incoming.framing_bytes += (uint32_t)(end - cur);
   }
 
@@ -95,7 +95,7 @@ grpc_error* grpc_chttp2_window_update_parser_parse(
     GPR_ASSERT(is_last);
 
     if (t->incoming_stream_id != 0) {
-      if (s != NULL) {
+      if (s != nullptr) {
         s->flow_control->RecvUpdate(received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_mark_stream_writable(exec_ctx, t, s);

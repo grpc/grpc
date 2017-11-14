@@ -273,7 +273,7 @@ static void null_and_maybe_free_read_buffer(stream_obj* s) {
       s->state.rs.read_buffer != s->state.rs.grpc_header_bytes) {
     gpr_free(s->state.rs.read_buffer);
   }
-  s->state.rs.read_buffer = NULL;
+  s->state.rs.read_buffer = nullptr;
 }
 
 static void maybe_flush_read(stream_obj* s) {
@@ -342,7 +342,7 @@ static void add_to_storage(struct stream_obj* s,
 static void remove_from_storage(struct stream_obj* s,
                                 struct op_and_state* oas) {
   struct op_and_state* curr;
-  if (s->storage.head == NULL || oas == NULL) {
+  if (s->storage.head == nullptr || oas == nullptr) {
     return;
   }
   if (s->storage.head == oas) {
@@ -352,7 +352,7 @@ static void remove_from_storage(struct stream_obj* s,
     CRONET_LOG(GPR_DEBUG, "Freed %p. Now %d in the queue", oas,
                s->storage.num_pending_ops);
   } else {
-    for (curr = s->storage.head; curr != NULL; curr = curr->next) {
+    for (curr = s->storage.head; curr != nullptr; curr = curr->next) {
       if (curr->next == oas) {
         curr->next = oas->next;
         s->storage.num_pending_ops--;
@@ -360,7 +360,7 @@ static void remove_from_storage(struct stream_obj* s,
                    s->storage.num_pending_ops);
         gpr_free(oas);
         break;
-      } else if (curr->next == NULL) {
+      } else if (curr->next == nullptr) {
         CRONET_LOG(GPR_ERROR, "Reached end of LL and did not find op to free");
       }
     }
@@ -375,7 +375,7 @@ static void remove_from_storage(struct stream_obj* s,
 */
 static void execute_from_storage(grpc_exec_ctx* exec_ctx, stream_obj* s) {
   gpr_mu_lock(&s->mu);
-  for (struct op_and_state* curr = s->storage.head; curr != NULL;) {
+  for (struct op_and_state* curr = s->storage.head; curr != nullptr;) {
     CRONET_LOG(GPR_DEBUG, "calling op at %p. done = %d", curr, curr->done);
     GPR_ASSERT(curr->done == 0);
     enum e_op_result result = execute_stream_op(exec_ctx, curr);
@@ -408,14 +408,14 @@ static void on_failed(bidirectional_stream* stream, int net_error) {
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_FAILED] = true;
-  s->cbs = NULL;
+  s->cbs = nullptr;
   if (s->header_array.headers) {
     gpr_free(s->header_array.headers);
-    s->header_array.headers = NULL;
+    s->header_array.headers = nullptr;
   }
   if (s->state.ws.write_buffer) {
     gpr_free(s->state.ws.write_buffer);
-    s->state.ws.write_buffer = NULL;
+    s->state.ws.write_buffer = nullptr;
   }
   null_and_maybe_free_read_buffer(s);
   gpr_mu_unlock(&s->mu);
@@ -435,14 +435,14 @@ static void on_canceled(bidirectional_stream* stream) {
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_CANCELED] = true;
-  s->cbs = NULL;
+  s->cbs = nullptr;
   if (s->header_array.headers) {
     gpr_free(s->header_array.headers);
-    s->header_array.headers = NULL;
+    s->header_array.headers = nullptr;
   }
   if (s->state.ws.write_buffer) {
     gpr_free(s->state.ws.write_buffer);
-    s->state.ws.write_buffer = NULL;
+    s->state.ws.write_buffer = nullptr;
   }
   null_and_maybe_free_read_buffer(s);
   gpr_mu_unlock(&s->mu);
@@ -462,7 +462,7 @@ static void on_succeeded(bidirectional_stream* stream) {
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_SUCCEEDED] = true;
-  s->cbs = NULL;
+  s->cbs = nullptr;
   null_and_maybe_free_read_buffer(s);
   gpr_mu_unlock(&s->mu);
   execute_from_storage(&exec_ctx, s);
@@ -484,7 +484,7 @@ static void on_stream_ready(bidirectional_stream* stream) {
   /* Free the memory allocated for headers */
   if (s->header_array.headers) {
     gpr_free(s->header_array.headers);
-    s->header_array.headers = NULL;
+    s->header_array.headers = nullptr;
   }
   /* Send the initial metadata on wire if there is no SEND_MESSAGE or
    * SEND_TRAILING_METADATA ops pending */
@@ -566,7 +566,7 @@ static void on_write_completed(bidirectional_stream* stream, const char* data) {
   gpr_mu_lock(&s->mu);
   if (s->state.ws.write_buffer) {
     gpr_free(s->state.ws.write_buffer);
-    s->state.ws.write_buffer = NULL;
+    s->state.ws.write_buffer = nullptr;
   }
   s->state.state_callback_received[OP_SEND_MESSAGE] = true;
   gpr_mu_unlock(&s->mu);
@@ -713,7 +713,7 @@ static void convert_metadata_to_cronet_headers(
   grpc_linked_mdelem* curr = head;
   /* Walk the linked list and get number of header fields */
   size_t num_headers_available = 0;
-  while (curr != NULL) {
+  while (curr != nullptr) {
     curr = curr->next;
     num_headers_available++;
   }
@@ -765,7 +765,7 @@ static void convert_metadata_to_cronet_headers(
     headers[num_headers].key = key;
     headers[num_headers].value = value;
     num_headers++;
-    if (curr == NULL) {
+    if (curr == nullptr) {
       break;
     }
   }
@@ -785,7 +785,7 @@ static void parse_grpc_header(const uint8_t* data, int* length,
 }
 
 static bool header_has_authority(grpc_linked_mdelem* head) {
-  while (head != NULL) {
+  while (head != nullptr) {
     if (grpc_slice_eq(GRPC_MDKEY(head->md), GRPC_MDSTR_AUTHORITY)) {
       return true;
     }
@@ -993,7 +993,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx* exec_ctx,
     CRONET_LOG(GPR_DEBUG, "running: %p OP_SEND_INITIAL_METADATA", oas);
     /* Start new cronet stream. It is destroyed in on_succeeded, on_canceled,
      * on_failed */
-    GPR_ASSERT(s->cbs == NULL);
+    GPR_ASSERT(s->cbs == nullptr);
     GPR_ASSERT(!stream_state->state_op_done[OP_SEND_INITIAL_METADATA]);
     s->cbs =
         bidirectional_stream_create(t->engine, s->curr_gs, &cronet_callbacks);
@@ -1002,9 +1002,9 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx* exec_ctx,
       bidirectional_stream_disable_auto_flush(s->cbs, true);
       bidirectional_stream_delay_request_headers_until_flush(s->cbs, true);
     }
-    char* url = NULL;
+    char* url = nullptr;
     const char* method = "POST";
-    s->header_array.headers = NULL;
+    s->header_array.headers = nullptr;
     convert_metadata_to_cronet_headers(stream_op->payload->send_initial_metadata
                                            .send_initial_metadata->list.head,
                                        t->host, &url, &s->header_array.headers,
@@ -1042,7 +1042,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx* exec_ctx,
       if (1 != grpc_byte_stream_next(
                    exec_ctx, stream_op->payload->send_message.send_message,
                    stream_op->payload->send_message.send_message->length,
-                   NULL)) {
+                   nullptr)) {
         /* Should never reach here */
         GPR_ASSERT(false);
       }
@@ -1358,10 +1358,10 @@ static int init_stream(grpc_exec_ctx* exec_ctx, grpc_transport* gt,
   s->refcount = refcount;
   GRPC_CRONET_STREAM_REF(s, "cronet transport");
   memset(&s->storage, 0, sizeof(s->storage));
-  s->storage.head = NULL;
+  s->storage.head = nullptr;
   memset(&s->state, 0, sizeof(s->state));
-  s->curr_op = NULL;
-  s->cbs = NULL;
+  s->curr_op = nullptr;
+  s->cbs = nullptr;
   memset(&s->header_array, 0, sizeof(s->header_array));
   memset(&s->state.rs, 0, sizeof(s->state.rs));
   memset(&s->state.ws, 0, sizeof(s->state.ws));
@@ -1369,7 +1369,7 @@ static int init_stream(grpc_exec_ctx* exec_ctx, grpc_transport* gt,
   memset(s->state.state_callback_received, 0,
          sizeof(s->state.state_callback_received));
   s->state.fail_state = s->state.flush_read = false;
-  s->state.cancel_error = NULL;
+  s->state.cancel_error = nullptr;
   s->state.flush_cronet_when_ready = s->state.pending_write_for_trailer = false;
   s->state.pending_send_message = false;
   s->state.pending_recv_trailing_metadata = false;
@@ -1432,7 +1432,7 @@ static void destroy_transport(grpc_exec_ctx* exec_ctx, grpc_transport* gt) {}
 
 static grpc_endpoint* get_endpoint(grpc_exec_ctx* exec_ctx,
                                    grpc_transport* gt) {
-  return NULL;
+  return nullptr;
 }
 
 static void perform_op(grpc_exec_ctx* exec_ctx, grpc_transport* gt,
@@ -1491,5 +1491,5 @@ error:
     gpr_free(ct);
   }
 
-  return NULL;
+  return nullptr;
 }

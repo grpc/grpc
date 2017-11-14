@@ -91,7 +91,7 @@ static timer_shard** g_shard_queue;
 #define NUM_HASH_BUCKETS 1009 /* Prime number close to 1000 */
 
 static gpr_mu g_hash_mu[NUM_HASH_BUCKETS]; /* One mutex per bucket */
-static grpc_timer* g_timer_ht[NUM_HASH_BUCKETS] = {NULL};
+static grpc_timer* g_timer_ht[NUM_HASH_BUCKETS] = {nullptr};
 
 static void init_timer_ht() {
   for (int i = 0; i < NUM_HASH_BUCKETS; i++) {
@@ -104,7 +104,7 @@ static bool is_in_ht(grpc_timer* t) {
 
   gpr_mu_lock(&g_hash_mu[i]);
   grpc_timer* p = g_timer_ht[i];
-  while (p != NULL && p != t) {
+  while (p != nullptr && p != t) {
     p = p->hash_table_next;
   }
   gpr_mu_unlock(&g_hash_mu[i]);
@@ -118,7 +118,7 @@ static void add_to_ht(grpc_timer* t) {
 
   gpr_mu_lock(&g_hash_mu[i]);
   grpc_timer* p = g_timer_ht[i];
-  while (p != NULL && p != t) {
+  while (p != nullptr && p != t) {
     p = p->hash_table_next;
   }
 
@@ -146,9 +146,9 @@ static void remove_from_ht(grpc_timer* t) {
   if (g_timer_ht[i] == t) {
     g_timer_ht[i] = g_timer_ht[i]->hash_table_next;
     removed = true;
-  } else if (g_timer_ht[i] != NULL) {
+  } else if (g_timer_ht[i] != nullptr) {
     grpc_timer* p = g_timer_ht[i];
-    while (p->hash_table_next != NULL && p->hash_table_next != t) {
+    while (p->hash_table_next != nullptr && p->hash_table_next != t) {
       p = p->hash_table_next;
     }
 
@@ -169,7 +169,7 @@ static void remove_from_ht(grpc_timer* t) {
     abort();
   }
 
-  t->hash_table_next = NULL;
+  t->hash_table_next = nullptr;
 }
 
 /* If a timer is added to a timer shard (either heap or a list), it cannot
@@ -275,7 +275,7 @@ void grpc_timer_list_init(grpc_exec_ctx* exec_ctx) {
 void grpc_timer_list_shutdown(grpc_exec_ctx* exec_ctx) {
   size_t i;
   run_some_expired_timers(
-      exec_ctx, GPR_ATM_MAX, NULL,
+      exec_ctx, GPR_ATM_MAX, nullptr,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Timer list shutdown"));
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
@@ -336,7 +336,7 @@ void grpc_timer_init(grpc_exec_ctx* exec_ctx, grpc_timer* timer,
   timer->deadline = deadline;
 
 #ifndef NDEBUG
-  timer->hash_table_next = NULL;
+  timer->hash_table_next = nullptr;
 #endif
 
   if (GRPC_TRACER_ON(grpc_timer_trace)) {
@@ -499,8 +499,8 @@ static grpc_timer* pop_one(timer_shard* shard, gpr_atm now) {
               grpc_timer_heap_is_empty(&shard->heap) ? "true" : "false");
     }
     if (grpc_timer_heap_is_empty(&shard->heap)) {
-      if (now < shard->queue_deadline_cap) return NULL;
-      if (!refill_heap(shard, now)) return NULL;
+      if (now < shard->queue_deadline_cap) return nullptr;
+      if (!refill_heap(shard, now)) return nullptr;
     }
     timer = grpc_timer_heap_top(&shard->heap);
     if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
@@ -508,7 +508,7 @@ static grpc_timer* pop_one(timer_shard* shard, gpr_atm now) {
               "  .. check top timer deadline=%" PRIdPTR " now=%" PRIdPTR,
               timer->deadline, now);
     }
-    if (timer->deadline > now) return NULL;
+    if (timer->deadline > now) return nullptr;
     if (GRPC_TRACER_ON(grpc_timer_trace)) {
       gpr_log(GPR_DEBUG, "TIMER %p: FIRE %" PRIdPTR "ms late via %s scheduler",
               timer, now - timer->deadline,
@@ -550,7 +550,7 @@ static grpc_timer_check_result run_some_expired_timers(grpc_exec_ctx* exec_ctx,
   gpr_atm min_timer = gpr_atm_no_barrier_load(&g_shared_mutables.min_timer);
   gpr_tls_set(&g_last_seen_min_timer, min_timer);
   if (now < min_timer) {
-    if (next != NULL) *next = GPR_MIN(*next, min_timer);
+    if (next != nullptr) *next = GPR_MIN(*next, min_timer);
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
   }
 
@@ -618,7 +618,7 @@ grpc_timer_check_result grpc_timer_check(grpc_exec_ctx* exec_ctx,
      mutable cacheline in the common case */
   grpc_millis min_timer = gpr_tls_get(&g_last_seen_min_timer);
   if (now < min_timer) {
-    if (next != NULL) {
+    if (next != nullptr) {
       *next = GPR_MIN(*next, min_timer);
     }
     if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
@@ -637,7 +637,7 @@ grpc_timer_check_result grpc_timer_check(grpc_exec_ctx* exec_ctx,
   // tracing
   if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
     char* next_str;
-    if (next == NULL) {
+    if (next == nullptr) {
       next_str = gpr_strdup("NULL");
     } else {
       gpr_asprintf(&next_str, "%" PRIdPTR, *next);
@@ -655,7 +655,7 @@ grpc_timer_check_result grpc_timer_check(grpc_exec_ctx* exec_ctx,
   // tracing
   if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
     char* next_str;
-    if (next == NULL) {
+    if (next == nullptr) {
       next_str = gpr_strdup("NULL");
     } else {
       gpr_asprintf(&next_str, "%" PRIdPTR, *next);

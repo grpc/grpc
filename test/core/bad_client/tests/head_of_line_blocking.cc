@@ -74,7 +74,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   cq_verifier* cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
   gpr_timespec deadline;
-  grpc_byte_buffer* payload = NULL;
+  grpc_byte_buffer* payload = nullptr;
 
   grpc_metadata_array_init(&request_metadata_recv);
 
@@ -85,7 +85,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(payload != NULL);
+  GPR_ASSERT(payload != nullptr);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_unref(s);
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
     addbuf(hdr, sizeof(hdr));
     addbuf(msg, FRAME_SIZE);
   }
-  grpc_run_bad_client_test(verifier, NULL, g_buffer, g_count, 0);
+  grpc_run_bad_client_test(verifier, nullptr, g_buffer, g_count, 0);
   gpr_free(g_buffer);
 
   return 0;

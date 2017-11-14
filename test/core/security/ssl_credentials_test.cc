@@ -36,14 +36,14 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
   {
     tsi_ssl_pem_key_cert_pair* tsi_pairs =
         grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, 0);
-    GPR_ASSERT(tsi_pairs == NULL);
+    GPR_ASSERT(tsi_pairs == nullptr);
   }
 
   {
     tsi_ssl_pem_key_cert_pair* tsi_pairs =
         grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, num_pairs);
 
-    GPR_ASSERT(tsi_pairs != NULL);
+    GPR_ASSERT(tsi_pairs != nullptr);
     for (size_t i = 0; i < num_pairs; i++) {
       GPR_ASSERT(strncmp(grpc_pairs[i].private_key, tsi_pairs[i].private_key,
                          strlen(grpc_pairs[i].private_key)) == 0);

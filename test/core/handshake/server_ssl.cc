@@ -80,18 +80,18 @@ static void server_thread(void* arg) {
   pem_key_cert_pair.private_key = (const char*)GRPC_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char*)GRPC_SLICE_START_PTR(cert_slice);
   grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-      ca_cert, &pem_key_cert_pair, 1, 0, NULL);
+      ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
 
   // Start server listening on local port.
   char* addr;
   gpr_asprintf(&addr, "127.0.0.1:%d", port);
-  grpc_server* server = grpc_server_create(NULL, NULL);
+  grpc_server* server = grpc_server_create(nullptr, nullptr);
   GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
   free(addr);
 
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
-  grpc_server_register_completion_queue(server, cq, NULL);
+  grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
   // Wait a bounded number of time until client_handshake_complete is set,
@@ -99,16 +99,16 @@ static void server_thread(void* arg) {
   int retries = 10;
   while (!gpr_event_get(&client_handshake_complete) && retries-- > 0) {
     const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(1);
-    grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
+    grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
     GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
   }
 
   gpr_log(GPR_INFO, "Shutting down server");
-  grpc_server_shutdown_and_notify(server, cq, NULL);
+  grpc_server_shutdown_and_notify(server, cq, nullptr);
   grpc_completion_queue_shutdown(cq);
 
   const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
-  grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
+  grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
   grpc_server_destroy(server);

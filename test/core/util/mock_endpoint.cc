@@ -81,7 +81,7 @@ static void me_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
     GRPC_CLOSURE_SCHED(exec_ctx, m->on_read,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "Endpoint Shutdown", &why, 1));
-    m->on_read = NULL;
+    m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->mu);
   grpc_resource_user_shutdown(exec_ctx, m->resource_user);
@@ -130,7 +130,7 @@ grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
   grpc_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);
   m->on_write = on_write;
-  m->on_read = NULL;
+  m->on_read = nullptr;
   return &m->base;
 }
 
@@ -138,10 +138,10 @@ void grpc_mock_endpoint_put_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                                  grpc_slice slice) {
   grpc_mock_endpoint* m = (grpc_mock_endpoint*)ep;
   gpr_mu_lock(&m->mu);
-  if (m->on_read != NULL) {
+  if (m->on_read != nullptr) {
     grpc_slice_buffer_add(m->on_read_out, slice);
     GRPC_CLOSURE_SCHED(exec_ctx, m->on_read, GRPC_ERROR_NONE);
-    m->on_read = NULL;
+    m->on_read = nullptr;
   } else {
     grpc_slice_buffer_add(&m->read_buffer, slice);
   }

@@ -69,7 +69,7 @@ static void on_handshake_done(grpc_exec_ctx* exec_ctx, void* arg,
     const char* error_str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
 
-    if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
+    if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
       // We were shut down after handshaking completed successfully, so
       // destroy the endpoint here.
       // TODO(ctiller): It is currently necessary to shutdown endpoints
@@ -86,7 +86,7 @@ static void on_handshake_done(grpc_exec_ctx* exec_ctx, void* arg,
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
     // code, so we can just clean up here without creating a transport.
-    if (args->endpoint != NULL) {
+    if (args->endpoint != nullptr) {
       grpc_transport* transport =
           grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
       grpc_server_setup_transport(
@@ -166,7 +166,7 @@ static void tcp_server_shutdown_complete(grpc_exec_ctx* exec_ctx, void* arg,
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.
   grpc_exec_ctx_flush(exec_ctx);
-  if (destroy_done != NULL) {
+  if (destroy_done != nullptr) {
     destroy_done->cb(exec_ctx, destroy_done->cb_arg, GRPC_ERROR_REF(error));
     grpc_exec_ctx_flush(exec_ctx);
   }
@@ -194,14 +194,14 @@ grpc_error* grpc_chttp2_server_add_port(grpc_exec_ctx* exec_ctx,
                                         grpc_server* server, const char* addr,
                                         grpc_channel_args* args,
                                         int* port_num) {
-  grpc_resolved_addresses* resolved = NULL;
-  grpc_tcp_server* tcp_server = NULL;
+  grpc_resolved_addresses* resolved = nullptr;
+  grpc_tcp_server* tcp_server = nullptr;
   size_t i;
   size_t count = 0;
   int port_temp;
   grpc_error* err = GRPC_ERROR_NONE;
-  server_state* state = NULL;
-  grpc_error** errors = NULL;
+  server_state* state = nullptr;
+  grpc_error** errors = nullptr;
   size_t naddrs = 0;
 
   *port_num = -1;
@@ -284,7 +284,7 @@ error:
   *port_num = 0;
 
 done:
-  if (errors != NULL) {
+  if (errors != nullptr) {
     for (i = 0; i < naddrs; i++) {
       GRPC_ERROR_UNREF(errors[i]);
     }

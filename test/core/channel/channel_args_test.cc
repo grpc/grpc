@@ -43,7 +43,7 @@ static void test_create(void) {
 
   to_add[0] = arg_int;
   to_add[1] = arg_string;
-  ch_args = grpc_channel_args_copy_and_add(NULL, to_add, 2);
+  ch_args = grpc_channel_args_copy_and_add(nullptr, to_add, 2);
 
   GPR_ASSERT(ch_args->num_args == 2);
   GPR_ASSERT(strcmp(ch_args->args[0].key, arg_int.key) == 0);
@@ -64,7 +64,7 @@ static void test_set_compression_algorithm(void) {
   grpc_channel_args* ch_args;
 
   ch_args =
-      grpc_channel_args_set_compression_algorithm(NULL, GRPC_COMPRESS_GZIP);
+      grpc_channel_args_set_compression_algorithm(nullptr, GRPC_COMPRESS_GZIP);
   GPR_ASSERT(ch_args->num_args == 1);
   GPR_ASSERT(strcmp(ch_args->args[0].key,
                     GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) == 0);
@@ -80,7 +80,7 @@ static void test_compression_algorithm_states(void) {
   unsigned states_bitset;
   size_t i;
 
-  ch_args = grpc_channel_args_copy_and_add(NULL, NULL, 0);
+  ch_args = grpc_channel_args_copy_and_add(nullptr, nullptr, 0);
   /* by default, all enabled */
   states_bitset =
       (unsigned)grpc_channel_args_compression_algorithm_get_states(ch_args);
@@ -129,9 +129,9 @@ static void test_compression_algorithm_states(void) {
 static void test_set_socket_mutator(void) {
   grpc_channel_args* ch_args;
   grpc_socket_mutator mutator;
-  grpc_socket_mutator_init(&mutator, NULL);
+  grpc_socket_mutator_init(&mutator, nullptr);
 
-  ch_args = grpc_channel_args_set_socket_mutator(NULL, &mutator);
+  ch_args = grpc_channel_args_set_socket_mutator(nullptr, &mutator);
   GPR_ASSERT(ch_args->num_args == 1);
   GPR_ASSERT(strcmp(ch_args->args[0].key, GRPC_ARG_SOCKET_MUTATOR) == 0);
   GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_POINTER);
