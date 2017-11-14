@@ -46,14 +46,6 @@ cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..
 cmake --build . --config Release --target install || goto :error
 cd ../../../..
 
-@rem TODO(jtattermusch): what do do with gflags
-@rem cd third_party/gflags/cmake
-@rem mkdir build
-@rem cd build
-@rem cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ../..
-@rem cmake --build . --config Release --target install || goto :error
-@rem cd ../../../..
-
 @rem OpenSSL-Win32 and OpenSSL-Win64 can be downloaded from https://slproweb.com/products/Win32OpenSSL.html
 cd cmake
 mkdir build
