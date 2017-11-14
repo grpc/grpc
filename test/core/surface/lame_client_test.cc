@@ -30,7 +30,7 @@
 
 grpc_closure transport_op_cb;
 
-static void* tag(intptr_t x) { return (void*)x; }
+static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
 void verify_connectivity(grpc_exec_ctx* exec_ctx, void* arg,
                          grpc_error* error) {
