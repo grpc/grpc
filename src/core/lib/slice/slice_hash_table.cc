@@ -61,14 +61,15 @@ grpc_slice_hash_table* grpc_slice_hash_table_create(
     void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value),
     int (*value_cmp)(void* a, void* b)) {
   grpc_slice_hash_table* table =
-      (grpc_slice_hash_table*)gpr_zalloc(sizeof(*table));
+      reinterpret_cast<grpc_slice_hash_table*>(gpr_zalloc(sizeof(*table)));
   gpr_ref_init(&table->refs, 1);
   table->destroy_value = destroy_value;
   table->value_cmp = value_cmp;
   // Keep load factor low to improve performance of lookups.
   table->size = num_entries * 2;
   const size_t entry_size = sizeof(grpc_slice_hash_table_entry) * table->size;
-  table->entries = (grpc_slice_hash_table_entry*)gpr_zalloc(entry_size);
+  table->entries =
+      reinterpret_cast<grpc_slice_hash_table_entry*>(gpr_zalloc(entry_size));
   for (size_t i = 0; i < num_entries; ++i) {
     grpc_slice_hash_table_entry* entry = &entries[i];
     grpc_slice_hash_table_add(table, entry->key, entry->value);
@@ -120,7 +121,7 @@ int grpc_slice_hash_table_cmp(const grpc_slice_hash_table* a,
       b->value_cmp != nullptr ? b->value_cmp : pointer_cmp;
   // Compare value_fns
   const int value_fns_cmp =
-      GPR_ICMP((void*)value_cmp_fn_a, (void*)value_cmp_fn_b);
+      GPR_ICMP((void*)value_cmp_fn_a, reinterpret_cast<void*>(value_cmp_fn_b));
   if (value_fns_cmp != 0) return value_fns_cmp;
   // Compare sizes
   if (a->size < b->size) return -1;

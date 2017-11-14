@@ -81,7 +81,7 @@ static void step_ping_pong_request(void) {
       grpc_slice_from_static_string("/Reflector/reflectUnary"), &host,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops), (void*)1,
+                                                   (size_t)(op - ops), reinterpret_cast<void*>(1),
                                                    nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_call_unref(call);
@@ -104,7 +104,7 @@ static void init_ping_pong_stream(void) {
   stream_init_ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
   stream_init_ops[1].data.recv_initial_metadata.recv_initial_metadata =
       &initial_metadata_recv;
-  error = grpc_call_start_batch(call, stream_init_ops, 2, (void*)1, nullptr);
+  error = grpc_call_start_batch(call, stream_init_ops, 2, reinterpret_cast<void*>(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
@@ -119,7 +119,7 @@ static void init_ping_pong_stream(void) {
 static void step_ping_pong_stream(void) {
   grpc_call_error error;
   GPR_TIMER_BEGIN("ping_pong", 1);
-  error = grpc_call_start_batch(call, stream_step_ops, 2, (void*)1, nullptr);
+  error = grpc_call_start_batch(call, stream_step_ops, 2, reinterpret_cast<void*>(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -128,7 +128,7 @@ static void step_ping_pong_stream(void) {
 
 static double now(void) {
   gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
-  return 1e9 * (double)tv.tv_sec + tv.tv_nsec;
+  return 1e9 * static_cast<double>(tv.tv_sec) + tv.tv_nsec;
 }
 
 typedef struct {
@@ -194,7 +194,8 @@ int main(int argc, char** argv) {
 
   channel = grpc_insecure_channel_create(target, nullptr, nullptr);
   cq = grpc_completion_queue_create_for_next(nullptr);
-  the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
+  the_buffer =
+      grpc_raw_byte_buffer_create(&slice, static_cast<size_t>(payload_size));
   histogram = gpr_histogram_create(0.01, 60e9);
 
   sc.init();

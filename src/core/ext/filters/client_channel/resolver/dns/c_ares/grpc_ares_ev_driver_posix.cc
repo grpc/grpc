@@ -127,7 +127,8 @@ static void fd_node_shutdown(grpc_exec_ctx* exec_ctx, fd_node* fdn) {
 
 grpc_error* grpc_ares_ev_driver_create(grpc_ares_ev_driver** ev_driver,
                                        grpc_pollset_set* pollset_set) {
-  *ev_driver = (grpc_ares_ev_driver*)gpr_malloc(sizeof(grpc_ares_ev_driver));
+  *ev_driver = reinterpret_cast<grpc_ares_ev_driver*>(
+      gpr_malloc(sizeof(grpc_ares_ev_driver)));
   int status = ares_init(&(*ev_driver)->channel);
   gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create");
   if (status != ARES_SUCCESS) {
@@ -201,7 +202,7 @@ static bool grpc_ares_is_fd_still_readable(grpc_ares_ev_driver* ev_driver,
 
 static void on_readable_cb(grpc_exec_ctx* exec_ctx, void* arg,
                            grpc_error* error) {
-  fd_node* fdn = (fd_node*)arg;
+  fd_node* fdn = reinterpret_cast<fd_node*>(arg);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   gpr_mu_lock(&fdn->mu);
   const int fd = grpc_fd_wrapped_fd(fdn->fd);
@@ -236,7 +237,7 @@ static void on_readable_cb(grpc_exec_ctx* exec_ctx, void* arg,
 
 static void on_writable_cb(grpc_exec_ctx* exec_ctx, void* arg,
                            grpc_error* error) {
-  fd_node* fdn = (fd_node*)arg;
+  fd_node* fdn = reinterpret_cast<fd_node*>(arg);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   gpr_mu_lock(&fdn->mu);
   const int fd = grpc_fd_wrapped_fd(fdn->fd);
@@ -288,7 +289,7 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx* exec_ctx,
         if (fdn == nullptr) {
           char* fd_name;
           gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
-          fdn = (fd_node*)gpr_malloc(sizeof(fd_node));
+          fdn = reinterpret_cast<fd_node*>(gpr_malloc(sizeof(fd_node)));
           gpr_log(GPR_DEBUG, "new fd: %d", socks[i]);
           fdn->fd = grpc_fd_create(socks[i], fd_name);
           fdn->ev_driver = ev_driver;

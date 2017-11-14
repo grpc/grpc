@@ -79,7 +79,7 @@ void grpc_pollset_global_shutdown(void) {
 static void timer_run_cb(uv_timer_t* timer) {}
 
 static void timer_close_cb(uv_handle_t* handle) {
-  handle->data = (void*)1;
+  handle->data = reinterpret_cast<void*>(1);
   gpr_free(handle);
 }
 
@@ -110,7 +110,7 @@ void grpc_pollset_destroy(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset) {
   GRPC_UV_ASSERT_SAME_THREAD();
   uv_close((uv_handle_t*)pollset->timer, timer_close_cb);
   // timer.data is a boolean indicating that the timer has finished closing
-  pollset->timer->data = (void*)0;
+  pollset->timer->data = reinterpret_cast<void*>(0);
   if (grpc_pollset_work_run_loop) {
     while (!pollset->timer->data) {
       uv_run(uv_default_loop(), UV_RUN_NOWAIT);

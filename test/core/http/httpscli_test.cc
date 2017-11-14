@@ -158,8 +158,8 @@ int main(int argc, char** argv) {
   /* figure out where we are */
   char* root;
   if (lslash) {
-    root = static_cast<char*>(gpr_malloc((size_t)(lslash - me + 1)));
-    memcpy(root, me, (size_t)(lslash - me));
+    root = static_cast<char*>(gpr_malloc(static_cast<size_t>(lslash - me + 1)));
+    memcpy(root, me, static_cast<size_t>(lslash - me));
     root[lslash - me] = 0;
   } else {
     root = gpr_strdup(".");

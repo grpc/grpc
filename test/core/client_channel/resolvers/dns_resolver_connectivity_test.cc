@@ -97,7 +97,7 @@ static grpc_resolver* create_resolver(grpc_exec_ctx* exec_ctx,
 }
 
 static void on_done(grpc_exec_ctx* exec_ctx, void* ev, grpc_error* error) {
-  gpr_event_set((gpr_event*)ev, (void*)1);
+  gpr_event_set(reinterpret_cast<gpr_event*>(ev), reinterpret_cast<void*>(1));
 }
 
 // interleave waiting for an event with a timer check

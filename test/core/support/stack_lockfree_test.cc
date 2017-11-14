@@ -75,7 +75,7 @@ struct test_arg {
 };
 
 static void test_mt_body(void* v) {
-  struct test_arg* arg = (struct test_arg*)v;
+  struct test_arg* arg = reinterpret_cast<struct test_arg*>(v);
   int lo, hi;
   int i;
   int res;
@@ -103,7 +103,7 @@ static void test_mt_sized(size_t size, int nth) {
   stack = gpr_stack_lockfree_create(size);
   for (i = 0; i < nth; i++) {
     args[i].stack = stack;
-    args[i].stack_size = (int)size;
+    args[i].stack_size = static_cast<int>(size);
     args[i].nthreads = nth;
     args[i].rank = i;
     args[i].sum = 0;

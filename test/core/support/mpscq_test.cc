@@ -48,7 +48,7 @@ static void test_serial(void) {
     gpr_mpscq_push(&q, &new_node(i, nullptr)->node);
   }
   for (size_t i = 0; i < 10000000; i++) {
-    test_node* n = (test_node*)gpr_mpscq_pop(&q);
+    test_node* n = reinterpret_cast<test_node*>(gpr_mpscq_pop(&q));
     GPR_ASSERT(n);
     GPR_ASSERT(n->i == i);
     gpr_free(n);
@@ -89,13 +89,13 @@ static void test_mt(void) {
   }
   size_t num_done = 0;
   size_t spins = 0;
-  gpr_event_set(&start, (void*)1);
+  gpr_event_set(&start, reinterpret_cast<void*>(1));
   while (num_done != GPR_ARRAY_SIZE(thds)) {
     gpr_mpscq_node* n;
     while ((n = gpr_mpscq_pop(&q)) == nullptr) {
       spins++;
     }
-    test_node* tn = (test_node*)n;
+    test_node* tn = reinterpret_cast<test_node*>(n);
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) num_done++;
@@ -132,7 +132,7 @@ static void pull_thread(void* arg) {
     while ((n = gpr_mpscq_pop(pa->q)) == nullptr) {
       pa->spins++;
     }
-    test_node* tn = (test_node*)n;
+    test_node* tn = reinterpret_cast<test_node*>(n);
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) pa->num_done++;
@@ -171,7 +171,7 @@ static void test_mt_multipop(void) {
     gpr_thd_options_set_joinable(&options);
     GPR_ASSERT(gpr_thd_new(&pull_thds[i], pull_thread, &pa, &options));
   }
-  gpr_event_set(&start, (void*)1);
+  gpr_event_set(&start, reinterpret_cast<void*>(1));
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
     gpr_thd_join(pull_thds[i]);
   }

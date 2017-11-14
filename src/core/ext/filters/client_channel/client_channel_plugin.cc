@@ -37,7 +37,8 @@
 static bool append_filter(grpc_exec_ctx* exec_ctx,
                           grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
+      builder, reinterpret_cast<const grpc_channel_filter*>(arg), nullptr,
+      nullptr);
 }
 
 static bool set_default_host_if_unset(grpc_exec_ctx* exec_ctx,

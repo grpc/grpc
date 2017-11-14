@@ -106,7 +106,7 @@ typedef struct test_fd {
 } test_fd;
 
 void on_readable(grpc_exec_ctx* exec_ctx, void* tfd, grpc_error* error) {
-  ((test_fd*)tfd)->is_on_readable_called = true;
+  (reinterpret_cast<test_fd*>(tfd))->is_on_readable_called = true;
 }
 
 static void reset_test_fd(grpc_exec_ctx* exec_ctx, test_fd* tfd) {

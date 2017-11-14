@@ -26,6 +26,7 @@ import jobset
 
 GRPC_CHECKS = [
   'modernize-use-nullptr',
+  'google-readability-casting',
 ]
 
 extra_args = [

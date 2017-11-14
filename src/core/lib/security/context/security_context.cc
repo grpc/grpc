@@ -46,8 +46,8 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
     gpr_log(GPR_ERROR, "Method is client-side only.");
     return GRPC_CALL_ERROR_NOT_ON_SERVER;
   }
-  ctx = (grpc_client_security_context*)grpc_call_context_get(
-      call, GRPC_CONTEXT_SECURITY);
+  ctx = reinterpret_cast<grpc_client_security_context*>(
+      grpc_call_context_get(call, GRPC_CONTEXT_SECURITY));
   if (ctx == nullptr) {
     ctx = grpc_client_security_context_create();
     ctx->creds = grpc_call_credentials_ref(creds);
@@ -82,13 +82,14 @@ void grpc_auth_context_release(grpc_auth_context* context) {
 /* --- grpc_client_security_context --- */
 
 grpc_client_security_context* grpc_client_security_context_create(void) {
-  return (grpc_client_security_context*)gpr_zalloc(
-      sizeof(grpc_client_security_context));
+  return reinterpret_cast<grpc_client_security_context*>(
+      gpr_zalloc(sizeof(grpc_client_security_context)));
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_client_security_context* c = (grpc_client_security_context*)ctx;
+  grpc_client_security_context* c =
+      reinterpret_cast<grpc_client_security_context*>(ctx);
   grpc_call_credentials_unref(&exec_ctx, c->creds);
   GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "client_security_context");
   if (c->extension.instance != nullptr && c->extension.destroy != nullptr) {
@@ -101,12 +102,13 @@ void grpc_client_security_context_destroy(void* ctx) {
 /* --- grpc_server_security_context --- */
 
 grpc_server_security_context* grpc_server_security_context_create(void) {
-  return (grpc_server_security_context*)gpr_zalloc(
-      sizeof(grpc_server_security_context));
+  return reinterpret_cast<grpc_server_security_context*>(
+      gpr_zalloc(sizeof(grpc_server_security_context)));
 }
 
 void grpc_server_security_context_destroy(void* ctx) {
-  grpc_server_security_context* c = (grpc_server_security_context*)ctx;
+  grpc_server_security_context* c =
+      reinterpret_cast<grpc_server_security_context*>(ctx);
   GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "server_security_context");
   if (c->extension.instance != nullptr && c->extension.destroy != nullptr) {
     c->extension.destroy(c->extension.instance);
@@ -119,8 +121,8 @@ void grpc_server_security_context_destroy(void* ctx) {
 static grpc_auth_property_iterator empty_iterator = {nullptr, 0, nullptr};
 
 grpc_auth_context* grpc_auth_context_create(grpc_auth_context* chained) {
-  grpc_auth_context* ctx =
-      (grpc_auth_context*)gpr_zalloc(sizeof(grpc_auth_context));
+  grpc_auth_context* ctx = reinterpret_cast<grpc_auth_context*>(
+      gpr_zalloc(sizeof(grpc_auth_context)));
   gpr_ref_init(&ctx->refcount, 1);
   if (chained != nullptr) {
     ctx->chained = GRPC_AUTH_CONTEXT_REF(chained, "chained");
@@ -261,9 +263,9 @@ static void ensure_auth_context_capacity(grpc_auth_context* ctx) {
   if (ctx->properties.count == ctx->properties.capacity) {
     ctx->properties.capacity =
         GPR_MAX(ctx->properties.capacity + 8, ctx->properties.capacity * 2);
-    ctx->properties.array = (grpc_auth_property*)gpr_realloc(
-        ctx->properties.array,
-        ctx->properties.capacity * sizeof(grpc_auth_property));
+    ctx->properties.array = reinterpret_cast<grpc_auth_property*>(
+        gpr_realloc(ctx->properties.array,
+                    ctx->properties.capacity * sizeof(grpc_auth_property)));
   }
 }
 
@@ -279,7 +281,7 @@ void grpc_auth_context_add_property(grpc_auth_context* ctx, const char* name,
   ensure_auth_context_capacity(ctx);
   prop = &ctx->properties.array[ctx->properties.count++];
   prop->name = gpr_strdup(name);
-  prop->value = (char*)gpr_malloc(value_length + 1);
+  prop->value = reinterpret_cast<char*>(gpr_malloc(value_length + 1));
   memcpy(prop->value, value, value_length);
   prop->value[value_length] = '\0';
   prop->value_length = value_length;
@@ -332,7 +334,7 @@ grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg) {
             GRPC_AUTH_CONTEXT_ARG);
     return nullptr;
   }
-  return (grpc_auth_context*)arg->value.pointer.p;
+  return reinterpret_cast<grpc_auth_context*>(arg->value.pointer.p);
 }
 
 grpc_auth_context* grpc_find_auth_context_in_args(

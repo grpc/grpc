@@ -67,17 +67,18 @@ void grpc_lb_policy_ref(grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
 
 static void shutdown_locked(grpc_exec_ctx* exec_ctx, void* arg,
                             grpc_error* error) {
-  grpc_lb_policy* policy = (grpc_lb_policy*)arg;
+  grpc_lb_policy* policy = reinterpret_cast<grpc_lb_policy*>(arg);
   policy->vtable->shutdown_locked(exec_ctx, policy);
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, policy, "strong-unref");
 }
 
 void grpc_lb_policy_unref(grpc_exec_ctx* exec_ctx,
                           grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
-  gpr_atm old_val =
-      ref_mutate(policy, (gpr_atm)1 - (gpr_atm)(1 << WEAK_REF_BITS),
-                 1 REF_MUTATE_PASS_ARGS("STRONG_UNREF"));
-  gpr_atm mask = ~(gpr_atm)((1 << WEAK_REF_BITS) - 1);
+  gpr_atm old_val = ref_mutate(
+      policy,
+      static_cast<gpr_atm>(1) - static_cast<gpr_atm>(1 << WEAK_REF_BITS),
+      1 REF_MUTATE_PASS_ARGS("STRONG_UNREF"));
+  gpr_atm mask = ~static_cast<gpr_atm>((1 << WEAK_REF_BITS) - 1);
   gpr_atm check = 1 << WEAK_REF_BITS;
   if ((old_val & mask) == check) {
     GRPC_CLOSURE_SCHED(
@@ -97,8 +98,8 @@ void grpc_lb_policy_weak_ref(grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
 
 void grpc_lb_policy_weak_unref(grpc_exec_ctx* exec_ctx,
                                grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
-  gpr_atm old_val =
-      ref_mutate(policy, -(gpr_atm)1, 1 REF_MUTATE_PASS_ARGS("WEAK_UNREF"));
+  gpr_atm old_val = ref_mutate(policy, -static_cast<gpr_atm>(1),
+                               1 REF_MUTATE_PASS_ARGS("WEAK_UNREF"));
   if (old_val == 1) {
     grpc_pollset_set_destroy(exec_ctx, policy->interested_parties);
     grpc_combiner* combiner = policy->combiner;

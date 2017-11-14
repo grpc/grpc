@@ -84,7 +84,8 @@ static void concurrent_test_body(void* arg) {
   concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
   gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
   for (size_t i = 0; i < concurrent_test_iterations(); i++) {
-    *(char*)gpr_arena_alloc(a->arena, 1) = (char)i;
+    *reinterpret_cast<char*>(gpr_arena_alloc(a->arena, 1)) =
+        static_cast<char>(i);
   }
 }
 
@@ -103,7 +104,7 @@ static void concurrent_test(void) {
     gpr_thd_new(&thds[i], concurrent_test_body, &args, &opt);
   }
 
-  gpr_event_set(&args.ev_start, (void*)1);
+  gpr_event_set(&args.ev_start, reinterpret_cast<void*>(1));
 
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     gpr_thd_join(thds[i]);

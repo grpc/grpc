@@ -169,7 +169,8 @@ static void server_verifier_sends_too_much_metadata(grpc_server* server,
 
 static bool client_validator(grpc_slice_buffer* incoming) {
   for (size_t i = 0; i < incoming->count; ++i) {
-    const char* s = (const char*)GRPC_SLICE_START_PTR(incoming->slices[i]);
+    const char* s =
+        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(incoming->slices[i]);
     char* hex = gpr_dump(s, GRPC_SLICE_LENGTH(incoming->slices[i]),
                          GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_INFO, "RESPONSE SLICE %" PRIdPTR ": %s", i, hex);
@@ -229,7 +230,7 @@ int main(int argc, char** argv) {
       client_headers, headers_len);
   GRPC_RUN_BAD_CLIENT_TEST(server_verifier, client_validator, client_payload,
                            0);
-  gpr_free((void*)client_headers);
+  gpr_free(reinterpret_cast<void*>(client_headers));
 
   // Test sending more metadata than the client will accept.
   GRPC_RUN_BAD_CLIENT_TEST(server_verifier_sends_too_much_metadata,

@@ -794,8 +794,9 @@ static grpc_error* finish_indexed_field(grpc_exec_ctx* exec_ctx,
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "Invalid HPACK index received"),
-                           GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
-        GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
+                           GRPC_ERROR_INT_INDEX,
+                           static_cast<intptr_t>(p->index)),
+        GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(p->table.num_ents));
   }
   GRPC_MDELEM_REF(md);
   GRPC_STATS_INC_HPACK_RECV_INDEXED(exec_ctx);
@@ -1149,7 +1150,7 @@ static grpc_error* parse_value1(grpc_exec_ctx* exec_ctx,
     return GRPC_ERROR_NONE;
   }
 
-  *p->parsing.value += (((uint32_t)*cur) & 0x7f) << 7;
+  *p->parsing.value += ((static_cast<uint32_t>(*cur)) & 0x7f) << 7;
 
   if ((*cur) & 0x80) {
     return parse_value2(exec_ctx, p, cur + 1, end);
@@ -1168,7 +1169,7 @@ static grpc_error* parse_value2(grpc_exec_ctx* exec_ctx,
     return GRPC_ERROR_NONE;
   }
 
-  *p->parsing.value += (((uint32_t)*cur) & 0x7f) << 14;
+  *p->parsing.value += ((static_cast<uint32_t>(*cur)) & 0x7f) << 14;
 
   if ((*cur) & 0x80) {
     return parse_value3(exec_ctx, p, cur + 1, end);
@@ -1187,7 +1188,7 @@ static grpc_error* parse_value3(grpc_exec_ctx* exec_ctx,
     return GRPC_ERROR_NONE;
   }
 
-  *p->parsing.value += (((uint32_t)*cur) & 0x7f) << 21;
+  *p->parsing.value += ((static_cast<uint32_t>(*cur)) & 0x7f) << 21;
 
   if ((*cur) & 0x80) {
     return parse_value4(exec_ctx, p, cur + 1, end);
@@ -1217,7 +1218,7 @@ static grpc_error* parse_value4(grpc_exec_ctx* exec_ctx,
   }
 
   cur_value = *p->parsing.value;
-  add_value = ((uint32_t)c) << 28;
+  add_value = (static_cast<uint32_t>(c)) << 28;
   if (add_value > 0xffffffffu - cur_value) {
     goto error;
   }
@@ -1294,13 +1295,14 @@ static void append_bytes(grpc_chttp2_hpack_parser_string* str,
   if (length == 0) return;
   if (length + str->data.copied.length > str->data.copied.capacity) {
     GPR_ASSERT(str->data.copied.length + length <= UINT32_MAX);
-    str->data.copied.capacity = (uint32_t)(str->data.copied.length + length);
-    str->data.copied.str =
-        (char*)gpr_realloc(str->data.copied.str, str->data.copied.capacity);
+    str->data.copied.capacity =
+        static_cast<uint32_t>(str->data.copied.length + length);
+    str->data.copied.str = reinterpret_cast<char*>(
+        gpr_realloc(str->data.copied.str, str->data.copied.capacity));
   }
   memcpy(str->data.copied.str + str->data.copied.length, data, length);
   GPR_ASSERT(length <= UINT32_MAX - str->data.copied.length);
-  str->data.copied.length += (uint32_t)length;
+  str->data.copied.length += static_cast<uint32_t>(length);
 }
 
 static grpc_error* append_string(grpc_exec_ctx* exec_ctx,
@@ -1309,9 +1311,9 @@ static grpc_error* append_string(grpc_exec_ctx* exec_ctx,
   grpc_chttp2_hpack_parser_string* str = p->parsing.str;
   uint32_t bits;
   uint8_t decoded[3];
-  switch ((binary_state)p->binary) {
+  switch (static_cast<binary_state>(p->binary)) {
     case NOT_BINARY:
-      append_bytes(str, cur, (size_t)(end - cur));
+      append_bytes(str, cur, static_cast<size_t>(end - cur));
       return GRPC_ERROR_NONE;
     case BINARY_BEGIN:
       if (cur == end) {
@@ -1323,7 +1325,7 @@ static grpc_error* append_string(grpc_exec_ctx* exec_ctx,
         ++cur;
         p->binary = NOT_BINARY;
         GRPC_STATS_INC_HPACK_RECV_BINARY(exec_ctx);
-        append_bytes(str, cur, (size_t)(end - cur));
+        append_bytes(str, cur, static_cast<size_t>(end - cur));
         return GRPC_ERROR_NONE;
       }
       GRPC_STATS_INC_HPACK_RECV_BINARY_BASE64(exec_ctx);
@@ -1392,9 +1394,9 @@ static grpc_error* append_string(grpc_exec_ctx* exec_ctx,
         goto b64_byte3;
       p->base64_buffer |= bits;
       bits = p->base64_buffer;
-      decoded[0] = (uint8_t)(bits >> 16);
-      decoded[1] = (uint8_t)(bits >> 8);
-      decoded[2] = (uint8_t)(bits);
+      decoded[0] = static_cast<uint8_t>(bits >> 16);
+      decoded[1] = static_cast<uint8_t>(bits >> 8);
+      decoded[2] = static_cast<uint8_t>(bits);
       append_bytes(str, decoded, 3);
       goto b64_byte0;
   }
@@ -1409,7 +1411,7 @@ static grpc_error* finish_str(grpc_exec_ctx* exec_ctx,
   uint8_t decoded[2];
   uint32_t bits;
   grpc_chttp2_hpack_parser_string* str = p->parsing.str;
-  switch ((binary_state)p->binary) {
+  switch (static_cast<binary_state>(p->binary)) {
     case NOT_BINARY:
       break;
     case BINARY_BEGIN:
@@ -1430,7 +1432,7 @@ static grpc_error* finish_str(grpc_exec_ctx* exec_ctx,
         gpr_free(msg);
         return parse_error(exec_ctx, p, cur, end, err);
       }
-      decoded[0] = (uint8_t)(bits >> 16);
+      decoded[0] = static_cast<uint8_t>(bits >> 16);
       append_bytes(str, decoded, 1);
       break;
     case B64_BYTE3:
@@ -1443,8 +1445,8 @@ static grpc_error* finish_str(grpc_exec_ctx* exec_ctx,
         gpr_free(msg);
         return parse_error(exec_ctx, p, cur, end, err);
       }
-      decoded[0] = (uint8_t)(bits >> 16);
-      decoded[1] = (uint8_t)(bits >> 8);
+      decoded[0] = static_cast<uint8_t>(bits >> 16);
+      decoded[1] = static_cast<uint8_t>(bits >> 8);
       append_bytes(str, decoded, 2);
       break;
   }
@@ -1458,7 +1460,7 @@ static grpc_error* huff_nibble(grpc_exec_ctx* exec_ctx,
   int16_t next = next_sub_tbl[16 * next_tbl[p->huff_state] + nibble];
   if (emit != -1) {
     if (emit >= 0 && emit < 256) {
-      uint8_t c = (uint8_t)emit;
+      uint8_t c = static_cast<uint8_t>(emit);
       grpc_error* err = append_string(exec_ctx, p, &c, (&c) + 1);
       if (err != GRPC_ERROR_NONE) return err;
     } else {
@@ -1499,7 +1501,7 @@ static grpc_error* parse_string(grpc_exec_ctx* exec_ctx,
                                 grpc_chttp2_hpack_parser* p, const uint8_t* cur,
                                 const uint8_t* end) {
   size_t remaining = p->strlen - p->strgot;
-  size_t given = (size_t)(end - cur);
+  size_t given = static_cast<size_t>(end - cur);
   if (remaining <= given) {
     grpc_error* err = add_str_bytes(exec_ctx, p, cur, cur + remaining);
     if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
@@ -1510,7 +1512,7 @@ static grpc_error* parse_string(grpc_exec_ctx* exec_ctx,
     grpc_error* err = add_str_bytes(exec_ctx, p, cur, cur + given);
     if (err != GRPC_ERROR_NONE) return parse_error(exec_ctx, p, cur, end, err);
     GPR_ASSERT(given <= UINT32_MAX - p->strgot);
-    p->strgot += (uint32_t)given;
+    p->strgot += static_cast<uint32_t>(given);
     p->state = parse_string;
     return GRPC_ERROR_NONE;
   }
@@ -1522,12 +1524,13 @@ static grpc_error* begin_parse_string(grpc_exec_ctx* exec_ctx,
                                       const uint8_t* cur, const uint8_t* end,
                                       uint8_t binary,
                                       grpc_chttp2_hpack_parser_string* str) {
-  if (!p->huff && binary == NOT_BINARY && (end - cur) >= (intptr_t)p->strlen &&
+  if (!p->huff && binary == NOT_BINARY &&
+      (end - cur) >= static_cast<intptr_t>(p->strlen) &&
       p->current_slice_refcount != nullptr) {
     GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED(exec_ctx);
     str->copied = false;
     str->data.referenced.refcount = p->current_slice_refcount;
-    str->data.referenced.data.refcounted.bytes = (uint8_t*)cur;
+    str->data.referenced.data.refcounted.bytes = const_cast<uint8_t*>(cur);
     str->data.referenced.data.refcounted.length = p->strlen;
     grpc_slice_ref_internal(str->data.referenced);
     return parse_next(exec_ctx, p, cur + p->strlen, end);
@@ -1578,8 +1581,9 @@ static grpc_error* is_binary_indexed_header(grpc_chttp2_hpack_parser* p,
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "Invalid HPACK index received"),
-                           GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
-        GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
+                           GRPC_ERROR_INT_INDEX,
+                           static_cast<intptr_t>(p->index)),
+        GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(p->table.num_ents));
   }
   *is = grpc_is_binary_header(GRPC_MDKEY(elem));
   return GRPC_ERROR_NONE;
@@ -1672,7 +1676,7 @@ static const maybe_complete_func_type maybe_complete_funcs[] = {
 
 static void force_client_rst_stream(grpc_exec_ctx* exec_ctx, void* sp,
                                     grpc_error* error) {
-  grpc_chttp2_stream* s = (grpc_chttp2_stream*)sp;
+  grpc_chttp2_stream* s = reinterpret_cast<grpc_chttp2_stream*>(sp);
   grpc_chttp2_transport* t = s->t;
   if (!s->write_closed) {
     grpc_slice_buffer_add(
@@ -1703,7 +1707,8 @@ grpc_error* grpc_chttp2_header_parser_parse(grpc_exec_ctx* exec_ctx,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
                                             grpc_slice slice, int is_last) {
-  grpc_chttp2_hpack_parser* parser = (grpc_chttp2_hpack_parser*)hpack_parser;
+  grpc_chttp2_hpack_parser* parser =
+      reinterpret_cast<grpc_chttp2_hpack_parser*>(hpack_parser);
   GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);

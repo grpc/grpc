@@ -250,7 +250,7 @@ class Stream {
     grpc_transport_destroy_stream(exec_ctx, stream->f_->transport(),
                                   static_cast<grpc_stream*>(stream->stream_),
                                   stream->destroy_closure_);
-    gpr_event_set(&stream->done_, (void*)1);
+    gpr_event_set(&stream->done_, reinterpret_cast<void*>(1));
   }
 
   Fixture* f_;
@@ -434,7 +434,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   std::unique_ptr<Closure> c =
       MakeClosure([&](grpc_exec_ctx* exec_ctx, grpc_error* error) {
         if (!state.KeepRunning()) {
-          gpr_event_set(bm_done, (void*)1);
+          gpr_event_set(bm_done, reinterpret_cast<void*>(1));
           return;
         }
         // force outgoing window to be yuge

@@ -38,7 +38,7 @@ void grpc_lb_subchannel_data_unref_subchannel(grpc_exec_ctx* exec_ctx,
               " (subchannel %p): unreffing subchannel",
               sd->subchannel_list->tracer->name, sd->subchannel_list->policy,
               sd->subchannel_list,
-              (size_t)(sd - sd->subchannel_list->subchannels),
+              static_cast<size_t>(sd - sd->subchannel_list->subchannels),
               sd->subchannel_list->num_subchannels, sd->subchannel);
     }
     GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, reason);
@@ -64,7 +64,7 @@ void grpc_lb_subchannel_data_start_connectivity_watch(
             " (subchannel %p): requesting connectivity change notification",
             sd->subchannel_list->tracer->name, sd->subchannel_list->policy,
             sd->subchannel_list,
-            (size_t)(sd - sd->subchannel_list->subchannels),
+            static_cast<size_t>(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel);
   }
   sd->connectivity_notification_pending = true;
@@ -82,7 +82,7 @@ void grpc_lb_subchannel_data_stop_connectivity_watch(
             " (subchannel %p): stopping connectivity watch",
             sd->subchannel_list->tracer->name, sd->subchannel_list->policy,
             sd->subchannel_list,
-            (size_t)(sd - sd->subchannel_list->subchannels),
+            static_cast<size_t>(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel);
   }
   GPR_ASSERT(sd->connectivity_notification_pending);
@@ -94,7 +94,8 @@ grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
     const grpc_lb_addresses* addresses, const grpc_lb_policy_args* args,
     grpc_iomgr_cb_func connectivity_changed_cb) {
   grpc_lb_subchannel_list* subchannel_list =
-      (grpc_lb_subchannel_list*)gpr_zalloc(sizeof(*subchannel_list));
+      reinterpret_cast<grpc_lb_subchannel_list*>(
+          gpr_zalloc(sizeof(*subchannel_list)));
   if (GRPC_TRACER_ON(*tracer)) {
     gpr_log(GPR_DEBUG,
             "[%s %p] Creating subchannel list %p for %" PRIuPTR " subchannels",
@@ -103,8 +104,8 @@ grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
   subchannel_list->policy = p;
   subchannel_list->tracer = tracer;
   gpr_ref_init(&subchannel_list->refcount, 1);
-  subchannel_list->subchannels = (grpc_lb_subchannel_data*)gpr_zalloc(
-      sizeof(grpc_lb_subchannel_data) * addresses->num_addresses);
+  subchannel_list->subchannels = reinterpret_cast<grpc_lb_subchannel_data*>(
+      gpr_zalloc(sizeof(grpc_lb_subchannel_data) * addresses->num_addresses));
   // We need to remove the LB addresses in order to be able to compare the
   // subchannel keys of subchannels from a different batch of addresses.
   static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
@@ -195,8 +196,8 @@ void grpc_lb_subchannel_list_ref(grpc_lb_subchannel_list* subchannel_list,
     const gpr_atm count = gpr_atm_acq_load(&subchannel_list->refcount.count);
     gpr_log(GPR_DEBUG, "[%s %p] subchannel_list %p REF %lu->%lu (%s)",
             subchannel_list->tracer->name, subchannel_list->policy,
-            subchannel_list, (unsigned long)(count - 1), (unsigned long)count,
-            reason);
+            subchannel_list, static_cast<unsigned long>(count - 1),
+            static_cast<unsigned long>(count), reason);
   }
 }
 
@@ -208,8 +209,8 @@ void grpc_lb_subchannel_list_unref(grpc_exec_ctx* exec_ctx,
     const gpr_atm count = gpr_atm_acq_load(&subchannel_list->refcount.count);
     gpr_log(GPR_DEBUG, "[%s %p] subchannel_list %p UNREF %lu->%lu (%s)",
             subchannel_list->tracer->name, subchannel_list->policy,
-            subchannel_list, (unsigned long)(count + 1), (unsigned long)count,
-            reason);
+            subchannel_list, static_cast<unsigned long>(count + 1),
+            static_cast<unsigned long>(count), reason);
   }
   if (done) {
     subchannel_list_destroy(exec_ctx, subchannel_list);
@@ -237,7 +238,7 @@ static void subchannel_data_cancel_connectivity_watch(
             " (subchannel %p): canceling connectivity watch (%s)",
             sd->subchannel_list->tracer->name, sd->subchannel_list->policy,
             sd->subchannel_list,
-            (size_t)(sd - sd->subchannel_list->subchannels),
+            static_cast<size_t>(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel, reason);
   }
   grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel, nullptr,

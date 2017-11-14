@@ -265,7 +265,7 @@ class CommonStressTestAsyncServer : public BaseClass {
       service_.RequestEcho(contexts_[i].srv_ctx.get(),
                            &contexts_[i].recv_request,
                            contexts_[i].response_writer.get(), cq_.get(),
-                           cq_.get(), (void*)(intptr_t)i);
+                           cq_.get(), reinterpret_cast<void*>(i));
     }
   }
   struct Context {
@@ -369,7 +369,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
       call->response_reader =
           common_.GetStub()->AsyncEcho(&call->context, request, &cq_);
       call->response_reader->Finish(&call->response, &call->status,
-                                    (void*)call);
+                                    reinterpret_cast<void*>(call));
 
       std::unique_lock<std::mutex> l(mu_);
       rpcs_outstanding_++;

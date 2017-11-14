@@ -61,13 +61,13 @@ struct gpr_stack_lockfree {
 
 gpr_stack_lockfree* gpr_stack_lockfree_create(size_t entries) {
   gpr_stack_lockfree* stack;
-  stack = (gpr_stack_lockfree*)gpr_malloc(sizeof(*stack));
+  stack = reinterpret_cast<gpr_stack_lockfree*>(gpr_malloc(sizeof(*stack)));
   /* Since we only allocate 16 bits to represent an entry number,
    * make sure that we are within the desired range */
   /* Reserve the highest entry number as a dummy */
   GPR_ASSERT(entries < INVALID_ENTRY_INDEX);
-  stack->entries = (lockfree_node*)gpr_malloc_aligned(
-      entries * sizeof(stack->entries[0]), ENTRY_ALIGNMENT_BITS);
+  stack->entries = reinterpret_cast<lockfree_node*>(gpr_malloc_aligned(
+      entries * sizeof(stack->entries[0]), ENTRY_ALIGNMENT_BITS));
   /* Clear out all entries */
   memset(stack->entries, 0, entries * sizeof(stack->entries[0]));
   memset(&stack->head, 0, sizeof(stack->head));
@@ -96,7 +96,7 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree* stack, int entry) {
   lockfree_node newent;
 
   /* First fill in the entry's index and aba ctr for new head */
-  newhead.contents.index = (uint16_t)entry;
+  newhead.contents.index = static_cast<uint16_t>(entry);
 #ifdef GPR_ARCH_64
   /* Fill in the pad to avoid confusing memcheck tools */
   newhead.contents.pad = 0;

@@ -369,8 +369,8 @@ static void polling_island_add_fds_locked(polling_island* pi, grpc_fd** fds,
 
     if (pi->fd_cnt == pi->fd_capacity) {
       pi->fd_capacity = GPR_MAX(pi->fd_capacity + 8, pi->fd_cnt * 3 / 2);
-      pi->fds =
-          (grpc_fd**)gpr_realloc(pi->fds, sizeof(grpc_fd*) * pi->fd_capacity);
+      pi->fds = reinterpret_cast<grpc_fd**>(
+          gpr_realloc(pi->fds, sizeof(grpc_fd*) * pi->fd_capacity));
     }
 
     pi->fds[pi->fd_cnt++] = fds[i];
@@ -473,7 +473,7 @@ static polling_island* polling_island_create(grpc_exec_ctx* exec_ctx,
 
   *error = GRPC_ERROR_NONE;
 
-  pi = (polling_island*)gpr_malloc(sizeof(*pi));
+  pi = reinterpret_cast<polling_island*>(gpr_malloc(sizeof(*pi)));
   gpr_mu_init(&pi->mu);
   pi->fd_cnt = 0;
   pi->fd_capacity = 0;
@@ -817,7 +817,7 @@ static grpc_fd* fd_create(int fd, const char* name) {
   gpr_mu_unlock(&fd_freelist_mu);
 
   if (new_fd == nullptr) {
-    new_fd = (grpc_fd*)gpr_malloc(sizeof(grpc_fd));
+    new_fd = reinterpret_cast<grpc_fd*>(gpr_malloc(sizeof(grpc_fd)));
     gpr_mu_init(&new_fd->po.mu);
   }
 
@@ -980,7 +980,8 @@ static grpc_error* pollset_worker_kick(grpc_pollset_worker* worker) {
   grpc_error* err = GRPC_ERROR_NONE;
 
   /* Kick the worker only if it was not already kicked */
-  if (gpr_atm_no_barrier_cas(&worker->is_kicked, (gpr_atm)0, (gpr_atm)1)) {
+  if (gpr_atm_no_barrier_cas(&worker->is_kicked, static_cast<gpr_atm>(0),
+                             static_cast<gpr_atm>(1))) {
     GRPC_POLLING_TRACE(
         "pollset_worker_kick: Kicking worker: %p (thread id: %ld)",
         (void*)worker, (long int)worker->pt_id);
@@ -1103,7 +1104,7 @@ static int poll_deadline_to_millis_timeout(grpc_exec_ctx* exec_ctx,
   else if (delta < 0)
     return 0;
   else
-    return (int)delta;
+    return static_cast<int>(delta);
 }
 
 static void fd_become_readable(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
@@ -1245,7 +1246,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx* exec_ctx,
       /* We were interrupted. Save an interation by doing a zero timeout
          epoll_wait to see if there are any other events of interest */
       GRPC_POLLING_TRACE("pollset_work: pollset: %p, worker: %p received kick",
-                         (void*)pollset, (void*)worker);
+                         (void*)pollset, reinterpret_cast<void*>(worker));
       ep_rv = epoll_wait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
     }
   }
@@ -1267,7 +1268,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx* exec_ctx,
          to the function pollset_work_and_unlock() will pick up the correct
          epoll_fd */
     } else {
-      grpc_fd* fd = (grpc_fd*)data_ptr;
+      grpc_fd* fd = reinterpret_cast<grpc_fd*>(data_ptr);
       int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
       int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
       int write_ev = ep_ev[i].events & EPOLLOUT;
@@ -1465,7 +1466,7 @@ retry:
               "add_poll_object: Raced creating new polling island. pi_new: %p "
               "(fd: %d, %s: %p)",
               (void*)pi_new, FD_FROM_PO(item)->fd, poll_obj_string(bag_type),
-              (void*)bag);
+              reinterpret_cast<void*>(bag));
           /* No need to lock 'pi_new' here since this is a new polling island
              and no one has a reference to it yet */
           polling_island_remove_all_fds_locked(pi_new, true, &error);
@@ -1484,7 +1485,7 @@ retry:
           "add_poll_object: Created new polling island. pi_new: %p (%s: %p, "
           "%s: %p)",
           (void*)pi_new, poll_obj_string(item_type), (void*)item,
-          poll_obj_string(bag_type), (void*)bag);
+          poll_obj_string(bag_type), reinterpret_cast<void*>(bag));
     } else {
       GRPC_POLLING_TRACE(
           "add_poll_object: Same polling island. pi: %p (%s, %s)",
@@ -1505,7 +1506,7 @@ retry:
         "add_poll_obj: item->pi was NULL. pi_new: %p (item(%s): %p, "
         "bag(%s): %p)",
         (void*)pi_new, poll_obj_string(item_type), (void*)item,
-        poll_obj_string(bag_type), (void*)bag);
+        poll_obj_string(bag_type), reinterpret_cast<void*>(bag));
   } else if (bag->pi == nullptr) {
     /* GPR_ASSERT(item->pi != NULL) */
     /* Make pi_new to point to latest pi */
@@ -1515,14 +1516,14 @@ retry:
         "add_poll_obj: bag->pi was NULL. pi_new: %p (item(%s): %p, "
         "bag(%s): %p)",
         (void*)pi_new, poll_obj_string(item_type), (void*)item,
-        poll_obj_string(bag_type), (void*)bag);
+        poll_obj_string(bag_type), reinterpret_cast<void*>(bag));
   } else {
     pi_new = polling_island_merge(item->pi, bag->pi, &error);
     GRPC_POLLING_TRACE(
         "add_poll_obj: polling islands merged. pi_new: %p (item(%s): %p, "
         "bag(%s): %p)",
         (void*)pi_new, poll_obj_string(item_type), (void*)item,
-        poll_obj_string(bag_type), (void*)bag);
+        poll_obj_string(bag_type), reinterpret_cast<void*>(bag));
   }
 
   /* At this point, pi_new is the polling island that both item->pi and bag->pi
@@ -1562,7 +1563,8 @@ static void pollset_add_fd(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
  */
 
 static grpc_pollset_set* pollset_set_create(void) {
-  grpc_pollset_set* pss = (grpc_pollset_set*)gpr_malloc(sizeof(*pss));
+  grpc_pollset_set* pss =
+      reinterpret_cast<grpc_pollset_set*>(gpr_malloc(sizeof(*pss)));
   gpr_mu_init(&pss->po.mu);
   pss->po.pi = nullptr;
 #ifndef NDEBUG
@@ -1640,8 +1642,8 @@ void* grpc_pollset_get_polling_island(grpc_pollset* ps) {
 }
 
 bool grpc_are_polling_islands_equal(void* p, void* q) {
-  polling_island* p1 = (polling_island*)p;
-  polling_island* p2 = (polling_island*)q;
+  polling_island* p1 = reinterpret_cast<polling_island*>(p);
+  polling_island* p2 = reinterpret_cast<polling_island*>(q);
 
   /* Note: polling_island_lock_pair() may change p1 and p2 to point to the
      latest polling islands in their respective linked lists */

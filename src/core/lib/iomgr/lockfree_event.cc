@@ -204,7 +204,7 @@ void LockfreeEvent::SetReady(grpc_exec_ctx* exec_ctx) {
 
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_ERROR, "LockfreeEvent::SetReady: %p curr=%p", &state_,
-              (void*)curr);
+              reinterpret_cast<void*>(curr));
     }
 
     switch (curr) {
