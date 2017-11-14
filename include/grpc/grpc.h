@@ -428,7 +428,7 @@ GRPCAPI void grpc_server_destroy(grpc_server* server);
 
 /** Enable or disable a tracer.
 
-    TraceFlags (usually controlled by the environment variable GRPC_TRACE)
+    Tracers (usually controlled by the environment variable GRPC_TRACE)
     allow printf-style debugging on GRPC internals, and are useful for
     tracking down problems in the field.
 

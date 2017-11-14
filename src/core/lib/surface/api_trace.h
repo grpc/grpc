@@ -22,11 +22,11 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 
+extern grpc_core::TraceFlag grpc_api_trace;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern grpc_core::TraceFlag grpc_api_trace;
 
 /* Provide unwrapping macros because we're in C89 and variadic macros weren't
    introduced until C99... */
