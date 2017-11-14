@@ -1207,13 +1207,16 @@
       "grpc", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/core/handshake/server_ssl_common.h"
+    ], 
     "is_filegroup": false, 
     "language": "c", 
     "name": "handshake_server", 
     "src": [
       "test/core/handshake/server_ssl.cc", 
-      "test/core/handshake/server_ssl_common.cc"
+      "test/core/handshake/server_ssl_common.cc", 
+      "test/core/handshake/server_ssl_common.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1225,13 +1228,16 @@
       "grpc", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/core/handshake/server_ssl_common.h"
+    ], 
     "is_filegroup": false, 
     "language": "c", 
     "name": "handshake_server_with_readahead_handshaker", 
     "src": [
       "test/core/handshake/readahead_handshaker_server_ssl.cc", 
-      "test/core/handshake/server_ssl_common.cc"
+      "test/core/handshake/server_ssl_common.cc", 
+      "test/core/handshake/server_ssl_common.h"
     ], 
     "third_party": false, 
     "type": "target"

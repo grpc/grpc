@@ -2511,6 +2511,8 @@ targets:
 - name: handshake_server
   build: test
   language: c
+  headers:
+  - test/core/handshake/server_ssl_common.h
   src:
   - test/core/handshake/server_ssl.cc
   - test/core/handshake/server_ssl_common.cc
@@ -2527,6 +2529,8 @@ targets:
 - name: handshake_server_with_readahead_handshaker
   build: test
   language: c
+  headers:
+  - test/core/handshake/server_ssl_common.h
   src:
   - test/core/handshake/readahead_handshaker_server_ssl.cc
   - test/core/handshake/server_ssl_common.cc
