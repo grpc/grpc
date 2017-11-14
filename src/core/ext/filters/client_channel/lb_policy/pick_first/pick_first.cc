@@ -154,7 +154,8 @@ static void pf_cancel_picks_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
 static void start_picking_locked(grpc_exec_ctx* exec_ctx,
                                  pick_first_lb_policy* p) {
   p->started_picking = true;
-  if (p->subchannel_list != nullptr && p->subchannel_list->num_subchannels > 0) {
+  if (p->subchannel_list != nullptr &&
+      p->subchannel_list->num_subchannels > 0) {
     p->subchannel_list->checking_subchannel = 0;
     grpc_lb_subchannel_list_ref_for_connectivity_watch(
         p->subchannel_list, "connectivity_watch+start_picking");

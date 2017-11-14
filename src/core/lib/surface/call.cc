@@ -1909,8 +1909,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
         if (!prepare_application_metadata(
                 exec_ctx, call,
                 (int)op->data.send_status_from_server.trailing_metadata_count,
-                op->data.send_status_from_server.trailing_metadata, 1, 1, nullptr,
-                0)) {
+                op->data.send_status_from_server.trailing_metadata, 1, 1,
+                nullptr, 0)) {
           for (int n = 0; n < call->send_extra_metadata_count; n++) {
             GRPC_MDELEM_UNREF(exec_ctx, call->send_extra_metadata[n].md);
           }

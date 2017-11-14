@@ -198,7 +198,8 @@ static void cover_self(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp) {
                           grpc_executor_scheduler(GRPC_EXECUTOR_LONG)),
         GRPC_ERROR_NONE);
   } else {
-    while ((p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller)) == nullptr) {
+    while ((p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller)) ==
+           nullptr) {
       // spin waiting for backup poller
     }
   }

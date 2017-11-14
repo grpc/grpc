@@ -240,7 +240,8 @@ static void subchannel_data_cancel_connectivity_watch(
             (size_t)(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel, reason);
   }
-  grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel, nullptr, nullptr,
+  grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel, nullptr,
+                                         nullptr,
                                          &sd->connectivity_changed_closure);
 }
 

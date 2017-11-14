@@ -410,10 +410,11 @@ static void fail_helper_locked(grpc_exec_ctx* exec_ctx, inproc_stream* s,
     grpc_metadata_batch_init(&fake_md);
 
     inproc_stream* other = s->other_side;
-    grpc_metadata_batch* dest = (other == nullptr) ? &s->write_buffer_trailing_md
-                                                : &other->to_read_trailing_md;
+    grpc_metadata_batch* dest = (other == nullptr)
+                                    ? &s->write_buffer_trailing_md
+                                    : &other->to_read_trailing_md;
     bool* destfilled = (other == nullptr) ? &s->write_buffer_trailing_md_filled
-                                       : &other->to_read_trailing_md_filled;
+                                          : &other->to_read_trailing_md_filled;
     fill_in_metadata(exec_ctx, s, &fake_md, 0, dest, nullptr, destfilled);
     grpc_metadata_batch_destroy(exec_ctx, &fake_md);
 
@@ -612,10 +613,11 @@ static void op_state_machine(grpc_exec_ctx* exec_ctx, void* arg,
       (!s->send_message_op ||
        (s->t->is_client &&
         (s->trailing_md_recvd || s->to_read_trailing_md_filled)))) {
-    grpc_metadata_batch* dest = (other == nullptr) ? &s->write_buffer_trailing_md
-                                                : &other->to_read_trailing_md;
+    grpc_metadata_batch* dest = (other == nullptr)
+                                    ? &s->write_buffer_trailing_md
+                                    : &other->to_read_trailing_md;
     bool* destfilled = (other == nullptr) ? &s->write_buffer_trailing_md_filled
-                                       : &other->to_read_trailing_md_filled;
+                                          : &other->to_read_trailing_md_filled;
     if (*destfilled || s->trailing_md_sent) {
       // The buffer is already in use; that's an error!
       INPROC_LOG(GPR_DEBUG, "Extra trailing metadata %p", s);
@@ -827,10 +829,11 @@ static bool cancel_stream_locked(grpc_exec_ctx* exec_ctx, inproc_stream* s,
     grpc_metadata_batch_init(&cancel_md);
 
     inproc_stream* other = s->other_side;
-    grpc_metadata_batch* dest = (other == nullptr) ? &s->write_buffer_trailing_md
-                                                : &other->to_read_trailing_md;
+    grpc_metadata_batch* dest = (other == nullptr)
+                                    ? &s->write_buffer_trailing_md
+                                    : &other->to_read_trailing_md;
     bool* destfilled = (other == nullptr) ? &s->write_buffer_trailing_md_filled
-                                       : &other->to_read_trailing_md_filled;
+                                          : &other->to_read_trailing_md_filled;
     fill_in_metadata(exec_ctx, s, &cancel_md, 0, dest, nullptr, destfilled);
     grpc_metadata_batch_destroy(exec_ctx, &cancel_md);
 
@@ -914,12 +917,14 @@ static void perform_stream_op(grpc_exec_ctx* exec_ctx, grpc_transport* gt,
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown");
     }
     if (error == GRPC_ERROR_NONE && op->send_initial_metadata) {
-      grpc_metadata_batch* dest = (other == nullptr) ? &s->write_buffer_initial_md
-                                                  : &other->to_read_initial_md;
-      uint32_t* destflags = (other == nullptr) ? &s->write_buffer_initial_md_flags
-                                            : &other->to_read_initial_md_flags;
+      grpc_metadata_batch* dest = (other == nullptr)
+                                      ? &s->write_buffer_initial_md
+                                      : &other->to_read_initial_md;
+      uint32_t* destflags = (other == nullptr)
+                                ? &s->write_buffer_initial_md_flags
+                                : &other->to_read_initial_md_flags;
       bool* destfilled = (other == nullptr) ? &s->write_buffer_initial_md_filled
-                                         : &other->to_read_initial_md_filled;
+                                            : &other->to_read_initial_md_filled;
       if (*destfilled || s->initial_md_sent) {
         // The buffer is already in use; that's an error!
         INPROC_LOG(GPR_DEBUG, "Extra initial metadata %p", s);
