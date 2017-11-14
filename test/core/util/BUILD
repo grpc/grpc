@@ -103,6 +103,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "fuzzer_corpus_test",
+    testonly = 1,
     srcs = ["fuzzer_corpus_test.cc"],
     deps = [
         ":gpr_test_util",
