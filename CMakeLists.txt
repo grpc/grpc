@@ -462,6 +462,9 @@ endif()
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_server)
 endif()
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c handshake_server_with_readahead_handshaker)
+endif()
 add_dependencies(buildtests_c hpack_parser_test)
 add_dependencies(buildtests_c hpack_table_test)
 add_dependencies(buildtests_c http_parser_test)
@@ -7236,6 +7239,7 @@ if(_gRPC_PLATFORM_LINUX)
 
 add_executable(handshake_server
   test/core/handshake/server_ssl.cc
+  test/core/handshake/server_ssl_common.cc
 )
 
 
@@ -7254,6 +7258,40 @@ target_include_directories(handshake_server
 )
 
 target_link_libraries(handshake_server
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+add_executable(handshake_server_with_readahead_handshaker
+  test/core/handshake/readahead_handshaker_server_ssl.cc
+  test/core/handshake/server_ssl_common.cc
+)
+
+
+target_include_directories(handshake_server_with_readahead_handshaker
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+)
+
+target_link_libraries(handshake_server_with_readahead_handshaker
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
