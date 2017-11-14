@@ -30,17 +30,17 @@
 
 struct gpr_arena {
   gpr_mu mu;
-  void **ptrs;
+  void** ptrs;
   size_t num_ptrs;
 };
 
-gpr_arena *gpr_arena_create(size_t ignored_initial_size) {
-  gpr_arena *arena = gpr_zalloc(sizeof(*arena));
+gpr_arena* gpr_arena_create(size_t ignored_initial_size) {
+  gpr_arena* arena = gpr_zalloc(sizeof(*arena));
   gpr_mu_init(&arena->mu);
   return arena;
 }
 
-size_t gpr_arena_destroy(gpr_arena *arena) {
+size_t gpr_arena_destroy(gpr_arena* arena) {
   gpr_mu_destroy(&arena->mu);
   for (size_t i = 0; i < arena->num_ptrs; ++i) {
     gpr_free(arena->ptrs[i]);
@@ -50,11 +50,10 @@ size_t gpr_arena_destroy(gpr_arena *arena) {
   return 1;  // Value doesn't matter, since it won't be used.
 }
 
-void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
+void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   gpr_mu_lock(&arena->mu);
-  arena->ptrs =
-      gpr_realloc(arena->ptrs, sizeof(void *) * (arena->num_ptrs + 1));
-  void *retval = arena->ptrs[arena->num_ptrs++] = gpr_zalloc(size);
+  arena->ptrs = gpr_realloc(arena->ptrs, sizeof(void*) * (arena->num_ptrs + 1));
+  void* retval = arena->ptrs[arena->num_ptrs++] = gpr_zalloc(size);
   gpr_mu_unlock(&arena->mu);
   return retval;
 }

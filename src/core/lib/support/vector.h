@@ -51,7 +51,9 @@ class InlinedVector {
       T& value = *reinterpret_cast<T*>(inline_ + i);
       value.~T();
     }
-    for (size_t i = 0; i < size_ - N; ++i) { dynamic_[i].~T(); }
+    for (size_t i = 0; i < size_ - N; ++i) {
+      dynamic_[i].~T();
+    }
     gpr_free(dynamic_);
   }
 
@@ -75,7 +77,7 @@ class InlinedVector {
       if (size_ - N == dynamic_capacity_) {
         size_t new_capacity =
             dynamic_capacity_ == 0 ? 2 : dynamic_capacity_ * 2;
-        T* new_dynamic = static_cast<T*>(gpr_malloc( sizeof(T) * new_capacity));
+        T* new_dynamic = static_cast<T*>(gpr_malloc(sizeof(T) * new_capacity));
         for (size_t i = 0; i < dynamic_capacity_; ++i) {
           new (&new_dynamic[i]) T(std::move(dynamic_[i]));
           dynamic_[i].~T();

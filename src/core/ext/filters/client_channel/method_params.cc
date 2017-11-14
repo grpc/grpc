@@ -48,7 +48,7 @@ void method_parameters_unref(method_parameters* method_params) {
 namespace {
 
 bool parse_wait_for_ready(grpc_json* field,
-                                 wait_for_ready_value* wait_for_ready) {
+                          wait_for_ready_value* wait_for_ready) {
   if (field->type != GRPC_JSON_TRUE && field->type != GRPC_JSON_FALSE) {
     return false;
   }

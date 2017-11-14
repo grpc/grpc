@@ -21,8 +21,8 @@
 
 #include <grpc/status.h>
 
-#include <string.h>
 #include <stdbool.h>
+#include <string.h>
 
 /// If \a status_str is a valid status string, sets \a status to the
 /// corresponding status value and returns true.
@@ -40,9 +40,7 @@ class StatusCodeSet {
  public:
   bool Empty() const { return status_code_mask_ == 0; }
 
-  void Add(grpc_status_code status) {
-    status_code_mask_ |= (1 << status);
-  }
+  void Add(grpc_status_code status) { status_code_mask_ |= (1 << status); }
 
   bool Contains(grpc_status_code status) const {
     return status_code_mask_ & (1 << status);

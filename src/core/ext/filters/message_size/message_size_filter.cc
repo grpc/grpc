@@ -258,8 +258,8 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
       chand->method_limit_table =
           grpc_service_config_create_method_config_table(
               exec_ctx, service_config,
-              refcounted_message_size_limits_create_from_json,
-              NULL, refcounted_message_size_limits_ref,
+              refcounted_message_size_limits_create_from_json, NULL,
+              refcounted_message_size_limits_ref,
               refcounted_message_size_limits_unref);
       grpc_service_config_destroy(service_config);
     }

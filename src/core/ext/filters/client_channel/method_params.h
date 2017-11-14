@@ -47,8 +47,7 @@ typedef struct {
   retry_policy_params* retry_policy;
 } method_parameters;
 
-method_parameters* method_parameters_ref(
-    method_parameters* method_params);
+method_parameters* method_parameters_ref(method_parameters* method_params);
 
 void method_parameters_unref(method_parameters* method_params);
 

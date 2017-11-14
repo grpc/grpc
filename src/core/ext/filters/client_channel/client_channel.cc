@@ -2136,9 +2136,8 @@ static void add_subchannel_batches_for_pending_batches(
         retry_state->started_send_initial_metadata) {
       continue;
     }
-    if (batch->send_message &&
-        retry_state->started_send_message_count <
-            retry_state->completed_send_message_count) {
+    if (batch->send_message && retry_state->started_send_message_count <
+                                   retry_state->completed_send_message_count) {
       continue;
     }
     // Note that we only start send_trailing_metadata if we have no more

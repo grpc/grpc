@@ -1506,7 +1506,7 @@ static void perform_stream_op_locked(grpc_exec_ctx* exec_ctx, void* stream_op,
       }
     }
     if (op_payload->send_initial_metadata.peer_string != NULL) {
-      char *old_peer_string = (char *)gpr_atm_full_xchg(
+      char* old_peer_string = (char*)gpr_atm_full_xchg(
           op_payload->send_initial_metadata.peer_string,
           (gpr_atm)gpr_strdup(t->peer_string));
       gpr_free(old_peer_string);
@@ -1620,7 +1620,7 @@ static void perform_stream_op_locked(grpc_exec_ctx* exec_ctx, void* stream_op,
     s->trailing_metadata_available =
         op_payload->recv_initial_metadata.trailing_metadata_available;
     if (op_payload->recv_initial_metadata.peer_string != NULL) {
-      char *old_peer_string = (char *)gpr_atm_full_xchg(
+      char* old_peer_string = (char*)gpr_atm_full_xchg(
           op_payload->recv_initial_metadata.peer_string,
           (gpr_atm)gpr_strdup(t->peer_string));
       gpr_free(old_peer_string);

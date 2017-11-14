@@ -52,8 +52,7 @@ const char* grpc_service_config_get_lb_policy_name(
 grpc_slice_hash_table* grpc_service_config_create_method_config_table(
     grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json, void* user_data),
-    void* user_data,
-    void* (*ref_value)(void* value),
+    void* user_data, void* (*ref_value)(void* value),
     void (*unref_value)(grpc_exec_ctx* exec_ctx, void* value));
 
 /// A helper function for looking up values in the table returned by
