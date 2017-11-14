@@ -56,13 +56,13 @@ static int posix_socket_factory_socket(address_sorting_socket_factory* self,
 }
 
 static int posix_socket_factory_connect(address_sorting_socket_factory* self,
-                                        int sockfd, const char* addr,
+                                        int sockfd, const void* addr,
                                         size_t addrlen) {
   return connect(sockfd, (const struct sockaddr*)addr, (socklen_t)addrlen);
 }
 
 static int posix_socket_factory_getsockname(
-    address_sorting_socket_factory* self, int sockfd, char* addr,
+    address_sorting_socket_factory* self, int sockfd, void* addr,
     size_t* addrlen) {
   return getsockname(sockfd, (struct sockaddr*)addr, (socklen_t*)addrlen);
 }

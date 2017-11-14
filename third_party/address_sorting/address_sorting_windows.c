@@ -58,13 +58,13 @@ static int windows_socket_factory_socket(address_sorting_socket_factory* self,
 }
 
 static int windows_socket_factory_connect(address_sorting_socket_factory* self,
-                                          int sockfd, const char* addr,
+                                          int sockfd, const void* addr,
                                           size_t addrlen) {
   return -1;
 }
 
 static int windows_socket_factory_getsockname(
-    address_sorting_socket_factory* self, int sockfd, char* addr,
+    address_sorting_socket_factory* self, int sockfd, void* addr,
     size_t* addrlen) {
   return -1;
 }

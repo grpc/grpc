@@ -59,13 +59,13 @@ static int address_sorting_socket(int domain, int type, int protocol) {
                                                   domain, type, protocol);
 }
 
-static int address_sorting_connect(int sockfd, const char* addr,
+static int address_sorting_connect(int sockfd, const void* addr,
                                    size_t addrlen) {
   return g_current_socket_factory->vtable->connect(g_current_socket_factory,
                                                    sockfd, addr, addrlen);
 }
 
-static int address_sorting_getsockname(int sockfd, char* addr,
+static int address_sorting_getsockname(int sockfd, void* addr,
                                        size_t* addrlen) {
   return g_current_socket_factory->vtable->getsockname(g_current_socket_factory,
                                                        sockfd, addr, addrlen);
@@ -322,12 +322,12 @@ void address_sorting_rfc_6724_sort(address_sorting_sortable* sortables,
     int s = address_sorting_socket(
         address_sorting_get_family(&sortables[i].dest_addr), SOCK_DGRAM, 0);
     if (s != -1) {
-      if (address_sorting_connect(s, (const char*)&sortables[i].dest_addr.addr,
+      if (address_sorting_connect(s, &sortables[i].dest_addr.addr,
                                   sortables[i].dest_addr.len) != -1) {
         address_sorting_address found_source_addr;
         memset(&found_source_addr, 0, sizeof(found_source_addr));
         found_source_addr.len = sizeof(found_source_addr.addr);
-        if (address_sorting_getsockname(s, (char*)&found_source_addr.addr,
+        if (address_sorting_getsockname(s, &found_source_addr.addr,
                                         &found_source_addr.len) != -1) {
           sortables[i].source_addr_exists = 1;
           sortables[i].source_addr = found_source_addr;

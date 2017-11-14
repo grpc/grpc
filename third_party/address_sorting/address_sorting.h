@@ -77,9 +77,9 @@ typedef struct {
   int (*socket)(struct address_sorting_socket_factory* factory, int domain,
                 int type, int protocol);
   int (*connect)(struct address_sorting_socket_factory* factory, int sockfd,
-                 const char* addr, size_t addrlen);
+                 const void* addr, size_t addrlen);
   int (*getsockname)(struct address_sorting_socket_factory* factory, int sockfd,
-                     char* addr, size_t* addrlen);
+                     void* addr, size_t* addrlen);
   int (*close)(struct address_sorting_socket_factory* factory, int sockfd);
   void (*destroy)(struct address_sorting_socket_factory* factory);
 } address_sorting_socket_factory_vtable;
