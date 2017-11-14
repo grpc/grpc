@@ -94,7 +94,8 @@ int main(int argc, char** argv) {
   svr = fork();
   if (svr == 0) {
     const size_t num_args = 3 + !FLAGS_extra_server_flags.empty();
-    char** args = (char**)gpr_malloc(sizeof(char*) * num_args);
+    char** args =
+        reinterpret_cast<char**>(gpr_malloc(sizeof(char*) * num_args));
     memset(args, 0, sizeof(char*) * num_args);
     gpr_asprintf(&args[0], "%s/interop_server", root);
     gpr_asprintf(&args[1], "--port=%d", port);

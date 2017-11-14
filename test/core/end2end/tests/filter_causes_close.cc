@@ -33,7 +33,7 @@
 
 static bool g_enable_filter = false;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -153,7 +153,8 @@ static void test_request(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -199,8 +200,8 @@ typedef struct {
 
 static void recv_im_ready(grpc_exec_ctx* exec_ctx, void* arg,
                           grpc_error* error) {
-  grpc_call_element* elem = (grpc_call_element*)arg;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(arg);
+  call_data* calld = reinterpret_cast<call_data*>(elem->call_data);
   GRPC_CLOSURE_RUN(
       exec_ctx, calld->recv_im_ready,
       grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -212,7 +213,7 @@ static void recv_im_ready(grpc_exec_ctx* exec_ctx, void* arg,
 static void start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op_batch* op) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = reinterpret_cast<call_data*>(elem->call_data);
   if (op->recv_initial_metadata) {
     calld->recv_im_ready =
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;

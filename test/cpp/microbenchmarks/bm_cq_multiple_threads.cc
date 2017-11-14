@@ -38,7 +38,7 @@ namespace testing {
 
 auto& force_library_initialization = Library::get();
 
-static void* g_tag = (void*)(intptr_t)10;  // Some random number
+static void* g_tag = reinterpret_cast<void*>(10);  // Some random number
 static grpc_completion_queue* g_cq;
 static grpc_event_engine_vtable g_vtable;
 static const grpc_event_engine_vtable* g_old_vtable;
@@ -81,7 +81,8 @@ static grpc_error* pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
   gpr_mu_unlock(&ps->mu);
   GPR_ASSERT(grpc_cq_begin_op(g_cq, g_tag));
   grpc_cq_end_op(exec_ctx, g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
-                 (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
+                 reinterpret_cast<grpc_cq_completion*>(
+                     gpr_malloc(sizeof(grpc_cq_completion))));
   grpc_exec_ctx_flush(exec_ctx);
   gpr_mu_lock(&ps->mu);
   return GRPC_ERROR_NONE;

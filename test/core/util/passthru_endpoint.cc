@@ -57,7 +57,7 @@ struct passthru_endpoint {
 
 static void me_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                     grpc_slice_buffer* slices, grpc_closure* cb) {
-  half* m = (half*)ep;
+  half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
     GRPC_CLOSURE_SCHED(
@@ -79,7 +79,7 @@ static half* other_half(half* h) {
 
 static void me_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                      grpc_slice_buffer* slices, grpc_closure* cb) {
-  half* m = other_half((half*)ep);
+  half* m = other_half(reinterpret_cast<half*>(ep));
   gpr_mu_lock(&m->parent->mu);
   grpc_error* error = GRPC_ERROR_NONE;
   gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
@@ -113,7 +113,7 @@ static void me_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
 
 static void me_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                         grpc_error* why) {
-  half* m = (half*)ep;
+  half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
@@ -135,7 +135,7 @@ static void me_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
 }
 
 static void me_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
-  passthru_endpoint* p = ((half*)ep)->parent;
+  passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
   gpr_mu_lock(&p->mu);
   if (0 == --p->halves) {
     gpr_mu_unlock(&p->mu);
@@ -151,15 +151,16 @@ static void me_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
 }
 
 static char* me_get_peer(grpc_endpoint* ep) {
-  passthru_endpoint* p = ((half*)ep)->parent;
-  return ((half*)ep) == &p->client ? gpr_strdup("fake:mock_client_endpoint")
-                                   : gpr_strdup("fake:mock_server_endpoint");
+  passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
+  return (reinterpret_cast<half*>(ep)) == &p->client
+             ? gpr_strdup("fake:mock_client_endpoint")
+             : gpr_strdup("fake:mock_server_endpoint");
 }
 
 static int me_get_fd(grpc_endpoint* ep) { return -1; }
 
 static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
-  half* m = (half*)ep;
+  half* m = reinterpret_cast<half*>(ep);
   return m->resource_user;
 }
 
@@ -194,7 +195,8 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
                                    grpc_resource_quota* resource_quota,
                                    grpc_passthru_endpoint_stats* stats) {
-  passthru_endpoint* m = (passthru_endpoint*)gpr_malloc(sizeof(*m));
+  passthru_endpoint* m =
+      reinterpret_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
   m->halves = 2;
   m->shutdown = 0;
   m->stats = stats == nullptr ? &m->dummy_stats : stats;

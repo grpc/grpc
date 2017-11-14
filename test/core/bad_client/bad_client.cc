@@ -45,18 +45,18 @@ typedef struct {
 } thd_args;
 
 static void thd_func(void* arg) {
-  thd_args* a = (thd_args*)arg;
+  thd_args* a = reinterpret_cast<thd_args*>(arg);
   a->validator(a->server, a->cq, a->registered_method);
-  gpr_event_set(&a->done_thd, (void*)1);
+  gpr_event_set(&a->done_thd, reinterpret_cast<void*>(1));
 }
 
 static void done_write(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
-  thd_args* a = (thd_args*)arg;
-  gpr_event_set(&a->done_write, (void*)1);
+  thd_args* a = reinterpret_cast<thd_args*>(arg);
+  gpr_event_set(&a->done_write, reinterpret_cast<void*>(1));
 }
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
-  thd_args* a = (thd_args*)ts;
+  thd_args* a = reinterpret_cast<thd_args*>(ts);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_server_setup_transport(&exec_ctx, a->server, transport, nullptr,
                               grpc_server_get_channel_args(a->server));
@@ -64,8 +64,8 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
 }
 
 static void read_done(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
-  gpr_event* read_done = (gpr_event*)arg;
-  gpr_event_set(read_done, (void*)1);
+  gpr_event* read_done = reinterpret_cast<gpr_event*>(arg);
+  gpr_event_set(read_done, reinterpret_cast<void*>(1));
 }
 
 void grpc_run_bad_client_test(

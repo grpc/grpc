@@ -236,7 +236,8 @@ static void test(const char* name, void (*body)(void* m),
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec time_taken;
   gpr_timespec deadline = gpr_time_add(
-      start, gpr_time_from_micros((int64_t)timeout_s * 1000000, GPR_TIMESPAN));
+      start, gpr_time_from_micros(static_cast<int64_t>(timeout_s) * 1000000,
+                                  GPR_TIMESPAN));
   fprintf(stderr, "%s:", name);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
     iterations <<= 1;
@@ -257,8 +258,8 @@ static void test(const char* name, void (*body)(void* m),
     test_destroy(m);
   }
   time_taken = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start);
-  fprintf(stderr, " done %lld.%09d s\n", (long long)time_taken.tv_sec,
-          (int)time_taken.tv_nsec);
+  fprintf(stderr, " done %lld.%09d s\n",
+          static_cast<long long>(time_taken.tv_sec), (int)time_taken.tv_nsec);
 }
 
 /* Increment m->counter on each iteration; then mark thread as done.  */
@@ -397,7 +398,7 @@ static void statsinc(void* v /*=m*/) {
 }
 
 /* Increment m->refcount by m->incr_step for m->iterations times. Decrement
-   m->thread_refcount once, and if it reaches zero, set m->event to (void*)1;
+   m->thread_refcount once, and if it reaches zero, set m->event to reinterpret_cast<void*>(1);
    then mark thread as done.  */
 static void refinc(void* v /*=m*/) {
   struct test* m = static_cast<struct test*>(v);
@@ -410,7 +411,7 @@ static void refinc(void* v /*=m*/) {
     }
   }
   if (gpr_unref(&m->thread_refcount)) {
-    gpr_event_set(&m->event, (void*)1);
+    gpr_event_set(&m->event, reinterpret_cast<void*>(1));
   }
   mark_thread_done(m);
 }
@@ -423,8 +424,8 @@ static void refcheck(void* v /*=m*/) {
   int64_t n = m->iterations * m->threads * m->incr_step;
   int64_t i;
   GPR_ASSERT(gpr_event_wait(&m->event, gpr_inf_future(GPR_CLOCK_REALTIME)) ==
-             (void*)1);
-  GPR_ASSERT(gpr_event_get(&m->event) == (void*)1);
+             reinterpret_cast<void*>(1));
+  GPR_ASSERT(gpr_event_get(&m->event) == reinterpret_cast<void*>(1));
   for (i = 1; i != n; i++) {
     GPR_ASSERT(!gpr_unref(&m->refcount));
     m->counter++;

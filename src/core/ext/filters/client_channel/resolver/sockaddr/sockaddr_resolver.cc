@@ -70,7 +70,7 @@ static const grpc_resolver_vtable sockaddr_resolver_vtable = {
 
 static void sockaddr_shutdown_locked(grpc_exec_ctx* exec_ctx,
                                      grpc_resolver* resolver) {
-  sockaddr_resolver* r = (sockaddr_resolver*)resolver;
+  sockaddr_resolver* r = reinterpret_cast<sockaddr_resolver*>(resolver);
   if (r->next_completion != nullptr) {
     *r->target_result = nullptr;
     GRPC_CLOSURE_SCHED(
@@ -82,7 +82,7 @@ static void sockaddr_shutdown_locked(grpc_exec_ctx* exec_ctx,
 
 static void sockaddr_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
                                               grpc_resolver* resolver) {
-  sockaddr_resolver* r = (sockaddr_resolver*)resolver;
+  sockaddr_resolver* r = reinterpret_cast<sockaddr_resolver*>(resolver);
   r->published = false;
   sockaddr_maybe_finish_next_locked(exec_ctx, r);
 }
@@ -91,7 +91,7 @@ static void sockaddr_next_locked(grpc_exec_ctx* exec_ctx,
                                  grpc_resolver* resolver,
                                  grpc_channel_args** target_result,
                                  grpc_closure* on_complete) {
-  sockaddr_resolver* r = (sockaddr_resolver*)resolver;
+  sockaddr_resolver* r = reinterpret_cast<sockaddr_resolver*>(resolver);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
   r->target_result = target_result;
@@ -111,7 +111,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
 }
 
 static void sockaddr_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
-  sockaddr_resolver* r = (sockaddr_resolver*)gr;
+  sockaddr_resolver* r = reinterpret_cast<sockaddr_resolver*>(gr);
   grpc_lb_addresses_destroy(exec_ctx, r->addresses);
   grpc_channel_args_destroy(exec_ctx, r->channel_args);
   gpr_free(r);
@@ -177,8 +177,8 @@ static grpc_resolver* sockaddr_create(grpc_exec_ctx* exec_ctx,
     return nullptr;
   }
   /* Instantiate resolver. */
-  sockaddr_resolver* r =
-      (sockaddr_resolver*)gpr_zalloc(sizeof(sockaddr_resolver));
+  sockaddr_resolver* r = reinterpret_cast<sockaddr_resolver*>(
+      gpr_zalloc(sizeof(sockaddr_resolver)));
   r->addresses = addresses;
   r->channel_args = grpc_channel_args_copy(args->args);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable, args->combiner);

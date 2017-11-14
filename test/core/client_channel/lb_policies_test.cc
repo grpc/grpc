@@ -116,7 +116,7 @@ static void test_spec_destroy(test_spec* spec) {
   gpr_free(spec);
 }
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static gpr_timespec n_millis_time(int n) {
   return gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -327,7 +327,7 @@ static request_sequences perform_request(servers_fixture* f,
                 nullptr))
                .type != GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-      read_tag = ((int)(intptr_t)ev.tag);
+      read_tag = (static_cast<int>((intptr_t)ev.tag));
       const grpc_connectivity_state conn_state =
           grpc_channel_check_connectivity_state(client, 0);
       sequences.connectivity_states[iter_num] = conn_state;
@@ -699,7 +699,7 @@ static void verify_vanilla_round_robin(const servers_fixture* f,
       gpr_log(
           GPR_ERROR,
           "CONNECTION SEQUENCE FAILURE: expected %d, got %d at iteration #%d",
-          expected, actual, (int)i);
+          expected, actual, static_cast<int>(i));
       abort();
     }
   }
@@ -715,7 +715,7 @@ static void verify_vanilla_round_robin(const servers_fixture* f,
               "CONNECTIVITY STATUS SEQUENCE FAILURE: expected '%s', got '%s' "
               "at iteration #%d",
               grpc_connectivity_state_name(expected),
-              grpc_connectivity_state_name(actual), (int)i);
+              grpc_connectivity_state_name(actual), static_cast<int>(i));
       abort();
     }
   }
@@ -772,7 +772,7 @@ static void verify_vanishing_floor_round_robin(
               "CONNECTIVITY STATUS SEQUENCE FAILURE: expected '%s', got '%s' "
               "at iteration #%d",
               grpc_connectivity_state_name(expected),
-              grpc_connectivity_state_name(actual), (int)i);
+              grpc_connectivity_state_name(actual), static_cast<int>(i));
       abort();
     }
   }
@@ -791,7 +791,7 @@ static void verify_total_carnage_round_robin(const servers_fixture* f,
       gpr_log(
           GPR_ERROR,
           "CONNECTION SEQUENCE FAILURE: expected %d, got %d at iteration #%d",
-          expected, actual, (int)i);
+          expected, actual, static_cast<int>(i));
       abort();
     }
   }
@@ -806,7 +806,7 @@ static void verify_total_carnage_round_robin(const servers_fixture* f,
       gpr_log(GPR_ERROR,
               "CONNECTIVITY STATUS SEQUENCE FAILURE: got unexpected state "
               "'%s' at iteration #%d.",
-              grpc_connectivity_state_name(actual), (int)i);
+              grpc_connectivity_state_name(actual), static_cast<int>(i));
       abort();
     }
   }
@@ -866,7 +866,7 @@ static void verify_partial_carnage_round_robin(
       gpr_log(GPR_ERROR,
               "CONNECTIVITY STATUS SEQUENCE FAILURE: got unexpected state "
               "'%s' at iteration #%d.",
-              grpc_connectivity_state_name(actual), (int)i);
+              grpc_connectivity_state_name(actual), static_cast<int>(i));
       abort();
     }
   }
@@ -933,7 +933,8 @@ static void verify_rebirth_round_robin(const servers_fixture* f,
             "CONNECTIVITY STATUS SEQUENCE FAILURE: expected '%s', got '%s' "
             "at iteration #%d",
             grpc_connectivity_state_name(expected),
-            grpc_connectivity_state_name(actual), (int)num_iters - 1);
+            grpc_connectivity_state_name(actual),
+            static_cast<int>(num_iters) - 1);
     abort();
   }
 
@@ -951,7 +952,7 @@ static void verify_rebirth_round_robin(const servers_fixture* f,
         "GRPC_CHANNEL_TRANSIENT_FAILURE status not found. Got the following "
         "instead:");
     for (size_t i = 0; i < num_iters; i++) {
-      gpr_log(GPR_ERROR, "[%d]: %s", (int)i,
+      gpr_log(GPR_ERROR, "[%d]: %s", static_cast<int>(i),
               grpc_connectivity_state_name(static_cast<grpc_connectivity_state>(
                   sequences->connectivity_states[i])));
     }

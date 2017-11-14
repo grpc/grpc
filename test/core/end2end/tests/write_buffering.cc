@@ -28,7 +28,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -129,7 +129,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -139,7 +140,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -155,7 +157,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->data.send_message.send_message = request_payload1;
   op->flags = GRPC_WRITE_BUFFER_HINT;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -163,7 +166,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* recv message should not succeed yet - it's buffered at the client still */
@@ -172,7 +176,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv1;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(2), true);
@@ -187,7 +192,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->data.send_message.send_message = request_payload2;
   op->flags = 0;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(4), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* now the first send should match up with the first recv */
@@ -201,7 +207,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv2;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(104), true);
@@ -220,7 +227,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(4), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4),
+                                nullptr);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -237,7 +245,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(105), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(105),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(105), 1);

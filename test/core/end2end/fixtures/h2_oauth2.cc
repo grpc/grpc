@@ -65,7 +65,7 @@ static void process_oauth2_success(void* state, grpc_auth_context* ctx,
   test_processor_state* s;
 
   GPR_ASSERT(state != nullptr);
-  s = (test_processor_state*)state;
+  s = reinterpret_cast<test_processor_state*>(state);
   GPR_ASSERT(s->pseudo_refcount == 1);
   GPR_ASSERT(oauth2 != nullptr);
   grpc_auth_context_add_cstring_property(ctx, client_identity_property_name,
@@ -83,7 +83,7 @@ static void process_oauth2_failure(void* state, grpc_auth_context* ctx,
       find_metadata(md, md_count, "authorization", oauth2_md);
   test_processor_state* s;
   GPR_ASSERT(state != nullptr);
-  s = (test_processor_state*)state;
+  s = reinterpret_cast<test_processor_state*>(state);
   GPR_ASSERT(s->pseudo_refcount == 1);
   GPR_ASSERT(oauth2 != nullptr);
   cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
@@ -177,7 +177,7 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
 }
 
 static void processor_destroy(void* state) {
-  test_processor_state* s = (test_processor_state*)state;
+  test_processor_state* s = reinterpret_cast<test_processor_state*>(state);
   GPR_ASSERT((s->pseudo_refcount--) == 1);
   gpr_free(s);
 }

@@ -86,8 +86,8 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
     if (target_uri->path[0] != '\0') {  // "path" may be empty
       const grpc_slice key = grpc_slice_from_static_string(
           target_uri->path[0] == '/' ? target_uri->path + 1 : target_uri->path);
-      const char* value =
-          (const char*)grpc_slice_hash_table_get(targets_info, key);
+      const char* value = reinterpret_cast<const char*>(
+          grpc_slice_hash_table_get(targets_info, key));
       if (value != nullptr) target_name_to_check = gpr_strdup(value);
       grpc_slice_unref_internal(exec_ctx, key);
     }
@@ -128,8 +128,8 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
   if (new_args_from_connector != nullptr) {
     grpc_channel_args_destroy(exec_ctx, new_args_from_connector);
   }
-  grpc_subchannel_args* final_sc_args =
-      (grpc_subchannel_args*)gpr_malloc(sizeof(*final_sc_args));
+  grpc_subchannel_args* final_sc_args = reinterpret_cast<grpc_subchannel_args*>(
+      gpr_malloc(sizeof(*final_sc_args)));
   memcpy(final_sc_args, args, sizeof(*args));
   final_sc_args->args = new_args;
   return final_sc_args;
@@ -150,8 +150,8 @@ static grpc_subchannel* client_channel_factory_create_subchannel(
   grpc_subchannel* s =
       grpc_subchannel_create(exec_ctx, connector, subchannel_args);
   grpc_connector_unref(exec_ctx, connector);
-  grpc_channel_args_destroy(exec_ctx,
-                            (grpc_channel_args*)subchannel_args->args);
+  grpc_channel_args_destroy(
+      exec_ctx, const_cast<grpc_channel_args*>(subchannel_args->args));
   gpr_free(subchannel_args);
   return s;
 }
@@ -198,7 +198,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
   GRPC_API_TRACE(
       "grpc_secure_channel_create(creds=%p, target=%s, args=%p, "
       "reserved=%p)",
-      4, ((void*)creds, target, (void*)args, (void*)reserved));
+      4, ((void*)creds, target, (void*)args, reinterpret_cast<void*>(reserved)));
   GPR_ASSERT(reserved == nullptr);
   grpc_channel* channel = nullptr;
   if (creds != nullptr) {

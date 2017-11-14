@@ -91,7 +91,7 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
     gpr_log(GPR_ERROR,
             "Adding multiple AsyncGenericService is unsupported for now. "
             "Dropping the service %p",
-            (void*)service);
+            reinterpret_cast<void*>(service));
   } else {
     generic_service_ = service;
   }

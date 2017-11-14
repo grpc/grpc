@@ -29,13 +29,13 @@ grpc_tracer_flag grpc_call_combiner_trace =
 
 static grpc_error* decode_cancel_state_error(gpr_atm cancel_state) {
   if (cancel_state & 1) {
-    return (grpc_error*)(cancel_state & ~(gpr_atm)1);
+    return (grpc_error*)(cancel_state & ~static_cast<gpr_atm>(1));
   }
   return GRPC_ERROR_NONE;
 }
 
 static gpr_atm encode_cancel_state_error(grpc_error* error) {
-  return (gpr_atm)1 | (gpr_atm)error;
+  return static_cast<gpr_atm>(1) | (gpr_atm)error;
 }
 
 void grpc_call_combiner_init(grpc_call_combiner* call_combiner) {
@@ -70,8 +70,8 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
             call_combiner, closure DEBUG_FMT_ARGS, reason,
             grpc_error_string(error));
   }
-  size_t prev_size =
-      (size_t)gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)1);
+  size_t prev_size = static_cast<size_t>(
+      gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)1));
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
     gpr_log(GPR_DEBUG, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size + 1);
@@ -91,7 +91,8 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
     }
     // Queue was not empty, so add closure to queue.
     closure->error_data.error = error;
-    gpr_mpscq_push(&call_combiner->queue, (gpr_mpscq_node*)closure);
+    gpr_mpscq_push(&call_combiner->queue,
+                   reinterpret_cast<gpr_mpscq_node*>(closure));
   }
   GPR_TIMER_END("call_combiner_start", 0);
 }
@@ -105,8 +106,8 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
             "==> grpc_call_combiner_stop() [%p] [" DEBUG_FMT_STR "%s]",
             call_combiner DEBUG_FMT_ARGS, reason);
   }
-  size_t prev_size =
-      (size_t)gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)-1);
+  size_t prev_size = static_cast<size_t>(
+      gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)-1));
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
     gpr_log(GPR_DEBUG, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size - 1);
@@ -118,8 +119,8 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
         gpr_log(GPR_DEBUG, "  checking queue");
       }
       bool empty;
-      grpc_closure* closure = (grpc_closure*)gpr_mpscq_pop_and_check_end(
-          &call_combiner->queue, &empty);
+      grpc_closure* closure = reinterpret_cast<grpc_closure*>(
+          gpr_mpscq_pop_and_check_end(&call_combiner->queue, &empty));
       if (closure == nullptr) {
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with grpc_call_combiner_start().

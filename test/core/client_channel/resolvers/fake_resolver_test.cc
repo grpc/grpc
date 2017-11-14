@@ -68,7 +68,7 @@ void on_resolution_cb(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
       grpc_lb_addresses_cmp(actual_lb_addresses, expected_lb_addresses) == 0);
   grpc_channel_args_destroy(exec_ctx, res->resolver_result);
   grpc_channel_args_destroy(exec_ctx, res->expected_resolver_result);
-  gpr_event_set(&res->ev, (void*)1);
+  gpr_event_set(&res->ev, reinterpret_cast<void*>(1));
 }
 
 static void test_fake_resolver() {

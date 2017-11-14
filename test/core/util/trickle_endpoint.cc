@@ -47,7 +47,7 @@ typedef struct {
 
 static void te_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                     grpc_slice_buffer* slices, grpc_closure* cb) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   grpc_endpoint_read(exec_ctx, te->wrapped, slices, cb);
 }
 
@@ -63,7 +63,7 @@ static void maybe_call_write_cb_locked(grpc_exec_ctx* exec_ctx,
 
 static void te_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                      grpc_slice_buffer* slices, grpc_closure* cb) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   GPR_ASSERT(te->write_cb == nullptr);
   if (te->write_buffer.length == 0) {
@@ -80,26 +80,26 @@ static void te_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
 
 static void te_add_to_pollset(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                               grpc_pollset* pollset) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   grpc_endpoint_add_to_pollset(exec_ctx, te->wrapped, pollset);
 }
 
 static void te_add_to_pollset_set(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                                   grpc_pollset_set* pollset_set) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   grpc_endpoint_add_to_pollset_set(exec_ctx, te->wrapped, pollset_set);
 }
 
 static void te_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
                                        grpc_endpoint* ep,
                                        grpc_pollset_set* pollset_set) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   grpc_endpoint_delete_from_pollset_set(exec_ctx, te->wrapped, pollset_set);
 }
 
 static void te_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                         grpc_error* why) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   if (te->error == GRPC_ERROR_NONE) {
     te->error = GRPC_ERROR_REF(why);
@@ -110,7 +110,7 @@ static void te_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
 }
 
 static void te_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   grpc_endpoint_destroy(exec_ctx, te->wrapped);
   gpr_mu_destroy(&te->mu);
   grpc_slice_buffer_destroy_internal(exec_ctx, &te->write_buffer);
@@ -120,23 +120,23 @@ static void te_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
 }
 
 static grpc_resource_user* te_get_resource_user(grpc_endpoint* ep) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   return grpc_endpoint_get_resource_user(te->wrapped);
 }
 
 static char* te_get_peer(grpc_endpoint* ep) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   return grpc_endpoint_get_peer(te->wrapped);
 }
 
 static int te_get_fd(grpc_endpoint* ep) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   return grpc_endpoint_get_fd(te->wrapped);
 }
 
 static void te_finish_write(grpc_exec_ctx* exec_ctx, void* arg,
                             grpc_error* error) {
-  trickle_endpoint* te = (trickle_endpoint*)arg;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(arg);
   gpr_mu_lock(&te->mu);
   te->writing = false;
   grpc_slice_buffer_reset_and_unref(&te->writing_buffer);
@@ -156,7 +156,8 @@ static const grpc_endpoint_vtable vtable = {te_read,
 
 grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
                                             double bytes_per_second) {
-  trickle_endpoint* te = (trickle_endpoint*)gpr_malloc(sizeof(*te));
+  trickle_endpoint* te =
+      reinterpret_cast<trickle_endpoint*>(gpr_malloc(sizeof(*te)));
   te->base.vtable = &vtable;
   te->wrapped = wrap;
   te->bytes_per_second = bytes_per_second;
@@ -170,17 +171,17 @@ grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
 }
 
 static double ts2dbl(gpr_timespec s) {
-  return (double)s.tv_sec + 1e-9 * (double)s.tv_nsec;
+  return static_cast<double>(s.tv_sec) + 1e-9 * static_cast<double>(s.tv_nsec);
 }
 
 size_t grpc_trickle_endpoint_trickle(grpc_exec_ctx* exec_ctx,
                                      grpc_endpoint* ep) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   if (!te->writing && te->write_buffer.length > 0) {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     double elapsed = ts2dbl(gpr_time_sub(now, te->last_write));
-    size_t bytes = (size_t)(te->bytes_per_second * elapsed);
+    size_t bytes = static_cast<size_t>(te->bytes_per_second * elapsed);
     // gpr_log(GPR_DEBUG, "%lf elapsed --> %" PRIdPTR " bytes", elapsed, bytes);
     if (bytes > 0) {
       grpc_slice_buffer_move_first(&te->write_buffer,
@@ -200,7 +201,7 @@ size_t grpc_trickle_endpoint_trickle(grpc_exec_ctx* exec_ctx,
 }
 
 size_t grpc_trickle_get_backlog(grpc_endpoint* ep) {
-  trickle_endpoint* te = (trickle_endpoint*)ep;
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   size_t backlog = te->write_buffer.length;
   gpr_mu_unlock(&te->mu);

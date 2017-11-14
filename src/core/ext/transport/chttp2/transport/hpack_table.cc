@@ -173,7 +173,8 @@ void grpc_chttp2_hptbl_init(grpc_exec_ctx* exec_ctx, grpc_chttp2_hptbl* tbl) {
       GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
   tbl->max_entries = tbl->cap_entries =
       entries_for_bytes(tbl->current_table_bytes);
-  tbl->ents = (grpc_mdelem*)gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries);
+  tbl->ents = reinterpret_cast<grpc_mdelem*>(
+      gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries));
   memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
   for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
     tbl->static_ents[i - 1] = grpc_mdelem_from_slices(
@@ -221,14 +222,15 @@ static void evict1(grpc_exec_ctx* exec_ctx, grpc_chttp2_hptbl* tbl) {
                       GRPC_SLICE_LENGTH(GRPC_MDVALUE(first_ent)) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   GPR_ASSERT(elem_bytes <= tbl->mem_used);
-  tbl->mem_used -= (uint32_t)elem_bytes;
+  tbl->mem_used -= static_cast<uint32_t>(elem_bytes);
   tbl->first_ent = ((tbl->first_ent + 1) % tbl->cap_entries);
   tbl->num_ents--;
   GRPC_MDELEM_UNREF(exec_ctx, first_ent);
 }
 
 static void rebuild_ents(grpc_chttp2_hptbl* tbl, uint32_t new_cap) {
-  grpc_mdelem* ents = (grpc_mdelem*)gpr_malloc(sizeof(*ents) * new_cap);
+  grpc_mdelem* ents =
+      reinterpret_cast<grpc_mdelem*>(gpr_malloc(sizeof(*ents) * new_cap));
   uint32_t i;
 
   for (i = 0; i < tbl->num_ents; i++) {
@@ -326,7 +328,8 @@ grpc_error* grpc_chttp2_hptbl_add(grpc_exec_ctx* exec_ctx,
   }
 
   /* evict entries to ensure no overflow */
-  while (elem_bytes > (size_t)tbl->current_table_bytes - tbl->mem_used) {
+  while (elem_bytes >
+         static_cast<size_t>(tbl->current_table_bytes) - tbl->mem_used) {
     evict1(exec_ctx, tbl);
   }
 
@@ -336,7 +339,7 @@ grpc_error* grpc_chttp2_hptbl_add(grpc_exec_ctx* exec_ctx,
 
   /* update accounting values */
   tbl->num_ents++;
-  tbl->mem_used += (uint32_t)elem_bytes;
+  tbl->mem_used += static_cast<uint32_t>(elem_bytes);
   return GRPC_ERROR_NONE;
 }
 

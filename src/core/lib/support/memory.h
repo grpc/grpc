@@ -83,10 +83,10 @@ class Allocator {
   size_t max_size() const {
     return std::numeric_limits<size_type>::max() / sizeof(value_type);
   }
-  void construct(pointer p, const_reference val) { new ((void*)p) T(val); }
+  void construct(pointer p, const_reference val) { new (reinterpret_cast<void*>(p)) T(val); }
   template <class U, class... Args>
   void construct(U* p, Args&&... args) {
-    ::new ((void*)p) U(std::forward<Args>(args)...);
+    ::new (reinterpret_cast<void*>(p)) U(std::forward<Args>(args)...);
   }
   void destroy(pointer p) { p->~T(); }
   template <class U>

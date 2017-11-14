@@ -122,8 +122,8 @@ static bool add_original_filter(grpc_exec_ctx* exec_ctx,
                                 grpc_channel_stack_builder* builder,
                                 void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, (const grpc_channel_filter*)arg, set_arg_once_fn,
-      &g_original_fn_called);
+      builder, reinterpret_cast<const grpc_channel_filter*>(arg),
+      set_arg_once_fn, &g_original_fn_called);
 }
 
 static void init_plugin(void) {

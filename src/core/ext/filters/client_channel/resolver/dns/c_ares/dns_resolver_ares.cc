@@ -117,7 +117,7 @@ static const grpc_resolver_vtable dns_ares_resolver_vtable = {
 
 static void dns_ares_shutdown_locked(grpc_exec_ctx* exec_ctx,
                                      grpc_resolver* resolver) {
-  ares_dns_resolver* r = (ares_dns_resolver*)resolver;
+  ares_dns_resolver* r = reinterpret_cast<ares_dns_resolver*>(resolver);
   if (r->have_retry_timer) {
     grpc_timer_cancel(exec_ctx, &r->retry_timer);
   }
@@ -135,7 +135,7 @@ static void dns_ares_shutdown_locked(grpc_exec_ctx* exec_ctx,
 
 static void dns_ares_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
                                               grpc_resolver* resolver) {
-  ares_dns_resolver* r = (ares_dns_resolver*)resolver;
+  ares_dns_resolver* r = reinterpret_cast<ares_dns_resolver*>(resolver);
   if (!r->resolving) {
     grpc_backoff_reset(&r->backoff_state);
     dns_ares_start_resolving_locked(exec_ctx, r);
@@ -144,7 +144,7 @@ static void dns_ares_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
 
 static void dns_ares_on_retry_timer_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                            grpc_error* error) {
-  ares_dns_resolver* r = (ares_dns_resolver*)arg;
+  ares_dns_resolver* r = reinterpret_cast<ares_dns_resolver*>(arg);
   r->have_retry_timer = false;
   if (error == GRPC_ERROR_NONE) {
     if (!r->resolving) {
@@ -228,7 +228,7 @@ static char* choose_service_config(char* service_config_choice_json) {
 
 static void dns_ares_on_resolved_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                         grpc_error* error) {
-  ares_dns_resolver* r = (ares_dns_resolver*)arg;
+  ares_dns_resolver* r = reinterpret_cast<ares_dns_resolver*>(arg);
   grpc_channel_args* result = nullptr;
   GPR_ASSERT(r->resolving);
   r->resolving = false;
@@ -258,7 +258,8 @@ static void dns_ares_on_resolved_locked(grpc_exec_ctx* exec_ctx, void* arg,
           if (lb_policy_name != nullptr) {
             args_to_remove[num_args_to_remove++] = GRPC_ARG_LB_POLICY_NAME;
             new_args[num_args_to_add++] = grpc_channel_arg_string_create(
-                (char*)GRPC_ARG_LB_POLICY_NAME, (char*)lb_policy_name);
+                (char*)GRPC_ARG_LB_POLICY_NAME,
+                const_cast<char*>(lb_policy_name));
           }
         }
       }
@@ -302,7 +303,7 @@ static void dns_ares_next_locked(grpc_exec_ctx* exec_ctx,
                                  grpc_channel_args** target_result,
                                  grpc_closure* on_complete) {
   gpr_log(GPR_DEBUG, "dns_ares_next is called.");
-  ares_dns_resolver* r = (ares_dns_resolver*)resolver;
+  ares_dns_resolver* r = reinterpret_cast<ares_dns_resolver*>(resolver);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
   r->target_result = target_result;
@@ -344,7 +345,7 @@ static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
 
 static void dns_ares_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   gpr_log(GPR_DEBUG, "dns_ares_destroy");
-  ares_dns_resolver* r = (ares_dns_resolver*)gr;
+  ares_dns_resolver* r = reinterpret_cast<ares_dns_resolver*>(gr);
   if (r->resolved_result != nullptr) {
     grpc_channel_args_destroy(exec_ctx, r->resolved_result);
   }
@@ -363,8 +364,8 @@ static grpc_resolver* dns_ares_create(grpc_exec_ctx* exec_ctx,
   const char* path = args->uri->path;
   if (path[0] == '/') ++path;
   /* Create resolver. */
-  ares_dns_resolver* r =
-      (ares_dns_resolver*)gpr_zalloc(sizeof(ares_dns_resolver));
+  ares_dns_resolver* r = reinterpret_cast<ares_dns_resolver*>(
+      gpr_zalloc(sizeof(ares_dns_resolver)));
   grpc_resolver_init(&r->base, &dns_ares_resolver_vtable, args->combiner);
   if (0 != strcmp(args->uri->authority, "")) {
     r->dns_server = gpr_strdup(args->uri->authority);

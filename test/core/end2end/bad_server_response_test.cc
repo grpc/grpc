@@ -89,7 +89,7 @@ static struct rpc_state state;
 static grpc_closure on_read;
 static grpc_closure on_write;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void done_write(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
@@ -134,7 +134,7 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
-  test_tcp_server* server = (test_tcp_server*)arg;
+  test_tcp_server* server = reinterpret_cast<test_tcp_server*>(arg);
   GRPC_CLOSURE_INIT(&on_read, handle_read, nullptr, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_write, done_write, nullptr, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
@@ -197,8 +197,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(state.call, ops, (size_t)(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(state.call, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -237,7 +237,7 @@ typedef struct {
 } poll_args;
 
 static void actually_poll_server(void* arg) {
-  poll_args* pa = (poll_args*)arg;
+  poll_args* pa = reinterpret_cast<poll_args*>(arg);
   gpr_timespec deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
@@ -250,7 +250,7 @@ static void actually_poll_server(void* arg) {
     }
     test_tcp_server_poll(pa->server, 1);
   }
-  gpr_event_set(pa->signal_when_done, (void*)1);
+  gpr_event_set(pa->signal_when_done, reinterpret_cast<void*>(1));
   gpr_free(pa);
 }
 
@@ -259,7 +259,7 @@ static void poll_server_until_read_done(test_tcp_server* server,
   gpr_atm_rel_store(&state.done_atm, 0);
   state.write_done = 0;
   gpr_thd_id id;
-  poll_args* pa = (poll_args*)gpr_malloc(sizeof(*pa));
+  poll_args* pa = reinterpret_cast<poll_args*>(gpr_malloc(sizeof(*pa)));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
   gpr_thd_new(&id, actually_poll_server, pa, nullptr);

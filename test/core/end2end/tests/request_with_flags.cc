@@ -29,7 +29,7 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -150,7 +150,8 @@ static void test_invoke_request_with_flags(
   op->reserved = nullptr;
   op++;
   expectation = call_start_batch_expected_result;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(expectation == error);
 
   if (expectation == GRPC_CALL_OK) {

@@ -138,7 +138,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
           case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
           case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
-            success = (uint32_t)json_reader_set_number(reader);
+            success = static_cast<uint32_t>(json_reader_set_number(reader));
             if (!success) return GRPC_JSON_PARSE_ERROR;
             json_reader_string_clear(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
@@ -173,7 +173,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
             } else if ((c == ']') && !reader->in_array) {
               return GRPC_JSON_PARSE_ERROR;
             }
-            success = (uint32_t)json_reader_set_number(reader);
+            success = static_cast<uint32_t>(json_reader_set_number(reader));
             if (!success) return GRPC_JSON_PARSE_ERROR;
             json_reader_string_clear(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
@@ -417,8 +417,10 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
             } else {
               return GRPC_JSON_PARSE_ERROR;
             }
-            reader->unicode_char = (uint16_t)(reader->unicode_char << 4);
-            reader->unicode_char = (uint16_t)(reader->unicode_char | c);
+            reader->unicode_char =
+                static_cast<uint16_t>(reader->unicode_char << 4);
+            reader->unicode_char =
+                static_cast<uint16_t>(reader->unicode_char | c);
 
             switch (reader->state) {
               case GRPC_JSON_STATE_STRING_ESCAPE_U1:
@@ -445,9 +447,9 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
                   if (reader->unicode_high_surrogate == 0)
                     return GRPC_JSON_PARSE_ERROR;
                   utf32 = 0x10000;
-                  utf32 += (uint32_t)(
+                  utf32 += static_cast<uint32_t>(
                       (reader->unicode_high_surrogate - 0xd800) * 0x400);
-                  utf32 += (uint32_t)(reader->unicode_char - 0xdc00);
+                  utf32 += static_cast<uint32_t>(reader->unicode_char - 0xdc00);
                   json_reader_string_add_utf32(reader, utf32);
                   reader->unicode_high_surrogate = 0;
                 } else {

@@ -151,7 +151,8 @@ struct ArgsStruct {
 
 void ArgsInit(grpc_exec_ctx* exec_ctx, ArgsStruct* args) {
   gpr_event_init(&args->ev);
-  args->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  args->pollset =
+      reinterpret_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(exec_ctx, args->pollset_set, args->pollset);
@@ -205,7 +206,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     gpr_mu_unlock(args->mu);
     grpc_exec_ctx_finish(&exec_ctx);
   }
-  gpr_event_set(&args->ev, (void*)1);
+  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
 
 void CheckServiceConfigResultLocked(grpc_channel_args* channel_args,
@@ -237,14 +238,14 @@ void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
 
 void CheckResolverResultLocked(grpc_exec_ctx* exec_ctx, void* argsp,
                                grpc_error* err) {
-  ArgsStruct* args = (ArgsStruct*)argsp;
+  ArgsStruct* args = reinterpret_cast<ArgsStruct*>(argsp);
   grpc_channel_args* channel_args = args->channel_args;
   const grpc_arg* channel_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
   GPR_ASSERT(channel_arg != nullptr);
   GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
   grpc_lb_addresses* addresses =
-      (grpc_lb_addresses*)channel_arg->value.pointer.p;
+      reinterpret_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
   gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
           addresses->num_addresses, args->expected_addrs.size());
   GPR_ASSERT(addresses->num_addresses == args->expected_addrs.size());

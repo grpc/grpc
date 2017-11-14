@@ -177,9 +177,10 @@ class TransportFlowControl {
 
   int64_t remote_window() const { return remote_window_; }
   int64_t target_window() const {
-    return (uint32_t)GPR_MIN((int64_t)((1u << 31) - 1),
-                             announced_stream_total_over_incoming_window_ +
-                                 target_initial_window_size_);
+    return static_cast<uint32_t> GPR_MIN(
+        (int64_t)((1u << 31) - 1),
+        announced_stream_total_over_incoming_window_ +
+            target_initial_window_size_);
   }
   int64_t announced_window() const { return announced_window_; }
 

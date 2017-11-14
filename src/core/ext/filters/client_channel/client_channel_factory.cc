@@ -43,13 +43,14 @@ grpc_channel* grpc_client_channel_factory_create_channel(
 }
 
 static void* factory_arg_copy(void* factory) {
-  grpc_client_channel_factory_ref((grpc_client_channel_factory*)factory);
+  grpc_client_channel_factory_ref(
+      reinterpret_cast<grpc_client_channel_factory*>(factory));
   return factory;
 }
 
 static void factory_arg_destroy(grpc_exec_ctx* exec_ctx, void* factory) {
-  grpc_client_channel_factory_unref(exec_ctx,
-                                    (grpc_client_channel_factory*)factory);
+  grpc_client_channel_factory_unref(
+      exec_ctx, reinterpret_cast<grpc_client_channel_factory*>(factory));
 }
 
 static int factory_arg_cmp(void* factory1, void* factory2) {

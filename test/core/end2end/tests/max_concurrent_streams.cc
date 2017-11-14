@@ -28,7 +28,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -136,7 +136,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -166,7 +167,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -275,7 +277,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(301), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(301), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -293,7 +296,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -307,7 +311,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(401), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(401), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -325,7 +330,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(402), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   got_client_start = 0;
@@ -346,7 +352,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
        * both);
        * check this here */
       /* We'll get tag 303 or 403, we want 300, 400 */
-      live_call = ((int)(intptr_t)ev.tag) - 1;
+      live_call = (static_cast<int>((intptr_t)ev.tag)) - 1;
       got_client_start = 1;
     }
   }
@@ -372,7 +378,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s1, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s1, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -409,7 +416,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s2, ops, (size_t)(op - ops), tag(202), nullptr);
+  error = grpc_call_start_batch(s2, ops, static_cast<size_t>(op - ops),
+                                tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(live_call + 2), 1);
@@ -515,7 +523,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(301), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(301), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -533,7 +542,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
@@ -551,7 +561,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(401), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(401), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -569,7 +580,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(402), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   grpc_call_details_destroy(&call_details);
@@ -604,7 +616,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s2, ops, (size_t)(op - ops), tag(202), nullptr);
+  error = grpc_call_start_batch(s2, ops, static_cast<size_t>(op - ops),
+                                tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(402), 1);
@@ -710,7 +723,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(301), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(301), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -728,7 +742,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
@@ -746,7 +761,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(401), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(401), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -764,7 +780,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(402), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the second request is time out*/
@@ -797,7 +814,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s1, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s1, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(302), 1);

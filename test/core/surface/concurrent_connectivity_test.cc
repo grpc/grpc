@@ -54,14 +54,14 @@
 // end after the shorter delay_millis
 #define POLL_MILLIS_SHORT_TIMEOUTS 30000
 
-static void* tag(int n) { return (void*)(uintptr_t)n; }
-static int detag(void* p) { return (int)(uintptr_t)p; }
+static void* tag(int n) { return reinterpret_cast<void*>(n); }
+static int detag(void* p) { return static_cast<int>((uintptr_t)p); }
 
 void create_loop_destroy(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan =
-        grpc_insecure_channel_create((char*)addr, nullptr, nullptr);
+    grpc_channel* chan = grpc_insecure_channel_create(
+        reinterpret_cast<char*>(addr), nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
       gpr_timespec later_time =
@@ -93,7 +93,8 @@ struct server_thread_args {
 };
 
 void server_thread(void* vargs) {
-  struct server_thread_args* args = (struct server_thread_args*)vargs;
+  struct server_thread_args* args =
+      reinterpret_cast<struct server_thread_args*>(vargs);
   grpc_event ev;
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   ev = grpc_completion_queue_next(args->cq, deadline, nullptr);
@@ -105,7 +106,8 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* vargs, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
-  struct server_thread_args* args = (struct server_thread_args*)vargs;
+  struct server_thread_args* args =
+      reinterpret_cast<struct server_thread_args*>(vargs);
   grpc_endpoint_shutdown(exec_ctx, tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(exec_ctx, tcp);
@@ -116,11 +118,13 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* vargs, grpc_endpoint* tcp,
 }
 
 void bad_server_thread(void* vargs) {
-  struct server_thread_args* args = (struct server_thread_args*)vargs;
+  struct server_thread_args* args =
+      reinterpret_cast<struct server_thread_args*>(vargs);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
+  struct sockaddr_storage* addr =
+      reinterpret_cast<struct sockaddr_storage*>(resolved_addr.addr);
   int port;
   grpc_tcp_server* s;
   grpc_error* error = grpc_tcp_server_create(&exec_ctx, nullptr, nullptr, &s);
@@ -133,7 +137,7 @@ void bad_server_thread(void* vargs) {
   gpr_asprintf(&args->addr, "localhost:%d", port);
 
   grpc_tcp_server_start(&exec_ctx, s, &args->pollset, 1, on_connect, args);
-  gpr_event_set(&args->ready, (void*)1);
+  gpr_event_set(&args->ready, reinterpret_cast<void*>(1));
 
   gpr_mu_lock(args->mu);
   while (gpr_atm_acq_load(&args->stop) == 0) {
@@ -241,8 +245,8 @@ int run_concurrent_connectivity_test() {
 void watches_with_short_timeouts(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS_SHORT_TIMEOUTS; ++i) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan =
-        grpc_insecure_channel_create((char*)addr, nullptr, nullptr);
+    grpc_channel* chan = grpc_insecure_channel_create(
+        reinterpret_cast<char*>(addr), nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS_SHORT_TIMEOUTS; ++j) {
       gpr_timespec later_time =

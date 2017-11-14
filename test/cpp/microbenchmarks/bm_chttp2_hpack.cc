@@ -82,7 +82,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
         static_cast<uint32_t>(state.iterations()),
         true,
         false,
-        (size_t)1024,
+        static_cast<size_t>(1024),
         &stats,
     };
     grpc_chttp2_encode_header(&exec_ctx, &c, nullptr, 0, &b, &hopt, &outbuf);
@@ -133,7 +133,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
         static_cast<uint32_t>(state.iterations()),
         state.range(0) != 0,
         Fixture::kEnableTrueBinary,
-        (size_t)state.range(1),
+        static_cast<size_t>(state.range(1)),
         &stats,
     };
     grpc_chttp2_encode_header(&exec_ctx, &c, nullptr, 0, &b, &hopt, &outbuf);
@@ -787,7 +787,8 @@ static void OnHeaderNew(grpc_exec_ctx* exec_ctx, void* user_data,
       if (GRPC_MDELEM_IS_INTERNED(md)) {
         /* not already parsed: parse it now, and store the
          * result away */
-        cached_timeout = (grpc_millis*)gpr_malloc(sizeof(grpc_millis));
+        cached_timeout =
+            reinterpret_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
         *cached_timeout = timeout;
         grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
       }

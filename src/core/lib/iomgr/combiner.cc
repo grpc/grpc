@@ -75,7 +75,8 @@ static const grpc_closure_scheduler_vtable finally_scheduler = {
 static void offload(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error);
 
 grpc_combiner* grpc_combiner_create(void) {
-  grpc_combiner* lock = (grpc_combiner*)gpr_zalloc(sizeof(*lock));
+  grpc_combiner* lock =
+      reinterpret_cast<grpc_combiner*>(gpr_zalloc(sizeof(*lock)));
   gpr_ref_init(&lock->refs, 1);
   lock->scheduler.vtable = &scheduler;
   lock->finally_scheduler.vtable = &finally_scheduler;
@@ -196,7 +197,7 @@ static void move_next(grpc_exec_ctx* exec_ctx) {
 }
 
 static void offload(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
-  grpc_combiner* lock = (grpc_combiner*)arg;
+  grpc_combiner* lock = reinterpret_cast<grpc_combiner*>(arg);
   push_last_on_exec_ctx(exec_ctx, lock);
 }
 
@@ -253,7 +254,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx* exec_ctx) {
       return true;
     }
     GPR_TIMER_BEGIN("combiner.exec1", 0);
-    grpc_closure* cl = (grpc_closure*)n;
+    grpc_closure* cl = reinterpret_cast<grpc_closure*>(n);
     grpc_error* cl_err = cl->error_data.error;
 #ifndef NDEBUG
     cl->scheduled = false;
@@ -358,7 +359,7 @@ static void combiner_finally_exec(grpc_exec_ctx* exec_ctx,
 
 static void enqueue_finally(grpc_exec_ctx* exec_ctx, void* closure,
                             grpc_error* error) {
-  combiner_finally_exec(exec_ctx, (grpc_closure*)closure,
+  combiner_finally_exec(exec_ctx, reinterpret_cast<grpc_closure*>(closure),
                         GRPC_ERROR_REF(error));
 }
 

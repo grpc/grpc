@@ -150,10 +150,10 @@ static void test_jitter_backoff(void) {
                  grpc_exec_ctx_now(&exec_ctx) ==
              initial_backoff);
 
-  grpc_millis expected_next_lower_bound =
-      (grpc_millis)((double)current_backoff * (1 - jitter));
-  grpc_millis expected_next_upper_bound =
-      (grpc_millis)((double)current_backoff * (1 + jitter));
+  grpc_millis expected_next_lower_bound = static_cast<grpc_millis>(
+      static_cast<double>(current_backoff) * (1 - jitter));
+  grpc_millis expected_next_upper_bound = static_cast<grpc_millis>(
+      static_cast<double>(current_backoff) * (1 + jitter));
 
   for (int i = 0; i < 10000; i++) {
     next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
@@ -165,10 +165,10 @@ static void test_jitter_backoff(void) {
     GPR_ASSERT(timeout_millis <= expected_next_upper_bound);
     current_backoff = GPR_MIN(
         (grpc_millis)((double)current_backoff * multiplier), max_backoff);
-    expected_next_lower_bound =
-        (grpc_millis)((double)current_backoff * (1 - jitter));
-    expected_next_upper_bound =
-        (grpc_millis)((double)current_backoff * (1 + jitter));
+    expected_next_lower_bound = static_cast<grpc_millis>(
+        static_cast<double>(current_backoff) * (1 - jitter));
+    expected_next_upper_bound = static_cast<grpc_millis>(
+        static_cast<double>(current_backoff) * (1 + jitter));
     exec_ctx.now = next_deadlines.current_deadline;
   }
   grpc_exec_ctx_finish(&exec_ctx);

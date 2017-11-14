@@ -25,7 +25,7 @@
 
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 typedef struct {
   gpr_event started;
@@ -34,9 +34,9 @@ typedef struct {
 } child_events;
 
 static void child_thread(void* arg) {
-  child_events* ce = (child_events*)arg;
+  child_events* ce = reinterpret_cast<child_events*>(arg);
   grpc_event ev;
-  gpr_event_set(&ce->started, (void*)1);
+  gpr_event_set(&ce->started, reinterpret_cast<void*>(1));
   gpr_log(GPR_DEBUG, "verifying");
   ev = grpc_completion_queue_next(ce->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC),
                                   nullptr);

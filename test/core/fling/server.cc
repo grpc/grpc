@@ -58,7 +58,7 @@ static int was_cancelled = 2;
 static grpc_op unary_ops[6];
 static int got_sigint = 0;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,
@@ -111,7 +111,8 @@ static void handle_unary_method(void) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  error = grpc_call_start_batch(call, unary_ops, (size_t)(op - unary_ops),
+  error = grpc_call_start_batch(call, unary_ops,
+                                static_cast<size_t>(op - unary_ops),
                                 tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -188,7 +189,7 @@ int main(int argc, char** argv) {
   grpc_test_init(1, fake_argv);
 
   grpc_init();
-  srand((unsigned)clock());
+  srand(static_cast<unsigned>(clock()));
 
   cl = gpr_cmdline_create("fling server");
   gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);

@@ -62,7 +62,8 @@ struct cq_verifier {
 };
 
 cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
-  cq_verifier* v = (cq_verifier*)gpr_malloc(sizeof(cq_verifier));
+  cq_verifier* v =
+      reinterpret_cast<cq_verifier*>(gpr_malloc(sizeof(cq_verifier)));
   v->cq = cq;
   v->first_expectation = nullptr;
   return v;
@@ -306,7 +307,8 @@ void cq_verify_empty(cq_verifier* v) { cq_verify_empty_timeout(v, 1); }
 
 static void add(cq_verifier* v, const char* file, int line,
                 grpc_completion_type type, void* tag, bool success) {
-  expectation* e = (expectation*)gpr_malloc(sizeof(expectation));
+  expectation* e =
+      reinterpret_cast<expectation*>(gpr_malloc(sizeof(expectation)));
   e->type = type;
   e->file = file;
   e->line = line;

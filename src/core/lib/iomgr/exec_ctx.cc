@@ -125,7 +125,7 @@ static grpc_millis g_last_start_time_update;
 static gpr_timespec timespec_from_time_atm_pair(const time_atm_pair* src,
                                                 gpr_clock_type clock_type) {
   gpr_timespec time;
-  time.tv_nsec = (int32_t)gpr_atm_no_barrier_load(&src->tv_nsec);
+  time.tv_nsec = static_cast<int32_t> gpr_atm_no_barrier_load(&src->tv_nsec);
   time.tv_sec = (int64_t)gpr_atm_no_barrier_load(&src->tv_sec);
   time.clock_type = clock_type;
   return time;
@@ -138,7 +138,8 @@ static void time_atm_pair_store(time_atm_pair* dst, const gpr_timespec src) {
 
 void grpc_exec_ctx_global_init(void) {
   for (int i = 0; i < GPR_TIMESPAN; i++) {
-    time_atm_pair_store(&g_start_time[i], gpr_now((gpr_clock_type)i));
+    time_atm_pair_store(&g_start_time[i],
+                        gpr_now(static_cast<gpr_clock_type>(i)));
   }
   // allows uniform treatment in conversion functions
   time_atm_pair_store(&g_start_time[GPR_TIMESPAN], gpr_time_0(GPR_TIMESPAN));
@@ -150,23 +151,24 @@ static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
   gpr_timespec start_time =
       timespec_from_time_atm_pair(&g_start_time[ts.clock_type], ts.clock_type);
   ts = gpr_time_sub(ts, start_time);
-  double x =
-      GPR_MS_PER_SEC * (double)ts.tv_sec + (double)ts.tv_nsec / GPR_NS_PER_MS;
+  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
+             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x < 0) return 0;
   if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return (gpr_atm)x;
+  return static_cast<gpr_atm>(x);
 }
 
 static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
   gpr_timespec start_time =
       timespec_from_time_atm_pair(&g_start_time[ts.clock_type], ts.clock_type);
   ts = gpr_time_sub(ts, start_time);
-  double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
-             (double)ts.tv_nsec / GPR_NS_PER_MS +
-             (double)(GPR_NS_PER_SEC - 1) / (double)GPR_NS_PER_SEC;
+  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
+             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
+             static_cast<double>(GPR_NS_PER_SEC - 1) /
+                 static_cast<double>(GPR_NS_PER_SEC);
   if (x < 0) return 0;
   if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return (gpr_atm)x;
+  return static_cast<gpr_atm>(x);
 }
 
 grpc_millis grpc_exec_ctx_now(grpc_exec_ctx* exec_ctx) {

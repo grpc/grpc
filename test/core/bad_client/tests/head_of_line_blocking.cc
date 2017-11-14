@@ -65,7 +65,7 @@ static const char prefix[] =
     "\x01\x00\x00\x27\x10"
     "";
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* registered_method) {
@@ -115,9 +115,9 @@ int main(int argc, char** argv) {
 
   addbuf(prefix, sizeof(prefix) - 1);
   for (i = 0; i < NUM_FRAMES; i++) {
-    uint8_t hdr[9] = {(uint8_t)(FRAME_SIZE >> 16),
-                      (uint8_t)(FRAME_SIZE >> 8),
-                      (uint8_t)FRAME_SIZE,
+    uint8_t hdr[9] = {static_cast<uint8_t>(FRAME_SIZE >> 16),
+                      static_cast<uint8_t>(FRAME_SIZE >> 8),
+                      static_cast<uint8_t>(FRAME_SIZE),
                       0,
                       0,
                       0,

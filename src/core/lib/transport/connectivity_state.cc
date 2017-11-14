@@ -76,7 +76,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx* exec_ctx,
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker* tracker) {
   grpc_connectivity_state cur =
-      (grpc_connectivity_state)gpr_atm_no_barrier_load(
+      static_cast<grpc_connectivity_state> gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
   if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {
     gpr_log(GPR_DEBUG, "CONWATCH: %p %s: get %s", tracker, tracker->name,
@@ -88,7 +88,7 @@ grpc_connectivity_state grpc_connectivity_state_check(
 grpc_connectivity_state grpc_connectivity_state_get(
     grpc_connectivity_state_tracker* tracker, grpc_error** error) {
   grpc_connectivity_state cur =
-      (grpc_connectivity_state)gpr_atm_no_barrier_load(
+      static_cast<grpc_connectivity_state> gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
   if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {
     gpr_log(GPR_DEBUG, "CONWATCH: %p %s: get %s", tracker, tracker->name,
@@ -109,7 +109,7 @@ bool grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx* exec_ctx, grpc_connectivity_state_tracker* tracker,
     grpc_connectivity_state* current, grpc_closure* notify) {
   grpc_connectivity_state cur =
-      (grpc_connectivity_state)gpr_atm_no_barrier_load(
+      static_cast<grpc_connectivity_state> gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
   if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {
     if (current == nullptr) {
@@ -147,7 +147,8 @@ bool grpc_connectivity_state_notify_on_state_change(
                          GRPC_ERROR_REF(tracker->current_error));
     } else {
       grpc_connectivity_state_watcher* w =
-          (grpc_connectivity_state_watcher*)gpr_malloc(sizeof(*w));
+          reinterpret_cast<grpc_connectivity_state_watcher*>(
+              gpr_malloc(sizeof(*w)));
       w->current = current;
       w->notify = notify;
       w->next = tracker->watchers;
@@ -162,7 +163,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx* exec_ctx,
                                  grpc_connectivity_state state,
                                  grpc_error* error, const char* reason) {
   grpc_connectivity_state cur =
-      (grpc_connectivity_state)gpr_atm_no_barrier_load(
+      static_cast<grpc_connectivity_state> gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
   grpc_connectivity_state_watcher* w;
   if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {

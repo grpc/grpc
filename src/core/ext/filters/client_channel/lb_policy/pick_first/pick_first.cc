@@ -59,7 +59,7 @@ typedef struct {
 } pick_first_lb_policy;
 
 static void pf_destroy(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   GPR_ASSERT(p->subchannel_list == nullptr);
   GPR_ASSERT(p->latest_pending_subchannel_list == nullptr);
   GPR_ASSERT(p->pending_picks == nullptr);
@@ -67,7 +67,7 @@ static void pf_destroy(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   gpr_free(p);
   grpc_subchannel_index_unref();
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_DEBUG, "Pick First %p destroyed.", (void*)p);
+    gpr_log(GPR_DEBUG, "Pick First %p destroyed.", reinterpret_cast<void*>(p));
   }
 }
 
@@ -101,14 +101,14 @@ static void shutdown_locked(grpc_exec_ctx* exec_ctx, pick_first_lb_policy* p,
 }
 
 static void pf_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
-  shutdown_locked(exec_ctx, (pick_first_lb_policy*)pol,
+  shutdown_locked(exec_ctx, reinterpret_cast<pick_first_lb_policy*>(pol),
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown"));
 }
 
 static void pf_cancel_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
                                   grpc_connected_subchannel** target,
                                   grpc_error* error) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   pending_pick* pp = p->pending_picks;
   p->pending_picks = nullptr;
   while (pp != nullptr) {
@@ -132,7 +132,7 @@ static void pf_cancel_picks_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
                                    uint32_t initial_metadata_flags_mask,
                                    uint32_t initial_metadata_flags_eq,
                                    grpc_error* error) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   pending_pick* pp = p->pending_picks;
   p->pending_picks = nullptr;
   while (pp != nullptr) {
@@ -166,7 +166,7 @@ static void start_picking_locked(grpc_exec_ctx* exec_ctx,
 }
 
 static void pf_exit_idle_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   if (!p->started_picking) {
     start_picking_locked(exec_ctx, p);
   }
@@ -177,7 +177,7 @@ static int pf_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
                           grpc_connected_subchannel** target,
                           grpc_call_context_element* context, void** user_data,
                           grpc_closure* on_complete) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   // If we have a selected subchannel already, return synchronously.
   if (p->selected != nullptr) {
     *target = GRPC_CONNECTED_SUBCHANNEL_REF(p->selected->connected_subchannel,
@@ -188,7 +188,7 @@ static int pf_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
   if (!p->started_picking) {
     start_picking_locked(exec_ctx, p);
   }
-  pending_pick* pp = (pending_pick*)gpr_malloc(sizeof(*pp));
+  pending_pick* pp = reinterpret_cast<pending_pick*>(gpr_malloc(sizeof(*pp)));
   pp->next = p->pending_picks;
   pp->target = target;
   pp->initial_metadata_flags = pick_args->initial_metadata_flags;
@@ -210,7 +210,7 @@ static void destroy_unselected_subchannels_locked(grpc_exec_ctx* exec_ctx,
 
 static grpc_connectivity_state pf_check_connectivity_locked(
     grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol, grpc_error** error) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   return grpc_connectivity_state_get(&p->state_tracker, error);
 }
 
@@ -218,14 +218,14 @@ static void pf_notify_on_state_change_locked(grpc_exec_ctx* exec_ctx,
                                              grpc_lb_policy* pol,
                                              grpc_connectivity_state* current,
                                              grpc_closure* notify) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   grpc_connectivity_state_notify_on_state_change(exec_ctx, &p->state_tracker,
                                                  current, notify);
 }
 
 static void pf_ping_one_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
                                grpc_closure* closure) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   if (p->selected) {
     grpc_connected_subchannel_ping(exec_ctx, p->selected->connected_subchannel,
                                    closure);
@@ -240,7 +240,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
 
 static void pf_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
                              const grpc_lb_policy_args* args) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)policy;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(policy);
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
@@ -255,15 +255,15 @@ static void pf_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
       gpr_log(GPR_ERROR,
               "No valid LB addresses channel arg for Pick First %p update, "
               "ignoring.",
-              (void*)p);
+              reinterpret_cast<void*>(p));
     }
     return;
   }
   const grpc_lb_addresses* addresses =
-      (const grpc_lb_addresses*)arg->value.pointer.p;
+      reinterpret_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p received update with %lu addresses",
-            (void*)p, (unsigned long)addresses->num_addresses);
+            (void*)p, static_cast<unsigned long>(addresses->num_addresses));
   }
   grpc_lb_subchannel_list* subchannel_list = grpc_lb_subchannel_list_create(
       exec_ctx, &p->base, &grpc_lb_pick_first_trace, addresses, args,
@@ -341,7 +341,7 @@ static void pf_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
                 "Pick First %p Shutting down latest pending subchannel list "
                 "%p, about to be replaced by newer latest %p",
                 (void*)p, (void*)p->latest_pending_subchannel_list,
-                (void*)subchannel_list);
+                reinterpret_cast<void*>(subchannel_list));
       }
       grpc_lb_subchannel_list_shutdown_and_unref(
           exec_ctx, p->latest_pending_subchannel_list,
@@ -361,8 +361,9 @@ static void pf_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
 
 static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                            grpc_error* error) {
-  grpc_lb_subchannel_data* sd = (grpc_lb_subchannel_data*)arg;
-  pick_first_lb_policy* p = (pick_first_lb_policy*)sd->subchannel_list->policy;
+  grpc_lb_subchannel_data* sd = reinterpret_cast<grpc_lb_subchannel_data*>(arg);
+  pick_first_lb_policy* p =
+      reinterpret_cast<pick_first_lb_policy*>(sd->subchannel_list->policy);
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_DEBUG,
             "Pick First %p connectivity changed for subchannel %p (%" PRIuPTR
@@ -570,9 +571,10 @@ static grpc_lb_policy* create_pick_first(grpc_exec_ctx* exec_ctx,
                                          grpc_lb_policy_factory* factory,
                                          grpc_lb_policy_args* args) {
   GPR_ASSERT(args->client_channel_factory != nullptr);
-  pick_first_lb_policy* p = (pick_first_lb_policy*)gpr_zalloc(sizeof(*p));
+  pick_first_lb_policy* p =
+      reinterpret_cast<pick_first_lb_policy*>(gpr_zalloc(sizeof(*p)));
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_DEBUG, "Pick First %p created.", (void*)p);
+    gpr_log(GPR_DEBUG, "Pick First %p created.", reinterpret_cast<void*>(p));
   }
   pf_update_locked(exec_ctx, &p->base, args);
   grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner);

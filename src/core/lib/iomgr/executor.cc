@@ -95,8 +95,8 @@ void grpc_executor_set_threading(grpc_exec_ctx* exec_ctx, bool threading) {
     g_max_threads = GPR_MAX(1, 2 * gpr_cpu_num_cores());
     gpr_atm_no_barrier_store(&g_cur_threads, 1);
     gpr_tls_init(&g_this_thread_state);
-    g_thread_state =
-        (thread_state*)gpr_zalloc(sizeof(thread_state) * g_max_threads);
+    g_thread_state = reinterpret_cast<thread_state*>(
+        gpr_zalloc(sizeof(thread_state) * g_max_threads));
     for (size_t i = 0; i < g_max_threads; i++) {
       gpr_mu_init(&g_thread_state[i].mu);
       gpr_cv_init(&g_thread_state[i].cv);
@@ -144,7 +144,7 @@ void grpc_executor_shutdown(grpc_exec_ctx* exec_ctx) {
 }
 
 static void executor_thread(void* arg) {
-  thread_state* ts = (thread_state*)arg;
+  thread_state* ts = reinterpret_cast<thread_state*>(arg);
   gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
 
   grpc_exec_ctx exec_ctx =
@@ -154,7 +154,7 @@ static void executor_thread(void* arg) {
   for (;;) {
     if (GRPC_TRACER_ON(executor_trace)) {
       gpr_log(GPR_DEBUG, "EXECUTOR[%d]: step (sub_depth=%" PRIdPTR ")",
-              (int)(ts - g_thread_state), subtract_depth);
+              static_cast<int>(ts - g_thread_state), subtract_depth);
     }
     gpr_mu_lock(&ts->mu);
     ts->depth -= subtract_depth;
@@ -165,7 +165,7 @@ static void executor_thread(void* arg) {
     if (ts->shutdown) {
       if (GRPC_TRACER_ON(executor_trace)) {
         gpr_log(GPR_DEBUG, "EXECUTOR[%d]: shutdown",
-                (int)(ts - g_thread_state));
+                static_cast<int>(ts - g_thread_state));
       }
       gpr_mu_unlock(&ts->mu);
       break;
@@ -175,7 +175,8 @@ static void executor_thread(void* arg) {
     ts->elems = GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
     if (GRPC_TRACER_ON(executor_trace)) {
-      gpr_log(GPR_DEBUG, "EXECUTOR[%d]: execute", (int)(ts - g_thread_state));
+      gpr_log(GPR_DEBUG, "EXECUTOR[%d]: execute",
+              static_cast<int>(ts - g_thread_state));
     }
 
     grpc_exec_ctx_invalidate_now(&exec_ctx);
@@ -194,7 +195,8 @@ static void executor_push(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
   }
   do {
     retry_push = false;
-    size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
+    size_t cur_thread_count =
+        static_cast<size_t> gpr_atm_no_barrier_load(&g_cur_threads);
     if (cur_thread_count == 0) {
       if (GRPC_TRACER_ON(executor_trace)) {
 #ifndef NDEBUG
@@ -223,7 +225,7 @@ static void executor_push(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
             GPR_DEBUG,
             "EXECUTOR: try to schedule %p (%s) (created %s:%d) to thread %d",
             closure, is_short ? "short" : "long", closure->file_created,
-            closure->line_created, (int)(ts - g_thread_state));
+            closure->line_created, static_cast<int>(ts - g_thread_state));
 #else
         gpr_log(GPR_DEBUG, "EXECUTOR: try to schedule %p (%s) to thread %d",
                 closure, is_short ? "short" : "long",
@@ -237,7 +239,7 @@ static void executor_push(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
         // guarantee no starvation)
         // ... spin through queues and try again
         gpr_mu_unlock(&ts->mu);
-        size_t idx = (size_t)(ts - g_thread_state);
+        size_t idx = static_cast<size_t>(ts - g_thread_state);
         ts = &g_thread_state[(idx + 1) % cur_thread_count];
         if (ts == orig_ts) {
           retry_push = true;
@@ -259,7 +261,8 @@ static void executor_push(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
       break;
     }
     if (try_new_thread && gpr_spinlock_trylock(&g_adding_thread_lock)) {
-      cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
+      cur_thread_count =
+          static_cast<size_t> gpr_atm_no_barrier_load(&g_cur_threads);
       if (cur_thread_count < g_max_threads) {
         gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
 

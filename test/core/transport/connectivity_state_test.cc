@@ -24,7 +24,7 @@
 
 #include "test/core/util/test_config.h"
 
-#define THE_ARG ((void*)(size_t)0xcafebabe)
+#define THE_ARG (reinterpret_cast<void*>(0xcafebabe))
 
 int g_counter;
 

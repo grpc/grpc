@@ -210,7 +210,7 @@ static void BM_LameChannelCallCreateCore(benchmark::State& state) {
 
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
                                                      (size_t)(op - ops),
-                                                     (void*)1, nullptr));
+                                                     reinterpret_cast<void*>(1), nullptr));
     grpc_event ev = grpc_completion_queue_next(
         cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     GPR_ASSERT(ev.type != GRPC_QUEUE_SHUTDOWN);
@@ -289,7 +289,7 @@ static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State& state) {
 
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
                                                      (size_t)(op - ops),
-                                                     (void*)1, nullptr));
+                                                     reinterpret_cast<void*>(1), nullptr));
     grpc_event ev = grpc_completion_queue_next(
         cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     GPR_ASSERT(ev.type != GRPC_QUEUE_SHUTDOWN);

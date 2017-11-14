@@ -30,7 +30,7 @@
 
 grpc_closure transport_op_cb;
 
-static void* tag(intptr_t x) { return (void*)x; }
+static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
 void verify_connectivity(grpc_exec_ctx* exec_ctx, void* arg,
                          grpc_error* error) {
@@ -115,7 +115,8 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */
@@ -131,7 +132,8 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(2), nullptr);
+  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
+                                tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */

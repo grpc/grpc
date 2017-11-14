@@ -30,7 +30,7 @@
   (h) ^= (h) >> 16;
 
 uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
-  const uint8_t* data = (const uint8_t*)key;
+  const uint8_t* data = reinterpret_cast<const uint8_t*>(key);
   const size_t nblocks = len / 4;
   int i;
 
@@ -40,11 +40,11 @@ uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
   const uint32_t c1 = 0xcc9e2d51;
   const uint32_t c2 = 0x1b873593;
 
-  const uint32_t* blocks = ((const uint32_t*)key) + nblocks;
-  const uint8_t* tail = (const uint8_t*)(data + nblocks * 4);
+  const uint32_t* blocks = (reinterpret_cast<const uint32_t*>(key)) + nblocks;
+  const uint8_t* tail = (data + nblocks * 4);
 
   /* body */
-  for (i = -(int)nblocks; i; i++) {
+  for (i = -static_cast<int>(nblocks); i; i++) {
     memcpy(&k1, blocks + i, sizeof(uint32_t));
 
     k1 *= c1;
@@ -61,10 +61,10 @@ uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
   /* tail */
   switch (len & 3) {
     case 3:
-      k1 ^= ((uint32_t)tail[2]) << 16;
+      k1 ^= (static_cast<uint32_t>(tail[2])) << 16;
     /* fallthrough */
     case 2:
-      k1 ^= ((uint32_t)tail[1]) << 8;
+      k1 ^= (static_cast<uint32_t>(tail[1])) << 8;
     /* fallthrough */
     case 1:
       k1 ^= tail[0];
@@ -75,7 +75,7 @@ uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
   };
 
   /* finalization */
-  h1 ^= (uint32_t)len;
+  h1 ^= static_cast<uint32_t>(len);
   FMIX32(h1);
   return h1;
 }

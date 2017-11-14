@@ -256,7 +256,7 @@ static grpc_end2end_test_config_wrapper configs[] = {
              BAD_CERT_PAIR, FAIL),
 };
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static gpr_timespec n_seconds_time(int n) {
   return grpc_timeout_seconds_to_deadline(n);
@@ -320,7 +320,8 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), expected_result == SUCCESS);

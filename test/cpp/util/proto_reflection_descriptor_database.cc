@@ -45,7 +45,8 @@ ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
     if (!status.ok()) {
       gpr_log(GPR_INFO,
               "ServerReflectionInfo rpc failed. Error code: %d, details: %s",
-              (int)status.error_code(), status.error_message().c_str());
+              static_cast<int>(status.error_code()),
+              status.error_message().c_str());
     }
   }
 }

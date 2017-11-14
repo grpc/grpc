@@ -78,9 +78,9 @@ static bool valid_hex(const uint8_t* p, const uint8_t* end) {
 }
 
 static uint8_t dehex(uint8_t c) {
-  if (c >= '0' && c <= '9') return (uint8_t)(c - '0');
-  if (c >= 'A' && c <= 'F') return (uint8_t)(c - 'A' + 10);
-  if (c >= 'a' && c <= 'f') return (uint8_t)(c - 'a' + 10);
+  if (c >= '0' && c <= '9') return static_cast<uint8_t>(c - '0');
+  if (c >= 'A' && c <= 'F') return static_cast<uint8_t>(c - 'A' + 10);
+  if (c >= 'a' && c <= 'f') return static_cast<uint8_t>(c - 'a' + 10);
   GPR_UNREACHABLE_CODE(return 255);
 }
 
@@ -114,7 +114,7 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
   uint8_t* q = GRPC_SLICE_START_PTR(*slice_out);
   while (p != in_end) {
     if (*p == '%') {
-      *q++ = (uint8_t)(dehex(p[1]) << 4) | (dehex(p[2]));
+      *q++ = static_cast<uint8_t>(dehex(p[1]) << 4) | (dehex(p[2]));
       p += 3;
     } else {
       *q++ = *p++;
@@ -155,7 +155,7 @@ grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
       if (!valid_hex(p + 1, in_end) || !valid_hex(p + 2, in_end)) {
         *q++ = *p++;
       } else {
-        *q++ = (uint8_t)(dehex(p[1]) << 4) | (dehex(p[2]));
+        *q++ = static_cast<uint8_t>(dehex(p[1]) << 4) | (dehex(p[2]));
         p += 3;
       }
     } else {

@@ -24,7 +24,9 @@ static void* fake_malloc(size_t size) { return (void*)size; }
 
 static void* fake_realloc(void* addr, size_t size) { return (void*)size; }
 
-static void fake_free(void* addr) { *((intptr_t*)addr) = (intptr_t)0xdeadd00d; }
+static void fake_free(void* addr) {
+  *(reinterpret_cast<intptr_t*>(addr)) = static_cast<intptr_t>(0xdeadd00d);
+}
 
 static void test_custom_allocs() {
   const gpr_allocation_functions default_fns = gpr_get_allocation_functions();
@@ -34,8 +36,9 @@ static void test_custom_allocs() {
                                   fake_free};
 
   gpr_set_allocation_functions(fns);
-  GPR_ASSERT((void*)(size_t)0xdeadbeef == gpr_malloc(0xdeadbeef));
-  GPR_ASSERT((void*)(size_t)0xcafed00d == gpr_realloc(nullptr, 0xcafed00d));
+  GPR_ASSERT(reinterpret_cast<void*>(0xdeadbeef) == gpr_malloc(0xdeadbeef));
+  GPR_ASSERT(reinterpret_cast<void*>(0xcafed00d) ==
+             gpr_realloc(nullptr, 0xcafed00d));
 
   gpr_free(&addr_to_free);
   GPR_ASSERT(addr_to_free == (intptr_t)0xdeadd00d);
@@ -44,7 +47,7 @@ static void test_custom_allocs() {
   gpr_set_allocation_functions(default_fns);
   GPR_ASSERT((void*)sizeof(*i) !=
              (i = static_cast<char*>(gpr_malloc(sizeof(*i)))));
-  GPR_ASSERT((void*)2 != (i = static_cast<char*>(gpr_realloc(i, 2))));
+  GPR_ASSERT(reinterpret_cast<void*>(2) != (i = static_cast<char*>(gpr_realloc(i, 2))));
   gpr_free(i);
 }
 

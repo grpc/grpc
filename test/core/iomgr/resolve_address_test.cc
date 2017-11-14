@@ -92,7 +92,7 @@ static void poll_pollset_until_request_done(args_struct* args) {
     gpr_mu_unlock(args->mu);
     grpc_exec_ctx_flush(&exec_ctx);
   }
-  gpr_event_set(&args->ev, (void*)1);
+  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

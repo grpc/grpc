@@ -52,7 +52,7 @@ static gpr_timespec gpr_from_timespec(struct timespec ts,
    */
   gpr_timespec rv;
   rv.tv_sec = ts.tv_sec;
-  rv.tv_nsec = (int32_t)ts.tv_nsec;
+  rv.tv_nsec = static_cast<int32_t>(ts.tv_nsec);
   rv.clock_type = clock_type;
   return rv;
 }

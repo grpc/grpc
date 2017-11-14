@@ -62,7 +62,7 @@ void bad_ssl_run(grpc_server* server) {
   grpc_server_start(server);
 
   error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, (void*)1);
+                                   &request_metadata_recv, cq, cq, reinterpret_cast<void*>(1));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   signal(SIGINT, sigint_handler);
@@ -86,7 +86,7 @@ void bad_ssl_run(grpc_server* server) {
         nullptr);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        GPR_ASSERT(ev.tag == (void*)1);
+        GPR_ASSERT(ev.tag == reinterpret_cast<void*>(1));
         GPR_ASSERT(ev.success == 0);
         break;
       case GRPC_QUEUE_SHUTDOWN:

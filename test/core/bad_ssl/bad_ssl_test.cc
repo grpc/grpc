@@ -32,7 +32,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
   gpr_subprocess* svr;
   /* figure out where we are */
   if (lslash) {
-    memcpy(root, me, (size_t)(lslash - me));
+    memcpy(root, me, static_cast<size_t>(lslash - me));
     root[lslash - me] = 0;
   } else {
     strcpy(root, ".");
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
   tmp = lunder - 1;
   while (*tmp != '_') tmp--;
   tmp++;
-  memcpy(test, tmp, (size_t)(lunder - tmp));
+  memcpy(test, tmp, static_cast<size_t>(lunder - tmp));
   /* start the server */
   gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test,
                gpr_subprocess_binary_extension());

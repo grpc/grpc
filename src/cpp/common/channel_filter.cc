@@ -79,7 +79,7 @@ namespace {
 
 bool MaybeAddFilter(grpc_exec_ctx* exec_ctx,
                     grpc_channel_stack_builder* builder, void* arg) {
-  const FilterRecord& filter = *(FilterRecord*)arg;
+  const FilterRecord& filter = *reinterpret_cast<FilterRecord*>(arg);
   if (filter.include_filter) {
     const grpc_channel_args* args =
         grpc_channel_stack_builder_get_channel_arguments(builder);

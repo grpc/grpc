@@ -206,7 +206,8 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
   GRPC_API_TRACE("grpc_compression_algorithm_for_level(level=%d)", 1,
                  ((int)level));
   if (level > GRPC_COMPRESS_LEVEL_HIGH) {
-    gpr_log(GPR_ERROR, "Unknown compression level %d.", (int)level);
+    gpr_log(GPR_ERROR, "Unknown compression level %d.",
+            static_cast<int>(level));
     abort();
   }
 
@@ -261,7 +262,8 @@ grpc_stream_compression_algorithm_for_level(
   GRPC_API_TRACE("grpc_stream_compression_algorithm_for_level(level=%d)", 1,
                  ((int)level));
   if (level > GRPC_STREAM_COMPRESS_LEVEL_HIGH) {
-    gpr_log(GPR_ERROR, "Unknown compression level %d.", (int)level);
+    gpr_log(GPR_ERROR, "Unknown compression level %d.",
+            static_cast<int>(level));
     abort();
   }
 
