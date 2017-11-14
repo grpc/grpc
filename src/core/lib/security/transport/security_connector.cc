@@ -93,10 +93,10 @@ const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
   if (peer == nullptr) return nullptr;
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* property = &peer->properties[i];
-    if (name == NULL && property->name == NULL) {
+    if (name == nullptr && property->name == nullptr) {
       return property;
     }
-    if (name != NULL && property->name != NULL &&
+    if (name != nullptr && property->name != nullptr &&
         strcmp(property->name, name) == 0) {
       return property;
     }
@@ -271,7 +271,7 @@ grpc_security_connector* grpc_security_connector_find_in_args(
   for (i = 0; i < args->num_args; i++) {
     grpc_security_connector* sc =
         grpc_security_connector_from_arg(&args->args[i]);
-    if (sc != NULL) return sc;
+    if (sc != nullptr) return sc;
   }
   return nullptr;
 }
@@ -333,7 +333,7 @@ static bool fake_check_target(const char* target_type, const char* target,
   gpr_string_split(set_str, ",", &set, &set_size);
   bool found = false;
   for (size_t i = 0; i < set_size; ++i) {
-    if (set[i] != NULL && strcmp(target, set[i]) == 0) found = true;
+    if (set[i] != nullptr && strcmp(target, set[i]) == 0) found = true;
   }
   for (size_t i = 0; i < set_size; ++i) {
     gpr_free(set[i]);
@@ -613,7 +613,7 @@ static void ssl_channel_add_handshakers(grpc_exec_ctx* exec_ctx,
 }
 
 static const char** fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
-  GPR_ASSERT(num_alpn_protocols != NULL);
+  GPR_ASSERT(num_alpn_protocols != nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const char** alpn_protocol_strings =
       (const char**)gpr_malloc(sizeof(const char*) * (*num_alpn_protocols));
@@ -752,10 +752,10 @@ grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer) {
       GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
-    if (prop->name == NULL) continue;
+    if (prop->name == nullptr) continue;
     if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
       /* If there is no subject alt name, have the CN as the identity. */
-      if (peer_identity_property_name == NULL) {
+      if (peer_identity_property_name == nullptr) {
         peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
       }
       grpc_auth_context_add_property(ctx, GRPC_X509_CN_PROPERTY_NAME,
@@ -869,7 +869,7 @@ tsi_peer tsi_shallow_peer_from_ssl_auth_context(
   memset(&peer, 0, sizeof(peer));
 
   it = grpc_auth_context_property_iterator(auth_context);
-  while (grpc_auth_property_iterator_next(&it) != NULL) max_num_props++;
+  while (grpc_auth_property_iterator_next(&it) != nullptr) max_num_props++;
 
   if (max_num_props > 0) {
     peer.properties = (tsi_peer_property*)gpr_malloc(max_num_props *
@@ -948,7 +948,7 @@ static grpc_slice compute_default_pem_root_certs_once(void) {
 
   /* Try overridden roots if needed. */
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
-  if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != NULL) {
+  if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != nullptr) {
     char* pem_root_certs = nullptr;
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
@@ -985,7 +985,7 @@ const char* grpc_get_default_ssl_roots(void) {
   static gpr_once once = GPR_ONCE_INIT;
   gpr_once_init(&once, init_default_pem_root_certs);
   return GRPC_SLICE_IS_EMPTY(default_pem_root_certs)
-             ? NULL
+             ? nullptr
              : (const char*)GRPC_SLICE_START_PTR(default_pem_root_certs);
 }
 
@@ -1039,7 +1039,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
                       config->pem_key_cert_pair->private_key != nullptr &&
                       config->pem_key_cert_pair->cert_chain != nullptr;
   result = tsi_create_ssl_client_handshaker_factory(
-      has_key_cert_pair ? config->pem_key_cert_pair : NULL, pem_root_certs,
+      has_key_cert_pair ? config->pem_key_cert_pair : nullptr, pem_root_certs,
       ssl_cipher_suites(), alpn_protocol_strings, (uint16_t)num_alpn_protocols,
       &c->client_handshaker_factory);
   if (result != TSI_OK) {

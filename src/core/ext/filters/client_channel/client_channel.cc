@@ -1492,7 +1492,7 @@ static void cc_destroy_call_elem(grpc_exec_ctx* exec_ctx,
                                     "picked");
   }
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-    if (calld->subchannel_call_context[i].value != NULL) {
+    if (calld->subchannel_call_context[i].value != nullptr) {
       calld->subchannel_call_context[i].destroy(
           calld->subchannel_call_context[i].value);
     }

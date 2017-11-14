@@ -1277,7 +1277,7 @@ static grpc_error* consolidate_batch_errors(batch_control* bctl) {
         "Call batch failed", bctl->errors, n);
     for (size_t i = 0; i < n; i++) {
       GRPC_ERROR_UNREF(bctl->errors[i]);
-      bctl->errors[i] = NULL;
+      bctl->errors[i] = nullptr;
     }
     return error;
   }
@@ -1452,9 +1452,9 @@ static void process_data_after_md(grpc_exec_ctx* exec_ctx,
     if ((call->receiving_stream->flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
         (call->incoming_compression_algorithm > GRPC_COMPRESS_NONE)) {
       *call->receiving_buffer = grpc_raw_compressed_byte_buffer_create(
-          NULL, 0, call->incoming_compression_algorithm);
+          nullptr, 0, call->incoming_compression_algorithm);
     } else {
-      *call->receiving_buffer = grpc_raw_byte_buffer_create(NULL, 0);
+      *call->receiving_buffer = grpc_raw_byte_buffer_create(nullptr, 0);
     }
     GRPC_CLOSURE_INIT(&call->receiving_slice_ready, receiving_slice_ready, bctl,
                       grpc_schedule_on_exec_ctx);
@@ -1686,7 +1686,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
       GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
       grpc_cq_end_op(
           exec_ctx, call->cq, notify_tag, GRPC_ERROR_NONE,
-          free_no_op_completion, NULL,
+          free_no_op_completion, nullptr,
           (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
     } else {
       GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure*)notify_tag, GRPC_ERROR_NONE);
@@ -1709,7 +1709,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
   /* rewrite batch ops into a transport op */
   for (i = 0; i < nops; i++) {
     op = &ops[i];
-    if (op->reserved != NULL) {
+    if (op->reserved != nullptr) {
       error = GRPC_CALL_ERROR;
       goto done_with_error;
     }
@@ -1814,7 +1814,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (op->data.send_message.send_message == NULL) {
+        if (op->data.send_message.send_message == nullptr) {
           error = GRPC_CALL_ERROR_INVALID_MESSAGE;
           goto done_with_error;
         }
@@ -1890,7 +1890,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
             override_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Error from server send status");
           }
-          if (op->data.send_status_from_server.status_details != NULL) {
+          if (op->data.send_status_from_server.status_details != nullptr) {
             call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
                 exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
                 grpc_slice_ref_internal(
@@ -1909,7 +1909,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
         if (!prepare_application_metadata(
                 exec_ctx, call,
                 (int)op->data.send_status_from_server.trailing_metadata_count,
-                op->data.send_status_from_server.trailing_metadata, 1, 1, NULL,
+                op->data.send_status_from_server.trailing_metadata, 1, 1, nullptr,
                 0)) {
           for (int n = 0; n < call->send_extra_metadata_count; n++) {
             GRPC_MDELEM_UNREF(exec_ctx, call->send_extra_metadata[n].md);
