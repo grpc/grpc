@@ -64,7 +64,7 @@ static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
 
 static void split(const char* s, char*** ss, size_t* ns) {
   const char* c = strchr(s, ',');
-  if (c == NULL) {
+  if (c == nullptr) {
     add(s, s + strlen(s), ss, ns);
   } else {
     add(s, c, ss, ns);
@@ -73,7 +73,7 @@ static void split(const char* s, char*** ss, size_t* ns) {
 }
 
 static void parse(const char* s) {
-  char** strings = NULL;
+  char** strings = nullptr;
   size_t nstrings = 0;
   size_t i;
   split(s, &strings, &nstrings);
@@ -102,7 +102,7 @@ static void list_tracers() {
 
 void grpc_tracer_init(const char* env_var) {
   char* e = gpr_getenv(env_var);
-  if (e != NULL) {
+  if (e != nullptr) {
     parse(e);
     gpr_free(e);
   }
@@ -126,7 +126,7 @@ int grpc_tracer_set_enabled(const char* name, int enabled) {
     list_tracers();
   } else if (0 == strcmp(name, "refcount")) {
     for (t = tracers; t; t = t->next) {
-      if (strstr(t->flag->name, "refcount") != NULL) {
+      if (strstr(t->flag->name, "refcount") != nullptr) {
         TRACER_SET(*t->flag, enabled);
       }
     }

@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
   log_level = FLAGS_log_level;
   gpr_set_log_function(TestLogFunction);
 
-  srand(time(NULL));
+  srand(time(nullptr));
 
   // Parse the server addresses
   std::vector<grpc::string> server_addresses;

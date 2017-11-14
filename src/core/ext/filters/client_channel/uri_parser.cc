@@ -52,14 +52,16 @@ static grpc_uri* bad_uri(const char* uri_text, size_t pos, const char* section,
     gpr_free(line_prefix);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /** Returns a copy of percent decoded \a src[begin, end) */
 static char* decode_and_copy_component(grpc_exec_ctx* exec_ctx, const char* src,
                                        size_t begin, size_t end) {
   grpc_slice component =
-      grpc_slice_from_copied_buffer(src + begin, end - begin);
+      (begin == NOT_SET || end == NOT_SET)
+          ? grpc_empty_slice()
+          : grpc_slice_from_copied_buffer(src + begin, end - begin);
   grpc_slice decoded_component =
       grpc_permissive_percent_decode_slice(component);
   char* out = grpc_dump_slice(decoded_component, GPR_DUMP_ASCII);
@@ -146,10 +148,10 @@ static int parse_fragment_or_query(const char* uri_text, size_t* i) {
 static void parse_query_parts(grpc_uri* uri) {
   static const char* QUERY_PARTS_SEPARATOR = "&";
   static const char* QUERY_PARTS_VALUE_SEPARATOR = "=";
-  GPR_ASSERT(uri->query != NULL);
+  GPR_ASSERT(uri->query != nullptr);
   if (uri->query[0] == '\0') {
-    uri->query_parts = NULL;
-    uri->query_parts_values = NULL;
+    uri->query_parts = nullptr;
+    uri->query_parts_values = nullptr;
     uri->num_query_parts = 0;
     return;
   }
@@ -172,7 +174,7 @@ static void parse_query_parts(grpc_uri* uri) {
        * be included, even if they include the separator. */
       uri->query_parts_values[i] = query_param_parts[1];
     } else {
-      uri->query_parts_values[i] = NULL;
+      uri->query_parts_values[i] = nullptr;
     }
     for (size_t j = 2; j < num_query_param_parts; j++) {
       gpr_free(query_param_parts[j]);
@@ -287,15 +289,15 @@ grpc_uri* grpc_uri_parse(grpc_exec_ctx* exec_ctx, const char* uri_text,
 }
 
 const char* grpc_uri_get_query_arg(const grpc_uri* uri, const char* key) {
-  GPR_ASSERT(key != NULL);
-  if (key[0] == '\0') return NULL;
+  GPR_ASSERT(key != nullptr);
+  if (key[0] == '\0') return nullptr;
 
   for (size_t i = 0; i < uri->num_query_parts; ++i) {
     if (0 == strcmp(key, uri->query_parts[i])) {
       return uri->query_parts_values[i];
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void grpc_uri_destroy(grpc_uri* uri) {

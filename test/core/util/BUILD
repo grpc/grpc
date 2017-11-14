@@ -21,8 +21,8 @@ grpc_package(name = "test/core/util", visibility = "public")
 grpc_cc_library(
     name = "gpr_test_util",
     srcs = [
-        "memory_counters.c",
-        "test_config.c",
+        "memory_counters.cc",
+        "test_config.cc",
     ],
     hdrs = [
         "memory_counters.h",
@@ -48,16 +48,16 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
-        "grpc_profiler.c",
-        "mock_endpoint.c",
-        "parse_hexstring.c",
-        "passthru_endpoint.c",
-        "port.c",
-        "port_server_client.c",
-        "reconnect_server.c",
-        "slice_splitter.c",
-        "test_tcp_server.c",
-        "trickle_endpoint.c",
+        "grpc_profiler.cc",
+        "mock_endpoint.cc",
+        "parse_hexstring.cc",
+        "passthru_endpoint.cc",
+        "port.cc",
+        "port_server_client.cc",
+        "reconnect_server.cc",
+        "slice_splitter.cc",
+        "test_tcp_server.cc",
+        "trickle_endpoint.cc",
     ],
     hdrs = [
         "grpc_profiler.h",
@@ -71,7 +71,7 @@ grpc_cc_library(
         "test_tcp_server.h",
         "trickle_endpoint.h",
     ],
-    language = "C",
+    language = "C++",
     deps = [
         ":gpr_test_util",
         "//:grpc_common",
@@ -83,7 +83,7 @@ grpc_cc_library(
     name = "grpc_test_util",
     srcs = [],
     hdrs = [],
-    language = "C",
+    language = "C++",
     deps = [
         ":grpc_test_util_base",
         "//:grpc",
@@ -94,7 +94,7 @@ grpc_cc_library(
     name = "grpc_test_util_unsecure",
     srcs = [],
     hdrs = [],
-    language = "C",
+    language = "C++",
     deps = [
         ":grpc_test_util_base",
         "//:grpc_unsecure",

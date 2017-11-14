@@ -31,11 +31,12 @@ void gpr_mpscq_destroy(gpr_mpscq* q) {
   GPR_ASSERT(q->tail == &q->stub);
 }
 
-void gpr_mpscq_push(gpr_mpscq* q, gpr_mpscq_node* n) {
+bool gpr_mpscq_push(gpr_mpscq* q, gpr_mpscq_node* n) {
   gpr_atm_no_barrier_store(&n->next, (gpr_atm)NULL);
   gpr_mpscq_node* prev =
       (gpr_mpscq_node*)gpr_atm_full_xchg(&q->head, (gpr_atm)n);
   gpr_atm_rel_store(&prev->next, (gpr_atm)n);
+  return prev == &q->stub;
 }
 
 gpr_mpscq_node* gpr_mpscq_pop(gpr_mpscq* q) {
@@ -48,15 +49,15 @@ gpr_mpscq_node* gpr_mpscq_pop_and_check_end(gpr_mpscq* q, bool* empty) {
   gpr_mpscq_node* next = (gpr_mpscq_node*)gpr_atm_acq_load(&tail->next);
   if (tail == &q->stub) {
     // indicates the list is actually (ephemerally) empty
-    if (next == NULL) {
+    if (next == nullptr) {
       *empty = true;
-      return NULL;
+      return nullptr;
     }
     q->tail = next;
     tail = next;
     next = (gpr_mpscq_node*)gpr_atm_acq_load(&tail->next);
   }
-  if (next != NULL) {
+  if (next != nullptr) {
     *empty = false;
     q->tail = next;
     return tail;
@@ -65,15 +66,49 @@ gpr_mpscq_node* gpr_mpscq_pop_and_check_end(gpr_mpscq* q, bool* empty) {
   if (tail != head) {
     *empty = false;
     // indicates a retry is in order: we're still adding
-    return NULL;
+    return nullptr;
   }
   gpr_mpscq_push(q, &q->stub);
   next = (gpr_mpscq_node*)gpr_atm_acq_load(&tail->next);
-  if (next != NULL) {
+  if (next != nullptr) {
     q->tail = next;
     return tail;
   }
   // indicates a retry is in order: we're still adding
   *empty = false;
-  return NULL;
+  return nullptr;
+}
+
+void gpr_locked_mpscq_init(gpr_locked_mpscq* q) {
+  gpr_mpscq_init(&q->queue);
+  gpr_mu_init(&q->mu);
+}
+
+void gpr_locked_mpscq_destroy(gpr_locked_mpscq* q) {
+  gpr_mpscq_destroy(&q->queue);
+  gpr_mu_destroy(&q->mu);
+}
+
+bool gpr_locked_mpscq_push(gpr_locked_mpscq* q, gpr_mpscq_node* n) {
+  return gpr_mpscq_push(&q->queue, n);
+}
+
+gpr_mpscq_node* gpr_locked_mpscq_try_pop(gpr_locked_mpscq* q) {
+  if (gpr_mu_trylock(&q->mu)) {
+    gpr_mpscq_node* n = gpr_mpscq_pop(&q->queue);
+    gpr_mu_unlock(&q->mu);
+    return n;
+  }
+  return nullptr;
+}
+
+gpr_mpscq_node* gpr_locked_mpscq_pop(gpr_locked_mpscq* q) {
+  gpr_mu_lock(&q->mu);
+  bool empty = false;
+  gpr_mpscq_node* n;
+  do {
+    n = gpr_mpscq_pop_and_check_end(&q->queue, &empty);
+  } while (n == nullptr && !empty);
+  gpr_mu_unlock(&q->mu);
+  return n;
 }

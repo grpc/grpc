@@ -102,7 +102,7 @@ static void grpc_ares_request_unref(grpc_exec_ctx* exec_ctx,
      request */
   if (gpr_unref(&r->pending_queries)) {
     /* TODO(zyc): Sort results with RFC6724 before invoking on_done. */
-    if (exec_ctx == NULL) {
+    if (exec_ctx == nullptr) {
       /* A new exec_ctx is created here, as the c-ares interface does not
          provide one in ares_host_callback. It's safe to schedule on_done with
          the newly created exec_ctx, since the caller has been warned not to
@@ -150,12 +150,12 @@ static void on_hostbyname_done_cb(void* arg, int status, int timeouts,
     r->error = GRPC_ERROR_NONE;
     r->success = true;
     grpc_lb_addresses** lb_addresses = r->lb_addrs_out;
-    if (*lb_addresses == NULL) {
-      *lb_addresses = grpc_lb_addresses_create(0, NULL);
+    if (*lb_addresses == nullptr) {
+      *lb_addresses = grpc_lb_addresses_create(0, nullptr);
     }
     size_t prev_naddr = (*lb_addresses)->num_addresses;
     size_t i;
-    for (i = 0; hostent->h_addr_list[i] != NULL; i++) {
+    for (i = 0; hostent->h_addr_list[i] != nullptr; i++) {
     }
     (*lb_addresses)->num_addresses += i;
     (*lb_addresses)->addresses = (grpc_lb_address*)gpr_realloc(
@@ -174,8 +174,8 @@ static void on_hostbyname_done_cb(void* arg, int status, int timeouts,
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
               hr->is_balancer /* is_balancer */,
-              hr->is_balancer ? hr->host : NULL /* balancer_name */,
-              NULL /* user_data */);
+              hr->is_balancer ? hr->host : nullptr /* balancer_name */,
+              nullptr /* user_data */);
           char output[INET6_ADDRSTRLEN];
           ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
           gpr_log(GPR_DEBUG,
@@ -195,8 +195,8 @@ static void on_hostbyname_done_cb(void* arg, int status, int timeouts,
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
               hr->is_balancer /* is_balancer */,
-              hr->is_balancer ? hr->host : NULL /* balancer_name */,
-              NULL /* user_data */);
+              hr->is_balancer ? hr->host : nullptr /* balancer_name */,
+              nullptr /* user_data */);
           char output[INET_ADDRSTRLEN];
           ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
           gpr_log(GPR_DEBUG,
@@ -220,7 +220,7 @@ static void on_hostbyname_done_cb(void* arg, int status, int timeouts,
     }
   }
   gpr_mu_unlock(&r->mu);
-  destroy_hostbyname_request(NULL, hr);
+  destroy_hostbyname_request(nullptr, hr);
 }
 
 static void on_srv_query_done_cb(void* arg, int status, int timeouts,
@@ -234,7 +234,7 @@ static void on_srv_query_done_cb(void* arg, int status, int timeouts,
     const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
     if (parse_status == ARES_SUCCESS) {
       ares_channel* channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
-      for (struct ares_srv_reply* srv_it = reply; srv_it != NULL;
+      for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
            srv_it = srv_it->next) {
         if (grpc_ipv6_loopback_available()) {
           grpc_ares_hostbyname_request* hr = create_hostbyname_request(
@@ -249,7 +249,7 @@ static void on_srv_query_done_cb(void* arg, int status, int timeouts,
         grpc_ares_ev_driver_start(&exec_ctx, r->ev_driver);
       }
     }
-    if (reply != NULL) {
+    if (reply != nullptr) {
       ares_free_data(reply);
     }
   } else if (!r->success) {
@@ -276,15 +276,15 @@ static void on_txt_done_cb(void* arg, int status, int timeouts,
   char* error_msg;
   grpc_ares_request* r = (grpc_ares_request*)arg;
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
-  struct ares_txt_ext* result = NULL;
-  struct ares_txt_ext* reply = NULL;
+  struct ares_txt_ext* result = nullptr;
+  struct ares_txt_ext* reply = nullptr;
   grpc_error* error = GRPC_ERROR_NONE;
   gpr_mu_lock(&r->mu);
   if (status != ARES_SUCCESS) goto fail;
   status = ares_parse_txt_reply_ext(buf, len, &reply);
   if (status != ARES_SUCCESS) goto fail;
   // Find service config in TXT record.
-  for (result = reply; result != NULL; result = result->next) {
+  for (result = reply; result != nullptr; result = result->next) {
     if (result->record_start &&
         memcmp(result->txt, g_service_config_attribute_prefix, prefix_len) ==
             0) {
@@ -292,12 +292,12 @@ static void on_txt_done_cb(void* arg, int status, int timeouts,
     }
   }
   // Found a service config record.
-  if (result != NULL) {
+  if (result != nullptr) {
     size_t service_config_len = result->length - prefix_len;
     *r->service_config_json_out = (char*)gpr_malloc(service_config_len + 1);
     memcpy(*r->service_config_json_out, result->txt + prefix_len,
            service_config_len);
-    for (result = result->next; result != NULL && !result->record_start;
+    for (result = result->next; result != nullptr && !result->record_start;
          result = result->next) {
       *r->service_config_json_out = (char*)gpr_realloc(
           *r->service_config_json_out, service_config_len + result->length + 1);
@@ -323,7 +323,7 @@ fail:
   }
 done:
   gpr_mu_unlock(&r->mu);
-  grpc_ares_request_unref(NULL, r);
+  grpc_ares_request_unref(nullptr, r);
 }
 
 static grpc_ares_request* grpc_dns_lookup_ares_impl(
@@ -332,9 +332,9 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
     grpc_closure* on_done, grpc_lb_addresses** addrs, bool check_grpclb,
     char** service_config_json) {
   grpc_error* error = GRPC_ERROR_NONE;
-  grpc_ares_hostbyname_request* hr = NULL;
-  grpc_ares_request* r = NULL;
-  ares_channel* channel = NULL;
+  grpc_ares_hostbyname_request* hr = nullptr;
+  grpc_ares_request* r = nullptr;
+  ares_channel* channel = nullptr;
   /* TODO(zyc): Enable tracing after #9603 is checked in */
   /* if (grpc_dns_trace) {
       gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",
@@ -345,13 +345,13 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
   char* host;
   char* port;
   gpr_split_host_port(name, &host, &port);
-  if (host == NULL) {
+  if (host == nullptr) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
         GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto error_cleanup;
-  } else if (port == NULL) {
-    if (default_port == NULL) {
+  } else if (port == nullptr) {
+    if (default_port == nullptr) {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
           GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
@@ -375,7 +375,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
   channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
 
   // If dns_server is specified, use it.
-  if (dns_server != NULL) {
+  if (dns_server != nullptr) {
     gpr_log(GPR_INFO, "Using DNS server %s", dns_server);
     grpc_resolved_address addr;
     if (grpc_parse_ipv4_hostport(dns_server, &addr, false /* log_errors */)) {
@@ -429,7 +429,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
                r);
     gpr_free(service_name);
   }
-  if (service_config_json != NULL) {
+  if (service_config_json != nullptr) {
     grpc_ares_request_ref(r);
     ares_search(*channel, hr->host, ns_c_in, ns_t_txt, on_txt_done_cb, r);
   }
@@ -444,7 +444,7 @@ error_cleanup:
   GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
   gpr_free(host);
   gpr_free(port);
-  return NULL;
+  return nullptr;
 }
 
 grpc_ares_request* (*grpc_dns_lookup_ares)(
@@ -503,8 +503,8 @@ static void on_dns_lookup_done_cb(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_resolve_address_ares_request* r =
       (grpc_resolve_address_ares_request*)arg;
   grpc_resolved_addresses** resolved_addresses = r->addrs_out;
-  if (r->lb_addrs == NULL || r->lb_addrs->num_addresses == 0) {
-    *resolved_addresses = NULL;
+  if (r->lb_addrs == nullptr || r->lb_addrs->num_addresses == 0) {
+    *resolved_addresses = nullptr;
   } else {
     *resolved_addresses =
         (grpc_resolved_addresses*)gpr_zalloc(sizeof(grpc_resolved_addresses));
@@ -536,10 +536,10 @@ static void grpc_resolve_address_ares_impl(grpc_exec_ctx* exec_ctx,
   r->on_resolve_address_done = on_done;
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done, on_dns_lookup_done_cb, r,
                     grpc_schedule_on_exec_ctx);
-  grpc_dns_lookup_ares(exec_ctx, NULL /* dns_server */, name, default_port,
+  grpc_dns_lookup_ares(exec_ctx, nullptr /* dns_server */, name, default_port,
                        interested_parties, &r->on_dns_lookup_done, &r->lb_addrs,
                        false /* check_grpclb */,
-                       NULL /* service_config_json */);
+                       nullptr /* service_config_json */);
 }
 
 void (*grpc_resolve_address_ares)(

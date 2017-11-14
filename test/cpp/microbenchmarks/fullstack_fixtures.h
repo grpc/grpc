@@ -28,7 +28,6 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
-extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -40,7 +39,6 @@ extern "C" {
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
-}
 
 #include "src/cpp/client/create_channel_internal.h"
 #include "test/cpp/microbenchmarks/helpers.h"
@@ -187,8 +185,9 @@ class EndpointPairFixture : public BaseFixture {
       }
 
       grpc_server_setup_transport(&exec_ctx, server_->c_server(),
-                                  server_transport_, NULL, server_args);
-      grpc_chttp2_transport_start_reading(&exec_ctx, server_transport_, NULL);
+                                  server_transport_, nullptr, server_args);
+      grpc_chttp2_transport_start_reading(&exec_ctx, server_transport_,
+                                          nullptr);
     }
 
     /* create channel */
@@ -204,7 +203,8 @@ class EndpointPairFixture : public BaseFixture {
       grpc_channel* channel =
           grpc_channel_create(&exec_ctx, "target", &c_args,
                               GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
-      grpc_chttp2_transport_start_reading(&exec_ctx, client_transport_, NULL);
+      grpc_chttp2_transport_start_reading(&exec_ctx, client_transport_,
+                                          nullptr);
 
       channel_ = CreateChannelInternal("", channel);
     }
@@ -246,7 +246,7 @@ class SockPair : public EndpointPairFixture {
   SockPair(Service* service, const FixtureConfiguration& fixture_configuration =
                                  FixtureConfiguration())
       : EndpointPairFixture(service,
-                            grpc_iomgr_create_endpoint_pair("test", NULL),
+                            grpc_iomgr_create_endpoint_pair("test", nullptr),
                             fixture_configuration) {}
 };
 

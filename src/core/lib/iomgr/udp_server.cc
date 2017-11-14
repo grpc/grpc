@@ -121,7 +121,7 @@ static grpc_socket_factory* get_socket_factory(const grpc_channel_args* args) {
       return (grpc_socket_factory*)arg->value.pointer.p;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
@@ -134,8 +134,8 @@ grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
   s->active_ports = 0;
   s->destroyed_ports = 0;
   s->shutdown = 0;
-  s->head = NULL;
-  s->tail = NULL;
+  s->head = nullptr;
+  s->tail = nullptr;
   s->nports = 0;
 
   return s;
@@ -155,7 +155,7 @@ static void dummy_cb(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 }
 
 static void finish_shutdown(grpc_exec_ctx* exec_ctx, grpc_udp_server* s) {
-  if (s->shutdown_complete != NULL) {
+  if (s->shutdown_complete != nullptr) {
     GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
@@ -213,7 +213,7 @@ static void deactivated_all_ports(grpc_exec_ctx* exec_ctx, grpc_udp_server* s) {
         sp->orphan_cb(exec_ctx, sp->emfd, &sp->orphan_fd_closure,
                       sp->server->user_data);
       }
-      grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
+      grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, nullptr,
                      false /* already_closed */, "udp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
@@ -256,7 +256,7 @@ void grpc_udp_server_destroy(grpc_exec_ctx* exec_ctx, grpc_udp_server* s,
 
 static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
                        const grpc_resolved_address* addr) {
-  return (socket_factory != NULL)
+  return (socket_factory != nullptr)
              ? grpc_socket_factory_bind(socket_factory, sockfd, addr)
              : bind(sockfd, (struct sockaddr*)addr->addr, (socklen_t)addr->len);
 }
@@ -394,8 +394,8 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
     gpr_mu_lock(&s->mu);
     s->nports++;
     sp = (grpc_udp_listener*)gpr_malloc(sizeof(grpc_udp_listener));
-    sp->next = NULL;
-    if (s->head == NULL) {
+    sp->next = nullptr;
+    if (s->head == nullptr) {
       s->head = sp;
     } else {
       s->tail->next = sp;
@@ -431,7 +431,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
   grpc_resolved_address wild4;
   grpc_resolved_address wild6;
   grpc_resolved_address addr4_copy;
-  grpc_resolved_address* allocated_addr = NULL;
+  grpc_resolved_address* allocated_addr = nullptr;
   grpc_resolved_address sockname_temp;
   int port;
 
@@ -508,6 +508,7 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index) {
   for (sp = s->head; sp && port_index != 0; sp = sp->next) {
     --port_index;
   }
+  GPR_ASSERT(sp);  // if this fails, our check earlier was bogus
   return sp->fd;
 }
 
@@ -522,7 +523,7 @@ void grpc_udp_server_start(grpc_exec_ctx* exec_ctx, grpc_udp_server* s,
   s->user_data = user_data;
 
   sp = s->head;
-  while (sp != NULL) {
+  while (sp != nullptr) {
     for (i = 0; i < pollset_count; i++) {
       grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
     }

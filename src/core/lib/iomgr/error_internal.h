@@ -23,6 +23,7 @@
 #include <stdbool.h>  // TODO, do we need this?
 
 #include <grpc/support/sync.h>
+#include "src/core/lib/iomgr/error.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +60,7 @@ struct grpc_error {
   intptr_t arena[0];
 };
 
-bool grpc_error_is_special(grpc_error* err);
+bool grpc_error_is_special(struct grpc_error* err);
 
 #ifdef __cplusplus
 }

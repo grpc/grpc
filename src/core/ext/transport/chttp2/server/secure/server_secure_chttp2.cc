@@ -38,16 +38,16 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
                                       grpc_server_credentials* creds) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_error* err = GRPC_ERROR_NONE;
-  grpc_server_security_connector* sc = NULL;
+  grpc_server_security_connector* sc = nullptr;
   int port_num = 0;
   grpc_security_status status;
-  grpc_channel_args* args = NULL;
+  grpc_channel_args* args = nullptr;
   GRPC_API_TRACE(
       "grpc_server_add_secure_http2_port("
       "server=%p, addr=%s, creds=%p)",
       3, (server, addr, creds));
   // Create security context.
-  if (creds == NULL) {
+  if (creds == nullptr) {
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No credentials specified for secure server port (creds==NULL)");
     goto done;
@@ -74,7 +74,7 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   // Add server port.
   err = grpc_chttp2_server_add_port(&exec_ctx, server, addr, args, &port_num);
 done:
-  if (sc != NULL) {
+  if (sc != nullptr) {
     GRPC_SECURITY_CONNECTOR_UNREF(&exec_ctx, &sc->base, "server");
   }
   grpc_exec_ctx_finish(&exec_ctx);

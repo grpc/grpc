@@ -105,7 +105,7 @@ void gpr_cmdline_add_flag(gpr_cmdline* cl, const char* name, const char* help,
 }
 
 void gpr_cmdline_add_string(gpr_cmdline* cl, const char* name, const char* help,
-                            char** value) {
+                            const char** value) {
   add_arg(cl, name, help, ARGTYPE_STRING, value);
 }
 
@@ -169,7 +169,7 @@ char* gpr_cmdline_usage_string(gpr_cmdline* cl, const char* argv0) {
   }
   gpr_strvec_add(&s, gpr_strdup("\n"));
 
-  tmp = gpr_strvec_flatten(&s, NULL);
+  tmp = gpr_strvec_flatten(&s, nullptr);
   gpr_strvec_destroy(&s);
   return tmp;
 }
@@ -203,7 +203,7 @@ static arg* find_arg(gpr_cmdline* cl, char* name) {
 
   if (!a) {
     fprintf(stderr, "Unknown argument: %s\n", name);
-    return NULL;
+    return nullptr;
   }
 
   return a;
@@ -246,9 +246,9 @@ static int value_state(gpr_cmdline* cl, char* str) {
 }
 
 static int normal_state(gpr_cmdline* cl, char* str) {
-  char* eq = NULL;
-  char* tmp = NULL;
-  char* arg_name = NULL;
+  char* eq = nullptr;
+  char* tmp = nullptr;
+  char* arg_name = nullptr;
   int r = 1;
 
   if (0 == strcmp(str, "-help") || 0 == strcmp(str, "--help") ||
@@ -256,7 +256,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
     return print_usage_and_die(cl);
   }
 
-  cl->cur_arg = NULL;
+  cl->cur_arg = nullptr;
 
   if (str[0] == '-') {
     if (str[1] == '-') {
@@ -274,7 +274,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
       /* str is of the form '--no-foo' - it's a flag disable */
       str += 3;
       cl->cur_arg = find_arg(cl, str);
-      if (cl->cur_arg == NULL) {
+      if (cl->cur_arg == nullptr) {
         return print_usage_and_die(cl);
       }
       if (cl->cur_arg->type != ARGTYPE_BOOL) {
@@ -285,7 +285,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
       return 1; /* early out */
     }
     eq = strchr(str, '=');
-    if (eq != NULL) {
+    if (eq != nullptr) {
       /* copy the string into a temp buffer and extract the name */
       tmp = arg_name = (char*)gpr_malloc((size_t)(eq - str + 1));
       memcpy(arg_name, str, (size_t)(eq - str));
@@ -294,10 +294,10 @@ static int normal_state(gpr_cmdline* cl, char* str) {
       arg_name = str;
     }
     cl->cur_arg = find_arg(cl, arg_name);
-    if (cl->cur_arg == NULL) {
+    if (cl->cur_arg == nullptr) {
       return print_usage_and_die(cl);
     }
-    if (eq != NULL) {
+    if (eq != nullptr) {
       /* str was of the type --foo=value, parse the value */
       r = value_state(cl, eq + 1);
     } else if (cl->cur_arg->type != ARGTYPE_BOOL) {
