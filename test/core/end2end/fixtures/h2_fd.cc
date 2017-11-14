@@ -58,8 +58,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
   f.fixture_data = fixture_data;
-  f.cq = grpc_completion_queue_create_for_next(NULL);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   create_sockets(fixture_data->fd_pair);
 
@@ -84,12 +84,12 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
   GPR_ASSERT(!f->server);
-  f->server = grpc_server_create(server_args, NULL);
+  f->server = grpc_server_create(server_args, nullptr);
   GPR_ASSERT(f->server);
-  grpc_server_register_completion_queue(f->server, f->cq, NULL);
+  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
 
-  grpc_server_add_insecure_channel_from_fd(f->server, NULL, sfd->fd_pair[1]);
+  grpc_server_add_insecure_channel_from_fd(f->server, nullptr, sfd->fd_pair[1]);
 
   grpc_exec_ctx_finish(&exec_ctx);
 }

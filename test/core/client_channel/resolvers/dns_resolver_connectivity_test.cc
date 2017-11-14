@@ -72,11 +72,12 @@ static grpc_ares_request* my_dns_lookup_ares(
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
     gpr_mu_unlock(&g_mu);
-    *lb_addrs = grpc_lb_addresses_create(1, NULL);
-    grpc_lb_addresses_set_address(*lb_addrs, 0, NULL, 0, false, NULL, NULL);
+    *lb_addrs = grpc_lb_addresses_create(1, nullptr);
+    grpc_lb_addresses_set_address(*lb_addrs, 0, nullptr, 0, false, nullptr,
+                                  nullptr);
   }
   GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
-  return NULL;
+  return nullptr;
 }
 
 static grpc_resolver* create_resolver(grpc_exec_ctx* exec_ctx,
@@ -107,7 +108,7 @@ static bool wait_loop(int deadline_seconds, gpr_event* ev) {
     deadline_seconds--;
 
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_timer_check(&exec_ctx, NULL);
+    grpc_timer_check(&exec_ctx, nullptr);
     grpc_exec_ctx_finish(&exec_ctx);
   }
   return false;
@@ -161,7 +162,7 @@ int main(int argc, char** argv) {
       GRPC_CLOSURE_CREATE(on_done, &ev1, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(5, &ev1));
-  GPR_ASSERT(result == NULL);
+  GPR_ASSERT(result == nullptr);
 
   gpr_event ev2;
   gpr_event_init(&ev2);
@@ -170,7 +171,7 @@ int main(int argc, char** argv) {
       GRPC_CLOSURE_CREATE(on_done, &ev2, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(30, &ev2));
-  GPR_ASSERT(result != NULL);
+  GPR_ASSERT(result != nullptr);
 
   grpc_channel_args_destroy(&exec_ctx, result);
   GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test");

@@ -42,7 +42,7 @@ static void test_succeeds(const char* uri_text, const char* scheme,
 
 static void test_fails(const char* uri_text) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GPR_ASSERT(NULL == grpc_uri_parse(&exec_ctx, uri_text, 0));
+  GPR_ASSERT(nullptr == grpc_uri_parse(&exec_ctx, uri_text, 0));
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -60,7 +60,7 @@ static void test_query_parts() {
     GPR_ASSERT(4 == uri->num_query_parts);
 
     GPR_ASSERT(0 == strcmp("a", uri->query_parts[0]));
-    GPR_ASSERT(NULL == uri->query_parts_values[0]);
+    GPR_ASSERT(nullptr == uri->query_parts_values[0]);
 
     GPR_ASSERT(0 == strcmp("b", uri->query_parts[1]));
     GPR_ASSERT(0 == strcmp("B", uri->query_parts_values[1]));
@@ -69,12 +69,12 @@ static void test_query_parts() {
     GPR_ASSERT(0 == strcmp("", uri->query_parts_values[2]));
 
     GPR_ASSERT(0 == strcmp("", uri->query_parts[3]));
-    GPR_ASSERT(NULL == uri->query_parts_values[3]);
+    GPR_ASSERT(nullptr == uri->query_parts_values[3]);
 
-    GPR_ASSERT(NULL == grpc_uri_get_query_arg(uri, "a"));
+    GPR_ASSERT(nullptr == grpc_uri_get_query_arg(uri, "a"));
     GPR_ASSERT(0 == strcmp("B", grpc_uri_get_query_arg(uri, "b")));
     GPR_ASSERT(0 == strcmp("", grpc_uri_get_query_arg(uri, "c")));
-    GPR_ASSERT(NULL == grpc_uri_get_query_arg(uri, ""));
+    GPR_ASSERT(nullptr == grpc_uri_get_query_arg(uri, ""));
 
     GPR_ASSERT(0 == strcmp("frag", uri->fragment));
     grpc_exec_ctx_finish(&exec_ctx);
@@ -111,8 +111,8 @@ static void test_query_parts() {
     GPR_ASSERT(0 == strcmp("/path", uri->path));
     GPR_ASSERT(0 == strcmp("", uri->query));
     GPR_ASSERT(0 == uri->num_query_parts);
-    GPR_ASSERT(NULL == uri->query_parts);
-    GPR_ASSERT(NULL == uri->query_parts_values);
+    GPR_ASSERT(nullptr == uri->query_parts);
+    GPR_ASSERT(nullptr == uri->query_parts_values);
     GPR_ASSERT(0 == strcmp("", uri->fragment));
     grpc_exec_ctx_finish(&exec_ctx);
     grpc_uri_destroy(uri);

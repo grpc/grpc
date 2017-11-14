@@ -17,4 +17,5 @@
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/yapf_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
-
+- script: tools/run_tests/sanity/check_clang_tidy.sh
+  cpu_cost: 1000

@@ -33,7 +33,7 @@
 
 int grpc_auth_refresh_token_is_valid(
     const grpc_auth_refresh_token* refresh_token) {
-  return (refresh_token != NULL) &&
+  return (refresh_token != nullptr) &&
          strcmp(refresh_token->type, GRPC_AUTH_JSON_TYPE_INVALID);
 }
 
@@ -45,13 +45,13 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
 
   memset(&result, 0, sizeof(grpc_auth_refresh_token));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
-  if (json == NULL) {
+  if (json == nullptr) {
     gpr_log(GPR_ERROR, "Invalid json.");
     goto end;
   }
 
   prop_value = grpc_json_get_string_property(json, "type");
-  if (prop_value == NULL ||
+  if (prop_value == nullptr ||
       strcmp(prop_value, GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER)) {
     goto end;
   }
@@ -77,25 +77,25 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
   grpc_json* json = grpc_json_parse_string(scratchpad);
   grpc_auth_refresh_token result =
       grpc_auth_refresh_token_create_from_json(json);
-  if (json != NULL) grpc_json_destroy(json);
+  if (json != nullptr) grpc_json_destroy(json);
   gpr_free(scratchpad);
   return result;
 }
 
 void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {
-  if (refresh_token == NULL) return;
+  if (refresh_token == nullptr) return;
   refresh_token->type = GRPC_AUTH_JSON_TYPE_INVALID;
-  if (refresh_token->client_id != NULL) {
+  if (refresh_token->client_id != nullptr) {
     gpr_free(refresh_token->client_id);
-    refresh_token->client_id = NULL;
+    refresh_token->client_id = nullptr;
   }
-  if (refresh_token->client_secret != NULL) {
+  if (refresh_token->client_secret != nullptr) {
     gpr_free(refresh_token->client_secret);
-    refresh_token->client_secret = NULL;
+    refresh_token->client_secret = nullptr;
   }
-  if (refresh_token->refresh_token != NULL) {
+  if (refresh_token->refresh_token != nullptr) {
     gpr_free(refresh_token->refresh_token);
-    refresh_token->refresh_token = NULL;
+    refresh_token->refresh_token = nullptr;
   }
 }
 
@@ -118,12 +118,12 @@ grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_exec_ctx* exec_ctx, const grpc_http_response* response,
     grpc_mdelem* token_md, grpc_millis* token_lifetime) {
-  char* null_terminated_body = NULL;
-  char* new_access_token = NULL;
+  char* null_terminated_body = nullptr;
+  char* new_access_token = nullptr;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
-  grpc_json* json = NULL;
+  grpc_json* json = nullptr;
 
-  if (response == NULL) {
+  if (response == nullptr) {
     gpr_log(GPR_ERROR, "Received NULL response.");
     status = GRPC_CREDENTIALS_ERROR;
     goto end;
@@ -138,16 +138,16 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
   if (response->status != 200) {
     gpr_log(GPR_ERROR, "Call to http server ended with error %d [%s].",
             response->status,
-            null_terminated_body != NULL ? null_terminated_body : "");
+            null_terminated_body != nullptr ? null_terminated_body : "");
     status = GRPC_CREDENTIALS_ERROR;
     goto end;
   } else {
-    grpc_json* access_token = NULL;
-    grpc_json* token_type = NULL;
-    grpc_json* expires_in = NULL;
+    grpc_json* access_token = nullptr;
+    grpc_json* token_type = nullptr;
+    grpc_json* expires_in = nullptr;
     grpc_json* ptr;
     json = grpc_json_parse_string(null_terminated_body);
-    if (json == NULL) {
+    if (json == nullptr) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s", null_terminated_body);
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
@@ -166,24 +166,24 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
         expires_in = ptr;
       }
     }
-    if (access_token == NULL || access_token->type != GRPC_JSON_STRING) {
+    if (access_token == nullptr || access_token->type != GRPC_JSON_STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid access_token in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    if (token_type == NULL || token_type->type != GRPC_JSON_STRING) {
+    if (token_type == nullptr || token_type->type != GRPC_JSON_STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid token_type in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    if (expires_in == NULL || expires_in->type != GRPC_JSON_NUMBER) {
+    if (expires_in == nullptr || expires_in->type != GRPC_JSON_NUMBER) {
       gpr_log(GPR_ERROR, "Missing or invalid expires_in in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
     gpr_asprintf(&new_access_token, "%s %s", token_type->value,
                  access_token->value);
-    *token_lifetime = strtol(expires_in->value, NULL, 10) * GPR_MS_PER_SEC;
+    *token_lifetime = strtol(expires_in->value, nullptr, 10) * GPR_MS_PER_SEC;
     if (!GRPC_MDISNULL(*token_md)) GRPC_MDELEM_UNREF(exec_ctx, *token_md);
     *token_md = grpc_mdelem_from_slices(
         exec_ctx,
@@ -197,9 +197,9 @@ end:
     GRPC_MDELEM_UNREF(exec_ctx, *token_md);
     *token_md = GRPC_MDNULL;
   }
-  if (null_terminated_body != NULL) gpr_free(null_terminated_body);
-  if (new_access_token != NULL) gpr_free(new_access_token);
-  if (json != NULL) grpc_json_destroy(json);
+  if (null_terminated_body != nullptr) gpr_free(null_terminated_body);
+  if (new_access_token != nullptr) gpr_free(new_access_token);
+  if (json != nullptr) grpc_json_destroy(json);
   return status;
 }
 
@@ -225,10 +225,10 @@ static void on_oauth2_token_fetcher_http_response(grpc_exec_ctx* exec_ctx,
                             : 0;
   grpc_oauth2_pending_get_request_metadata* pending_request =
       c->pending_requests;
-  c->pending_requests = NULL;
+  c->pending_requests = nullptr;
   gpr_mu_unlock(&c->mu);
   // Invoke callbacks for all pending requests.
-  while (pending_request != NULL) {
+  while (pending_request != nullptr) {
     if (status == GRPC_CREDENTIALS_OK) {
       grpc_credentials_mdelem_array_add(pending_request->md_array,
                                         access_token_md);
@@ -305,13 +305,13 @@ static void oauth2_token_fetcher_cancel_get_request_metadata(
   grpc_oauth2_token_fetcher_credentials* c =
       (grpc_oauth2_token_fetcher_credentials*)creds;
   gpr_mu_lock(&c->mu);
-  grpc_oauth2_pending_get_request_metadata* prev = NULL;
+  grpc_oauth2_pending_get_request_metadata* prev = nullptr;
   grpc_oauth2_pending_get_request_metadata* pending_request =
       c->pending_requests;
-  while (pending_request != NULL) {
+  while (pending_request != nullptr) {
     if (pending_request->md_array == md_array) {
       // Remove matching pending request from the list.
-      if (prev != NULL) {
+      if (prev != nullptr) {
         prev->next = pending_request->next;
       } else {
         c->pending_requests = pending_request->next;
@@ -380,7 +380,7 @@ grpc_call_credentials* grpc_google_compute_engine_credentials_create(
           sizeof(grpc_oauth2_token_fetcher_credentials));
   GRPC_API_TRACE("grpc_compute_engine_credentials_create(reserved=%p)", 1,
                  (reserved));
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
   init_oauth2_token_fetcher(c, compute_engine_fetch_oauth2);
   c->base.vtable = &compute_engine_vtable;
   return &c->base;
@@ -411,7 +411,7 @@ static void refresh_token_fetch_oauth2(
   grpc_http_header header = {(char*)"Content-Type",
                              (char*)"application/x-www-form-urlencoded"};
   grpc_httpcli_request request;
-  char* body = NULL;
+  char* body = nullptr;
   gpr_asprintf(&body, GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
                c->refresh_token.client_id, c->refresh_token.client_secret,
                c->refresh_token.refresh_token);
@@ -441,7 +441,7 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
   grpc_google_refresh_token_credentials* c;
   if (!grpc_auth_refresh_token_is_valid(&refresh_token)) {
     gpr_log(GPR_ERROR, "Invalid input for refresh token credentials creation");
-    return NULL;
+    return nullptr;
   }
   c = (grpc_google_refresh_token_credentials*)gpr_zalloc(
       sizeof(grpc_google_refresh_token_credentials));
@@ -455,7 +455,7 @@ static char* create_loggable_refresh_token(grpc_auth_refresh_token* token) {
   if (strcmp(token->type, GRPC_AUTH_JSON_TYPE_INVALID) == 0) {
     return gpr_strdup("<Invalid json token>");
   }
-  char* loggable_token = NULL;
+  char* loggable_token = nullptr;
   gpr_asprintf(&loggable_token,
                "{\n type: %s\n client_id: %s\n client_secret: "
                "<redacted>\n refresh_token: <redacted>\n}",
@@ -475,7 +475,7 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
             loggable_token, reserved);
     gpr_free(loggable_token);
   }
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
 }
 
@@ -517,7 +517,7 @@ grpc_call_credentials* grpc_access_token_credentials_create(
       "grpc_access_token_credentials_create(access_token=<redacted>, "
       "reserved=%p)",
       1, (reserved));
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
   c->base.vtable = &access_token_vtable;
   gpr_ref_init(&c->base.refcount, 1);

@@ -37,7 +37,7 @@
 static bool append_filter(grpc_exec_ctx* exec_ctx,
                           grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter*)arg, NULL, NULL);
+      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
 }
 
 static bool set_default_host_if_unset(grpc_exec_ctx* exec_ctx,
@@ -53,7 +53,7 @@ static bool set_default_host_if_unset(grpc_exec_ctx* exec_ctx,
   }
   char* default_authority = grpc_get_default_authority(
       exec_ctx, grpc_channel_stack_builder_get_target(builder));
-  if (default_authority != NULL) {
+  if (default_authority != nullptr) {
     grpc_arg arg = grpc_channel_arg_string_create(
         (char*)GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
@@ -73,7 +73,7 @@ extern "C" void grpc_client_channel_init(void) {
   grpc_register_http_proxy_mapper();
   grpc_subchannel_index_init();
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
-                                   set_default_host_if_unset, NULL);
+                                   set_default_host_if_unset, nullptr);
   grpc_channel_init_register_stage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
       (void*)&grpc_client_channel_filter);

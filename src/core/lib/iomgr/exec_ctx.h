@@ -124,6 +124,8 @@ gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
 
+void grpc_exec_ctx_maybe_update_start_time(grpc_exec_ctx* exec_ctx);
+
 #ifdef __cplusplus
 }
 #endif

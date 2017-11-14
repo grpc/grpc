@@ -37,7 +37,7 @@ static optional_filter compress_filter = {
 static bool is_building_http_like_transport(
     grpc_channel_stack_builder* builder) {
   grpc_transport* t = grpc_channel_stack_builder_get_transport(builder);
-  return t != NULL && strstr(t->vtable->name, "http");
+  return t != nullptr && strstr(t->vtable->name, "http");
 }
 
 static bool maybe_add_optional_filter(grpc_exec_ctx* exec_ctx,
@@ -51,7 +51,7 @@ static bool maybe_add_optional_filter(grpc_exec_ctx* exec_ctx,
       grpc_channel_args_find(channel_args, filtarg->control_channel_arg),
       !grpc_channel_args_want_minimal_stack(channel_args));
   return enable ? grpc_channel_stack_builder_prepend_filter(
-                      builder, filtarg->filter, NULL, NULL)
+                      builder, filtarg->filter, nullptr, nullptr)
                 : true;
 }
 
@@ -60,7 +60,7 @@ static bool maybe_add_required_filter(grpc_exec_ctx* exec_ctx,
                                       void* arg) {
   return is_building_http_like_transport(builder)
              ? grpc_channel_stack_builder_prepend_filter(
-                   builder, (const grpc_channel_filter*)arg, NULL, NULL)
+                   builder, (const grpc_channel_filter*)arg, nullptr, nullptr)
              : true;
 }
 

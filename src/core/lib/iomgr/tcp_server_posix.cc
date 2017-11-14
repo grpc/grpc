@@ -77,7 +77,7 @@ grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_zalloc(sizeof(grpc_tcp_server));
   s->so_reuseport = has_so_reuseport;
   s->expand_wildcard_addrs = false;
-  for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
+  for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
         s->so_reuseport =
@@ -102,13 +102,13 @@ grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
   s->active_ports = 0;
   s->destroyed_ports = 0;
   s->shutdown = false;
-  s->shutdown_starting.head = NULL;
-  s->shutdown_starting.tail = NULL;
+  s->shutdown_starting.head = nullptr;
+  s->shutdown_starting.tail = nullptr;
   s->shutdown_complete = shutdown_complete;
-  s->on_accept_cb = NULL;
-  s->on_accept_cb_arg = NULL;
-  s->head = NULL;
-  s->tail = NULL;
+  s->on_accept_cb = nullptr;
+  s->on_accept_cb_arg = nullptr;
+  s->head = nullptr;
+  s->tail = nullptr;
   s->nports = 0;
   s->channel_args = grpc_channel_args_copy(args);
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
@@ -120,7 +120,7 @@ static void finish_shutdown(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(s->shutdown);
   gpr_mu_unlock(&s->mu);
-  if (s->shutdown_complete != NULL) {
+  if (s->shutdown_complete != nullptr) {
     GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
@@ -165,7 +165,7 @@ static void deactivated_all_ports(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
       grpc_unlink_if_unix_domain_socket(&sp->addr);
       GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
                         grpc_schedule_on_exec_ctx);
-      grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
+      grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, nullptr,
                      false /* already_closed */, "tcp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
@@ -288,8 +288,8 @@ static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
   grpc_resolved_address wild6;
   unsigned fd_index = 0;
   grpc_dualstack_mode dsmode;
-  grpc_tcp_listener* sp = NULL;
-  grpc_tcp_listener* sp2 = NULL;
+  grpc_tcp_listener* sp = nullptr;
+  grpc_tcp_listener* sp2 = nullptr;
   grpc_error* v6_err = GRPC_ERROR_NONE;
   grpc_error* v4_err = GRPC_ERROR_NONE;
   *out_port = -1;
@@ -314,7 +314,7 @@ static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
   if ((v4_err = grpc_tcp_server_add_addr(s, &wild4, port_index, fd_index,
                                          &dsmode, &sp2)) == GRPC_ERROR_NONE) {
     *out_port = sp2->port;
-    if (sp != NULL) {
+    if (sp != nullptr) {
       sp2->is_sibling = 1;
       sp->sibling = sp2;
     }
@@ -346,7 +346,7 @@ static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
 }
 
 static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
-  grpc_tcp_listener* sp = NULL;
+  grpc_tcp_listener* sp = nullptr;
   char* addr_str;
   char* name;
   grpc_error* err;
@@ -383,7 +383,7 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     sp->port_index = listener->port_index;
     sp->fd_index = listener->fd_index + count - i;
     GPR_ASSERT(sp->emfd);
-    while (listener->server->tail->next != NULL) {
+    while (listener->server->tail->next != nullptr) {
       listener->server->tail = listener->server->tail->next;
     }
     gpr_free(addr_str);
@@ -404,7 +404,7 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
   grpc_dualstack_mode dsmode;
   grpc_error* err;
   *out_port = -1;
-  if (s->tail != NULL) {
+  if (s->tail != nullptr) {
     port_index = s->tail->port_index + 1;
   }
   grpc_unlink_if_unix_domain_socket(addr);
@@ -454,7 +454,7 @@ static grpc_tcp_listener* get_port_index(grpc_tcp_server* s,
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server* s,
@@ -498,7 +498,7 @@ void grpc_tcp_server_start(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s,
   s->pollsets = pollsets;
   s->pollset_count = pollset_count;
   sp = s->head;
-  while (sp != NULL) {
+  while (sp != nullptr) {
     if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
         pollset_count > 1) {
       GPR_ASSERT(GRPC_LOG_IF_ERROR(

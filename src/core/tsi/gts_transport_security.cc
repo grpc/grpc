@@ -31,7 +31,7 @@ extern "C" void grpc_tsi_gts_init() {
 
 extern "C" void grpc_tsi_gts_shutdown() {
   gpr_mu_destroy(&g_gts_resource.mu);
-  if (g_gts_resource.cq == NULL) {
+  if (g_gts_resource.cq == nullptr) {
     return;
   }
   grpc_completion_queue_destroy(g_gts_resource.cq);

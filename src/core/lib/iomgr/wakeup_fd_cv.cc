@@ -46,7 +46,7 @@ static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
         (fd_node*)gpr_realloc(g_cvfds.cvfds, sizeof(fd_node) * newsize);
     for (i = g_cvfds.size; i < newsize; i++) {
       g_cvfds.cvfds[i].is_set = 0;
-      g_cvfds.cvfds[i].cvs = NULL;
+      g_cvfds.cvfds[i].cvs = nullptr;
       g_cvfds.cvfds[i].next_free = g_cvfds.free_fds;
       g_cvfds.free_fds = &g_cvfds.cvfds[i];
     }
@@ -55,7 +55,7 @@ static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
 
   idx = (int)(g_cvfds.free_fds - g_cvfds.cvfds);
   g_cvfds.free_fds = g_cvfds.free_fds->next_free;
-  g_cvfds.cvfds[idx].cvs = NULL;
+  g_cvfds.cvfds[idx].cvs = nullptr;
   g_cvfds.cvfds[idx].is_set = 0;
   fd_info->read_fd = GRPC_IDX_TO_FD(idx);
   fd_info->write_fd = -1;

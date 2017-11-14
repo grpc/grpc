@@ -71,8 +71,8 @@ void set_arg_once_fn(grpc_channel_stack* channel_stack,
 
 static void test_channel_stack_builder_filter_replace(void) {
   grpc_channel* channel =
-      grpc_insecure_channel_create("target name isn't used", NULL, NULL);
-  GPR_ASSERT(channel != NULL);
+      grpc_insecure_channel_create("target name isn't used", nullptr, nullptr);
+  GPR_ASSERT(channel != nullptr);
   // Make sure the high priority filter has been created.
   GPR_ASSERT(g_replacement_fn_called);
   // ... and that the low priority one hasn't.

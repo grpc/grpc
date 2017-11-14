@@ -76,7 +76,7 @@ class Allocator {
   pointer address(reference x) const { return &x; }
   const_pointer address(const_reference x) const { return &x; }
   pointer allocate(std::size_t n,
-                   std::allocator<void>::const_pointer hint = 0) {
+                   std::allocator<void>::const_pointer hint = nullptr) {
     return static_cast<pointer>(gpr_malloc(n * sizeof(T)));
   }
   void deallocate(T* p, std::size_t n) { gpr_free(p); }

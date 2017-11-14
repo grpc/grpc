@@ -47,7 +47,7 @@ grpc_poll_function_type grpc_poll_function = poll;
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
 static const grpc_event_engine_vtable* g_event_engine;
-static const char* g_poll_strategy_name = NULL;
+static const char* g_poll_strategy_name = nullptr;
 
 typedef const grpc_event_engine_vtable* (*event_engine_factory_fn)(
     bool explicit_request);
@@ -110,7 +110,7 @@ static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
 
 static void split(const char* s, char*** ss, size_t* ns) {
   const char* c = strchr(s, ',');
-  if (c == NULL) {
+  if (c == nullptr) {
     add(s, s + strlen(s), ss, ns);
   } else {
     add(s, c, ss, ns);
@@ -150,15 +150,15 @@ const char* grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
   char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-  if (s == NULL) {
+  if (s == nullptr) {
     s = gpr_strdup("all");
   }
 
-  char** strings = NULL;
+  char** strings = nullptr;
   size_t nstrings = 0;
   split(s, &strings, &nstrings);
 
-  for (size_t i = 0; g_event_engine == NULL && i < nstrings; i++) {
+  for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
     try_engine(strings[i]);
   }
 
@@ -167,7 +167,7 @@ void grpc_event_engine_init(void) {
   }
   gpr_free(strings);
 
-  if (g_event_engine == NULL) {
+  if (g_event_engine == nullptr) {
     gpr_log(GPR_ERROR, "No event engine could be initialized from %s", s);
     abort();
   }
@@ -176,7 +176,7 @@ void grpc_event_engine_init(void) {
 
 void grpc_event_engine_shutdown(void) {
   g_event_engine->shutdown_engine();
-  g_event_engine = NULL;
+  g_event_engine = nullptr;
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name) {

@@ -62,11 +62,11 @@ static uint64_t g_timed_waiter_generation;
 static void timer_thread(void* completed_thread_ptr);
 
 static void gc_completed_threads(void) {
-  if (g_completed_threads != NULL) {
+  if (g_completed_threads != nullptr) {
     completed_thread* to_gc = g_completed_threads;
-    g_completed_threads = NULL;
+    g_completed_threads = nullptr;
     gpr_mu_unlock(&g_mu);
-    while (to_gc != NULL) {
+    while (to_gc != nullptr) {
       gpr_thd_join(to_gc->t);
       completed_thread* next = to_gc->next;
       gpr_free(to_gc);
@@ -224,6 +224,11 @@ static void timer_main_loop(grpc_exec_ctx* exec_ctx) {
   for (;;) {
     grpc_millis next = GRPC_MILLIS_INF_FUTURE;
     grpc_exec_ctx_invalidate_now(exec_ctx);
+
+    /* Calibrate g_start_time in exec_ctx.cc with a regular interval in case the
+     * system clock has changed */
+    grpc_exec_ctx_maybe_update_start_time(exec_ctx);
+
     // check timer state, updates next to the next time to run a check
     switch (grpc_timer_check(exec_ctx, &next)) {
       case GRPC_TIMERS_FIRED:
@@ -274,7 +279,7 @@ static void timer_thread(void* completed_thread_ptr) {
   // this threads exec_ctx: we try to run things through to completion here
   // since it's easy to spin up new threads
   grpc_exec_ctx exec_ctx =
-      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
+      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, nullptr);
   timer_main_loop(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
   timer_thread_cleanup((completed_thread*)completed_thread_ptr);
@@ -298,7 +303,7 @@ void grpc_timer_manager_init(void) {
   g_threaded = false;
   g_thread_count = 0;
   g_waiter_count = 0;
-  g_completed_threads = NULL;
+  g_completed_threads = nullptr;
 
   g_has_timed_waiter = false;
   g_timed_waiter_deadline = GRPC_MILLIS_INF_FUTURE;
