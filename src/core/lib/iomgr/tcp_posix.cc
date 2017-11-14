@@ -576,6 +576,8 @@ static bool tcp_flush(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
       if (errno == EAGAIN) {
         tcp->outgoing_slice_idx = unwind_slice_idx;
         tcp->outgoing_byte_idx = unwind_byte_idx;
+        grpc_slice_buffer_partial_reset_and_unref_internal(
+            exec_ctx, tcp->outgoing_buffer, unwind_slice_idx);
         return false;
       } else if (errno == EPIPE) {
         *error = grpc_error_set_int(GRPC_OS_ERROR(errno, "sendmsg"),
