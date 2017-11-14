@@ -26,7 +26,6 @@
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
 
-extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -38,7 +37,7 @@ extern "C" {
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
-}
+
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"

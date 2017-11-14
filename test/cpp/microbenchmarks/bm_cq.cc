@@ -26,9 +26,7 @@
 #include <grpc/support/log.h>
 #include "test/cpp/microbenchmarks/helpers.h"
 
-extern "C" {
 #include "src/core/lib/surface/completion_queue.h"
-}
 
 namespace grpc {
 namespace testing {
@@ -70,7 +68,7 @@ BENCHMARK(BM_CreateDestroyCore);
 static void DoneWithCompletionOnStack(grpc_exec_ctx* exec_ctx, void* arg,
                                       grpc_cq_completion* completion) {}
 
-class DummyTag final : public CompletionQueueTag {
+class DummyTag final : public internal::CompletionQueueTag {
  public:
   bool FinalizeResult(void** tag, bool* status) override { return true; }
 };

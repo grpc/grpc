@@ -16,7 +16,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-bool server_ssl_test(const char *alpn_list[], unsigned int alpn_list_len,
-                     const char *alpn_expected);
+bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
+                     const char* alpn_expected);
 
 #endif  // GRPC_SERVER_SSL_COMMON_H

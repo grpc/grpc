@@ -31,7 +31,7 @@ extern "C" {
 typedef struct grpc_linked_error grpc_linked_error;
 
 struct grpc_linked_error {
-  grpc_error *err;
+  grpc_error* err;
   uint8_t next;
 };
 
@@ -59,7 +59,7 @@ struct grpc_error {
   intptr_t arena[0];
 };
 
-bool grpc_error_is_special(grpc_error *err);
+bool grpc_error_is_special(grpc_error* err);
 
 #ifdef __cplusplus
 }

@@ -47,17 +47,17 @@ static VALUE id_compress_level_high = Qnil;
  * Ruby objects and don't have a mark for GC. */
 typedef struct grpc_rb_compression_options {
   /* The actual compression options that's being wrapped */
-  grpc_compression_options *wrapped;
+  grpc_compression_options* wrapped;
 } grpc_rb_compression_options;
 
 /* Destroys the compression options instances and free the
  * wrapped grpc compression options. */
-static void grpc_rb_compression_options_free(void *p) {
-  grpc_rb_compression_options *wrapper = NULL;
+static void grpc_rb_compression_options_free(void* p) {
+  grpc_rb_compression_options* wrapper = NULL;
   if (p == NULL) {
     return;
   };
-  wrapper = (grpc_rb_compression_options *)p;
+  wrapper = (grpc_rb_compression_options*)p;
 
   if (wrapper->wrapped != NULL) {
     gpr_free(wrapper->wrapped);
@@ -85,7 +85,7 @@ static rb_data_type_t grpc_rb_compression_options_data_type = {
    Allocate the wrapped grpc compression options and
    initialize it here too. */
 static VALUE grpc_rb_compression_options_alloc(VALUE cls) {
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
 
   grpc_ruby_once_init();
 
@@ -103,7 +103,7 @@ static VALUE grpc_rb_compression_options_alloc(VALUE cls) {
 VALUE grpc_rb_compression_options_disable_compression_algorithm_internal(
     VALUE self, VALUE algorithm_to_disable) {
   grpc_compression_algorithm compression_algorithm = 0;
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
                        &grpc_rb_compression_options_data_type, wrapper);
@@ -145,7 +145,7 @@ grpc_compression_level grpc_rb_compression_options_level_name_to_value_internal(
 /* Sets the default compression level, given the name of a compression level.
  * Throws an error if no algorithm matched. */
 void grpc_rb_compression_options_set_default_level(
-    grpc_compression_options *options, VALUE new_level_name) {
+    grpc_compression_options* options, VALUE new_level_name) {
   options->default_level.level =
       grpc_rb_compression_options_level_name_to_value_internal(new_level_name);
   options->default_level.is_set = 1;
@@ -156,10 +156,10 @@ void grpc_rb_compression_options_set_default_level(
  * algorithm_value is an out parameter.
  * Raises an error if the name of the algorithm passed in is invalid. */
 void grpc_rb_compression_options_algorithm_name_to_value_internal(
-    grpc_compression_algorithm *algorithm_value, VALUE algorithm_name) {
+    grpc_compression_algorithm* algorithm_value, VALUE algorithm_name) {
   grpc_slice name_slice;
   VALUE algorithm_name_as_string = Qnil;
-  char *tmp_str = NULL;
+  char* tmp_str = NULL;
 
   Check_Type(algorithm_name, T_SYMBOL);
 
@@ -186,7 +186,7 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
  * readable algorithm name. */
 VALUE grpc_rb_compression_options_is_algorithm_enabled(VALUE self,
                                                        VALUE algorithm_name) {
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
   grpc_compression_algorithm internal_algorithm_value;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
@@ -204,7 +204,7 @@ VALUE grpc_rb_compression_options_is_algorithm_enabled(VALUE self,
 /* Sets the default algorithm to the name of the algorithm passed in.
  * Raises an error if the name is not a valid compression algorithm name. */
 void grpc_rb_compression_options_set_default_algorithm(
-    grpc_compression_options *options, VALUE algorithm_name) {
+    grpc_compression_options* options, VALUE algorithm_name) {
   grpc_rb_compression_options_algorithm_name_to_value_internal(
       &options->default_algorithm.algorithm, algorithm_name);
   options->default_algorithm.is_set = 1;
@@ -214,7 +214,7 @@ void grpc_rb_compression_options_set_default_algorithm(
  * algorithm.
  * Fails if the algorithm name is invalid. */
 void grpc_rb_compression_options_disable_algorithm(
-    grpc_compression_options *compression_options, VALUE algorithm_name) {
+    grpc_compression_options* compression_options, VALUE algorithm_name) {
   grpc_compression_algorithm internal_algorithm_value;
 
   grpc_rb_compression_options_algorithm_name_to_value_internal(
@@ -226,8 +226,8 @@ void grpc_rb_compression_options_disable_algorithm(
 /* Provides a ruby hash of GRPC core channel argument key-values that
  * correspond to the compression settings on this instance. */
 VALUE grpc_rb_compression_options_to_hash(VALUE self) {
-  grpc_rb_compression_options *wrapper = NULL;
-  grpc_compression_options *compression_options = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
+  grpc_compression_options* compression_options = NULL;
   VALUE channel_arg_hash = rb_hash_new();
   VALUE key = Qnil;
   VALUE value = Qnil;
@@ -284,7 +284,7 @@ VALUE grpc_rb_compression_options_level_value_to_name_internal(
  * Fails if the enum value is invalid. */
 VALUE grpc_rb_compression_options_algorithm_value_to_name_internal(
     grpc_compression_algorithm internal_value) {
-  char *algorithm_name = NULL;
+  char* algorithm_name = NULL;
 
   if (!grpc_compression_algorithm_name(internal_value, &algorithm_name)) {
     rb_raise(rb_eArgError, "Failed to convert algorithm value to name");
@@ -297,7 +297,7 @@ VALUE grpc_rb_compression_options_algorithm_value_to_name_internal(
  * Returns nil if no algorithm has been set. */
 VALUE grpc_rb_compression_options_get_default_algorithm(VALUE self) {
   grpc_compression_algorithm internal_value;
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
                        &grpc_rb_compression_options_data_type, wrapper);
@@ -316,7 +316,7 @@ VALUE grpc_rb_compression_options_get_default_algorithm(VALUE self) {
  * A nil return value means that it hasn't been set. */
 VALUE grpc_rb_compression_options_get_default_level(VALUE self) {
   grpc_compression_level internal_value;
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
                        &grpc_rb_compression_options_data_type, wrapper);
@@ -335,7 +335,7 @@ VALUE grpc_rb_compression_options_get_default_level(VALUE self) {
 VALUE grpc_rb_compression_options_get_disabled_algorithms(VALUE self) {
   VALUE disabled_algorithms = rb_ary_new();
   grpc_compression_algorithm internal_value;
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
                        &grpc_rb_compression_options_data_type, wrapper);
@@ -363,8 +363,8 @@ VALUE grpc_rb_compression_options_get_disabled_algorithms(VALUE self) {
  *   channel_arg hash = Hash.new[...]
  *   channel_arg_hash_with_compression_options = channel_arg_hash.merge(options)
  */
-VALUE grpc_rb_compression_options_init(int argc, VALUE *argv, VALUE self) {
-  grpc_rb_compression_options *wrapper = NULL;
+VALUE grpc_rb_compression_options_init(int argc, VALUE* argv, VALUE self) {
+  grpc_rb_compression_options* wrapper = NULL;
   VALUE default_algorithm = Qnil;
   VALUE default_level = Qnil;
   VALUE disabled_algorithms = Qnil;

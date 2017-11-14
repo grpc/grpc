@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 void gpr_precise_clock_init(void);
-void gpr_precise_clock_now(gpr_timespec *clk);
+void gpr_precise_clock_now(gpr_timespec* clk);
 
 #ifdef __cplusplus
 }

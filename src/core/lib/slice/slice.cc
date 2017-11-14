@@ -26,8 +26,8 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-char *grpc_slice_to_c_string(grpc_slice slice) {
-  char *out = (char *)gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1);
+char* grpc_slice_to_c_string(grpc_slice slice) {
+  char* out = (char*)gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1);
   memcpy(out, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));
   out[GRPC_SLICE_LENGTH(slice)] = 0;
   return out;
@@ -54,7 +54,7 @@ grpc_slice grpc_slice_ref_internal(grpc_slice slice) {
   return slice;
 }
 
-void grpc_slice_unref_internal(grpc_exec_ctx *exec_ctx, grpc_slice slice) {
+void grpc_slice_unref_internal(grpc_exec_ctx* exec_ctx, grpc_slice slice) {
   if (slice.refcount) {
     slice.refcount->vtable->unref(exec_ctx, slice.refcount);
   }
@@ -74,8 +74,8 @@ void grpc_slice_unref(grpc_slice slice) {
 
 /* grpc_slice_from_static_string support structure - a refcount that does
    nothing */
-static void noop_ref(void *unused) {}
-static void noop_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
+static void noop_ref(void* unused) {}
+static void noop_unref(grpc_exec_ctx* exec_ctx, void* unused) {}
 
 static const grpc_slice_refcount_vtable noop_refcount_vtable = {
     noop_ref, noop_unref, grpc_slice_default_eq_impl,
@@ -83,15 +83,15 @@ static const grpc_slice_refcount_vtable noop_refcount_vtable = {
 static grpc_slice_refcount noop_refcount = {&noop_refcount_vtable,
                                             &noop_refcount};
 
-grpc_slice grpc_slice_from_static_buffer(const void *s, size_t len) {
+grpc_slice grpc_slice_from_static_buffer(const void* s, size_t len) {
   grpc_slice slice;
   slice.refcount = &noop_refcount;
-  slice.data.refcounted.bytes = (uint8_t *)s;
+  slice.data.refcounted.bytes = (uint8_t*)s;
   slice.data.refcounted.length = len;
   return slice;
 }
 
-grpc_slice grpc_slice_from_static_string(const char *s) {
+grpc_slice grpc_slice_from_static_string(const char* s) {
   return grpc_slice_from_static_buffer(s, strlen(s));
 }
 
@@ -100,17 +100,17 @@ grpc_slice grpc_slice_from_static_string(const char *s) {
 typedef struct new_slice_refcount {
   grpc_slice_refcount rc;
   gpr_refcount refs;
-  void (*user_destroy)(void *);
-  void *user_data;
+  void (*user_destroy)(void*);
+  void* user_data;
 } new_slice_refcount;
 
-static void new_slice_ref(void *p) {
-  new_slice_refcount *r = (new_slice_refcount *)p;
+static void new_slice_ref(void* p) {
+  new_slice_refcount* r = (new_slice_refcount*)p;
   gpr_ref(&r->refs);
 }
 
-static void new_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
-  new_slice_refcount *r = (new_slice_refcount *)p;
+static void new_slice_unref(grpc_exec_ctx* exec_ctx, void* p) {
+  new_slice_refcount* r = (new_slice_refcount*)p;
   if (gpr_unref(&r->refs)) {
     r->user_destroy(r->user_data);
     gpr_free(r);
@@ -121,12 +121,12 @@ static const grpc_slice_refcount_vtable new_slice_vtable = {
     new_slice_ref, new_slice_unref, grpc_slice_default_eq_impl,
     grpc_slice_default_hash_impl};
 
-grpc_slice grpc_slice_new_with_user_data(void *p, size_t len,
-                                         void (*destroy)(void *),
-                                         void *user_data) {
+grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
+                                         void (*destroy)(void*),
+                                         void* user_data) {
   grpc_slice slice;
-  new_slice_refcount *rc =
-      (new_slice_refcount *)gpr_malloc(sizeof(new_slice_refcount));
+  new_slice_refcount* rc =
+      (new_slice_refcount*)gpr_malloc(sizeof(new_slice_refcount));
   gpr_ref_init(&rc->refs, 1);
   rc->rc.vtable = &new_slice_vtable;
   rc->rc.sub_refcount = &rc->rc;
@@ -134,12 +134,12 @@ grpc_slice grpc_slice_new_with_user_data(void *p, size_t len,
   rc->user_data = user_data;
 
   slice.refcount = &rc->rc;
-  slice.data.refcounted.bytes = (uint8_t *)p;
+  slice.data.refcounted.bytes = (uint8_t*)p;
   slice.data.refcounted.length = len;
   return slice;
 }
 
-grpc_slice grpc_slice_new(void *p, size_t len, void (*destroy)(void *)) {
+grpc_slice grpc_slice_new(void* p, size_t len, void (*destroy)(void*)) {
   /* Pass "p" to *destroy when the slice is no longer needed. */
   return grpc_slice_new_with_user_data(p, len, destroy, p);
 }
@@ -149,18 +149,18 @@ grpc_slice grpc_slice_new(void *p, size_t len, void (*destroy)(void *)) {
 typedef struct new_with_len_slice_refcount {
   grpc_slice_refcount rc;
   gpr_refcount refs;
-  void *user_data;
+  void* user_data;
   size_t user_length;
-  void (*user_destroy)(void *, size_t);
+  void (*user_destroy)(void*, size_t);
 } new_with_len_slice_refcount;
 
-static void new_with_len_ref(void *p) {
-  new_with_len_slice_refcount *r = (new_with_len_slice_refcount *)p;
+static void new_with_len_ref(void* p) {
+  new_with_len_slice_refcount* r = (new_with_len_slice_refcount*)p;
   gpr_ref(&r->refs);
 }
 
-static void new_with_len_unref(grpc_exec_ctx *exec_ctx, void *p) {
-  new_with_len_slice_refcount *r = (new_with_len_slice_refcount *)p;
+static void new_with_len_unref(grpc_exec_ctx* exec_ctx, void* p) {
+  new_with_len_slice_refcount* r = (new_with_len_slice_refcount*)p;
   if (gpr_unref(&r->refs)) {
     r->user_destroy(r->user_data, r->user_length);
     gpr_free(r);
@@ -171,10 +171,10 @@ static const grpc_slice_refcount_vtable new_with_len_vtable = {
     new_with_len_ref, new_with_len_unref, grpc_slice_default_eq_impl,
     grpc_slice_default_hash_impl};
 
-grpc_slice grpc_slice_new_with_len(void *p, size_t len,
-                                   void (*destroy)(void *, size_t)) {
+grpc_slice grpc_slice_new_with_len(void* p, size_t len,
+                                   void (*destroy)(void*, size_t)) {
   grpc_slice slice;
-  new_with_len_slice_refcount *rc = (new_with_len_slice_refcount *)gpr_malloc(
+  new_with_len_slice_refcount* rc = (new_with_len_slice_refcount*)gpr_malloc(
       sizeof(new_with_len_slice_refcount));
   gpr_ref_init(&rc->refs, 1);
   rc->rc.vtable = &new_with_len_vtable;
@@ -184,19 +184,19 @@ grpc_slice grpc_slice_new_with_len(void *p, size_t len,
   rc->user_length = len;
 
   slice.refcount = &rc->rc;
-  slice.data.refcounted.bytes = (uint8_t *)p;
+  slice.data.refcounted.bytes = (uint8_t*)p;
   slice.data.refcounted.length = len;
   return slice;
 }
 
-grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t length) {
+grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
   if (length == 0) return grpc_empty_slice();
   grpc_slice slice = GRPC_SLICE_MALLOC(length);
   memcpy(GRPC_SLICE_START_PTR(slice), source, length);
   return slice;
 }
 
-grpc_slice grpc_slice_from_copied_string(const char *source) {
+grpc_slice grpc_slice_from_copied_string(const char* source) {
   return grpc_slice_from_copied_buffer(source, strlen(source));
 }
 
@@ -205,13 +205,13 @@ typedef struct {
   gpr_refcount refs;
 } malloc_refcount;
 
-static void malloc_ref(void *p) {
-  malloc_refcount *r = (malloc_refcount *)p;
+static void malloc_ref(void* p) {
+  malloc_refcount* r = (malloc_refcount*)p;
   gpr_ref(&r->refs);
 }
 
-static void malloc_unref(grpc_exec_ctx *exec_ctx, void *p) {
-  malloc_refcount *r = (malloc_refcount *)p;
+static void malloc_unref(grpc_exec_ctx* exec_ctx, void* p) {
+  malloc_refcount* r = (malloc_refcount*)p;
   if (gpr_unref(&r->refs)) {
     gpr_free(r);
   }
@@ -233,8 +233,8 @@ grpc_slice grpc_slice_malloc_large(size_t length) {
      refcount is a malloc_refcount
      bytes is an array of bytes of the requested length
      Both parts are placed in the same allocation returned from gpr_malloc */
-  malloc_refcount *rc =
-      (malloc_refcount *)gpr_malloc(sizeof(malloc_refcount) + length);
+  malloc_refcount* rc =
+      (malloc_refcount*)gpr_malloc(sizeof(malloc_refcount) + length);
 
   /* Initial refcount on rc is 1 - and it's up to the caller to release
      this reference. */
@@ -247,7 +247,7 @@ grpc_slice grpc_slice_malloc_large(size_t length) {
   /* The slices refcount points back to the allocated block. */
   slice.refcount = &rc->base;
   /* The data bytes are placed immediately after the refcount struct */
-  slice.data.refcounted.bytes = (uint8_t *)(rc + 1);
+  slice.data.refcounted.bytes = (uint8_t*)(rc + 1);
   /* And the length of the block is set to the requested length */
   slice.data.refcounted.length = length;
   return slice;
@@ -307,7 +307,7 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   return subset;
 }
 
-grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice *source, size_t split,
+grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
                                            grpc_slice_ref_whom ref_whom) {
   grpc_slice tail;
 
@@ -358,11 +358,11 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice *source, size_t split,
   return tail;
 }
 
-grpc_slice grpc_slice_split_tail(grpc_slice *source, size_t split) {
+grpc_slice grpc_slice_split_tail(grpc_slice* source, size_t split) {
   return grpc_slice_split_tail_maybe_ref(source, split, GRPC_SLICE_REF_BOTH);
 }
 
-grpc_slice grpc_slice_split_head(grpc_slice *source, size_t split) {
+grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
   grpc_slice head;
 
   if (source->refcount == NULL) {
@@ -423,7 +423,7 @@ int grpc_slice_cmp(grpc_slice a, grpc_slice b) {
                 GRPC_SLICE_LENGTH(a));
 }
 
-int grpc_slice_str_cmp(grpc_slice a, const char *b) {
+int grpc_slice_str_cmp(grpc_slice a, const char* b) {
   size_t b_length = strlen(b);
   int d = (int)(GRPC_SLICE_LENGTH(a) - b_length);
   if (d != 0) return d;
@@ -438,13 +438,13 @@ int grpc_slice_is_equivalent(grpc_slice a, grpc_slice b) {
          a.data.refcounted.bytes == b.data.refcounted.bytes;
 }
 
-int grpc_slice_buf_start_eq(grpc_slice a, const void *b, size_t len) {
+int grpc_slice_buf_start_eq(grpc_slice a, const void* b, size_t len) {
   if (GRPC_SLICE_LENGTH(a) < len) return 0;
   return 0 == memcmp(GRPC_SLICE_START_PTR(a), b, len);
 }
 
 int grpc_slice_rchr(grpc_slice s, char c) {
-  const char *b = (const char *)GRPC_SLICE_START_PTR(s);
+  const char* b = (const char*)GRPC_SLICE_START_PTR(s);
   int i;
   for (i = (int)GRPC_SLICE_LENGTH(s) - 1; i != -1 && b[i] != c; i--)
     ;
@@ -452,16 +452,16 @@ int grpc_slice_rchr(grpc_slice s, char c) {
 }
 
 int grpc_slice_chr(grpc_slice s, char c) {
-  const char *b = (const char *)GRPC_SLICE_START_PTR(s);
-  const char *p = (const char *)memchr(b, c, GRPC_SLICE_LENGTH(s));
+  const char* b = (const char*)GRPC_SLICE_START_PTR(s);
+  const char* p = (const char*)memchr(b, c, GRPC_SLICE_LENGTH(s));
   return p == NULL ? -1 : (int)(p - b);
 }
 
 int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
   size_t haystack_len = GRPC_SLICE_LENGTH(haystack);
-  const uint8_t *haystack_bytes = GRPC_SLICE_START_PTR(haystack);
+  const uint8_t* haystack_bytes = GRPC_SLICE_START_PTR(haystack);
   size_t needle_len = GRPC_SLICE_LENGTH(needle);
-  const uint8_t *needle_bytes = GRPC_SLICE_START_PTR(needle);
+  const uint8_t* needle_bytes = GRPC_SLICE_START_PTR(needle);
 
   if (haystack_len == 0 || needle_len == 0) return -1;
   if (haystack_len < needle_len) return -1;
@@ -469,8 +469,8 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
     return grpc_slice_eq(haystack, needle) ? 0 : -1;
   if (needle_len == 1) return grpc_slice_chr(haystack, (char)*needle_bytes);
 
-  const uint8_t *last = haystack_bytes + haystack_len - needle_len;
-  for (const uint8_t *cur = haystack_bytes; cur != last; ++cur) {
+  const uint8_t* last = haystack_bytes + haystack_len - needle_len;
+  for (const uint8_t* cur = haystack_bytes; cur != last; ++cur) {
     if (0 == memcmp(cur, needle_bytes, needle_len)) {
       return (int)(cur - haystack_bytes);
     }

@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath('tools/run_tests/'))
 from run_tests_matrix import _create_test_jobs, _create_portability_test_jobs
 import python_utils.filter_pull_request_tests as filter_pull_request_tests
 
-_LIST_OF_LANGUAGE_LABELS = ['c', 'c++', 'csharp', 'grpc-node', 'node', 'objc', 'php', 'php7', 'python', 'ruby']
+_LIST_OF_LANGUAGE_LABELS = ['c', 'c++', 'csharp', 'grpc-node', 'objc', 'php', 'php7', 'python', 'ruby']
 _LIST_OF_PLATFORM_LABELS = ['linux', 'macos', 'windows']
 
 class TestFilteringTest(unittest.TestCase):
@@ -87,8 +87,6 @@ class TestFilteringTest(unittest.TestCase):
                                               filter_pull_request_tests._CPP_TEST_SUITE.labels])
     self.test_filtering(['src/csharp/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
                                                  filter_pull_request_tests._CSHARP_TEST_SUITE.labels])
-    self.test_filtering(['src/node/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
-                                               filter_pull_request_tests._NODE_TEST_SUITE.labels])
     self.test_filtering(['src/objective-c/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
                                                       filter_pull_request_tests._OBJC_TEST_SUITE.labels])
     self.test_filtering(['src/php/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
@@ -103,9 +101,8 @@ class TestFilteringTest(unittest.TestCase):
                         [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
                          filter_pull_request_tests._CPP_TEST_SUITE.labels and label not in
                          filter_pull_request_tests._CORE_TEST_SUITE.labels])
-    self.test_filtering(['src/node/foo.bar', 'src/cpp/foo.bar', "src/csharp/foo.bar"],
+    self.test_filtering(['src/cpp/foo.bar', "src/csharp/foo.bar"],
                         [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
-                         filter_pull_request_tests._NODE_TEST_SUITE.labels and label not in
                          filter_pull_request_tests._CPP_TEST_SUITE.labels and label not in
                          filter_pull_request_tests._CSHARP_TEST_SUITE.labels])
     self.test_filtering(['src/objective-c/foo.bar', 'src/php/foo.bar', "src/python/foo.bar", "src/ruby/foo.bar"],

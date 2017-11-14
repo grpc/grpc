@@ -18,4 +18,4 @@
 
 void grpc_rb_event_queue_thread_start();
 
-void grpc_rb_event_queue_enqueue(void (*callback)(void *), void *argument);
+void grpc_rb_event_queue_enqueue(void (*callback)(void*), void* argument);

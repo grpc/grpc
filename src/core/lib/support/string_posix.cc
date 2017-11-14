@@ -27,7 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-int gpr_asprintf(char **strp, const char *format, ...) {
+int gpr_asprintf(char** strp, const char* format, ...) {
   va_list args;
   int ret;
   char buf[64];
@@ -44,7 +44,7 @@ int gpr_asprintf(char **strp, const char *format, ...) {
 
   /* Allocate a new buffer, with space for the NUL terminator. */
   strp_buflen = (size_t)ret + 1;
-  if ((*strp = (char *)gpr_malloc(strp_buflen)) == NULL) {
+  if ((*strp = (char*)gpr_malloc(strp_buflen)) == NULL) {
     /* This shouldn't happen, because gpr_malloc() calls abort(). */
     return -1;
   }
