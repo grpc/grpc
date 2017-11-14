@@ -310,7 +310,11 @@ double TransportFlowControl::SmoothLogBdp(grpc_exec_ctx* exec_ctx,
                                           double value) {
   grpc_millis now = grpc_exec_ctx_now(exec_ctx);
   double bdp_error = value - pid_controller_.last_control_value();
-  const double dt = (double)(now - last_pid_update_) * 1e-3;
+  double dt = (double)(now - last_pid_update_) * 1e-3;
+  // Limit dt to 100ms
+  if (dt > 0.1) {
+    dt = 0.1;
+  }
   last_pid_update_ = now;
   return pid_controller_.Update(bdp_error, dt);
 }
