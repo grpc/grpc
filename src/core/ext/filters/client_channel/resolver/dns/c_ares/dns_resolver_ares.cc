@@ -447,12 +447,8 @@ extern "C" void grpc_resolver_dns_ares_init(void) {
 
 extern "C" void grpc_resolver_dns_ares_shutdown(void) {
   char* resolver = gpr_getenv("GRPC_DNS_RESOLVER");
-<<<<<<< HEAD
   if (resolver != nullptr && gpr_stricmp(resolver, "ares") == 0) {
-=======
-  if (resolver != NULL && gpr_stricmp(resolver, "ares") == 0) {
     address_sorting_shutdown();
->>>>>>> 6f69eb678a... Simply logging and fix mismatched init and shutdown
     grpc_ares_cleanup();
   }
   gpr_free(resolver);
