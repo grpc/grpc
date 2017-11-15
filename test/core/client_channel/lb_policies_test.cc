@@ -126,19 +126,19 @@ static gpr_timespec n_millis_time(int n) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, n_millis_time(5000), NULL);
+    ev = grpc_completion_queue_next(cq, n_millis_time(5000), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void kill_server(const servers_fixture* f, size_t i) {
   gpr_log(GPR_INFO, "KILLING SERVER %" PRIuPTR, i);
-  GPR_ASSERT(f->servers[i] != NULL);
+  GPR_ASSERT(f->servers[i] != nullptr);
   grpc_server_shutdown_and_notify(f->servers[i], f->shutdown_cq, tag(10000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(10000),
-                                         n_millis_time(5000), NULL)
+                                         n_millis_time(5000), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->servers[i]);
-  f->servers[i] = NULL;
+  f->servers[i] = nullptr;
 }
 
 typedef struct request_data {
@@ -153,12 +153,12 @@ static void revive_server(const servers_fixture* f, request_data* rdata,
                           size_t i) {
   int got_port;
   gpr_log(GPR_INFO, "RAISE AGAIN SERVER %" PRIuPTR, i);
-  GPR_ASSERT(f->servers[i] == NULL);
+  GPR_ASSERT(f->servers[i] == nullptr);
 
   gpr_log(GPR_DEBUG, "revive: %s", f->servers_hostports[i]);
 
-  f->servers[i] = grpc_server_create(NULL, NULL);
-  grpc_server_register_completion_queue(f->servers[i], f->cq, NULL);
+  f->servers[i] = grpc_server_create(nullptr, nullptr);
+  grpc_server_register_completion_queue(f->servers[i], f->cq, nullptr);
   GPR_ASSERT((got_port = grpc_server_add_insecure_http2_port(
                   f->servers[i], f->servers_hostports[i])) > 0);
   grpc_server_start(f->servers[i]);
@@ -187,13 +187,13 @@ static servers_fixture* setup_servers(const char* server_host,
       gpr_malloc(sizeof(grpc_server*) * num_servers));
   f->servers_hostports =
       static_cast<char**>(gpr_malloc(sizeof(char*) * num_servers));
-  f->cq = grpc_completion_queue_create_for_next(NULL);
-  f->shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  f->cq = grpc_completion_queue_create_for_next(nullptr);
+  f->shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   for (i = 0; i < num_servers; i++) {
     grpc_metadata_array_init(&f->request_metadata_recv[i]);
     gpr_join_host_port(&f->servers_hostports[i], server_host,
                        grpc_pick_unused_port_or_die());
-    f->servers[i] = 0;
+    f->servers[i] = nullptr;
     revive_server(f, rdata, i);
   }
   return f;
@@ -203,10 +203,10 @@ static void teardown_servers(servers_fixture* f) {
   size_t i;
   /* Destroy server. */
   for (i = 0; i < f->num_servers; i++) {
-    if (f->servers[i] == NULL) continue;
+    if (f->servers[i] == nullptr) continue;
     grpc_server_shutdown_and_notify(f->servers[i], f->shutdown_cq, tag(10000));
     GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(10000),
-                                           n_millis_time(5000), NULL)
+                                           n_millis_time(5000), nullptr)
                    .type == GRPC_OP_COMPLETE);
     grpc_server_destroy(f->servers[i]);
   }
@@ -286,9 +286,10 @@ static request_sequences perform_request(servers_fixture* f,
     memset(s_valid, 0, f->num_servers * sizeof(int));
 
     grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
-    c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                                 grpc_slice_from_static_string("/foo"), &host,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                 f->cq, grpc_slice_from_static_string("/foo"),
+                                 &host, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                 nullptr);
     GPR_ASSERT(c);
     completed_client = 0;
 
@@ -297,17 +298,17 @@ static request_sequences perform_request(servers_fixture* f,
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
     op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
     op->data.recv_initial_metadata.recv_initial_metadata =
         &rdata->initial_metadata_recv;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     op->data.recv_status_on_client.trailing_metadata =
@@ -315,16 +316,16 @@ static request_sequences perform_request(servers_fixture* f,
     op->data.recv_status_on_client.status = &rdata->status;
     op->data.recv_status_on_client.status_details = &rdata->details;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL));
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, (size_t)(op - ops),
+                                                     tag(1), nullptr));
 
     s_idx = -1;
-    while (
-        (ev = grpc_completion_queue_next(
-             f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT), NULL))
-            .type != GRPC_QUEUE_TIMEOUT) {
+    while ((ev = grpc_completion_queue_next(
+                f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT),
+                nullptr))
+               .type != GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(intptr_t)ev.tag);
       const grpc_connectivity_state conn_state =
@@ -352,7 +353,7 @@ static request_sequences perform_request(servers_fixture* f,
       op->op = GRPC_OP_SEND_INITIAL_METADATA;
       op->data.send_initial_metadata.count = 0;
       op->flags = 0;
-      op->reserved = NULL;
+      op->reserved = nullptr;
       op++;
       op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
       op->data.send_status_from_server.trailing_metadata_count = 0;
@@ -360,16 +361,16 @@ static request_sequences perform_request(servers_fixture* f,
       grpc_slice status_details = grpc_slice_from_static_string("xyz");
       op->data.send_status_from_server.status_details = &status_details;
       op->flags = 0;
-      op->reserved = NULL;
+      op->reserved = nullptr;
       op++;
       op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
       op->data.recv_close_on_server.cancelled = &was_cancelled;
       op->flags = 0;
-      op->reserved = NULL;
+      op->reserved = nullptr;
       op++;
       GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(f->server_calls[s_idx],
                                                        ops, (size_t)(op - ops),
-                                                       tag(102), NULL));
+                                                       tag(102), nullptr));
 
       CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
       if (!completed_client) {
@@ -394,17 +395,17 @@ static request_sequences perform_request(servers_fixture* f,
                                      &f->request_metadata_recv[s_idx], f->cq,
                                      f->cq, tag(1000 + (int)s_idx)));
     } else { /* no response from server */
-      grpc_call_cancel(c, NULL);
+      grpc_call_cancel(c, nullptr);
       if (!completed_client) {
         CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
         cq_verify(cqv);
       }
     }
 
-    GPR_ASSERT(
-        grpc_completion_queue_next(
-            f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT), NULL)
-            .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(grpc_completion_queue_next(
+                   f->cq, grpc_timeout_milliseconds_to_deadline(RETRY_TIMEOUT),
+                   nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
 
     grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
     grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
@@ -443,22 +444,22 @@ static grpc_call** perform_multirequest(servers_fixture* f,
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
 
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
   for (i = 0; i < concurrent_calls; i++) {
-    calls[i] =
-        grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                                 grpc_slice_from_static_string("/foo"), &host,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    calls[i] = grpc_channel_create_call(
+        client, nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq,
+        grpc_slice_from_static_string("/foo"), &host,
+        gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     GPR_ASSERT(calls[i]);
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(calls[i], ops,
                                                      (size_t)(op - ops), tag(1),
-                                                     NULL));
+                                                     nullptr));
   }
 
   return calls;
@@ -478,7 +479,7 @@ void run_spec(const test_spec* spec) {
 
   /* Create client. */
   servers_hostports_str = gpr_strjoin_sep((const char**)f->servers_hostports,
-                                          f->num_servers, ",", NULL);
+                                          f->num_servers, ",", nullptr);
   gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
   arg_array[0].type = GRPC_ARG_INTEGER;
@@ -491,7 +492,7 @@ void run_spec(const test_spec* spec) {
   args.num_args = 2;
   args.args = arg_array;
 
-  client = grpc_insecure_channel_create(client_hostport, &args, NULL);
+  client = grpc_insecure_channel_create(client_hostport, &args, nullptr);
 
   gpr_log(GPR_INFO, "Testing '%s' with servers=%s client=%s", spec->description,
           servers_hostports_str, client_hostport);
@@ -517,7 +518,7 @@ static grpc_channel* create_client(const servers_fixture* f) {
   grpc_channel_args args;
 
   servers_hostports_str = gpr_strjoin_sep((const char**)f->servers_hostports,
-                                          f->num_servers, ",", NULL);
+                                          f->num_servers, ",", nullptr);
   gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
 
   arg_array[0].type = GRPC_ARG_INTEGER;
@@ -534,7 +535,7 @@ static grpc_channel* create_client(const servers_fixture* f) {
   args.num_args = GPR_ARRAY_SIZE(arg_array);
   args.args = arg_array;
 
-  client = grpc_insecure_channel_create(client_hostport, &args, NULL);
+  client = grpc_insecure_channel_create(client_hostport, &args, nullptr);
   gpr_free(client_hostport);
   gpr_free(servers_hostports_str);
 
@@ -557,7 +558,7 @@ static void test_ping() {
 
   client = create_client(f);
 
-  grpc_channel_ping(client, f->cq, tag(0), NULL);
+  grpc_channel_ping(client, f->cq, tag(0), nullptr);
   CQ_EXPECT_COMPLETION(cqv, tag(0), 0);
 
   /* check that we're still in idle, and start connecting */
@@ -577,7 +578,7 @@ static void test_ping() {
   }
 
   for (i = 1; i <= 5; i++) {
-    grpc_channel_ping(client, f->cq, tag(i), NULL);
+    grpc_channel_ping(client, f->cq, tag(i), nullptr);
     CQ_EXPECT_COMPLETION(cqv, tag(i), 1);
     cq_verify(cqv);
   }
@@ -602,9 +603,8 @@ static void test_pending_calls(size_t concurrent_calls) {
 
   client = create_client(f);
   calls = perform_multirequest(f, client, concurrent_calls);
-  grpc_call_cancel(
-      calls[0],
-      NULL); /* exercise the cancel pick path whilst there are pending picks */
+  grpc_call_cancel(calls[0], nullptr); /* exercise the cancel pick path whilst
+                                          there are pending picks */
 
   gpr_free(rdata.call_details);
 
@@ -621,7 +621,7 @@ static void test_pending_calls(size_t concurrent_calls) {
 
 static void test_get_channel_info() {
   grpc_channel* channel =
-      grpc_insecure_channel_create("ipv4:127.0.0.1:1234", NULL, NULL);
+      grpc_insecure_channel_create("ipv4:127.0.0.1:1234", nullptr, nullptr);
   // Ensures that resolver returns.
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
   // First, request no fields.  This is a no-op.
@@ -629,10 +629,10 @@ static void test_get_channel_info() {
   memset(&channel_info, 0, sizeof(channel_info));
   grpc_channel_get_info(channel, &channel_info);
   // Request LB policy name.
-  char* lb_policy_name = NULL;
+  char* lb_policy_name = nullptr;
   channel_info.lb_policy_name = &lb_policy_name;
   grpc_channel_get_info(channel, &channel_info);
-  GPR_ASSERT(lb_policy_name != NULL);
+  GPR_ASSERT(lb_policy_name != nullptr);
   GPR_ASSERT(strcmp(lb_policy_name, "pick_first") == 0);
   gpr_free(lb_policy_name);
   // Request service config, which does not exist, so we'll get nothing back.
@@ -640,7 +640,7 @@ static void test_get_channel_info() {
   char* service_config_json = const_cast<char*>("dummy_string");
   channel_info.service_config_json = &service_config_json;
   grpc_channel_get_info(channel, &channel_info);
-  GPR_ASSERT(service_config_json == NULL);
+  GPR_ASSERT(service_config_json == nullptr);
   // Recreate the channel such that it has a service config.
   grpc_channel_destroy(channel);
   grpc_arg arg;
@@ -648,8 +648,8 @@ static void test_get_channel_info() {
   arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
   arg.value.string =
       const_cast<char*>("{\"loadBalancingPolicy\": \"ROUND_ROBIN\"}");
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
-  channel = grpc_insecure_channel_create("ipv4:127.0.0.1:1234", args, NULL);
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+  channel = grpc_insecure_channel_create("ipv4:127.0.0.1:1234", args, nullptr);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_channel_args_destroy(&exec_ctx, args);
@@ -659,7 +659,7 @@ static void test_get_channel_info() {
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
   // Now request the service config again.
   grpc_channel_get_info(channel, &channel_info);
-  GPR_ASSERT(service_config_json != NULL);
+  GPR_ASSERT(service_config_json != nullptr);
   GPR_ASSERT(strcmp(service_config_json, arg.value.string) == 0);
   gpr_free(service_config_json);
   // Clean up.
@@ -884,7 +884,7 @@ static void dump_array(const char* desc, const int* data, const size_t count) {
     gpr_asprintf(&tmp, " %d", data[i]);
     gpr_strvec_add(&s, tmp);
   }
-  tmp = gpr_strvec_flatten(&s, NULL);
+  tmp = gpr_strvec_flatten(&s, nullptr);
   gpr_strvec_destroy(&s);
   gpr_log(GPR_DEBUG, "%s", tmp);
   gpr_free(tmp);
@@ -970,8 +970,8 @@ int main(int argc, char** argv) {
   grpc_tracer_set_enabled("round_robin", 1);
 
   GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, "this-lb-policy-does-not-exist",
-                                   NULL) == NULL);
-  GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, NULL, NULL) == NULL);
+                                   nullptr) == nullptr);
+  GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, nullptr, nullptr) == nullptr);
 
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);
   /* everything is fine, all servers stay up the whole time and life's peachy

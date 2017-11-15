@@ -62,7 +62,7 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   zone* z = &arena->initial_zone;
   while (start > z->size_end) {
     zone* next_z = (zone*)gpr_atm_acq_load(&z->next_atm);
-    if (next_z == NULL) {
+    if (next_z == nullptr) {
       size_t next_z_size = (size_t)gpr_atm_no_barrier_load(&arena->size_so_far);
       next_z = (zone*)gpr_zalloc(sizeof(zone) + next_z_size);
       next_z->size_begin = z->size_end;

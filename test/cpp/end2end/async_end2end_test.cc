@@ -466,7 +466,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
   char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-  if (s != NULL && 0 == strcmp(s, "poll")) {
+  if (s != nullptr && 0 == strcmp(s, "poll")) {
     poller_slowdown_factor = 2;
   }
   gpr_free(s);

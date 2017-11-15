@@ -47,7 +47,7 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
   cq_verifier* cqv = cq_verifier_create(cq);
   grpc_metadata_array request_metadata_recv;
   gpr_timespec deadline;
-  grpc_byte_buffer* payload = NULL;
+  grpc_byte_buffer* payload = nullptr;
 
   grpc_metadata_array_init(&request_metadata_recv);
 
@@ -58,7 +58,7 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(payload != NULL);
+  GPR_ASSERT(payload != nullptr);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_unref(s);
@@ -70,7 +70,7 @@ static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
                            void* registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), NULL)
+                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);
   }
 }
@@ -80,45 +80,45 @@ int main(int argc, char** argv) {
 
   /* body generated with
    * tools/codegen/core/gen_server_registered_method_bad_client_test_body.py */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, NULL,
+  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, nullptr,
                            PFX_STR "\x00\x00\x00\x00\x00\x00\x00\x00\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, NULL,
+  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, nullptr,
                            PFX_STR "\x00\x00\x01\x00\x00\x00\x00\x00\x01\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, NULL,
+  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, nullptr,
                            PFX_STR
                            "\x00\x00\x02\x00\x00\x00\x00\x00\x01\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, NULL,
+  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, nullptr,
                            PFX_STR
                            "\x00\x00\x03\x00\x00\x00\x00\x00\x01\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails, NULL,
+      verifier_fails, nullptr,
       PFX_STR "\x00\x00\x04\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00",
       GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_succeeds, NULL,
+      verifier_succeeds, nullptr,
       PFX_STR "\x00\x00\x05\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00", 0);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails, NULL,
+      verifier_fails, nullptr,
       PFX_STR "\x00\x00\x05\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x01",
       GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_succeeds, NULL,
+      verifier_succeeds, nullptr,
       PFX_STR "\x00\x00\x06\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x01\x00",
       0);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails, NULL,
+      verifier_fails, nullptr,
       PFX_STR "\x00\x00\x05\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x02",
       GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails, NULL,
+      verifier_fails, nullptr,
       PFX_STR "\x00\x00\x06\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x02\x00",
       GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_succeeds, NULL,
+      verifier_succeeds, nullptr,
       PFX_STR
       "\x00\x00\x07\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x02\x00\x00",
       0);

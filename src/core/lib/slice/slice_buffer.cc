@@ -98,7 +98,7 @@ add_new:
   maybe_embiggen(sb);
   back = &sb->slices[sb->count];
   sb->count++;
-  back->refcount = NULL;
+  back->refcount = nullptr;
   back->data.inlined.length = (uint8_t)n;
   return back->data.inlined.bytes;
 }
@@ -137,7 +137,7 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
         maybe_embiggen(sb);
         back = &sb->slices[n];
         sb->count = n + 1;
-        back->refcount = NULL;
+        back->refcount = nullptr;
         back->data.inlined.length = (uint8_t)(s.data.inlined.length - cp1);
         memcpy(back->data.inlined.bytes, s.data.inlined.bytes + cp1,
                s.data.inlined.length - cp1);

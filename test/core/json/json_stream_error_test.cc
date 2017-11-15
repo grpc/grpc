@@ -37,13 +37,13 @@ static void string_clear(void* userdata) {
 static uint32_t read_char(void* userdata) { return GRPC_JSON_READ_CHAR_ERROR; }
 
 static grpc_json_reader_vtable reader_vtable = {
-    string_clear, NULL, NULL, read_char, NULL, NULL,
-    NULL,         NULL, NULL, NULL,      NULL, NULL};
+    string_clear, nullptr, nullptr, read_char, nullptr, nullptr,
+    nullptr,      nullptr, nullptr, nullptr,   nullptr, nullptr};
 
 static void read_error() {
   grpc_json_reader reader;
   grpc_json_reader_status status;
-  grpc_json_reader_init(&reader, &reader_vtable, NULL);
+  grpc_json_reader_init(&reader, &reader_vtable, nullptr);
 
   status = grpc_json_reader_run(&reader);
   GPR_ASSERT(status == GRPC_JSON_READ_ERROR);

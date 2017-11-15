@@ -47,7 +47,7 @@ void args_init(grpc_exec_ctx* exec_ctx, args_struct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(exec_ctx, args->pollset_set, args->pollset);
-  args->addrs = NULL;
+  args->addrs = nullptr;
   gpr_atm_rel_store(&args->done_atm, 0);
 }
 
@@ -57,7 +57,7 @@ void args_finish(grpc_exec_ctx* exec_ctx, args_struct* args) {
   grpc_pollset_set_del_pollset(exec_ctx, args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(exec_ctx, args->pollset_set);
   grpc_closure do_nothing_cb;
-  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, NULL,
+  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
                     grpc_schedule_on_exec_ctx);
   gpr_mu_lock(args->mu);
   grpc_pollset_shutdown(exec_ctx, args->pollset, &do_nothing_cb);
@@ -84,7 +84,7 @@ static void poll_pollset_until_request_done(args_struct* args) {
     grpc_millis time_left = deadline - grpc_exec_ctx_now(&exec_ctx);
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRIdPTR, done, time_left);
     GPR_ASSERT(time_left >= 0);
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
                       grpc_pollset_work(&exec_ctx, args->pollset, &worker,
@@ -100,12 +100,12 @@ static void must_succeed(grpc_exec_ctx* exec_ctx, void* argsp,
                          grpc_error* err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
-  GPR_ASSERT(args->addrs != NULL);
+  GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
+                    grpc_pollset_kick(exec_ctx, args->pollset, nullptr));
   gpr_mu_unlock(args->mu);
 }
 
@@ -115,7 +115,7 @@ static void must_fail(grpc_exec_ctx* exec_ctx, void* argsp, grpc_error* err) {
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
+                    grpc_pollset_kick(exec_ctx, args->pollset, nullptr));
   gpr_mu_unlock(args->mu);
 }
 
@@ -124,7 +124,7 @@ static void test_localhost(void) {
   args_struct args;
   args_init(&exec_ctx, &args);
   grpc_resolve_address(
-      &exec_ctx, "localhost:1", NULL, args.pollset_set,
+      &exec_ctx, "localhost:1", nullptr, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
   grpc_exec_ctx_flush(&exec_ctx);
@@ -166,7 +166,7 @@ static void test_missing_default_port(void) {
   args_struct args;
   args_init(&exec_ctx, &args);
   grpc_resolve_address(
-      &exec_ctx, "localhost", NULL, args.pollset_set,
+      &exec_ctx, "localhost", nullptr, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
   grpc_exec_ctx_flush(&exec_ctx);
@@ -180,7 +180,7 @@ static void test_ipv6_with_port(void) {
   args_struct args;
   args_init(&exec_ctx, &args);
   grpc_resolve_address(
-      &exec_ctx, "[2001:db8::1]:1", NULL, args.pollset_set,
+      &exec_ctx, "[2001:db8::1]:1", nullptr, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
   grpc_exec_ctx_flush(&exec_ctx);
@@ -222,7 +222,7 @@ static void test_invalid_ip_addresses(void) {
     args_struct args;
     args_init(&exec_ctx, &args);
     grpc_resolve_address(
-        &exec_ctx, kCases[i], NULL, args.pollset_set,
+        &exec_ctx, kCases[i], nullptr, args.pollset_set,
         GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
         &args.addrs);
     grpc_exec_ctx_flush(&exec_ctx);

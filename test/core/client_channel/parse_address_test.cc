@@ -62,8 +62,8 @@ static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
   GPR_ASSERT(1 == grpc_parse_ipv4(uri, &addr));
   struct sockaddr_in* addr_in = (struct sockaddr_in*)addr.addr;
   GPR_ASSERT(AF_INET == addr_in->sin_family);
-  GPR_ASSERT(NULL != grpc_inet_ntop(AF_INET, &addr_in->sin_addr, ntop_buf,
-                                    sizeof(ntop_buf)));
+  GPR_ASSERT(nullptr != grpc_inet_ntop(AF_INET, &addr_in->sin_addr, ntop_buf,
+                                       sizeof(ntop_buf)));
   GPR_ASSERT(0 == strcmp(ntop_buf, host));
   GPR_ASSERT(ntohs(addr_in->sin_port) == port);
 
@@ -81,8 +81,8 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   GPR_ASSERT(1 == grpc_parse_ipv6(uri, &addr));
   struct sockaddr_in6* addr_in6 = (struct sockaddr_in6*)addr.addr;
   GPR_ASSERT(AF_INET6 == addr_in6->sin6_family);
-  GPR_ASSERT(NULL != grpc_inet_ntop(AF_INET6, &addr_in6->sin6_addr, ntop_buf,
-                                    sizeof(ntop_buf)));
+  GPR_ASSERT(nullptr != grpc_inet_ntop(AF_INET6, &addr_in6->sin6_addr, ntop_buf,
+                                       sizeof(ntop_buf)));
   GPR_ASSERT(0 == strcmp(ntop_buf, host));
   GPR_ASSERT(ntohs(addr_in6->sin6_port) == port);
   GPR_ASSERT(addr_in6->sin6_scope_id == scope_id);

@@ -39,13 +39,13 @@ static int check_transport_security_type(const grpc_auth_context* ctx) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       ctx, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == NULL) return 0;
+  if (prop == nullptr) return 0;
   if (strncmp(prop->value, GRPC_SSL_TRANSPORT_SECURITY_TYPE,
               prop->value_length) != 0) {
     return 0;
   }
   /* Check that we have only one property with this name. */
-  if (grpc_auth_property_iterator_next(&it) != NULL) return 0;
+  if (grpc_auth_property_iterator_next(&it) != nullptr) return 0;
   return 1;
 }
 
@@ -89,7 +89,7 @@ static void test_unauthenticated_ssl_peer(void) {
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
                  &peer.properties[0]) == TSI_OK);
   ctx = tsi_ssl_peer_to_auth_context(&peer);
-  GPR_ASSERT(ctx != NULL);
+  GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(!grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(check_transport_security_type(ctx));
 
@@ -112,7 +112,7 @@ static int check_identity(const grpc_auth_context* ctx,
   it = grpc_auth_context_peer_identity(ctx);
   for (i = 0; i < num_identities; i++) {
     prop = grpc_auth_property_iterator_next(&it);
-    if (prop == NULL) {
+    if (prop == nullptr) {
       gpr_log(GPR_ERROR, "Expected identity value %s not found.",
               expected_identities[i]);
       return 0;
@@ -136,7 +136,7 @@ static int check_x509_cn(const grpc_auth_context* ctx,
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       ctx, GRPC_X509_CN_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == NULL) {
+  if (prop == nullptr) {
     gpr_log(GPR_ERROR, "CN property not found.");
     return 0;
   }
@@ -144,7 +144,7 @@ static int check_x509_cn(const grpc_auth_context* ctx,
     gpr_log(GPR_ERROR, "Expected CN %s and got %s", expected_cn, prop->value);
     return 0;
   }
-  if (grpc_auth_property_iterator_next(&it) != NULL) {
+  if (grpc_auth_property_iterator_next(&it) != nullptr) {
     gpr_log(GPR_ERROR, "Expected only one property for CN.");
     return 0;
   }
@@ -156,7 +156,7 @@ static int check_x509_pem_cert(const grpc_auth_context* ctx,
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == NULL) {
+  if (prop == nullptr) {
     gpr_log(GPR_ERROR, "Pem certificate property not found.");
     return 0;
   }
@@ -165,7 +165,7 @@ static int check_x509_pem_cert(const grpc_auth_context* ctx,
             prop->value);
     return 0;
   }
-  if (grpc_auth_property_iterator_next(&it) != NULL) {
+  if (grpc_auth_property_iterator_next(&it) != nullptr) {
     gpr_log(GPR_ERROR, "Expected only one property for pem cert.");
     return 0;
   }
@@ -189,7 +189,7 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[2]) == TSI_OK);
   ctx = tsi_ssl_peer_to_auth_context(&peer);
-  GPR_ASSERT(ctx != NULL);
+  GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(check_identity(ctx, GRPC_X509_CN_PROPERTY_NAME, &expected_cn, 1));
   GPR_ASSERT(check_transport_security_type(ctx));
@@ -225,7 +225,7 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[3]) == TSI_OK);
   ctx = tsi_ssl_peer_to_auth_context(&peer);
-  GPR_ASSERT(ctx != NULL);
+  GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(
       check_identity(ctx, GRPC_X509_SAN_PROPERTY_NAME, &expected_san, 1));
@@ -266,7 +266,7 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
                    expected_sans[i], &peer.properties[3 + i]) == TSI_OK);
   }
   ctx = tsi_ssl_peer_to_auth_context(&peer);
-  GPR_ASSERT(ctx != NULL);
+  GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(check_identity(ctx, GRPC_X509_SAN_PROPERTY_NAME, expected_sans,
                             GPR_ARRAY_SIZE(expected_sans)));
@@ -312,7 +312,7 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
                    expected_sans[i], &peer.properties[5 + i]) == TSI_OK);
   }
   ctx = tsi_ssl_peer_to_auth_context(&peer);
-  GPR_ASSERT(ctx != NULL);
+  GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(check_identity(ctx, GRPC_X509_SAN_PROPERTY_NAME, expected_sans,
                             GPR_ARRAY_SIZE(expected_sans)));
