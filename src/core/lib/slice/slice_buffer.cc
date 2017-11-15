@@ -176,10 +176,11 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx* exec_ctx,
   sb->idx_of_first_valid_slice = 0;
 }
 
-void grpc_slice_buffer_partial_reset_and_unref_internal(grpc_exec_ctx* exec_ctx,
-                                                        grpc_slice_buffer* sb,
-                                                        size_t idx) {
-  GPR_ASSERT(idx <= sb->count);
+void grpc_slice_buffer_partial_unref_internal(grpc_exec_ctx* exec_ctx,
+                                              grpc_slice_buffer* sb,
+                                              size_t idx) {
+  GPR_ASSERT(idx < sb->count);  //  if idx == count, then partial is not needed
+  GPR_ASSERT(sb->idx_of_first_valid_slice <= idx);
 
   size_t i;
   for (i = sb->idx_of_first_valid_slice; i < idx; i++) {
