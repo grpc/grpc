@@ -572,6 +572,7 @@ def manual_cmdline(docker_cmdline, docker_image):
       continue
     if item == docker_image:
       item = "$docker_image"
+    item = item.replace('"', '\\"')
     # add quotes when necessary
     if any(character.isspace() for character in item):
       item = "\"%s\"" % item
