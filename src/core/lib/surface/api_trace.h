@@ -24,10 +24,6 @@
 
 extern grpc_core::TraceFlag grpc_api_trace;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Provide unwrapping macros because we're in C89 and variadic macros weren't
    introduced until C99... */
 #define GRPC_API_TRACE_UNWRAP0()
@@ -50,9 +46,5 @@ extern "C" {
   if (grpc_api_trace.enabled()) {                             \
     gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
   }
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_API_TRACE_H */
