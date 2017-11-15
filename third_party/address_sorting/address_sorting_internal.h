@@ -59,7 +59,7 @@
 
 #include "address_sorting.h"
 
-address_sorting_socket_factory*
-address_sorting_create_socket_factory_for_current_platform();
+address_sorting_source_addr_factory*
+address_sorting_create_source_addr_factory_for_current_platform();
 
 #endif  // ADDRESS_SORTING_INTERNAL_H
