@@ -54,8 +54,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(NULL);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
@@ -64,7 +64,8 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
                                   grpc_channel_args* client_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
-  f->client = grpc_insecure_channel_create(ffd->localaddr, client_args, NULL);
+  f->client =
+      grpc_insecure_channel_create(ffd->localaddr, client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
@@ -85,8 +86,8 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(server_args_new, NULL);
-  grpc_server_register_completion_queue(f->server, f->cq, NULL);
+  f->server = grpc_server_create(server_args_new, nullptr);
+  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
   grpc_channel_args_destroy(&exec_ctx, server_args_new);

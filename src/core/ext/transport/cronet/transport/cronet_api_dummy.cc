@@ -33,7 +33,7 @@ bidirectional_stream* bidirectional_stream_create(
     stream_engine* engine, void* annotation,
     bidirectional_stream_callback* callback) {
   GPR_ASSERT(0);
-  return NULL;
+  return nullptr;
 }
 
 int bidirectional_stream_destroy(bidirectional_stream* stream) {

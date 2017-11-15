@@ -55,8 +55,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
 
   memset(&f, 0, sizeof(f));
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(NULL);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
@@ -65,22 +65,22 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture* f,
                                               grpc_channel_args* client_args) {
   fullstack_compression_fixture_data* ffd =
       static_cast<fullstack_compression_fixture_data*>(f->fixture_data);
-  if (ffd->client_args_compression != NULL) {
+  if (ffd->client_args_compression != nullptr) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_channel_args_destroy(&exec_ctx, ffd->client_args_compression);
     grpc_exec_ctx_finish(&exec_ctx);
   }
   ffd->client_args_compression = grpc_channel_args_set_compression_algorithm(
       client_args, GRPC_COMPRESS_GZIP);
-  f->client = grpc_insecure_channel_create(ffd->localaddr,
-                                           ffd->client_args_compression, NULL);
+  f->client = grpc_insecure_channel_create(
+      ffd->localaddr, ffd->client_args_compression, nullptr);
 }
 
 void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture* f,
                                               grpc_channel_args* server_args) {
   fullstack_compression_fixture_data* ffd =
       static_cast<fullstack_compression_fixture_data*>(f->fixture_data);
-  if (ffd->server_args_compression != NULL) {
+  if (ffd->server_args_compression != nullptr) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_channel_args_destroy(&exec_ctx, ffd->server_args_compression);
     grpc_exec_ctx_finish(&exec_ctx);
@@ -90,8 +90,8 @@ void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture* f,
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(ffd->server_args_compression, NULL);
-  grpc_server_register_completion_queue(f->server, f->cq, NULL);
+  f->server = grpc_server_create(ffd->server_args_compression, nullptr);
+  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
 }

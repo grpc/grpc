@@ -263,13 +263,13 @@ static grpc_error* error_for_fd(int fd, const grpc_resolved_address* addr) {
 grpc_error* grpc_create_dualstack_socket(
     const grpc_resolved_address* resolved_addr, int type, int protocol,
     grpc_dualstack_mode* dsmode, int* newfd) {
-  return grpc_create_dualstack_socket_using_factory(NULL, resolved_addr, type,
-                                                    protocol, dsmode, newfd);
+  return grpc_create_dualstack_socket_using_factory(
+      nullptr, resolved_addr, type, protocol, dsmode, newfd);
 }
 
 static int create_socket(grpc_socket_factory* factory, int domain, int type,
                          int protocol) {
-  return (factory != NULL)
+  return (factory != nullptr)
              ? grpc_socket_factory_socket(factory, domain, type, protocol)
              : socket(domain, type, protocol);
 }
@@ -292,7 +292,7 @@ grpc_error* grpc_create_dualstack_socket_using_factory(
       return GRPC_ERROR_NONE;
     }
     /* If this isn't an IPv4 address, then return whatever we've got. */
-    if (!grpc_sockaddr_is_v4mapped(resolved_addr, NULL)) {
+    if (!grpc_sockaddr_is_v4mapped(resolved_addr, nullptr)) {
       *dsmode = GRPC_DSMODE_IPV6;
       return error_for_fd(*newfd, resolved_addr);
     }

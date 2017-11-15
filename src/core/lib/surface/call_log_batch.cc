@@ -27,7 +27,7 @@
 
 static void add_metadata(gpr_strvec* b, const grpc_metadata* md, size_t count) {
   size_t i;
-  if (md == NULL) {
+  if (md == nullptr) {
     gpr_strvec_add(b, gpr_strdup("(nil)"));
     return;
   }
@@ -66,7 +66,7 @@ char* grpc_op_string(const grpc_op* op) {
       gpr_asprintf(&tmp, "SEND_STATUS_FROM_SERVER status=%d details=",
                    op->data.send_status_from_server.status);
       gpr_strvec_add(&b, tmp);
-      if (op->data.send_status_from_server.status_details != NULL) {
+      if (op->data.send_status_from_server.status_details != nullptr) {
         gpr_strvec_add(&b, grpc_dump_slice(
                                *op->data.send_status_from_server.status_details,
                                GPR_DUMP_ASCII));
@@ -99,7 +99,7 @@ char* grpc_op_string(const grpc_op* op) {
                    op->data.recv_close_on_server.cancelled);
       gpr_strvec_add(&b, tmp);
   }
-  out = gpr_strvec_flatten(&b, NULL);
+  out = gpr_strvec_flatten(&b, nullptr);
   gpr_strvec_destroy(&b);
 
   return out;

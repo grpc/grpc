@@ -100,7 +100,7 @@ class EndpointPairFixture {
       }
 
       grpc_server_setup_transport(&exec_ctx, server_->c_server(), transport,
-                                  NULL, server_args);
+                                  nullptr, server_args);
       grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr,
                                           nullptr);
     }

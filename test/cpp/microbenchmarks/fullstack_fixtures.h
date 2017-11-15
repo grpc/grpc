@@ -185,7 +185,7 @@ class EndpointPairFixture : public BaseFixture {
       }
 
       grpc_server_setup_transport(&exec_ctx, server_->c_server(),
-                                  server_transport_, NULL, server_args);
+                                  server_transport_, nullptr, server_args);
       grpc_chttp2_transport_start_reading(&exec_ctx, server_transport_,
                                           nullptr, nullptr);
     }
@@ -246,7 +246,7 @@ class SockPair : public EndpointPairFixture {
   SockPair(Service* service, const FixtureConfiguration& fixture_configuration =
                                  FixtureConfiguration())
       : EndpointPairFixture(service,
-                            grpc_iomgr_create_endpoint_pair("test", NULL),
+                            grpc_iomgr_create_endpoint_pair("test", nullptr),
                             fixture_configuration) {}
 };
 

@@ -42,7 +42,7 @@ char* grpc_event_string(grpc_event* ev) {
   char* out;
   gpr_strvec buf;
 
-  if (ev == NULL) return gpr_strdup("null");
+  if (ev == nullptr) return gpr_strdup("null");
 
   gpr_strvec_init(&buf);
 
@@ -60,7 +60,7 @@ char* grpc_event_string(grpc_event* ev) {
       break;
   }
 
-  out = gpr_strvec_flatten(&buf, NULL);
+  out = gpr_strvec_flatten(&buf, nullptr);
   gpr_strvec_destroy(&buf);
   return out;
 }

@@ -26,7 +26,7 @@
 #include <grpc/support/string_util.h>
 
 void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser* p) {
-  p->debug_data = NULL;
+  p->debug_data = nullptr;
 }
 
 void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser* p) {
@@ -137,7 +137,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(grpc_exec_ctx* exec_ctx,
         grpc_chttp2_add_incoming_goaway(
             exec_ctx, t, (uint32_t)p->error_code,
             grpc_slice_new(p->debug_data, p->debug_length, gpr_free));
-        p->debug_data = NULL;
+        p->debug_data = nullptr;
       }
       return GRPC_ERROR_NONE;
   }

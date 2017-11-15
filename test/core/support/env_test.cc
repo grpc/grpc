@@ -37,7 +37,7 @@ static void test_setenv_getenv(void) {
 
   gpr_setenv(name, value);
   retrieved_value = gpr_getenv(name);
-  GPR_ASSERT(retrieved_value != NULL);
+  GPR_ASSERT(retrieved_value != nullptr);
   GPR_ASSERT(strcmp(value, retrieved_value) == 0);
   gpr_free(retrieved_value);
 }
