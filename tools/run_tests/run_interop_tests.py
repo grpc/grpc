@@ -319,14 +319,16 @@ class NodeLanguage:
 
   def client_cmd(self, args):
     return ['packages/grpc-native-core/deps/grpc/tools/run_tests/interop/with_nvm.sh',
-            'node', 'test/interop/interop_client.js'] + args
+            'node', '--require', './test/fixtures/native_native',
+            'test/interop/interop_client.js'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
     return ['packages/grpc-native-core/deps/grpc/tools/run_tests/interop/with_nvm.sh',
-            'node', 'test/interop/interop_server.js'] + args
+            'node', '--require', './test/fixtures/native_native',
+            'test/interop/interop_server.js'] + args
 
   def global_env(self):
     return {}
@@ -1242,7 +1244,7 @@ try:
       _HTTP2_TEST_CASES, http2_server_test_cases, resultset, num_failures,
       args.cloud_to_prod_auth or args.cloud_to_prod, args.prod_servers,
       args.http2_interop)
-  
+
   if num_failures:
     sys.exit(1)
   else:
