@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2015, 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -167,22 +167,22 @@ module GRPC
             if desc.request_response?
               define_method(mth_name) do |req, metadata = {}|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                request_response(route, req, marshal, unmarshal, metadata)
+                request_response(route, req, marshal, unmarshal, metadata: metadata)
               end
             elsif desc.client_streamer?
               define_method(mth_name) do |reqs, metadata = {}|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                client_streamer(route, reqs, marshal, unmarshal, metadata)
+                client_streamer(route, reqs, marshal, unmarshal, metadata: metadata)
               end
             elsif desc.server_streamer?
               define_method(mth_name) do |req, metadata = {}, &blk|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                server_streamer(route, req, marshal, unmarshal, metadata, &blk)
+                server_streamer(route, req, marshal, unmarshal, metadata: metadata, &blk)
               end
             else  # is a bidi_stream
               define_method(mth_name) do |reqs, metadata = {}, &blk|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                bidi_streamer(route, reqs, marshal, unmarshal, metadata, &blk)
+                bidi_streamer(route, reqs, marshal, unmarshal, metadata: metadata, &blk)
               end
             end
           end
