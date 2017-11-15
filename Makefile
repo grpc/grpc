@@ -3210,6 +3210,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/dns/grpclb/dns_resolver_grpclb.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
@@ -4324,6 +4325,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
+    src/core/ext/filters/client_channel/resolver/dns/grpclb/dns_resolver_grpclb.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
