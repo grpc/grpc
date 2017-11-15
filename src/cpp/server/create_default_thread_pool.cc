@@ -28,7 +28,7 @@ namespace {
 ThreadPoolInterface* CreateDefaultThreadPoolImpl() {
   int cores = gpr_cpu_num_cores();
   if (!cores) cores = 4;
-  return new DynamicThreadPool(cores);
+  return new DynamicThreadPool(cores, gpr_thd_new, gpr_thd_join);
 }
 
 CreateThreadPoolFunc g_ctp_impl = CreateDefaultThreadPoolImpl;

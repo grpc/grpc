@@ -43,9 +43,14 @@ void AuthMetadataProcessorAyncWrapper::Process(
     return;
   }
   if (w->processor_->IsBlocking()) {
-    w->thread_pool_->Add(
+    bool added = w->thread_pool_->Add(
         std::bind(&AuthMetadataProcessorAyncWrapper::InvokeProcessor, w,
                   context, md, num_md, cb, user_data));
+    if (!added) {
+      // no thread available, so fail with temporary resource unavailability
+      cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAVAILABLE, nullptr);
+      return;
+    }
   } else {
     // invoke directly.
     w->InvokeProcessor(context, md, num_md, cb, user_data);
