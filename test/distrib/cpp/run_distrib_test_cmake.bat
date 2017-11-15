@@ -15,6 +15,10 @@
 @rem enter this directory
 cd /d %~dp0\..\..\..
 
+@rem TODO(jtattermusch): Kokoro has pre-installed protoc.exe in C:\Program Files\ProtoC and that directory
+@rem is on PATH. To avoid picking up the older version protoc.exe, we change the path to something non-existent.
+set PATH=%PATH:ProtoC=DontPickupProtoC%
+
 @rem Install into ./testinstall, but use absolute path and foward slashes
 set INSTALL_DIR=%cd:\=/%/testinstall
 
