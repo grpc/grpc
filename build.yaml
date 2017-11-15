@@ -3828,6 +3828,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: client_channel_stress_test
+  gtest: false
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/client/client_channel_stress_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: client_crash_test
   gtest: true
   cpu_cost: 0.1
