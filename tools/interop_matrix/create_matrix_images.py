@@ -140,7 +140,7 @@ def build_image_jobspec(runtime, env, gcr_tag, stack_base):
   }
   build_env.update(env)
   build_job = jobset.JobSpec(
-          cmdline=[os.path.join(stack_base, _IMAGE_BUILDER)],
+          cmdline=[_IMAGE_BUILDER],
           environ=build_env,
           shortname='build_docker_%s' % runtime,
           timeout_seconds=30*60)
