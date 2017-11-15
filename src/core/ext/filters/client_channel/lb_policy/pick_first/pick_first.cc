@@ -305,20 +305,20 @@ static void pf_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
                   p, p->selected->subchannel, i,
                   subchannel_list->num_subchannels);
         }
-        grpc_lb_subchannel_list_ref_for_connectivity_watch(
-            subchannel_list, "connectivity_watch+replace_selected");
-        grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
-        if (p->subchannel_list != nullptr) {
-          grpc_lb_subchannel_list_shutdown_and_unref(
-              exec_ctx, p->subchannel_list, "pf_update_includes_selected");
-        }
-        p->subchannel_list = subchannel_list;
         if (p->selected->connected_subchannel != nullptr) {
           sd->connected_subchannel = GRPC_CONNECTED_SUBCHANNEL_REF(
               p->selected->connected_subchannel, "pf_update_includes_selected");
         }
         p->selected = sd;
+        if (p->subchannel_list != nullptr) {
+          grpc_lb_subchannel_list_shutdown_and_unref(
+              exec_ctx, p->subchannel_list, "pf_update_includes_selected");
+        }
+        p->subchannel_list = subchannel_list;
         destroy_unselected_subchannels_locked(exec_ctx, p);
+        grpc_lb_subchannel_list_ref_for_connectivity_watch(
+            subchannel_list, "connectivity_watch+replace_selected");
+        grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
         // If there was a previously pending update (which may or may
         // not have contained the currently selected subchannel), drop
         // it, so that it doesn't override what we've done here.
