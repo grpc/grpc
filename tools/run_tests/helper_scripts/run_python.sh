@@ -22,6 +22,22 @@ PYTHON=`realpath "${1:-py27/bin/python}"`
 
 ROOT=`pwd`
 
+# compiles proto files to pb2.py and pb2_grpc.py
+# usage: proto_to_pb2 proto_file package_root target_dir_relative_to_package
+proto_to_pb2() {
+  PWD="$(pwd)"
+  cd "$2"
+  $PYTHON -m grpc_tools.protoc "$1" "-I$(dirname "$1")" \
+    "--python_out=$2/$3" "--grpc_python_out=$2/$3"
+  cd "$PWD"
+}
+# Build health-checking and reflection protos before running the tests
+proto_to_pb2 "$ROOT/src/proto/grpc/health/v1/health.proto" \
+  "$ROOT/src/python/grpcio_health_checking" "grpc_health/v1"
+proto_to_pb2 "$ROOT/src/proto/grpc/reflection/v1alpha/reflection.proto" \
+  "$ROOT/src/python/grpcio_reflection" "grpc_reflection/v1alpha"
+
+# Install testing
 $PYTHON $ROOT/src/python/grpcio_tests/setup.py test_lite
 
 mkdir -p $ROOT/reports

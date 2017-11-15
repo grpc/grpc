@@ -20,8 +20,7 @@ import setuptools
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-# Break import-style to ensure we can actually find our commands module.
-import health_commands
+# Break import-style to ensure we can actually find our module.
 import grpc_version
 
 CLASSIFIERS = [
@@ -40,17 +39,8 @@ PACKAGE_DIRECTORIES = {
     '': '.',
 }
 
-SETUP_REQUIRES = (
-    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),)
-
 INSTALL_REQUIRES = ('protobuf>=3.3.0',
                     'grpcio>={version}'.format(version=grpc_version.VERSION),)
-
-COMMAND_CLASS = {
-    # Run preprocess from the repository *before* doing any packaging!
-    'preprocess': health_commands.CopyProtoModules,
-    'build_package_protos': health_commands.BuildPackageProtos,
-}
 
 setuptools.setup(
     name='grpcio-health-checking',
@@ -64,5 +54,5 @@ setuptools.setup(
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),
     install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS)
+    setup_requires=(),
+    cmdclass={})

@@ -145,11 +145,21 @@ VENV_PYTHON=`script_realpath "$VENV/$VENV_RELATIVE_PYTHON"`
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
 pip_install_dir() {
-  PWD=`pwd`
-  cd $1
+  PWD="$(pwd)"
+  cd "$1"
   ($VENV_PYTHON setup.py build_ext -c $TOOLCHAIN || true)
   $VENV_PYTHON -m pip install --no-deps .
-  cd $PWD
+  cd "$PWD"
+}
+
+# compiles proto files to pb2.py and pb2_grpc.py
+# usage: proto_to_pb2 proto_file package_root target_dir_relative_to_package
+proto_to_pb2() {
+  PWD="$(pwd)"
+  cd "$2"
+  ${VENV_PYTHON} -m grpc_tools.protoc "$1" "-I$(dirname "$1")" \
+    "--python_out=$2/$3" "--grpc_python_out=$2/$3"
+  cd "$PWD"
 }
 
 $VENV_PYTHON -m pip install --upgrade pip==9.0.1
@@ -162,13 +172,13 @@ $VENV_PYTHON $ROOT/tools/distrib/python/make_grpcio_tools.py
 pip_install_dir $ROOT/tools/distrib/python/grpcio_tools
 
 # Build/install health checking
-$VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py preprocess
-$VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py build_package_protos
+proto_to_pb2 "$ROOT/src/proto/grpc/health/v1/health.proto" \
+  "$ROOT/src/python/grpcio_health_checking" "grpc_health/v1"
 pip_install_dir $ROOT/src/python/grpcio_health_checking
 
 # Build/install reflection
-$VENV_PYTHON $ROOT/src/python/grpcio_reflection/setup.py preprocess
-$VENV_PYTHON $ROOT/src/python/grpcio_reflection/setup.py build_package_protos
+proto_to_pb2 "$ROOT/src/proto/grpc/reflection/v1alpha/reflection.proto" \
+  "$ROOT/src/python/grpcio_reflection" "grpc_reflection/v1alpha"
 pip_install_dir $ROOT/src/python/grpcio_reflection
 
 # Install testing

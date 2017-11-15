@@ -56,24 +56,43 @@ then
   done
 fi
 
-# We need to use the built grpcio-tools/grpcio to compile the health proto
+# We need to use the built grpcio-tools/grpcio to compile the protos
 # Wheels are not supported by setup_requires/dependency_links, so we
 # manually install the dependency.  Note we should only do this if we
 # are in a docker image or in a virtualenv.
+#
+# Please note that since the packages built inside this code path
+# are pure Python, only one package needs to be distributed on PyPI
+# for all platforms, so it is fine that they are only built on one
+# platform, i.e. Linux.
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
   ${PIP} install -rrequirements.txt
   ${PIP} install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
   ${PIP} install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
+  # preprocess health.proto and generate the required pb2 and pb2_grpc
+  # files for grpcio_health_checking package
+  HEALTH_PROTO="src/proto/grpc/health/v1/health.proto"
+  HEALTH_PB2_DIR="src/python/grpcio_health_checking/grpc_health/v1"
+  ${PYTHON} -m grpc_tools.protoc "${HEALTH_PROTO}" \
+    "-I$(dirname "${HEALTH_PROTO}")" \
+    "--python_out=${HEALTH_PB2_DIR}" \
+    "--grpc_python_out=${HEALTH_PB2_DIR}"
   # Build gRPC health-checking source distribution
-  ${SETARCH_CMD} ${PYTHON} src/python/grpcio_health_checking/setup.py \
-      preprocess build_package_protos sdist
+  ${SETARCH_CMD} ${PYTHON} src/python/grpcio_health_checking/setup.py sdist
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
+  # preprocess reflection.proto and generate the required pb2 and pb2_grpc
+  # files for grpcio_reflection package
+  REFLECTION_PROTO="src/proto/grpc/reflection/v1alpha/reflection.proto"
+  REFLECTION_PB2_DIR="src/python/grpcio_reflection/grpc_reflection/v1alpha"
+  ${PYTHON} -m grpc_tools.protoc "${REFLECTION_PROTO}" \
+    "-I$(dirname "${REFLECTION_PROTO}")" \
+    "--python_out=${REFLECTION_PB2_DIR}" \
+    "--grpc_python_out=${REFLECTION_PB2_DIR}"
   # Build gRPC reflection source distribution
-  ${SETARCH_CMD} ${PYTHON} src/python/grpcio_reflection/setup.py \
-      preprocess build_package_protos sdist
+  ${SETARCH_CMD} ${PYTHON} src/python/grpcio_reflection/setup.py sdist
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 fi
 
