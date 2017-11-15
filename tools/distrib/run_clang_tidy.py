@@ -59,7 +59,7 @@ cmdline = [
 ]
 
 if args.fix:
-  cmdline.append('--fix')
+  cmdline.append('--fix-errors')
 
 jobs = []
 for filename in args.files:
