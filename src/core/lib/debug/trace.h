@@ -45,6 +45,8 @@ void grpc_tracer_shutdown(void);
 namespace grpc_core {
 
 class TraceFlag {
+  friend class TraceFlagPeer;
+
  public:
   TraceFlag(bool default_enabled, const char* name);
   ~TraceFlag() {}
@@ -61,8 +63,9 @@ class TraceFlag {
 #endif
   }
 
-  // Only to be used for testing purposes. Tracers should usually be set using
-  // the static Set function
+ private:
+  static void LogAllTracers();
+
   void set_enabled(bool enabled) {
 #ifdef GRPC_THREADSAFE_TRACER
     gpr_atm_no_barrier_store(&value_, enabled);
@@ -70,9 +73,6 @@ class TraceFlag {
     value_ = enabled;
 #endif
   }
-
- private:
-  static void LogAllTracers();
 
   static TraceFlag* root_tracer_;
   TraceFlag* next_tracer_;
@@ -91,6 +91,9 @@ class DebugOnlyTraceFlag {
  public:
   DebugOnlyTraceFlag(bool default_enabled, const char* name) {}
   bool enabled() { return false; }
+
+ private:
+  void set_enabled(bool enabled) {}
 };
 #endif
 

@@ -23,6 +23,7 @@
 #include <grpc/support/log.h>
 
 #include "test/core/util/test_config.h"
+#include "test/core/util/tracer_peer.h"
 
 #define THE_ARG ((void*)(size_t)0xcafebabe)
 
@@ -136,7 +137,7 @@ static void test_subscribe_with_failure_then_destroy(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_connectivity_state_trace.set_enabled(1);
+  grpc_tracer_peer_enable_flag(&grpc_connectivity_state_trace);
   test_connectivity_state_name();
   test_check();
   test_subscribe_then_unsubscribe();

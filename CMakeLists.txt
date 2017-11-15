@@ -1620,6 +1620,7 @@ add_library(grpc_test_util
   test/core/util/port.cc
   test/core/util/port_server_client.cc
   test/core/util/slice_splitter.cc
+  test/core/util/tracer_peer.cc
   test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
@@ -1886,6 +1887,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/port.cc
   test/core/util/port_server_client.cc
   test/core/util/slice_splitter.cc
+  test/core/util/tracer_peer.cc
   test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc

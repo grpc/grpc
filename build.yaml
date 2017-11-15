@@ -714,6 +714,7 @@ filegroups:
   - test/core/util/port.h
   - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
+  - test/core/util/tracer_peer.h
   - test/core/util/trickle_endpoint.h
   src:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
@@ -730,6 +731,7 @@ filegroups:
   - test/core/util/port.cc
   - test/core/util/port_server_client.cc
   - test/core/util/slice_splitter.cc
+  - test/core/util/tracer_peer.cc
   - test/core/util/trickle_endpoint.cc
   deps:
   - gpr_test_util
