@@ -45,6 +45,8 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
 typedef struct address_sorting_address {
   char addr[128];
   size_t len;
@@ -60,7 +62,7 @@ typedef struct address_sorting_sortable {
   void* user_data;
   // internal fields, these must be zero'd when passed to sort function
   address_sorting_address source_addr;
-  int source_addr_exists;
+  bool source_addr_exists;
   size_t original_index;
 } address_sorting_sortable;
 
@@ -70,26 +72,28 @@ void address_sorting_rfc_6724_sort(address_sorting_sortable* sortables,
 void address_sorting_init();
 void address_sorting_shutdown();
 
-struct address_sorting_socket_factory;
+struct address_sorting_source_addr_factory;
 
-/* The socket factory interface is exposed only for testing */
+/* The interfaces below are exposed only for testing */
 typedef struct {
-  int (*socket)(struct address_sorting_socket_factory* factory, int domain,
-                int type, int protocol);
-  int (*connect)(struct address_sorting_socket_factory* factory, int sockfd,
-                 const void* addr, size_t addrlen);
-  int (*getsockname)(struct address_sorting_socket_factory* factory, int sockfd,
-                     void* addr, size_t* addrlen);
-  int (*close)(struct address_sorting_socket_factory* factory, int sockfd);
-  void (*destroy)(struct address_sorting_socket_factory* factory);
-} address_sorting_socket_factory_vtable;
+  /* Gets the source address that would be used for the passed-in destination
+   * address, and fills in *source_addr* with it if one exists.
+   * Returns non-zero if a source address exists for the destination address,
+   * and zero if there is a source address. */
+  bool (*get_source_addr)(struct address_sorting_source_addr_factory* factory,
+                          const address_sorting_address* dest_addr,
+                          address_sorting_address* source_addr);
+  void (*destroy)(struct address_sorting_source_addr_factory* factory);
+} address_sorting_source_addr_factory_vtable;
 
-typedef struct address_sorting_socket_factory {
-  const address_sorting_socket_factory_vtable* vtable;
-} address_sorting_socket_factory;
+typedef struct address_sorting_source_addr_factory {
+  const address_sorting_source_addr_factory_vtable* vtable;
+} address_sorting_source_addr_factory;
 
-void address_sorting_override_socket_factory_for_testing(
-    address_sorting_socket_factory* factory);
+int address_sorting_get_family(const address_sorting_address* address);
+
+void address_sorting_override_source_addr_factory_for_testing(
+    address_sorting_source_addr_factory* factory);
 
 #ifdef __cplusplus
 }
