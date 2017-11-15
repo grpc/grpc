@@ -29,17 +29,19 @@ int grpc_tracer_set_enabled(const char* name, int enabled);
 
 namespace grpc_core {
 
-TraceFlag* TraceFlag::root_tracer_ = nullptr;
+// there is only ever one global list of tracers for the entire program.
+static TraceFlag* g_root_tracer = nullptr;
 
+// Flags register themselves on the list during construction
 TraceFlag::TraceFlag(bool default_enabled, const char* name)
-    : next_tracer_(root_tracer_), name_(name), value_(default_enabled) {
-  root_tracer_ = this;
+    : next_tracer_(g_root_tracer), name_(name), value_(default_enabled) {
+  g_root_tracer = this;
 }
 
 void TraceFlag::LogAllTracers() {
   gpr_log(GPR_DEBUG, "available tracers:");
   TraceFlag* t;
-  for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+  for (t = g_root_tracer; t != nullptr; t = t->next_tracer_) {
     gpr_log(GPR_DEBUG, "\t%s", t->name_);
   }
 }
@@ -47,20 +49,20 @@ void TraceFlag::LogAllTracers() {
 bool TraceFlag::Set(const char* name, bool enabled) {
   TraceFlag* t;
   if (0 == strcmp(name, "all")) {
-    for (t = root_tracer_; t; t = t->next_tracer_) {
+    for (t = g_root_tracer; t; t = t->next_tracer_) {
       t->set_enabled(enabled);
     }
   } else if (0 == strcmp(name, "list_tracers")) {
     LogAllTracers();
   } else if (0 == strcmp(name, "refcount")) {
-    for (t = root_tracer_; t; t = t->next_tracer_) {
+    for (t = g_root_tracer; t; t = t->next_tracer_) {
       if (strstr(t->name_, "refcount") != nullptr) {
         t->set_enabled(enabled);
       }
     }
   } else {
     bool found = false;
-    for (t = root_tracer_; t; t = t->next_tracer_) {
+    for (t = g_root_tracer; t; t = t->next_tracer_) {
       if (0 == strcmp(name, t->name_)) {
         t->set_enabled(enabled);
         found = true;

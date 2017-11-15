@@ -46,14 +46,15 @@ namespace grpc_core {
 
 class TraceFlag {
   friend class TraceFlagPeer;
+  friend class TracerList;
 
  public:
   TraceFlag(bool default_enabled, const char* name);
   ~TraceFlag() {}
 
-  static bool Set(const char* tracer, bool enabled);
-
   const char* name() const { return name_; }
+
+  static bool Set(const char* name, bool enabled);
 
   bool enabled() {
 #ifdef GRPC_THREADSAFE_TRACER
@@ -74,7 +75,6 @@ class TraceFlag {
 #endif
   }
 
-  static TraceFlag* root_tracer_;
   TraceFlag* next_tracer_;
   const char* const name_;
 #ifdef GRPC_THREADSAFE_TRACER
