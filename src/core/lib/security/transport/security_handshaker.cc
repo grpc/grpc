@@ -65,6 +65,25 @@ typedef struct {
   tsi_handshaker_result* handshaker_result;
 } security_handshaker;
 
+static size_t move_read_buffer_into_handshake_buffer(grpc_exec_ctx* exec_ctx,
+                                                     security_handshaker* h) {
+  size_t bytes_in_read_buffer = h->args->read_buffer->length;
+  if (h->handshake_buffer_size < bytes_in_read_buffer) {
+    h->handshake_buffer =
+        (uint8_t*)gpr_realloc(h->handshake_buffer, bytes_in_read_buffer);
+    h->handshake_buffer_size = bytes_in_read_buffer;
+  }
+  size_t offset = 0;
+  while (h->args->read_buffer->count > 0) {
+    grpc_slice next_slice = grpc_slice_buffer_take_first(h->args->read_buffer);
+    memcpy(h->handshake_buffer + offset, GRPC_SLICE_START_PTR(next_slice),
+           GRPC_SLICE_LENGTH(next_slice));
+    offset += GRPC_SLICE_LENGTH(next_slice);
+    grpc_slice_unref_internal(exec_ctx, next_slice);
+  }
+  return bytes_in_read_buffer;
+}
+
 static void security_handshaker_unref(grpc_exec_ctx* exec_ctx,
                                       security_handshaker* h) {
   if (gpr_unref(&h->refs)) {
@@ -177,8 +196,6 @@ static void on_peer_checked_inner(grpc_exec_ctx* exec_ctx,
   }
   tsi_handshaker_result_destroy(h->handshaker_result);
   h->handshaker_result = nullptr;
-  // Clear out the read buffer before it gets passed to the transport.
-  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, h->args->read_buffer);
   // Add auth context to channel args.
   grpc_arg auth_context_arg = grpc_auth_context_to_arg(h->auth_context);
   grpc_channel_args* tmp_args = h->args->args;
@@ -312,23 +329,8 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx* exec_ctx,
     return;
   }
   // Copy all slices received.
-  size_t i;
-  size_t bytes_received_size = 0;
-  for (i = 0; i < h->args->read_buffer->count; i++) {
-    bytes_received_size += GRPC_SLICE_LENGTH(h->args->read_buffer->slices[i]);
-  }
-  if (bytes_received_size > h->handshake_buffer_size) {
-    h->handshake_buffer =
-        (uint8_t*)gpr_realloc(h->handshake_buffer, bytes_received_size);
-    h->handshake_buffer_size = bytes_received_size;
-  }
-  size_t offset = 0;
-  for (i = 0; i < h->args->read_buffer->count; i++) {
-    size_t slice_size = GPR_SLICE_LENGTH(h->args->read_buffer->slices[i]);
-    memcpy(h->handshake_buffer + offset,
-           GRPC_SLICE_START_PTR(h->args->read_buffer->slices[i]), slice_size);
-    offset += slice_size;
-  }
+  size_t bytes_received_size =
+      move_read_buffer_into_handshake_buffer(exec_ctx, h);
   // Call TSI handshaker.
   error = do_handshaker_next_locked(exec_ctx, h, h->handshake_buffer,
                                     bytes_received_size);
@@ -405,7 +407,10 @@ static void security_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
   h->args = args;
   h->on_handshake_done = on_handshake_done;
   gpr_ref(&h->refs);
-  grpc_error* error = do_handshaker_next_locked(exec_ctx, h, nullptr, 0);
+  size_t bytes_received_size =
+      move_read_buffer_into_handshake_buffer(exec_ctx, h);
+  grpc_error* error = do_handshaker_next_locked(
+      exec_ctx, h, h->handshake_buffer, bytes_received_size);
   if (error != GRPC_ERROR_NONE) {
     security_handshake_failed_locked(exec_ctx, h, error);
     gpr_mu_unlock(&h->mu);
