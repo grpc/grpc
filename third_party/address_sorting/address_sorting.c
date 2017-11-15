@@ -52,28 +52,13 @@ static const int kIPv6AddrScopeLinkLocal = 1;
 static const int kIPv6AddrScopeSiteLocal = 2;
 static const int kIPv6AddrScopeGlobal = 3;
 
-static address_sorting_socket_factory* g_current_socket_factory = NULL;
+static address_sorting_source_addr_factory* g_current_source_addr_factory =
+    NULL;
 
-static int address_sorting_socket(int domain, int type, int protocol) {
-  return g_current_socket_factory->vtable->socket(g_current_socket_factory,
-                                                  domain, type, protocol);
-}
-
-static int address_sorting_connect(int sockfd, const void* addr,
-                                   size_t addrlen) {
-  return g_current_socket_factory->vtable->connect(g_current_socket_factory,
-                                                   sockfd, addr, addrlen);
-}
-
-static int address_sorting_getsockname(int sockfd, void* addr,
-                                       size_t* addrlen) {
-  return g_current_socket_factory->vtable->getsockname(g_current_socket_factory,
-                                                       sockfd, addr, addrlen);
-}
-
-static int address_sorting_close(int sockfd) {
-  return g_current_socket_factory->vtable->close(g_current_socket_factory,
-                                                 sockfd);
+static int address_sorting_get_source_addr(const address_sorting_address* dest,
+                                           address_sorting_address* source) {
+  return g_current_source_addr_factory->vtable->get_source_addr(
+      g_current_source_addr_factory, dest, source);
 }
 
 static int ipv6_prefix_match_length(const struct sockaddr_in6* sa,
@@ -115,7 +100,7 @@ static int in6_is_addr_6bone(const struct in6_addr* ipv6_address) {
   return bytes[0] == 0x3f && bytes[1] == 0xfe;
 }
 
-static int address_sorting_get_family(const address_sorting_address* address) {
+int address_sorting_get_family(const address_sorting_address* address) {
   return ((struct sockaddr*)address)->sa_family;
 }
 
@@ -293,13 +278,13 @@ static int rfc_6724_compare(const void* a, const void* b) {
   return (int)(first->original_index - second->original_index);
 }
 
-void address_sorting_override_socket_factory_for_testing(
-    address_sorting_socket_factory* factory) {
-  if (!g_current_socket_factory) {
+void address_sorting_override_source_addr_factory_for_testing(
+    address_sorting_source_addr_factory* factory) {
+  if (!g_current_source_addr_factory) {
     abort();
   }
-  g_current_socket_factory->vtable->destroy(g_current_socket_factory);
-  g_current_socket_factory = factory;
+  g_current_source_addr_factory->vtable->destroy(g_current_source_addr_factory);
+  g_current_source_addr_factory = factory;
 }
 
 static void sanity_check_private_fields_are_unused(
@@ -318,39 +303,24 @@ void address_sorting_rfc_6724_sort(address_sorting_sortable* sortables,
   for (size_t i = 0; i < sortables_len; i++) {
     sanity_check_private_fields_are_unused(&sortables[i]);
     sortables[i].original_index = i;
-    // Android sets SOCK_CLOEXEC. Don't set this here for portability.
-    int s = address_sorting_socket(
-        address_sorting_get_family(&sortables[i].dest_addr), SOCK_DGRAM, 0);
-    if (s != -1) {
-      if (address_sorting_connect(s, &sortables[i].dest_addr.addr,
-                                  sortables[i].dest_addr.len) != -1) {
-        address_sorting_address found_source_addr;
-        memset(&found_source_addr, 0, sizeof(found_source_addr));
-        found_source_addr.len = sizeof(found_source_addr.addr);
-        if (address_sorting_getsockname(s, &found_source_addr.addr,
-                                        &found_source_addr.len) != -1) {
-          sortables[i].source_addr_exists = 1;
-          sortables[i].source_addr = found_source_addr;
-        }
-      }
-      address_sorting_close(s);
-    }
+    sortables[i].source_addr_exists = address_sorting_get_source_addr(
+        &sortables[i].dest_addr, &sortables[i].source_addr);
   }
   qsort(sortables, sortables_len, sizeof(address_sorting_sortable),
         rfc_6724_compare);
 }
 
 void address_sorting_init() {
-  if (g_current_socket_factory) {
+  if (g_current_source_addr_factory) {
     abort();
   }
-  g_current_socket_factory =
-      address_sorting_create_socket_factory_for_current_platform();
+  g_current_source_addr_factory =
+      address_sorting_create_source_addr_factory_for_current_platform();
 }
 
 void address_sorting_shutdown() {
-  if (!g_current_socket_factory) {
+  if (!g_current_source_addr_factory) {
     abort();
   }
-  g_current_socket_factory->vtable->destroy(g_current_socket_factory);
+  g_current_source_addr_factory->vtable->destroy(g_current_source_addr_factory);
 }

@@ -42,58 +42,14 @@
 
 #if defined(ADDRESS_SORTING_WINDOWS)
 
-#include <errno.h>
-#include <inttypes.h>
-#include <limits.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
 
-/* TODO : Fill in these functions; get address sorting functionality to work on
- * windows. */
+/* TODO : Add address sorting functionality to work on windows. */
 
-static int windows_socket_factory_socket(address_sorting_socket_factory* self,
-                                         int domain, int type, int protocol) {
-  return -1;
-}
-
-static int windows_socket_factory_connect(address_sorting_socket_factory* self,
-                                          int sockfd, const void* addr,
-                                          size_t addrlen) {
-  return -1;
-}
-
-static int windows_socket_factory_getsockname(
-    address_sorting_socket_factory* self, int sockfd, void* addr,
-    size_t* addrlen) {
-  return -1;
-}
-
-static int windows_socket_factory_close(address_sorting_socket_factory* self,
-                                        int sockfd) {
-  return -1;
-}
-
-static void windows_socket_factory_destroy(
-    address_sorting_socket_factory* self) {
-  free(self);
-  return;
-}
-
-static const address_sorting_socket_factory_vtable
-    windows_socket_factory_vtable = {
-        windows_socket_factory_socket,      windows_socket_factory_connect,
-        windows_socket_factory_getsockname, windows_socket_factory_close,
-        windows_socket_factory_destroy,
-};
-
-address_sorting_socket_factory*
-address_sorting_create_socket_factory_for_current_platform() {
-  address_sorting_socket_factory* factory =
-      malloc(sizeof(address_sorting_socket_factory));
-  memset(factory, 0, sizeof(address_sorting_socket_factory));
-  factory->vtable = &windows_socket_factory_vtable;
-  return factory;
+address_sorting_source_addr_factory*
+address_sorting_create_source_addr_factory_for_current_platform() {
+  abort();
+  return NULL;
 }
 
 #endif  // defined(ADDRESS_SORTING_WINDOWS)

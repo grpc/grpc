@@ -88,122 +88,80 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
   return resolved_addr;
 }
 
-class MockSocketFactory : public address_sorting_socket_factory {
+class MockSourceAddrFactory : public address_sorting_source_addr_factory {
  public:
-  MockSocketFactory(bool ipv4_supported, bool ipv6_supported,
-                    std::map<std::string, TestAddress> dest_addr_to_src_addr)
+  MockSourceAddrFactory(
+      bool ipv4_supported, bool ipv6_supported,
+      std::map<std::string, TestAddress> dest_addr_to_src_addr)
       : ipv4_supported_(ipv4_supported),
         ipv6_supported_(ipv6_supported),
-        dest_addr_to_src_addr_(dest_addr_to_src_addr),
-        fd_to_getsockname_return_vals_(std::map<int, TestAddress>()),
-        cur_socket_(0) {}
+        dest_addr_to_src_addr_(dest_addr_to_src_addr) {}
 
-  int Socket(int domain, int type, int protocol) {
-    EXPECT_TRUE(domain == AF_INET || domain == AF_INET6);
-    if ((domain == AF_INET && !ipv4_supported_) ||
-        (domain == AF_INET6 && !ipv6_supported_)) {
-      errno = EAFNOSUPPORT;
-      return -1;
-    }
-    return cur_socket_++;
-  }
-
-  int Connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
-    if ((addr->sa_family == AF_INET && !ipv4_supported_) ||
-        (addr->sa_family == AF_INET6 && !ipv6_supported_)) {
-      errno = EAFNOSUPPORT;
-      return -1;
+  int GetSourceAddr(const address_sorting_address* dest_addr,
+                    address_sorting_address* source_addr) {
+    if ((address_sorting_get_family(dest_addr) == AF_INET &&
+         !ipv4_supported_) ||
+        (address_sorting_get_family(dest_addr) == AF_INET6 &&
+         !ipv6_supported_)) {
+      return false;
     }
     char* ip_addr_str;
-    grpc_resolved_address resolved_addr;
-    memcpy(&resolved_addr.addr, addr, addrlen);
-    resolved_addr.len = addrlen;
-    grpc_sockaddr_to_string(&ip_addr_str, &resolved_addr,
+    grpc_resolved_address dest_addr_as_resolved_addr;
+    memcpy(&dest_addr_as_resolved_addr.addr, dest_addr, dest_addr->len);
+    dest_addr_as_resolved_addr.len = dest_addr->len;
+    grpc_sockaddr_to_string(&ip_addr_str, &dest_addr_as_resolved_addr,
                             false /* normalize */);
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
       gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map", ip_addr_str);
       gpr_free(ip_addr_str);
-      errno = ENETUNREACH;
-      return -1;
+      return false;
     }
     gpr_free(ip_addr_str);
-    fd_to_getsockname_return_vals_.insert(
-        std::pair<int, TestAddress>(sockfd, it->second));
-    return 0;
-  }
-
-  int GetSockName(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
-    auto it = fd_to_getsockname_return_vals_.find(sockfd);
-    EXPECT_TRUE(it != fd_to_getsockname_return_vals_.end());
-    grpc_resolved_address resolved_addr =
+    grpc_resolved_address source_addr_as_resolved_addr =
         TestAddressToGrpcResolvedAddress(it->second);
-    if (*addrlen < resolved_addr.len) {
-      errno = EINVAL;
-      return -1;
-    }
-    memcpy(addr, &resolved_addr.addr, resolved_addr.len);
-    *addrlen = resolved_addr.len;
-    return 0;
+    memcpy(source_addr->addr, &source_addr_as_resolved_addr.addr,
+           source_addr_as_resolved_addr.len);
+    source_addr->len = source_addr_as_resolved_addr.len;
+    return true;
   }
-
-  static int Close(int sockfd) { return 0; }
 
  private:
   // user provided test config
   bool ipv4_supported_;
   bool ipv6_supported_;
   std::map<std::string, TestAddress> dest_addr_to_src_addr_;
-  // internal state for mock
-  std::map<int, TestAddress> fd_to_getsockname_return_vals_;
-  int cur_socket_;
 };
 
-int mock_socket_factory_wrapper_socket(address_sorting_socket_factory* factory,
-                                       int domain, int type, int protocol) {
-  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
-  return mock->Socket(domain, type, protocol);
+static int mock_source_addr_factory_wrapper_get_source_addr(
+    address_sorting_source_addr_factory* factory,
+    const address_sorting_address* dest_addr,
+    address_sorting_address* source_addr) {
+  MockSourceAddrFactory* mock =
+      reinterpret_cast<MockSourceAddrFactory*>(factory);
+  return mock->GetSourceAddr(dest_addr, source_addr);
 }
 
-int mock_socket_factory_wrapper_connect(address_sorting_socket_factory* factory,
-                                        int sockfd, const void* addr,
-                                        size_t addrlen) {
-  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
-  return mock->Connect(sockfd, (const struct sockaddr*)addr,
-                       (socklen_t)addrlen);
-}
-
-int mock_socket_factory_getsockname(address_sorting_socket_factory* factory,
-                                    int sockfd, void* addr, size_t* addrlen) {
-  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
-  return mock->GetSockName(sockfd, (struct sockaddr*)addr, (socklen_t*)addrlen);
-}
-
-int mock_socket_factory_close(address_sorting_socket_factory* factory,
-                              int sockfd) {
-  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
-  return mock->Close(sockfd);
-}
-
-void mock_socket_factory_wrapper_destroy(
-    address_sorting_socket_factory* factory) {
-  MockSocketFactory* mock = reinterpret_cast<MockSocketFactory*>(factory);
+void mock_source_addr_factory_wrapper_destroy(
+    address_sorting_source_addr_factory* factory) {
+  MockSourceAddrFactory* mock =
+      reinterpret_cast<MockSourceAddrFactory*>(factory);
   delete mock;
 }
 
-const address_sorting_socket_factory_vtable kMockSocketFactoryVtable = {
-    mock_socket_factory_wrapper_socket,  mock_socket_factory_wrapper_connect,
-    mock_socket_factory_getsockname,     mock_socket_factory_close,
-    mock_socket_factory_wrapper_destroy,
+const address_sorting_source_addr_factory_vtable kMockSourceAddrFactoryVtable =
+    {
+        mock_source_addr_factory_wrapper_get_source_addr,
+        mock_source_addr_factory_wrapper_destroy,
 };
 
-void OverrideAddressSortingSocketFactory(
+void OverrideAddressSortingSourceAddrFactory(
     bool ipv4_supported, bool ipv6_supported,
     std::map<std::string, TestAddress> dest_addr_to_src_addr) {
-  address_sorting_socket_factory* factory = new MockSocketFactory(
+  address_sorting_source_addr_factory* factory = new MockSourceAddrFactory(
       ipv4_supported, ipv6_supported, dest_addr_to_src_addr);
-  factory->vtable = &kMockSocketFactoryVtable;
-  address_sorting_override_socket_factory_for_testing(factory);
+  factory->vtable = &kMockSourceAddrFactoryVtable;
+  address_sorting_override_source_addr_factory_for_testing(factory);
 }
 
 grpc_lb_addresses* BuildLbAddrInputs(std::vector<TestAddress> test_addrs) {
@@ -239,7 +197,7 @@ void VerifyLbAddrOutputs(grpc_lb_addresses* lb_addrs,
 TEST(AddressSortingTest, TestDepriotizesUnreachableAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"1.2.3.4:443", {"4.3.2.1:443", AF_INET}},
@@ -258,7 +216,7 @@ TEST(AddressSortingTest, TestDepriotizesUnreachableAddresses) {
 TEST(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv6) {
   bool ipv4_supported = true;
   bool ipv6_supported = false;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"1.2.3.4:443", {"4.3.2.1:0", AF_INET}},
@@ -277,7 +235,7 @@ TEST(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv6) {
 TEST(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv4) {
   bool ipv4_supported = false;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"1.2.3.4:443", {"4.3.2.1:0", AF_INET}},
@@ -299,7 +257,7 @@ TEST(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv4) {
 TEST(AddressSortingTest, TestDepriotizesNonMatchingScope) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[2000:f8b0:400a:801::1002]:443",
@@ -323,7 +281,7 @@ TEST(AddressSortingTest, TestDepriotizesNonMatchingScope) {
 TEST(AddressSortingTest, TestUsesLabelFromDefaultTable) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[2002::5001]:443", {"[2001::5002]:0", AF_INET6}},
@@ -347,7 +305,7 @@ TEST(AddressSortingTest,
      TestUsesDestinationWithHigherPrecedenceWithAnIpv4Address) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[3ffe::5001]:443", {"[3ffe::5002]:0", AF_INET6}},
@@ -372,7 +330,7 @@ TEST(AddressSortingTest,
      TestUsesDestinationWithHigherPrecedenceWith2000PrefixedAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[2001::1234]:443", {"[2001::5678]:0", AF_INET6}},
@@ -396,7 +354,7 @@ TEST(
     TestUsesDestinationWithHigherPrecedenceWith2000PrefixedAddressEnsurePrefixMatchHasNoEffect) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[2001::1231]:443", {"[2001::1232]:0", AF_INET6}},
@@ -417,7 +375,7 @@ TEST(AddressSortingTest,
      TestUsesDestinationWithHigherPrecedenceWithLinkAndSiteLocalAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[fec0::1234]:443", {"[fec0::5678]:0", AF_INET6}},
@@ -439,7 +397,7 @@ TEST(AddressSortingTest,
 TEST(AddressSortingTest, TestPrefersSmallerScope) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           // Both of these destinations have the same precedence in default
@@ -464,7 +422,7 @@ TEST(AddressSortingTest, TestPrefersSmallerScope) {
 TEST(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefix) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           // Both of these destinations have the same precedence in default
@@ -488,7 +446,7 @@ TEST(AddressSortingTest,
      TestPrefersLongestMatchingSrcDstPrefixMatchesWholeAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[3ffe::1234]:443", {"[3ffe::1235]:0", AF_INET6}},
@@ -508,7 +466,7 @@ TEST(AddressSortingTest,
 TEST(AddressSortingTest, TestPrefersLongestPrefixStressInnerBytePrefix) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[3ffe:8000::]:443", {"[3ffe:C000::]:0", AF_INET6}},
@@ -528,7 +486,7 @@ TEST(AddressSortingTest, TestPrefersLongestPrefixStressInnerBytePrefix) {
 TEST(AddressSortingTest, TestPrefersLongestPrefixDiffersOnHighestBitOfByte) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[3ffe:6::]:443", {"[3ffe:8::]:0", AF_INET6}},
@@ -548,7 +506,7 @@ TEST(AddressSortingTest, TestPrefersLongestPrefixDiffersOnHighestBitOfByte) {
 TEST(AddressSortingTest, TestPrefersLongestPrefixDiffersByLastBit) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[3ffe:1111:1111:1111::]:443",
@@ -572,7 +530,7 @@ TEST(AddressSortingTest, TestPrefersLongestPrefixDiffersByLastBit) {
 TEST(AddressSortingTest, TestStableSort) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[3ffe::1234]:443", {"[3ffe::1236]:0", AF_INET6}},
@@ -592,7 +550,7 @@ TEST(AddressSortingTest, TestStableSort) {
 TEST(AddressSortingTest, TestStableSortFiveElements) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(
+  OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
           {"[3ffe::1231]:443", {"[3ffe::1201]:0", AF_INET6}},
@@ -621,7 +579,7 @@ TEST(AddressSortingTest, TestStableSortFiveElements) {
 TEST(AddressSortingTest, TestStableSortNoSrcAddrsExist) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(ipv4_supported, ipv6_supported, {});
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported, {});
   grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
       {"[3ffe::1231]:443", AF_INET6},
       {"[3ffe::1232]:443", AF_INET6},
@@ -642,7 +600,7 @@ TEST(AddressSortingTest, TestStableSortNoSrcAddrsExist) {
 TEST(AddressSortingTest, TestStableSortNoSrcAddrsExistWithIpv4) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSocketFactory(ipv4_supported, ipv6_supported, {});
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported, {});
   grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
       {"[::ffff:5.6.7.8]:443", AF_INET6},
       {"1.2.3.4:443", AF_INET},

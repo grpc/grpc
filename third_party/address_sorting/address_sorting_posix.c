@@ -50,46 +50,48 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-static int posix_socket_factory_socket(address_sorting_socket_factory* self,
-                                       int domain, int type, int protocol) {
-  return socket(domain, type, protocol);
+static int posix_source_addr_factory_get_source_addr(
+    address_sorting_source_addr_factory* factory,
+    const address_sorting_address* dest_addr,
+    address_sorting_address* source_addr) {
+  int source_addr_exists = 0;
+  // Android sets SOCK_CLOEXEC. Don't set this here for portability.
+  int s = socket(address_sorting_get_family(dest_addr), SOCK_DGRAM, 0);
+  if (s != -1) {
+    if (connect(s, (const struct sockaddr*)&dest_addr->addr,
+                (socklen_t)dest_addr->len) != -1) {
+      address_sorting_address found_source_addr;
+      memset(&found_source_addr, 0, sizeof(found_source_addr));
+      found_source_addr.len = sizeof(found_source_addr.addr);
+      if (getsockname(s, (struct sockaddr*)&found_source_addr.addr,
+                      (socklen_t*)&found_source_addr.len) != -1) {
+        source_addr_exists = 1;
+        *source_addr = found_source_addr;
+      }
+    }
+  }
+  close(s);
+  return source_addr_exists;
 }
 
-static int posix_socket_factory_connect(address_sorting_socket_factory* self,
-                                        int sockfd, const void* addr,
-                                        size_t addrlen) {
-  return connect(sockfd, (const struct sockaddr*)addr, (socklen_t)addrlen);
-}
-
-static int posix_socket_factory_getsockname(
-    address_sorting_socket_factory* self, int sockfd, void* addr,
-    size_t* addrlen) {
-  return getsockname(sockfd, (struct sockaddr*)addr, (socklen_t*)addrlen);
-}
-
-static int posix_socket_factory_close(address_sorting_socket_factory* self,
-                                      int sockfd) {
-  return close(sockfd);
-}
-
-static void posix_socket_factory_destroy(address_sorting_socket_factory* self) {
+static void posix_source_addr_factory_destroy(
+    address_sorting_source_addr_factory* self) {
   free(self);
   return;
 }
 
-static const address_sorting_socket_factory_vtable posix_socket_factory_vtable =
-    {
-        posix_socket_factory_socket,      posix_socket_factory_connect,
-        posix_socket_factory_getsockname, posix_socket_factory_close,
-        posix_socket_factory_destroy,
+static const address_sorting_source_addr_factory_vtable
+    posix_source_addr_factory_vtable = {
+        posix_source_addr_factory_get_source_addr,
+        posix_source_addr_factory_destroy,
 };
 
-address_sorting_socket_factory*
-address_sorting_create_socket_factory_for_current_platform() {
-  address_sorting_socket_factory* factory =
-      malloc(sizeof(address_sorting_socket_factory));
-  memset(factory, 0, sizeof(address_sorting_socket_factory));
-  factory->vtable = &posix_socket_factory_vtable;
+address_sorting_source_addr_factory*
+address_sorting_create_source_addr_factory_for_current_platform() {
+  address_sorting_source_addr_factory* factory =
+      malloc(sizeof(address_sorting_source_addr_factory));
+  memset(factory, 0, sizeof(address_sorting_source_addr_factory));
+  factory->vtable = &posix_source_addr_factory_vtable;
   return factory;
 }
 
