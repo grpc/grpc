@@ -115,7 +115,7 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
 void bad_server_thread(void* vargs) {
   struct server_thread_args* args = (struct server_thread_args*)vargs;
 
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
   int port;
@@ -134,7 +134,7 @@ void bad_server_thread(void* vargs) {
 
   gpr_mu_lock(args->mu);
   while (gpr_atm_acq_load(&args->stop) == 0) {
-    grpc_millis deadline = ExecCtx::Get()->Now() + 100;
+    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 100;
 
     grpc_pollset_worker* worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
@@ -222,7 +222,7 @@ int run_concurrent_connectivity_test() {
 
   gpr_atm_rel_store(&args.stop, 1);
   gpr_thd_join(server);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_pollset_shutdown(args.pollset,
                         GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
                                             grpc_schedule_on_exec_ctx));

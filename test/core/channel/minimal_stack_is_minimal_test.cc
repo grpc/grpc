@@ -124,7 +124,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
     grpc_channel_stack_builder_set_transport(builder, &fake_transport);
   }
   {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_channel_stack_builder_set_channel_arguments(builder, channel_args);
     GPR_ASSERT(grpc_channel_init_create_stack(
         builder, (grpc_channel_stack_type)channel_stack_type));
@@ -209,7 +209,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   gpr_free(expect);
 
   {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_channel_stack_builder_destroy(builder);
     grpc_channel_args_destroy(channel_args);
   }

@@ -163,14 +163,14 @@ static void on_connect(void* arg, grpc_endpoint* tcp, grpc_pollset* pollset,
 }
 
 static void test_no_op(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   grpc_tcp_server_unref(s);
 }
 
 static void test_no_op_with_start(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   LOG_TEST("test_no_op_with_start");
@@ -179,7 +179,7 @@ static void test_no_op_with_start(void) {
 }
 
 static void test_no_op_with_port(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
@@ -198,7 +198,7 @@ static void test_no_op_with_port(void) {
 }
 
 static void test_no_op_with_port_and_start(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
@@ -243,7 +243,8 @@ static grpc_error* tcp_connect(const test_addr* remote,
     return GRPC_OS_ERROR(errno, "connect");
   }
   gpr_log(GPR_DEBUG, "wait");
-  while (g_nconnects == nconnects_before && deadline > ExecCtx::Get()->Now()) {
+  while (g_nconnects == nconnects_before &&
+         deadline > grpc_core::ExecCtx::Get()->Now()) {
     grpc_pollset_worker* worker = NULL;
     grpc_error* err;
     if ((err = grpc_pollset_work(g_pollset, &worker, deadline)) !=
@@ -281,7 +282,7 @@ static grpc_error* tcp_connect(const test_addr* remote,
 static void test_connect(size_t num_connects,
                          const grpc_channel_args* channel_args,
                          test_addrs* dst_addrs, bool test_dst_addrs) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolved_address resolved_addr;
   grpc_resolved_address resolved_addr1;
   struct sockaddr_storage* const addr =
@@ -420,7 +421,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_arg chan_args[1];
   chan_args[0].type = GRPC_ARG_INTEGER;
   chan_args[0].key = const_cast<char*>(GRPC_ARG_EXPAND_WILDCARD_ADDRS);

@@ -451,7 +451,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   };
 
   void SetNextResolution(const std::vector<AddressData>& address_data) {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(address_data.size(), nullptr);
     for (size_t i = 0; i < address_data.size(); ++i) {

@@ -62,7 +62,7 @@ static void test_vector(grpc_chttp2_hpack_parser* parser,
   grpc_slice_unref(input);
 
   for (i = 0; i < nslices; i++) {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     GPR_ASSERT(grpc_chttp2_hpack_parser_parse(parser, slices[i]) ==
                GRPC_ERROR_NONE);
   }
@@ -79,7 +79,7 @@ static void test_vector(grpc_chttp2_hpack_parser* parser,
 
 static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser parser;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   grpc_chttp2_hpack_parser_init(&parser);
   /* D.2.1 */

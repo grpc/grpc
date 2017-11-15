@@ -44,7 +44,7 @@ static void assert_index(const grpc_chttp2_hptbl* tbl, uint32_t idx,
 }
 
 static void test_static_lookup(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_chttp2_hptbl tbl;
 
   grpc_chttp2_hptbl_init(&tbl);
@@ -123,7 +123,7 @@ static void test_many_additions(void) {
 
   LOG_TEST("test_many_additions");
 
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_chttp2_hptbl_init(&tbl);
 
   for (i = 0; i < 100000; i++) {
@@ -152,7 +152,7 @@ static void test_many_additions(void) {
 static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl* tbl,
                                                  const char* key,
                                                  const char* value) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_mdelem md = grpc_mdelem_from_slices(
       grpc_slice_from_copied_string(key), grpc_slice_from_copied_string(value));
   grpc_chttp2_hptbl_find_result r = grpc_chttp2_hptbl_find(tbl, md);
@@ -162,7 +162,7 @@ static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl* tbl,
 }
 
 static void test_find(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_chttp2_hptbl tbl;
   uint32_t i;
   char buffer[32];

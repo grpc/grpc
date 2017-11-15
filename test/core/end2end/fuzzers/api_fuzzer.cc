@@ -411,7 +411,7 @@ void my_resolve_address(const char* addr, const char* default_port,
   r->addrs = addresses;
   r->lb_addrs = NULL;
   grpc_timer_init(
-      &r->timer, GPR_MS_PER_SEC + ExecCtx::Get()->Now(),
+      &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
 }
 
@@ -428,7 +428,7 @@ grpc_ares_request* my_dns_lookup_ares(const char* dns_server, const char* addr,
   r->addrs = NULL;
   r->lb_addrs = lb_addrs;
   grpc_timer_init(
-      &r->timer, GPR_MS_PER_SEC + ExecCtx::Get()->Now(),
+      &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
   return NULL;
 }
@@ -488,7 +488,7 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
   fc->ep = ep;
   fc->deadline = deadline;
   grpc_timer_init(
-      &fc->timer, GPR_MS_PER_SEC + ExecCtx::Get()->Now(),
+      &fc->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
@@ -743,7 +743,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_executor_set_threading(false);
   }
   grpc_resolve_address = my_resolve_address;
@@ -837,7 +837,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           g_channel = grpc_insecure_channel_create(target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
           {
-            ExecCtx _local_exec_ctx;
+            grpc_core::ExecCtx _local_exec_ctx;
             grpc_channel_args_destroy(args);
           }
           gpr_free(target_uri);
@@ -864,7 +864,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           g_server = grpc_server_create(args, NULL);
           GPR_ASSERT(g_server != NULL);
           {
-            ExecCtx _local_exec_ctx;
+            grpc_core::ExecCtx _local_exec_ctx;
             grpc_channel_args_destroy(args);
           }
           grpc_server_register_completion_queue(g_server, cq, NULL);
@@ -1192,7 +1192,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           g_channel = grpc_secure_channel_create(creds, target_uri, args, NULL);
           GPR_ASSERT(g_channel != NULL);
           {
-            ExecCtx _local_exec_ctx;
+            grpc_core::ExecCtx _local_exec_ctx;
             grpc_channel_args_destroy(args);
           }
           gpr_free(target_uri);

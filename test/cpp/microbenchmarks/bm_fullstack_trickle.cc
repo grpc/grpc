@@ -177,7 +177,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   }
 
   void Step(bool update_stats) {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     inc_time();
     size_t client_backlog =
         grpc_trickle_endpoint_trickle(endpoint_pair_.client);

@@ -181,7 +181,7 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
         grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);  \
     chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);      \
     {                                                                        \
-      ExecCtx _local_exec_ctx;                                               \
+      grpc_core::ExecCtx _local_exec_ctx;                                    \
       grpc_channel_args_destroy(new_client_args);                            \
     }                                                                        \
   }

@@ -46,6 +46,7 @@ typedef struct grpc_combiner grpc_combiner;
    should be given to not delete said call/channel from this exec_ctx */
 #define GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP 2
 
+namespace grpc_core {
 /** Execution context.
  *  A bag of data that collects information along a callstack.
  *  Generally created at public API entry points, and passed down as
@@ -68,10 +69,25 @@ typedef struct grpc_combiner grpc_combiner;
  */
 class ExecCtx {
  public:
-  ExecCtx();
-  ExecCtx(uintptr_t fl);
-  ~ExecCtx();
+  /** Default Constructor */
+  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) { exec_ctx_ = this; }
 
+  /** Parameterised Constructor */
+  ExecCtx(uintptr_t fl) : flags_(fl) { exec_ctx_ = this; }
+
+  /** Destructor */
+  ~ExecCtx() {
+    GPR_ASSERT(exec_ctx_ == this);
+    flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
+    Flush();
+    exec_ctx_ = last_exec_ctx_;
+  }
+
+  /** Disallow copy and assignment operators */
+  ExecCtx(const ExecCtx&) = delete;
+  ExecCtx& operator=(const ExecCtx&) = delete;
+
+  /** Return starting_cpu */
   unsigned starting_cpu() const { return starting_cpu_; }
 
   struct CombinerData {
@@ -84,8 +100,13 @@ class ExecCtx {
   /** Only to be used by grpc-combiner code */
   CombinerData* combiner_data() { return &combiner_data_; }
 
+  /** Return pointer to grpc_closure_list */
   grpc_closure_list* closure_list() { return &closure_list_; }
 
+  /** Return flags */
+  uintptr_t flags() { return flags_; }
+
+  /** Checks if there is work to be done */
   bool HasWork() {
     return combiner_data_.active_combiner != NULL ||
            !grpc_closure_list_empty(closure_list_);
@@ -99,32 +120,59 @@ class ExecCtx {
   /** Returns true if we'd like to leave this execution context as soon as
 possible: useful for deciding whether to do something more or not depending
 on outside context */
-  bool IsReadyToFinish();
+  bool IsReadyToFinish() {
+    if ((flags_ & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
+      if (CheckReadyToFinish()) {
+        flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
+        return true;
+      }
+      return false;
+    } else {
+      return true;
+    }
+  }
 
+  /** Returns the stored current time relative to start if valid,
+   * otherwise refreshes the stored time, sets it valid and returns the new
+   * value */
   grpc_millis Now();
 
+  /** Invalidates the stored time value. A new time value will be set on calling
+   * Now() */
   void InvalidateNow() { now_is_valid_ = false; }
 
-  void SetNow(grpc_millis new_val) {
-    now_ = new_val;
+  /** To be used only by shutdown code in iomgr */
+  void SetNowIomgrShutdown() {
+    now_ = GRPC_MILLIS_INF_FUTURE;
     now_is_valid_ = true;
   }
 
-  uintptr_t flags() { return flags_; }
+  /** To be used only for testing.
+   * Sets the now value
+   */
+  void TestOnlySetNow(grpc_millis new_val) {
+    now_ = new_val;
+    now_is_valid_ = true;
+  }
 
   /** Finish any pending work for a grpc_exec_ctx. Must be called before
    *  the instance is destroyed, or work may be lost. */
   void Finish();
 
+  /** Global initialization for ExecCtx. Called by iomgr */
   static void GlobalInit(void);
 
+  /** Global shutdown for ExecCtx. Called by iomgr */
   static void GlobalShutdown(void);
 
-  static ExecCtx* Get();
+  /** Gets pointer to current exec_ctx */
+  static ExecCtx* Get() { return exec_ctx_; }
 
  protected:
+  /** Check if ready to finish */
   virtual bool CheckReadyToFinish() { return false; }
 
+ private:
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};
   uintptr_t flags_;
@@ -133,8 +181,10 @@ on outside context */
   bool now_is_valid_ = false;
   grpc_millis now_ = 0;
 
-  ExecCtx* last_exec_ctx_ = Get();
+  static thread_local ExecCtx* exec_ctx_;
+  ExecCtx* last_exec_ctx_ = exec_ctx_;
 };
+}  // namespace grpc_core
 
 extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
 

@@ -133,7 +133,7 @@ void grpc_subchannel_index_shutdown(void) {
 void grpc_subchannel_index_unref(void) {
   if (gpr_unref(&g_refcount)) {
     gpr_mu_destroy(&g_mu);
-    gpr_avl_unref(g_subchannel_index, ExecCtx::Get());
+    gpr_avl_unref(g_subchannel_index, grpc_core::ExecCtx::Get());
   }
 }
 
@@ -143,12 +143,13 @@ grpc_subchannel* grpc_subchannel_index_find(grpc_subchannel_key* key) {
   // Lock, and take a reference to the subchannel index.
   // We don't need to do the search under a lock as avl's are immutable.
   gpr_mu_lock(&g_mu);
-  gpr_avl index = gpr_avl_ref(g_subchannel_index, ExecCtx::Get());
+  gpr_avl index = gpr_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
   gpr_mu_unlock(&g_mu);
 
   grpc_subchannel* c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(
-      (grpc_subchannel*)gpr_avl_get(index, key, ExecCtx::Get()), "index_find");
-  gpr_avl_unref(index, ExecCtx::Get());
+      (grpc_subchannel*)gpr_avl_get(index, key, grpc_core::ExecCtx::Get()),
+      "index_find");
+  gpr_avl_unref(index, grpc_core::ExecCtx::Get());
 
   return c;
 }
@@ -164,11 +165,11 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
     // Compare and swap loop:
     // - take a reference to the current index
     gpr_mu_lock(&g_mu);
-    gpr_avl index = gpr_avl_ref(g_subchannel_index, ExecCtx::Get());
+    gpr_avl index = gpr_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
     gpr_mu_unlock(&g_mu);
 
     // - Check to see if a subchannel already exists
-    c = (grpc_subchannel*)gpr_avl_get(index, key, ExecCtx::Get());
+    c = (grpc_subchannel*)gpr_avl_get(index, key, grpc_core::ExecCtx::Get());
     if (c != NULL) {
       c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "index_register");
     }
@@ -177,10 +178,11 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
       need_to_unref_constructed = true;
     } else {
       // no -> update the avl and compare/swap
-      gpr_avl updated = gpr_avl_add(
-          gpr_avl_ref(index, ExecCtx::Get()), subchannel_key_copy(key),
-          GRPC_SUBCHANNEL_WEAK_REF(constructed, "index_register"),
-          ExecCtx::Get());
+      gpr_avl updated =
+          gpr_avl_add(gpr_avl_ref(index, grpc_core::ExecCtx::Get()),
+                      subchannel_key_copy(key),
+                      GRPC_SUBCHANNEL_WEAK_REF(constructed, "index_register"),
+                      grpc_core::ExecCtx::Get());
 
       // it may happen (but it's expected to be unlikely)
       // that some other thread has changed the index:
@@ -192,9 +194,9 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
       }
       gpr_mu_unlock(&g_mu);
 
-      gpr_avl_unref(updated, ExecCtx::Get());
+      gpr_avl_unref(updated, grpc_core::ExecCtx::Get());
     }
-    gpr_avl_unref(index, ExecCtx::Get());
+    gpr_avl_unref(index, grpc_core::ExecCtx::Get());
   }
 
   if (need_to_unref_constructed) {
@@ -211,22 +213,23 @@ void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
     // Compare and swap loop:
     // - take a reference to the current index
     gpr_mu_lock(&g_mu);
-    gpr_avl index = gpr_avl_ref(g_subchannel_index, ExecCtx::Get());
+    gpr_avl index = gpr_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
     gpr_mu_unlock(&g_mu);
 
     // Check to see if this key still refers to the previously
     // registered subchannel
     grpc_subchannel* c =
-        (grpc_subchannel*)gpr_avl_get(index, key, ExecCtx::Get());
+        (grpc_subchannel*)gpr_avl_get(index, key, grpc_core::ExecCtx::Get());
     if (c != constructed) {
-      gpr_avl_unref(index, ExecCtx::Get());
+      gpr_avl_unref(index, grpc_core::ExecCtx::Get());
       break;
     }
 
     // compare and swap the update (some other thread may have
     // mutated the index behind us)
     gpr_avl updated =
-        gpr_avl_remove(gpr_avl_ref(index, ExecCtx::Get()), key, ExecCtx::Get());
+        gpr_avl_remove(gpr_avl_ref(index, grpc_core::ExecCtx::Get()), key,
+                       grpc_core::ExecCtx::Get());
 
     gpr_mu_lock(&g_mu);
     if (index.root == g_subchannel_index.root) {
@@ -235,8 +238,8 @@ void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
     }
     gpr_mu_unlock(&g_mu);
 
-    gpr_avl_unref(updated, ExecCtx::Get());
-    gpr_avl_unref(index, ExecCtx::Get());
+    gpr_avl_unref(updated, grpc_core::ExecCtx::Get());
+    gpr_avl_unref(index, grpc_core::ExecCtx::Get());
   }
 }
 

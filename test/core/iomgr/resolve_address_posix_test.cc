@@ -67,7 +67,7 @@ void args_finish(args_struct* args) {
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(args->pollset, &do_nothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
 }
@@ -79,14 +79,14 @@ static grpc_millis n_sec_deadline(int seconds) {
 
 static void actually_poll(void* argsp) {
   args_struct* args = static_cast<args_struct*>(argsp);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_millis deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
       break;
     }
-    grpc_millis time_left = deadline - ExecCtx::Get()->Now();
+    grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRIdPTR, done, time_left);
     GPR_ASSERT(time_left >= 0);
     grpc_pollset_worker* worker = NULL;
@@ -94,7 +94,7 @@ static void actually_poll(void* argsp) {
     GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
                                                         n_sec_deadline(1)));
     gpr_mu_unlock(args->mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
   gpr_event_set(&args->ev, (void*)1);
 }
@@ -120,7 +120,7 @@ static void must_fail(void* argsp, grpc_error* err) {
 }
 
 static void test_unix_socket(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   args_struct args;
   args_init(&args);
   poll_pollset_until_request_done(&args);
@@ -132,7 +132,7 @@ static void test_unix_socket(void) {
 }
 
 static void test_unix_socket_path_name_too_long(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   args_struct args;
   args_init(&args);
   const char prefix[] = "unix:/path/name";
@@ -156,7 +156,7 @@ static void test_unix_socket_path_name_too_long(void) {
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   test_unix_socket();
   test_unix_socket_path_name_too_long();
   grpc_executor_shutdown();

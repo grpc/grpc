@@ -257,7 +257,7 @@ static void test_interned_key_indexed() {
 
 static void run_test(void (*test)(), const char* name) {
   gpr_log(GPR_INFO, "RUN TEST: %s", name);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_chttp2_hpack_compressor_init(&g_compressor);
   test();
   grpc_chttp2_hpack_compressor_destroy(&g_compressor);

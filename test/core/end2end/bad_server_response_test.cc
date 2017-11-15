@@ -269,7 +269,7 @@ static void run_test(const char* response_payload,
                      grpc_status_code expected_status,
                      const char* expected_detail) {
   test_tcp_server test_server;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   gpr_event ev;
 
   grpc_init();

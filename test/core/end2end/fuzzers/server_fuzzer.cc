@@ -41,7 +41,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   if (leak_check) grpc_memory_counters_init();
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_executor_set_threading(false);
 
   grpc_resource_quota* resource_quota =
@@ -78,7 +78,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   grpc_event ev;
   while (1) {
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:

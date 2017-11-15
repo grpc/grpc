@@ -137,7 +137,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
 
 static void handle_close_callback(uv_handle_t* handle) {
   grpc_tcp_listener* sp = (grpc_tcp_listener*)handle->data;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   sp->server->open_ports--;
   if (sp->server->open_ports == 0 && sp->server->shutdown) {
     finish_shutdown(sp->server);
@@ -174,9 +174,9 @@ void grpc_tcp_server_unref(grpc_tcp_server* s) {
   GRPC_UV_ASSERT_SAME_THREAD();
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     tcp_server_destroy(s);
   }
 }
@@ -223,7 +223,7 @@ static void finish_accept(grpc_tcp_listener* sp) {
 
 static void on_connect(uv_stream_t* server, int status) {
   grpc_tcp_listener* sp = (grpc_tcp_listener*)server->data;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   if (status < 0) {
     switch (status) {

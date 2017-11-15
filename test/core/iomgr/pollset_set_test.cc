@@ -84,7 +84,7 @@ static void cleanup_test_pollsets(test_pollset* pollsets,
                       grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(pollsets[i].ps, &destroyed);
 
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_free(pollsets[i].ps);
     pollsets[i].ps = NULL;
   }
@@ -129,7 +129,7 @@ static void cleanup_test_fds(test_fd* tfds, const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     grpc_fd_shutdown(tfds[i].fd,
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("fd cleanup"));
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
 
     /* grpc_fd_orphan frees the memory allocated for grpc_fd. Normally it also
      * calls close() on the underlying fd. In our case, we are using
@@ -138,7 +138,7 @@ static void cleanup_test_fds(test_fd* tfds, const int num_fds) {
      * underlying fd, call it with a non-NULL 'release_fd' parameter */
     grpc_fd_orphan(tfds[i].fd, NULL, &release_fd, false /* already_closed */,
                    "test_fd_cleanup");
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
 
     grpc_wakeup_fd_destroy(&tfds[i].wakeup_fd);
   }
@@ -199,7 +199,7 @@ static void pollset_set_test_basic() {
    *                    |
    *                    +---> FD9 (Added after PS2 is added to PSS0)
    */
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_pollset_worker* worker;
   grpc_millis deadline;
 
@@ -236,7 +236,7 @@ static void pollset_set_test_basic() {
   grpc_pollset_add_fd(pollsets[1].ps, tfds[8].fd);
   grpc_pollset_add_fd(pollsets[2].ps, tfds[9].fd);
 
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   /* Test that if any FD in the above structure is readable, it is observable by
    * doing grpc_pollset_work on any pollset
@@ -259,10 +259,10 @@ static void pollset_set_test_basic() {
                grpc_pollset_work(pollsets[i].ps, &worker, deadline));
     gpr_mu_unlock(pollsets[i].mu);
 
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
 
     verify_readable_and_reset(tfds, num_fds);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   /* Test tear down */
@@ -270,14 +270,14 @@ static void pollset_set_test_basic() {
   grpc_pollset_set_del_fd(pollset_sets[0].pss, tfds[5].fd);
   grpc_pollset_set_del_fd(pollset_sets[1].pss, tfds[1].fd);
   grpc_pollset_set_del_fd(pollset_sets[1].pss, tfds[6].fd);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   grpc_pollset_set_del_pollset(pollset_sets[1].pss, pollsets[0].ps);
   grpc_pollset_set_del_pollset(pollset_sets[0].pss, pollsets[1].ps);
   grpc_pollset_set_del_pollset(pollset_sets[0].pss, pollsets[2].ps);
 
   grpc_pollset_set_del_pollset_set(pollset_sets[0].pss, pollset_sets[1].pss);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   cleanup_test_fds(tfds, num_fds);
   cleanup_test_pollsets(pollsets, num_ps);
@@ -301,7 +301,7 @@ void pollset_set_test_dup_fds() {
    *                    |           +--> FD2
    *                    +---> FD1
    */
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_pollset_worker* worker;
   grpc_millis deadline;
 
@@ -337,10 +337,10 @@ void pollset_set_test_dup_fds() {
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_pollset_work(pollset.ps, &worker, deadline));
   gpr_mu_unlock(pollset.mu);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   verify_readable_and_reset(tfds, num_fds);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   /* Tear down */
   grpc_pollset_set_del_fd(pollset_sets[0].pss, tfds[0].fd);
@@ -349,7 +349,7 @@ void pollset_set_test_dup_fds() {
 
   grpc_pollset_set_del_pollset(pollset_sets[1].pss, pollset.ps);
   grpc_pollset_set_del_pollset_set(pollset_sets[0].pss, pollset_sets[1].pss);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   cleanup_test_fds(tfds, num_fds);
   cleanup_test_pollsets(&pollset, num_ps);
@@ -371,7 +371,7 @@ void pollset_set_test_empty_pollset() {
    *                   |
    *                   +---> FD2
    */
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_pollset_worker* worker;
   grpc_millis deadline;
 
@@ -404,16 +404,16 @@ void pollset_set_test_empty_pollset() {
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_pollset_work(pollsets[0].ps, &worker, deadline));
   gpr_mu_unlock(pollsets[0].mu);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   verify_readable_and_reset(tfds, num_fds);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   /* Tear down */
   grpc_pollset_set_del_fd(pollset_set.pss, tfds[0].fd);
   grpc_pollset_set_del_pollset(pollset_set.pss, pollsets[0].ps);
   grpc_pollset_set_del_pollset(pollset_set.pss, pollsets[1].ps);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   cleanup_test_fds(tfds, num_fds);
   cleanup_test_pollsets(pollsets, num_ps);
@@ -421,7 +421,7 @@ void pollset_set_test_empty_pollset() {
 }
 
 int main(int argc, char** argv) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
   const char* poll_strategy = grpc_get_poll_strategy_name();

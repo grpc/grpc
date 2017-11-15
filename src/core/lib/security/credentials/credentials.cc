@@ -72,7 +72,7 @@ void grpc_channel_credentials_unref(grpc_channel_credentials* creds) {
 
 void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
   GRPC_API_TRACE("grpc_channel_credentials_release(creds=%p)", 1, (creds));
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_channel_credentials_unref(creds);
 }
 
@@ -94,7 +94,7 @@ void grpc_call_credentials_unref(grpc_call_credentials* creds) {
 
 void grpc_call_credentials_release(grpc_call_credentials* creds) {
   GRPC_API_TRACE("grpc_call_credentials_release(creds=%p)", 1, (creds));
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_call_credentials_unref(creds);
 }
 
@@ -209,7 +209,7 @@ void grpc_server_credentials_unref(grpc_server_credentials* creds) {
 
 void grpc_server_credentials_release(grpc_server_credentials* creds) {
   GRPC_API_TRACE("grpc_server_credentials_release(creds=%p)", 1, (creds));
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_server_credentials_unref(creds);
 }
 

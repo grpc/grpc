@@ -28,7 +28,7 @@
 static void test_succeeds(const char* uri_text, const char* scheme,
                           const char* authority, const char* path,
                           const char* query, const char* fragment) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_uri* uri = grpc_uri_parse(uri_text, 0);
   GPR_ASSERT(uri);
   GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
@@ -41,13 +41,13 @@ static void test_succeeds(const char* uri_text, const char* scheme,
 }
 
 static void test_fails(const char* uri_text) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   GPR_ASSERT(NULL == grpc_uri_parse(uri_text, 0));
 }
 
 static void test_query_parts() {
   {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     const char* uri_text = "http://foo/path?a&b=B&c=&#frag";
     grpc_uri* uri = grpc_uri_parse(uri_text, 0);
     GPR_ASSERT(uri);
@@ -81,7 +81,7 @@ static void test_query_parts() {
   }
   {
     /* test the current behavior of multiple query part values */
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     const char* uri_text = "http://auth/path?foo=bar=baz&foobar==";
     grpc_uri* uri = grpc_uri_parse(uri_text, 0);
     GPR_ASSERT(uri);
@@ -99,7 +99,7 @@ static void test_query_parts() {
   }
   {
     /* empty query */
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     const char* uri_text = "http://foo/path";
     grpc_uri* uri = grpc_uri_parse(uri_text, 0);
     GPR_ASSERT(uri);

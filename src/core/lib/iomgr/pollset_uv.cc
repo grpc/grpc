@@ -124,7 +124,7 @@ grpc_error* grpc_pollset_work(grpc_pollset* pollset,
   GRPC_UV_ASSERT_SAME_THREAD();
   gpr_mu_unlock(&grpc_polling_mu);
   if (grpc_pollset_work_run_loop) {
-    grpc_millis now = ExecCtx::Get()->Now();
+    grpc_millis now = grpc_core::ExecCtx::Get()->Now();
     if (deadline >= now) {
       timeout = deadline - now;
     } else {
@@ -143,7 +143,7 @@ grpc_error* grpc_pollset_work(grpc_pollset* pollset,
     }
   }
   if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
   gpr_mu_lock(&grpc_polling_mu);
   return GRPC_ERROR_NONE;

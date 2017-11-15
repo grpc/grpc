@@ -57,7 +57,7 @@ static void done_write(void* arg, grpc_error* error) {
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
   thd_args* a = (thd_args*)ts;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_server_setup_transport(a->server, transport, NULL,
                               grpc_server_get_channel_args(a->server));
 }
@@ -80,7 +80,7 @@ void grpc_run_bad_client_test(
       grpc_slice_from_copied_buffer(client_payload, client_payload_length);
   grpc_slice_buffer outgoing;
   grpc_closure done_write_closure;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_completion_queue* shutdown_cq;
 
   if (client_payload_length < 4 * 1024) {

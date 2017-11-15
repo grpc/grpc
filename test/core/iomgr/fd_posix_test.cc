@@ -246,7 +246,7 @@ static int server_start(server* sv) {
 static void server_wait_and_shutdown(server* sv) {
   gpr_mu_lock(g_mu);
   while (!sv->done) {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_pollset_worker* worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
@@ -362,7 +362,7 @@ static void client_wait_and_shutdown(client* cl) {
   gpr_mu_lock(g_mu);
   while (!cl->done) {
     grpc_pollset_worker* worker = NULL;
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
@@ -380,7 +380,7 @@ static void test_grpc_fd(void) {
   server sv;
   client cl;
   int port;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   server_init(&sv);
   port = server_start(&sv);
@@ -436,7 +436,7 @@ static void test_grpc_fd_change(void) {
   ssize_t result;
   grpc_closure first_closure;
   grpc_closure second_closure;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   GRPC_CLOSURE_INIT(&first_closure, first_read_callback, &a,
                     grpc_schedule_on_exec_ctx);
@@ -513,7 +513,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
@@ -523,7 +523,7 @@ int main(int argc, char** argv) {
   GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, &destroyed);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(g_pollset);
 
   grpc_shutdown();

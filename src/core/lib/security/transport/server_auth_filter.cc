@@ -118,7 +118,7 @@ static void on_md_processing_done(
     grpc_status_code status, const char* error_details) {
   grpc_call_element* elem = (grpc_call_element*)user_data;
   call_data* calld = (call_data*)elem->call_data;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   // If the call was not cancelled while we were in flight, process the result.
   if (gpr_atm_full_cas(&calld->state, (gpr_atm)STATE_INIT,
                        (gpr_atm)STATE_DONE)) {

@@ -119,7 +119,7 @@ static void test_slice_hash_table() {
   check_values(test_entries, num_entries, table);
   check_non_existent_value("XX", table);
   // Clean up.
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_slice_hash_table_unref(table);
 }
 
@@ -146,7 +146,7 @@ static void test_slice_hash_table_eq() {
       create_table_from_entries(test_entries_b, num_entries_b, value_cmp_fn);
 
   GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b) == 0);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_slice_hash_table_unref(table_a);
   grpc_slice_hash_table_unref(table_b);
 }
@@ -217,7 +217,7 @@ static void test_slice_hash_table_not_eq() {
       create_table_from_entries(test_entries_h, num_entries_h, pointer_cmp_fn);
   GPR_ASSERT(grpc_slice_hash_table_cmp(table_g, table_h) != 0);
 
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_slice_hash_table_unref(table_a);
   grpc_slice_hash_table_unref(table_b_larger);
   grpc_slice_hash_table_unref(table_b_smaller);

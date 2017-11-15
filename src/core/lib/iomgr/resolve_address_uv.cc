@@ -114,7 +114,7 @@ static grpc_error* handle_addrinfo_result(int status, struct addrinfo* result,
 static void getaddrinfo_callback(uv_getaddrinfo_t* req, int status,
                                  struct addrinfo* res) {
   request* r = (request*)req->data;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_error* error;
   int retry_status;
   char* port = r->port;

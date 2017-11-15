@@ -206,7 +206,7 @@ static void test_parse_json_key_failure_no_private_key(void) {
 
 static grpc_json* parse_json_part_from_jwt(const char* str, size_t len,
                                            char** scratchpad) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   char* b64;
   char* decoded;
   grpc_json* json;
@@ -326,7 +326,7 @@ static void check_jwt_claim(grpc_json* claim, const char* expected_audience,
 static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
                                 const char* signed_data,
                                 size_t signed_data_size) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   EVP_MD_CTX* md_ctx = EVP_MD_CTX_create();
   EVP_PKEY* key = EVP_PKEY_new();

@@ -72,7 +72,7 @@ void on_resolution_cb(void* arg, grpc_error* error) {
 }
 
 static void test_fake_resolver() {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_combiner* combiner = grpc_combiner_create();
   // Create resolver.
   grpc_fake_resolver_response_generator* response_generator =
@@ -109,7 +109,7 @@ static void test_fake_resolver() {
                                                      results);
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_seconds_to_deadline(5)) != NULL);
 
@@ -144,7 +144,7 @@ static void test_fake_resolver() {
                                                      results_update);
   grpc_resolver_next_locked(resolver, &on_res_arg_update.resolver_result,
                             on_resolution);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg_update.ev,
                             grpc_timeout_seconds_to_deadline(5)) != NULL);
 
@@ -153,7 +153,7 @@ static void test_fake_resolver() {
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_milliseconds_to_deadline(100)) ==
              NULL);

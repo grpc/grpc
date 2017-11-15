@@ -79,7 +79,7 @@ grpc_millis BdpEstimator::CompletePing() {
   }
   ping_state_ = PingState::UNSCHEDULED;
   accumulator_ = 0;
-  return ExecCtx::Get()->Now() + inter_ping_delay_;
+  return grpc_core::ExecCtx::Get()->Now() + inter_ping_delay_;
 }
 
 }  // namespace grpc_core

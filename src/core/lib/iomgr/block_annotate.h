@@ -41,18 +41,18 @@ void gpr_thd_end_blocking_region();
   do {                                        \
     gpr_thd_start_blocking_region();          \
   } while (0)
-#define GRPC_SCHEDULING_END_BLOCKING_REGION \
-  do {                                      \
-    gpr_thd_end_blocking_region();          \
-    ExecCtx::Get()->InvalidateNow();        \
+#define GRPC_SCHEDULING_END_BLOCKING_REGION     \
+  do {                                          \
+    gpr_thd_end_blocking_region();              \
+    grpc_core::ExecCtx::Get()->InvalidateNow(); \
   } while (0)
 #else
 #define GRPC_SCHEDULING_START_BLOCKING_REGION \
   do {                                        \
   } while (0)
-#define GRPC_SCHEDULING_END_BLOCKING_REGION \
-  do {                                      \
-    ExecCtx::Get()->InvalidateNow();        \
+#define GRPC_SCHEDULING_END_BLOCKING_REGION     \
+  do {                                          \
+    grpc_core::ExecCtx::Get()->InvalidateNow(); \
   } while (0)
 #endif
 

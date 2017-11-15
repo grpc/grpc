@@ -217,7 +217,7 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
   c->token_fetch_pending = false;
   c->access_token_md = GRPC_MDELEM_REF(access_token_md);
   c->token_expiration = status == GRPC_CREDENTIALS_OK
-                            ? ExecCtx::Get()->Now() + token_lifetime
+                            ? grpc_core::ExecCtx::Get()->Now() + token_lifetime
                             : 0;
   grpc_oauth2_pending_get_request_metadata* pending_request =
       c->pending_requests;
@@ -256,7 +256,8 @@ static bool oauth2_token_fetcher_get_request_metadata(
   grpc_mdelem cached_access_token_md = GRPC_MDNULL;
   gpr_mu_lock(&c->mu);
   if (!GRPC_MDISNULL(c->access_token_md) &&
-      (c->token_expiration - ExecCtx::Get()->Now() > refresh_threshold)) {
+      (c->token_expiration - grpc_core::ExecCtx::Get()->Now() >
+       refresh_threshold)) {
     cached_access_token_md = GRPC_MDELEM_REF(c->access_token_md);
   }
   if (!GRPC_MDISNULL(cached_access_token_md)) {
@@ -288,7 +289,7 @@ static bool oauth2_token_fetcher_get_request_metadata(
     c->fetch_func(grpc_credentials_metadata_request_create(creds),
                   &c->httpcli_context, &c->pollent,
                   on_oauth2_token_fetcher_http_response,
-                  ExecCtx::Get()->Now() + refresh_threshold);
+                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
   }
   return false;
 }
@@ -514,7 +515,7 @@ grpc_call_credentials* grpc_access_token_credentials_create(
   gpr_ref_init(&c->base.refcount, 1);
   char* token_md_value;
   gpr_asprintf(&token_md_value, "Bearer %s", access_token);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   c->access_token_md = grpc_mdelem_from_slices(
       grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
       grpc_slice_from_copied_string(token_md_value));

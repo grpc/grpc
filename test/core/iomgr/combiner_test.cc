@@ -28,7 +28,7 @@
 
 static void test_no_op(void) {
   gpr_log(GPR_DEBUG, "test_no_op");
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
 }
 
@@ -42,11 +42,11 @@ static void test_execute_one(void) {
   grpc_combiner* lock = grpc_combiner_create();
   gpr_event done;
   gpr_event_init(&done);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(set_event_to_true, &done,
                                          grpc_combiner_scheduler(lock)),
                      GRPC_ERROR_NONE);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
              NULL);
   GRPC_COMBINER_UNREF(lock, "test_execute_one");
@@ -72,7 +72,7 @@ static void check_one(void* a, grpc_error* error) {
 
 static void execute_many_loop(void* a) {
   thd_args* args = static_cast<thd_args*>(a);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   size_t n = 1;
   for (size_t i = 0; i < 10; i++) {
     for (size_t j = 0; j < 10000; j++) {
@@ -82,7 +82,7 @@ static void execute_many_loop(void* a) {
       GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(
                              check_one, c, grpc_combiner_scheduler(args->lock)),
                          GRPC_ERROR_NONE);
-      ExecCtx::Get()->Flush();
+      grpc_core::ExecCtx::Get()->Flush();
     }
     // sleep for a little bit, to test a combiner draining and another thread
     // picking it up
@@ -112,7 +112,7 @@ static void test_execute_many(void) {
                               gpr_inf_future(GPR_CLOCK_REALTIME)) != NULL);
     gpr_thd_join(thds[i]);
   }
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   GRPC_COMBINER_UNREF(lock, "test_execute_many");
 }
 
@@ -133,12 +133,12 @@ static void test_execute_finally(void) {
   gpr_log(GPR_DEBUG, "test_execute_finally");
 
   grpc_combiner* lock = grpc_combiner_create();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   gpr_event_init(&got_in_finally);
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_CREATE(add_finally, lock, grpc_combiner_scheduler(lock)),
       GRPC_ERROR_NONE);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&got_in_finally,
                             grpc_timeout_seconds_to_deadline(5)) != NULL);
   GRPC_COMBINER_UNREF(lock, "test_execute_finally");

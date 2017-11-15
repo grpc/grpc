@@ -246,7 +246,7 @@ template <class Fixture>
 static void BM_ErrorGetStatus(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
     grpc_status_code status;
     grpc_slice slice;
@@ -261,7 +261,7 @@ template <class Fixture>
 static void BM_ErrorGetStatusCode(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
     grpc_status_code status;
     grpc_error_get_status(fixture.error(), fixture.deadline(), &status, NULL,
@@ -275,7 +275,7 @@ template <class Fixture>
 static void BM_ErrorHttpError(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
     grpc_http2_error_code error;
     grpc_error_get_status(fixture.error(), fixture.deadline(), NULL, NULL,

@@ -25,29 +25,6 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/profiling/timers.h"
 
-thread_local ExecCtx* exec_ctx = nullptr;
-
-ExecCtx::ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) { exec_ctx = this; }
-ExecCtx::ExecCtx(uintptr_t fl) : flags_(fl) { exec_ctx = this; }
-ExecCtx::~ExecCtx() {
-  GPR_ASSERT(exec_ctx == this);
-  flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
-  Flush();
-  exec_ctx = last_exec_ctx_;
-}
-
-bool ExecCtx::IsReadyToFinish() {
-  if ((flags_ & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
-    if (CheckReadyToFinish()) {
-      flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
-      return true;
-    }
-    return false;
-  } else {
-    return true;
-  }
-}
-
 void exec_ctx_run(grpc_closure* closure, grpc_error* error) {
 #ifndef NDEBUG
   closure->scheduled = false;
@@ -67,47 +44,15 @@ void exec_ctx_run(grpc_closure* closure, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-bool ExecCtx::Flush() {
-  bool did_something = 0;
-  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
-  for (;;) {
-    if (!grpc_closure_list_empty(closure_list_)) {
-      grpc_closure* c = closure_list_.head;
-      closure_list_.head = closure_list_.tail = NULL;
-      while (c != NULL) {
-        grpc_closure* next = c->next_data.next;
-        grpc_error* error = c->error_data.error;
-        did_something = true;
-        exec_ctx_run(c, error);
-        c = next;
-      }
-    } else if (!grpc_combiner_continue_exec_ctx()) {
-      break;
-    }
-  }
-  GPR_ASSERT(combiner_data_.active_combiner == nullptr);
-  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
-  return did_something;
-}
-
-void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
-  grpc_closure_list_append(exec_ctx->closure_list(), closure, error);
-}
-
 static gpr_timespec
     g_start_time[GPR_TIMESPAN + 1];  // assumes GPR_TIMESPAN is the
                                      // last enum value in
                                      // gpr_clock_type
 
-void ExecCtx::GlobalInit(void) {
-  for (int i = 0; i < GPR_TIMESPAN; i++) {
-    g_start_time[i] = gpr_now((gpr_clock_type)i);
-  }
-  // allows uniform treatment in conversion functions
-  g_start_time[GPR_TIMESPAN] = gpr_time_0(GPR_TIMESPAN);
+void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
+  grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure,
+                           error);
 }
-
-void ExecCtx::GlobalShutdown(void) {}
 
 static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
   ts = gpr_time_sub(ts, g_start_time[ts.clock_type]);
@@ -154,6 +99,47 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
   return timespec_to_atm_round_up(ts);
 }
 
+static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
+    exec_ctx_run, exec_ctx_sched, "exec_ctx"};
+static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
+grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
+
+namespace grpc_core {
+thread_local ExecCtx* ExecCtx::exec_ctx_ = nullptr;
+
+bool ExecCtx::Flush() {
+  bool did_something = 0;
+  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
+  for (;;) {
+    if (!grpc_closure_list_empty(closure_list_)) {
+      grpc_closure* c = closure_list_.head;
+      closure_list_.head = closure_list_.tail = NULL;
+      while (c != NULL) {
+        grpc_closure* next = c->next_data.next;
+        grpc_error* error = c->error_data.error;
+        did_something = true;
+        exec_ctx_run(c, error);
+        c = next;
+      }
+    } else if (!grpc_combiner_continue_exec_ctx()) {
+      break;
+    }
+  }
+  GPR_ASSERT(combiner_data_.active_combiner == nullptr);
+  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
+  return did_something;
+}
+
+void ExecCtx::GlobalInit(void) {
+  for (int i = 0; i < GPR_TIMESPAN; i++) {
+    g_start_time[i] = gpr_now((gpr_clock_type)i);
+  }
+  // allows uniform treatment in conversion functions
+  g_start_time[GPR_TIMESPAN] = gpr_time_0(GPR_TIMESPAN);
+}
+
+void ExecCtx::GlobalShutdown(void) {}
+
 grpc_millis ExecCtx::Now() {
   if (!now_is_valid_) {
     now_ = timespec_to_atm_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
@@ -162,9 +148,4 @@ grpc_millis ExecCtx::Now() {
   return now_;
 }
 
-ExecCtx* ExecCtx::Get() { return exec_ctx; }
-
-static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
-    exec_ctx_run, exec_ctx_sched, "exec_ctx"};
-static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
-grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
+}  // namespace grpc_core

@@ -66,7 +66,7 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture* f,
   fullstack_compression_fixture_data* ffd =
       static_cast<fullstack_compression_fixture_data*>(f->fixture_data);
   if (ffd->client_args_compression != NULL) {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(ffd->client_args_compression);
   }
   ffd->client_args_compression = grpc_channel_args_set_compression_algorithm(
@@ -80,7 +80,7 @@ void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture* f,
   fullstack_compression_fixture_data* ffd =
       static_cast<fullstack_compression_fixture_data*>(f->fixture_data);
   if (ffd->server_args_compression != NULL) {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(ffd->server_args_compression);
   }
   ffd->server_args_compression = grpc_channel_args_set_compression_algorithm(
@@ -95,7 +95,7 @@ void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture* f,
 }
 
 void chttp2_tear_down_fullstack_compression(grpc_end2end_test_fixture* f) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   fullstack_compression_fixture_data* ffd =
       static_cast<fullstack_compression_fixture_data*>(f->fixture_data);
   grpc_channel_args_destroy(ffd->client_args_compression);

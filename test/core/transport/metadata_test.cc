@@ -60,7 +60,7 @@ static void test_create_metadata(bool intern_keys, bool intern_values) {
           intern_keys, intern_values);
 
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   m1 = grpc_mdelem_from_slices(
       maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
       maybe_intern(grpc_slice_from_static_string("b"), intern_values));
@@ -95,7 +95,7 @@ static void test_create_many_ephemeral_metadata(bool intern_keys,
       intern_keys, intern_values);
 
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   /* add, and immediately delete a bunch of different elements */
   for (i = 0; i < MANY; i++) {
     gpr_ltoa(i, buffer);
@@ -117,7 +117,7 @@ static void test_create_many_persistant_metadata(void) {
   gpr_log(GPR_INFO, "test_create_many_persistant_metadata");
 
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   /* add phase */
   for (i = 0; i < MANY; i++) {
     gpr_ltoa(i, buffer);
@@ -151,7 +151,7 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
           intern_keys, intern_values);
 
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_mdelem a, b, c;
   GRPC_MDELEM_UNREF(
       a = grpc_mdelem_from_slices(
@@ -178,7 +178,7 @@ static void test_identity_laws(bool intern_keys, bool intern_values) {
           intern_keys, intern_values);
 
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_mdelem a, b, c;
   a = grpc_mdelem_from_slices(
       maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
@@ -225,7 +225,7 @@ static void test_things_stick_around(void) {
   gpr_log(GPR_INFO, "test_things_stick_around");
 
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   for (i = 0; i < nstrs; i++) {
     gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", i);
@@ -271,7 +271,7 @@ static void test_user_data_works(void) {
   gpr_log(GPR_INFO, "test_user_data_works");
 
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   ud1 = static_cast<int*>(gpr_malloc(sizeof(int)));
   *ud1 = 1;
   ud2 = static_cast<int*>(gpr_malloc(sizeof(int)));
@@ -322,7 +322,7 @@ static void test_mdelem_sizes_in_hpack(bool intern_key, bool intern_value) {
   gpr_log(GPR_INFO, "test_mdelem_size: intern_key=%d intern_value=%d",
           intern_key, intern_value);
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   uint8_t binary_value[BUFFER_SIZE] = {0};
   for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
@@ -346,7 +346,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   gpr_log(GPR_INFO, "test_static_metadata: dup_key=%d dup_value=%d", dup_key,
           dup_value);
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   for (size_t i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
     grpc_mdelem p = GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[i],

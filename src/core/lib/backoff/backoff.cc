@@ -36,7 +36,7 @@ grpc_backoff_result grpc_backoff_begin(grpc_backoff* backoff) {
   backoff->current_backoff = backoff->initial_backoff;
   const grpc_millis initial_timeout =
       GPR_MAX(backoff->initial_backoff, backoff->min_connect_timeout);
-  const grpc_millis now = ExecCtx::Get()->Now();
+  const grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   const grpc_backoff_result result = {now + initial_timeout,
                                       now + backoff->current_backoff};
   return result;
@@ -67,7 +67,7 @@ grpc_backoff_result grpc_backoff_step(grpc_backoff* backoff) {
               backoff->min_connect_timeout);
   const grpc_millis next_timeout = GPR_MIN(
       (grpc_millis)(backoff->current_backoff + jitter), backoff->max_backoff);
-  const grpc_millis now = ExecCtx::Get()->Now();
+  const grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   const grpc_backoff_result result = {now + current_timeout,
                                       now + next_timeout};
   return result;

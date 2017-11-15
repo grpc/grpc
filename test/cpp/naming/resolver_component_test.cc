@@ -171,7 +171,7 @@ void ArgsFinish(ArgsStruct* args) {
   grpc_pollset_shutdown(args->pollset, &DoNothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
   grpc_channel_args_destroy(args->channel_args);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
   GRPC_COMBINER_UNREF(args->lock, NULL);
@@ -195,7 +195,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
     grpc_pollset_worker* worker = NULL;
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
                       grpc_pollset_work(args->pollset, &worker,
@@ -274,7 +274,7 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
   args.expected_addrs = ParseExpectedAddrs(FLAGS_expected_addrs);
@@ -294,7 +294,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
                     (void*)&args, grpc_combiner_scheduler(args.lock));
   grpc_resolver_next_locked(resolver, &args.channel_args,
                             &on_resolver_result_changed);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   GRPC_RESOLVER_UNREF(resolver, NULL);
   ArgsFinish(&args);

@@ -62,7 +62,7 @@ static void on_metadata_response(void* arg, grpc_error* error) {
 
 int main(int argc, char** argv) {
   int result = 0;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   synchronizer sync;
   grpc_channel_credentials* creds = NULL;
   const char* service_url = "https://test.foo.google.com/Foo";
@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
                               GRPC_MILLIS_INF_FUTURE)))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(sync.mu);
   }
   gpr_mu_unlock(sync.mu);

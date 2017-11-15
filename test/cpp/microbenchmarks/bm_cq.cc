@@ -80,7 +80,7 @@ static void BM_Pass1Cpp(benchmark::State& state) {
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
     DummyTag dummy_tag;
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag));
     grpc_cq_end_op(c_cq, &dummy_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
                    NULL, &completion);
@@ -100,7 +100,7 @@ static void BM_Pass1Core(benchmark::State& state) {
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, NULL));
     grpc_cq_end_op(cq, NULL, GRPC_ERROR_NONE, DoneWithCompletionOnStack, NULL,
                    &completion);
@@ -119,7 +119,7 @@ static void BM_Pluck1Core(benchmark::State& state) {
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, NULL));
     grpc_cq_end_op(cq, NULL, GRPC_ERROR_NONE, DoneWithCompletionOnStack, NULL,
                    &completion);

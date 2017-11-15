@@ -129,7 +129,7 @@ grpc_error* grpc_pollset_work(grpc_pollset* pollset,
       g_active_poller = &worker;
       gpr_mu_unlock(&grpc_polling_mu);
       grpc_iocp_work(deadline);
-      ExecCtx::Get()->Flush();
+      grpc_core::ExecCtx::Get()->Flush();
       gpr_mu_lock(&grpc_polling_mu);
       pollset->is_iocp_worker = 0;
       g_active_poller = NULL;
@@ -160,10 +160,10 @@ grpc_error* grpc_pollset_work(grpc_pollset* pollset,
     while (!worker.kicked) {
       if (gpr_cv_wait(&worker.cv, &grpc_polling_mu,
                       grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME))) {
-        ExecCtx::Get()->InvalidateNow();
+        grpc_core::ExecCtx::Get()->InvalidateNow();
         break;
       }
-      ExecCtx::Get()->InvalidateNow();
+      grpc_core::ExecCtx::Get()->InvalidateNow();
     }
   } else {
     pollset->kicked_without_pollers = 0;
@@ -171,7 +171,7 @@ grpc_error* grpc_pollset_work(grpc_pollset* pollset,
 done:
   if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
     gpr_mu_unlock(&grpc_polling_mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(&grpc_polling_mu);
   }
   if (added_worker) {

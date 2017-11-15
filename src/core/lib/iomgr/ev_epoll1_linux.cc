@@ -554,7 +554,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 
 static int poll_deadline_to_millis_timeout(grpc_millis millis) {
   if (millis == GRPC_MILLIS_INF_FUTURE) return -1;
-  grpc_millis delta = millis - ExecCtx::Get()->Now();
+  grpc_millis delta = millis - grpc_core::ExecCtx::Get()->Now();
   if (delta > INT_MAX) {
     return INT_MAX;
   } else if (delta < 0) {
@@ -743,7 +743,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
         SET_KICK_STATE(worker, KICKED);
       }
     }
-    ExecCtx::Get()->InvalidateNow();
+    grpc_core::ExecCtx::Get()->InvalidateNow();
   }
 
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
@@ -848,7 +848,7 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
   /* Make sure we appear kicked */
   SET_KICK_STATE(worker, KICKED);
   grpc_closure_list_move(&worker->schedule_on_end_work,
-                         ExecCtx::Get()->closure_list());
+                         grpc_core::ExecCtx::Get()->closure_list());
   if (gpr_atm_no_barrier_load(&g_active_poller) == (gpr_atm)worker) {
     if (worker->next != worker && worker->next->state == UNKICKED) {
       if (GRPC_TRACER_ON(grpc_polling_trace)) {
@@ -859,9 +859,9 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
       SET_KICK_STATE(worker->next, DESIGNATED_POLLER);
       GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV();
       gpr_cv_signal(&worker->next->cv);
-      if (ExecCtx::Get()->HasWork()) {
+      if (grpc_core::ExecCtx::Get()->HasWork()) {
         gpr_mu_unlock(&pollset->mu);
-        ExecCtx::Get()->Flush();
+        grpc_core::ExecCtx::Get()->Flush();
         gpr_mu_lock(&pollset->mu);
       }
     } else {
@@ -892,12 +892,12 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
         found_worker = check_neighborhood_for_available_poller(neighborhood);
         gpr_mu_unlock(&neighborhood->mu);
       }
-      ExecCtx::Get()->Flush();
+      grpc_core::ExecCtx::Get()->Flush();
       gpr_mu_lock(&pollset->mu);
     }
-  } else if (ExecCtx::Get()->HasWork()) {
+  } else if (grpc_core::ExecCtx::Get()->HasWork()) {
     gpr_mu_unlock(&pollset->mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(&pollset->mu);
   }
   if (worker->initialized_cv) {
@@ -948,8 +948,8 @@ static grpc_error* pollset_work(grpc_pollset* ps,
 
        process_epoll_events() returns very quickly: It just queues the work on
        exec_ctx but does not execute it (the actual exectution or more
-       accurately ExecCtx::Get()->Flush() happens in end_worker() AFTER
-       selecting a designated poller). So we are not waiting long periods
+       accurately grpc_core::ExecCtx::Get()->Flush() happens in end_worker()
+       AFTER selecting a designated poller). So we are not waiting long periods
        without a designated poller */
     if (gpr_atm_acq_load(&g_epoll_set.cursor) ==
         gpr_atm_acq_load(&g_epoll_set.num_events)) {

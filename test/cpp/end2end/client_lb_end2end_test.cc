@@ -112,7 +112,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   void SetNextResolution(const std::vector<int>& ports) {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_lb_addresses* addresses = grpc_lb_addresses_create(ports.size(), NULL);
     for (size_t i = 0; i < ports.size(); ++i) {
       char* lb_uri_str;

@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
   gpr_cmdline* cl;
   const char* jwt = NULL;
   const char* aud = NULL;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   grpc_init();
   cl = gpr_cmdline_create("JWT verifier tool");
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
             grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE)))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(sync.mu);
   }
   gpr_mu_unlock(sync.mu);

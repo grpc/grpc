@@ -277,7 +277,7 @@ static void test_invoke_request_response_with_payload(
   end_test(&f);
   config.tear_down_data(&f);
   {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(client_args);
     grpc_channel_args_destroy(server_args);
   }

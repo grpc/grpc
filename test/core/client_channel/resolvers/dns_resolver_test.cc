@@ -28,7 +28,7 @@
 static grpc_combiner* g_combiner;
 
 static void test_succeeds(grpc_resolver_factory* factory, const char* string) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_uri* uri = grpc_uri_parse(string, 0);
   grpc_resolver_args args;
   grpc_resolver* resolver;
@@ -45,7 +45,7 @@ static void test_succeeds(grpc_resolver_factory* factory, const char* string) {
 }
 
 static void test_fails(grpc_resolver_factory* factory, const char* string) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_uri* uri = grpc_uri_parse(string, 0);
   grpc_resolver_args args;
   grpc_resolver* resolver;
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 
   grpc_resolver_factory_unref(dns);
   {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     GRPC_COMBINER_UNREF(g_combiner, "test");
   }
   grpc_shutdown();

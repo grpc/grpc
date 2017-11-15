@@ -39,7 +39,7 @@ static void test_algorithm_mesh(void) {
     grpc_compression_algorithm parsed;
     grpc_slice mdstr;
     grpc_mdelem mdelem;
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     GPR_ASSERT(
         grpc_compression_algorithm_name((grpc_compression_algorithm)i, &name));
     GPR_ASSERT(grpc_compression_algorithm_parse(
@@ -61,7 +61,7 @@ static void test_algorithm_mesh(void) {
 }
 
 static void test_algorithm_failure(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_slice mdstr;
 
   gpr_log(GPR_DEBUG, "test_algorithm_failure");

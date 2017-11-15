@@ -104,7 +104,7 @@ static bool wait_loop(int deadline_seconds, gpr_event* ev) {
     if (gpr_event_wait(ev, grpc_timeout_seconds_to_deadline(1))) return true;
     deadline_seconds--;
 
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_timer_check(NULL);
   }
   return false;
@@ -146,14 +146,14 @@ int main(int argc, char** argv) {
   grpc_dns_lookup_ares = my_dns_lookup_ares;
   grpc_channel_args* result = (grpc_channel_args*)1;
 
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolver* resolver = create_resolver("dns:test");
   gpr_event ev1;
   gpr_event_init(&ev1);
   call_resolver_next_after_locking(
       resolver, &result,
       GRPC_CLOSURE_CREATE(on_done, &ev1, grpc_schedule_on_exec_ctx));
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(wait_loop(5, &ev1));
   GPR_ASSERT(result == NULL);
 
@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
   call_resolver_next_after_locking(
       resolver, &result,
       GRPC_CLOSURE_CREATE(on_done, &ev2, grpc_schedule_on_exec_ctx));
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(wait_loop(30, &ev2));
   GPR_ASSERT(result != NULL);
 

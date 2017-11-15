@@ -40,7 +40,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
   /* Full flush is not allowed when inflating. */
   GPR_ASSERT(!(ctx->flate == inflate && (flush == Z_FINISH)));
 
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   int r;
   bool eoc = false;
   size_t original_max_output_size = max_output_size;

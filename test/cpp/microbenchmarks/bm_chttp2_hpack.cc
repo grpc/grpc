@@ -50,12 +50,12 @@ static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
 
 static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_chttp2_hpack_compressor c;
   while (state.KeepRunning()) {
     grpc_chttp2_hpack_compressor_init(&c);
     grpc_chttp2_hpack_compressor_destroy(&c);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   track_counters.Finish(state);
@@ -64,8 +64,8 @@ BENCHMARK(BM_HpackEncoderInitDestroy);
 
 static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   TrackCounters track_counters;
-  ExecCtx _local_exec_ctx;
-  grpc_millis saved_now = ExecCtx::Get()->Now();
+  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
@@ -87,7 +87,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
     };
     grpc_chttp2_encode_header(&c, NULL, 0, &b, &hopt, &outbuf);
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_metadata_batch_destroy(&b);
   grpc_chttp2_hpack_compressor_destroy(&c);
@@ -108,7 +108,7 @@ BENCHMARK(BM_HpackEncoderEncodeDeadline);
 template <class Fixture>
 static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   TrackCounters track_counters;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   static bool logged_representative_output = false;
 
   grpc_metadata_batch b;
@@ -144,7 +144,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
       }
     }
     grpc_slice_buffer_reset_and_unref_internal(&outbuf);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_metadata_batch_destroy(&b);
   grpc_chttp2_hpack_compressor_destroy(&c);
@@ -425,12 +425,12 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_chttp2_hpack_parser p;
   while (state.KeepRunning()) {
     grpc_chttp2_hpack_parser_init(&p);
     grpc_chttp2_hpack_parser_destroy(&p);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   track_counters.Finish(state);
@@ -444,7 +444,7 @@ static void UnrefHeader(void* user_data, grpc_mdelem md) {
 template <class Fixture, void (*OnHeader)(void*, grpc_mdelem)>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_chttp2_hpack_parser p;
@@ -458,7 +458,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     for (auto slice : benchmark_slices) {
       GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
     }
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);

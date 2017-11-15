@@ -114,13 +114,13 @@ static int is_stack_running_on_compute_engine() {
       grpc_resource_quota_create("google_default_credentials");
   grpc_httpcli_get(
       &context, &detector.pollent, resource_quota, &request,
-      ExecCtx::Get()->Now() + max_detection_delay,
+      grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_compute_engine_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response);
   grpc_resource_quota_unref_internal(resource_quota);
 
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
@@ -144,7 +144,7 @@ static int is_stack_running_on_compute_engine() {
   grpc_pollset_shutdown(grpc_polling_entity_pollset(&detector.pollent),
                         &destroy_closure);
   g_polling_mu = NULL;
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   gpr_free(grpc_polling_entity_pollset(&detector.pollent));
   grpc_http_response_destroy(&detector.response);
@@ -220,7 +220,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Failed to create Google credentials");
   grpc_error* err;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   GRPC_API_TRACE("grpc_google_default_credentials_create(void)", 0, ());
 
@@ -290,7 +290,7 @@ end:
 }
 
 void grpc_flush_cached_google_default_credentials(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
   gpr_mu_lock(&g_state_mu);
   if (default_credentials != NULL) {

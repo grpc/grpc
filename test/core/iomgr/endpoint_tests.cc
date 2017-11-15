@@ -173,7 +173,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   struct read_and_write_test_state state;
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_millis deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   gpr_log(GPR_DEBUG,
@@ -213,7 +213,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
      even when bytes_written is unsigned. */
   state.bytes_written -= state.current_write_size;
   read_and_write_test_write_handler(&state, GRPC_ERROR_NONE);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read);
 
@@ -225,17 +225,17 @@ static void read_and_write_test(grpc_endpoint_test_config config,
     grpc_endpoint_shutdown(
         state.write_ep, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   }
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   gpr_mu_lock(g_mu);
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker* worker = NULL;
-    GPR_ASSERT(ExecCtx::Get()->Now() < deadline);
+    GPR_ASSERT(grpc_core::ExecCtx::Get()->Now() < deadline);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
   }
   gpr_mu_unlock(g_mu);
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   end_test(config);
   grpc_slice_buffer_destroy_internal(&state.outgoing);
@@ -252,16 +252,17 @@ static void inc_on_failure(void* arg, grpc_error* error) {
 }
 
 static void wait_for_fail_count(int* fail_count, int want_fail_count) {
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);
   grpc_millis deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
-  while (ExecCtx::Get()->Now() < deadline && *fail_count < want_fail_count) {
+  while (grpc_core::ExecCtx::Get()->Now() < deadline &&
+         *fail_count < want_fail_count) {
     grpc_pollset_worker* worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(*fail_count == want_fail_count);
@@ -276,7 +277,7 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_slice_buffer slice_buffer;
   grpc_slice_buffer_init(&slice_buffer);
 
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,

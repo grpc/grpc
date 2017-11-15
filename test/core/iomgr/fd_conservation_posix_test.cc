@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 
   grpc_test_init(argc, argv);
   grpc_init();
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   /* set max # of file descriptors to a low value, and
      verify we can create and destroy many more than this number
@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     p = grpc_iomgr_create_endpoint_pair("test", NULL);
     grpc_endpoint_destroy(p.client);
     grpc_endpoint_destroy(p.server);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   grpc_resource_quota_unref(resource_quota);

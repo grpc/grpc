@@ -29,7 +29,7 @@
 gpr_thd_id g_init_thread;
 
 void grpc_iomgr_platform_init(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_pollset_global_init();
   grpc_register_tracer(&grpc_tcp_trace);
   grpc_executor_set_threading(false);

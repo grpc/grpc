@@ -69,7 +69,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {
   oauth2_request request;
   memset(&request, 0, sizeof(request));
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_closure do_nothing_closure;
   grpc_auth_metadata_context null_ctx = {"", "", NULL, NULL};
 
@@ -92,7 +92,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
     on_oauth2_response(&request, error);
     GRPC_ERROR_UNREF(error);
   }
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
 
   gpr_mu_lock(request.mu);
   while (!request.is_done) {

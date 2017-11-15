@@ -35,7 +35,7 @@ void test_unknown_scheme_target(void) {
   chan = grpc_insecure_channel_create("blah://blah", NULL, NULL);
   GPR_ASSERT(chan != NULL);
 
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));

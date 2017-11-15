@@ -60,7 +60,7 @@ static void on_finish(void* arg, grpc_error* error) {
 static void test_get(int port) {
   grpc_httpcli_request req;
   char* host;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   g_done = 0;
   gpr_log(GPR_INFO, "test_get");
@@ -100,7 +100,7 @@ static void test_get(int port) {
 static void test_post(int port) {
   grpc_httpcli_request req;
   char* host;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   g_done = 0;
   gpr_log(GPR_INFO, "test_post");
@@ -144,7 +144,7 @@ static void destroy_pops(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   gpr_subprocess* server;
   char* me = argv[0];
   char* lslash = strrchr(me, '/');

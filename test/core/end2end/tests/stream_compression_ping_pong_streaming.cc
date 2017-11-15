@@ -273,7 +273,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   end_test(&f);
   config.tear_down_data(&f);
   {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(client_args);
     grpc_channel_args_destroy(server_args);
   }

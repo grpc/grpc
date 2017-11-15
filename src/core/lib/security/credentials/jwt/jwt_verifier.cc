@@ -347,7 +347,7 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
     grpc_jwt_claims* claims, const char* audience, grpc_slice signature,
     const char* signed_jwt, size_t signed_jwt_len, void* user_data,
     grpc_jwt_verification_done_cb cb) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   verifier_cb_ctx* ctx = (verifier_cb_ctx*)gpr_zalloc(sizeof(verifier_cb_ctx));
   ctx->verifier = verifier;
   ctx->pollent = grpc_polling_entity_create_from_pollset(pollset);
@@ -702,7 +702,7 @@ static void on_openid_config_retrieved(void* user_data, grpc_error* error) {
   resource_quota = grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
       &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
-      ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
+      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
   grpc_resource_quota_unref_internal(resource_quota);
@@ -827,9 +827,10 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   resource_quota = grpc_resource_quota_create("jwt_verifier");
-  grpc_httpcli_get(&ctx->verifier->http_ctx, &ctx->pollent, resource_quota,
-                   &req, ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
-                   http_cb, &ctx->responses[rsp_idx]);
+  grpc_httpcli_get(
+      &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
+      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
+      &ctx->responses[rsp_idx]);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_free(req.host);
   gpr_free(req.http.path);

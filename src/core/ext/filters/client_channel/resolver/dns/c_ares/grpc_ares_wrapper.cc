@@ -213,7 +213,7 @@ static void on_hostbyname_done_cb(void* arg, int status, int timeouts,
 static void on_srv_query_done_cb(void* arg, int status, int timeouts,
                                  unsigned char* abuf, int alen) {
   grpc_ares_request* r = (grpc_ares_request*)arg;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   gpr_log(GPR_DEBUG, "on_query_srv_done_cb");
   if (status == ARES_SUCCESS) {
     gpr_log(GPR_DEBUG, "on_query_srv_done_cb ARES_SUCCESS");

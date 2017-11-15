@@ -42,7 +42,7 @@ static int is_compressed(grpc_byte_buffer* buffer) {
 
 int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                  grpc_byte_buffer* buffer) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_slice_buffer decompressed_slices_buffer;
   reader->buffer_in = buffer;
   switch (reader->buffer_in->type) {
@@ -110,7 +110,7 @@ grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader) {
   grpc_slice out_slice = GRPC_SLICE_MALLOC(input_size);
   uint8_t* const outbuf = GRPC_SLICE_START_PTR(out_slice); /* just an alias */
 
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   while (grpc_byte_buffer_reader_next(reader, &in_slice) != 0) {
     const size_t slice_length = GRPC_SLICE_LENGTH(in_slice);
     memcpy(&(outbuf[bytes_read]), GRPC_SLICE_START_PTR(in_slice), slice_length);

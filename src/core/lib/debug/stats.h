@@ -35,7 +35,7 @@ typedef struct grpc_stats_data {
 extern grpc_stats_data* grpc_stats_per_cpu_storage;
 
 #define GRPC_THREAD_STATS_DATA() \
-  (&grpc_stats_per_cpu_storage[ExecCtx::Get()->starting_cpu()])
+  (&grpc_stats_per_cpu_storage[grpc_core::ExecCtx::Get()->starting_cpu()])
 
 #define GRPC_STATS_INC_COUNTER(ctr) \
   (gpr_atm_no_barrier_fetch_add(&GRPC_THREAD_STATS_DATA()->counters[(ctr)], 1))

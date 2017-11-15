@@ -32,7 +32,7 @@ static void clean_up(void) {}
 
 static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
     size_t slice_size) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_endpoint_test_fixture f;
   grpc_arg a[1];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
@@ -59,7 +59,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));

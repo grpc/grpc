@@ -95,7 +95,7 @@ static void test_create_channel_stack(void) {
   grpc_channel_args chan_args;
   int* channel_data;
   int* call_data;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_slice path = grpc_slice_from_static_string("/service/method");
 
   arg.type = GRPC_ARG_INTEGER;
@@ -138,7 +138,7 @@ static void test_create_channel_stack(void) {
   GPR_ASSERT(*channel_data == 1);
 
   GRPC_CALL_STACK_UNREF(call_stack, "done");
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(*channel_data == 2);
 
   GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");

@@ -26,7 +26,7 @@
 #include "test/core/util/test_config.h"
 
 static void test_create(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   grpc_arg arg_int;
   grpc_arg arg_string;
@@ -59,7 +59,7 @@ static void test_create(void) {
 }
 
 static void test_set_compression_algorithm(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_channel_args* ch_args;
 
   ch_args =
@@ -73,7 +73,7 @@ static void test_set_compression_algorithm(void) {
 }
 
 static void test_compression_algorithm_states(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_channel_args *ch_args, *ch_args_wo_gzip, *ch_args_wo_gzip_deflate;
   unsigned states_bitset;
   size_t i;
@@ -134,7 +134,7 @@ static void test_set_socket_mutator(void) {
   GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_POINTER);
 
   {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(ch_args);
   }
 }

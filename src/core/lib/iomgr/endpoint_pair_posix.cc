@@ -54,7 +54,7 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
   char* final_name;
   create_sockets(sv);
 
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   gpr_asprintf(&final_name, "%s:client", name);
   p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name), args,

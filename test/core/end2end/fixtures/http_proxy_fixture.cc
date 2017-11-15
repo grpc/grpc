@@ -391,7 +391,8 @@ static void on_read_request_done(void* arg, grpc_error* error) {
   GPR_ASSERT(resolved_addresses->naddrs >= 1);
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
-  const grpc_millis deadline = ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
+  const grpc_millis deadline =
+      grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
                           conn->pollset_set, NULL,
                           &resolved_addresses->addrs[0], deadline);
@@ -444,7 +445,7 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
 
 static void thread_main(void* arg) {
   grpc_end2end_http_proxy* proxy = (grpc_end2end_http_proxy*)arg;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   do {
     gpr_ref(&proxy->users);
     grpc_pollset_worker* worker = NULL;
@@ -452,15 +453,15 @@ static void thread_main(void* arg) {
     GRPC_LOG_IF_ERROR(
         "grpc_pollset_work",
         grpc_pollset_work(proxy->pollset, &worker,
-                          ExecCtx::Get()->Now() + GPR_MS_PER_SEC));
+                          grpc_core::ExecCtx::Get()->Now() + GPR_MS_PER_SEC));
     gpr_mu_unlock(proxy->mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   } while (!gpr_unref(&proxy->users));
 }
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
     grpc_channel_args* args) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_end2end_http_proxy* proxy =
       (grpc_end2end_http_proxy*)gpr_malloc(sizeof(*proxy));
   memset(proxy, 0, sizeof(*proxy));
@@ -505,7 +506,7 @@ static void destroy_pollset(void* arg, grpc_error* error) {
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   gpr_unref(&proxy->users);  // Signal proxy thread to shutdown.
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   gpr_thd_join(proxy->thd);
   grpc_tcp_server_shutdown_listeners(proxy->server);
   grpc_tcp_server_unref(proxy->server);

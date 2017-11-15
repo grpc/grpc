@@ -160,7 +160,7 @@ TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
                           .set_min_control_value(-1)
                           .set_max_control_value(25)
                           .set_integral_range(10)),
-      last_pid_update_(ExecCtx::Get()->Now()) {}
+      last_pid_update_(grpc_core::ExecCtx::Get()->Now()) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
@@ -306,7 +306,7 @@ double TransportFlowControl::TargetLogBdp() {
 }
 
 double TransportFlowControl::SmoothLogBdp(double value) {
-  grpc_millis now = ExecCtx::Get()->Now();
+  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   double bdp_error = value - pid_controller_.last_control_value();
   const double dt = (double)(now - last_pid_update_) * 1e-3;
   last_pid_update_ = now;

@@ -115,14 +115,14 @@ static void on_connect(void* arg, grpc_endpoint* tcp, grpc_pollset* pollset,
 }
 
 static void test_no_op(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   grpc_tcp_server_unref(s);
 }
 
 static void test_no_op_with_start(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   LOG_TEST("test_no_op_with_start");
@@ -131,7 +131,7 @@ static void test_no_op_with_start(void) {
 }
 
 static void test_no_op_with_port(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
@@ -150,7 +150,7 @@ static void test_no_op_with_port(void) {
 }
 
 static void test_no_op_with_port_and_start(void) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
@@ -214,7 +214,7 @@ static void tcp_connect(const struct sockaddr* remote, socklen_t remote_len,
 
 /* Tests a tcp server with multiple ports. */
 static void test_connect(unsigned n) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolved_address resolved_addr;
   grpc_resolved_address resolved_addr1;
   struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
@@ -284,7 +284,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset = static_cast<grpc_pollset*>(gpr_malloc(grpc_pollset_size()));

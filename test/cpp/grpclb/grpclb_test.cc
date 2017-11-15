@@ -558,7 +558,7 @@ static void perform_request(client_fixture* cf) {
 #define BALANCERS_NAME "lb.name"
 static void setup_client(const server_fixture* lb_server,
                          const server_fixture* backends, client_fixture* cf) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   char* expected_target_names = NULL;
   const char* backends_name = lb_server->servers_hostport;

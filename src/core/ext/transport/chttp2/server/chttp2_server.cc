@@ -132,7 +132,8 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
                        connection_state->handshake_mgr);
   // TODO(roth): We should really get this timeout value from channel
   // args instead of hard-coding it.
-  const grpc_millis deadline = ExecCtx::Get()->Now() + 120 * GPR_MS_PER_SEC;
+  const grpc_millis deadline =
+      grpc_core::ExecCtx::Get()->Now() + 120 * GPR_MS_PER_SEC;
   grpc_handshake_manager_do_handshake(connection_state->handshake_mgr, tcp,
                                       state->args, deadline, acceptor,
                                       on_handshake_done, connection_state);
@@ -161,10 +162,10 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
   gpr_mu_unlock(&state->mu);
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.
-  ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();
   if (destroy_done != NULL) {
     destroy_done->cb(destroy_done->cb_arg, GRPC_ERROR_REF(error));
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_channel_args_destroy(state->args);
   gpr_mu_destroy(&state->mu);

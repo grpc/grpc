@@ -570,7 +570,8 @@ static void deadline_enc(grpc_chttp2_hpack_compressor* c, grpc_millis deadline,
                          framer_state* st) {
   char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem mdelem;
-  grpc_http2_encode_timeout(deadline - ExecCtx::Get()->Now(), timeout_str);
+  grpc_http2_encode_timeout(deadline - grpc_core::ExecCtx::Get()->Now(),
+                            timeout_str);
   mdelem = grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TIMEOUT,
                                    grpc_slice_from_copied_string(timeout_str));
   hpack_enc(c, mdelem, st);

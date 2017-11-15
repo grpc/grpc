@@ -163,7 +163,7 @@ static void dns_on_resolved_locked(void* arg, grpc_error* error) {
   } else {
     grpc_millis next_try =
         grpc_backoff_step(&r->backoff_state).next_attempt_start_time;
-    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
+    grpc_millis timeout = next_try - grpc_core::ExecCtx::Get()->Now();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
     GPR_ASSERT(!r->have_retry_timer);

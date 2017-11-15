@@ -143,7 +143,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
 
 static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL, NULL);
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(

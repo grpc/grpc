@@ -50,7 +50,7 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_malloc(ps_sz));
   gpr_mu* mu;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
@@ -60,7 +60,7 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
     gpr_mu_lock(mu);
     grpc_pollset_shutdown(ps, &shutdown_ps_closure);
     gpr_mu_unlock(mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   gpr_free(ps);
@@ -114,7 +114,7 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
   grpc_pollset_init(ps, &mu);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   gpr_mu_lock(mu);
   while (state.KeepRunning()) {
     GRPC_ERROR_UNREF(grpc_pollset_work(ps, NULL, 0));
@@ -136,14 +136,14 @@ static void BM_PollAddFd(benchmark::State& state) {
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
   grpc_pollset_init(ps, &mu);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_wakeup_fd wakeup_fd;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
   grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx");
   while (state.KeepRunning()) {
     grpc_pollset_add_fd(ps, fd);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_fd_orphan(fd, NULL, NULL, false /* already_closed */, "xxx");
   grpc_closure shutdown_ps_closure;
@@ -218,7 +218,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
   grpc_pollset_init(ps, &mu);
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_wakeup_fd wakeup_fd;
   GRPC_ERROR_UNREF(grpc_wakeup_fd_init(&wakeup_fd));
   grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read");

@@ -249,7 +249,7 @@ void grpc_timer_list_init() {
   g_shared_mutables.initialized = true;
   g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
   gpr_mu_init(&g_shared_mutables.mu);
-  g_shared_mutables.min_timer = ExecCtx::Get()->Now();
+  g_shared_mutables.min_timer = grpc_core::ExecCtx::Get()->Now();
   gpr_tls_init(&g_last_seen_min_timer);
   gpr_tls_set(&g_last_seen_min_timer, 0);
   grpc_register_tracer(&grpc_timer_trace);
@@ -341,7 +341,7 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
   if (GRPC_TRACER_ON(grpc_timer_trace)) {
     gpr_log(GPR_DEBUG,
             "TIMER %p: SET %" PRIdPTR " now %" PRIdPTR " call %p[%p]", timer,
-            deadline, ExecCtx::Get()->Now(), closure, closure->cb);
+            deadline, grpc_core::ExecCtx::Get()->Now(), closure, closure->cb);
   }
 
   if (!g_shared_mutables.initialized) {
@@ -354,7 +354,7 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
 
   gpr_mu_lock(&shard->mu);
   timer->pending = true;
-  grpc_millis now = ExecCtx::Get()->Now();
+  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   if (deadline <= now) {
     timer->pending = false;
     GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_NONE);
@@ -607,7 +607,7 @@ static grpc_timer_check_result run_some_expired_timers(gpr_atm now,
 
 grpc_timer_check_result grpc_timer_check(grpc_millis* next) {
   // prelude
-  grpc_millis now = ExecCtx::Get()->Now();
+  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
 
   /* fetch from a thread-local first: this avoids contention on a globally
      mutable cacheline in the common case */

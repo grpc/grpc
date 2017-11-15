@@ -142,7 +142,7 @@ static void request_with_payload_template(
       NULL, default_server_channel_compression_algorithm);
 
   if (user_agent_override) {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_channel_args* client_args_old = client_args;
     grpc_arg arg;
     arg.key = const_cast<char*>(GRPC_ARG_PRIMARY_USER_AGENT_STRING);
@@ -348,7 +348,7 @@ static void request_with_payload_template(
   cq_verifier_destroy(cqv);
 
   {
-    ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_channel_args_destroy(client_args);
     grpc_channel_args_destroy(server_args);
   }

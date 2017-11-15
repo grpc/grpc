@@ -76,7 +76,7 @@ static grpc_slice base64_decode_with_length(const char* s,
       s, grpc_chttp2_base64_decode_with_length(base64_encode(s), strlen(s)));
 
 int main(int argc, char** argv) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   /* ENCODE_AND_DECODE tests grpc_chttp2_base64_decode_with_length(), which
      takes encoded base64 strings without pad chars, but output length is

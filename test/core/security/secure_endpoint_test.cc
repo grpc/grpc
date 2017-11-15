@@ -38,7 +38,7 @@ static grpc_pollset* g_pollset;
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, grpc_slice* leftover_slices, size_t leftover_nslices,
     bool use_zero_copy_protector) {
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   tsi_frame_protector* fake_read_protector =
       tsi_create_fake_frame_protector(NULL);
   tsi_frame_protector* fake_write_protector =
@@ -170,7 +170,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_slice_buffer incoming;
   grpc_slice s =
       grpc_slice_from_copied_string("hello world 12345678900987654321");
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   int n = 0;
   grpc_closure done_closure;
   gpr_log(GPR_INFO, "Start test left over");
@@ -202,7 +202,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
 
   grpc_init();

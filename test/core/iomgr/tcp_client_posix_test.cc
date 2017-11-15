@@ -53,7 +53,7 @@ static grpc_millis test_deadline(void) {
 static void finish_connection() {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
 
@@ -83,7 +83,7 @@ void test_succeeds(void) {
   int r;
   int connections_complete_before;
   grpc_closure done;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
@@ -127,7 +127,7 @@ void test_succeeds(void) {
                           grpc_timespec_to_millis_round_up(
                               grpc_timeout_seconds_to_deadline(5)))));
     gpr_mu_unlock(g_mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
 
@@ -139,7 +139,7 @@ void test_fails(void) {
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   int connections_complete_before;
   grpc_closure done;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
 
   gpr_log(GPR_DEBUG, "test_fails");
 
@@ -175,7 +175,7 @@ void test_fails(void) {
         break;
     }
     gpr_mu_unlock(g_mu);
-    ExecCtx::Get()->Flush();
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
 
@@ -188,7 +188,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset_set = grpc_pollset_set_create();
