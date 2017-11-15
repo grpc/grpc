@@ -144,6 +144,15 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                              extra_args=extra_args,
                              inner_jobs=inner_jobs)
 
+  test_jobs += _generate_jobs(languages=['c'],
+                             configs=['dbg', 'opt'],
+                             platforms=['linux'],
+                             labels=['basictests', 'corelang'],
+                             iomgr_platform='uv',
+                             extra_args=extra_args,
+                             inner_jobs=inner_jobs,
+                             timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+
   # supported on all platforms.
   test_jobs += _generate_jobs(languages=['c'],
                              configs=['dbg', 'opt'],
