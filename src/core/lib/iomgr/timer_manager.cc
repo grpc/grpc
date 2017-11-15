@@ -273,7 +273,7 @@ static void timer_thread_cleanup(completed_thread* ct) {
 static void timer_thread(void* completed_thread_ptr) {
   // this threads exec_ctx: we try to run things through to completion here
   // since it's easy to spin up new threads
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx(0);
   timer_main_loop();
 
   timer_thread_cleanup((completed_thread*)completed_thread_ptr);

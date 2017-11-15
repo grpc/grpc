@@ -145,7 +145,7 @@ static void executor_thread(void* arg) {
   thread_state* ts = (thread_state*)arg;
   gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx(0);
 
   size_t subtract_depth = 0;
   for (;;) {
