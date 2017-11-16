@@ -30,10 +30,6 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/mpscq.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
 
@@ -152,7 +148,7 @@ typedef struct {
   grpc_closure wrapper;
 } wrapped_closure;
 
-void closure_wrapper(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+inline void closure_wrapper(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   wrapped_closure* wc = (wrapped_closure*)arg;
   grpc_iomgr_cb_func cb = wc->cb;
   void* cb_arg = wc->cb_arg;
@@ -366,10 +362,6 @@ inline void grpc_closure_list_sched(grpc_exec_ctx* exec_ctx,
 #else
 #define GRPC_CLOSURE_LIST_SCHED(exec_ctx, closure_list) \
   grpc_closure_list_sched(exec_ctx, closure_list)
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */
