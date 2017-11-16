@@ -32,17 +32,17 @@ static void assert_valid_list(grpc_mdelem_list* list) {
 #ifndef NDEBUG
   grpc_linked_mdelem* l;
 
-  GPR_ASSERT((list->head == NULL) == (list->tail == NULL));
+  GPR_ASSERT((list->head == nullptr) == (list->tail == nullptr));
   if (!list->head) return;
-  GPR_ASSERT(list->head->prev == NULL);
-  GPR_ASSERT(list->tail->next == NULL);
-  GPR_ASSERT((list->head == list->tail) == (list->head->next == NULL));
+  GPR_ASSERT(list->head->prev == nullptr);
+  GPR_ASSERT(list->tail->next == nullptr);
+  GPR_ASSERT((list->head == list->tail) == (list->head->next == nullptr));
 
   size_t verified_count = 0;
   for (l = list->head; l; l = l->next) {
     GPR_ASSERT(!GRPC_MDISNULL(l->md));
-    GPR_ASSERT((l->prev == NULL) == (l == list->head));
-    GPR_ASSERT((l->next == NULL) == (l == list->tail));
+    GPR_ASSERT((l->prev == nullptr) == (l == list->head));
+    GPR_ASSERT((l->next == nullptr) == (l == list->tail));
     if (l->next) GPR_ASSERT(l->next->prev == l);
     if (l->prev) GPR_ASSERT(l->prev->next == l);
     verified_count++;
@@ -54,7 +54,7 @@ static void assert_valid_list(grpc_mdelem_list* list) {
 static void assert_valid_callouts(grpc_exec_ctx* exec_ctx,
                                   grpc_metadata_batch* batch) {
 #ifndef NDEBUG
-  for (grpc_linked_mdelem* l = batch->list.head; l != NULL; l = l->next) {
+  for (grpc_linked_mdelem* l = batch->list.head; l != nullptr; l = l->next) {
     grpc_slice key_interned = grpc_slice_intern(GRPC_MDKEY(l->md));
     grpc_metadata_batch_callouts_index callout_idx =
         GRPC_BATCH_INDEX_OF(key_interned);
@@ -104,7 +104,7 @@ static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
   if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
     return GRPC_ERROR_NONE;
   }
-  if (batch->idx.array[idx] == NULL) {
+  if (batch->idx.array[idx] == nullptr) {
     if (grpc_static_callout_is_default[idx]) ++batch->list.default_count;
     batch->idx.array[idx] = storage;
     return GRPC_ERROR_NONE;
@@ -122,8 +122,8 @@ static void maybe_unlink_callout(grpc_metadata_batch* batch,
     return;
   }
   if (grpc_static_callout_is_default[idx]) --batch->list.default_count;
-  GPR_ASSERT(batch->idx.array[idx] != NULL);
-  batch->idx.array[idx] = NULL;
+  GPR_ASSERT(batch->idx.array[idx] != nullptr);
+  batch->idx.array[idx] = nullptr;
 }
 
 grpc_error* grpc_metadata_batch_add_head(grpc_exec_ctx* exec_ctx,
@@ -138,9 +138,9 @@ grpc_error* grpc_metadata_batch_add_head(grpc_exec_ctx* exec_ctx,
 static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
   GPR_ASSERT(!GRPC_MDISNULL(storage->md));
-  storage->prev = NULL;
+  storage->prev = nullptr;
   storage->next = list->head;
-  if (list->head != NULL) {
+  if (list->head != nullptr) {
     list->head->prev = storage;
   } else {
     list->tail = storage;
@@ -177,9 +177,9 @@ static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
   GPR_ASSERT(!GRPC_MDISNULL(storage->md));
   storage->prev = list->tail;
-  storage->next = NULL;
-  storage->reserved = NULL;
-  if (list->tail != NULL) {
+  storage->next = nullptr;
+  storage->reserved = nullptr;
+  if (list->tail != nullptr) {
     list->tail->next = storage;
   } else {
     list->head = storage;
@@ -206,12 +206,12 @@ grpc_error* grpc_metadata_batch_link_tail(grpc_exec_ctx* exec_ctx,
 static void unlink_storage(grpc_mdelem_list* list,
                            grpc_linked_mdelem* storage) {
   assert_valid_list(list);
-  if (storage->prev != NULL) {
+  if (storage->prev != nullptr) {
     storage->prev->next = storage->next;
   } else {
     list->head = storage->next;
   }
-  if (storage->next != NULL) {
+  if (storage->next != nullptr) {
     storage->next->prev = storage->prev;
   } else {
     list->tail = storage->prev;
@@ -270,12 +270,13 @@ void grpc_metadata_batch_clear(grpc_exec_ctx* exec_ctx,
 }
 
 bool grpc_metadata_batch_is_empty(grpc_metadata_batch* batch) {
-  return batch->list.head == NULL && batch->deadline == GRPC_MILLIS_INF_FUTURE;
+  return batch->list.head == nullptr &&
+         batch->deadline == GRPC_MILLIS_INF_FUTURE;
 }
 
 size_t grpc_metadata_batch_size(grpc_metadata_batch* batch) {
   size_t size = 0;
-  for (grpc_linked_mdelem* elem = batch->list.head; elem != NULL;
+  for (grpc_linked_mdelem* elem = batch->list.head; elem != nullptr;
        elem = elem->next) {
     size += GRPC_MDELEM_LENGTH(elem->md);
   }

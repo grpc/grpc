@@ -55,7 +55,7 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -64,16 +64,16 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
                                          grpc_timeout_seconds_to_deadline(5),
-                                         NULL)
+                                         nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
-  f->server = NULL;
+  f->server = nullptr;
 }
 
 static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
-  f->client = NULL;
+  f->client = nullptr;
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
@@ -91,17 +91,17 @@ static void empty_batch_body(grpc_end2end_test_config config,
   grpc_call* c;
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_call_error error;
-  grpc_op* op = NULL;
+  grpc_op* op = nullptr;
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
       get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      NULL);
+      nullptr);
   GPR_ASSERT(c);
 
-  error = grpc_call_start_batch(c, op, 0, tag(1), NULL);
+  error = grpc_call_start_batch(c, op, 0, tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
@@ -114,7 +114,7 @@ static void empty_batch_body(grpc_end2end_test_config config,
 static void test_invoke_empty_body(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  f = begin_test(config, "test_invoke_empty_body", NULL, NULL);
+  f = begin_test(config, "test_invoke_empty_body", nullptr, nullptr);
   empty_batch_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);

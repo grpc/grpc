@@ -53,10 +53,11 @@ static void te_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
 
 static void maybe_call_write_cb_locked(grpc_exec_ctx* exec_ctx,
                                        trickle_endpoint* te) {
-  if (te->write_cb != NULL && (te->error != GRPC_ERROR_NONE ||
-                               te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
+  if (te->write_cb != nullptr &&
+      (te->error != GRPC_ERROR_NONE ||
+       te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
     GRPC_CLOSURE_SCHED(exec_ctx, te->write_cb, GRPC_ERROR_REF(te->error));
-    te->write_cb = NULL;
+    te->write_cb = nullptr;
   }
 }
 
@@ -64,7 +65,7 @@ static void te_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                      grpc_slice_buffer* slices, grpc_closure* cb) {
   trickle_endpoint* te = (trickle_endpoint*)ep;
   gpr_mu_lock(&te->mu);
-  GPR_ASSERT(te->write_cb == NULL);
+  GPR_ASSERT(te->write_cb == nullptr);
   if (te->write_buffer.length == 0) {
     te->last_write = gpr_now(GPR_CLOCK_MONOTONIC);
   }
@@ -159,7 +160,7 @@ grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
   te->base.vtable = &vtable;
   te->wrapped = wrap;
   te->bytes_per_second = bytes_per_second;
-  te->write_cb = NULL;
+  te->write_cb = nullptr;
   gpr_mu_init(&te->mu);
   grpc_slice_buffer_init(&te->write_buffer);
   grpc_slice_buffer_init(&te->writing_buffer);

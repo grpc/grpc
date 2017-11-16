@@ -89,7 +89,7 @@ static void test_format_post_request_no_body(void) {
   req.http.hdr_count = 1;
   req.http.hdrs = &hdr;
 
-  slice = grpc_httpcli_format_post_request(&req, NULL, 0);
+  slice = grpc_httpcli_format_post_request(&req, nullptr, 0);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
                                      "POST /index.html HTTP/1.0\r\n"

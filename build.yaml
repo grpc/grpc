@@ -2511,8 +2511,29 @@ targets:
 - name: handshake_server
   build: test
   language: c
+  headers:
+  - test/core/handshake/server_ssl_common.h
   src:
   - test/core/handshake/server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
+  secure: true
+- name: handshake_server_with_readahead_handshaker
+  build: test
+  language: c
+  headers:
+  - test/core/handshake/server_ssl_common.h
+  src:
+  - test/core/handshake/readahead_handshaker_server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3801,6 +3822,20 @@ targets:
   - test/cpp/util/cli_call_test.cc
   deps:
   - grpc_cli_libs
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: client_channel_stress_test
+  gtest: false
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/client/client_channel_stress_test.cc
+  deps:
   - grpc++_test_util
   - grpc_test_util
   - grpc++

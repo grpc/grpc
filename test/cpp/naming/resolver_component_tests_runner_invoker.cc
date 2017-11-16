@@ -60,8 +60,8 @@ static void register_sighandler() {
   struct sigaction act;
   memset(&act, 0, sizeof(act));
   act.sa_handler = sighandler;
-  sigaction(SIGINT, &act, NULL);
-  sigaction(SIGTERM, &act, NULL);
+  sigaction(SIGINT, &act, nullptr);
+  sigaction(SIGTERM, &act, nullptr);
 }
 
 namespace {

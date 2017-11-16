@@ -42,7 +42,7 @@ TEST_F(SecureAuthContextTest, EmptyContext) {
 }
 
 TEST_F(SecureAuthContextTest, Properties) {
-  grpc_auth_context* ctx = grpc_auth_context_create(NULL);
+  grpc_auth_context* ctx = grpc_auth_context_create(nullptr);
   SecureAuthContext context(ctx, true);
   context.AddProperty("name", "chapi");
   context.AddProperty("name", "chapo");
@@ -60,7 +60,7 @@ TEST_F(SecureAuthContextTest, Properties) {
 }
 
 TEST_F(SecureAuthContextTest, Iterators) {
-  grpc_auth_context* ctx = grpc_auth_context_create(NULL);
+  grpc_auth_context* ctx = grpc_auth_context_create(nullptr);
   SecureAuthContext context(ctx, true);
   context.AddProperty("name", "chapi");
   context.AddProperty("name", "chapo");

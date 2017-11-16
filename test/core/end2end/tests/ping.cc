@@ -32,7 +32,7 @@ static void* tag(intptr_t t) { return (void*)t; }
 
 static void test_ping(grpc_end2end_test_config config,
                       int min_time_between_pings_ms) {
-  grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
+  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
@@ -62,7 +62,7 @@ static void test_ping(grpc_end2end_test_config config,
   config.init_client(&f, &client_args);
   config.init_server(&f, &server_args);
 
-  grpc_channel_ping(f.client, f.cq, tag(0), NULL);
+  grpc_channel_ping(f.client, f.cq, tag(0), nullptr);
   CQ_EXPECT_COMPLETION(cqv, tag(0), 0);
 
   /* check that we're still in idle, and start connecting */
@@ -86,7 +86,7 @@ static void test_ping(grpc_end2end_test_config config,
   }
 
   for (i = 1; i <= PING_NUM; i++) {
-    grpc_channel_ping(f.client, f.cq, tag(i), NULL);
+    grpc_channel_ping(f.client, f.cq, tag(i), nullptr);
     CQ_EXPECT_COMPLETION(cqv, tag(i), 1);
     cq_verify(cqv);
   }
