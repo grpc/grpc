@@ -18,6 +18,7 @@
 
 #include "src/core/lib/transport/error_utils.h"
 
+#include <grpc/support/string_util.h>
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/transport/status_conversion.h"
 
@@ -44,7 +45,7 @@ void grpc_error_get_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
                            grpc_slice* slice, grpc_http2_error_code* http_error,
                            const char** full_error_details) {
   if (full_error_details != NULL) {
-    *full_error_details = grpc_error_string(error);
+    *full_error_details = gpr_strdup(grpc_error_string(error));
   }
 
   // Start with the parent error and recurse through the tree of children
