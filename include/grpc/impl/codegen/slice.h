@@ -108,10 +108,6 @@ typedef struct {
   /** the number of slices allocated in the array. External users (i.e any code
    * outside grpc core) MUST NOT use this field */
   size_t capacity;
-  /** the index of the first slice who's memory is still owned by this buffer.
-   * This is only to be used when partially unreffing this slice buffer in
-   * grpc_slice_buffer_partial_reset_and_unref_internal. */
-  size_t idx_of_first_valid_slice;
   /** the combined length of all slices in the array */
   size_t length;
   /** inlined elements to avoid allocations */

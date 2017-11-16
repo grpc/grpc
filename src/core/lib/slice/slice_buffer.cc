@@ -62,7 +62,6 @@ void grpc_slice_buffer_init(grpc_slice_buffer* sb) {
   sb->count = 0;
   sb->length = 0;
   sb->capacity = GRPC_SLICE_BUFFER_INLINE_ELEMENTS;
-  sb->idx_of_first_valid_slice = 0;
   sb->base_slices = sb->slices = sb->inlined;
 }
 
@@ -167,27 +166,12 @@ void grpc_slice_buffer_pop(grpc_slice_buffer* sb) {
 void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx* exec_ctx,
                                                 grpc_slice_buffer* sb) {
   size_t i;
-  for (i = sb->idx_of_first_valid_slice; i < sb->count; i++) {
+  for (i = 0; i < sb->count; i++) {
     grpc_slice_unref_internal(exec_ctx, sb->slices[i]);
   }
 
   sb->count = 0;
   sb->length = 0;
-  sb->idx_of_first_valid_slice = 0;
-}
-
-void grpc_slice_buffer_partial_unref_internal(grpc_exec_ctx* exec_ctx,
-                                              grpc_slice_buffer* sb,
-                                              size_t idx) {
-  GPR_ASSERT(idx < sb->count);  //  if idx == count, then partial is not needed
-  GPR_ASSERT(sb->idx_of_first_valid_slice <= idx);
-
-  size_t i;
-  for (i = sb->idx_of_first_valid_slice; i < idx; i++) {
-    grpc_slice_unref_internal(exec_ctx, sb->slices[i]);
-  }
-
-  sb->idx_of_first_valid_slice = idx;
 }
 
 void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
