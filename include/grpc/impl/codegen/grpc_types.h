@@ -535,18 +535,23 @@ typedef struct grpc_op {
        */
       grpc_slice* status_details;
     } send_status_from_server;
-    /** ownership of the array is with the caller, but ownership of the elements
-        stays with the call object (ie key, value members are owned by the call
-        object, recv_initial_metadata->array is owned by the caller).
-        After the operation completes, call grpc_metadata_array_destroy on this
-        value, or reuse it in a future op. */
     struct grpc_op_recv_initial_metadata {
+      /** ownership of the array is with the caller, but ownership of the
+          elements stays with the call object (ie key, value members are owned
+          by the call object, recv_initial_metadata->array is owned by the
+          caller).  After the operation completes, call
+          grpc_metadata_array_destroy on this value, or reuse it in a future
+          op. */
       grpc_metadata_array* recv_initial_metadata;
+      /** If non-NULL, will be set to 1 if trailing metadata is available.
+       * This may indicate a Trailers-Only response from the server. */
+      uint8_t* trailing_metadata_available;
     } recv_initial_metadata;
-    /** ownership of the byte buffer is moved to the caller; the caller must
-        call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
-       */
     struct grpc_op_recv_message {
+      /** Ownership of the byte buffer is moved to the caller; the caller must
+          call grpc_byte_buffer_destroy on this value, or reuse it in a future
+          op.  The value will be NULL if the call was completed without
+          receiving a message. */
       struct grpc_byte_buffer** recv_message;
     } recv_message;
     struct grpc_op_recv_status_on_client {
