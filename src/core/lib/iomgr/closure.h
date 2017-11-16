@@ -148,7 +148,8 @@ typedef struct {
   grpc_closure wrapper;
 } wrapped_closure;
 
-inline void closure_wrapper(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+inline void closure_wrapper(grpc_exec_ctx* exec_ctx, void* arg,
+                            grpc_error* error) {
   wrapped_closure* wc = (wrapped_closure*)arg;
   grpc_iomgr_cb_func cb = wc->cb;
   void* cb_arg = wc->cb_arg;
