@@ -49,7 +49,19 @@ static grpc_server* create_proxy_server(const char* port,
 
 static grpc_channel* create_proxy_client(const char* target,
                                          grpc_channel_args* client_args) {
-  return grpc_insecure_channel_create(target, client_args, nullptr);
+  // Disable retries in proxy client.
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_arg arg;
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = const_cast<char*>(GRPC_ARG_ENABLE_RETRIES);
+  arg.value.integer = 0;
+  grpc_channel_args* new_args =
+      grpc_channel_args_copy_and_add(client_args, &arg, 1);
+  grpc_channel* channel =
+      grpc_insecure_channel_create(target, new_args, nullptr);
+  grpc_channel_args_destroy(&exec_ctx, new_args);
+  grpc_exec_ctx_finish(&exec_ctx);
+  return channel;
 }
 
 static const grpc_end2end_proxy_def proxy_def = {create_proxy_server,
