@@ -121,6 +121,7 @@ gdb.txt
 tags
 
 # perf data
+memory_usage.csv
 perf.data
 perf.data.old
 
