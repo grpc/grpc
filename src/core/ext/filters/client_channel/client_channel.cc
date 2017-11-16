@@ -818,7 +818,7 @@ typedef struct {
   // For intercepting recv_initial_metadata.
   grpc_metadata_batch recv_initial_metadata;
   grpc_closure recv_initial_metadata_ready;
-  bool trailing_metadata_available;
+  uint8_t trailing_metadata_available;
   // For intercepting recv_message.
   grpc_closure recv_message_ready;
   grpc_byte_stream* recv_message;
@@ -1479,6 +1479,11 @@ static void invoke_recv_initial_metadata_callback(grpc_exec_ctx* exec_ctx,
   grpc_metadata_batch_move(
       &batch_data->recv_initial_metadata,
       pending->batch->payload->recv_initial_metadata.recv_initial_metadata);
+  if (pending->batch->payload->recv_initial_metadata
+          .trailing_metadata_available != nullptr) {
+    *pending->batch->payload->recv_initial_metadata
+         .trailing_metadata_available = batch_data->trailing_metadata_available;
+  }
   // Update bookkeeping.
   // Note: Need to do this before invoking the callback, since invoking
   // the callback will result in yielding the call combiner.
