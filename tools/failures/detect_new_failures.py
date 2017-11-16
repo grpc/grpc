@@ -25,6 +25,7 @@ import logging
 import os
 import pprint
 import sys
+import urllib
 import urllib2
 from collections import namedtuple
 
@@ -34,7 +35,8 @@ sys.path.append(gcp_utils_dir)
 
 import big_query_utils
 
-GH_ISSUES_URL = 'https://api.github.com/repos/grpc/grpc/issues'
+GH_ISSUE_CREATION_URL = 'https://api.github.com/repos/grpc/grpc/issues'
+GH_ISSUE_SEARCH_URL = 'https://api.github.com/search/issues'
 KOKORO_BASE_URL = 'https://kokoro2.corp.google.com/job/'
 
 def gh(url, data=None):
@@ -51,11 +53,22 @@ def gh(url, data=None):
         response.getcode(), response.geturl()))
 
 
-def create_gh_issue(title, body, labels):
-  data = json.dumps({'title': title,
-                     'body': body,
-                     'labels': labels})
-  response = gh(GH_ISSUES_URL, data)
+def search_gh_issues(search_term, status='open'):
+  params = ' '.join((search_term, 'is:issue', 'is:open', 'repo:grpc/grpc'))
+  qargs = urllib.urlencode({'q': params})
+  url = '?'.join((GH_ISSUE_SEARCH_URL, qargs))
+  response = gh(url)
+  return response
+
+
+def create_gh_issue(title, body, labels, assignees=[]):
+  params = {'title': title,
+            'body': body,
+            'labels': labels}
+  if assignees:
+    params['assignees'] = assignees
+  data = json.dumps(params)
+  response = gh(GH_ISSUE_CREATION_URL, data)
   issue_url = response['html_url']
   print('Issue {} created for {}'.format(issue_url, title))
 
@@ -65,63 +78,59 @@ def build_kokoro_url(job_name, build_id):
   return KOKORO_BASE_URL + job_path
 
 
-def create_issues(new_flakes):
+def create_issues(new_flakes, always_create):
   for test_name, results_row in new_flakes.items():
     poll_strategy, job_name, build_id, timestamp = results_row
     url = build_kokoro_url(job_name, build_id)
-    title = 'New Flake: ' + test_name
+    title = 'New Failure: ' + test_name
     body = '- Test: {}\n- Poll Strategy: {}\n- URL: {}'.format(
         test_name, poll_strategy, url)
-    labels = ['infra/New Flakes']
-    create_gh_issue(title, body, labels)
+    labels = ['infra/New Failure']
+    if always_create:
+      proceed = True
+    else:
+      preexisting_issues = search_gh_issues(test_name)
+      if preexisting_issues['total_count'] > 0:
+        print('\nFound {} issues for "{}":'.format(
+            preexisting_issues['total_count'], test_name))
+        for issue in preexisting_issues['items']:
+          print('\t"{}" ; URL: {}'.format(issue['title'], issue['url']))
+      else:
+        print('\nNo preexisting issues found for "{}"'.format(test_name))
+      proceed = raw_input('Create issue for:\nTitle: {}\nBody: {}\n[Y/n] '.format(
+          title, body)) in ('y', 'Y', '')
+    if proceed:
+      assignees_str = raw_input('Asignees? (comma-separated, leave blank for unassigned): ')
+      assignees = [assignee.strip() for assignee in assignees_str.split(',')]
+      create_gh_issue(title, body, labels, assignees)
 
 
 def print_table(table, format):
+  first_time = True
   for test_name, results_row in table.items():
     poll_strategy, job_name, build_id, timestamp = results_row
-    ts = int(float(timestamp))
-    # TODO(dgq): timezone handling is wrong. We need to determine the timezone
-    # of the computer running this script.
-    human_ts = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S UTC')
     full_kokoro_url = build_kokoro_url(job_name, build_id)
     if format == 'human':
       print("\t- Test: {}, Polling: {}, Timestamp: {}, url: {}".format(
-          test_name, poll_strategy, human_ts, full_kokoro_url))
+          test_name, poll_strategy, timestamp, full_kokoro_url))
     else:
       assert(format == 'csv')
-      print("{},{},{}".format(test_name, ts, human_ts, full_kokoro_url))
+      if first_time:
+        print('test,timestamp,url')
+        first_time = False
+      print("{},{},{}".format(test_name, timestamp, full_kokoro_url))
 
 Row = namedtuple('Row', ['poll_strategy', 'job_name', 'build_id', 'timestamp'])
-def get_flaky_tests(from_date, to_date, limit=None):
-  """Return flaky tests for date range (from_date, to_date], where both are
-  strings of the form "YYYY-MM-DD" """
+def get_new_failures(dates):
   bq = big_query_utils.create_big_query()
-  query = """
-#standardSQL
-SELECT
-  RTRIM(LTRIM(REGEXP_REPLACE(filtered_test_name, r'(/\d+)|(bins/.+/)|(cmake/.+/.+/)', ''))) AS test_binary,
-  REGEXP_EXTRACT(test_name, r'GRPC_POLL_STRATEGY=(\w+)') AS poll_strategy,
-  job_name,
-  build_id,
-  timestamp
-FROM (
-  SELECT
-    REGEXP_REPLACE(test_name, r'(/\d+)|(GRPC_POLL_STRATEGY=.+)', '') AS filtered_test_name,
-    test_name,
-    job_name,
-    build_id,
-    timestamp
-  FROM `grpc-testing.jenkins_test_results.aggregate_results`
-  WHERE
-  timestamp > TIMESTAMP("{from_date}")
-  AND timestamp <= TIMESTAMP("{to_date}")
-    AND NOT REGEXP_CONTAINS(job_name, 'portability')
-    AND result != 'PASSED' AND result != 'SKIPPED'
-)
-ORDER BY timestamp desc""".format(
-    from_date=from_date.isoformat(), to_date=to_date.isoformat())
-  if limit:
-    query += '\n LIMIT {}'.format(limit)
+  this_script_path = os.path.join(os.path.dirname(__file__))
+  sql_script = os.path.join(this_script_path, 'sql/new_failures_24h.sql')
+  with open(sql_script) as query_file:
+    query = query_file.read().format(
+        calibration_begin=dates['calibration']['begin'],
+        calibration_end=dates['calibration']['end'],
+        reporting_begin=dates['reporting']['begin'],
+        reporting_end=dates['reporting']['end'])
   logging.debug("Query:\n%s", query)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
   page = bq.jobs().getQueryResults(
@@ -156,27 +165,9 @@ date
          days                days
   """
   dates = process_date_args(args)
-  calibration_results = get_flaky_tests(dates['calibration']['begin'],
-                                        dates['calibration']['end'])
-  reporting_results = get_flaky_tests(dates['reporting']['begin'],
-                                      dates['reporting']['end'])
-  logging.debug('Calibration results: %s', pprint.pformat(calibration_results))
-  logging.debug('Reporting results: %s', pprint.pformat(reporting_results))
-
-  calibration_names = set(calibration_results.keys())
-  logging.info('|calibration_results (%s, %s]| = %d',
-               dates['calibration']['begin'].isoformat(),
-               dates['calibration']['end'].isoformat(),
-               len(calibration_names))
-  reporting_names = set(reporting_results.keys())
-  logging.info('|reporting_results (%s, %s]| = %d',
-               dates['reporting']['begin'].isoformat(),
-               dates['reporting']['end'].isoformat(),
-               len(reporting_names))
-
-  new_flakes = reporting_names - calibration_names
-  logging.info('|new_flakes| = %d', len(new_flakes))
-  return {k: reporting_results[k] for k in new_flakes}
+  new_failures = get_new_failures(dates)
+  logging.info('|new failures| = %d', len(new_failures))
+  return new_failures
 
 
 def build_args_parser():
@@ -194,6 +185,10 @@ def build_args_parser():
   parser.add_argument('--create_issues', dest='create_issues', action='store_true',
                       help='Create issues for all new flakes.')
   parser.set_defaults(create_issues=False)
+  parser.add_argument('--always_create_issues', dest='always_create_issues', action='store_true',
+                      help='Always create issues for all new flakes. Otherwise,'
+                      ' interactively prompt for every issue.')
+  parser.set_defaults(always_create_issues=False)
   parser.add_argument('--token', type=str, default='',
                       help='GitHub token to use its API with a higher rate limit')
   parser.add_argument('--format', type=str, choices=['human', 'csv'],
@@ -243,7 +238,8 @@ def main():
       print(found_msg)
       print('*' * len(found_msg))
       print_table(new_flakes, 'human')
-      create_issues(new_flakes)
+      if args.create_issues:
+        create_issues(new_flakes, args.always_create_issues)
     else:
       print('No new flakes found '.format(len(new_flakes)), dates_info_string)
   elif args.format == 'csv':
@@ -254,7 +250,6 @@ def main():
           dates['reporting']['end'].isoformat(),
           len(new_flakes)))
     else:
-      print('test,timestamp,readable_timestamp,url')
       print_table(new_flakes, 'csv')
   else:
     raise ValueError('Invalid argument for --format: {}'.format(args.format))
