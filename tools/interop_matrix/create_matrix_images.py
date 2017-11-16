@@ -81,8 +81,10 @@ argp.add_argument('--reuse_git_root',
                   default=False,
                   action='store_const',
                   const=True,                  
-                  help='reuse the repo dir. Reusing the repo can cause git '
-                  'checkout error if you switch between releases.')
+                  help='reuse the repo dir. If False, the existing git root '
+                  'directory will removed before a clean checkout, because '
+                  'reusing the repo can cause git checkout error if you switch '
+                  'between releases.')
 
 
 args = argp.parse_args()
