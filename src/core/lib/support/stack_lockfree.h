@@ -21,9 +21,7 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct gpr_stack_lockfree gpr_stack_lockfree;
 
@@ -39,8 +37,6 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree*, int entry);
 /* Returns -1 on empty or the actual entry number */
 int gpr_stack_lockfree_pop(gpr_stack_lockfree* stack);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SUPPORT_STACK_LOCKFREE_H */

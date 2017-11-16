@@ -21,9 +21,7 @@
 
 #include "src/core/lib/slice/slice_hash_table.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** Return a channel argument containing \a targets_info. */
 grpc_arg grpc_lb_targets_info_create_channel_arg(
@@ -33,8 +31,6 @@ grpc_arg grpc_lb_targets_info_create_channel_arg(
 grpc_slice_hash_table* grpc_lb_targets_info_find_in_args(
     const grpc_channel_args* args);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H */

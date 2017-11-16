@@ -23,9 +23,7 @@
 
 #include "src/core/lib/iomgr/iomgr.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct grpc_iomgr_object {
   char* name;
@@ -44,8 +42,6 @@ void grpc_iomgr_platform_shutdown(void);
 
 bool grpc_iomgr_abort_on_leaks(void);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_INTERNAL_H */

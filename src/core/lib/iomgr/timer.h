@@ -32,9 +32,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct grpc_timer grpc_timer;
 
@@ -106,8 +104,6 @@ void grpc_timer_consume_kick(void);
 
 void grpc_kick_poller(void);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_H */

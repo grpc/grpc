@@ -21,9 +21,7 @@
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** \file Provides an index of active subchannels so that they can be
     shared amongst channels */
@@ -82,8 +80,6 @@ void grpc_subchannel_index_unref(void);
  * force_creation set. */
 void grpc_subchannel_index_test_only_set_force_creation(bool force_creation);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INDEX_H */

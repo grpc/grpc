@@ -21,9 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct gpr_subprocess gpr_subprocess;
 
@@ -37,8 +35,6 @@ GPRAPI void gpr_subprocess_destroy(gpr_subprocess* p);
 GPRAPI int gpr_subprocess_join(gpr_subprocess* p);
 GPRAPI void gpr_subprocess_interrupt(gpr_subprocess* p);
 
-#ifdef __cplusplus
-}  // extern "C"
-#endif
+
 
 #endif /* GRPC_SUPPORT_SUBPROCESS_H */

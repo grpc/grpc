@@ -22,9 +22,7 @@
 #include <grpc/slice_buffer.h>
 #include "src/core/tsi/transport_security.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* This method creates a tsi_zero_copy_grpc_protector object. It return TSI_OK
    assuming there is no fatal error.
@@ -77,8 +75,6 @@ struct tsi_zero_copy_grpc_protector {
   const tsi_zero_copy_grpc_protector_vtable* vtable;
 };
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_GRPC_H */

@@ -21,9 +21,7 @@
 
 #include <grpc/grpc.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** Return the compression algorithm from \a call.
  *
@@ -54,8 +52,6 @@ uint32_t grpc_call_test_only_get_stream_encodings_accepted_by_peer(
 grpc_stream_compression_algorithm
 grpc_call_test_only_get_incoming_stream_encodings(grpc_call* call);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SURFACE_CALL_TEST_ONLY_H */

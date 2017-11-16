@@ -23,9 +23,7 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 #define GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "gcloud"
 #define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE \
@@ -45,9 +43,7 @@ extern "C" {
 
 void grpc_flush_cached_google_default_credentials(void);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H \
         */

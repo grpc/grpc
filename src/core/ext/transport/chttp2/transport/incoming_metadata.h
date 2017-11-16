@@ -21,9 +21,7 @@
 
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct {
   gpr_arena* arena;
@@ -49,8 +47,6 @@ grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_millis deadline);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H */

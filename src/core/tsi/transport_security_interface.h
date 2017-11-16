@@ -24,9 +24,7 @@
 
 #include "src/core/lib/debug/trace.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* --- tsi result ---  */
 
@@ -453,8 +451,6 @@ void tsi_init();
 /* This method destroys the shared objects created by tsi_init.  */
 void tsi_destroy();
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H */

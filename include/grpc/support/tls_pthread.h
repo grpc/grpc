@@ -34,12 +34,8 @@ struct gpr_pthread_thread_local {
 #define gpr_tls_init(tls) GPR_ASSERT(0 == pthread_key_create(&(tls)->key, NULL))
 #define gpr_tls_destroy(tls) pthread_key_delete((tls)->key)
 #define gpr_tls_get(tls) ((intptr_t)pthread_getspecific((tls)->key))
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 intptr_t gpr_tls_set(struct gpr_pthread_thread_local* tls, intptr_t value);
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_SUPPORT_TLS_PTHREAD_H */

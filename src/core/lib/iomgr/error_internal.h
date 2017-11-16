@@ -25,9 +25,7 @@
 #include <grpc/support/sync.h>
 #include "src/core/lib/iomgr/error.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct grpc_linked_error grpc_linked_error;
 
@@ -62,8 +60,6 @@ struct grpc_error {
 
 bool grpc_error_is_special(struct grpc_error* err);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H */

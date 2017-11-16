@@ -23,9 +23,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** A load balancing policy: specified by a vtable and a struct (which
     is expected to be extended to contain some parameters) */
@@ -208,8 +206,6 @@ void grpc_lb_policy_update_locked(grpc_exec_ctx* exec_ctx,
                                   grpc_lb_policy* policy,
                                   const grpc_lb_policy_args* lb_policy_args);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H */

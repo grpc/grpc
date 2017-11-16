@@ -45,9 +45,7 @@
 #include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct grpc_channel_element grpc_channel_element;
 typedef struct grpc_call_element grpc_call_element;
@@ -290,8 +288,6 @@ extern grpc_tracer_flag grpc_trace_channel;
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
   if (GRPC_TRACER_ON(grpc_trace_channel)) grpc_call_log_op(sev, elem, op)
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H */

@@ -25,9 +25,7 @@
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
@@ -56,8 +54,6 @@ extern grpc_error* (*grpc_blocking_resolve_address)(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */

@@ -23,9 +23,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /// A utility function to get the status code and message to be returned
 /// to the application.  If not set in the top-level message, looks
@@ -44,8 +42,6 @@ void grpc_error_get_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
 /// GRPC_ERROR_CANCELLED
 bool grpc_error_has_clear_grpc_status(grpc_error* error);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H */

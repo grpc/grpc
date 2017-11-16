@@ -23,9 +23,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 grpc_channel* grpc_channel_create(grpc_exec_ctx* exec_ctx, const char* target,
                                   const grpc_channel_args* args,
@@ -85,8 +83,6 @@ void grpc_channel_internal_unref(grpc_exec_ctx* exec_ctx,
 grpc_compression_options grpc_channel_compression_options(
     const grpc_channel* channel);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */

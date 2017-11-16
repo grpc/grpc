@@ -21,9 +21,7 @@
 
 #include "src/core/lib/transport/transport_impl.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          grpc_channel_args* args,
@@ -34,8 +32,6 @@ extern grpc_tracer_flag grpc_inproc_trace;
 void grpc_inproc_transport_init(void);
 void grpc_inproc_transport_shutdown(void);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H */

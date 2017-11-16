@@ -24,9 +24,7 @@
 #include <grpc/grpc.h>
 #include "test/core/util/test_config.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* A cq_verifier can verify that expected events arrive in a timely fashion
    on a single completion queue */
@@ -63,8 +61,6 @@ int contains_metadata(grpc_metadata_array* array, const char* key,
 int contains_metadata_slices(grpc_metadata_array* array, grpc_slice key,
                              grpc_slice value);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */

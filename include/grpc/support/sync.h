@@ -22,9 +22,7 @@
 #include <grpc/impl/codegen/gpr_types.h> /* for gpr_timespec */
 #include <grpc/impl/codegen/sync.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** --- Mutex interface ---
 
@@ -273,9 +271,6 @@ GPRAPI intptr_t gpr_stats_read(const gpr_stats_counter* c);
    }
 #endif /* 0 */
 
-#ifdef __cplusplus
-}  // extern "C"
-
 namespace grpc_core {
 
 class mu_guard {
@@ -291,6 +286,5 @@ class mu_guard {
 };
 
 }  // namespace grpc_core
-#endif
 
 #endif /* GRPC_SUPPORT_SYNC_H */

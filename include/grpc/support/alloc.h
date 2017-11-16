@@ -23,9 +23,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct gpr_allocation_functions {
   void* (*malloc_fn)(size_t size);
@@ -60,8 +58,6 @@ GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
 /** Return the family of allocation functions currently in effect. */
 GPRAPI gpr_allocation_functions gpr_get_allocation_functions();
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_SUPPORT_ALLOC_H */

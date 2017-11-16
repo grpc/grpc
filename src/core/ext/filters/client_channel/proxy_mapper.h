@@ -25,9 +25,7 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct grpc_proxy_mapper grpc_proxy_mapper;
 
@@ -75,8 +73,6 @@ bool grpc_proxy_mapper_map_address(grpc_exec_ctx* exec_ctx,
 
 void grpc_proxy_mapper_destroy(grpc_proxy_mapper* mapper);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_H */

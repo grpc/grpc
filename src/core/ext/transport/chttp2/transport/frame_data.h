@@ -28,9 +28,7 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef enum {
   GRPC_CHTTP2_DATA_FH_0,
@@ -84,8 +82,6 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
     grpc_slice_buffer* slices, grpc_slice* slice_out,
     grpc_byte_stream** stream_out);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */

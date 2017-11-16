@@ -21,9 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** Interface providing CPU information for currently running system */
 
@@ -37,8 +35,6 @@ GPRAPI unsigned gpr_cpu_num_cores(void);
    [0, gpr_cpu_num_cores() - 1] */
 GPRAPI unsigned gpr_cpu_current_cpu(void);
 
-#ifdef __cplusplus
-}  // extern "C"
-#endif
+
 
 #endif /* GRPC_SUPPORT_CPU_H */

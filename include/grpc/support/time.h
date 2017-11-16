@@ -24,9 +24,7 @@
 #include <stddef.h>
 #include <time.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** Time constants. */
 GPRAPI gpr_timespec
@@ -83,8 +81,6 @@ GPRAPI void gpr_sleep_until(gpr_timespec until);
 
 GPRAPI double gpr_timespec_to_micros(gpr_timespec t);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_SUPPORT_TIME_H */

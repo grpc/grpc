@@ -36,9 +36,7 @@ extern grpc_tracer_flag grpc_trace_pending_tags;
 extern grpc_tracer_flag grpc_trace_cq_refcount;
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct grpc_cq_completion {
   gpr_mpscq_node node;
@@ -98,8 +96,6 @@ int grpc_get_cq_poll_num(grpc_completion_queue* cc);
 grpc_completion_queue* grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H */

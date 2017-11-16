@@ -40,9 +40,7 @@
 #define GRPC_FD_TO_IDX(fd) (-(fd)-1)
 #define GRPC_IDX_TO_FD(idx) (-(idx)-1)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct cv_node {
   gpr_cv* cv;
@@ -68,8 +66,6 @@ typedef struct cv_fd_table {
 
 extern const grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable;
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H */

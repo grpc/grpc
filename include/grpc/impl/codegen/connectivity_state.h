@@ -19,9 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H
 #define GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** Connectivity state of a channel. */
 typedef enum {
@@ -37,8 +35,6 @@ typedef enum {
   GRPC_CHANNEL_SHUTDOWN
 } grpc_connectivity_state;
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H */

@@ -24,9 +24,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* defined in internal.h */
 typedef struct grpc_chttp2_stream grpc_chttp2_stream;
@@ -47,8 +45,6 @@ typedef struct grpc_chttp2_transport grpc_chttp2_transport;
 #define GRPC_CHTTP2_DATA_FLAG_PADDED 8
 #define GRPC_CHTTP2_FLAG_HAS_PRIORITY 0x20
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H */

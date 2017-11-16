@@ -21,9 +21,7 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct {
   grpc_call_credentials** creds_array;
@@ -57,9 +55,7 @@ typedef struct {
   grpc_call_credentials_array inner;
 } grpc_composite_call_credentials;
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H \
         */

@@ -22,9 +22,7 @@
 #include <grpc/compression.h>
 #include <grpc/slice_buffer.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* compress 'input' to 'output' using 'algorithm'.
    On success, appends compressed slices to output and returns 1.
@@ -40,8 +38,6 @@ int grpc_msg_decompress(grpc_exec_ctx* exec_ctx,
                         grpc_compression_algorithm algorithm,
                         grpc_slice_buffer* input, grpc_slice_buffer* output);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H */

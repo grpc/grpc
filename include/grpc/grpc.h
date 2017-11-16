@@ -29,9 +29,7 @@
 #include <grpc/support/time.h>
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /*! \mainpage GRPC Core
  *
@@ -466,8 +464,6 @@ GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
  */
 GRPCAPI const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_GRPC_H */

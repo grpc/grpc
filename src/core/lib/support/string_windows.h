@@ -21,9 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 #ifdef GPR_WINDOWS
 
@@ -33,8 +31,6 @@ LPSTR gpr_tchar_to_char(LPCTSTR input);
 
 #endif /* GPR_WINDOWS */
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SUPPORT_STRING_WINDOWS_H */

@@ -26,9 +26,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /// Handshakers are used to perform initial handshakes on a connection
 /// before the client sends the initial request.  Some examples of what
@@ -168,8 +166,6 @@ void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
 void grpc_handshake_manager_pending_list_shutdown_all(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

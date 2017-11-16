@@ -27,9 +27,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 #include "src/core/lib/transport/metadata.h"
 
@@ -588,7 +586,5 @@ extern const uint8_t grpc_static_accept_stream_encoding_metadata[4];
   (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table                                  \
                         [grpc_static_accept_stream_encoding_metadata[(algs)]], \
                     GRPC_MDELEM_STORAGE_STATIC))
-#ifdef __cplusplus
-}
-#endif
+
 #endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */

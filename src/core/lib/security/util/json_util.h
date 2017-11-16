@@ -28,9 +28,7 @@
 #define GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT "service_account"
 #define GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER "authorized_user"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 // Gets a child property from a json node.
 const char* grpc_json_get_string_property(const grpc_json* json,
@@ -41,8 +39,6 @@ const char* grpc_json_get_string_property(const grpc_json* json,
 bool grpc_copy_json_string_property(const grpc_json* json,
                                     const char* prop_name, char** copied_value);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SECURITY_UTIL_JSON_UTIL_H */

@@ -23,9 +23,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* Conversion of grpc status codes to http2 error codes (for RST_STREAM) */
 grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status);
@@ -37,8 +35,6 @@ grpc_status_code grpc_http2_error_to_grpc_status(grpc_exec_ctx* exec_ctx,
 grpc_status_code grpc_http2_status_to_grpc_status(int status);
 int grpc_status_to_http2_status(grpc_status_code status);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_STATUS_CONVERSION_H */

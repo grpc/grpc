@@ -21,9 +21,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** Propagation bits: this can be bitwise or-ed to form propagation_mask for
  * grpc_call */
@@ -45,8 +43,6 @@ extern "C" {
       0xffff | GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_STATS_CONTEXT | \
       GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT | GRPC_PROPAGATE_CANCELLATION)))
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H */

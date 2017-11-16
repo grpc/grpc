@@ -23,9 +23,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct grpc_connectivity_state_watcher {
   /** we keep watchers in a linked list */
@@ -88,8 +86,6 @@ bool grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx* exec_ctx, grpc_connectivity_state_tracker* tracker,
     grpc_connectivity_state* current, grpc_closure* notify);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H */

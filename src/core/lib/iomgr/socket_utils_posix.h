@@ -29,9 +29,7 @@
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* a wrapper for accept or accept4 */
 int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
@@ -133,8 +131,6 @@ grpc_error* grpc_create_dualstack_socket_using_factory(
     grpc_socket_factory* factory, const grpc_resolved_address* addr, int type,
     int protocol, grpc_dualstack_mode* dsmode, int* newfd);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H */

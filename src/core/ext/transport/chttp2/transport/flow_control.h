@@ -30,7 +30,7 @@
 struct grpc_chttp2_transport;
 struct grpc_chttp2_stream;
 
-extern "C" grpc_tracer_flag grpc_flowctl_trace;
+extern grpc_tracer_flag grpc_flowctl_trace;
 
 namespace grpc {
 namespace testing {

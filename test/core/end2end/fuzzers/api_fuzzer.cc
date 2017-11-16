@@ -441,7 +441,7 @@ grpc_ares_request* my_dns_lookup_ares(
 // client connection
 
 // defined in tcp_client_posix.c
-extern "C" void (*grpc_tcp_client_connect_impl)(
+void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr, grpc_millis deadline);

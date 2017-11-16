@@ -21,9 +21,7 @@
 
 #include <grpc/slice.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** initialize a slice buffer */
 GPRAPI void grpc_slice_buffer_init(grpc_slice_buffer* sb);
@@ -76,8 +74,6 @@ GPRAPI grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* src);
 GPRAPI void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* src,
                                               grpc_slice slice);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_SLICE_BUFFER_H */

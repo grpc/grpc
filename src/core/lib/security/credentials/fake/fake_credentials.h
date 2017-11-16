@@ -21,9 +21,7 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* -- Fake transport security credentials. -- */
 
@@ -60,8 +58,6 @@ typedef struct {
   bool is_async;
 } grpc_md_only_test_credentials;
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */

@@ -26,9 +26,7 @@
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/slice.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** Parses the \a slice as a grpc_compression_algorithm instance and updating \a
  * algorithm. Returns 1 upon success, 0 otherwise. */
@@ -85,8 +83,6 @@ GRPCAPI int grpc_compression_options_is_stream_compression_algorithm_enabled(
     const grpc_compression_options* opts,
     grpc_stream_compression_algorithm algorithm);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_COMPRESSION_H */

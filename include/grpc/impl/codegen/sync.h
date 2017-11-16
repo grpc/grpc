@@ -37,9 +37,7 @@
                                  provides no memory barriers.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* Platform-specific type declarations of gpr_mu and gpr_cv.   */
 #include <grpc/impl/codegen/port_platform.h>
@@ -55,8 +53,6 @@ extern "C" {
 #error Unable to determine platform for sync
 #endif
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_IMPL_CODEGEN_SYNC_H */

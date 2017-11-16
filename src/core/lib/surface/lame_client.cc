@@ -25,7 +25,6 @@
 
 #include "src/core/lib/support/atomic.h"
 
-extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -33,7 +32,6 @@ extern "C" {
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/static_metadata.h"
-}
 
 namespace grpc_core {
 
@@ -146,7 +144,7 @@ static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
 
 }  // namespace grpc_core
 
-extern "C" const grpc_channel_filter grpc_lame_filter = {
+const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_start_transport_stream_op_batch,
     grpc_core::lame_start_transport_op,
     sizeof(grpc_core::CallData),

@@ -21,9 +21,7 @@
 
 #include "src/core/lib/iomgr/timer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct {
   grpc_timer** timers;
@@ -43,8 +41,6 @@ void grpc_timer_heap_pop(grpc_timer_heap* heap);
 
 int grpc_timer_heap_is_empty(grpc_timer_heap* heap);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H */

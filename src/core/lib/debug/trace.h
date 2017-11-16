@@ -23,9 +23,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer)
@@ -56,8 +54,6 @@ void grpc_register_tracer(grpc_tracer_flag* flag);
 void grpc_tracer_init(const char* env_var_name);
 void grpc_tracer_shutdown(void);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_DEBUG_TRACE_H */

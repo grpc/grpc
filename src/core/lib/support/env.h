@@ -21,9 +21,7 @@
 
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* Env utility functions */
 
@@ -42,8 +40,6 @@ void gpr_setenv(const char* name, const char* value);
    level of logging. So DO NOT USE THIS. */
 const char* gpr_getenv_silent(const char* name, char** dst);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SUPPORT_ENV_H */

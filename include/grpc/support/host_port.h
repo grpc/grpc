@@ -21,9 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** Given a host and port, creates a newly-allocated string of the form
    "host:port" or "[ho:st]:port", depending on whether the host contains colons
@@ -44,8 +42,6 @@ GPRAPI int gpr_join_host_port(char** out, const char* host, int port);
    failure. */
 GPRAPI int gpr_split_host_port(const char* name, char** host, char** port);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_SUPPORT_HOST_PORT_H */

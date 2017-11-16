@@ -22,9 +22,7 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
@@ -91,8 +89,6 @@ void grpc_resolver_next_locked(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
                                grpc_channel_args** result,
                                grpc_closure* on_complete);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H */

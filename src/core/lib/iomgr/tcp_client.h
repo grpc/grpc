@@ -25,9 +25,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* Asynchronously connect to an address (specified as (addr, len)), and call
    cb with arg and the completed connection when done (or call cb with arg and
@@ -41,8 +39,6 @@ void grpc_tcp_client_connect(grpc_exec_ctx* exec_ctx, grpc_closure* on_connect,
                              const grpc_resolved_address* addr,
                              grpc_millis deadline);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */

@@ -21,9 +21,7 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef enum {
   GRPC_EXECUTOR_SHORT,
@@ -49,8 +47,6 @@ bool grpc_executor_is_threaded();
    grpc_executor_shutdown */
 void grpc_executor_set_threading(grpc_exec_ctx* exec_ctx, bool enable);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */

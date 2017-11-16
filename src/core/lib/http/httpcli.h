@@ -32,9 +32,7 @@
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* Tracks in-progress http requests
    TODO(ctiller): allow caching and capturing multiple requests for the
@@ -127,8 +125,6 @@ typedef int (*grpc_httpcli_post_override)(
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_HTTP_HTTPCLI_H */

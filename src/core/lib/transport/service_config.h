@@ -22,9 +22,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef struct grpc_service_config grpc_service_config;
 
@@ -64,8 +62,6 @@ void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
                                    const grpc_slice_hash_table* table,
                                    grpc_slice path);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H */

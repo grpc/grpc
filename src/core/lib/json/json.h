@@ -23,9 +23,7 @@
 
 #include "src/core/lib/json/json_common.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* A tree-like structure to hold json values. The key and value pointers
  * are not owned by it.
@@ -74,8 +72,6 @@ char* grpc_json_dump_to_string(grpc_json* json, int indent);
 grpc_json* grpc_json_create(grpc_json_type type);
 void grpc_json_destroy(grpc_json* json);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_JSON_JSON_H */

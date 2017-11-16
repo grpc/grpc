@@ -22,9 +22,7 @@
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/support/sync.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** Increment the refcount of s. Requires slice is initialized.
    Returns s. */
@@ -163,8 +161,6 @@ GPRAPI grpc_slice grpc_slice_dup(grpc_slice a);
    NULL's. Returned string must be freed with gpr_free. */
 GPRAPI char* grpc_slice_to_c_string(grpc_slice s);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_SLICE_H */

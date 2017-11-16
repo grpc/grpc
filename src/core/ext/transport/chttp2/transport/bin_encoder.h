@@ -21,9 +21,7 @@
 
 #include <grpc/slice.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* base64 encode a slice. Returns a new slice, does not take ownership of the
    input */
@@ -40,8 +38,6 @@ grpc_slice grpc_chttp2_huffman_compress(grpc_slice input);
    return y; */
 grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(grpc_slice input);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H */

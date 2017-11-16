@@ -127,9 +127,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
 }
 #endif
 
-extern "C" {
 gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
-}
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
 gpr_atm gpr_now_call_count;

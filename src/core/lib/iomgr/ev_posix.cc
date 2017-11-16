@@ -63,8 +63,6 @@ typedef struct {
 
 namespace {
 
-extern "C" {
-
 grpc_poll_function_type real_poll_function;
 
 int dummy_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
@@ -76,7 +74,6 @@ int dummy_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
     return -1;
   }
 }
-}  // extern "C"
 
 const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
   if (!explicit_request) {

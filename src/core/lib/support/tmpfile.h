@@ -21,9 +21,7 @@
 
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* Creates a temporary file from a prefix.
    If tmp_filename is not NULL, *tmp_filename is assigned the name of the
@@ -31,8 +29,6 @@ extern "C" {
    unless an error occurs in which case it will be set to NULL. */
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SUPPORT_TMPFILE_H */

@@ -21,9 +21,7 @@
 
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef enum {
   // normal top-half client channel with load-balancing, connection management
@@ -46,8 +44,6 @@ bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type);
 
 const char* grpc_channel_stack_type_string(grpc_channel_stack_type type);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H */

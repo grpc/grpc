@@ -21,9 +21,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** To be used as initial metadata key for the request of a concrete compression
  * algorithm */
@@ -157,8 +155,6 @@ typedef struct grpc_compression_options {
 
 } grpc_compression_options;
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H */

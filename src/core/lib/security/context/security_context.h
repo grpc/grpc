@@ -26,9 +26,7 @@
 extern grpc_tracer_flag grpc_trace_auth_context_refcount;
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* --- grpc_auth_context ---
 
@@ -116,8 +114,6 @@ grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);
 grpc_auth_context* grpc_find_auth_context_in_args(
     const grpc_channel_args* args);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H */

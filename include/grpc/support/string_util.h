@@ -21,9 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** String utility functions */
 
@@ -42,8 +40,6 @@ GPRAPI char* gpr_strdup(const char* src);
 GPRAPI int gpr_asprintf(char** strp, const char* format, ...)
     GPR_PRINT_FORMAT_CHECK(2, 3);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_SUPPORT_STRING_UTIL_H */

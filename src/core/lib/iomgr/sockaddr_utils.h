@@ -21,9 +21,7 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
    ::ffff:0.0.0.0/96 range, or false otherwise.
@@ -81,8 +79,6 @@ const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);
 
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H */

@@ -26,9 +26,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/mpscq.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 // Provides serialized access to some resource.
 // Each action queued on a combiner is executed serially in a borrowed thread.
@@ -67,8 +65,6 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx* exec_ctx);
 
 extern grpc_tracer_flag grpc_combiner_trace;
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */

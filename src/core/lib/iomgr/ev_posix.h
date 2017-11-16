@@ -27,9 +27,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
 
@@ -162,8 +160,6 @@ extern grpc_poll_function_type grpc_poll_function;
 void grpc_set_event_engine_test_only(const grpc_event_engine_vtable*);
 const grpc_event_engine_vtable* grpc_get_event_engine_test_only();
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

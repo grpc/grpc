@@ -22,9 +22,7 @@
 #include <grpc/support/port_platform.h>
 #include "src/core/lib/json/json_common.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 typedef enum {
   GRPC_JSON_STATE_OBJECT_KEY_BEGIN,
@@ -146,8 +144,6 @@ void grpc_json_reader_init(grpc_json_reader* reader,
  */
 int grpc_json_reader_is_complete(grpc_json_reader* reader);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_LIB_JSON_JSON_READER_H */

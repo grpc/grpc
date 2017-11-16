@@ -25,9 +25,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 
@@ -87,9 +85,7 @@ grpc_millis grpc_grpclb_duration_to_millis(grpc_grpclb_duration* duration_pb);
 void grpc_grpclb_initial_response_destroy(
     grpc_grpclb_initial_response* response);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H \
         */
