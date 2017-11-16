@@ -18,7 +18,6 @@
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
-#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 void test_slice_buffer_add() {
@@ -105,49 +104,11 @@ void test_slice_buffer_move_first() {
   GPR_ASSERT(dst.length == dst_len);
 }
 
-static void populate_slice_buffer(grpc_slice_buffer* sb) {
-  grpc_slice slices[4];
-  int idx = 0;
-
-  slices[0] = grpc_slice_from_copied_string("aaa");
-  slices[1] = grpc_slice_from_copied_string("bbbb");
-  slices[2] = grpc_slice_from_copied_string("ccc");
-  slices[3] = grpc_slice_from_copied_string("ddddd");
-
-  for (idx = 0; idx < 4; idx++) {
-    grpc_slice_ref(slices[idx]);
-    grpc_slice_buffer_add_indexed(sb, slices[idx]);
-  }
-}
-
-void test_slice_buffer_unref() {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_buffer sb;
-
-  grpc_slice_buffer_init(&sb);
-
-  // regular init and unref
-  populate_slice_buffer(&sb);
-  grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, &sb);
-
-  // inits, then unrefs partial, then unrefs the rest
-  populate_slice_buffer(&sb);
-  grpc_slice_buffer_partial_unref_internal(&exec_ctx, &sb, 1);
-  grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, &sb);
-
-  // two partial unrefs
-  populate_slice_buffer(&sb);
-  grpc_slice_buffer_partial_unref_internal(&exec_ctx, &sb, 1);
-  grpc_slice_buffer_partial_unref_internal(&exec_ctx, &sb, 3);
-  grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, &sb);
-}
-
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
 
   test_slice_buffer_add();
   test_slice_buffer_move_first();
-  test_slice_buffer_unref();
 
   return 0;
 }
