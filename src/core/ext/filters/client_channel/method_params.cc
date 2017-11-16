@@ -67,7 +67,7 @@ bool parse_duration(grpc_json* field, grpc_millis* duration) {
   buf[len - 1] = '\0';  // Remove trailing 's'.
   char* decimal_point = strchr(buf, '.');
   int nanos = 0;
-  if (decimal_point != NULL) {
+  if (decimal_point != nullptr) {
     *decimal_point = '\0';
     nanos = gpr_parse_nonnegative_int(decimal_point + 1);
     if (nanos == -1) {
@@ -92,9 +92,9 @@ bool parse_duration(grpc_json* field, grpc_millis* duration) {
 
 bool parse_retry_policy(grpc_json* field, retry_policy_params* retry_policy) {
   if (field->type != GRPC_JSON_OBJECT) return false;
-  for (grpc_json* sub_field = field->child; sub_field != NULL;
+  for (grpc_json* sub_field = field->child; sub_field != nullptr;
        sub_field = sub_field->next) {
-    if (sub_field->key == NULL) return false;
+    if (sub_field->key == nullptr) return false;
     if (strcmp(sub_field->key, "maxAttempts") == 0) {
       if (retry_policy->max_attempts != 0) return false;  // Duplicate.
       if (sub_field->type != GRPC_JSON_NUMBER) return false;
@@ -129,7 +129,7 @@ bool parse_retry_policy(grpc_json* field, retry_policy_params* retry_policy) {
         return false;  // Duplicate.
       }
       if (sub_field->type != GRPC_JSON_ARRAY) return false;
-      for (grpc_json* element = sub_field->child; element != NULL;
+      for (grpc_json* element = sub_field->child; element != nullptr;
            element = element->next) {
         if (element->type != GRPC_JSON_STRING) return false;
         grpc_status_code status;
@@ -157,18 +157,18 @@ void* method_parameters_create_from_json(const grpc_json* json,
   const bool enable_retries = (bool)user_data;
   wait_for_ready_value wait_for_ready = WAIT_FOR_READY_UNSET;
   grpc_millis timeout = 0;
-  retry_policy_params* retry_policy = NULL;
-  method_parameters* value = NULL;
-  for (grpc_json* field = json->child; field != NULL; field = field->next) {
-    if (field->key == NULL) continue;
+  retry_policy_params* retry_policy = nullptr;
+  method_parameters* value = nullptr;
+  for (grpc_json* field = json->child; field != nullptr; field = field->next) {
+    if (field->key == nullptr) continue;
     if (strcmp(field->key, "waitForReady") == 0) {
       if (wait_for_ready != WAIT_FOR_READY_UNSET) goto error;  // Duplicate.
       if (!parse_wait_for_ready(field, &wait_for_ready)) goto error;
     } else if (strcmp(field->key, "timeout") == 0) {
-      if (timeout > 0) return NULL;  // Duplicate.
+      if (timeout > 0) return nullptr;  // Duplicate.
       if (!parse_duration(field, &timeout)) goto error;
     } else if (strcmp(field->key, "retryPolicy") == 0 && enable_retries) {
-      if (retry_policy != NULL) goto error;  // Duplicate.
+      if (retry_policy != nullptr) goto error;  // Duplicate.
       retry_policy = (retry_policy_params*)gpr_zalloc(sizeof(*retry_policy));
       if (!parse_retry_policy(field, retry_policy)) goto error;
     }
@@ -181,7 +181,7 @@ void* method_parameters_create_from_json(const grpc_json* json,
   return value;
 error:
   gpr_free(retry_policy);
-  return NULL;
+  return nullptr;
 }
 
 }  // namespace internal

@@ -39,7 +39,7 @@ grpc_status_code grpc_get_status_code_from_metadata(grpc_mdelem md) {
     return GRPC_STATUS_UNKNOWN;
   }
   void* user_data = grpc_mdelem_get_user_data(md, destroy_status);
-  if (user_data != NULL) {
+  if (user_data != nullptr) {
     return (grpc_status_code)((intptr_t)user_data - STATUS_OFFSET);
   }
   uint32_t status;

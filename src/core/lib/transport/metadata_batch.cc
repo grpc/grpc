@@ -319,7 +319,7 @@ void grpc_metadata_batch_copy(grpc_exec_ctx* exec_ctx, grpc_metadata_batch* src,
   grpc_metadata_batch_init(dst);
   dst->deadline = src->deadline;
   size_t i = 0;
-  for (grpc_linked_mdelem* elem = src->list.head; elem != NULL;
+  for (grpc_linked_mdelem* elem = src->list.head; elem != nullptr;
        elem = elem->next) {
     grpc_error* error = grpc_metadata_batch_add_tail(
         exec_ctx, dst, &storage[i++], GRPC_MDELEM_REF(elem->md));
