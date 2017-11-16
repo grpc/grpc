@@ -144,7 +144,7 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
   grpc_closure_init(closure, cb, cb_arg, scheduler)
 #endif
 
-namespace {
+namespace closure_impl {
 
 typedef struct {
   grpc_iomgr_cb_func cb;
@@ -152,8 +152,7 @@ typedef struct {
   grpc_closure wrapper;
 } wrapped_closure;
 
-static void closure_wrapper(grpc_exec_ctx* exec_ctx, void* arg,
-                            grpc_error* error) {
+void closure_wrapper(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   wrapped_closure* wc = (wrapped_closure*)arg;
   grpc_iomgr_cb_func cb = wc->cb;
   void* cb_arg = wc->cb_arg;
@@ -161,7 +160,7 @@ static void closure_wrapper(grpc_exec_ctx* exec_ctx, void* arg,
   cb(exec_ctx, cb_arg, error);
 }
 
-}  // anonymous namespace
+}  // namespace closure_impl
 
 #ifndef NDEBUG
 inline grpc_closure* grpc_closure_create(const char* file, int line,
@@ -171,13 +170,15 @@ inline grpc_closure* grpc_closure_create(const char* file, int line,
 inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg,
                                          grpc_closure_scheduler* scheduler) {
 #endif
-  wrapped_closure* wc = (wrapped_closure*)gpr_malloc(sizeof(*wc));
+  closure_impl::wrapped_closure* wc =
+      (closure_impl::wrapped_closure*)gpr_malloc(sizeof(*wc));
   wc->cb = cb;
   wc->cb_arg = cb_arg;
 #ifndef NDEBUG
-  grpc_closure_init(file, line, &wc->wrapper, closure_wrapper, wc, scheduler);
+  grpc_closure_init(file, line, &wc->wrapper, closure_impl::closure_wrapper, wc,
+                    scheduler);
 #else
-  grpc_closure_init(&wc->wrapper, closure_wrapper, wc, scheduler);
+  grpc_closure_init(&wc->wrapper, closure_impl::closure_wrapper, wc, scheduler);
 #endif
   return &wc->wrapper;
 }
