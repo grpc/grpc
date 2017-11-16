@@ -2712,6 +2712,7 @@ static void cc_start_transport_stream_op_batch(
     // cancelled before any batches are passed down (e.g., if the deadline
     // is in the past when the call starts), we can return the right
     // error to the caller when the first batch does get passed down.
+    GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: recording cancel_error=%s", chand,
