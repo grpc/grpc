@@ -589,9 +589,13 @@ static bool tcp_flush(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
         *error = grpc_error_set_int(GRPC_OS_ERROR(errno, "sendmsg"),
                                     GRPC_ERROR_INT_GRPC_STATUS,
                                     GRPC_STATUS_UNAVAILABLE);
+        grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                                   tcp->outgoing_buffer);
         return true;
       } else {
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
+        grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                                   tcp->outgoing_buffer);
         return true;
       }
     }
