@@ -21,21 +21,11 @@
 #include "src/core/lib/debug/trace.h"
 
 namespace grpc_core {
-
-// This class is a friend of TraceFlag, and can be used to manually turn on
-// certain tracers for tests.
-class TraceFlagPeer {
- public:
-  TraceFlagPeer(TraceFlag* flag) : flag_(flag) {}
-  void enable() { flag_->set_enabled(1); }
-  void disable() { flag_->set_enabled(0); }
-
- private:
-  TraceFlag* flag_;
-};
-}  // namespace grpc_core
+namespace testing {
 
 void grpc_tracer_peer_enable_flag(grpc_core::TraceFlag* flag) {
-  grpc_core::TraceFlagPeer peer(flag);
-  peer.enable();
+  flag->set_enabled(1);
 }
+
+}  // namespace testing
+}  // namespace grpc_core

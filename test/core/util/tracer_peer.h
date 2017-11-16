@@ -21,9 +21,12 @@
 
 namespace grpc_core {
 class TraceFlag;
-}
 
+namespace testing {
 // enables the TraceFlag passed to it. Used for testing purposes.
 void grpc_tracer_peer_enable_flag(grpc_core::TraceFlag* flag);
+
+}  // namespace testing
+}  // namespace grpc_core
 
 #endif /* GRPC_TEST_CORE_UTIL_TRACER_PEER_H */

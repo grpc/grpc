@@ -58,8 +58,12 @@ class TraceFlagList {
   TraceFlag* root_tracer_;
 };
 
+namespace testing {
+void grpc_tracer_peer_enable_flag(grpc_core::TraceFlag* flag);
+}
+
 class TraceFlag {
-  friend class TraceFlagPeer;
+  friend void grpc_core::testing::grpc_tracer_peer_enable_flag(TraceFlag* flag);
   friend class TraceFlagList;
 
  public:
