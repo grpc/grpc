@@ -24,6 +24,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -184,9 +185,15 @@ grpc_error* grpc_error_add_child(grpc_error* src,
                                  grpc_error* child) GRPC_MUST_USE_RESULT;
 grpc_error* grpc_os_error(const char* file, int line, int err,
                           const char* call_name) GRPC_MUST_USE_RESULT;
+
+inline grpc_error* grpc_assert_never_ok(grpc_error* error) {
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  return error;
+}
+
 /// create an error associated with errno!=0 (an 'operating system' error)
 #define GRPC_OS_ERROR(err, call_name) \
-  grpc_os_error(__FILE__, __LINE__, err, call_name)
+  grpc_assert_never_ok(grpc_os_error(__FILE__, __LINE__, err, call_name))
 grpc_error* grpc_wsa_error(const char* file, int line, int err,
                            const char* call_name) GRPC_MUST_USE_RESULT;
 /// windows only: create an error associated with WSAGetLastError()!=0

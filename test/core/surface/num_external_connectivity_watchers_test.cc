@@ -50,8 +50,8 @@ static void channel_idle_start_watch(grpc_channel* channel,
 
 static void channel_idle_poll_for_timeout(grpc_channel* channel,
                                           grpc_completion_queue* cq) {
-  grpc_event ev =
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_event ev = grpc_completion_queue_next(
+      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   /* expect watch_connectivity_state to end with a timeout */
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
@@ -73,7 +73,7 @@ static void run_timeouts_test(const test_fixture* fixture) {
   gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
 
   grpc_channel* channel = fixture->create_channel(addr);
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* start 1 watcher and then let it time out */
   channel_idle_start_watch(channel, cq);
@@ -105,9 +105,9 @@ static void run_timeouts_test(const test_fixture* fixture) {
 
   grpc_channel_destroy(channel);
   grpc_completion_queue_shutdown(cq);
-  GPR_ASSERT(
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
-          .type == GRPC_QUEUE_SHUTDOWN);
+  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                        nullptr)
+                 .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
@@ -127,7 +127,7 @@ static void run_channel_shutdown_before_timeout_test(
   gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
 
   grpc_channel* channel = fixture->create_channel(addr);
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* start 1 watcher and then shut down the channel before the timer goes off */
   GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) == 0);
@@ -141,16 +141,16 @@ static void run_channel_shutdown_before_timeout_test(
                                         connect_deadline, cq, (void*)1);
   grpc_channel_destroy(channel);
 
-  grpc_event ev =
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_event ev = grpc_completion_queue_next(
+      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   /* expect success with a state transition to CHANNEL_SHUTDOWN */
   GPR_ASSERT(ev.success == true);
 
   grpc_completion_queue_shutdown(cq);
-  GPR_ASSERT(
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
-          .type == GRPC_QUEUE_SHUTDOWN);
+  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                        nullptr)
+                 .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
@@ -158,7 +158,7 @@ static void run_channel_shutdown_before_timeout_test(
 }
 
 static grpc_channel* insecure_test_create_channel(const char* addr) {
-  return grpc_insecure_channel_create(addr, NULL, NULL);
+  return grpc_insecure_channel_create(addr, nullptr, nullptr);
 }
 
 static const test_fixture insecure_test = {
@@ -168,15 +168,15 @@ static const test_fixture insecure_test = {
 
 static grpc_channel* secure_test_create_channel(const char* addr) {
   grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(test_root_cert, NULL, NULL);
+      grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
       {const_cast<char*>("foo.test.google.fr")}};
   grpc_channel_args* new_client_args =
-      grpc_channel_args_copy_and_add(NULL, &ssl_name_override, 1);
+      grpc_channel_args_copy_and_add(nullptr, &ssl_name_override, 1);
   grpc_channel* channel =
-      grpc_secure_channel_create(ssl_creds, addr, new_client_args, NULL);
+      grpc_secure_channel_create(ssl_creds, addr, new_client_args, nullptr);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_channel_args_destroy(&exec_ctx, new_client_args);

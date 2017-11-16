@@ -60,7 +60,7 @@ static size_t run_closures(grpc_exec_ctx* exec_ctx, grpc_closure_list list) {
   size_t n = 0;
 
   grpc_closure* c = list.head;
-  while (c != NULL) {
+  while (c != nullptr) {
     grpc_closure* next = c->next_data.next;
     grpc_error* error = c->error_data.error;
     if (GRPC_TRACER_ON(executor_trace)) {
@@ -148,7 +148,7 @@ static void executor_thread(void* arg) {
   gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
 
   grpc_exec_ctx exec_ctx =
-      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
+      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, nullptr);
 
   size_t subtract_depth = 0;
   for (;;) {
@@ -208,7 +208,7 @@ static void executor_push(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
       return;
     }
     thread_state* ts = (thread_state*)gpr_tls_get(&g_this_thread_state);
-    if (ts == NULL) {
+    if (ts == nullptr) {
       ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
     } else {
       GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF(exec_ctx);

@@ -46,8 +46,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(NULL);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
@@ -56,8 +56,8 @@ static void process_auth_failure(void* state, grpc_auth_context* ctx,
                                  const grpc_metadata* md, size_t md_count,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
-  GPR_ASSERT(state == NULL);
-  cb(user_data, NULL, 0, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
+  GPR_ASSERT(state == nullptr);
+  cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
 static void chttp2_init_client_secure_fullstack(
@@ -66,8 +66,8 @@ static void chttp2_init_client_secure_fullstack(
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
   f->client =
-      grpc_secure_channel_create(creds, ffd->localaddr, client_args, NULL);
-  GPR_ASSERT(f->client != NULL);
+      grpc_secure_channel_create(creds, ffd->localaddr, client_args, nullptr);
+  GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
 
@@ -79,8 +79,8 @@ static void chttp2_init_server_secure_fullstack(
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(server_args, NULL);
-  grpc_server_register_completion_queue(f->server, f->cq, NULL);
+  f->server = grpc_server_create(server_args, nullptr);
+  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
                                                server_creds));
   grpc_server_credentials_release(server_creds);
@@ -103,7 +103,7 @@ static void chttp2_init_client_fake_secure_fullstack(
 
 static int fail_server_auth_check(grpc_channel_args* server_args) {
   size_t i;
-  if (server_args == NULL) return 0;
+  if (server_args == nullptr) return 0;
   for (i = 0; i < server_args->num_args; i++) {
     if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
         0) {
@@ -118,7 +118,8 @@ static void chttp2_init_server_fake_secure_fullstack(
   grpc_server_credentials* fake_ts_creds =
       grpc_fake_transport_security_server_credentials_create();
   if (fail_server_auth_check(server_args)) {
-    grpc_auth_metadata_processor processor = {process_auth_failure, NULL, NULL};
+    grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
+                                              nullptr};
     grpc_server_credentials_set_auth_metadata_processor(fake_ts_creds,
                                                         processor);
   }

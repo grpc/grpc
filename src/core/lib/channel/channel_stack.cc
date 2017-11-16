@@ -225,7 +225,7 @@ void grpc_call_stack_destroy(grpc_exec_ctx* exec_ctx, grpc_call_stack* stack,
   for (i = 0; i < count; i++) {
     elems[i].filter->destroy_call_elem(
         exec_ctx, &elems[i], final_info,
-        i == count - 1 ? then_schedule_closure : NULL);
+        i == count - 1 ? then_schedule_closure : nullptr);
   }
 }
 

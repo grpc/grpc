@@ -39,7 +39,8 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
 grpc_error* grpc_resolve_unix_domain_address(const char* name,
                                              grpc_resolved_addresses** addrs) {
   struct sockaddr_un* un;
-  if (strlen(name) > GPR_ARRAY_SIZE(((struct sockaddr_un*)0)->sun_path) - 1) {
+  if (strlen(name) >
+      GPR_ARRAY_SIZE(((struct sockaddr_un*)nullptr)->sun_path) - 1) {
     char* err_msg;
     grpc_error* err;
     gpr_asprintf(&err_msg,
@@ -56,7 +57,7 @@ grpc_error* grpc_resolve_unix_domain_address(const char* name,
       (grpc_resolved_address*)gpr_malloc(sizeof(grpc_resolved_address));
   un = (struct sockaddr_un*)(*addrs)->addrs->addr;
   un->sun_family = AF_UNIX;
-  strcpy(un->sun_path, name);
+  strncpy(un->sun_path, name, sizeof(un->sun_path));
   (*addrs)->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
   return GRPC_ERROR_NONE;
 }
@@ -84,7 +85,7 @@ char* grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr) {
   const struct sockaddr* addr = (const struct sockaddr*)resolved_addr->addr;
   if (addr->sa_family != AF_UNIX) {
-    return NULL;
+    return nullptr;
   }
 
   char* result;

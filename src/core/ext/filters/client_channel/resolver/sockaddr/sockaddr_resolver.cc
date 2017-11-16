@@ -71,12 +71,12 @@ static const grpc_resolver_vtable sockaddr_resolver_vtable = {
 static void sockaddr_shutdown_locked(grpc_exec_ctx* exec_ctx,
                                      grpc_resolver* resolver) {
   sockaddr_resolver* r = (sockaddr_resolver*)resolver;
-  if (r->next_completion != NULL) {
-    *r->target_result = NULL;
+  if (r->next_completion != nullptr) {
+    *r->target_result = nullptr;
     GRPC_CLOSURE_SCHED(
         exec_ctx, r->next_completion,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
-    r->next_completion = NULL;
+    r->next_completion = nullptr;
   }
 }
 
@@ -100,13 +100,13 @@ static void sockaddr_next_locked(grpc_exec_ctx* exec_ctx,
 
 static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
                                               sockaddr_resolver* r) {
-  if (r->next_completion != NULL && !r->published) {
+  if (r->next_completion != nullptr && !r->published) {
     r->published = true;
     grpc_arg arg = grpc_lb_addresses_create_channel_arg(r->addresses);
     *r->target_result =
         grpc_channel_args_copy_and_add(r->channel_args, &arg, 1);
     GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
-    r->next_completion = NULL;
+    r->next_completion = nullptr;
   }
 }
 
@@ -149,7 +149,7 @@ static grpc_resolver* sockaddr_create(grpc_exec_ctx* exec_ctx,
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
             args->uri->scheme);
-    return NULL;
+    return nullptr;
   }
   /* Construct addresses. */
   grpc_slice path_slice =
@@ -157,8 +157,8 @@ static grpc_resolver* sockaddr_create(grpc_exec_ctx* exec_ctx,
   grpc_slice_buffer path_parts;
   grpc_slice_buffer_init(&path_parts);
   grpc_slice_split(path_slice, ",", &path_parts);
-  grpc_lb_addresses* addresses =
-      grpc_lb_addresses_create(path_parts.count, NULL /* user_data_vtable */);
+  grpc_lb_addresses* addresses = grpc_lb_addresses_create(
+      path_parts.count, nullptr /* user_data_vtable */);
   bool errors_found = false;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_uri ith_uri = *args->uri;
@@ -174,7 +174,7 @@ static grpc_resolver* sockaddr_create(grpc_exec_ctx* exec_ctx,
   grpc_slice_unref_internal(exec_ctx, path_slice);
   if (errors_found) {
     grpc_lb_addresses_destroy(exec_ctx, addresses);
-    return NULL;
+    return nullptr;
   }
   /* Instantiate resolver. */
   sockaddr_resolver* r =

@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port_server_client.h"
 
-static int* chosen_ports = NULL;
+static int* chosen_ports = nullptr;
 static size_t num_chosen_ports = 0;
 
 static int free_chosen_port(int port) {
@@ -71,7 +71,7 @@ static void free_chosen_ports(void) {
 }
 
 static void chose_port(int port) {
-  if (chosen_ports == NULL) {
+  if (chosen_ports == nullptr) {
     atexit(free_chosen_ports);
   }
   num_chosen_ports++;
@@ -123,9 +123,9 @@ void grpc_recycle_unused_port(int port) {
 }
 
 void grpc_set_pick_port_functions(grpc_pick_port_functions functions) {
-  GPR_ASSERT(functions.pick_unused_port_fn != NULL);
-  GPR_ASSERT(functions.pick_unused_port_or_die_fn != NULL);
-  GPR_ASSERT(functions.recycle_unused_port_fn != NULL);
+  GPR_ASSERT(functions.pick_unused_port_fn != nullptr);
+  GPR_ASSERT(functions.pick_unused_port_or_die_fn != nullptr);
+  GPR_ASSERT(functions.recycle_unused_port_fn != nullptr);
   g_pick_port_functions = functions;
 }
 

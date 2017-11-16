@@ -120,7 +120,7 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
       bool empty;
       grpc_closure* closure = (grpc_closure*)gpr_mpscq_pop_and_check_end(
           &call_combiner->queue, &empty);
-      if (closure == NULL) {
+      if (closure == nullptr) {
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with grpc_call_combiner_start().
         if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {

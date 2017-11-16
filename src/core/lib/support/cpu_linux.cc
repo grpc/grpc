@@ -36,6 +36,13 @@
 static int ncpus = 0;
 
 static void init_num_cpus() {
+#ifndef GPR_MUSL_LIBC_COMPAT
+  if (sched_getcpu() < 0) {
+    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
+    ncpus = 1;
+    return;
+  }
+#endif
   /* This must be signed. sysconf returns -1 when the number cannot be
      determined */
   ncpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
@@ -56,6 +63,9 @@ unsigned gpr_cpu_current_cpu(void) {
   // sched_getcpu() is undefined on musl
   return 0;
 #else
+  if (gpr_cpu_num_cores() == 1) {
+    return 0;
+  }
   int cpu = sched_getcpu();
   if (cpu < 0) {
     gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));

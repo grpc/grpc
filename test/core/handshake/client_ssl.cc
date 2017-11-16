@@ -246,7 +246,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   pem_key_cert_pair.private_key = (const char*)GRPC_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char*)GRPC_SLICE_START_PTR(cert_slice);
   grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(ca_cert, &pem_key_cert_pair, NULL);
+      grpc_ssl_credentials_create(ca_cert, &pem_key_cert_pair, nullptr);
 
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
   // lazy, this won't necessarily establish a connection yet.
@@ -260,7 +260,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   grpc_args.num_args = 1;
   grpc_args.args = &ssl_name_override;
   grpc_channel* channel =
-      grpc_secure_channel_create(ssl_creds, target, &grpc_args, NULL);
+      grpc_secure_channel_create(ssl_creds, target, &grpc_args, nullptr);
   GPR_ASSERT(channel);
   gpr_free(target);
 
@@ -274,13 +274,13 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   // completed and we know that the client's ALPN list satisfied the server.
   int retries = 10;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   while (state != GRPC_CHANNEL_READY && retries-- > 0) {
     grpc_channel_watch_connectivity_state(
-        channel, state, grpc_timeout_seconds_to_deadline(3), cq, NULL);
+        channel, state, grpc_timeout_seconds_to_deadline(3), cq, nullptr);
     gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
-    grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
+    grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     state =
         grpc_channel_check_connectivity_state(channel, 0 /* try_to_connect */);

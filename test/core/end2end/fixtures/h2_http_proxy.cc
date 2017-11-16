@@ -57,8 +57,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   ffd->proxy = grpc_end2end_http_proxy_create(client_args);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(NULL);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
@@ -72,7 +72,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   /* If testing for proxy auth, add credentials to proxy uri */
   const grpc_arg* proxy_auth_arg =
       grpc_channel_args_find(client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  if (proxy_auth_arg == NULL || proxy_auth_arg->type != GRPC_ARG_STRING) {
+  if (proxy_auth_arg == nullptr || proxy_auth_arg->type != GRPC_ARG_STRING) {
     gpr_asprintf(&proxy_uri, "http://%s",
                  grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
   } else {
@@ -81,7 +81,8 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   }
   gpr_setenv("http_proxy", proxy_uri);
   gpr_free(proxy_uri);
-  f->client = grpc_insecure_channel_create(ffd->server_addr, client_args, NULL);
+  f->client =
+      grpc_insecure_channel_create(ffd->server_addr, client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
@@ -92,8 +93,8 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(server_args, NULL);
-  grpc_server_register_completion_queue(f->server, f->cq, NULL);
+  f->server = grpc_server_create(server_args, nullptr);
+  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(f->server, ffd->server_addr));
   grpc_server_start(f->server);
 }

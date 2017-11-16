@@ -67,7 +67,7 @@ static void adapter_result_destroy(tsi_handshaker_result* self) {
 
 static const tsi_handshaker_result_vtable result_vtable = {
     adapter_result_extract_peer,
-    NULL, /* create_zero_copy_grpc_protector */
+    nullptr, /* create_zero_copy_grpc_protector */
     adapter_result_create_frame_protector,
     adapter_result_get_unused_bytes,
     adapter_result_destroy,
@@ -77,7 +77,8 @@ static const tsi_handshaker_result_vtable result_vtable = {
 static tsi_result tsi_adapter_create_handshaker_result(
     tsi_handshaker* wrapped, const unsigned char* unused_bytes,
     size_t unused_bytes_size, tsi_handshaker_result** handshaker_result) {
-  if (wrapped == NULL || (unused_bytes_size > 0 && unused_bytes == NULL)) {
+  if (wrapped == nullptr ||
+      (unused_bytes_size > 0 && unused_bytes == nullptr)) {
     return TSI_INVALID_ARGUMENT;
   }
   tsi_adapter_handshaker_result* impl =
@@ -89,7 +90,7 @@ static tsi_result tsi_adapter_create_handshaker_result(
     impl->unused_bytes = (unsigned char*)gpr_malloc(unused_bytes_size);
     memcpy(impl->unused_bytes, unused_bytes, unused_bytes_size);
   } else {
-    impl->unused_bytes = NULL;
+    impl->unused_bytes = nullptr;
   }
   *handshaker_result = &impl->base;
   return TSI_OK;
@@ -148,9 +149,9 @@ static tsi_result adapter_next(
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void* user_data) {
   /* Input sanity check.  */
-  if ((received_bytes_size > 0 && received_bytes == NULL) ||
-      bytes_to_send == NULL || bytes_to_send_size == NULL ||
-      handshaker_result == NULL) {
+  if ((received_bytes_size > 0 && received_bytes == nullptr) ||
+      bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
+      handshaker_result == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -183,16 +184,16 @@ static tsi_result adapter_next(
 
   /* If handshake completes, create tsi_handshaker_result.  */
   if (tsi_handshaker_is_in_progress(impl->wrapped)) {
-    *handshaker_result = NULL;
+    *handshaker_result = nullptr;
   } else {
     size_t unused_bytes_size = received_bytes_size - bytes_consumed;
     const unsigned char* unused_bytes =
-        unused_bytes_size == 0 ? NULL : received_bytes + bytes_consumed;
+        unused_bytes_size == 0 ? nullptr : received_bytes + bytes_consumed;
     status = tsi_adapter_create_handshaker_result(
         impl->wrapped, unused_bytes, unused_bytes_size, handshaker_result);
     if (status == TSI_OK) {
       impl->base.handshaker_result_created = true;
-      impl->wrapped = NULL;
+      impl->wrapped = nullptr;
     }
   }
   return status;
@@ -209,7 +210,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
 };
 
 tsi_handshaker* tsi_create_adapter_handshaker(tsi_handshaker* wrapped) {
-  GPR_ASSERT(wrapped != NULL);
+  GPR_ASSERT(wrapped != nullptr);
   tsi_adapter_handshaker* impl =
       (tsi_adapter_handshaker*)gpr_zalloc(sizeof(*impl));
   impl->base.vtable = &handshaker_vtable;
@@ -220,7 +221,7 @@ tsi_handshaker* tsi_create_adapter_handshaker(tsi_handshaker* wrapped) {
 }
 
 tsi_handshaker* tsi_adapter_handshaker_get_wrapped(tsi_handshaker* adapter) {
-  if (adapter == NULL) return NULL;
+  if (adapter == nullptr) return nullptr;
   tsi_adapter_handshaker* impl = (tsi_adapter_handshaker*)adapter;
   return impl->wrapped;
 }
