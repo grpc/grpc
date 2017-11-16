@@ -978,7 +978,6 @@ add_library(grpc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -1319,7 +1318,6 @@ add_library(grpc_cronet
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -1641,7 +1639,6 @@ add_library(grpc_test_util
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -1907,7 +1904,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -2159,7 +2155,6 @@ add_library(grpc_unsecure
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -2910,7 +2905,6 @@ add_library(grpc++_cronet
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
