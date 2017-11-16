@@ -1294,11 +1294,16 @@ static void do_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   GPR_ASSERT(calld->method_params != NULL);
   retry_policy_params* retry_policy = calld->method_params->retry_policy;
   GPR_ASSERT(retry_policy != NULL);
-  // Reset subchannel call.
+  // Reset subchannel call and connected subchannel.
   if (calld->subchannel_call != NULL) {
     GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, calld->subchannel_call,
                                "client_channel_call_retry");
     calld->subchannel_call = NULL;
+  }
+  if (calld->connected_subchannel != NULL) {
+    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, calld->connected_subchannel,
+                                    "client_channel_call_retry");
+    calld->connected_subchannel = NULL;
   }
   // Compute backoff delay.
   grpc_millis next_attempt_time;
@@ -2442,11 +2447,6 @@ static bool pick_callback_start_locked(grpc_exec_ctx* exec_ctx,
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: starting pick on lb_policy=%p",
             chand, calld, chand->lb_policy);
   }
-  if (calld->connected_subchannel != NULL) {
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, calld->connected_subchannel,
-                                    "starting pick");
-    calld->connected_subchannel = NULL;
-  }
   // Only get service config data on the first attempt.
   if (calld->num_attempts_completed == 0) {
     apply_service_config_to_call_locked(exec_ctx, elem);
@@ -2647,6 +2647,8 @@ static void start_pick_locked(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_call_element* elem = (grpc_call_element*)arg;
   call_data* calld = (call_data*)elem->call_data;
   channel_data* chand = (channel_data*)elem->channel_data;
+  GPR_ASSERT(calld->connected_subchannel == NULL);
+  GPR_ASSERT(calld->subchannel_call == NULL);
   if (chand->lb_policy != NULL) {
     // We already have an LB policy, so ask it for a pick.
     if (pick_callback_start_locked(exec_ctx, elem)) {
