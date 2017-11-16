@@ -1,5 +1,11 @@
 /* Generated from ares_config.h.cmake*/
 
+/* IMPORTANT: gRPC MANUAL EDIT HERE! */
+#ifndef CARES_TYPEOF_ARES_SSIZE_T
+  #include <unistd.h>
+  typedef ssize_t ares_ssize_t;
+#endif
+
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
