@@ -19,7 +19,9 @@
 #ifndef GRPC_IMPL_CODEGEN_STATUS_H
 #define GRPC_IMPL_CODEGEN_STATUS_H
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum {
   /** Not an error; returned on success */
@@ -144,6 +146,8 @@ typedef enum {
   GRPC_STATUS__DO_NOT_USE = -1
 } grpc_status_code;
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_STATUS_H */

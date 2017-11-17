@@ -21,7 +21,9 @@
 
 #include <grpc/support/sync.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** internal node of an AVL tree */
 typedef struct gpr_avl_node {
@@ -93,6 +95,8 @@ GPRAPI int gpr_avl_maybe_get(gpr_avl avl, void* key, void** value,
 /** Return 1 if avl is empty, 0 otherwise */
 GPRAPI int gpr_avl_is_empty(gpr_avl avl);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_SUPPORT_AVL_H */

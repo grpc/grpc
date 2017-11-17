@@ -19,7 +19,9 @@
 #ifndef GRPC_IMPL_CODEGEN_BYTE_BUFFER_READER_H
 #define GRPC_IMPL_CODEGEN_BYTE_BUFFER_READER_H
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct grpc_byte_buffer;
 
@@ -33,6 +35,8 @@ struct grpc_byte_buffer_reader {
   } current;
 };
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_BYTE_BUFFER_READER_H */

@@ -19,7 +19,9 @@
 #ifndef GRPC_GRPC_SECURITY_CONSTANTS_H
 #define GRPC_GRPC_SECURITY_CONSTANTS_H
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
 #define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
@@ -97,6 +99,8 @@ typedef enum {
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 } grpc_ssl_client_certificate_request_type;
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_GRPC_SECURITY_CONSTANTS_H */

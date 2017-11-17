@@ -23,7 +23,9 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** --- Authentication Context. --- */
 
@@ -459,6 +461,8 @@ typedef struct {
 GRPCAPI void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials* creds, grpc_auth_metadata_processor processor);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_GRPC_SECURITY_H */

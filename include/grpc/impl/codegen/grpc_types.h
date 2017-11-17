@@ -29,7 +29,9 @@
 
 #include <stddef.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum {
   GRPC_BB_RAW
@@ -626,6 +628,8 @@ typedef struct grpc_completion_queue_attributes {
 /** The completion queue factory structure is opaque to the callers of grpc */
 typedef struct grpc_completion_queue_factory grpc_completion_queue_factory;
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_GRPC_TYPES_H */

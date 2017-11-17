@@ -24,7 +24,9 @@
 
 #include <stddef.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*! \mainpage GRPC Core POSIX
  *
@@ -57,6 +59,8 @@ GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
    - This API is optional but if called, it MUST be called before grpc_init() */
 GRPCAPI void grpc_use_signal(int signum);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_GRPC_POSIX_H */

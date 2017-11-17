@@ -21,7 +21,9 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Metadata key for the gRPC LB load balancer token.
  *
@@ -39,6 +41,8 @@
  * call. */
 #define GRPC_LB_COST_MD_KEY "lb-cost-bin"
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_LOAD_REPORTING_H */

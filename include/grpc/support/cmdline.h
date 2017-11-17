@@ -21,7 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Simple command line parser.
 
@@ -79,6 +81,8 @@ GPRAPI void gpr_cmdline_destroy(gpr_cmdline* cl);
 /** Get a string describing usage */
 GPRAPI char* gpr_cmdline_usage_string(gpr_cmdline* cl, const char* argv0);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_SUPPORT_CMDLINE_H */

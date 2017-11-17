@@ -29,7 +29,9 @@
 
 #include <grpc/support/port_platform.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef uintptr_t gpr_thd_id;
 
@@ -67,6 +69,8 @@ GPRAPI gpr_thd_id gpr_thd_currentid(void);
    Calling this on a detached thread has unpredictable results. */
 GPRAPI void gpr_thd_join(gpr_thd_id t);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_SUPPORT_THD_H */

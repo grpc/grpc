@@ -21,7 +21,9 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Returns a RAW byte buffer instance over the given slices (up to \a nslices).
  *
@@ -77,6 +79,8 @@ grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader);
 GRPCAPI grpc_byte_buffer* grpc_raw_byte_buffer_from_reader(
     grpc_byte_buffer_reader* reader);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_BYTE_BUFFER_H */

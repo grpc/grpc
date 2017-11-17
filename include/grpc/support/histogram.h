@@ -22,7 +22,9 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct gpr_histogram gpr_histogram;
 
@@ -55,6 +57,8 @@ GPRAPI void gpr_histogram_merge_contents(gpr_histogram* histogram,
                                          double max_seen, double sum,
                                          double sum_of_squares, double count);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_SUPPORT_HISTOGRAM_H */

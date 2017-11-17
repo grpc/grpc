@@ -25,7 +25,9 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** GPR log API.
 
@@ -94,6 +96,8 @@ GPRAPI void gpr_set_log_function(gpr_log_func func);
     }                                                 \
   } while (0)
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_SUPPORT_LOG_H */

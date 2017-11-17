@@ -23,7 +23,9 @@
 
 #include <stddef.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** The clocks we support. */
 typedef enum {
@@ -50,6 +52,8 @@ typedef struct gpr_timespec {
   gpr_clock_type clock_type;
 } gpr_timespec;
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_GPR_TYPES_H */
