@@ -323,7 +323,7 @@ void grpc::testing::interop::RunServer(
 void grpc::testing::interop::RunServer(
     std::shared_ptr<ServerCredentials> creds,
     const int port,
-    std::condition_variable *server_started_condition) {
+    ServerStartedCondition *server_started_condition) {
   GPR_ASSERT(port != 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
@@ -342,7 +342,11 @@ void grpc::testing::interop::RunServer(
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
 
   // Signal that the server has started.
-  if (server_started_condition) server_started_condition->notify_all();
+  if (server_started_condition) {
+    std::unique_lock<std::mutex> lock(server_started_condition->mutex);
+    server_started_condition->server_started = true;
+    server_started_condition->condition.notify_all();
+  }
 
   while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
