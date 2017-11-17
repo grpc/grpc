@@ -70,7 +70,7 @@ void RunServer(std::shared_ptr<ServerCredentials> creds);
 /// \param server_started_condition (optional) Struct holding mutex, condition
 ///     variable, and condition used to notify when the server has started.
 void RunServer(std::shared_ptr<ServerCredentials> creds, int port,
-               ServerStartedCondition *server_started_condition);
+               ServerStartedCondition* server_started_condition);
 
 }  // namespace interop
 }  // namespace testing

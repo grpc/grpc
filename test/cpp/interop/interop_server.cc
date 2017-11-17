@@ -322,7 +322,7 @@ void grpc::testing::interop::RunServer(
 
 void grpc::testing::interop::RunServer(
     std::shared_ptr<ServerCredentials> creds, const int port,
-    ServerStartedCondition *server_started_condition) {
+    ServerStartedCondition* server_started_condition) {
   GPR_ASSERT(port != 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
