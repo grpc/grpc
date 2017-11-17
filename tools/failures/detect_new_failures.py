@@ -70,7 +70,7 @@ def create_gh_issue(title, body, labels, assignees=[]):
   data = json.dumps(params)
   response = gh(GH_ISSUE_CREATION_URL, data)
   issue_url = response['html_url']
-  print('Issue {} created for {}'.format(issue_url, title))
+  print('Created issue {} for {}'.format(issue_url, title))
 
 
 def build_kokoro_url(job_name, build_id):
