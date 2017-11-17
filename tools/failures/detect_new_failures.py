@@ -94,7 +94,7 @@ def create_issues(new_flakes, always_create):
         print('\nFound {} issues for "{}":'.format(
             preexisting_issues['total_count'], test_name))
         for issue in preexisting_issues['items']:
-          print('\t"{}" ; URL: {}'.format(issue['title'], issue['url']))
+          print('\t"{}" ; URL: {}'.format(issue['title'], issue['html_url']))
       else:
         print('\nNo preexisting issues found for "{}"'.format(test_name))
       proceed = raw_input('Create issue for:\nTitle: {}\nBody: {}\n[Y/n] '.format(
