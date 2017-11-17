@@ -137,8 +137,7 @@ static void test_subscribe_with_failure_then_destroy(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_core::testing::grpc_tracer_peer_enable_flag(
-      &grpc_connectivity_state_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_connectivity_state_trace);
   test_connectivity_state_name();
   test_check();
   test_subscribe_then_unsubscribe();

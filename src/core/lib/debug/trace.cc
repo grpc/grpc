@@ -29,13 +29,7 @@ int grpc_tracer_set_enabled(const char* name, int enabled);
 
 namespace grpc_core {
 
-TraceFlagList* TraceFlagList::instance_ = nullptr;
-
-TraceFlagList* TraceFlagList::Get() {
-  if (instance_ == nullptr)
-    instance_ = static_cast<TraceFlagList*>(gpr_malloc(sizeof(TraceFlagList)));
-  return instance_;
-}
+TraceFlag* TraceFlagList::root_tracer_ = nullptr;
 
 bool TraceFlagList::Set(const char* name, bool enabled) {
   TraceFlag* t;
@@ -83,7 +77,7 @@ void TraceFlagList::LogAllTracers() {
 // Flags register themselves on the list during construction
 TraceFlag::TraceFlag(bool default_enabled, const char* name)
     : name_(name), value_(default_enabled) {
-  TraceFlagList::Get()->Add(this);
+  TraceFlagList::Add(this);
 }
 
 }  // namespace grpc_core
@@ -121,9 +115,9 @@ static void parse(const char* s) {
 
   for (i = 0; i < nstrings; i++) {
     if (strings[i][0] == '-') {
-      grpc_core::TraceFlagList::Get()->Set(strings[i] + 1, false);
+      grpc_core::TraceFlagList::Set(strings[i] + 1, false);
     } else {
-      grpc_core::TraceFlagList::Get()->Set(strings[i], true);
+      grpc_core::TraceFlagList::Set(strings[i], true);
     }
   }
 
@@ -144,5 +138,5 @@ void grpc_tracer_init(const char* env_var) {
 void grpc_tracer_shutdown(void) {}
 
 int grpc_tracer_set_enabled(const char* name, int enabled) {
-  return grpc_core::TraceFlagList::Get()->Set(name, enabled != 0);
+  return grpc_core::TraceFlagList::Set(name, enabled != 0);
 }

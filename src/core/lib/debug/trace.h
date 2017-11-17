@@ -47,25 +47,19 @@ namespace grpc_core {
 class TraceFlag;
 class TraceFlagList {
  public:
-  static TraceFlagList* Get();
-  bool Set(const char* name, bool enabled);
-  void Add(TraceFlag* flag);
+  static bool Set(const char* name, bool enabled);
+  static void Add(TraceFlag* flag);
 
  private:
-  static TraceFlagList* instance_;
-  void LogAllTracers();
-  TraceFlagList() : root_tracer_(nullptr) {}
-  TraceFlag* root_tracer_;
+  static void LogAllTracers();
+  static TraceFlag* root_tracer_;
 };
 
 namespace testing {
-void grpc_tracer_peer_enable_flag(grpc_core::TraceFlag* flag);
+void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
 }
 
 class TraceFlag {
-  friend void grpc_core::testing::grpc_tracer_peer_enable_flag(TraceFlag* flag);
-  friend class TraceFlagList;
-
  public:
   TraceFlag(bool default_enabled, const char* name);
   ~TraceFlag() {}
@@ -81,6 +75,9 @@ class TraceFlag {
   }
 
  private:
+  friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag* flag);
+  friend class TraceFlagList;
+
   void set_enabled(bool enabled) {
 #ifdef GRPC_THREADSAFE_TRACER
     gpr_atm_no_barrier_store(&value_, enabled);

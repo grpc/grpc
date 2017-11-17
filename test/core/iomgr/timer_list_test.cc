@@ -49,8 +49,8 @@ static void add_test(void) {
   gpr_log(GPR_INFO, "add_test");
 
   grpc_timer_list_init(&exec_ctx);
-  grpc_core::testing::grpc_tracer_peer_enable_flag(&grpc_timer_trace);
-  grpc_core::testing::grpc_tracer_peer_enable_flag(&grpc_timer_check_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_millis start = grpc_exec_ctx_now(&exec_ctx);
@@ -118,8 +118,8 @@ void destruction_test(void) {
   exec_ctx.now_is_valid = true;
   exec_ctx.now = 0;
   grpc_timer_list_init(&exec_ctx);
-  grpc_core::testing::grpc_tracer_peer_enable_flag(&grpc_timer_trace);
-  grpc_core::testing::grpc_tracer_peer_enable_flag(&grpc_timer_check_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_timer_init(

@@ -23,7 +23,7 @@
 namespace grpc_core {
 namespace testing {
 
-void grpc_tracer_peer_enable_flag(grpc_core::TraceFlag* flag) {
+void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag) {
   flag->set_enabled(1);
 }
 
