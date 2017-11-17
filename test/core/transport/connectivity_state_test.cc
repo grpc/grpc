@@ -23,7 +23,7 @@
 #include <grpc/support/log.h>
 
 #include "test/core/util/test_config.h"
-#include "test/core/util/tracer_peer.h"
+#include "test/core/util/tracer_util.h"
 
 #define THE_ARG ((void*)(size_t)0xcafebabe)
 

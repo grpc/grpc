@@ -57,7 +57,7 @@ grpc_cc_library(
         "reconnect_server.cc",
         "slice_splitter.cc",
         "test_tcp_server.cc",
-        "tracer_peer.cc",
+        "tracer_util.cc",
         "trickle_endpoint.cc",
     ],
     hdrs = [
@@ -70,7 +70,7 @@ grpc_cc_library(
         "reconnect_server.h",
         "slice_splitter.h",
         "test_tcp_server.h",
-        "tracer_peer.h",
+        "tracer_util.h",
         "trickle_endpoint.h",
     ],
     language = "C++",

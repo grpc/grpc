@@ -28,7 +28,7 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 #include "test/core/util/test_config.h"
-#include "test/core/util/tracer_peer.h"
+#include "test/core/util/tracer_util.h"
 
 #define MAX_CB 30
 

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_UTIL_TRACER_PEER_H
-#define GRPC_TEST_CORE_UTIL_TRACER_PEER_H
+#ifndef GRPC_TEST_CORE_UTIL_TRACER_UTIL_H
+#define GRPC_TEST_CORE_UTIL_TRACER_UTIL_H
 
 namespace grpc_core {
 class TraceFlag;
@@ -29,4 +29,4 @@ void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif /* GRPC_TEST_CORE_UTIL_TRACER_PEER_H */
+#endif /* GRPC_TEST_CORE_UTIL_TRACER_UTIL_H */
