@@ -92,7 +92,7 @@ static void BM_MetadataFromNonInternedSlices(benchmark::State& state) {
   gpr_slice v = grpc_slice_from_static_string("value");
   grpc_core::ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
-    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, NULL));
+    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, nullptr));
   }
 
   track_counters.Finish(state);
@@ -105,7 +105,7 @@ static void BM_MetadataFromInternedSlices(benchmark::State& state) {
   gpr_slice v = grpc_slice_intern(grpc_slice_from_static_string("value"));
   grpc_core::ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
-    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, NULL));
+    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, nullptr));
   }
 
   grpc_slice_unref(k);
@@ -120,9 +120,9 @@ static void BM_MetadataFromInternedSlicesAlreadyInIndex(
   gpr_slice k = grpc_slice_intern(grpc_slice_from_static_string("key"));
   gpr_slice v = grpc_slice_intern(grpc_slice_from_static_string("value"));
   grpc_core::ExecCtx _local_exec_ctx;
-  grpc_mdelem seed = grpc_mdelem_create(k, v, NULL);
+  grpc_mdelem seed = grpc_mdelem_create(k, v, nullptr);
   while (state.KeepRunning()) {
-    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, NULL));
+    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, nullptr));
   }
   GRPC_MDELEM_UNREF(seed);
 
@@ -138,7 +138,7 @@ static void BM_MetadataFromInternedKey(benchmark::State& state) {
   gpr_slice v = grpc_slice_from_static_string("value");
   grpc_core::ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
-    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, NULL));
+    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, nullptr));
   }
 
   grpc_slice_unref(k);
@@ -203,7 +203,7 @@ static void BM_MetadataFromStaticMetadataStrings(benchmark::State& state) {
   gpr_slice v = GRPC_MDSTR_200;
   grpc_core::ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
-    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, NULL));
+    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, nullptr));
   }
 
   grpc_slice_unref(k);
@@ -218,7 +218,7 @@ static void BM_MetadataFromStaticMetadataStringsNotIndexed(
   gpr_slice v = GRPC_MDSTR_GZIP;
   grpc_core::ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
-    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, NULL));
+    GRPC_MDELEM_UNREF(grpc_mdelem_create(k, v, nullptr));
   }
 
   grpc_slice_unref(k);
@@ -264,8 +264,9 @@ BENCHMARK(BM_MetadataRefUnrefInterned);
 static void BM_MetadataRefUnrefAllocated(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx _local_exec_ctx;
-  grpc_mdelem el = grpc_mdelem_create(grpc_slice_from_static_string("a"),
-                                      grpc_slice_from_static_string("b"), NULL);
+  grpc_mdelem el =
+      grpc_mdelem_create(grpc_slice_from_static_string("a"),
+                         grpc_slice_from_static_string("b"), nullptr);
   while (state.KeepRunning()) {
     GRPC_MDELEM_UNREF(GRPC_MDELEM_REF(el));
   }
@@ -278,7 +279,8 @@ BENCHMARK(BM_MetadataRefUnrefAllocated);
 static void BM_MetadataRefUnrefStatic(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx _local_exec_ctx;
-  grpc_mdelem el = grpc_mdelem_create(GRPC_MDSTR_STATUS, GRPC_MDSTR_200, NULL);
+  grpc_mdelem el =
+      grpc_mdelem_create(GRPC_MDSTR_STATUS, GRPC_MDSTR_200, nullptr);
   while (state.KeepRunning()) {
     GRPC_MDELEM_UNREF(GRPC_MDELEM_REF(el));
   }

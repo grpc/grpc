@@ -115,7 +115,7 @@ static void session_shutdown_cb(void* arg, /*session */
                                 bool success) {
   session* se = static_cast<session*>(arg);
   server* sv = se->sv;
-  grpc_fd_orphan(se->em_fd, NULL, NULL, false /* already_closed */, "a");
+  grpc_fd_orphan(se->em_fd, nullptr, nullptr, false /* already_closed */, "a");
   gpr_free(se);
   /* Start to shutdown listen fd. */
   grpc_fd_shutdown(sv->em_fd,
@@ -171,12 +171,12 @@ static void session_read_cb(void* arg, /*session */
 static void listen_shutdown_cb(void* arg /*server */, int success) {
   server* sv = static_cast<server*>(arg);
 
-  grpc_fd_orphan(sv->em_fd, NULL, NULL, false /* already_closed */, "b");
+  grpc_fd_orphan(sv->em_fd, nullptr, nullptr, false /* already_closed */, "b");
 
   gpr_mu_lock(g_mu);
   sv->done = 1;
   GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -247,7 +247,7 @@ static void server_wait_and_shutdown(server* sv) {
   gpr_mu_lock(g_mu);
   while (!sv->done) {
     grpc_core::ExecCtx _local_exec_ctx;
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
@@ -288,10 +288,10 @@ static void client_init(client* cl) {
 /* Called when a client upload session is ready to shutdown. */
 static void client_session_shutdown_cb(void* arg /*client */, int success) {
   client* cl = static_cast<client*>(arg);
-  grpc_fd_orphan(cl->em_fd, NULL, NULL, false /* already_closed */, "c");
+  grpc_fd_orphan(cl->em_fd, nullptr, nullptr, false /* already_closed */, "c");
   cl->done = 1;
   GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
 }
 
 /* Write as much as possible, then register notify_on_write. */
@@ -361,7 +361,7 @@ static void client_start(client* cl, int port) {
 static void client_wait_and_shutdown(client* cl) {
   gpr_mu_lock(g_mu);
   while (!cl->done) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx _local_exec_ctx;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
@@ -397,7 +397,7 @@ typedef struct fd_change_data {
   grpc_iomgr_cb_func cb_that_ran;
 } fd_change_data;
 
-void init_change_data(fd_change_data* fdc) { fdc->cb_that_ran = NULL; }
+void init_change_data(fd_change_data* fdc) { fdc->cb_that_ran = nullptr; }
 
 void destroy_change_data(fd_change_data* fdc) {}
 
@@ -408,7 +408,7 @@ static void first_read_callback(void* arg /* fd_change_data */,
   gpr_mu_lock(g_mu);
   fdc->cb_that_ran = first_read_callback;
   GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -419,7 +419,7 @@ static void second_read_callback(void* arg /* fd_change_data */,
   gpr_mu_lock(g_mu);
   fdc->cb_that_ran = second_read_callback;
   GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -463,8 +463,8 @@ static void test_grpc_fd_change(void) {
 
   /* And now wait for it to run. */
   gpr_mu_lock(g_mu);
-  while (a.cb_that_ran == NULL) {
-    grpc_pollset_worker* worker = NULL;
+  while (a.cb_that_ran == nullptr) {
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
@@ -487,8 +487,8 @@ static void test_grpc_fd_change(void) {
   GPR_ASSERT(result == 1);
 
   gpr_mu_lock(g_mu);
-  while (b.cb_that_ran == NULL) {
-    grpc_pollset_worker* worker = NULL;
+  while (b.cb_that_ran == nullptr) {
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
@@ -500,7 +500,7 @@ static void test_grpc_fd_change(void) {
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
   gpr_mu_unlock(g_mu);
 
-  grpc_fd_orphan(em_fd, NULL, NULL, false /* already_closed */, "d");
+  grpc_fd_orphan(em_fd, nullptr, nullptr, false /* already_closed */, "d");
 
   destroy_change_data(&a);
   destroy_change_data(&b);

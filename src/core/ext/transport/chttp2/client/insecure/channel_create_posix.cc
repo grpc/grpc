@@ -58,12 +58,12 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   grpc_channel* channel = grpc_channel_create(
       target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
   grpc_channel_args_destroy(final_args);
-  grpc_chttp2_transport_start_reading(transport, NULL);
+  grpc_chttp2_transport_start_reading(transport, nullptr);
 
-  return channel != NULL ? channel
-                         : grpc_lame_client_channel_create(
-                               target, GRPC_STATUS_INTERNAL,
-                               "Failed to create client channel");
+  return channel != nullptr ? channel
+                            : grpc_lame_client_channel_create(
+                                  target, GRPC_STATUS_INTERNAL,
+                                  "Failed to create client channel");
 }
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD
@@ -71,7 +71,7 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
 grpc_channel* grpc_insecure_channel_create_from_fd(
     const char* target, int fd, const grpc_channel_args* args) {
   GPR_ASSERT(0);
-  return NULL;
+  return nullptr;
 }
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD

@@ -62,7 +62,7 @@ static void on_read(grpc_fd* emfd, void* user_data) {
   g_number_of_bytes_read += (int)byte_count;
 
   GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -71,7 +71,7 @@ static void on_write(grpc_fd* emfd, void* user_data) {
   g_number_of_writes++;
 
   GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -128,16 +128,16 @@ static test_socket_factory* test_socket_factory_create(void) {
 
 static void test_no_op(void) {
   grpc_core::ExecCtx _local_exec_ctx;
-  grpc_udp_server* s = grpc_udp_server_create(NULL);
-  grpc_udp_server_destroy(s, NULL);
+  grpc_udp_server* s = grpc_udp_server_create(nullptr);
+  grpc_udp_server_destroy(s, nullptr);
 }
 
 static void test_no_op_with_start(void) {
   grpc_core::ExecCtx _local_exec_ctx;
-  grpc_udp_server* s = grpc_udp_server_create(NULL);
+  grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_start");
-  grpc_udp_server_start(s, NULL, 0, NULL);
-  grpc_udp_server_destroy(s, NULL);
+  grpc_udp_server_start(s, nullptr, 0, nullptr);
+  grpc_udp_server_destroy(s, nullptr);
 }
 
 static void test_no_op_with_port(void) {
@@ -145,7 +145,7 @@ static void test_no_op_with_port(void) {
   grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
-  grpc_udp_server* s = grpc_udp_server_create(NULL);
+  grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
@@ -154,7 +154,7 @@ static void test_no_op_with_port(void) {
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, on_read, on_write,
                                       on_fd_orphaned));
 
-  grpc_udp_server_destroy(s, NULL);
+  grpc_udp_server_destroy(s, nullptr);
 
   /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
@@ -170,7 +170,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
   grpc_arg socket_factory_arg =
       grpc_socket_factory_to_arg(&socket_factory->base);
   grpc_channel_args* channel_args =
-      grpc_channel_args_copy_and_add(NULL, &socket_factory_arg, 1);
+      grpc_channel_args_copy_and_add(nullptr, &socket_factory_arg, 1);
   grpc_udp_server* s = grpc_udp_server_create(channel_args);
   grpc_channel_args_destroy(channel_args);
 
@@ -184,7 +184,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
   GPR_ASSERT(socket_factory->number_of_socket_calls == 1);
   GPR_ASSERT(socket_factory->number_of_bind_calls == 1);
 
-  grpc_udp_server_destroy(s, NULL);
+  grpc_udp_server_destroy(s, nullptr);
 
   grpc_socket_factory_unref(&socket_factory->base);
 
@@ -197,7 +197,7 @@ static void test_no_op_with_port_and_start(void) {
   grpc_core::ExecCtx _local_exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
-  grpc_udp_server* s = grpc_udp_server_create(NULL);
+  grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_port_and_start");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
@@ -206,9 +206,9 @@ static void test_no_op_with_port_and_start(void) {
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, on_read, on_write,
                                       on_fd_orphaned));
 
-  grpc_udp_server_start(s, NULL, 0, NULL);
+  grpc_udp_server_start(s, nullptr, 0, nullptr);
 
-  grpc_udp_server_destroy(s, NULL);
+  grpc_udp_server_destroy(s, nullptr);
 
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
@@ -220,7 +220,7 @@ static void test_receive(int number_of_clients) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
   int clifd, svrfd;
-  grpc_udp_server* s = grpc_udp_server_create(NULL);
+  grpc_udp_server* s = grpc_udp_server_create(nullptr);
   int i;
   int number_of_reads_before;
   grpc_millis deadline;
@@ -244,7 +244,7 @@ static void test_receive(int number_of_clients) {
   GPR_ASSERT(resolved_addr.len <= sizeof(struct sockaddr_storage));
 
   pollsets[0] = g_pollset;
-  grpc_udp_server_start(s, pollsets, 1, NULL);
+  grpc_udp_server_start(s, pollsets, 1, nullptr);
 
   gpr_mu_lock(g_mu);
 
@@ -261,7 +261,7 @@ static void test_receive(int number_of_clients) {
     GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_reads == number_of_reads_before &&
            deadline > grpc_core::ExecCtx::Get()->Now()) {
-      grpc_pollset_worker* worker = NULL;
+      grpc_pollset_worker* worker = nullptr;
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
       gpr_mu_unlock(g_mu);
@@ -275,7 +275,7 @@ static void test_receive(int number_of_clients) {
 
   gpr_mu_unlock(g_mu);
 
-  grpc_udp_server_destroy(s, NULL);
+  grpc_udp_server_destroy(s, nullptr);
 
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */

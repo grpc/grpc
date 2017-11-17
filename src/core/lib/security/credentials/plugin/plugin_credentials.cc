@@ -37,7 +37,7 @@ grpc_tracer_flag grpc_plugin_credentials_trace =
 static void plugin_destruct(grpc_call_credentials* creds) {
   grpc_plugin_credentials* c = (grpc_plugin_credentials*)creds;
   gpr_mu_destroy(&c->mu);
-  if (c->plugin.state != NULL && c->plugin.destroy != NULL) {
+  if (c->plugin.state != nullptr && c->plugin.destroy != nullptr) {
     c->plugin.destroy(c->plugin.state);
   }
 }
@@ -45,12 +45,12 @@ static void plugin_destruct(grpc_call_credentials* creds) {
 static void pending_request_remove_locked(
     grpc_plugin_credentials* c,
     grpc_plugin_credentials_pending_request* pending_request) {
-  if (pending_request->prev == NULL) {
+  if (pending_request->prev == nullptr) {
     c->pending_requests = pending_request->next;
   } else {
     pending_request->prev->next = pending_request->next;
   }
-  if (pending_request->next != NULL) {
+  if (pending_request->next != nullptr) {
     pending_request->next->prev = pending_request->prev;
   }
 }
@@ -150,7 +150,7 @@ static bool plugin_get_request_metadata(grpc_call_credentials* creds,
                                         grpc_error** error) {
   grpc_plugin_credentials* c = (grpc_plugin_credentials*)creds;
   bool retval = true;  // Synchronous return.
-  if (c->plugin.get_metadata != NULL) {
+  if (c->plugin.get_metadata != nullptr) {
     // Create pending_request object.
     grpc_plugin_credentials_pending_request* pending_request =
         (grpc_plugin_credentials_pending_request*)gpr_zalloc(
@@ -160,7 +160,7 @@ static bool plugin_get_request_metadata(grpc_call_credentials* creds,
     pending_request->on_request_metadata = on_request_metadata;
     // Add it to the pending list.
     gpr_mu_lock(&c->mu);
-    if (c->pending_requests != NULL) {
+    if (c->pending_requests != nullptr) {
       c->pending_requests->prev = pending_request;
     }
     pending_request->next = c->pending_requests;
@@ -175,7 +175,7 @@ static bool plugin_get_request_metadata(grpc_call_credentials* creds,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX];
     size_t num_creds_md = 0;
     grpc_status_code status = GRPC_STATUS_OK;
-    const char* error_details = NULL;
+    const char* error_details = nullptr;
     if (!c->plugin.get_metadata(c->plugin.state, context,
                                 plugin_md_request_metadata_ready,
                                 pending_request, creds_md, &num_creds_md,
@@ -230,7 +230,7 @@ static void plugin_cancel_get_request_metadata(
   gpr_mu_lock(&c->mu);
   for (grpc_plugin_credentials_pending_request* pending_request =
            c->pending_requests;
-       pending_request != NULL; pending_request = pending_request->next) {
+       pending_request != nullptr; pending_request = pending_request->next) {
     if (pending_request->md_array == md_array) {
       if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
         gpr_log(GPR_INFO, "plugin_credentials[%p]: cancelling request %p", c,
@@ -256,7 +256,7 @@ grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
   grpc_plugin_credentials* c = (grpc_plugin_credentials*)gpr_zalloc(sizeof(*c));
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
   c->base.type = plugin.type;
   c->base.vtable = &plugin_vtable;
   gpr_ref_init(&c->base.refcount, 1);

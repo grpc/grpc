@@ -113,8 +113,8 @@ static void partly_done(state_watcher* w, bool due_to_completion,
         grpc_channel_get_channel_stack(w->channel));
     grpc_client_channel_watch_connectivity_state(
         client_channel_elem,
-        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(w->cq)), NULL,
-        &w->on_complete, NULL);
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(w->cq)),
+        nullptr, &w->on_complete, nullptr);
   }
 
   gpr_mu_lock(&w->mu);
@@ -223,7 +223,7 @@ void grpc_channel_watch_connectivity_state(
   w->cq = cq;
   w->tag = tag;
   w->channel = channel;
-  w->error = NULL;
+  w->error = nullptr;
 
   watcher_timer_init_arg* wa =
       (watcher_timer_init_arg*)gpr_malloc(sizeof(watcher_timer_init_arg));

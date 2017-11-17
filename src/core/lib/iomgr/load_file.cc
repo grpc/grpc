@@ -30,7 +30,7 @@
 
 grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
                            grpc_slice* output) {
-  unsigned char* contents = NULL;
+  unsigned char* contents = nullptr;
   size_t contents_size = 0;
   grpc_slice result = grpc_empty_slice();
   FILE* file;
@@ -39,7 +39,7 @@ grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   file = fopen(filename, "rb");
-  if (file == NULL) {
+  if (file == nullptr) {
     error = GRPC_OS_ERROR(errno, "fopen");
     goto end;
   }
@@ -62,7 +62,7 @@ grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
 
 end:
   *output = result;
-  if (file != NULL) fclose(file);
+  if (file != nullptr) fclose(file);
   if (error != GRPC_ERROR_NONE) {
     grpc_error* error_out =
         grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(

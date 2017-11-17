@@ -254,7 +254,7 @@ static bool append_error(grpc_error** composite, grpc_error* error,
  * becomes a spurious read notification on a reused fd.
  */
 
-static grpc_fd* fd_freelist = NULL;
+static grpc_fd* fd_freelist = nullptr;
 static gpr_mu fd_freelist_mu;
 
 #ifndef NDEBUG
@@ -320,7 +320,7 @@ static void fd_global_init(void) { gpr_mu_init(&fd_freelist_mu); }
 static void fd_global_shutdown(void) {
   gpr_mu_lock(&fd_freelist_mu);
   gpr_mu_unlock(&fd_freelist_mu);
-  while (fd_freelist != NULL) {
+  while (fd_freelist != nullptr) {
     grpc_fd* fd = fd_freelist;
     fd_freelist = fd_freelist->freelist_next;
     gpr_free(fd);
@@ -329,30 +329,30 @@ static void fd_global_shutdown(void) {
 }
 
 static grpc_fd* fd_create(int fd, const char* name) {
-  grpc_fd* new_fd = NULL;
+  grpc_fd* new_fd = nullptr;
 
   gpr_mu_lock(&fd_freelist_mu);
-  if (fd_freelist != NULL) {
+  if (fd_freelist != nullptr) {
     new_fd = fd_freelist;
     fd_freelist = fd_freelist->freelist_next;
   }
   gpr_mu_unlock(&fd_freelist_mu);
 
-  if (new_fd == NULL) {
+  if (new_fd == nullptr) {
     new_fd = (grpc_fd*)gpr_malloc(sizeof(grpc_fd));
   }
 
   gpr_mu_init(&new_fd->pollable_mu);
   gpr_mu_init(&new_fd->orphan_mu);
-  new_fd->pollable_obj = NULL;
+  new_fd->pollable_obj = nullptr;
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
   new_fd->read_closure.Init();
   new_fd->write_closure.Init();
-  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
+  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm) nullptr);
 
-  new_fd->freelist_next = NULL;
-  new_fd->on_done_closure = NULL;
+  new_fd->freelist_next = nullptr;
+  new_fd->on_done_closure = nullptr;
 
   char* fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
@@ -381,7 +381,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
 
   /* If release_fd is not NULL, we should be relinquishing control of the file
      descriptor fd->fd (but we still own the grpc_fd structure). */
-  if (release_fd != NULL) {
+  if (release_fd != nullptr) {
     *release_fd = fd->fd;
   } else if (!is_fd_closed) {
     close(fd->fd);
@@ -434,7 +434,7 @@ static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
  */
 
 static grpc_error* pollable_create(pollable_type type, pollable** p) {
-  *p = NULL;
+  *p = nullptr;
 
   int epfd = epoll_create1(EPOLL_CLOEXEC);
   if (epfd == -1) {
@@ -445,7 +445,7 @@ static grpc_error* pollable_create(pollable_type type, pollable** p) {
   if (err != GRPC_ERROR_NONE) {
     close(epfd);
     gpr_free(*p);
-    *p = NULL;
+    *p = nullptr;
     return err;
   }
   struct epoll_event ev;
@@ -456,7 +456,7 @@ static grpc_error* pollable_create(pollable_type type, pollable** p) {
     close(epfd);
     grpc_wakeup_fd_destroy(&(*p)->wakeup);
     gpr_free(*p);
-    *p = NULL;
+    *p = nullptr;
     return err;
   }
 
@@ -464,10 +464,10 @@ static grpc_error* pollable_create(pollable_type type, pollable** p) {
   gpr_ref_init(&(*p)->refs, 1);
   gpr_mu_init(&(*p)->mu);
   (*p)->epfd = epfd;
-  (*p)->owner_fd = NULL;
-  (*p)->pollset_set = NULL;
+  (*p)->owner_fd = nullptr;
+  (*p)->pollset_set = nullptr;
   (*p)->next = (*p)->prev = *p;
-  (*p)->root_worker = NULL;
+  (*p)->root_worker = nullptr;
   (*p)->event_cursor = 0;
   (*p)->event_count = 0;
   return GRPC_ERROR_NONE;
@@ -491,14 +491,14 @@ static pollable* pollable_ref(pollable* p, int line, const char* reason) {
 static void pollable_unref(pollable* p) {
 #else
 static void pollable_unref(pollable* p, int line, const char* reason) {
-  if (p == NULL) return;
+  if (p == nullptr) return;
   if (GRPC_TRACER_ON(grpc_trace_pollable_refcount)) {
     int r = (int)gpr_atm_no_barrier_load(&p->refs.count);
     gpr_log(__FILE__, line, GPR_LOG_SEVERITY_DEBUG,
             "POLLABLE:%p unref %d->%d %s", p, r, r - 1, reason);
   }
 #endif
-  if (p != NULL && gpr_unref(&p->refs)) {
+  if (p != nullptr && gpr_unref(&p->refs)) {
     close(p->epfd);
     grpc_wakeup_fd_destroy(&p->wakeup);
     gpr_free(p);
@@ -558,10 +558,10 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
             pollset, pollset->active_pollable, pollset->shutdown_closure,
             pollset->root_worker, pollset->containing_pollset_set_count);
   }
-  if (pollset->shutdown_closure != NULL && pollset->root_worker == NULL &&
+  if (pollset->shutdown_closure != nullptr && pollset->root_worker == nullptr &&
       pollset->containing_pollset_set_count == 0) {
     GRPC_CLOSURE_SCHED(pollset->shutdown_closure, GRPC_ERROR_NONE);
-    pollset->shutdown_closure = NULL;
+    pollset->shutdown_closure = nullptr;
   }
 }
 
@@ -571,7 +571,7 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
 static grpc_error* kick_one_worker(grpc_pollset_worker* specific_worker) {
   pollable* p = specific_worker->pollable_obj;
   grpc_core::mu_guard lock(&p->mu);
-  GPR_ASSERT(specific_worker != NULL);
+  GPR_ASSERT(specific_worker != nullptr);
   if (specific_worker->kicked) {
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_but_already_kicked", p);
@@ -620,9 +620,9 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
             (void*)gpr_tls_get(&g_current_thread_pollset),
             (void*)gpr_tls_get(&g_current_thread_worker), pollset->root_worker);
   }
-  if (specific_worker == NULL) {
+  if (specific_worker == nullptr) {
     if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)pollset) {
-      if (pollset->root_worker == NULL) {
+      if (pollset->root_worker == nullptr) {
         if (GRPC_TRACER_ON(grpc_polling_trace)) {
           gpr_log(GPR_DEBUG, "PS:%p kicked_any_without_poller", pollset);
         }
@@ -664,7 +664,7 @@ static grpc_error* pollset_kick_all(grpc_pollset* pollset) {
   grpc_error* error = GRPC_ERROR_NONE;
   const char* err_desc = "pollset_kick_all";
   grpc_pollset_worker* w = pollset->root_worker;
-  if (w != NULL) {
+  if (w != nullptr) {
     do {
       GRPC_STATS_INC_POLLSET_KICK();
       append_error(&error, kick_one_worker(w), err_desc);
@@ -709,23 +709,23 @@ static grpc_error* fd_get_or_become_pollable(grpc_fd* fd, pollable** p) {
   gpr_mu_lock(&fd->pollable_mu);
   grpc_error* error = GRPC_ERROR_NONE;
   static const char* err_desc = "fd_get_or_become_pollable";
-  if (fd->pollable_obj == NULL) {
+  if (fd->pollable_obj == nullptr) {
     if (append_error(&error, pollable_create(PO_FD, &fd->pollable_obj),
                      err_desc)) {
       fd->pollable_obj->owner_fd = fd;
       if (!append_error(&error, pollable_add_fd(fd->pollable_obj, fd),
                         err_desc)) {
         POLLABLE_UNREF(fd->pollable_obj, "fd_pollable");
-        fd->pollable_obj = NULL;
+        fd->pollable_obj = nullptr;
       }
     }
   }
   if (error == GRPC_ERROR_NONE) {
-    GPR_ASSERT(fd->pollable_obj != NULL);
+    GPR_ASSERT(fd->pollable_obj != nullptr);
     *p = POLLABLE_REF(fd->pollable_obj, "pollset");
   } else {
-    GPR_ASSERT(fd->pollable_obj == NULL);
-    *p = NULL;
+    GPR_ASSERT(fd->pollable_obj == nullptr);
+    *p = nullptr;
   }
   gpr_mu_unlock(&fd->pollable_mu);
   return error;
@@ -733,7 +733,7 @@ static grpc_error* fd_get_or_become_pollable(grpc_fd* fd, pollable** p) {
 
 /* pollset->po.mu lock must be held by the caller before calling this */
 static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
-  GPR_ASSERT(pollset->shutdown_closure == NULL);
+  GPR_ASSERT(pollset->shutdown_closure == nullptr);
   pollset->shutdown_closure = closure;
   GRPC_LOG_IF_ERROR("pollset_shutdown", pollset_kick_all(pollset));
   pollset_maybe_finish_shutdown(pollset);
@@ -783,7 +783,7 @@ static grpc_error* pollable_process_events(grpc_pollset* pollset,
 /* pollset_shutdown is guaranteed to be called before pollset_destroy. */
 static void pollset_destroy(grpc_pollset* pollset) {
   POLLABLE_UNREF(pollset->active_pollable, "pollset");
-  pollset->active_pollable = NULL;
+  pollset->active_pollable = nullptr;
 }
 
 static grpc_error* pollable_epoll(pollable* p, grpc_millis deadline) {
@@ -822,7 +822,7 @@ static grpc_error* pollable_epoll(pollable* p, grpc_millis deadline) {
 /* Return true if first in list */
 static bool worker_insert(grpc_pollset_worker** root_worker,
                           grpc_pollset_worker* worker, pwlinks link) {
-  if (*root_worker == NULL) {
+  if (*root_worker == nullptr) {
     *root_worker = worker;
     worker->links[link].next = worker->links[link].prev = worker;
     return true;
@@ -843,7 +843,7 @@ static worker_remove_result worker_remove(grpc_pollset_worker** root_worker,
                                           pwlinks link) {
   if (worker == *root_worker) {
     if (worker == worker->links[link].next) {
-      *root_worker = NULL;
+      *root_worker = nullptr;
       return WRR_EMPTIED;
     } else {
       *root_worker = worker->links[link].next;
@@ -863,7 +863,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
                          grpc_pollset_worker** worker_hdl,
                          grpc_millis deadline) {
   bool do_poll = (pollset->shutdown_closure == nullptr);
-  if (worker_hdl != NULL) *worker_hdl = worker;
+  if (worker_hdl != nullptr) *worker_hdl = worker;
   worker->initialized_cv = false;
   worker->kicked = false;
   worker->pollset = pollset;
@@ -1033,12 +1033,12 @@ static grpc_error* pollset_transition_pollable_from_fd_to_multi_locked(
   append_error(&error, pollset_kick_all(pollset), err_desc);
   grpc_fd* initial_fd = pollset->active_pollable->owner_fd;
   POLLABLE_UNREF(pollset->active_pollable, "pollset");
-  pollset->active_pollable = NULL;
+  pollset->active_pollable = nullptr;
   if (append_error(&error, pollable_create(PO_MULTI, &pollset->active_pollable),
                    err_desc)) {
     append_error(&error, pollable_add_fd(pollset->active_pollable, initial_fd),
                  err_desc);
-    if (and_add_fd != NULL) {
+    if (and_add_fd != nullptr) {
       append_error(&error,
                    pollable_add_fd(pollset->active_pollable, and_add_fd),
                    err_desc);
@@ -1100,8 +1100,8 @@ static grpc_error* pollset_as_multipollable_locked(grpc_pollset* pollset,
         POLLABLE_UNREF(pollset->active_pollable, "pollset");
         error = pollable_create(PO_MULTI, &pollset->active_pollable);
       } else {
-        error =
-            pollset_transition_pollable_from_fd_to_multi_locked(pollset, NULL);
+        error = pollset_transition_pollable_from_fd_to_multi_locked(pollset,
+                                                                    nullptr);
       }
       gpr_mu_unlock(&po_at_start->owner_fd->orphan_mu);
       break;
@@ -1111,7 +1111,7 @@ static grpc_error* pollset_as_multipollable_locked(grpc_pollset* pollset,
   if (error != GRPC_ERROR_NONE) {
     POLLABLE_UNREF(pollset->active_pollable, "pollset");
     pollset->active_pollable = po_at_start;
-    *pollable_obj = NULL;
+    *pollable_obj = nullptr;
   } else {
     *pollable_obj = POLLABLE_REF(pollset->active_pollable, "pollset_set");
     POLLABLE_UNREF(po_at_start, "pollset_as_multipollable");
@@ -1132,7 +1132,7 @@ static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {
 
 static grpc_pollset_set* pss_lock_adam(grpc_pollset_set* pss) {
   gpr_mu_lock(&pss->mu);
-  while (pss->parent != NULL) {
+  while (pss->parent != nullptr) {
     gpr_mu_unlock(&pss->mu);
     pss = pss->parent;
     gpr_mu_lock(&pss->mu);
@@ -1148,7 +1148,7 @@ static grpc_pollset_set* pollset_set_create(void) {
 }
 
 static void pollset_set_unref(grpc_pollset_set* pss) {
-  if (pss == NULL) return;
+  if (pss == nullptr) return;
   if (!gpr_unref(&pss->refs)) return;
   pollset_set_unref(pss->parent);
   gpr_mu_destroy(&pss->mu);
@@ -1266,11 +1266,11 @@ static void pollset_set_add_pollset(grpc_pollset_set* pss, grpc_pollset* ps) {
   }
   grpc_error* error = GRPC_ERROR_NONE;
   static const char* err_desc = "pollset_set_add_pollset";
-  pollable* pollable_obj = NULL;
+  pollable* pollable_obj = nullptr;
   gpr_mu_lock(&ps->mu);
   if (!GRPC_LOG_IF_ERROR(err_desc,
                          pollset_as_multipollable_locked(ps, &pollable_obj))) {
-    GPR_ASSERT(pollable_obj == NULL);
+    GPR_ASSERT(pollable_obj == nullptr);
     gpr_mu_unlock(&ps->mu);
     return;
   }
@@ -1314,9 +1314,9 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
     gpr_mu* b_mu = &b->mu;
     gpr_mu_lock(a_mu);
     gpr_mu_lock(b_mu);
-    if (a->parent != NULL) {
+    if (a->parent != nullptr) {
       a = a->parent;
-    } else if (b->parent != NULL) {
+    } else if (b->parent != nullptr) {
       b = b->parent;
     } else {
       break;  // exit loop, both pollsets locked
@@ -1365,8 +1365,8 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
   a->pollset_count += b->pollset_count;
   gpr_free(b->fds);
   gpr_free(b->pollsets);
-  b->fds = NULL;
-  b->pollsets = NULL;
+  b->fds = nullptr;
+  b->pollsets = nullptr;
   b->fd_count = b->fd_capacity = b->pollset_count = b->pollset_capacity = 0;
   gpr_mu_unlock(&a->mu);
   gpr_mu_unlock(&b->mu);
@@ -1418,17 +1418,17 @@ static const grpc_event_engine_vtable vtable = {
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested) {
   if (!explicitly_requested) {
-    return NULL;
+    return nullptr;
   }
 
   if (!grpc_has_wakeup_fd()) {
     gpr_log(GPR_ERROR, "Skipping epollex because of no wakeup fd.");
-    return NULL;
+    return nullptr;
   }
 
   if (!grpc_is_epollexclusive_available()) {
     gpr_log(GPR_INFO, "Skipping epollex because it is not supported.");
-    return NULL;
+    return nullptr;
   }
 
 #ifndef NDEBUG
@@ -1440,7 +1440,7 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
     pollset_global_shutdown();
     fd_global_shutdown();
-    return NULL;
+    return nullptr;
   }
 
   return &vtable;
@@ -1455,7 +1455,7 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested) {
   gpr_log(GPR_ERROR,
           "Skipping epollex becuase GRPC_LINUX_EPOLL is not defined.");
-  return NULL;
+  return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
 

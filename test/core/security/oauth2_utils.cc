@@ -41,7 +41,7 @@ typedef struct {
 
 static void on_oauth2_response(void* arg, grpc_error* error) {
   oauth2_request* request = (oauth2_request*)arg;
-  char* token = NULL;
+  char* token = nullptr;
   grpc_slice token_slice;
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Fetching token failed: %s", grpc_error_string(error));
@@ -59,7 +59,7 @@ static void on_oauth2_response(void* arg, grpc_error* error) {
   request->token = token;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&request->pops), NULL));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&request->pops), nullptr));
   gpr_mu_unlock(request->mu);
 }
 
@@ -71,14 +71,14 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   memset(&request, 0, sizeof(request));
   grpc_core::ExecCtx _local_exec_ctx;
   grpc_closure do_nothing_closure;
-  grpc_auth_metadata_context null_ctx = {"", "", NULL, NULL};
+  grpc_auth_metadata_context null_ctx = {"", "", nullptr, nullptr};
 
   grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &request.mu);
   request.pops = grpc_polling_entity_create_from_pollset(pollset);
   request.is_done = false;
 
-  GRPC_CLOSURE_INIT(&do_nothing_closure, do_nothing, NULL,
+  GRPC_CLOSURE_INIT(&do_nothing_closure, do_nothing, nullptr,
                     grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&request.closure, on_oauth2_response, &request,
@@ -96,7 +96,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
 
   gpr_mu_lock(request.mu);
   while (!request.is_done) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&request.pops),

@@ -19,10 +19,16 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_WINSOCK_SOCKET
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 // must be included after the above
 #include <mswsock.h>
+
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H */

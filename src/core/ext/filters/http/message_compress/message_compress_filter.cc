@@ -111,7 +111,7 @@ static grpc_error* process_send_initial_metadata(
   grpc_stream_compression_algorithm stream_compression_algorithm =
       GRPC_STREAM_COMPRESS_NONE;
   if (initial_metadata->idx.named.grpc_internal_stream_encoding_request !=
-      NULL) {
+      nullptr) {
     grpc_mdelem md =
         initial_metadata->idx.named.grpc_internal_stream_encoding_request->md;
     if (!grpc_stream_compression_algorithm_parse(
@@ -140,13 +140,13 @@ static grpc_error* process_send_initial_metadata(
         initial_metadata->idx.named.grpc_internal_stream_encoding_request);
     /* Disable message-wise compression */
     calld->compression_algorithm = GRPC_COMPRESS_NONE;
-    if (initial_metadata->idx.named.grpc_internal_encoding_request != NULL) {
+    if (initial_metadata->idx.named.grpc_internal_encoding_request != nullptr) {
       grpc_metadata_batch_remove(
           initial_metadata,
           initial_metadata->idx.named.grpc_internal_encoding_request);
     }
   } else if (initial_metadata->idx.named.grpc_internal_encoding_request !=
-             NULL) {
+             nullptr) {
     grpc_mdelem md =
         initial_metadata->idx.named.grpc_internal_encoding_request->md;
     if (!grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
@@ -224,7 +224,7 @@ static void send_message_batch_continue(grpc_call_element* elem) {
   // before we do that.
   grpc_transport_stream_op_batch* send_message_batch =
       calld->send_message_batch;
-  calld->send_message_batch = NULL;
+  calld->send_message_batch = nullptr;
   grpc_call_next_op(elem, send_message_batch);
 }
 
@@ -281,10 +281,10 @@ static void finish_send_message(grpc_call_element* elem) {
 static void fail_send_message_batch_in_call_combiner(void* arg,
                                                      grpc_error* error) {
   call_data* calld = (call_data*)arg;
-  if (calld->send_message_batch != NULL) {
+  if (calld->send_message_batch != nullptr) {
     grpc_transport_stream_op_batch_finish_with_failure(
         calld->send_message_batch, GRPC_ERROR_REF(error), calld->call_combiner);
-    calld->send_message_batch = NULL;
+    calld->send_message_batch = nullptr;
   }
 }
 
@@ -370,7 +370,7 @@ static void compress_start_transport_stream_op_batch(
     GRPC_ERROR_UNREF(calld->cancel_error);
     calld->cancel_error =
         GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
-    if (calld->send_message_batch != NULL) {
+    if (calld->send_message_batch != nullptr) {
       if (calld->send_initial_metadata_state == INITIAL_METADATA_UNSEEN) {
         GRPC_CALL_COMBINER_START(
             calld->call_combiner,
@@ -408,7 +408,7 @@ static void compress_start_transport_stream_op_batch(
     // for this, since we can't send two batches down while holding the
     // call combiner, since the connected_channel filter (at the bottom of
     // the call stack) will release the call combiner for each batch it sees.
-    if (calld->send_message_batch != NULL) {
+    if (calld->send_message_batch != nullptr) {
       GRPC_CALL_COMBINER_START(
           calld->call_combiner,
           &calld->start_send_message_batch_in_call_combiner, GRPC_ERROR_NONE,
@@ -417,7 +417,7 @@ static void compress_start_transport_stream_op_batch(
   }
   // Handle send_message.
   if (batch->send_message) {
-    GPR_ASSERT(calld->send_message_batch == NULL);
+    GPR_ASSERT(calld->send_message_batch == nullptr);
     calld->send_message_batch = batch;
     // If we have not yet seen send_initial_metadata, then we have to
     // wait.  We save the batch in calld and then drop the call

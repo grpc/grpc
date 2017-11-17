@@ -79,7 +79,7 @@ static void test_fd_cleanup(test_fd* tfds, int num_fds) {
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_fd_cleanup"));
     grpc_core::ExecCtx::Get()->Flush();
 
-    grpc_fd_orphan(tfds[i].fd, NULL, &release_fd, false /* already_closed */,
+    grpc_fd_orphan(tfds[i].fd, nullptr, &release_fd, false /* already_closed */,
                    "test_fd_cleanup");
     grpc_core::ExecCtx::Get()->Flush();
 
@@ -134,7 +134,7 @@ static void test_add_fd_to_pollset() {
   test_fd tfds[NUM_FDS];
   int fds[NUM_FDS];
   test_pollset pollsets[NUM_POLLSETS];
-  void* expected_pi = NULL;
+  void* expected_pi = nullptr;
   int i;
 
   test_fd_init(tfds, fds, NUM_FDS);
@@ -288,8 +288,8 @@ static void test_threading(void) {
   {
     grpc_core::ExecCtx _local_exec_ctx;
     grpc_fd_shutdown(shared.wakeup_desc, GRPC_ERROR_CANCELLED);
-    grpc_fd_orphan(shared.wakeup_desc, NULL, NULL, false /* already_closed */,
-                   "done");
+    grpc_fd_orphan(shared.wakeup_desc, nullptr, nullptr,
+                   false /* already_closed */, "done");
     grpc_pollset_shutdown(shared.pollset,
                           GRPC_CLOSURE_CREATE(destroy_pollset, shared.pollset,
                                               grpc_schedule_on_exec_ctx));
@@ -298,13 +298,13 @@ static void test_threading(void) {
 }
 
 int main(int argc, char** argv) {
-  const char* poll_strategy = NULL;
+  const char* poll_strategy = nullptr;
   grpc_test_init(argc, argv);
   grpc_init();
   grpc_core::ExecCtx _local_exec_ctx;
 
   poll_strategy = grpc_get_poll_strategy_name();
-  if (poll_strategy != NULL && strcmp(poll_strategy, "epollsig") == 0) {
+  if (poll_strategy != nullptr && strcmp(poll_strategy, "epollsig") == 0) {
     test_add_fd_to_pollset();
     test_threading();
   } else {

@@ -41,7 +41,7 @@ static void on_server_destroyed(void* data, grpc_error* error) {
 void test_tcp_server_init(test_tcp_server* server,
                           grpc_tcp_server_cb on_connect, void* user_data) {
   grpc_init();
-  server->tcp_server = NULL;
+  server->tcp_server = nullptr;
   GRPC_CLOSURE_INIT(&server->shutdown_complete, on_server_destroyed, server,
                     grpc_schedule_on_exec_ctx);
   server->shutdown = 0;
@@ -61,8 +61,8 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   addr->sin_port = htons((uint16_t)port);
   memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
 
-  grpc_error* error = grpc_tcp_server_create(&server->shutdown_complete, NULL,
-                                             &server->tcp_server);
+  grpc_error* error = grpc_tcp_server_create(&server->shutdown_complete,
+                                             nullptr, &server->tcp_server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
@@ -75,7 +75,7 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
 }
 
 void test_tcp_server_poll(test_tcp_server* server, int seconds) {
-  grpc_pollset_worker* worker = NULL;
+  grpc_pollset_worker* worker = nullptr;
   grpc_core::ExecCtx _local_exec_ctx;
   grpc_millis deadline = grpc_timespec_to_millis_round_up(
       grpc_timeout_seconds_to_deadline(seconds));
@@ -95,7 +95,7 @@ void test_tcp_server_destroy(test_tcp_server* server) {
   gpr_timespec shutdown_deadline;
   grpc_closure do_nothing_cb;
   grpc_tcp_server_unref(server->tcp_server);
-  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, NULL,
+  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
                     grpc_schedule_on_exec_ctx);
   shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                    gpr_time_from_seconds(5, GPR_TIMESPAN));

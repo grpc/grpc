@@ -56,7 +56,7 @@ static void on_metadata_response(void* arg, grpc_error* error) {
   sync->is_done = true;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), NULL));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), nullptr));
   gpr_mu_unlock(sync->mu);
 }
 
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
   int result = 0;
   grpc_core::ExecCtx _local_exec_ctx;
   synchronizer sync;
-  grpc_channel_credentials* creds = NULL;
+  grpc_channel_credentials* creds = nullptr;
   const char* service_url = "https://test.foo.google.com/Foo";
   grpc_auth_metadata_context context;
   gpr_cmdline* cl = gpr_cmdline_create("print_google_default_creds_token");
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
   grpc_init();
 
   creds = grpc_google_default_credentials_create();
-  if (creds == NULL) {
+  if (creds == nullptr) {
     fprintf(stderr, "\nCould not find default credentials.\n\n");
     result = 1;
     goto end;
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops), &worker,

@@ -62,11 +62,11 @@ static uint64_t g_timed_waiter_generation;
 static void timer_thread(void* completed_thread_ptr);
 
 static void gc_completed_threads(void) {
-  if (g_completed_threads != NULL) {
+  if (g_completed_threads != nullptr) {
     completed_thread* to_gc = g_completed_threads;
-    g_completed_threads = NULL;
+    g_completed_threads = nullptr;
     gpr_mu_unlock(&g_mu);
-    while (to_gc != NULL) {
+    while (to_gc != nullptr) {
       gpr_thd_join(to_gc->t);
       completed_thread* next = to_gc->next;
       gpr_free(to_gc);
@@ -224,6 +224,10 @@ static void timer_main_loop() {
   for (;;) {
     grpc_millis next = GRPC_MILLIS_INF_FUTURE;
     grpc_core::ExecCtx::Get()->InvalidateNow();
+    /* Calibrate g_start_time in exec_ctx.cc with a regular interval in case the
+     * system clock has changed */
+    grpc_exec_ctx_maybe_update_start_time();
+
     // check timer state, updates next to the next time to run a check
     switch (grpc_timer_check(&next)) {
       case GRPC_TIMERS_FIRED:
@@ -297,7 +301,7 @@ void grpc_timer_manager_init(void) {
   g_threaded = false;
   g_thread_count = 0;
   g_waiter_count = 0;
-  g_completed_threads = NULL;
+  g_completed_threads = nullptr;
 
   g_has_timed_waiter = false;
   g_timed_waiter_deadline = GRPC_MILLIS_INF_FUTURE;

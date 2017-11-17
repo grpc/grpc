@@ -218,7 +218,8 @@ void grpc_call_stack_destroy(grpc_call_stack* stack,
   /* destroy per-filter data */
   for (i = 0; i < count; i++) {
     elems[i].filter->destroy_call_elem(
-        &elems[i], final_info, i == count - 1 ? then_schedule_closure : NULL);
+        &elems[i], final_info,
+        i == count - 1 ? then_schedule_closure : nullptr);
   }
 }
 

@@ -157,7 +157,7 @@ void ArgsInit(ArgsStruct* args) {
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
   args->lock = grpc_combiner_create();
   gpr_atm_rel_store(&args->done_atm, 0);
-  args->channel_args = NULL;
+  args->channel_args = nullptr;
 }
 
 void DoNothing(void* arg, grpc_error* error) {}
@@ -167,14 +167,15 @@ void ArgsFinish(ArgsStruct* args) {
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure DoNothing_cb;
-  GRPC_CLOSURE_INIT(&DoNothing_cb, DoNothing, NULL, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&DoNothing_cb, DoNothing, nullptr,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(args->pollset, &DoNothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
   grpc_channel_args_destroy(args->channel_args);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
-  GRPC_COMBINER_UNREF(args->lock, NULL);
+  GRPC_COMBINER_UNREF(args->lock, nullptr);
 }
 
 gpr_timespec NSecondDeadline(int seconds) {
@@ -194,7 +195,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx _local_exec_ctx;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
@@ -211,12 +212,12 @@ void CheckServiceConfigResultLocked(grpc_channel_args* channel_args,
   const grpc_arg* service_config_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (args->expected_service_config_string != "") {
-    GPR_ASSERT(service_config_arg != NULL);
+    GPR_ASSERT(service_config_arg != nullptr);
     GPR_ASSERT(service_config_arg->type == GRPC_ARG_STRING);
     EXPECT_EQ(service_config_arg->value.string,
               args->expected_service_config_string);
   } else {
-    GPR_ASSERT(service_config_arg == NULL);
+    GPR_ASSERT(service_config_arg == nullptr);
   }
 }
 
@@ -225,11 +226,11 @@ void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
   const grpc_arg* lb_policy_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_POLICY_NAME);
   if (args->expected_lb_policy != "") {
-    GPR_ASSERT(lb_policy_arg != NULL);
+    GPR_ASSERT(lb_policy_arg != nullptr);
     GPR_ASSERT(lb_policy_arg->type == GRPC_ARG_STRING);
     EXPECT_EQ(lb_policy_arg->value.string, args->expected_lb_policy);
   } else {
-    GPR_ASSERT(lb_policy_arg == NULL);
+    GPR_ASSERT(lb_policy_arg == nullptr);
   }
 }
 
@@ -238,7 +239,7 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   grpc_channel_args* channel_args = args->channel_args;
   const grpc_arg* channel_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(channel_arg != NULL);
+  GPR_ASSERT(channel_arg != nullptr);
   GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
   grpc_lb_addresses* addresses =
       (grpc_lb_addresses*)channel_arg->value.pointer.p;
@@ -269,7 +270,7 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   }
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
   gpr_mu_unlock(args->mu);
 }
 
@@ -281,13 +282,13 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   args.expected_service_config_string = FLAGS_expected_chosen_service_config;
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
-  char* whole_uri = NULL;
+  char* whole_uri = nullptr;
   GPR_ASSERT(asprintf(&whole_uri, "dns://%s/%s",
                       FLAGS_local_dns_server_address.c_str(),
                       FLAGS_target_name.c_str()));
   // create resolver and resolve
   grpc_resolver* resolver =
-      grpc_resolver_create(whole_uri, NULL, args.pollset_set, args.lock);
+      grpc_resolver_create(whole_uri, nullptr, args.pollset_set, args.lock);
   gpr_free(whole_uri);
   grpc_closure on_resolver_result_changed;
   GRPC_CLOSURE_INIT(&on_resolver_result_changed, CheckResolverResultLocked,
@@ -296,7 +297,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
                             &on_resolver_result_changed);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
-  GRPC_RESOLVER_UNREF(resolver, NULL);
+  GRPC_RESOLVER_UNREF(resolver, nullptr);
   ArgsFinish(&args);
 }
 

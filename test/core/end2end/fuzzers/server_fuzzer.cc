@@ -52,19 +52,19 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_mock_endpoint_put_read(
       mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
 
-  grpc_server* server = grpc_server_create(NULL, NULL);
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
-  grpc_server_register_completion_queue(server, cq, NULL);
+  grpc_server* server = grpc_server_create(nullptr, nullptr);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_server_register_completion_queue(server, cq, nullptr);
   // TODO(ctiller): add registered methods (one for POST, one for PUT)
   // void *registered_method =
   //    grpc_server_register_method(server, "/reg", NULL, 0);
   grpc_server_start(server);
   grpc_transport* transport =
-      grpc_create_chttp2_transport(NULL, mock_endpoint, 0);
-  grpc_server_setup_transport(server, transport, NULL, NULL);
-  grpc_chttp2_transport_start_reading(transport, NULL);
+      grpc_create_chttp2_transport(nullptr, mock_endpoint, 0);
+  grpc_server_setup_transport(server, transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr);
 
-  grpc_call* call1 = NULL;
+  grpc_call* call1 = nullptr;
   grpc_call_details call_details1;
   grpc_metadata_array request_metadata1;
   grpc_call_details_init(&call_details1);
@@ -79,7 +79,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_event ev;
   while (1) {
     grpc_core::ExecCtx::Get()->Flush();
-    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                    nullptr);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
         goto done;
@@ -96,18 +97,20 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   }
 
 done:
-  if (call1 != NULL) grpc_call_unref(call1);
+  if (call1 != nullptr) grpc_call_unref(call1);
   grpc_call_details_destroy(&call_details1);
   grpc_metadata_array_destroy(&request_metadata1);
   grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
   grpc_server_cancel_all_calls(server);
   for (int i = 0; i <= requested_calls; i++) {
-    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                    nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   }
   grpc_completion_queue_shutdown(cq);
   for (int i = 0; i <= requested_calls; i++) {
-    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                    nullptr);
     GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   }
   grpc_server_destroy(server);

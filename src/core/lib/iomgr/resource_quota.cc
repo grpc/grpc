@@ -165,7 +165,7 @@ static void rulist_add_head(grpc_resource_user* resource_user,
                             grpc_rulist list) {
   grpc_resource_quota* resource_quota = resource_user->resource_quota;
   grpc_resource_user** root = &resource_quota->roots[list];
-  if (*root == NULL) {
+  if (*root == nullptr) {
     *root = resource_user;
     resource_user->links[list].next = resource_user->links[list].prev =
         resource_user;
@@ -182,7 +182,7 @@ static void rulist_add_tail(grpc_resource_user* resource_user,
                             grpc_rulist list) {
   grpc_resource_quota* resource_quota = resource_user->resource_quota;
   grpc_resource_user** root = &resource_quota->roots[list];
-  if (*root == NULL) {
+  if (*root == nullptr) {
     *root = resource_user;
     resource_user->links[list].next = resource_user->links[list].prev =
         resource_user;
@@ -196,18 +196,18 @@ static void rulist_add_tail(grpc_resource_user* resource_user,
 
 static bool rulist_empty(grpc_resource_quota* resource_quota,
                          grpc_rulist list) {
-  return resource_quota->roots[list] == NULL;
+  return resource_quota->roots[list] == nullptr;
 }
 
 static grpc_resource_user* rulist_pop_head(grpc_resource_quota* resource_quota,
                                            grpc_rulist list) {
   grpc_resource_user** root = &resource_quota->roots[list];
   grpc_resource_user* resource_user = *root;
-  if (resource_user == NULL) {
-    return NULL;
+  if (resource_user == nullptr) {
+    return nullptr;
   }
   if (resource_user->links[list].next == resource_user) {
-    *root = NULL;
+    *root = nullptr;
   } else {
     resource_user->links[list].next->links[list].prev =
         resource_user->links[list].prev;
@@ -215,24 +215,24 @@ static grpc_resource_user* rulist_pop_head(grpc_resource_quota* resource_quota,
         resource_user->links[list].next;
     *root = resource_user->links[list].next;
   }
-  resource_user->links[list].next = resource_user->links[list].prev = NULL;
+  resource_user->links[list].next = resource_user->links[list].prev = nullptr;
   return resource_user;
 }
 
 static void rulist_remove(grpc_resource_user* resource_user, grpc_rulist list) {
-  if (resource_user->links[list].next == NULL) return;
+  if (resource_user->links[list].next == nullptr) return;
   grpc_resource_quota* resource_quota = resource_user->resource_quota;
   if (resource_quota->roots[list] == resource_user) {
     resource_quota->roots[list] = resource_user->links[list].next;
     if (resource_quota->roots[list] == resource_user) {
-      resource_quota->roots[list] = NULL;
+      resource_quota->roots[list] = nullptr;
     }
   }
   resource_user->links[list].next->links[list].prev =
       resource_user->links[list].prev;
   resource_user->links[list].prev->links[list].next =
       resource_user->links[list].next;
-  resource_user->links[list].next = resource_user->links[list].prev = NULL;
+  resource_user->links[list].next = resource_user->links[list].prev = nullptr;
 }
 
 /*******************************************************************************
@@ -373,7 +373,7 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive) {
   grpc_rulist list = destructive ? GRPC_RULIST_RECLAIMER_DESTRUCTIVE
                                  : GRPC_RULIST_RECLAIMER_BENIGN;
   grpc_resource_user* resource_user = rulist_pop_head(resource_quota, list);
-  if (resource_user == NULL) return false;
+  if (resource_user == nullptr) return false;
   if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
     gpr_log(GPR_DEBUG, "RQ %s %s: initiate %s reclamation",
             resource_quota->name, resource_user->name,
@@ -385,7 +385,7 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive) {
   GPR_ASSERT(c);
   resource_quota->debug_only_last_reclaimer_resource_user = resource_user;
   resource_quota->debug_only_last_initiated_reclaimer = c;
-  resource_user->reclaimers[destructive] = NULL;
+  resource_user->reclaimers[destructive] = nullptr;
   GRPC_CLOSURE_RUN(c, GRPC_ERROR_NONE);
   return true;
 }
@@ -462,9 +462,9 @@ static void ru_add_to_free_pool(void* ru, grpc_error* error) {
 static bool ru_post_reclaimer(grpc_resource_user* resource_user,
                               bool destructive) {
   grpc_closure* closure = resource_user->new_reclaimers[destructive];
-  GPR_ASSERT(closure != NULL);
-  resource_user->new_reclaimers[destructive] = NULL;
-  GPR_ASSERT(resource_user->reclaimers[destructive] == NULL);
+  GPR_ASSERT(closure != nullptr);
+  resource_user->new_reclaimers[destructive] = nullptr;
+  GPR_ASSERT(resource_user->reclaimers[destructive] == nullptr);
   if (gpr_atm_acq_load(&resource_user->shutdown) > 0) {
     GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_CANCELLED);
     return false;
@@ -510,8 +510,8 @@ static void ru_shutdown(void* ru, grpc_error* error) {
   grpc_resource_user* resource_user = (grpc_resource_user*)ru;
   GRPC_CLOSURE_SCHED(resource_user->reclaimers[0], GRPC_ERROR_CANCELLED);
   GRPC_CLOSURE_SCHED(resource_user->reclaimers[1], GRPC_ERROR_CANCELLED);
-  resource_user->reclaimers[0] = NULL;
-  resource_user->reclaimers[1] = NULL;
+  resource_user->reclaimers[0] = nullptr;
+  resource_user->reclaimers[1] = nullptr;
   rulist_remove(resource_user, GRPC_RULIST_RECLAIMER_BENIGN);
   rulist_remove(resource_user, GRPC_RULIST_RECLAIMER_DESTRUCTIVE);
   if (resource_user->allocating) {
@@ -595,7 +595,7 @@ grpc_resource_quota* grpc_resource_quota_create(const char* name) {
   resource_quota->step_scheduled = false;
   resource_quota->reclaiming = false;
   gpr_atm_no_barrier_store(&resource_quota->memory_usage_estimation, 0);
-  if (name != NULL) {
+  if (name != nullptr) {
     resource_quota->name = gpr_strdup(name);
   } else {
     gpr_asprintf(&resource_quota->name, "anonymous_pool_%" PRIxPTR,
@@ -607,7 +607,7 @@ grpc_resource_quota* grpc_resource_quota_create(const char* name) {
                     rq_reclamation_done, resource_quota,
                     grpc_combiner_scheduler(resource_quota->combiner));
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
-    resource_quota->roots[i] = NULL;
+    resource_quota->roots[i] = nullptr;
   }
   return resource_quota;
 }
@@ -677,7 +677,7 @@ grpc_resource_quota* grpc_resource_quota_from_channel_args(
       }
     }
   }
-  return grpc_resource_quota_create(NULL);
+  return grpc_resource_quota_create(nullptr);
 }
 
 static void* rq_copy(void* rq) {
@@ -727,15 +727,15 @@ grpc_resource_user* grpc_resource_user_create(
   grpc_closure_list_init(&resource_user->on_allocated);
   resource_user->allocating = false;
   resource_user->added_to_free_pool = false;
-  resource_user->reclaimers[0] = NULL;
-  resource_user->reclaimers[1] = NULL;
-  resource_user->new_reclaimers[0] = NULL;
-  resource_user->new_reclaimers[1] = NULL;
+  resource_user->reclaimers[0] = nullptr;
+  resource_user->reclaimers[1] = nullptr;
+  resource_user->new_reclaimers[0] = nullptr;
+  resource_user->new_reclaimers[1] = nullptr;
   resource_user->outstanding_allocations = 0;
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
-    resource_user->links[i].next = resource_user->links[i].prev = NULL;
+    resource_user->links[i].next = resource_user->links[i].prev = nullptr;
   }
-  if (name != NULL) {
+  if (name != nullptr) {
     resource_user->name = gpr_strdup(name);
   } else {
     gpr_asprintf(&resource_user->name, "anonymous_resource_user_%" PRIxPTR,
@@ -829,7 +829,7 @@ void grpc_resource_user_free(grpc_resource_user* resource_user, size_t size) {
 void grpc_resource_user_post_reclaimer(grpc_resource_user* resource_user,
                                        bool destructive,
                                        grpc_closure* closure) {
-  GPR_ASSERT(resource_user->new_reclaimers[destructive] == NULL);
+  GPR_ASSERT(resource_user->new_reclaimers[destructive] == nullptr);
   resource_user->new_reclaimers[destructive] = closure;
   GRPC_CLOSURE_SCHED(&resource_user->post_reclaimer_closure[destructive],
                      GRPC_ERROR_NONE);
@@ -867,6 +867,6 @@ void grpc_resource_user_alloc_slices(
 
 grpc_slice grpc_resource_user_slice_malloc(grpc_resource_user* resource_user,
                                            size_t size) {
-  grpc_resource_user_alloc(resource_user, size, NULL);
+  grpc_resource_user_alloc(resource_user, size, nullptr);
   return ru_slice_create(resource_user, size);
 }

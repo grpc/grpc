@@ -48,8 +48,8 @@ static bool maybe_add_server_load_reporting_filter(
       !grpc_channel_stack_builder_iterator_is_end(it);
   grpc_channel_stack_builder_iterator_destroy(it);
   if (is_load_reporting_enabled(args) && !already_has_load_reporting_filter) {
-    return grpc_channel_stack_builder_prepend_filter(builder, filter, NULL,
-                                                     NULL);
+    return grpc_channel_stack_builder_prepend_filter(builder, filter, nullptr,
+                                                     nullptr);
   }
   return true;
 }

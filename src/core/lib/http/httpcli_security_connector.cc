@@ -41,11 +41,11 @@ typedef struct {
 static void httpcli_ssl_destroy(grpc_security_connector* sc) {
   grpc_httpcli_ssl_channel_security_connector* c =
       (grpc_httpcli_ssl_channel_security_connector*)sc;
-  if (c->handshaker_factory != NULL) {
+  if (c->handshaker_factory != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(c->handshaker_factory);
-    c->handshaker_factory = NULL;
+    c->handshaker_factory = nullptr;
   }
-  if (c->secure_peer_name != NULL) gpr_free(c->secure_peer_name);
+  if (c->secure_peer_name != nullptr) gpr_free(c->secure_peer_name);
   gpr_free(sc);
 }
 
@@ -53,8 +53,8 @@ static void httpcli_ssl_add_handshakers(grpc_channel_security_connector* sc,
                                         grpc_handshake_manager* handshake_mgr) {
   grpc_httpcli_ssl_channel_security_connector* c =
       (grpc_httpcli_ssl_channel_security_connector*)sc;
-  tsi_handshaker* handshaker = NULL;
-  if (c->handshaker_factory != NULL) {
+  tsi_handshaker* handshaker = nullptr;
+  if (c->handshaker_factory != nullptr) {
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         c->handshaker_factory, c->secure_peer_name, &handshaker);
     if (result != TSI_OK) {
@@ -75,7 +75,7 @@ static void httpcli_ssl_check_peer(grpc_security_connector* sc, tsi_peer peer,
   grpc_error* error = GRPC_ERROR_NONE;
 
   /* Check the peer name. */
-  if (c->secure_peer_name != NULL &&
+  if (c->secure_peer_name != nullptr &&
       !tsi_ssl_peer_matches_name(&peer, c->secure_peer_name)) {
     char* msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
@@ -105,7 +105,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
   tsi_result result = TSI_OK;
   grpc_httpcli_ssl_channel_security_connector* c;
 
-  if (secure_peer_name != NULL && pem_root_certs == NULL) {
+  if (secure_peer_name != nullptr && pem_root_certs == nullptr) {
     gpr_log(GPR_ERROR,
             "Cannot assert a secure peer name without a trust root.");
     return GRPC_SECURITY_ERROR;
@@ -116,20 +116,20 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &httpcli_ssl_vtable;
-  if (secure_peer_name != NULL) {
+  if (secure_peer_name != nullptr) {
     c->secure_peer_name = gpr_strdup(secure_peer_name);
   }
   result = tsi_create_ssl_client_handshaker_factory(
-      NULL, pem_root_certs, NULL, NULL, 0, &c->handshaker_factory);
+      nullptr, pem_root_certs, nullptr, nullptr, 0, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
     httpcli_ssl_destroy(&c->base.base);
-    *sc = NULL;
+    *sc = nullptr;
     return GRPC_SECURITY_ERROR;
   }
   // We don't actually need a channel credentials object in this case,
-  // but we set it to a non-NULL address so that we don't trigger
+  // but we set it to a non-nullptr address so that we don't trigger
   // assertions in grpc_channel_security_connector_cmp().
   c->base.channel_creds = (grpc_channel_credentials*)1;
   c->base.add_handshakers = httpcli_ssl_add_handshakers;
@@ -152,7 +152,7 @@ static void on_handshake_done(void* arg, grpc_error* error) {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
 
-    c->func(c->arg, NULL);
+    c->func(c->arg, nullptr);
   } else {
     grpc_channel_args_destroy(args->args);
     grpc_slice_buffer_destroy_internal(args->read_buffer);
@@ -168,15 +168,15 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
   on_done_closure* c = (on_done_closure*)gpr_malloc(sizeof(*c));
   const char* pem_root_certs = grpc_get_default_ssl_roots();
-  if (pem_root_certs == NULL) {
+  if (pem_root_certs == nullptr) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-    on_done(arg, NULL);
+    on_done(arg, nullptr);
     gpr_free(c);
     return;
   }
   c->func = on_done;
   c->arg = arg;
-  grpc_channel_security_connector* sc = NULL;
+  grpc_channel_security_connector* sc = nullptr;
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
                  pem_root_certs, host, &sc) == GRPC_SECURITY_OK);
   grpc_arg channel_arg = grpc_security_connector_to_arg(&sc->base);
@@ -184,8 +184,8 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   c->handshake_mgr = grpc_handshake_manager_create();
   grpc_handshakers_add(HANDSHAKER_CLIENT, &args, c->handshake_mgr);
   grpc_handshake_manager_do_handshake(
-      c->handshake_mgr, tcp, NULL /* channel_args */, deadline,
-      NULL /* acceptor */, on_handshake_done, c /* user_data */);
+      c->handshake_mgr, tcp, nullptr /* channel_args */, deadline,
+      nullptr /* acceptor */, on_handshake_done, c /* user_data */);
   GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
 }
 

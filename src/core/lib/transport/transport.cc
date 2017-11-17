@@ -178,9 +178,10 @@ void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
                              grpc_polling_entity* pollent) {
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  if ((pollset = grpc_polling_entity_pollset(pollent)) != NULL) {
+  if ((pollset = grpc_polling_entity_pollset(pollent)) != nullptr) {
     transport->vtable->set_pollset(transport, stream, pollset);
-  } else if ((pollset_set = grpc_polling_entity_pollset_set(pollent)) != NULL) {
+  } else if ((pollset_set = grpc_polling_entity_pollset_set(pollent)) !=
+             nullptr) {
     transport->vtable->set_pollset_set(transport, stream, pollset_set);
   } else {
     abort();

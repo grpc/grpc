@@ -105,7 +105,7 @@ static void tc_on_alarm(void* acp, grpc_error* error) {
             str);
   }
   gpr_mu_lock(&ac->mu);
-  if (ac->fd != NULL) {
+  if (ac->fd != nullptr) {
     grpc_fd_shutdown(
         ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
   }
@@ -145,7 +145,7 @@ static void on_writable(void* acp, grpc_error* error) {
   gpr_mu_lock(&ac->mu);
   GPR_ASSERT(ac->fd);
   fd = ac->fd;
-  ac->fd = NULL;
+  ac->fd = nullptr;
   gpr_mu_unlock(&ac->mu);
 
   grpc_timer_cancel(&ac->alarm);
@@ -172,7 +172,7 @@ static void on_writable(void* acp, grpc_error* error) {
     case 0:
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
       *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args, ac->addr_str);
-      fd = NULL;
+      fd = nullptr;
       break;
     case ENOBUFS:
       /* We will get one of these errors if we have run out of
@@ -205,11 +205,11 @@ static void on_writable(void* acp, grpc_error* error) {
   }
 
 finish:
-  if (fd != NULL) {
+  if (fd != nullptr) {
     grpc_pollset_set_del_fd(ac->interested_parties, fd);
-    grpc_fd_orphan(fd, NULL, NULL, false /* already_closed */,
+    grpc_fd_orphan(fd, nullptr, nullptr, false /* already_closed */,
                    "tcp_client_orphan");
-    fd = NULL;
+    fd = nullptr;
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -252,7 +252,7 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
   char* addr_str;
   grpc_error* error;
 
-  *ep = NULL;
+  *ep = nullptr;
 
   /* Use dualstack sockets where available. */
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
@@ -291,7 +291,7 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    grpc_fd_orphan(fdobj, NULL, NULL, false /* already_closed */,
+    grpc_fd_orphan(fdobj, nullptr, nullptr, false /* already_closed */,
                    "tcp_client_connect_error");
     GRPC_CLOSURE_SCHED(closure, GRPC_OS_ERROR(errno, "connect"));
     goto done;
@@ -305,7 +305,7 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
   ac->fd = fdobj;
   ac->interested_parties = interested_parties;
   ac->addr_str = addr_str;
-  addr_str = NULL;
+  addr_str = nullptr;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,

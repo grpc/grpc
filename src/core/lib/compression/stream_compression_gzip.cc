@@ -137,7 +137,7 @@ static bool grpc_stream_compress_gzip(grpc_stream_compression_context* ctx,
                                       size_t* output_size,
                                       size_t max_output_size,
                                       grpc_stream_compression_flush flush) {
-  if (ctx == NULL) {
+  if (ctx == nullptr) {
     return false;
   }
   grpc_stream_compression_context_gzip* gzip_ctx =
@@ -158,7 +158,7 @@ static bool grpc_stream_compress_gzip(grpc_stream_compression_context* ctx,
       gzip_flush = 0;
   }
   return gzip_flate(gzip_ctx, in, out, output_size, max_output_size, gzip_flush,
-                    NULL);
+                    nullptr);
 }
 
 static bool grpc_stream_decompress_gzip(grpc_stream_compression_context* ctx,
@@ -167,7 +167,7 @@ static bool grpc_stream_decompress_gzip(grpc_stream_compression_context* ctx,
                                         size_t* output_size,
                                         size_t max_output_size,
                                         bool* end_of_context) {
-  if (ctx == NULL) {
+  if (ctx == nullptr) {
     return false;
   }
   grpc_stream_compression_context_gzip* gzip_ctx =
@@ -186,8 +186,8 @@ grpc_stream_compression_context_create_gzip(
       (grpc_stream_compression_context_gzip*)gpr_zalloc(
           sizeof(grpc_stream_compression_context_gzip));
   int r;
-  if (gzip_ctx == NULL) {
-    return NULL;
+  if (gzip_ctx == nullptr) {
+    return nullptr;
   }
   if (method == GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS) {
     r = inflateInit2(&gzip_ctx->zs, 0x1F);
@@ -199,7 +199,7 @@ grpc_stream_compression_context_create_gzip(
   }
   if (r != Z_OK) {
     gpr_free(gzip_ctx);
-    return NULL;
+    return nullptr;
   }
 
   gzip_ctx->base.vtable = &grpc_stream_compression_gzip_vtable;
@@ -208,7 +208,7 @@ grpc_stream_compression_context_create_gzip(
 
 static void grpc_stream_compression_context_destroy_gzip(
     grpc_stream_compression_context* ctx) {
-  if (ctx == NULL) {
+  if (ctx == nullptr) {
     return;
   }
   grpc_stream_compression_context_gzip* gzip_ctx =

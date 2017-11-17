@@ -125,7 +125,7 @@ static void start_max_age_timer_after_init(void* arg, grpc_error* error) {
                   grpc_core::ExecCtx::Get()->Now() + chand->max_connection_age,
                   &chand->close_max_age_channel);
   gpr_mu_unlock(&chand->max_age_timer_mu);
-  grpc_transport_op* op = grpc_make_transport_op(NULL);
+  grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->on_connectivity_state_change = &chand->channel_connectivity_changed,
   op->connectivity_state = &chand->connectivity_state;
   grpc_channel_next_op(grpc_channel_stack_element(chand->channel_stack, 0), op);
@@ -155,7 +155,7 @@ static void close_max_idle_channel(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     /* Prevent the max idle timer from being set again */
     gpr_atm_no_barrier_fetch_add(&chand->call_count, 1);
-    grpc_transport_op* op = grpc_make_transport_op(NULL);
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->goaway_error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_idle"),
                            GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR);
@@ -196,7 +196,7 @@ static void force_close_max_age_channel(void* arg, grpc_error* error) {
   chand->max_age_grace_timer_pending = false;
   gpr_mu_unlock(&chand->max_age_timer_mu);
   if (error == GRPC_ERROR_NONE) {
-    grpc_transport_op* op = grpc_make_transport_op(NULL);
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->disconnect_with_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel reaches max age");
     grpc_channel_element* elem =
@@ -211,7 +211,7 @@ static void force_close_max_age_channel(void* arg, grpc_error* error) {
 static void channel_connectivity_changed(void* arg, grpc_error* error) {
   channel_data* chand = (channel_data*)arg;
   if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
-    grpc_transport_op* op = grpc_make_transport_op(NULL);
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->on_connectivity_state_change = &chand->channel_connectivity_changed,
     op->connectivity_state = &chand->connectivity_state;
     grpc_channel_next_op(grpc_channel_stack_element(chand->channel_stack, 0),
@@ -383,7 +383,7 @@ static bool maybe_add_max_age_filter(grpc_channel_stack_builder* builder,
           MAX_CONNECTION_IDLE_INTEGER_OPTIONS) != INT_MAX;
   if (enable) {
     return grpc_channel_stack_builder_prepend_filter(
-        builder, &grpc_max_age_filter, NULL, NULL);
+        builder, &grpc_max_age_filter, nullptr, nullptr);
   } else {
     return true;
   }
@@ -392,7 +392,7 @@ static bool maybe_add_max_age_filter(grpc_channel_stack_builder* builder,
 extern "C" void grpc_max_age_filter_init(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   maybe_add_max_age_filter, NULL);
+                                   maybe_add_max_age_filter, nullptr);
 }
 
 extern "C" void grpc_max_age_filter_shutdown(void) {}

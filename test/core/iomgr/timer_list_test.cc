@@ -70,7 +70,7 @@ static void add_test(void) {
 
   /* collect timers.  Only the first batch should be ready. */
   grpc_core::ExecCtx::Get()->TestOnlySetNow(start + 500);
-  GPR_ASSERT(grpc_timer_check(NULL) == GRPC_TIMERS_FIRED);
+  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
 
   for (i = 0; i < 20; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
@@ -78,7 +78,7 @@ static void add_test(void) {
   }
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(start + 600);
-  GPR_ASSERT(grpc_timer_check(NULL) == GRPC_TIMERS_CHECKED_AND_EMPTY);
+  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_CHECKED_AND_EMPTY);
 
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
@@ -87,7 +87,7 @@ static void add_test(void) {
 
   /* collect the rest of the timers */
   grpc_core::ExecCtx::Get()->TestOnlySetNow(start + 1500);
-  GPR_ASSERT(grpc_timer_check(NULL) == GRPC_TIMERS_FIRED);
+  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
 
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
@@ -95,7 +95,7 @@ static void add_test(void) {
   }
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(start + 1600);
-  GPR_ASSERT(grpc_timer_check(NULL) == GRPC_TIMERS_CHECKED_AND_EMPTY);
+  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_CHECKED_AND_EMPTY);
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
     GPR_ASSERT(cb_called[i][0] == 0);
@@ -133,7 +133,7 @@ void destruction_test(void) {
       &timers[4], 1,
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)4, grpc_schedule_on_exec_ctx));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(2);
-  GPR_ASSERT(grpc_timer_check(NULL) == GRPC_TIMERS_FIRED);
+  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
 
   GPR_ASSERT(1 == cb_called[4][1]);
   grpc_timer_cancel(&timers[0]);

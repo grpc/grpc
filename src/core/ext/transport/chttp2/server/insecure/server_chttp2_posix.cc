@@ -36,7 +36,7 @@
 
 void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
                                               void* reserved, int fd) {
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
 
   grpc_core::ExecCtx _local_exec_ctx;
   char* name;
@@ -59,8 +59,8 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
     grpc_endpoint_add_to_pollset(server_endpoint, pollsets[i]);
   }
 
-  grpc_server_setup_transport(server, transport, NULL, server_args);
-  grpc_chttp2_transport_start_reading(transport, NULL);
+  grpc_server_setup_transport(server, transport, nullptr, server_args);
+  grpc_chttp2_transport_start_reading(transport, nullptr);
 }
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD

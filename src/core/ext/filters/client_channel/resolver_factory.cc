@@ -29,12 +29,12 @@ void grpc_resolver_factory_unref(grpc_resolver_factory* factory) {
 /** Create a resolver instance for a name */
 grpc_resolver* grpc_resolver_factory_create_resolver(
     grpc_resolver_factory* factory, grpc_resolver_args* args) {
-  if (factory == NULL) return NULL;
+  if (factory == nullptr) return nullptr;
   return factory->vtable->create_resolver(factory, args);
 }
 
 char* grpc_resolver_factory_get_default_authority(
     grpc_resolver_factory* factory, grpc_uri* uri) {
-  if (factory == NULL) return NULL;
+  if (factory == nullptr) return nullptr;
   return factory->vtable->get_default_authority(factory, uri);
 }

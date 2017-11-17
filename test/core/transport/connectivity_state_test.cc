@@ -82,7 +82,7 @@ static void test_subscribe_then_unsubscribe(void) {
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(g_counter == 0);
-  grpc_connectivity_state_notify_on_state_change(&tracker, NULL, closure);
+  grpc_connectivity_state_notify_on_state_change(&tracker, nullptr, closure);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(g_counter == 1);

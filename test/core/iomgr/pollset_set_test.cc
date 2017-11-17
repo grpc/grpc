@@ -51,7 +51,7 @@ void cleanup_test_pollset_sets(test_pollset_set* pollset_sets,
                                const int num_pss) {
   for (int i = 0; i < num_pss; i++) {
     grpc_pollset_set_destroy(pollset_sets[i].pss);
-    pollset_sets[i].pss = NULL;
+    pollset_sets[i].pss = nullptr;
   }
 }
 
@@ -86,7 +86,7 @@ static void cleanup_test_pollsets(test_pollset* pollsets,
 
     grpc_core::ExecCtx::Get()->Flush();
     gpr_free(pollsets[i].ps);
-    pollsets[i].ps = NULL;
+    pollsets[i].ps = nullptr;
   }
 }
 
@@ -136,7 +136,7 @@ static void cleanup_test_fds(test_fd* tfds, const int num_fds) {
      * grpc_wakeup_fd and we would like to destroy it ourselves (by calling
      * grpc_wakeup_fd_destroy). To prevent grpc_fd from calling close() on the
      * underlying fd, call it with a non-NULL 'release_fd' parameter */
-    grpc_fd_orphan(tfds[i].fd, NULL, &release_fd, false /* already_closed */,
+    grpc_fd_orphan(tfds[i].fd, nullptr, &release_fd, false /* already_closed */,
                    "test_fd_cleanup");
     grpc_core::ExecCtx::Get()->Flush();
 
@@ -426,7 +426,7 @@ int main(int argc, char** argv) {
   grpc_init();
   const char* poll_strategy = grpc_get_poll_strategy_name();
 
-  if (poll_strategy != NULL &&
+  if (poll_strategy != nullptr &&
       (strcmp(poll_strategy, "epollsig") == 0 ||
        strcmp(poll_strategy, "epoll-threadpool") == 0)) {
     pollset_set_test_basic();

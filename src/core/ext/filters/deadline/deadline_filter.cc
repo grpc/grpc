@@ -86,7 +86,7 @@ static void start_timer_if_needed(grpc_call_element* elem,
     return;
   }
   grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
-  grpc_closure* closure = NULL;
+  grpc_closure* closure = nullptr;
   switch (deadline_state->timer_state) {
     case GRPC_DEADLINE_STATE_PENDING:
       // Note: We do not start the timer if there is already a timer
@@ -106,7 +106,7 @@ static void start_timer_if_needed(grpc_call_element* elem,
                             elem, grpc_schedule_on_exec_ctx);
       break;
   }
-  GPR_ASSERT(closure != NULL);
+  GPR_ASSERT(closure != nullptr);
   GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
   grpc_timer_init(&deadline_state->timer, deadline, closure);
 }
@@ -360,7 +360,7 @@ static bool maybe_add_deadline_filter(grpc_channel_stack_builder* builder,
   return grpc_deadline_checking_enabled(
              grpc_channel_stack_builder_get_channel_arguments(builder))
              ? grpc_channel_stack_builder_prepend_filter(
-                   builder, (const grpc_channel_filter*)arg, NULL, NULL)
+                   builder, (const grpc_channel_filter*)arg, nullptr, nullptr)
              : true;
 }
 

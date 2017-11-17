@@ -46,7 +46,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), NULL)
+                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);
   }
 }
@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
       addbuf(message, sizeof(message));
     }
   }
-  grpc_run_bad_client_test(verifier, NULL, g_buffer, g_count,
+  grpc_run_bad_client_test(verifier, nullptr, g_buffer, g_count,
                            GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free(g_buffer);
 

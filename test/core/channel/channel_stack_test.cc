@@ -69,7 +69,7 @@ static void free_channel(void* arg, grpc_error* error) {
 }
 
 static void free_call(void* arg, grpc_error* error) {
-  grpc_call_stack_destroy(static_cast<grpc_call_stack*>(arg), NULL, NULL);
+  grpc_call_stack_destroy(static_cast<grpc_call_stack*>(arg), nullptr, nullptr);
   gpr_free(arg);
 }
 
@@ -108,7 +108,7 @@ static void test_create_channel_stack(void) {
   channel_stack = static_cast<grpc_channel_stack*>(
       gpr_malloc(grpc_channel_stack_size(&filters, 1)));
   grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
-                          &chan_args, NULL, "test", channel_stack);
+                          &chan_args, nullptr, "test", channel_stack);
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = (int*)channel_elem->channel_data;

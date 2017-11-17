@@ -144,7 +144,7 @@ static void push_first_on_exec_ctx(grpc_combiner* lock) {
   lock->next_combiner_on_this_exec_ctx =
       grpc_core::ExecCtx::Get()->combiner_data()->active_combiner;
   grpc_core::ExecCtx::Get()->combiner_data()->active_combiner = lock;
-  if (lock->next_combiner_on_this_exec_ctx == NULL) {
+  if (lock->next_combiner_on_this_exec_ctx == nullptr) {
     grpc_core::ExecCtx::Get()->combiner_data()->last_combiner = lock;
   }
 }
@@ -190,8 +190,8 @@ static void move_next() {
       grpc_core::ExecCtx::Get()
           ->combiner_data()
           ->active_combiner->next_combiner_on_this_exec_ctx;
-  if (grpc_core::ExecCtx::Get()->combiner_data()->active_combiner == NULL) {
-    grpc_core::ExecCtx::Get()->combiner_data()->last_combiner = NULL;
+  if (grpc_core::ExecCtx::Get()->combiner_data()->active_combiner == nullptr) {
+    grpc_core::ExecCtx::Get()->combiner_data()->last_combiner = nullptr;
   }
 }
 
@@ -211,7 +211,7 @@ bool grpc_combiner_continue_exec_ctx() {
   GPR_TIMER_BEGIN("combiner.continue_exec_ctx", 0);
   grpc_combiner* lock =
       grpc_core::ExecCtx::Get()->combiner_data()->active_combiner;
-  if (lock == NULL) {
+  if (lock == nullptr) {
     GPR_TIMER_END("combiner.continue_exec_ctx", 0);
     return false;
   }
@@ -245,7 +245,7 @@ bool grpc_combiner_continue_exec_ctx() {
     gpr_mpscq_node* n = gpr_mpscq_pop(&lock->queue);
     GRPC_COMBINER_TRACE(
         gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
-    if (n == NULL) {
+    if (n == nullptr) {
       // queue is in an inconsistent state: use this as a cue that we should
       // go off and do something else for a while (and come back later)
       GPR_TIMER_MARK("delay_busy", 0);
@@ -264,10 +264,10 @@ bool grpc_combiner_continue_exec_ctx() {
     GPR_TIMER_END("combiner.exec1", 0);
   } else {
     grpc_closure* c = lock->final_list.head;
-    GPR_ASSERT(c != NULL);
+    GPR_ASSERT(c != nullptr);
     grpc_closure_list_init(&lock->final_list);
     int loops = 0;
-    while (c != NULL) {
+    while (c != nullptr) {
       GPR_TIMER_BEGIN("combiner.exec_1final", 0);
       GRPC_COMBINER_TRACE(
           gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c));

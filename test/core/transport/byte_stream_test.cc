@@ -52,7 +52,7 @@ static void test_slice_buffer_stream_basic(void) {
   grpc_slice_buffer_stream_init(&stream, &buffer, 0);
   GPR_ASSERT(stream.base.length == 6);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, NULL,
+  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
                     grpc_schedule_on_exec_ctx);
   // Read each slice.  Note that next() always returns synchronously.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
@@ -86,7 +86,7 @@ static void test_slice_buffer_stream_shutdown(void) {
   grpc_slice_buffer_stream_init(&stream, &buffer, 0);
   GPR_ASSERT(stream.base.length == 6);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, NULL,
+  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
                     grpc_schedule_on_exec_ctx);
   // Read the first slice.
   GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
@@ -135,7 +135,7 @@ static void test_caching_byte_stream_basic(void) {
   grpc_caching_byte_stream stream;
   grpc_caching_byte_stream_init(&stream, &cache);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, NULL,
+  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
                     grpc_schedule_on_exec_ctx);
   // Read each slice.  Note that next() always returns synchronously,
   // because the underlying byte stream always does.
@@ -174,7 +174,7 @@ static void test_caching_byte_stream_reset(void) {
   grpc_caching_byte_stream stream;
   grpc_caching_byte_stream_init(&stream, &cache);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, NULL,
+  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
                     grpc_schedule_on_exec_ctx);
   // Read one slice.
   GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
@@ -222,7 +222,7 @@ static void test_caching_byte_stream_shared_cache(void) {
   grpc_caching_byte_stream stream2;
   grpc_caching_byte_stream_init(&stream2, &cache);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, NULL,
+  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
                     grpc_schedule_on_exec_ctx);
   // Read one slice from stream1.
   GPR_ASSERT(grpc_byte_stream_next(&stream1.base, ~(size_t)0, &closure));

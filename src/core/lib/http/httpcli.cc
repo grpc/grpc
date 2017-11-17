@@ -60,8 +60,8 @@ typedef struct {
   grpc_resource_quota* resource_quota;
 } internal_request;
 
-static grpc_httpcli_get_override g_get_override = NULL;
-static grpc_httpcli_post_override g_post_override = NULL;
+static grpc_httpcli_get_override g_get_override = nullptr;
+static grpc_httpcli_post_override g_post_override = nullptr;
 
 static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
                                 const char* host, grpc_millis deadline,
@@ -88,10 +88,10 @@ static void finish(internal_request* req, grpc_error* error) {
                                            req->context->pollset_set);
   GRPC_CLOSURE_SCHED(req->on_done, error);
   grpc_http_parser_destroy(&req->parser);
-  if (req->addresses != NULL) {
+  if (req->addresses != nullptr) {
     grpc_resolved_addresses_destroy(req->addresses);
   }
-  if (req->ep != NULL) {
+  if (req->ep != nullptr) {
     grpc_endpoint_destroy(req->ep);
   }
   grpc_slice_unref_internal(req->request_text);
@@ -130,8 +130,8 @@ static void on_read(void* user_data, grpc_error* error) {
   for (i = 0; i < req->incoming.count; i++) {
     if (GRPC_SLICE_LENGTH(req->incoming.slices[i])) {
       req->have_read_byte = 1;
-      grpc_error* err =
-          grpc_http_parser_parse(&req->parser, req->incoming.slices[i], NULL);
+      grpc_error* err = grpc_http_parser_parse(
+          &req->parser, req->incoming.slices[i], nullptr);
       if (err != GRPC_ERROR_NONE) {
         finish(req, err);
         return;

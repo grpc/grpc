@@ -39,7 +39,7 @@ static bool g_finalized;
 
 void grpc_channel_init_init(void) {
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
-    g_slots[i].slots = NULL;
+    g_slots[i].slots = nullptr;
     g_slots[i].num_slots = 0;
     g_slots[i].cap_slots = 0;
   }

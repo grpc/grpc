@@ -99,7 +99,7 @@ void grpc_iomgr_shutdown() {
       last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
     }
     grpc_core::ExecCtx::Get()->SetNowIomgrShutdown();
-    if (grpc_timer_check(NULL) == GRPC_TIMERS_FIRED) {
+    if (grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED) {
       gpr_mu_unlock(&g_mu);
       grpc_core::ExecCtx::Get()->Flush();
       grpc_iomgr_platform_flush();

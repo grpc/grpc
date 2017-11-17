@@ -146,7 +146,8 @@ static void read_cb(void* user_data, grpc_error* error) {
   gpr_log(GPR_INFO, "Read %" PRIuPTR " bytes of %" PRIuPTR, read_bytes,
           state->target_read_bytes);
   if (state->read_bytes >= state->target_read_bytes) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
+    GPR_ASSERT(
+        GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
   } else {
     grpc_endpoint_read(state->ep, &state->incoming, &state->read_cb);
@@ -189,7 +190,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
@@ -239,7 +240,7 @@ static void large_read_test(size_t slice_size) {
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
@@ -289,7 +290,7 @@ static void write_done(void* user_data /* write_socket_state */,
   gpr_log(GPR_INFO, "Signalling write done");
   state->write_done = 1;
   GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -306,7 +307,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
   GPR_ASSERT(fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) == 0);
 
   for (;;) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(g_mu);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
@@ -376,7 +377,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
   gpr_mu_lock(g_mu);
   for (;;) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     if (state.write_done) {
       break;
     }
@@ -397,7 +398,7 @@ void on_fd_released(void* arg, grpc_error* errors) {
   int* done = (int*)arg;
   *done = 1;
   GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
 }
 
 /* Do a read_test, then release fd and try to read/write again. Verify that
@@ -444,7 +445,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_log(GPR_DEBUG, "wakeup: read=%" PRIdPTR " target=%" PRIdPTR,
@@ -461,7 +462,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);
   while (!fd_released_done) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_log(GPR_DEBUG, "wakeup: fd_released_done=%d", fd_released_done);

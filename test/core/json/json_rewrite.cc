@@ -205,8 +205,8 @@ int rewrite(FILE* in, FILE* out, int indent) {
 
   reader_user.writer = &writer;
   reader_user.in = in;
-  reader_user.top = NULL;
-  reader_user.scratchpad = NULL;
+  reader_user.top = nullptr;
+  reader_user.scratchpad = nullptr;
   reader_user.string_len = 0;
   reader_user.free_space = 0;
   reader_user.allocated = 0;
@@ -232,8 +232,8 @@ int main(int argc, char** argv) {
   int indent = 2;
   gpr_cmdline* cl;
 
-  cl = gpr_cmdline_create(NULL);
-  gpr_cmdline_add_int(cl, "indent", NULL, &indent);
+  cl = gpr_cmdline_create(nullptr);
+  gpr_cmdline_add_int(cl, "indent", nullptr, &indent);
   gpr_cmdline_parse(cl, argc, argv);
   gpr_cmdline_destroy(cl);
 

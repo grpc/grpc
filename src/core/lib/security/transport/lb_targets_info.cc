@@ -49,9 +49,9 @@ grpc_slice_hash_table* grpc_lb_targets_info_find_in_args(
     const grpc_channel_args* args) {
   const grpc_arg* targets_info_arg =
       grpc_channel_args_find(args, GRPC_ARG_LB_SECURE_NAMING_MAP);
-  if (targets_info_arg != NULL) {
+  if (targets_info_arg != nullptr) {
     GPR_ASSERT(targets_info_arg->type == GRPC_ARG_POINTER);
     return (grpc_slice_hash_table*)targets_info_arg->value.pointer.p;
   }
-  return NULL;
+  return nullptr;
 }

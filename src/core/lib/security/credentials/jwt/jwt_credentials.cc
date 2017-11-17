@@ -33,9 +33,9 @@
 static void jwt_reset_cache(grpc_service_account_jwt_access_credentials* c) {
   GRPC_MDELEM_UNREF(c->cached.jwt_md);
   c->cached.jwt_md = GRPC_MDNULL;
-  if (c->cached.service_url != NULL) {
+  if (c->cached.service_url != nullptr) {
     gpr_free(c->cached.service_url);
-    c->cached.service_url = NULL;
+    c->cached.service_url = nullptr;
   }
   c->cached.jwt_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
 }
@@ -63,7 +63,7 @@ static bool jwt_get_request_metadata(grpc_call_credentials* creds,
   grpc_mdelem jwt_md = GRPC_MDNULL;
   {
     gpr_mu_lock(&c->cache_mu);
-    if (c->cached.service_url != NULL &&
+    if (c->cached.service_url != nullptr &&
         strcmp(c->cached.service_url, context.service_url) == 0 &&
         !GRPC_MDISNULL(c->cached.jwt_md) &&
         (gpr_time_cmp(gpr_time_sub(c->cached.jwt_expiration,
@@ -75,13 +75,13 @@ static bool jwt_get_request_metadata(grpc_call_credentials* creds,
   }
 
   if (GRPC_MDISNULL(jwt_md)) {
-    char* jwt = NULL;
+    char* jwt = nullptr;
     /* Generate a new jwt. */
     gpr_mu_lock(&c->cache_mu);
     jwt_reset_cache(c);
     jwt = grpc_jwt_encode_and_sign(&c->key, context.service_url,
-                                   c->jwt_lifetime, NULL);
-    if (jwt != NULL) {
+                                   c->jwt_lifetime, nullptr);
+    if (jwt != nullptr) {
       char* md_value;
       gpr_asprintf(&md_value, "Bearer %s", jwt);
       gpr_free(jwt);
@@ -121,7 +121,7 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
   grpc_service_account_jwt_access_credentials* c;
   if (!grpc_auth_json_key_is_valid(&key)) {
     gpr_log(GPR_ERROR, "Invalid input for jwt credentials creation");
-    return NULL;
+    return nullptr;
   }
   c = (grpc_service_account_jwt_access_credentials*)gpr_zalloc(
       sizeof(grpc_service_account_jwt_access_credentials));
@@ -180,7 +180,7 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
             (int)token_lifetime.clock_type, reserved);
     gpr_free(clean_json);
   }
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
   grpc_core::ExecCtx _local_exec_ctx;
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create_from_auth_json_key(

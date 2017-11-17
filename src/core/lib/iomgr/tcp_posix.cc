@@ -134,7 +134,7 @@ static void run_poller(void* bp, grpc_error* error_ignored) {
   GRPC_STATS_INC_TCP_BACKUP_POLLER_POLLS();
   GRPC_LOG_IF_ERROR(
       "backup_poller:pollset_work",
-      grpc_pollset_work(BACKUP_POLLER_POLLSET(p), NULL, deadline));
+      grpc_pollset_work(BACKUP_POLLER_POLLSET(p), nullptr, deadline));
   gpr_mu_unlock(p->pollset_mu);
   /* last "uncovered" notification is the ref that keeps us polling, if we get
    * there try a cas to release it */
@@ -192,7 +192,8 @@ static void cover_self(grpc_tcp* tcp) {
                           grpc_executor_scheduler(GRPC_EXECUTOR_LONG)),
         GRPC_ERROR_NONE);
   } else {
-    while ((p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller)) == NULL) {
+    while ((p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller)) ==
+           nullptr) {
       // spin waiting for backup poller
     }
   }
@@ -356,8 +357,8 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
     }
   }
 
-  tcp->read_cb = NULL;
-  tcp->incoming_buffer = NULL;
+  tcp->read_cb = nullptr;
+  tcp->incoming_buffer = nullptr;
   GRPC_CLOSURE_RUN(cb, error);
 }
 
@@ -377,11 +378,11 @@ static void tcp_do_read(grpc_tcp* tcp) {
     iov[i].iov_len = GRPC_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
   }
 
-  msg.msg_name = NULL;
+  msg.msg_name = nullptr;
   msg.msg_namelen = 0;
   msg.msg_iov = iov;
   msg.msg_iovlen = (msg_iovlen_type)tcp->incoming_buffer->count;
-  msg.msg_control = NULL;
+  msg.msg_control = nullptr;
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
 
@@ -486,7 +487,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error) {
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
                      grpc_closure* cb) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
-  GPR_ASSERT(tcp->read_cb == NULL);
+  GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
   tcp->incoming_buffer = incoming_buffer;
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
@@ -533,11 +534,11 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
     }
     GPR_ASSERT(iov_size > 0);
 
-    msg.msg_name = NULL;
+    msg.msg_name = nullptr;
     msg.msg_namelen = 0;
     msg.msg_iov = iov;
     msg.msg_iovlen = iov_size;
-    msg.msg_control = NULL;
+    msg.msg_control = nullptr;
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
 
@@ -597,7 +598,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
 
   if (error != GRPC_ERROR_NONE) {
     cb = tcp->write_cb;
-    tcp->write_cb = NULL;
+    tcp->write_cb = nullptr;
     cb->cb(cb->cb_arg, error);
     TCP_UNREF(tcp, "write");
     return;
@@ -610,7 +611,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
     notify_on_write(tcp);
   } else {
     cb = tcp->write_cb;
-    tcp->write_cb = NULL;
+    tcp->write_cb = nullptr;
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       const char* str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "write: %s", str);
@@ -638,7 +639,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
   }
 
   GPR_TIMER_BEGIN("tcp_write", 0);
-  GPR_ASSERT(tcp->write_cb == NULL);
+  GPR_ASSERT(tcp->write_cb == nullptr);
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
@@ -722,8 +723,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
   int tcp_max_read_chunk_size = 4 * 1024 * 1024;
   int tcp_min_read_chunk_size = 256;
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);
-  if (channel_args != NULL) {
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create(nullptr);
+  if (channel_args != nullptr) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 ==
           strcmp(channel_args->args[i].key, GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
@@ -762,11 +763,11 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->base.vtable = &vtable;
   tcp->peer_string = gpr_strdup(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  tcp->read_cb = NULL;
-  tcp->write_cb = NULL;
-  tcp->release_fd_cb = NULL;
-  tcp->release_fd = NULL;
-  tcp->incoming_buffer = NULL;
+  tcp->read_cb = nullptr;
+  tcp->write_cb = nullptr;
+  tcp->release_fd_cb = nullptr;
+  tcp->release_fd = nullptr;
+  tcp->incoming_buffer = nullptr;
   tcp->target_length = (double)tcp_read_chunk_size;
   tcp->min_read_chunk_size = tcp_min_read_chunk_size;
   tcp->max_read_chunk_size = tcp_max_read_chunk_size;

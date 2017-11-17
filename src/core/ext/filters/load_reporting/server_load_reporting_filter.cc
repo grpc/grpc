@@ -59,7 +59,7 @@ static void on_initial_md_ready(void* user_data, grpc_error* err) {
   call_data* calld = (call_data*)elem->call_data;
 
   if (err == GRPC_ERROR_NONE) {
-    if (calld->recv_initial_metadata->idx.named.path != NULL) {
+    if (calld->recv_initial_metadata->idx.named.path != nullptr) {
       calld->service_method = grpc_slice_ref_internal(
           GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.path->md));
       calld->have_service_method = true;
@@ -67,7 +67,7 @@ static void on_initial_md_ready(void* user_data, grpc_error* err) {
       err = grpc_error_add_child(
           err, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing :path header"));
     }
-    if (calld->recv_initial_metadata->idx.named.lb_token != NULL) {
+    if (calld->recv_initial_metadata->idx.named.lb_token != nullptr) {
       calld->initial_md_string = grpc_slice_ref_internal(
           GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.lb_token->md));
       calld->have_initial_md_string = true;

@@ -77,28 +77,28 @@ static void fake_resolver_destroy(grpc_resolver* gr) {
 
 static void fake_resolver_shutdown_locked(grpc_resolver* resolver) {
   fake_resolver* r = (fake_resolver*)resolver;
-  if (r->next_completion != NULL) {
-    *r->target_result = NULL;
+  if (r->next_completion != nullptr) {
+    *r->target_result = nullptr;
     GRPC_CLOSURE_SCHED(r->next_completion, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                                "Resolver Shutdown"));
-    r->next_completion = NULL;
+    r->next_completion = nullptr;
   }
 }
 
 static void fake_resolver_maybe_finish_next_locked(fake_resolver* r) {
-  if (r->next_completion != NULL && r->next_results != NULL) {
+  if (r->next_completion != nullptr && r->next_results != nullptr) {
     *r->target_result =
         grpc_channel_args_union(r->next_results, r->channel_args);
     grpc_channel_args_destroy(r->next_results);
-    r->next_results = NULL;
+    r->next_results = nullptr;
     GRPC_CLOSURE_SCHED(r->next_completion, GRPC_ERROR_NONE);
-    r->next_completion = NULL;
+    r->next_completion = nullptr;
   }
 }
 
 static void fake_resolver_channel_saw_error_locked(grpc_resolver* resolver) {
   fake_resolver* r = (fake_resolver*)resolver;
-  if (r->next_results == NULL && r->results_upon_error != NULL) {
+  if (r->next_results == nullptr && r->results_upon_error != nullptr) {
     // Pretend we re-resolved.
     r->next_results = grpc_channel_args_copy(r->results_upon_error);
   }
@@ -156,11 +156,11 @@ static void set_response_closure_fn(void* arg, grpc_error* error) {
   set_response_closure_arg* closure_arg = (set_response_closure_arg*)arg;
   grpc_fake_resolver_response_generator* generator = closure_arg->generator;
   fake_resolver* r = generator->resolver;
-  if (r->next_results != NULL) {
+  if (r->next_results != nullptr) {
     grpc_channel_args_destroy(r->next_results);
   }
   r->next_results = closure_arg->next_response;
-  if (r->results_upon_error != NULL) {
+  if (r->results_upon_error != nullptr) {
     grpc_channel_args_destroy(r->results_upon_error);
   }
   r->results_upon_error = grpc_channel_args_copy(closure_arg->next_response);
@@ -171,7 +171,7 @@ static void set_response_closure_fn(void* arg, grpc_error* error) {
 void grpc_fake_resolver_response_generator_set_response(
     grpc_fake_resolver_response_generator* generator,
     grpc_channel_args* next_response) {
-  GPR_ASSERT(generator->resolver != NULL);
+  GPR_ASSERT(generator->resolver != nullptr);
   set_response_closure_arg* closure_arg =
       (set_response_closure_arg*)gpr_zalloc(sizeof(*closure_arg));
   closure_arg->generator = generator;
@@ -213,7 +213,7 @@ grpc_fake_resolver_response_generator*
 grpc_fake_resolver_get_response_generator(const grpc_channel_args* args) {
   const grpc_arg* arg =
       grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
-  if (arg == NULL || arg->type != GRPC_ARG_POINTER) return NULL;
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
   return (grpc_fake_resolver_response_generator*)arg->value.pointer.p;
 }
 
@@ -232,7 +232,7 @@ static grpc_resolver* fake_resolver_create(grpc_resolver_factory* factory,
   grpc_resolver_init(&r->base, &fake_resolver_vtable, args->combiner);
   grpc_fake_resolver_response_generator* response_generator =
       grpc_fake_resolver_get_response_generator(args->args);
-  if (response_generator != NULL) response_generator->resolver = r;
+  if (response_generator != nullptr) response_generator->resolver = r;
   return &r->base;
 }
 

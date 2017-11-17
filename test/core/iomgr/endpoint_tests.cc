@@ -125,7 +125,7 @@ static void read_and_write_test_read_handler(void* data, grpc_error* error) {
     gpr_log(GPR_INFO, "Read handler done");
     gpr_mu_lock(g_mu);
     state->read_done = 1 + (error == GRPC_ERROR_NONE);
-    GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL));
+    GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
     gpr_mu_unlock(g_mu);
   } else if (error == GRPC_ERROR_NONE) {
     grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read);
@@ -135,7 +135,7 @@ static void read_and_write_test_read_handler(void* data, grpc_error* error) {
 static void read_and_write_test_write_handler(void* data, grpc_error* error) {
   struct read_and_write_test_state* state =
       (struct read_and_write_test_state*)data;
-  grpc_slice* slices = NULL;
+  grpc_slice* slices = nullptr;
   size_t nslices;
 
   if (error == GRPC_ERROR_NONE) {
@@ -159,7 +159,7 @@ static void read_and_write_test_write_handler(void* data, grpc_error* error) {
   gpr_log(GPR_INFO, "Write handler done");
   gpr_mu_lock(g_mu);
   state->write_done = 1 + (error == GRPC_ERROR_NONE);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
   gpr_mu_unlock(g_mu);
 }
 
@@ -229,7 +229,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
   gpr_mu_lock(g_mu);
   while (!state.read_done || !state.write_done) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(grpc_core::ExecCtx::Get()->Now() < deadline);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
@@ -247,7 +247,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 static void inc_on_failure(void* arg, grpc_error* error) {
   gpr_mu_lock(g_mu);
   *(int*)arg += (error != GRPC_ERROR_NONE);
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -258,7 +258,7 @@ static void wait_for_fail_count(int* fail_count, int want_fail_count) {
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
   while (grpc_core::ExecCtx::Get()->Now() < deadline &&
          *fail_count < want_fail_count) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
@@ -317,6 +317,6 @@ void grpc_endpoint_tests(grpc_endpoint_test_config config,
   for (i = 1; i < 1000; i = GPR_MAX(i + 1, i * 5 / 4)) {
     read_and_write_test(config, 40320, i, i, false);
   }
-  g_pollset = NULL;
-  g_mu = NULL;
+  g_pollset = nullptr;
+  g_mu = nullptr;
 }

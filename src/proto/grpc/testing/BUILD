@@ -76,7 +76,6 @@ grpc_proto_library(
     deps = [
         "control_proto",
         "messages_proto",
-        "stats_proto",
     ],
 )
 
