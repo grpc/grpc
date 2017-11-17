@@ -78,8 +78,8 @@ struct address_sorting_source_addr_factory;
 typedef struct {
   /* Gets the source address that would be used for the passed-in destination
    * address, and fills in *source_addr* with it if one exists.
-   * Returns non-zero if a source address exists for the destination address,
-   * and zero if there is a source address. */
+   * Returns true if a source address exists for the destination address,
+   * and false otherwise. */
   bool (*get_source_addr)(struct address_sorting_source_addr_factory* factory,
                           const address_sorting_address* dest_addr,
                           address_sorting_address* source_addr);
