@@ -92,7 +92,7 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
  public:
   MockSourceAddrFactory(
       bool ipv4_supported, bool ipv6_supported,
-      const std::map<std::string, TestAddress> dest_addr_to_src_addr)
+      const std::map<std::string, TestAddress>& dest_addr_to_src_addr)
       : ipv4_supported_(ipv4_supported),
         ipv6_supported_(ipv6_supported),
         dest_addr_to_src_addr_(dest_addr_to_src_addr) {}
