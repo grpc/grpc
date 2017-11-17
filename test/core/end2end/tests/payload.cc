@@ -127,7 +127,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  uint8_t trailing_metadata_available = 0;
+  uint8_t trailing_metadata_available = 2;
   int was_cancelled = 2;
 
   gpr_timespec deadline = n_seconds_from_now(60);
