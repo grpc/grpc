@@ -101,7 +101,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  uint8_t trailing_metadata_available = 0;
+  uint8_t trailing_metadata_available = 2;
   int was_cancelled = 2;
   char* peer;
   grpc_stats_data* before =

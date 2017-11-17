@@ -547,8 +547,9 @@ typedef struct grpc_op {
           grpc_metadata_array_destroy on this value, or reuse it in a future
           op. */
       grpc_metadata_array* recv_initial_metadata;
-      /** If non-NULL, will be set to 1 if trailing metadata is available.
-       * This may indicate a Trailers-Only response from the server. */
+      /** If non-NULL, will be set to 1 if trailing metadata is available
+       * or 0 if not available.  This may indicate a Trailers-Only response
+       * from the server. */
       uint8_t* trailing_metadata_available;
     } recv_initial_metadata;
     struct grpc_op_recv_message {

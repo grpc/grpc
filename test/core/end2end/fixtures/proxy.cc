@@ -305,6 +305,7 @@ static void on_p2s_status(void* arg, int success) {
       op->data.send_initial_metadata.metadata =
           pc->p2s_initial_metadata.metadata;
       ++op;
+      pc->p2s_deferred_recv_initial_metadata = false;
     }
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op->flags = 0;
