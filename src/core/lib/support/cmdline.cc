@@ -47,13 +47,13 @@ struct gpr_cmdline {
   void (*extra_arg)(void* user_data, const char* arg);
   void* extra_arg_user_data;
 
-  int (*state)(gpr_cmdline* cl, char* arg);
+  int (*state)(gpr_cmdline* cl, const char* arg);
   arg* cur_arg;
 
   int survive_failure;
 };
 
-static int normal_state(gpr_cmdline* cl, char* arg);
+static int normal_state(gpr_cmdline* cl, const char* arg);
 
 gpr_cmdline* gpr_cmdline_create(const char* description) {
   gpr_cmdline* cl = (gpr_cmdline*)gpr_zalloc(sizeof(gpr_cmdline));
@@ -184,7 +184,7 @@ static int print_usage_and_die(gpr_cmdline* cl) {
   return 0;
 }
 
-static int extra_state(gpr_cmdline* cl, char* str) {
+static int extra_state(gpr_cmdline* cl, const char* str) {
   if (!cl->extra_arg) {
     return print_usage_and_die(cl);
   }
@@ -192,7 +192,7 @@ static int extra_state(gpr_cmdline* cl, char* str) {
   return 1;
 }
 
-static arg* find_arg(gpr_cmdline* cl, char* name) {
+static arg* find_arg(gpr_cmdline* cl, const char* name) {
   arg* a;
 
   for (a = cl->args; a; a = a->next) {
@@ -209,7 +209,7 @@ static arg* find_arg(gpr_cmdline* cl, char* name) {
   return a;
 }
 
-static int value_state(gpr_cmdline* cl, char* str) {
+static int value_state(gpr_cmdline* cl, const char* str) {
   long intval;
   char* end;
 
@@ -237,7 +237,7 @@ static int value_state(gpr_cmdline* cl, char* str) {
       }
       break;
     case ARGTYPE_STRING:
-      *(char**)cl->cur_arg->value = str;
+      *(const char**)cl->cur_arg->value = str;
       break;
   }
 
@@ -245,10 +245,10 @@ static int value_state(gpr_cmdline* cl, char* str) {
   return 1;
 }
 
-static int normal_state(gpr_cmdline* cl, char* str) {
-  char* eq = nullptr;
+static int normal_state(gpr_cmdline* cl, const char* str) {
+  const char* eq = nullptr;
   char* tmp = nullptr;
-  char* arg_name = nullptr;
+  const char* arg_name = nullptr;
   int r = 1;
 
   if (0 == strcmp(str, "-help") || 0 == strcmp(str, "--help") ||
@@ -287,9 +287,10 @@ static int normal_state(gpr_cmdline* cl, char* str) {
     eq = strchr(str, '=');
     if (eq != nullptr) {
       /* copy the string into a temp buffer and extract the name */
-      tmp = arg_name = (char*)gpr_malloc((size_t)(eq - str + 1));
-      memcpy(arg_name, str, (size_t)(eq - str));
-      arg_name[eq - str] = 0;
+      tmp = (char*)gpr_malloc((size_t)(eq - str + 1));
+      memcpy(tmp, str, (size_t)(eq - str));
+      tmp[eq - str] = 0;
+      arg_name = tmp;
     } else {
       arg_name = str;
     }
@@ -315,7 +316,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
   return r;
 }
 
-int gpr_cmdline_parse(gpr_cmdline* cl, int argc, char** argv) {
+int gpr_cmdline_parse(gpr_cmdline* cl, int argc, const char* const* argv) {
   int i;
 
   GPR_ASSERT(argc >= 1);
