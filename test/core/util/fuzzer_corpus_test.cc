@@ -28,7 +28,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 extern "C" bool squelch;
 extern "C" bool leak_check;
 

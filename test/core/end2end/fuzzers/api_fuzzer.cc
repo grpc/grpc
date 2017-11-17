@@ -441,7 +441,7 @@ grpc_ares_request* my_dns_lookup_ares(
 // client connection
 
 // defined in tcp_client_posix.c
-void (*grpc_tcp_client_connect_impl)(
+extern void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr, grpc_millis deadline);
@@ -740,7 +740,7 @@ static validator* make_finished_batch_validator(call_state* cs,
   return create_validator(finished_batch, bi);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);

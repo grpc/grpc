@@ -51,7 +51,7 @@ static void test(const uint8_t* data, size_t size, const uint8_t* dict) {
   GPR_ASSERT(counters.total_size_relative == 0);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   test(data, size, grpc_url_percent_encoding_unreserved_bytes);
   test(data, size, grpc_compatible_percent_encoding_unreserved_bytes);
   return 0;

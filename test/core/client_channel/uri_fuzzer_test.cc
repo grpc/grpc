@@ -28,7 +28,7 @@
 bool squelch = true;
 bool leak_check = true;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   char* s = static_cast<char*>(gpr_malloc(size + 1));
   memcpy(s, data, size);
   s[size] = 0;

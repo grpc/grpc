@@ -21,7 +21,7 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/iomgr/load_file.h"
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 
 extern bool squelch;
 extern bool leak_check;

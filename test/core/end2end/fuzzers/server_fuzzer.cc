@@ -35,7 +35,7 @@ static int detag(void* p) { return (int)(uintptr_t)p; }
 
 static void dont_log(gpr_log_func_args* args) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);

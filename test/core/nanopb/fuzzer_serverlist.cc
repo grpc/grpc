@@ -28,7 +28,7 @@ bool leak_check = true;
 
 static void dont_log(gpr_log_func_args* args) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   grpc_slice slice = grpc_slice_from_copied_buffer((const char*)data, size);
   grpc_grpclb_serverlist* serverlist;
