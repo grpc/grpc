@@ -143,8 +143,7 @@ static void call_read_cb(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
     for (i = 0; i < tcp->read_slices->count; i++) {
       char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", tcp, tcp->peer_string,
-              dump);
+      gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", tcp, tcp->peer_string, dump);
       gpr_free(dump);
     }
   }
@@ -177,9 +176,7 @@ static void read_callback(uv_stream_t* stream, ssize_t nread,
        * buffer, reuse it as the next read buffer. */
       grpc_slice_buffer_init(&garbage);
       grpc_slice_buffer_trim_end(
-          tcp->read_slices,
-          tcp->read_slices->length - (size_t)nread,
-          &garbage);
+          tcp->read_slices, tcp->read_slices->length - (size_t)nread, &garbage);
       grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, &garbage);
     }
   } else {
@@ -204,9 +201,9 @@ static void tcp_read_allocation_done(grpc_exec_ctx* exec_ctx, void* tcpp,
         uv_read_start((uv_stream_t*)tcp->handle, alloc_uv_buf, read_callback);
     if (status != 0) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed at start");
-      error =
-          grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                             grpc_slice_from_static_string(uv_strerror(status)));
+      error = grpc_error_set_str(
+          error, GRPC_ERROR_STR_OS_ERROR,
+          grpc_slice_from_static_string(uv_strerror(status)));
     }
   }
   if (error != GRPC_ERROR_NONE) {
