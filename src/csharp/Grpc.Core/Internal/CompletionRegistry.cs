@@ -36,7 +36,8 @@ namespace Grpc.Core.Internal
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<CompletionRegistry>();
 
         readonly GrpcEnvironment environment;
-        readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>(new IntPtrComparer());
+        readonly Dictionary<IntPtr, OpCompletionDelegate> dict = new Dictionary<IntPtr, OpCompletionDelegate>(new IntPtrComparer());
+        readonly object myLock = new object();
         IntPtr lastRegisteredKey;  // only for testing
 
         public CompletionRegistry(GrpcEnvironment environment)
@@ -47,32 +48,41 @@ namespace Grpc.Core.Internal
         public void Register(IntPtr key, OpCompletionDelegate callback)
         {
             environment.DebugStats.PendingBatchCompletions.Increment();
-            GrpcPreconditions.CheckState(dict.TryAdd(key, callback));
-            this.lastRegisteredKey = key;
+            lock (myLock)
+            {
+                dict.Add(key, callback);
+                this.lastRegisteredKey = key;
+            }
         }
 
         public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
         {
+            // TODO(jtattermusch): get rid of new delegate creation here
             OpCompletionDelegate opCallback = ((success) => HandleBatchCompletion(success, ctx, callback));
             Register(ctx.Handle, opCallback);
         }
 
         public void RegisterRequestCallCompletion(RequestCallContextSafeHandle ctx, RequestCallCompletionDelegate callback)
         {
+            // TODO(jtattermusch): get rid of new delegate creation here
             OpCompletionDelegate opCallback = ((success) => HandleRequestCallCompletion(success, ctx, callback));
             Register(ctx.Handle, opCallback);
         }
 
         public OpCompletionDelegate Extract(IntPtr key)
         {
-            OpCompletionDelegate value;
-            GrpcPreconditions.CheckState(dict.TryRemove(key, out value));
+            OpCompletionDelegate value = null;
+            lock (myLock)
+            {
+                value = dict[key];
+                dict.Remove(key);
+            }
             environment.DebugStats.PendingBatchCompletions.Decrement();
             return value;
         }
 
         /// <summary>
-        /// For testing purposes only.
+        /// For testing purposes only. NOT threadsafe.
         /// </summary>
         public IntPtr LastRegisteredKey
         {
