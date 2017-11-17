@@ -21,8 +21,6 @@
 
 #include <stdbool.h>
 
-
-
 /// Tracks retry throttling data for an individual server name.
 typedef struct grpc_server_retry_throttle_data grpc_server_retry_throttle_data;
 
@@ -48,7 +46,5 @@ void grpc_retry_throttle_map_shutdown();
 /// Caller must eventually unref via \a grpc_server_retry_throttle_data_unref().
 grpc_server_retry_throttle_data* grpc_retry_throttle_map_get_data_for_server(
     const char* server_name, int max_milli_tokens, int milli_token_ratio);
-
-
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_THROTTLE_H */

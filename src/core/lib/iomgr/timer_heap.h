@@ -21,8 +21,6 @@
 
 #include "src/core/lib/iomgr/timer.h"
 
-
-
 typedef struct {
   grpc_timer** timers;
   uint32_t timer_count;
@@ -40,7 +38,5 @@ grpc_timer* grpc_timer_heap_top(grpc_timer_heap* heap);
 void grpc_timer_heap_pop(grpc_timer_heap* heap);
 
 int grpc_timer_heap_is_empty(grpc_timer_heap* heap);
-
-
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H */

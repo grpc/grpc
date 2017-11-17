@@ -31,8 +31,6 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
-
-
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;
 
@@ -349,7 +347,5 @@ grpc_transport_op* grpc_make_transport_op(grpc_closure* on_consumed);
    to \a on_consumed and then delete the returned transport op */
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
     grpc_closure* on_consumed);
-
-
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */

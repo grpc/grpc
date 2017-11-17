@@ -19,12 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H
 #define GRPC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H
 
-
-
 void gpr_thd_start_blocking_region();
 void gpr_thd_end_blocking_region();
-
-
 
 /* These annotations identify the beginning and end of regions where
    the code may block for reasons other than synchronization functions.

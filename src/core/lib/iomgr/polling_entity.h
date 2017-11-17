@@ -22,8 +22,6 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-
-
 typedef enum grpc_pollset_tag {
   GRPC_POLLS_NONE,
   GRPC_POLLS_POLLSET,
@@ -66,6 +64,5 @@ void grpc_polling_entity_add_to_pollset_set(grpc_exec_ctx* exec_ctx,
 void grpc_polling_entity_del_from_pollset_set(grpc_exec_ctx* exec_ctx,
                                               grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst);
-
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H */

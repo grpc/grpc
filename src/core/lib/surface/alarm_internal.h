@@ -22,8 +22,6 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 
-
-
 #ifndef NDEBUG
 
 extern grpc_tracer_flag grpc_trace_alarm_refcount;
@@ -38,7 +36,5 @@ extern grpc_tracer_flag grpc_trace_alarm_refcount;
 #define GRPC_ALARM_UNREF(a, reason) alarm_unref(a)
 
 #endif /* defined(NDEBUG) */
-
-
 
 #endif /* GRPC_CORE_LIB_SURFACE_ALARM_INTERNAL_H */

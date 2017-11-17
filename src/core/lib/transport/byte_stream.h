@@ -28,8 +28,6 @@
 /** Mask of all valid internal flags. */
 #define GRPC_WRITE_INTERNAL_USED_MASK (GRPC_WRITE_INTERNAL_COMPRESS)
 
-
-
 typedef struct grpc_byte_stream grpc_byte_stream;
 
 typedef struct {
@@ -136,7 +134,5 @@ void grpc_caching_byte_stream_init(grpc_caching_byte_stream* stream,
 
 // Resets the byte stream to the start of the underlying stream.
 void grpc_caching_byte_stream_reset(grpc_caching_byte_stream* stream);
-
-
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H */

@@ -21,10 +21,6 @@
 
 #include <stdbool.h>
 
-
-
 bool grpc_is_epollexclusive_available(void);
-
-
 
 #endif /* GRPC_CORE_LIB_IOMGR_IS_EPOLLEXCLUSIVE_AVAILABLE_H */

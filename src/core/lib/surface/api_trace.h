@@ -22,8 +22,6 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 
-
-
 extern grpc_tracer_flag grpc_api_trace;
 
 /* Provide unwrapping macros because we're in C89 and variadic macros weren't
@@ -48,7 +46,5 @@ extern grpc_tracer_flag grpc_api_trace;
   if (GRPC_TRACER_ON(grpc_api_trace)) {                       \
     gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
   }
-
-
 
 #endif /* GRPC_CORE_LIB_SURFACE_API_TRACE_H */

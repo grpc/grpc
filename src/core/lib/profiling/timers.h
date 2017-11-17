@@ -19,8 +19,6 @@
 #ifndef GRPC_CORE_LIB_PROFILING_TIMERS_H
 #define GRPC_CORE_LIB_PROFILING_TIMERS_H
 
-
-
 void gpr_timers_global_init(void);
 void gpr_timers_global_destroy(void);
 

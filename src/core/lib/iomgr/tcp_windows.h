@@ -35,8 +35,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
-
-
 /* Create a tcp endpoint given a winsock handle.
  * Takes ownership of the handle.
  */
@@ -45,8 +43,6 @@ grpc_endpoint* grpc_tcp_create(grpc_exec_ctx* exec_ctx, grpc_winsocket* socket,
                                const char* peer_string);
 
 grpc_error* grpc_tcp_prepare_socket(SOCKET sock);
-
-
 
 #endif
 

@@ -27,8 +27,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/mpscq.h"
 
-
-
 // A simple, lock-free mechanism for serializing activity related to a
 // single call.  This is similar to a combiner but is more lightweight.
 //
@@ -119,7 +117,5 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
 void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
                                grpc_call_combiner* call_combiner,
                                grpc_error* error);
-
-
 
 #endif /* GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H */

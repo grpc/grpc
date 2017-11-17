@@ -24,8 +24,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata.h"
 
-
-
 /* HPACK header table */
 
 /* last index in the static table */
@@ -95,7 +93,5 @@ typedef struct {
 } grpc_chttp2_hptbl_find_result;
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     const grpc_chttp2_hptbl* tbl, grpc_mdelem md);
-
-
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_TABLE_H */

@@ -22,8 +22,6 @@
 #include <grpc/slice_buffer.h>
 #include "src/core/tsi/transport_security.h"
 
-
-
 /* This method creates a tsi_zero_copy_grpc_protector object. It return TSI_OK
    assuming there is no fatal error.
    The caller is responsible for destroying the protector.  */
@@ -74,7 +72,5 @@ typedef struct {
 struct tsi_zero_copy_grpc_protector {
   const tsi_zero_copy_grpc_protector_vtable* vtable;
 };
-
-
 
 #endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_GRPC_H */

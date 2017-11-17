@@ -19,8 +19,6 @@
 #ifndef GRPC_TEST_CORE_UTIL_PORT_H
 #define GRPC_TEST_CORE_UTIL_PORT_H
 
-
-
 typedef struct grpc_pick_port_functions {
   int (*pick_unused_port_fn)(void);
   int (*pick_unused_port_or_die_fn)(void);
@@ -42,7 +40,5 @@ void grpc_recycle_unused_port(int port);
 
 /** Request the family of pick_port functions in \a functions be used. */
 void grpc_set_pick_port_functions(grpc_pick_port_functions functions);
-
-
 
 #endif /* GRPC_TEST_CORE_UTIL_PORT_H */

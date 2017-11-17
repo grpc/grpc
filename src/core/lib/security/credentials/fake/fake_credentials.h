@@ -21,8 +21,6 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-
-
 /* -- Fake transport security credentials. -- */
 
 /* Creates a fake transport security credentials object for testing. */
@@ -57,7 +55,5 @@ typedef struct {
   grpc_mdelem md;
   bool is_async;
 } grpc_md_only_test_credentials;
-
-
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */

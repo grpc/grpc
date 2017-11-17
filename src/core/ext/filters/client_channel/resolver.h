@@ -22,8 +22,6 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
-
-
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 
@@ -88,7 +86,5 @@ void grpc_resolver_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
 void grpc_resolver_next_locked(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
                                grpc_channel_args** result,
                                grpc_closure* on_complete);
-
-
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H */

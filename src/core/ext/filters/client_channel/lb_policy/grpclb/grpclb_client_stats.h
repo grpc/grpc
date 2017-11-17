@@ -23,8 +23,6 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-
-
 typedef struct grpc_grpclb_client_stats grpc_grpclb_client_stats;
 
 typedef struct {
@@ -62,8 +60,6 @@ void grpc_grpclb_client_stats_get_locked(
 
 void grpc_grpclb_dropped_call_counts_destroy(
     grpc_grpclb_dropped_call_counts* drop_entries);
-
-
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H \
         */

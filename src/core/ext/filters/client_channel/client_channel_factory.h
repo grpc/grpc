@@ -27,8 +27,6 @@
 // Channel arg key for client channel factory.
 #define GRPC_ARG_CLIENT_CHANNEL_FACTORY "grpc.client_channel_factory"
 
-
-
 typedef struct grpc_client_channel_factory grpc_client_channel_factory;
 typedef struct grpc_client_channel_factory_vtable
     grpc_client_channel_factory_vtable;
@@ -75,7 +73,5 @@ grpc_channel* grpc_client_channel_factory_create_channel(
 
 grpc_arg grpc_client_channel_factory_create_channel_arg(
     grpc_client_channel_factory* factory);
-
-
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H */

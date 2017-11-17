@@ -21,8 +21,6 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
-
-
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for FAKE certs. */
 #define TSI_FAKE_CERTIFICATE_TYPE "FAKE"
 
@@ -41,7 +39,5 @@ tsi_frame_protector* tsi_create_fake_frame_protector(
  * phase. */
 tsi_zero_copy_grpc_protector* tsi_create_fake_zero_copy_grpc_protector(
     size_t* max_protected_frame_size);
-
-
 
 #endif /* GRPC_CORE_TSI_FAKE_TRANSPORT_SECURITY_H */

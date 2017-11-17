@@ -19,13 +19,9 @@
 #ifndef GRPC_CORE_LIB_SURFACE_INIT_H
 #define GRPC_CORE_LIB_SURFACE_INIT_H
 
-
-
 void grpc_register_security_filters(void);
 void grpc_security_pre_init(void);
 void grpc_security_init(void);
 int grpc_is_initialized(void);
-
-
 
 #endif /* GRPC_CORE_LIB_SURFACE_INIT_H */

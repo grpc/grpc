@@ -26,8 +26,6 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 
-
-
 /* An endpoint caps a streaming channel between two communicating processes.
    Examples may be: a tcp socket, <stdin+stdout>, or some shared memory. */
 
@@ -103,7 +101,5 @@ grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* endpoint);
 struct grpc_endpoint {
   const grpc_endpoint_vtable* vtable;
 };
-
-
 
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_H */

@@ -27,8 +27,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/metadata.h"
 
-
-
 typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
 
 typedef grpc_error* (*grpc_chttp2_hpack_parser_state)(
@@ -112,7 +110,5 @@ grpc_error* grpc_chttp2_header_parser_parse(grpc_exec_ctx* exec_ctx,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
                                             grpc_slice slice, int is_last);
-
-
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H */

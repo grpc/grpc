@@ -23,8 +23,6 @@
 
 #include "src/core/lib/iomgr/iomgr.h"
 
-
-
 typedef struct grpc_iomgr_object {
   char* name;
   struct grpc_iomgr_object* next;
@@ -41,7 +39,5 @@ void grpc_iomgr_platform_flush(void);
 void grpc_iomgr_platform_shutdown(void);
 
 bool grpc_iomgr_abort_on_leaks(void);
-
-
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_INTERNAL_H */

@@ -24,8 +24,6 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
-
-
 /* one listening port */
 typedef struct grpc_tcp_listener {
   int fd;
@@ -118,7 +116,5 @@ grpc_error* grpc_tcp_server_prepare_socket(int fd,
                                            bool so_reuseport, int* port);
 /* Ruturn true if the platform supports ifaddrs */
 bool grpc_tcp_server_have_ifaddrs(void);
-
-
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H */

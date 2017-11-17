@@ -23,13 +23,9 @@
 
 #include <grpc/support/thd.h>
 
-
-
 /* The thread ID of the thread on which grpc was initialized. Used to verify
  * that all calls into libuv are made on that same thread */
 extern gpr_thd_id g_init_thread;
-
-
 
 #ifdef GRPC_UV_THREAD_CHECK
 #define GRPC_UV_ASSERT_SAME_THREAD() \

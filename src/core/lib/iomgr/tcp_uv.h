@@ -42,13 +42,9 @@ extern grpc_tracer_flag grpc_tcp_trace;
 
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 
-
-
 grpc_endpoint* grpc_tcp_create(uv_tcp_t* handle,
                                grpc_resource_quota* resource_quota,
                                char* peer_string);
-
-
 
 #endif /* GRPC_UV */
 

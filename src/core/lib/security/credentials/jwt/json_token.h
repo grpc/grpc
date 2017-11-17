@@ -19,8 +19,6 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 
-
-
 #include <grpc/slice.h>
 #include <openssl/rsa.h>
 
@@ -71,7 +69,5 @@ typedef char* (*grpc_jwt_encode_and_sign_override)(
 /* Set a custom encode_and_sign override for testing. */
 void grpc_jwt_encode_and_sign_set_override(
     grpc_jwt_encode_and_sign_override func);
-
-
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H */

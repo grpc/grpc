@@ -24,8 +24,6 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
-
-
 typedef gpr_atm grpc_millis;
 
 #define GRPC_MILLIS_INF_FUTURE GPR_ATM_MAX

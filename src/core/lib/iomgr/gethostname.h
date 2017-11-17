@@ -19,12 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H
 #define GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H
 
-
-
 // Returns the hostname of the local machine.
 // Caller takes ownership of result.
 char* grpc_gethostname();
-
-
 
 #endif /* GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H */

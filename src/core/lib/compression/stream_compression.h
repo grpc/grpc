@@ -26,8 +26,6 @@
 
 #include "src/core/lib/transport/static_metadata.h"
 
-
-
 typedef struct grpc_stream_compression_vtable grpc_stream_compression_vtable;
 
 /* Stream compression/decompression context */
@@ -112,7 +110,5 @@ void grpc_stream_compression_context_destroy(
  */
 int grpc_stream_compression_method_parse(
     grpc_slice value, bool is_compress, grpc_stream_compression_method* method);
-
-
 
 #endif

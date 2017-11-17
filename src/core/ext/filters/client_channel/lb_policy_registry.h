@@ -22,8 +22,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-
-
 /** Initialize the registry and set \a default_factory as the factory to be
  * returned when no name is provided in a lookup */
 void grpc_lb_policy_registry_init(void);
@@ -38,7 +36,5 @@ void grpc_register_lb_policy(grpc_lb_policy_factory* factory);
  * will be returned. */
 grpc_lb_policy* grpc_lb_policy_create(grpc_exec_ctx* exec_ctx, const char* name,
                                       grpc_lb_policy_args* args);
-
-
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_REGISTRY_H */

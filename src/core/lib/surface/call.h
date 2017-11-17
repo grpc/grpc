@@ -19,8 +19,6 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_CORE_LIB_SURFACE_CALL_H
 
-
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -112,7 +110,5 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 
 extern grpc_tracer_flag grpc_call_error_trace;
 extern grpc_tracer_flag grpc_compression_trace;
-
-
 
 #endif /* GRPC_CORE_LIB_SURFACE_CALL_H */

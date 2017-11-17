@@ -19,10 +19,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-
-
 extern const grpc_channel_filter grpc_max_age_filter;
-
-
 
 #endif /* GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H */

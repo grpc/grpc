@@ -22,8 +22,6 @@
 #include <stddef.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-
-
 typedef struct {
   char* scheme;
   char* authority;
@@ -48,7 +46,5 @@ const char* grpc_uri_get_query_arg(const grpc_uri* uri, const char* key);
 
 /** destroy a uri */
 void grpc_uri_destroy(grpc_uri* uri);
-
-
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_URI_PARSER_H */

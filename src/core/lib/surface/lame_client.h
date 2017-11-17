@@ -21,10 +21,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-
-
 extern const grpc_channel_filter grpc_lame_filter;
-
-
 
 #endif /* GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H */

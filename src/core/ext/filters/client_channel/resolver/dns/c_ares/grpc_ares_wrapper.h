@@ -25,8 +25,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-
-
 typedef struct grpc_ares_request grpc_ares_request;
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
@@ -66,8 +64,6 @@ grpc_error* grpc_ares_init(void);
    grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
    it has been called the same number of times as grpc_ares_init(). */
 void grpc_ares_cleanup(void);
-
-
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */

@@ -21,8 +21,6 @@
 
 #include <grpc/grpc.h>
 
-
-
 typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
 typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
@@ -75,7 +73,5 @@ const grpc_slice* get_host_override_slice(const char* str,
 
 void validate_host_override_string(const char* pattern, grpc_slice str,
                                    grpc_end2end_test_config config);
-
-
 
 #endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */

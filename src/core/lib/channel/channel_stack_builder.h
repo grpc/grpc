@@ -24,8 +24,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 
-
-
 /// grpc_channel_stack_builder offers a programmatic interface to selected
 /// and order channel filters
 typedef struct grpc_channel_stack_builder grpc_channel_stack_builder;
@@ -159,7 +157,5 @@ void grpc_channel_stack_builder_destroy(grpc_exec_ctx* exec_ctx,
                                         grpc_channel_stack_builder* builder);
 
 extern grpc_tracer_flag grpc_trace_channel_stack_builder;
-
-
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H */

@@ -19,10 +19,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-
-
 extern const grpc_channel_filter grpc_message_size_filter;
-
-
 
 #endif /* GRPC_CORE_EXT_FILTERS_MESSAGE_SIZE_MESSAGE_SIZE_FILTER_H */

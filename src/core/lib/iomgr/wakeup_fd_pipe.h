@@ -21,10 +21,6 @@
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-
-
 extern const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable;
-
-
 
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_PIPE_H */

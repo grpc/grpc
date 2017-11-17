@@ -21,8 +21,6 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-
-
 typedef struct {
   /// const:  how long to wait after the first failure before retrying
   grpc_millis initial_backoff;
@@ -73,7 +71,5 @@ grpc_backoff_result grpc_backoff_step(grpc_exec_ctx* exec_ctx,
 /// Reset the backoff, so the next grpc_backoff_step will be a
 /// grpc_backoff_begin.
 void grpc_backoff_reset(grpc_backoff* backoff);
-
-
 
 #endif /* GRPC_CORE_LIB_BACKOFF_BACKOFF_H */

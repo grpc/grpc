@@ -22,8 +22,6 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/surface/completion_queue.h"
 
-
-
 typedef struct grpc_completion_queue_factory_vtable {
   grpc_completion_queue* (*create)(const grpc_completion_queue_factory*,
                                    const grpc_completion_queue_attributes*);
@@ -34,7 +32,5 @@ struct grpc_completion_queue_factory {
   void* data; /* Factory specific data */
   grpc_completion_queue_factory_vtable* vtable;
 };
-
-
 
 #endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H */
