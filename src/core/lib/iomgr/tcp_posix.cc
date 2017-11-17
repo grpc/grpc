@@ -579,11 +579,9 @@ static bool tcp_flush(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
         // unref all and forget about all slices that have been written to this
         // point
         for (size_t idx = 0; idx < unwind_slice_idx; ++idx) {
-          grpc_slice_unref_internal(exec_ctx,
-                                    tcp->outgoing_buffer->slices[idx]);
-          tcp->outgoing_buffer->count--;
+          grpc_slice_unref_internal(
+              exec_ctx, grpc_slice_buffer_take_first(tcp->outgoing_buffer));
         }
-        tcp->outgoing_buffer->slices += unwind_slice_idx;
         return false;
       } else if (errno == EPIPE) {
         *error = grpc_error_set_int(GRPC_OS_ERROR(errno, "sendmsg"),
