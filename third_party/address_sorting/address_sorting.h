@@ -90,7 +90,17 @@ typedef struct address_sorting_source_addr_factory {
   const address_sorting_source_addr_factory_vtable* vtable;
 } address_sorting_source_addr_factory;
 
-int address_sorting_get_family(const address_sorting_address* address);
+/* Platform-compatible address family types */
+typedef enum {
+  ADDRESS_SORTING_AF_INET,
+  ADDRESS_SORTING_AF_INET6,
+  ADDRESS_SORTING_UNKNOWN_FAMILY,
+} address_sorting_family;
+
+/* Indicates whether the address is AF_INET, AF_INET6, or another address
+ * family. */
+address_sorting_family address_sorting_abstract_get_family(
+    const address_sorting_address* address);
 
 void address_sorting_override_source_addr_factory_for_testing(
     address_sorting_source_addr_factory* factory);

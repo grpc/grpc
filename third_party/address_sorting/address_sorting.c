@@ -100,14 +100,24 @@ static int in6_is_addr_6bone(const struct in6_addr* ipv6_address) {
   return bytes[0] == 0x3f && bytes[1] == 0xfe;
 }
 
-int address_sorting_get_family(const address_sorting_address* address) {
-  return ((struct sockaddr*)address)->sa_family;
+address_sorting_family address_sorting_abstract_get_family(
+    const address_sorting_address* address) {
+  switch (((struct sockaddr*)address)->sa_family) {
+    case AF_INET:
+      return ADDRESS_SORTING_AF_INET;
+    case AF_INET6:
+      return ADDRESS_SORTING_AF_INET6;
+    default:
+      return ADDRESS_SORTING_UNKNOWN_FAMILY;
+  }
 }
 
 static int get_label_value(const address_sorting_address* resolved_addr) {
-  if (address_sorting_get_family(resolved_addr) == AF_INET) {
+  if (address_sorting_abstract_get_family(resolved_addr) ==
+      ADDRESS_SORTING_AF_INET) {
     return 4;
-  } else if (address_sorting_get_family(resolved_addr) != AF_INET6) {
+  } else if (address_sorting_abstract_get_family(resolved_addr) !=
+             ADDRESS_SORTING_AF_INET6) {
     return 1;
   }
   struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
@@ -132,9 +142,11 @@ static int get_label_value(const address_sorting_address* resolved_addr) {
 }
 
 static int get_precedence_value(const address_sorting_address* resolved_addr) {
-  if (address_sorting_get_family(resolved_addr) == AF_INET) {
+  if (address_sorting_abstract_get_family(resolved_addr) ==
+      ADDRESS_SORTING_AF_INET) {
     return 35;
-  } else if (address_sorting_get_family(resolved_addr) != AF_INET6) {
+  } else if (address_sorting_abstract_get_family(resolved_addr) !=
+             ADDRESS_SORTING_AF_INET6) {
     return 1;
   }
   struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
@@ -157,9 +169,11 @@ static int get_precedence_value(const address_sorting_address* resolved_addr) {
 }
 
 static int sockaddr_get_scope(const address_sorting_address* resolved_addr) {
-  if (address_sorting_get_family(resolved_addr) == AF_INET) {
+  if (address_sorting_abstract_get_family(resolved_addr) ==
+      ADDRESS_SORTING_AF_INET) {
     return kIPv6AddrScopeGlobal;
-  } else if (address_sorting_get_family(resolved_addr) == AF_INET6) {
+  } else if (address_sorting_abstract_get_family(resolved_addr) ==
+             ADDRESS_SORTING_AF_INET6) {
     struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
     if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr) ||
         IN6_IS_ADDR_LINKLOCAL(&ipv6_addr->sin6_addr)) {
@@ -235,9 +249,11 @@ static int compare_source_dest_prefix_match_lengths(
     const address_sorting_sortable* first,
     const address_sorting_sortable* second) {
   if (first->source_addr_exists &&
-      address_sorting_get_family(&first->source_addr) == AF_INET6 &&
+      address_sorting_abstract_get_family(&first->source_addr) ==
+          ADDRESS_SORTING_AF_INET6 &&
       second->source_addr_exists &&
-      address_sorting_get_family(&second->source_addr) == AF_INET6) {
+      address_sorting_abstract_get_family(&second->source_addr) ==
+          ADDRESS_SORTING_AF_INET6) {
     int first_match_length =
         ipv6_prefix_match_length((struct sockaddr_in6*)&first->source_addr.addr,
                                  (struct sockaddr_in6*)&first->dest_addr.addr);

@@ -99,9 +99,11 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
 
   bool GetSourceAddr(const address_sorting_address* dest_addr,
                      address_sorting_address* source_addr) {
-    if ((address_sorting_get_family(dest_addr) == AF_INET &&
+    if ((address_sorting_abstract_get_family(dest_addr) ==
+             ADDRESS_SORTING_AF_INET &&
          !ipv4_supported_) ||
-        (address_sorting_get_family(dest_addr) == AF_INET6 &&
+        (address_sorting_abstract_get_family(dest_addr) ==
+             ADDRESS_SORTING_AF_INET6 &&
          !ipv6_supported_)) {
       return false;
     }
