@@ -30,10 +30,12 @@ namespace grpc_core {
 class LockfreeEvent {
  public:
   LockfreeEvent();
-  ~LockfreeEvent();
 
   LockfreeEvent(const LockfreeEvent&) = delete;
   LockfreeEvent& operator=(const LockfreeEvent&) = delete;
+
+  void Init();
+  void Destroy();
 
   bool IsShutdown() const {
     return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
