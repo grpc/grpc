@@ -100,7 +100,7 @@ def find_all_images_for_lang(lang):
       jobset.message('SKIPPED',
                      '%s for %s is not defined' % (args.release, lang),
                      do_newline=True)
-      return []
+      return {}
     releases = [args.release]
 
   # Images tuples keyed by runtime.
