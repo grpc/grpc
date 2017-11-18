@@ -60,6 +60,8 @@ typedef struct grpc_handshaker grpc_handshaker;
 typedef struct {
   grpc_endpoint* endpoint;
   grpc_channel_args* args;
+  // All handshakes should be completed by deadline.
+  grpc_millis deadline;
   grpc_slice_buffer* read_buffer;
   // A handshaker may set this to true before invoking on_handshake_done
   // to indicate that subsequent handshakers should be skipped.
