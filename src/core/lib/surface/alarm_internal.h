@@ -22,13 +22,13 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_alarm_refcount;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef NDEBUG
-
-extern grpc_tracer_flag grpc_trace_alarm_refcount;
 
 #define GRPC_ALARM_REF(a, reason) alarm_ref_dbg(a, reason, __FILE__, __LINE__)
 #define GRPC_ALARM_UNREF(a, reason) \

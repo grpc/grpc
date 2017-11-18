@@ -30,7 +30,7 @@
 struct grpc_chttp2_transport;
 struct grpc_chttp2_stream;
 
-extern "C" grpc_tracer_flag grpc_flowctl_trace;
+extern grpc_core::TraceFlag grpc_flowctl_trace;
 
 namespace grpc {
 namespace testing {
@@ -118,7 +118,7 @@ class FlowControlTrace {
             StreamFlowControl* sfc);
   void Finish();
 
-  const bool enabled_ = GRPC_TRACER_ON(grpc_flowctl_trace);
+  const bool enabled_ = grpc_flowctl_trace.enabled();
 
   TransportFlowControl* tfc_;
   StreamFlowControl* sfc_;

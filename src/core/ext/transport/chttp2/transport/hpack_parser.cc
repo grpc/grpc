@@ -651,7 +651,7 @@ static const uint8_t inverse_base64[256] = {
 /* emission helpers */
 static grpc_error* on_hdr(grpc_exec_ctx* exec_ctx, grpc_chttp2_hpack_parser* p,
                           grpc_mdelem md, int add_to_table) {
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char* v = nullptr;
     if (grpc_is_binary_header(GRPC_MDKEY(md))) {
@@ -1047,7 +1047,7 @@ static grpc_error* parse_lithdr_nvridx_v(grpc_exec_ctx* exec_ctx,
 static grpc_error* finish_max_tbl_size(grpc_exec_ctx* exec_ctx,
                                        grpc_chttp2_hpack_parser* p,
                                        const uint8_t* cur, const uint8_t* end) {
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
   }
   grpc_error* err =

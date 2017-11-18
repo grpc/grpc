@@ -31,8 +31,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/validate_metadata.h"
 
-grpc_tracer_flag grpc_plugin_credentials_trace =
-    GRPC_TRACER_INITIALIZER(false, "plugin_credentials");
+grpc_core::TraceFlag grpc_plugin_credentials_trace(false, "plugin_credentials");
 
 static void plugin_destruct(grpc_exec_ctx* exec_ctx,
                             grpc_call_credentials* creds) {
@@ -123,7 +122,7 @@ static void plugin_md_request_metadata_ready(void* request,
       nullptr, nullptr);
   grpc_plugin_credentials_pending_request* r =
       (grpc_plugin_credentials_pending_request*)request;
-  if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
+  if (grpc_plugin_credentials_trace.enabled()) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin returned "
             "asynchronously",
@@ -136,7 +135,7 @@ static void plugin_md_request_metadata_ready(void* request,
     grpc_error* error =
         process_plugin_result(&exec_ctx, r, md, num_md, status, error_details);
     GRPC_CLOSURE_SCHED(&exec_ctx, r->on_request_metadata, error);
-  } else if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
+  } else if (grpc_plugin_credentials_trace.enabled()) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin was previously "
             "cancelled",
@@ -172,7 +171,7 @@ static bool plugin_get_request_metadata(grpc_exec_ctx* exec_ctx,
     c->pending_requests = pending_request;
     gpr_mu_unlock(&c->mu);
     // Invoke the plugin.  The callback holds a ref to us.
-    if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
+    if (grpc_plugin_credentials_trace.enabled()) {
       gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",
               c, pending_request);
     }
@@ -185,7 +184,7 @@ static bool plugin_get_request_metadata(grpc_exec_ctx* exec_ctx,
                                 plugin_md_request_metadata_ready,
                                 pending_request, creds_md, &num_creds_md,
                                 &status, &error_details)) {
-      if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
+      if (grpc_plugin_credentials_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "plugin_credentials[%p]: request %p: plugin will return "
                 "asynchronously",
@@ -200,7 +199,7 @@ static bool plugin_get_request_metadata(grpc_exec_ctx* exec_ctx,
     // asynchronously by plugin_cancel_get_request_metadata(), so return
     // false.  Otherwise, process the result.
     if (pending_request->cancelled) {
-      if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
+      if (grpc_plugin_credentials_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "plugin_credentials[%p]: request %p was cancelled, error "
                 "will be returned asynchronously",
@@ -208,7 +207,7 @@ static bool plugin_get_request_metadata(grpc_exec_ctx* exec_ctx,
       }
       retval = false;
     } else {
-      if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
+      if (grpc_plugin_credentials_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "plugin_credentials[%p]: request %p: plugin returned "
                 "synchronously",
@@ -237,7 +236,7 @@ static void plugin_cancel_get_request_metadata(
            c->pending_requests;
        pending_request != nullptr; pending_request = pending_request->next) {
     if (pending_request->md_array == md_array) {
-      if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
+      if (grpc_plugin_credentials_trace.enabled()) {
         gpr_log(GPR_INFO, "plugin_credentials[%p]: cancelling request %p", c,
                 pending_request);
       }

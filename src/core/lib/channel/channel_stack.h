@@ -285,10 +285,10 @@ void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
                       grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op);
 
-extern grpc_tracer_flag grpc_trace_channel;
+extern grpc_core::TraceFlag grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
-  if (GRPC_TRACER_ON(grpc_trace_channel)) grpc_call_log_op(sev, elem, op)
+  if (grpc_trace_channel.enabled()) grpc_call_log_op(sev, elem, op)
 
 #ifdef __cplusplus
 }
