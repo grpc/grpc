@@ -26,6 +26,8 @@
 
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
+#include "src/compiler/python_generator.h"
+#include "src/compiler/python_private_generator.h"
 
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::FileDescriptor;

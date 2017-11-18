@@ -168,7 +168,6 @@ filegroups:
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/call_combiner.cc
-  - src/core/lib/iomgr/closure.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/endpoint.cc
   - src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -3824,6 +3823,20 @@ targets:
   - test/cpp/util/cli_call_test.cc
   deps:
   - grpc_cli_libs
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: client_channel_stress_test
+  gtest: false
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/client/client_channel_stress_test.cc
+  deps:
   - grpc++_test_util
   - grpc_test_util
   - grpc++

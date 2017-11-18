@@ -318,7 +318,7 @@ class DataSendContext {
         GPR_MIN(stream_remote_window(), t_->flow_control->remote_window()));
   }
 
-  bool AnyOutgoing() const { return max_outgoing() != 0; }
+  bool AnyOutgoing() const { return max_outgoing() > 0; }
 
   void FlushCompressedBytes() {
     uint32_t send_bytes =

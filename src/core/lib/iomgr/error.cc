@@ -39,6 +39,7 @@
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_trace_closure(false, "closure");
 
 static const char* error_int_name(grpc_error_ints key) {
   switch (key) {

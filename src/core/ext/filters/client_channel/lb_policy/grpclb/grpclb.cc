@@ -1342,6 +1342,9 @@ static void client_load_report_done_locked(grpc_exec_ctx* exec_ctx, void* arg,
     glb_policy->client_load_report_timer_pending = false;
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
                               "client_load_report");
+    if (glb_policy->lb_call == nullptr) {
+      maybe_restart_lb_call(exec_ctx, glb_policy);
+    }
     return;
   }
   schedule_next_client_load_report(exec_ctx, glb_policy);

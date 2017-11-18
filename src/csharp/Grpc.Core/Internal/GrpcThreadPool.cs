@@ -176,10 +176,10 @@ namespace Grpc.Core.Internal
                     try
                     {
                         var callback = cq.CompletionRegistry.Extract(tag);
-                        // Use cached delegates to avoid unnecessary allocations
+                        queuedContinuationCounter.Increment();
                         if (!inlineHandlers)
                         {
-                            queuedContinuationCounter.Increment();
+                            // Use cached delegates to avoid unnecessary allocations
                             ThreadPool.QueueUserWorkItem(success ? runCompletionQueueEventCallbackSuccess : runCompletionQueueEventCallbackFailure, callback);
                         }
                         else
