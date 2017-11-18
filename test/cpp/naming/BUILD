@@ -27,22 +27,29 @@ load(":generate_resolver_component_tests.bzl", "generate_resolver_component_test
 
 # Meant to be invoked only through the top-level shell script driver.
 grpc_sh_binary(
-  name = "resolver_component_tests_runner",
-  srcs = [
-      "resolver_component_tests_runner.sh",
-  ],
+    name = "resolver_component_tests_runner",
+    srcs = [
+        "resolver_component_tests_runner.sh",
+    ],
+)
+
+grpc_sh_binary(
+    name = "resolver_component_tests_with_bind9_runner",
+    srcs = [
+        "resolver_component_tests_with_bind9_runner.sh",
+    ],
 )
 
 grpc_py_binary(
-  name = "test_dns_server",
-  srcs = ["test_dns_server.py"],
-  data = [
-      "local_dns_server_records.zone",
-  ],
-  deps = [
-      "twisted",
-      "yaml",
-  ],
+    name = "test_dns_server",
+    srcs = ["test_dns_server.py"],
+    data = [
+        "local_dns_server_records.zone",
+    ],
+    deps = [
+        "twisted",
+        "yaml",
+    ],
 )
 
 generate_resolver_component_tests()

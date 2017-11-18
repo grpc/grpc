@@ -91,7 +91,7 @@ RUN mkdir warmup \
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang bind9 && apt-get clean
 
 #==================
 # Node dependencies

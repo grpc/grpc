@@ -53,6 +53,16 @@ _grpc_config.ipv4-config-causing-fallback-to-tcp                                
     "{\"method\":\"FooTwelve\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooTwelve\",\"service\":\"SimpleService\"}],\"waitForReady\":true}]}}]"
 )
 ipv4-config-causing-fallback-to-tcp                                                                                             2100    IN  A       1.2.3.4
+simple-ipv4-from-cname                                                                                                          2100    IN  A       11.22.33.44
+simple-cname-to-ipv4                                                                                                            2100    IN  CNAME   simple-ipv4-from-cname.resolver-tests-version-5.grpctestingexp.
+simple-ipv6-from-cname                                                                                                          2100    IN  AAAA    3ffe::1234
+simple-cname-to-ipv6                                                                                                            2100    IN  CNAME   simple-ipv6-from-cname.resolver-tests-version-5.grpctestingexp.
+target-of-cname-chain-to-ipv4                                                                                                   2100    IN  A       10.20.30.40
+middle-of-cname-chain-to-ipv4                                                                                                   2100    IN  CNAME   target-of-cname-chain-to-ipv4.resolver-tests-version-5.grpctestingexp.
+chained-cname-to-ipv4                                                                                                           2100    IN  CNAME   middle-of-cname-chain-to-ipv4.resolver-tests-version-5.grpctestingexp.
+target-of-cname-chain-to-ipv6                                                                                                   2100    IN  AAAA    fec0::5678
+chained-cname-to-ipv6                                                                                                           2100    IN  CNAME   middle-of-cname-chain-to-ipv6.resolver-tests-version-5.grpctestingexp.
+middle-of-cname-chain-to-ipv6                                                                                                   2100    IN  CNAME   target-of-cname-chain-to-ipv6.resolver-tests-version-5.grpctestingexp.
 @                                                                                                                               0       IN  SOA     ns1.resolver-tests-version-5.grpctestingexp. dummy-admin-address.com 0 0 0 0 0
 @                                                                                                                               0       IN  NS      ns1.resolver-tests-version-5.grpctestingexp.
 ns1                                                                                                                             0       IN  A       127.0.0.1

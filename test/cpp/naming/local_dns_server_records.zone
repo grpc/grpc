@@ -51,6 +51,10 @@ _grpc_config.ipv4-config-causing-fallback-to-tcp.resolver-tests-version-5.grpcte
     "name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true}]}}]
 )
 ipv4-config-causing-fallback-to-tcp.resolver-tests-version-5.grpctestingexp.                                                    2100    IN  A       1.2.3.4
+simple-ipv4-from-cname.resolver-tests-version-5.grpctestingexp.                                                                 2100    IN  A       11.22.33.44
+simple-cname-to-ipv4.resolver-tests-version-5.grpctestingexp.                                                                   2100    IN  CNAME   simple-ipv4-from-cname.resolver-tests-version-5.grpctestingexp
+simple-ipv6-from-cname.resolver-tests-version-5.grpctestingexp.                                                                 2100    IN  AAAA    3ffe::1234
+simple-cname-to-ipv6.resolver-tests-version-5.grpctestingexp.                                                                   2100    IN  CNAME   simple-ipv6-from-cname.resolver-tests-version-5.grpctestingexp
 resolver-tests-version-5.grpctestingexp.                                                                                        0       IN  SOA     ns1.resolver-tests-version-5.grpctestingexp. dummy-admin-address.com 0 0 0 0 0
 resolver-tests-version-5.grpctestingexp.                                                                                        0       IN  NS      ns1.resolver-tests-version-5.grpctestingexp.
 ns1.resolver-tests-version-5.grpctestingexp.                                                                                    0       IN  A       127.0.0.1

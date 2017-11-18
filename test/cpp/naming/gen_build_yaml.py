@@ -36,7 +36,11 @@ _TARGET_RECORDS_TO_SKIP = {
       # in this group to GCE DNS.
       'ipv4-config-causing-fallback-to-tcp',
   ],
-  _TWISTED: [],
+  _TWISTED: [
+      # It appears that twisted DNS server can't follow CNAME chains.
+      'chained-cname-to-ipv4',
+      'chained-cname-to-ipv6',
+  ],
   _BIND9: [],
 }
 
@@ -68,7 +72,13 @@ def _data_for_type(r_type,
     path = 'test/cpp/naming/service_configs/%s.json' % record_name
     return service_config_utils.convert_service_config_to_txt_data(
         path, zone_file_type)
-  assert False, 'Unexpected record type: %s' % r_type
+  if r_type == 'CNAME':
+    out = '%s.%s' % (r_data, common_zone_name)
+    assert out[-1] == '.'
+    if zone_file_type == _TWISTED:
+      return out[:-1]
+    else:
+      return out
 
 def _fill_column(data, col_width):
   return data + ' ' * (col_width - len(data))
@@ -274,7 +284,8 @@ def main():
               'src': [
                   'test/cpp/naming/resolver_component_tests_runner_invoker.cc'
               ],
-              'platforms': ['linux', 'posix', 'mac'],
+              'platforms': (use_named_server and ['linux', 'posix']) or \
+                  ['linux', 'posix', 'mac'],
               'deps': [
                   'grpc++_test_util',
                   'grpc_test_util',
@@ -288,8 +299,10 @@ def main():
                   '--test_bin_name=resolver_component_test%s' % \
                       unsecure_build_config_suffix,
                   '--running_under_bazel=false',
+                  '--use_named_server=%s' % use_named_server,
               ],
-          } for unsecure_build_config_suffix in ['_unsecure', '']
+          } for unsecure_build_config_suffix in ['_unsecure', ''] \
+              for use_named_server in [True, False]
       ]
   }
 

@@ -1,6 +1,6 @@
 %YAML 1.2
 --- |
-  <%namespace file="resolver_component_tests_runner_init_python_defs.include" import="*"/>\
-  ${resolver_component_tests_runner_init_python()}
+  <%namespace file="resolver_component_tests_runner_init_bind9_defs.include" import="*"/>\
+  ${resolver_component_tests_runner_init_bind9(resolver_tests_common_zone_name)}
   <%namespace file="resolver_component_tests_runner_defs.include" import="*"/>\
   ${resolver_component_tests_runner(resolver_component_test_cases, resolver_component_tests_health_check_record_name, resolver_component_tests_health_check_record_data)}

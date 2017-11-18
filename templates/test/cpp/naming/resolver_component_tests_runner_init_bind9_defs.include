@@ -1,0 +1,59 @@
+<%def name="resolver_component_tests_runner_init_bind9(resolver_tests_common_zone_name)">#!/bin/bash
+# Copyright 2015 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This file is auto-generated
+
+set -ex
+
+# all command args required in this set order
+FLAGS_test_bin_path=`echo "$1" | grep '\--test_bin_path=' | cut -d "=" -f 2`
+FLAGS_dns_server_bin_path=`echo "$2" | grep '\--dns_server_bin_path=' | cut -d "=" -f 2`
+FLAGS_zone_file_path=`echo "$3" | grep '\--zone_file_path=' | cut -d "=" -f 2`
+FLAGS_test_dns_server_port=`echo "$4" | grep '\--test_dns_server_port=' | cut -d "=" -f 2`
+
+for cmd_arg in "$FLAGS_test_bin_path"\\
+
+               "$FLAGS_dns_server_bin_path"\\
+
+               "$FLAGS_zone_file_path"\\
+
+               "$FLAGS_test_dns_server_port" ; do
+  if [[ "$cmd_arg" == "" ]]; then
+    echo "Missing a CMD arg" && exit 1
+  fi
+done
+
+BIND_CONF_FILE=`mktemp`
+BIND_ZONE_FILE="$FLAGS_zone_file_path"
+# Make sure that we use the absolute path to the zone file.
+# If the passed-in zone file is not absolute, then assume it's relative
+# to the repo root.
+if [[ "<%text>${BIND_ZONE_FILE:0:1}</%text>" != "/" ]]; then
+  BIND_ZONE_FILE="$(pwd)/$BIND_ZONE_FILE"
+fi
+echo "zone \"${resolver_tests_common_zone_name}\" IN {
+    type master;
+    file \"$BIND_ZONE_FILE\"; # `pwd` since this needs to be an absolute path
+};" > "$BIND_CONF_FILE"
+NAMED_INIT_FAILED=0
+named-checkconf "$BIND_CONF_FILE" || NAMED_INIT_FAILED=1
+named-checkzone ${resolver_tests_common_zone_name} "$BIND_ZONE_FILE" || NAMED_INIT_FAILED=1
+named -p "$FLAGS_test_dns_server_port" -c "$BIND_CONF_FILE" || NAMED_INIT_FAILED=1
+if [[ "$NAMED_INIT_FAILED" != 0 ]]; then
+  echo "named DNS server startup failed somehow."
+  exit 1
+fi
+DNS_SERVER_PID=$!
+echo "Local DNS server started. PID: $DNS_SERVER_PID"</%def>

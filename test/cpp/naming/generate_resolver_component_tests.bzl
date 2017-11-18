@@ -37,28 +37,35 @@ def generate_resolver_component_tests():
             "//test/cpp/util:test_config",
         ],
     )
-    grpc_cc_test(
-        name = "resolver_component_tests_runner_invoker%s" % unsecure_build_config_suffix,
-        srcs = [
-            "resolver_component_tests_runner_invoker.cc",
-        ],
-        deps = [
-            "//test/cpp/util:test_util",
-            "//test/core/util:grpc_test_util",
-            "//test/core/util:gpr_test_util",
-            "//:grpc++",
-            "//:grpc",
-            "//:gpr",
-            "//test/cpp/util:test_config",
-        ],
-        data = [
-            ":resolver_component_tests_runner",
-            ":resolver_component_test%s" % unsecure_build_config_suffix,
-            ":test_dns_server",
-            "local_dns_server_records.zone", # include the transitive dependency so that the dns sever py binary can locate this
-        ],
-        args = [
-            "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
-            "--running_under_bazel=true",
-        ]
-    )
+    for use_named_server in [True, False]:
+      server_name = 'twisted'
+      if use_named_server:
+        server_name = 'bind9'
+      grpc_cc_test(
+          name = "resolver_component_tests_runner_invoker%s_%s" % (unsecure_build_config_suffix, server_name),
+          srcs = [
+              "resolver_component_tests_runner_invoker.cc",
+          ],
+          deps = [
+              "//test/cpp/util:test_util",
+              "//test/core/util:grpc_test_util",
+              "//test/core/util:gpr_test_util",
+              "//:grpc++",
+              "//:grpc",
+              "//:gpr",
+              "//test/cpp/util:test_config",
+          ],
+          data = [
+              ":resolver_component_tests_runner",
+              ":resolver_component_tests_with_bind9_runner",
+              ":resolver_component_test%s" % unsecure_build_config_suffix,
+              ":test_dns_server",
+              "local_dns_server_records.zone", # include the transitive dependency so that the dns sever py binary can locate this
+              "bind9_dns_server_records.zone",
+          ],
+          args = [
+              "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
+              "--running_under_bazel=true",
+              "--use_named_server=%s" % use_named_server,
+          ]
+      )

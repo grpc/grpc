@@ -32,7 +32,26 @@ for cmd_arg in "$FLAGS_test_bin_path"\
   fi
 done
 
-"$FLAGS_dns_server_bin_path" --zone_file_path="$FLAGS_zone_file_path" --port="$FLAGS_test_dns_server_port" 2>&1 > /dev/null &
+BIND_CONF_FILE=`mktemp`
+BIND_ZONE_FILE="$FLAGS_zone_file_path"
+# Make sure that we use the absolute path to the zone file.
+# If the passed-in zone file is not absolute, then assume it's relative
+# to the repo root.
+if [[ "${BIND_ZONE_FILE:0:1}" != "/" ]]; then
+  BIND_ZONE_FILE="$(pwd)/$BIND_ZONE_FILE"
+fi
+echo "zone \"resolver-tests-version-5.grpctestingexp.\" IN {
+    type master;
+    file \"$BIND_ZONE_FILE\"; # `pwd` since this needs to be an absolute path
+};" > "$BIND_CONF_FILE"
+NAMED_INIT_FAILED=0
+named-checkconf "$BIND_CONF_FILE" || NAMED_INIT_FAILED=1
+named-checkzone resolver-tests-version-5.grpctestingexp. "$BIND_ZONE_FILE" || NAMED_INIT_FAILED=1
+named -p "$FLAGS_test_dns_server_port" -c "$BIND_CONF_FILE" || NAMED_INIT_FAILED=1
+if [[ "$NAMED_INIT_FAILED" != 0 ]]; then
+  echo "named DNS server startup failed somehow."
+  exit 1
+fi
 DNS_SERVER_PID=$!
 echo "Local DNS server started. PID: $DNS_SERVER_PID"
 

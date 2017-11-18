@@ -250,6 +250,76 @@ if [[ "$ONE_FAILED" != 0 ]]; then
   exit 1
 fi
 
+ONE_FAILED=0
+dig A simple-ipv4-from-cname.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig A simple-ipv4-from-cname.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig CNAME simple-cname-to-ipv4.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig CNAME simple-cname-to-ipv4.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig AAAA simple-ipv6-from-cname.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig AAAA simple-ipv6-from-cname.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig CNAME simple-cname-to-ipv6.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig CNAME simple-cname-to-ipv6.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig A target-of-cname-chain-to-ipv4.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig A target-of-cname-chain-to-ipv4.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig CNAME middle-of-cname-chain-to-ipv4.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig CNAME middle-of-cname-chain-to-ipv4.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig CNAME chained-cname-to-ipv4.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig CNAME chained-cname-to-ipv4.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig AAAA target-of-cname-chain-to-ipv6.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig AAAA target-of-cname-chain-to-ipv6.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig CNAME chained-cname-to-ipv6.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig CNAME chained-cname-to-ipv6.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig CNAME middle-of-cname-chain-to-ipv6.resolver-tests-version-5.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig CNAME middle-of-cname-chain-to-ipv6.resolver-tests-version-5.grpctestingexp. FAILED"
+  exit 1
+fi
+
 echo "Sanity check PASSED. Run resolver tests:"
 
 ONE_FAILED=0
@@ -381,6 +451,50 @@ bins/$CONFIG/resolver_component_test \
   --expected_lb_policy='' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
   echo "Test based on target record: srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-5.grpctestingexp. FAILED"
+  EXIT_CODE=1
+fi
+
+ONE_FAILED=0
+bins/$CONFIG/resolver_component_test \
+  --target_name='simple-cname-to-ipv4.resolver-tests-version-5.grpctestingexp.' \
+  --expected_addrs='11.22.33.44:443,False' \
+  --expected_chosen_service_config='' \
+  --expected_lb_policy='' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Test based on target record: simple-cname-to-ipv4.resolver-tests-version-5.grpctestingexp. FAILED"
+  EXIT_CODE=1
+fi
+
+ONE_FAILED=0
+bins/$CONFIG/resolver_component_test \
+  --target_name='simple-cname-to-ipv6.resolver-tests-version-5.grpctestingexp.' \
+  --expected_addrs='[3ffe::1234]:443,False' \
+  --expected_chosen_service_config='' \
+  --expected_lb_policy='' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Test based on target record: simple-cname-to-ipv6.resolver-tests-version-5.grpctestingexp. FAILED"
+  EXIT_CODE=1
+fi
+
+ONE_FAILED=0
+bins/$CONFIG/resolver_component_test \
+  --target_name='chained-cname-to-ipv4.resolver-tests-version-5.grpctestingexp.' \
+  --expected_addrs='10.20.30.40:443,False' \
+  --expected_chosen_service_config='' \
+  --expected_lb_policy='' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Test based on target record: chained-cname-to-ipv4.resolver-tests-version-5.grpctestingexp. FAILED"
+  EXIT_CODE=1
+fi
+
+ONE_FAILED=0
+bins/$CONFIG/resolver_component_test \
+  --target_name='chained-cname-to-ipv6.resolver-tests-version-5.grpctestingexp.' \
+  --expected_addrs='[fec0::5678]:443,False' \
+  --expected_chosen_service_config='' \
+  --expected_lb_policy='' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Test based on target record: chained-cname-to-ipv6.resolver-tests-version-5.grpctestingexp. FAILED"
   EXIT_CODE=1
 fi
 

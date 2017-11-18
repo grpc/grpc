@@ -50,6 +50,9 @@ DEFINE_string(grpc_test_directory_relative_to_test_srcdir, "/__main__",
               "Directory of the <repo-root>/test directory relative to bazel's "
               "TEST_SRCDIR environment variable");
 
+DEFINE_bool(use_named_server, false,
+            "True if this test should use *named* for its DNS server. ");
+
 using grpc::SubProcess;
 
 static volatile sig_atomic_t abort_wait_for_child = 0;
@@ -98,9 +101,10 @@ namespace grpc {
 
 namespace testing {
 
-void InvokeResolverComponentTestsRunner(
-    std::string test_runner_bin_path, std::string test_bin_path,
-    std::string dns_server_bin_path, std::string zone_file_path) {
+void InvokeResolverComponentTestsRunner(std::string test_runner_bin_path,
+                                        std::string test_bin_path,
+                                        std::string dns_server_bin_path,
+                                        std::string zone_file_path) {
   int test_dns_server_port = grpc_pick_unused_port_or_die();
 
   SubProcess* test_driver = new SubProcess(
@@ -155,6 +159,12 @@ int main(int argc, char** argv) {
   grpc_init();
   GPR_ASSERT(FLAGS_test_bin_name != "");
   std::string my_bin = argv[0];
+  const std::string runner_script_basename_without_suffix =
+      FLAGS_use_named_server ? "resolver_component_tests_with_bind9_runner"
+                             : "resolver_component_tests_runner";
+  const std::string zone_file_basename = FLAGS_use_named_server
+                                             ? "bind9_dns_server_records.zone"
+                                             : "local_dns_server_records.zone";
   if (FLAGS_running_under_bazel) {
     GPR_ASSERT(FLAGS_grpc_test_directory_relative_to_test_srcdir != "");
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
@@ -167,19 +177,19 @@ int main(int argc, char** argv) {
     // the .sh and .py suffixes) to make
     // sure that we're using bazel's test environment.
     grpc::testing::InvokeResolverComponentTestsRunner(
-        bin_dir + "/resolver_component_tests_runner",
+        bin_dir + "/" + runner_script_basename_without_suffix,
         bin_dir + "/" + FLAGS_test_bin_name, bin_dir + "/test_dns_server",
-        bin_dir + "/local_dns_server_records.zone");
+        bin_dir + "/" + zone_file_basename);
   } else {
     // Get the current binary's directory relative to repo root to invoke the
     // correct build config (asan/tsan/dbg, etc.).
     std::string const bin_dir = my_bin.substr(0, my_bin.rfind('/'));
     // Invoke the .sh and .py scripts directly where they are in source code.
     grpc::testing::InvokeResolverComponentTestsRunner(
-        "test/cpp/naming/resolver_component_tests_runner.sh",
+        "test/cpp/naming/" + runner_script_basename_without_suffix + ".sh",
         bin_dir + "/" + FLAGS_test_bin_name,
         "test/cpp/naming/test_dns_server.py",
-        "test/cpp/naming/local_dns_server_records.zone");
+        "test/cpp/naming/" + zone_file_basename);
   }
   grpc_shutdown();
   return 0;

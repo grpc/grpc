@@ -153,3 +153,47 @@ resolver_component_tests:
     _grpc_config.ipv4-config-causing-fallback-to-tcp:
     - {TTL: '2100',
       type: TXT}
+- expected_addrs:
+  - {address: '11.22.33.44:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: simple-cname-to-ipv4
+  records:
+    simple-cname-to-ipv4:
+    - {TTL: '2100', data: simple-ipv4-from-cname, type: CNAME}
+    simple-ipv4-from-cname:
+    - {TTL: '2100', data: 11.22.33.44, type: A}
+- expected_addrs:
+  - {address: '[3ffe::1234]:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: simple-cname-to-ipv6
+  records:
+    simple-cname-to-ipv6:
+    - {TTL: '2100', data: simple-ipv6-from-cname, type: CNAME}
+    simple-ipv6-from-cname:
+    - {TTL: '2100', data: '3ffe::1234', type: AAAA}
+- expected_addrs:
+  - {address: '10.20.30.40:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: chained-cname-to-ipv4
+  records:
+    chained-cname-to-ipv4:
+    - {TTL: '2100', data: middle-of-cname-chain-to-ipv4, type: CNAME}
+    middle-of-cname-chain-to-ipv4:
+    - {TTL: '2100', data: target-of-cname-chain-to-ipv4, type: CNAME}
+    target-of-cname-chain-to-ipv4:
+    - {TTL: '2100', data: '10.20.30.40', type: A}
+- expected_addrs:
+  - {address: '[fec0::5678]:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: chained-cname-to-ipv6
+  records:
+    chained-cname-to-ipv6:
+    - {TTL: '2100', data: middle-of-cname-chain-to-ipv6, type: CNAME}
+    middle-of-cname-chain-to-ipv6:
+    - {TTL: '2100', data: target-of-cname-chain-to-ipv6, type: CNAME}
+    target-of-cname-chain-to-ipv6:
+    - {TTL: '2100', data: 'fec0::5678', type: AAAA}

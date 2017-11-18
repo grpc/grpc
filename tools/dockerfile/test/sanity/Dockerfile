@@ -70,7 +70,7 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0 twisted
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang bind9 && apt-get clean
 
 #========================
 # Sanity test dependencies
