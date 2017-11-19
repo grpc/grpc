@@ -49,15 +49,14 @@ unsigned gpr_cpu_num_cores(void) {
   return (unsigned)ncpus;
 }
 
-static void delete_thread_id_key(void* value) {
+static void delete_thread_id(void* value) {
   if (value) {
     gpr_free(value);
   }
-  pthread_key_delete(thread_id_key);
 }
 
 static void init_thread_id_key(void) {
-  pthread_key_create(&thread_id_key, delete_thread_id_key);
+  pthread_key_create(&thread_id_key, delete_thread_id);
 }
 
 unsigned gpr_cpu_current_cpu(void) {
