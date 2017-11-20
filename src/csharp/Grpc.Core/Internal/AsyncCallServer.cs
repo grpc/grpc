@@ -127,10 +127,10 @@ namespace Grpc.Core.Internal
         /// Sends call result status, indicating we are done with writes.
         /// Sending a status different from StatusCode.OK will also implicitly cancel the call.
         /// </summary>
-        public Task SendStatusFromServerAsync(Status status, Metadata trailers, Tuple<TResponse, WriteFlags> optionalWrite)
+        public Task SendStatusFromServerAsync(Status status, Metadata trailers, ResponseWithFlags? optionalWrite)
         {
-            byte[] payload = optionalWrite != null ? UnsafeSerialize(optionalWrite.Item1) : null;
-            var writeFlags = optionalWrite != null ? optionalWrite.Item2 : default(WriteFlags);
+            byte[] payload = optionalWrite.HasValue ? UnsafeSerialize(optionalWrite.Value.Response) : null;
+            var writeFlags = optionalWrite.HasValue ? optionalWrite.Value.WriteFlags : default(WriteFlags);
 
             lock (myLock)
             {
@@ -146,7 +146,7 @@ namespace Grpc.Core.Internal
                 halfcloseRequested = true;
                 initialMetadataSent = true;
                 sendStatusFromServerTcs = new TaskCompletionSource<object>();
-                if (optionalWrite != null)
+                if (optionalWrite.HasValue)
                 {
                     streamingWritesCounter++;
                 }
@@ -240,6 +240,18 @@ namespace Grpc.Core.Internal
         void ISendStatusFromServerCompletionCallback.OnSendStatusFromServerCompletion(bool success)
         {
             HandleSendStatusFromServerFinished(success);
+        }
+
+        public struct ResponseWithFlags
+        {
+            public ResponseWithFlags(TResponse response, WriteFlags writeFlags)
+            {
+                this.Response = response;
+                this.WriteFlags = writeFlags;
+            }
+
+            public TResponse Response { get; }
+            public WriteFlags WriteFlags { get; }
         }
     }
 }
