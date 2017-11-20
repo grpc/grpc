@@ -1009,14 +1009,14 @@ static void perform_stream_op(grpc_exec_ctx* exec_ctx, grpc_transport* gt,
     if (error != GRPC_ERROR_NONE) {
       // Schedule op's closures that we didn't push to op state machine
       if (op->recv_initial_metadata) {
-        if (s->recv_initial_md_op->payload->recv_initial_metadata
-                .trailing_metadata_available != nullptr) {
+        if (op->payload->recv_initial_metadata.trailing_metadata_available
+            != nullptr) {
           // Set to true unconditionally, because we're failing the call, so
           // even if we haven't actually seen the send_trailing_metadata op
           // from the other side, we're going to return trailing metadata
           // anyway.
-          *s->recv_initial_md_op->payload->recv_initial_metadata
-              .trailing_metadata_available = true;
+          *op->payload->recv_initial_metadata.trailing_metadata_available =
+              true;
         }
         INPROC_LOG(
             GPR_DEBUG,
