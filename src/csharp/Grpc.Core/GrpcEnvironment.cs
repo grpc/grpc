@@ -45,6 +45,7 @@ namespace Grpc.Core
 
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), LogLevel.Off, true);
 
+        readonly IObjectPool<BatchContextSafeHandle> batchContextPool;
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
@@ -249,6 +250,8 @@ namespace Grpc.Core
         private GrpcEnvironment()
         {
             GrpcNativeInit();
+            // TODO(jtattermusch): configure params
+            batchContextPool = new DefaultObjectPool<BatchContextSafeHandle>(() => BatchContextSafeHandle.Create(this.batchContextPool), 10000, 64);
             threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault(), inlineHandlers);
             threadPool.Start();
         }
@@ -263,6 +266,8 @@ namespace Grpc.Core
                 return this.threadPool.CompletionQueues;
             }
         }
+
+        internal IObjectPool<BatchContextSafeHandle> BatchContextPool => batchContextPool;
 
         internal bool IsAlive
         {
@@ -325,6 +330,7 @@ namespace Grpc.Core
             await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
 
             await threadPool.StopAsync().ConfigureAwait(false);
+            batchContextPool.Dispose();
             GrpcNativeShutdown();
             isShutdown = true;
 
