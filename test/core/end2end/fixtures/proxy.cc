@@ -294,6 +294,7 @@ static void on_p2s_status(void* arg, int success) {
   grpc_op ops[2];
   grpc_call_error err;
 
+  memset(ops, 0, sizeof(ops));
   if (!pc->proxy->shutdown) {
     GPR_ASSERT(success);
     grpc_op* op = ops;
