@@ -57,9 +57,9 @@ extern grpc_tracer_flag grpc_polling_trace;
 
 namespace grpc_core {
 
-LockfreeEvent::LockfreeEvent() { Init(); }
+LockfreeEvent::LockfreeEvent() { InitEvent(); }
 
-void LockfreeEvent::Init() {
+void LockfreeEvent::InitEvent() {
   /* Perform an atomic store to start the state machine.
 
      Note carefully that LockfreeEvent *MAY* be used whilst in a destroyed
@@ -69,7 +69,7 @@ void LockfreeEvent::Init() {
   gpr_atm_no_barrier_store(&state_, kClosureNotReady);
 }
 
-void LockfreeEvent::Destroy() {
+void LockfreeEvent::DestroyEvent() {
   gpr_atm curr;
   do {
     curr = gpr_atm_no_barrier_load(&state_);
