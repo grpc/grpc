@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2015 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,16 @@
  *
  */
 
-#include "src/core/ext/transport/inproc/inproc_transport.h"
+#include "test/core/util/test_config.h"
+
 #include "src/core/lib/debug/trace.h"
 
-grpc_core::TraceFlag grpc_inproc_trace(false, "inproc");
+namespace grpc_core {
+namespace testing {
 
-extern "C" void grpc_inproc_plugin_init(void) { grpc_inproc_transport_init(); }
-
-extern "C" void grpc_inproc_plugin_shutdown(void) {
-  grpc_inproc_transport_shutdown();
+void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag) {
+  flag->set_enabled(1);
 }
+
+}  // namespace testing
+}  // namespace grpc_core

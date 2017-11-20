@@ -20,9 +20,25 @@ import setuptools
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-# Break import-style to ensure we can actually find our commands module.
-import health_commands
+# Break import-style to ensure we can actually find our local modules.
 import grpc_version
+
+
+class _NoOpCommand(setuptools.Command):
+    """No-op command."""
+
+    description = ''
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        pass
+
 
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
@@ -40,17 +56,28 @@ PACKAGE_DIRECTORIES = {
     '': '.',
 }
 
-SETUP_REQUIRES = (
-    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),)
-
 INSTALL_REQUIRES = ('protobuf>=3.3.0',
                     'grpcio>={version}'.format(version=grpc_version.VERSION),)
 
-COMMAND_CLASS = {
-    # Run preprocess from the repository *before* doing any packaging!
-    'preprocess': health_commands.CopyProtoModules,
-    'build_package_protos': health_commands.BuildPackageProtos,
-}
+try:
+    # ensure we can load the _pb2_grpc module:
+    from grpc_health.v1 import health_pb2_grpc as _pb2_grpc
+    # if we can find the _pb2_grpc module, the package has already been built.
+    SETUP_REQUIRES = ()
+    COMMAND_CLASS = {
+        # wire up commands to no-op not to break the external dependencies
+        'preprocess': _NoOpCommand,
+        'build_package_protos': _NoOpCommand,
+    }
+except ImportError:  # we are in the build environment
+    import health_commands as _health_commands
+    SETUP_REQUIRES = (
+        'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
+    COMMAND_CLASS = {
+        # Run preprocess from the repository *before* doing any packaging!
+        'preprocess': _health_commands.CopyProtoModules,
+        'build_package_protos': _health_commands.BuildPackageProtos,
+    }
 
 setuptools.setup(
     name='grpcio-health-checking',

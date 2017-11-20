@@ -23,7 +23,7 @@
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_stack.h"
 
-extern grpc_tracer_flag grpc_client_channel_trace;
+extern grpc_core::TraceFlag grpc_client_channel_trace;
 
 // Channel arg key for server URI string.
 #define GRPC_ARG_SERVER_URI "grpc.server_uri"
