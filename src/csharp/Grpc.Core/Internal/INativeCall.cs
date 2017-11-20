@@ -33,6 +33,37 @@ namespace Grpc.Core.Internal
 
     internal delegate void ReceivedCloseOnServerHandler(bool success, bool cancelled);
 
+
+    internal interface IUnaryResponseClientCallback
+    {
+        void OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders);
+    }
+
+    internal interface IReceivedStatusOnClientCallback
+    {
+        void OnReceivedStatusOnClient(bool success, ClientSideStatus receivedStatus);
+    }
+
+    internal interface IReceivedMessageCallback
+    {
+        void OnReceivedMessage(bool success, byte[] receivedMessage);
+    }
+
+    internal interface IReceivedResponseHeadersCallback
+    {
+        void OnReceivedResponseHeaders(bool success, Metadata responseHeaders);
+    }
+
+    internal interface ISendCompletionCallback
+    {
+        void OnSendCompletion(bool success);
+    }
+
+    internal interface IReceivedCloseOnServerCallback
+    {
+        void OnReceivedCloseOnServerHandler(bool success, bool cancelled);
+    }
+
     /// <summary>
     /// Abstraction of a native call object.
     /// </summary>
