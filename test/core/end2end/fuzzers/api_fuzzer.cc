@@ -56,7 +56,7 @@ static grpc_server* g_server;
 static grpc_channel* g_channel;
 static grpc_resource_quota* g_resource_quota;
 
-extern "C" gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
