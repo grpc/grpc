@@ -1,5 +1,5 @@
 
-# Copyright 2016 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,3 +19,5 @@ PROTO_FILES=['google/protobuf/wrappers.proto', 'google/protobuf/type.proto', 'go
 
 CC_INCLUDE='third_party/protobuf/src'
 PROTO_INCLUDE='third_party/protobuf/src'
+
+PROTOBUF_SUBMODULE_VERSION="80a37e0782d2d702d52234b62dd4b9ec74fd2c95"
