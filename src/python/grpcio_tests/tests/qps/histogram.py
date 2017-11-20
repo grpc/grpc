@@ -68,3 +68,12 @@ class Histogram(object):
     def _bucket_for(self, val):
         val = min(val, self._max_possible)
         return int(math.log(val, self.multiplier))
+
+    def merge_hist(self, data_merge):
+        self._sum += data_merge.sum
+        self._sum_of_squares += data_merge.sum_of_squares
+        self._count += data_merge.count
+        self._min = min(self._min, data_merge.min_seen)
+        self._max = max(self._max, data_merge.max_seen)
+        self._buckets = [a + b for a, b in zip(self._buckets, data_merge.bucket)]
+

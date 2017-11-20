@@ -16,6 +16,8 @@ import multiprocessing
 import random
 import threading
 import time
+import os
+import resource
 
 from concurrent import futures
 import grpc
@@ -29,7 +31,6 @@ from tests.qps import client_runner
 from tests.qps import histogram
 from tests.unit import resources
 
-
 class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
     """Python Worker Server implementation."""
 
@@ -42,23 +43,27 @@ class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
         cores = multiprocessing.cpu_count()
         server.start()
         start_time = time.time()
-        yield self._get_server_status(start_time, start_time, port, cores)
+        start_ctime = resource.getrusage(resource.RUSAGE_SELF)
+        yield self._get_server_status(start_time, start_ctime, port, cores)
 
         for request in request_iterator:
-            end_time = time.time()
-            status = self._get_server_status(start_time, end_time, port, cores)
+            status = self._get_server_status(start_time, start_ctime, port, cores)
             if request.mark.reset:
-                start_time = end_time
+                start_time = time.time()
+                start_ctime = resource.getrusage(resource.RUSAGE_SELF)
             yield status
         server.stop(None)
 
-    def _get_server_status(self, start_time, end_time, port, cores):
+    def _get_server_status(self, start_time, start_ctime, port, cores):
         end_time = time.time()
+        end_ctime = resource.getrusage(resource.RUSAGE_SELF)
         elapsed_time = end_time - start_time
+        elapsed_stime = end_ctime.ru_stime - start_ctime.ru_stime
+        elapsed_utime = end_ctime.ru_utime - start_ctime.ru_utime
         stats = stats_pb2.ServerStats(
             time_elapsed=elapsed_time,
-            time_user=elapsed_time,
-            time_system=elapsed_time)
+            time_user=elapsed_utime,
+            time_system=elapsed_stime)
         return control_pb2.ServerStatus(stats=stats, port=port, cores=cores)
 
     def _create_server(self, config):
@@ -100,45 +105,74 @@ class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
 
         return (server, port)
 
+    def run(self, conn, config, context, i):
+        server = config.server_targets[i % len(config.server_targets)]
+        qps_data = histogram.Histogram(config.histogram_params.resolution,
+                config.histogram_params.max_possible)
+        runner = self._create_client_runner(server, config, qps_data)
+        start_ctime = resource.getrusage(resource.RUSAGE_SELF)
+        runner.start()
+        try:
+            while True:
+                cmd_from_server = conn.recv()
+                end_ctime = resource.getrusage(resource.RUSAGE_SELF)
+                if cmd_from_server == "reset" :
+                    qps_data.reset()
+                    start_ctime = end_ctime
+                if cmd_from_server == "mark" :
+                    conn.send([end_ctime.ru_utime - start_ctime.ru_utime,
+                        end_ctime.ru_stime - start_ctime.ru_stime, qps_data.get_data()])
+                if cmd_from_server == "quit_process" :
+                    runner.stop()
+                    break
+        except KeyboardInterrupt:
+            server.stop(0)
+
     def RunClient(self, request_iterator, context):
         config = next(request_iterator).setup
         client_runners = []
         qps_data = histogram.Histogram(config.histogram_params.resolution,
                                        config.histogram_params.max_possible)
         start_time = time.time()
-
+        report_utime = 0
+        report_stime = 0
         # Create a client for each channel
+        client_conn = []
         for i in xrange(config.client_channels):
-            server = config.server_targets[i % len(config.server_targets)]
-            runner = self._create_client_runner(server, config, qps_data)
-            client_runners.append(runner)
-            runner.start()
-
+            client_conn.append(multiprocessing.Pipe())
+            multiprocessing.Process(target=self.run,args=[client_conn[i][1], config, context, i]).start()
         end_time = time.time()
-        yield self._get_client_status(start_time, end_time, qps_data)
-
+        yield self._get_client_status(start_time, report_utime, report_stime, qps_data)
         # Respond to stat requests
         for request in request_iterator:
             end_time = time.time()
-            status = self._get_client_status(start_time, end_time, qps_data)
+            for i in xrange(config.client_channels):
+                client_conn[i][0].send('mark')
+                [utime, stime, client_data] = client_conn[i][0].recv()
+                report_utime += utime
+                report_stime += stime
+                qps_data.merge_hist(client_data)
+            status = self._get_client_status(start_time, report_utime, report_stime, qps_data)
             if request.mark.reset:
                 qps_data.reset()
+                for i in xrange(config.client_channels):
+                    client_conn[i][0].send('reset')
                 start_time = time.time()
             yield status
-
         # Cleanup the clients
-        for runner in client_runners:
-            runner.stop()
+        for i in xrange(config.client_channels):
+            client_conn[i][0].send('quit_process')
+        client_conn = []
 
-    def _get_client_status(self, start_time, end_time, qps_data):
+    def _get_client_status(self, start_time, report_utime, report_stime, qps_data):
         latencies = qps_data.get_data()
         end_time = time.time()
         elapsed_time = end_time - start_time
         stats = stats_pb2.ClientStats(
             latencies=latencies,
             time_elapsed=elapsed_time,
-            time_user=elapsed_time,
-            time_system=elapsed_time)
+            time_user=report_utime,
+            time_system=report_stime)
         return control_pb2.ClientStatus(stats=stats)
 
     def _create_client_runner(self, server, config, qps_data):
