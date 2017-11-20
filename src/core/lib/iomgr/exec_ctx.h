@@ -22,6 +22,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/tls.h>
 
 #include "src/core/lib/iomgr/closure.h"
 
@@ -70,17 +71,17 @@ namespace grpc_core {
 class ExecCtx {
  public:
   /** Default Constructor */
-  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) { exec_ctx_ = this; }
+  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) { Set(this); }
 
   /** Parameterised Constructor */
-  ExecCtx(uintptr_t fl) : flags_(fl) { exec_ctx_ = this; }
+  ExecCtx(uintptr_t fl) : flags_(fl) { Set(this); }
 
   /** Destructor */
   ~ExecCtx() {
-    GPR_ASSERT(exec_ctx_ == this);
+    GPR_ASSERT(Get() == this);
     flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
-    exec_ctx_ = last_exec_ctx_;
+    Set(last_exec_ctx_);
   }
 
   /** Disallow copy and assignment operators */
@@ -166,13 +167,28 @@ on outside context */
   static void GlobalShutdown(void);
 
   /** Gets pointer to current exec_ctx */
-  static ExecCtx* Get() { return exec_ctx_; }
+  static ExecCtx* Get() {
+#ifdef GPR_PTHREAD_TLS
+    return (ExecCtx*)gpr_tls_get(&exec_ctx_);
+#else
+    return exec_ctx_;
+#endif
+  }
 
  protected:
   /** Check if ready to finish */
   virtual bool CheckReadyToFinish() { return false; }
 
  private:
+  /** Set exec_ctx_ to exec_ctx */
+  void Set(ExecCtx* exec_ctx) {
+#ifdef GPR_PTHREAD_THS
+    gpr_tls_set(&exec_ctx_, exec_ctx);
+#else
+    exec_ctx_ = exec_ctx;
+#endif
+  }
+
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};
   uintptr_t flags_;
@@ -181,8 +197,12 @@ on outside context */
   bool now_is_valid_ = false;
   grpc_millis now_ = 0;
 
+#ifdef GPR_PTHREAD_TLS
+  GPR_TLS_DECL(exec_ctx_);
+#else
   static thread_local ExecCtx* exec_ctx_;
-  ExecCtx* last_exec_ctx_ = exec_ctx_;
+#endif
+  ExecCtx* last_exec_ctx_ = Get();
 };
 }  // namespace grpc_core
 

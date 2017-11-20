@@ -49,19 +49,16 @@
  * to the security_handshaker). This test is meant to protect code relying on
  * this functionality that lives outside of this repo. */
 
-static void readahead_handshaker_destroy(
-                                         grpc_handshaker* handshaker) {
+static void readahead_handshaker_destroy(grpc_handshaker* handshaker) {
   gpr_free(handshaker);
 }
 
-static void readahead_handshaker_shutdown(
-                                          grpc_handshaker* handshaker,
+static void readahead_handshaker_shutdown(grpc_handshaker* handshaker,
                                           grpc_error* error) {}
 
 static void readahead_handshaker_do_handshake(
-    grpc_handshaker* handshaker,
-    grpc_tcp_server_acceptor* acceptor, grpc_closure* on_handshake_done,
-    grpc_handshaker_args* args) {
+    grpc_handshaker* handshaker, grpc_tcp_server_acceptor* acceptor,
+    grpc_closure* on_handshake_done, grpc_handshaker_args* args) {
   grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done);
 }
 
@@ -76,10 +73,9 @@ static grpc_handshaker* readahead_handshaker_create() {
 }
 
 static void readahead_handshaker_factory_add_handshakers(
-    grpc_handshaker_factory* hf,
-    const grpc_channel_args* args, grpc_handshake_manager* handshake_mgr) {
-  grpc_handshake_manager_add(handshake_mgr,
-                             readahead_handshaker_create());
+    grpc_handshaker_factory* hf, const grpc_channel_args* args,
+    grpc_handshake_manager* handshake_mgr) {
+  grpc_handshake_manager_add(handshake_mgr, readahead_handshaker_create());
 }
 
 static void readahead_handshaker_factory_destroy(

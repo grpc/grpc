@@ -161,7 +161,9 @@ static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
 grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
 
 namespace grpc_core {
+#ifndef GPR_PTHREAD_TLS
 thread_local ExecCtx* ExecCtx::exec_ctx_ = nullptr;
+#endif
 
 bool ExecCtx::Flush() {
   bool did_something = 0;
@@ -192,9 +194,16 @@ void ExecCtx::GlobalInit(void) {
   }
   // allows uniform treatment in conversion functions
   time_atm_pair_store(&g_start_time[GPR_TIMESPAN], gpr_time_0(GPR_TIMESPAN));
+#ifdef GPR_PTHREAD_TLS
+  gpr_tls_init(&exec_ctx_);
+#endif
 }
 
-void ExecCtx::GlobalShutdown(void) {}
+void ExecCtx::GlobalShutdown(void) {
+#ifdef GPR_PTHREAD_TLS
+  gpr_tls_destroy(&exec_ctx_);
+#endif
+}
 
 grpc_millis ExecCtx::Now() {
   if (!now_is_valid_) {
