@@ -59,14 +59,14 @@ namespace Grpc.Microbenchmarks
             var cq = CompletionQueueSafeHandle.CreateAsync(completionRegistry);
             var call = CreateFakeCall(cq);
 
-            var sendCompletionHandler = new SendCompletionHandler((success) => { });
+            var sendCompletionCallback = new NopSendCompletionCallback();
             var payload = new byte[payloadSize];
             var writeFlags = default(WriteFlags);
 
             var stopwatch = Stopwatch.StartNew();
             for (int i = 0; i < iterations; i++)
             {
-                call.StartSendMessage(sendCompletionHandler, payload, writeFlags, false);
+                call.StartSendMessage(sendCompletionCallback, payload, writeFlags, false);
                 var callback = completionRegistry.Extract(completionRegistry.LastRegisteredKey);
                 callback.OnComplete(true);
             }
@@ -86,6 +86,14 @@ namespace Grpc.Microbenchmarks
                 call.DangerousAddRef(ref success);
             }
             return call;
+        }
+
+        private class NopSendCompletionCallback : ISendCompletionCallback
+        {
+            public void OnSendCompletion(bool success)
+            {
+                // NOP
+            }
         }
     }
 }

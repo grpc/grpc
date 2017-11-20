@@ -31,7 +31,7 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// Manages server side native call lifecycle.
     /// </summary>
-    internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>
+    internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>, IReceivedCloseOnServerCallback, ISendStatusFromServerCompletionCallback
     {
         readonly TaskCompletionSource<object> finishedServersideTcs = new TaskCompletionSource<object>();
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
@@ -70,7 +70,7 @@ namespace Grpc.Core.Internal
 
                 started = true;
 
-                call.StartServerSide(HandleFinishedServerside);
+                call.StartServerSide(ReceiveCloseOnServerCallback);
                 return finishedServersideTcs.Task;
             }
         }
@@ -114,7 +114,7 @@ namespace Grpc.Core.Internal
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(headers))
                 {
-                    call.StartSendInitialMetadata(HandleSendFinished, metadataArray);
+                    call.StartSendInitialMetadata(SendCompletionCallback, metadataArray);
                 }
 
                 this.initialMetadataSent = true;
@@ -140,7 +140,7 @@ namespace Grpc.Core.Internal
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
-                    call.StartSendStatusFromServer(HandleSendStatusFromServerFinished, status, metadataArray, !initialMetadataSent,
+                    call.StartSendStatusFromServer(SendStatusFromServerCompletionCallback, status, metadataArray, !initialMetadataSent,
                         payload, writeFlags);
                 }
                 halfcloseRequested = true;
@@ -226,6 +226,20 @@ namespace Grpc.Core.Internal
             }
 
             finishedServersideTcs.SetResult(null);
+        }
+
+        IReceivedCloseOnServerCallback ReceiveCloseOnServerCallback => this;
+
+        void IReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(bool success, bool cancelled)
+        {
+            HandleFinishedServerside(success, cancelled);
+        }
+
+        ISendStatusFromServerCompletionCallback SendStatusFromServerCompletionCallback => this;
+
+        void ISendStatusFromServerCompletionCallback.OnSendStatusFromServerCompletion(bool success)
+        {
+            HandleSendStatusFromServerFinished(success);
         }
     }
 }

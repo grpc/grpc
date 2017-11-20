@@ -44,6 +44,8 @@ namespace Grpc.Core.Internal
             (success, context, state) => ((IReceivedResponseHeadersCallback)state).OnReceivedResponseHeaders(success, context.GetReceivedInitialMetadata());
         static readonly BatchCompletionDelegate CompletionHandler_ISendCompletionCallback =
             (success, context, state) => ((ISendCompletionCallback)state).OnSendCompletion(success);
+        static readonly BatchCompletionDelegate CompletionHandler_ISendStatusFromServerCompletionCallback =
+            (success, context, state) => ((ISendStatusFromServerCompletionCallback)state).OnSendStatusFromServerCompletion(success);
         static readonly BatchCompletionDelegate CompletionHandler_IReceivedCloseOnServerCallback =
             (success, context, state) => ((IReceivedCloseOnServerCallback)state).OnReceivedCloseOnServerHandler(success, context.GetReceivedCloseOnServerCancelled());
 
@@ -81,7 +83,7 @@ namespace Grpc.Core.Internal
                 .CheckOk();
         }
 
-        public void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartClientStreaming(IUnaryResponseClientCallback callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
             using (completionQueue.NewScope())
             {
@@ -131,14 +133,14 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void StartSendStatusFromServer(ISendCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
+        public void StartSendStatusFromServer(ISendStatusFromServerCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
             byte[] optionalPayload, WriteFlags writeFlags)
         {
             using (completionQueue.NewScope())
             {
                 var ctx = BatchContextSafeHandle.Create();
                 var optionalPayloadLength = optionalPayload != null ? new UIntPtr((ulong)optionalPayload.Length) : UIntPtr.Zero;
-                completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, CompletionHandler_ISendCompletionCallback, callback);
+                completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, CompletionHandler_ISendStatusFromServerCompletionCallback, callback);
                 var statusDetailBytes = MarshalUtils.GetBytesUTF8(status.Detail);
                 Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, statusDetailBytes, new UIntPtr((ulong)statusDetailBytes.Length), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
                     optionalPayload, optionalPayloadLength, writeFlags).CheckOk();

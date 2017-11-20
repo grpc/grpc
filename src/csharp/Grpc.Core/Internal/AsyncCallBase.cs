@@ -35,7 +35,7 @@ namespace Grpc.Core.Internal
     /// Base for handling both client side and server side calls.
     /// Manages native call lifecycle and provides convenience methods.
     /// </summary>
-    internal abstract class AsyncCallBase<TWrite, TRead>
+    internal abstract class AsyncCallBase<TWrite, TRead> : IReceivedMessageCallback, ISendCompletionCallback
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCallBase<TWrite, TRead>>();
         protected static readonly Status DeserializeResponseFailureStatus = new Status(StatusCode.Internal, "Failed to deserialize response message.");
@@ -126,7 +126,7 @@ namespace Grpc.Core.Internal
                     return earlyResult;
                 }
 
-                call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
+                call.StartSendMessage(SendCompletionCallback, payload, writeFlags, !initialMetadataSent);
 
                 initialMetadataSent = true;
                 streamingWritesCounter++;
@@ -154,7 +154,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(streamingReadTcs == null, "Only one read can be pending at a time");
                 GrpcPreconditions.CheckState(!disposed);
 
-                call.StartReceiveMessage(HandleReadFinished);
+                call.StartReceiveMessage(ReceivedMessageCallback);
                 streamingReadTcs = new TaskCompletionSource<TRead>();
                 return streamingReadTcs.Task;
             }
@@ -341,6 +341,20 @@ namespace Grpc.Core.Internal
                 return;
             }
             origTcs.SetResult(msg);
+        }
+
+        protected ISendCompletionCallback SendCompletionCallback => this;
+
+        void ISendCompletionCallback.OnSendCompletion(bool success)
+        {
+            HandleSendFinished(success);
+        }
+
+        IReceivedMessageCallback ReceivedMessageCallback => this;
+
+        void IReceivedMessageCallback.OnReceivedMessage(bool success, byte[] receivedMessage)
+        {
+            HandleReadFinished(success, receivedMessage);
         }
     }
 }
