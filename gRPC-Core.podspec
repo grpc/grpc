@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.8.0-dev'
+  version = '1.7.2'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -85,6 +85,7 @@ Pod::Spec.new do |s|
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
+    'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
@@ -135,6 +136,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/atm_gcc_atomic.h',
                       'include/grpc/impl/codegen/atm_gcc_sync.h',
                       'include/grpc/impl/codegen/atm_windows.h',
+                      'include/grpc/impl/codegen/fork.h',
                       'include/grpc/impl/codegen/gpr_slice.h',
                       'include/grpc/impl/codegen/gpr_types.h',
                       'include/grpc/impl/codegen/port_platform.h',
@@ -156,6 +158,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/atm_gcc_atomic.h',
                       'include/grpc/impl/codegen/atm_gcc_sync.h',
                       'include/grpc/impl/codegen/atm_windows.h',
+                      'include/grpc/impl/codegen/fork.h',
                       'include/grpc/impl/codegen/gpr_slice.h',
                       'include/grpc/impl/codegen/gpr_types.h',
                       'include/grpc/impl/codegen/port_platform.h',
@@ -168,6 +171,7 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer.h',
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/compression.h',
+                      'include/grpc/fork.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security_constants.h',
@@ -192,6 +196,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/atomic_with_atm.h',
                       'src/core/lib/support/atomic_with_std.h',
                       'src/core/lib/support/env.h',
+                      'src/core/lib/support/fork.h',
                       'src/core/lib/support/manual_constructor.h',
                       'src/core/lib/support/memory.h',
                       'src/core/lib/support/mpscq.h',
@@ -200,6 +205,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
+                      'src/core/lib/support/thd_internal.h',
                       'src/core/lib/support/time_precise.h',
                       'src/core/lib/support/tmpfile.h',
                       'src/core/lib/profiling/basic_timers.cc',
@@ -216,6 +222,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/env_linux.cc',
                       'src/core/lib/support/env_posix.cc',
                       'src/core/lib/support/env_windows.cc',
+                      'src/core/lib/support/fork.cc',
                       'src/core/lib/support/histogram.cc',
                       'src/core/lib/support/host_port.cc',
                       'src/core/lib/support/log.cc',
@@ -492,6 +499,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_windows.cc',
                       'src/core/lib/iomgr/exec_ctx.cc',
                       'src/core/lib/iomgr/executor.cc',
+                      'src/core/lib/iomgr/fork_posix.cc',
+                      'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/gethostname_fallback.cc',
                       'src/core/lib/iomgr/gethostname_host_name_max.cc',
                       'src/core/lib/iomgr/gethostname_sysconf.cc',
@@ -711,6 +720,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/atomic_with_atm.h',
                               'src/core/lib/support/atomic_with_std.h',
                               'src/core/lib/support/env.h',
+                              'src/core/lib/support/fork.h',
                               'src/core/lib/support/manual_constructor.h',
                               'src/core/lib/support/memory.h',
                               'src/core/lib/support/mpscq.h',
@@ -719,6 +729,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
+                              'src/core/lib/support/thd_internal.h',
                               'src/core/lib/support/time_precise.h',
                               'src/core/lib/support/tmpfile.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',

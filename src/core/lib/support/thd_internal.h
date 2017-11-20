@@ -16,10 +16,15 @@
  *
  */
 
+#ifndef GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
+#define GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
 
-#ifndef VERSION_H
-#define VERSION_H
+#include <grpc/support/time.h>
 
-#define PHP_GRPC_VERSION "1.7.2"
+/* Internal interfaces between modules within the gpr support library.  */
+void gpr_thd_init();
 
-#endif /* VERSION_H */
+/* Wait for all outstanding threads to finish, up to deadline */
+int gpr_await_threads(gpr_timespec deadline);
+
+#endif /* GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H */

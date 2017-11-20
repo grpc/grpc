@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
  *
  */
 
+#ifndef GRPC_FORK_H
+#define GRPC_FORK_H
 
-#ifndef VERSION_H
-#define VERSION_H
+#include <grpc/impl/codegen/fork.h>
 
-#define PHP_GRPC_VERSION "1.7.2"
-
-#endif /* VERSION_H */
+#endif /* GRPC_FORK_H */

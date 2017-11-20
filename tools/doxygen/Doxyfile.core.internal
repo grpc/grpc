@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 5.0.0-dev
+PROJECT_NUMBER         = 5.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -800,6 +800,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
@@ -817,6 +818,8 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/exec_ctx_fwd.h \
+include/grpc/impl/codegen/fork.h \
+include/grpc/impl/codegen/fork.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
@@ -1100,6 +1103,8 @@ src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/fork_posix.cc \
+src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \
 src/core/lib/iomgr/gethostname_fallback.cc \
 src/core/lib/iomgr/gethostname_host_name_max.cc \
@@ -1284,6 +1289,8 @@ src/core/lib/support/env.h \
 src/core/lib/support/env_linux.cc \
 src/core/lib/support/env_posix.cc \
 src/core/lib/support/env_windows.cc \
+src/core/lib/support/fork.cc \
+src/core/lib/support/fork.h \
 src/core/lib/support/histogram.cc \
 src/core/lib/support/host_port.cc \
 src/core/lib/support/log.cc \
@@ -1312,6 +1319,7 @@ src/core/lib/support/sync.cc \
 src/core/lib/support/sync_posix.cc \
 src/core/lib/support/sync_windows.cc \
 src/core/lib/support/thd.cc \
+src/core/lib/support/thd_internal.h \
 src/core/lib/support/thd_posix.cc \
 src/core/lib/support/thd_windows.cc \
 src/core/lib/support/time.cc \

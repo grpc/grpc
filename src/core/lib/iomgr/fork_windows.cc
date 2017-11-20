@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,24 @@
  *
  */
 
+#include "src/core/lib/iomgr/port.h"
 
-#ifndef VERSION_H
-#define VERSION_H
+#ifndef GRPC_POSIX_FORK
 
-#define PHP_GRPC_VERSION "1.7.2"
+#include <grpc/fork.h>
+#include <grpc/support/log.h>
 
-#endif /* VERSION_H */
+/*
+ * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
+ *       AROUND VERY SPECIFIC USE CASES.
+ */
+
+void grpc_prefork() { gpr_log(GPR_ERROR, "Forking not supported on Windows"); }
+
+void grpc_postfork_parent() {}
+
+void grpc_postfork_child() {}
+
+void grpc_fork_handlers_auto_register() {}
+
+#endif  // GRPC_POSIX_FORK

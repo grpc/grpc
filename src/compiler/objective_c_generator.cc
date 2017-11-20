@@ -31,6 +31,7 @@ using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::MethodDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::protobuf::io::Printer;
+using ::grpc::protobuf::FileDescriptor;
 using ::std::map;
 using ::std::set;
 

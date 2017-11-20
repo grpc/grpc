@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,20 @@
  *
  */
 
+#ifndef GRPC_CORE_LIB_SUPPORT_FORK_H
+#define GRPC_CORE_LIB_SUPPORT_FORK_H
 
-#ifndef VERSION_H
-#define VERSION_H
+/*
+ * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
+ *       AROUND VERY SPECIFIC USE CASES.
+ */
 
-#define PHP_GRPC_VERSION "1.7.2"
+void grpc_fork_support_init(void);
 
-#endif /* VERSION_H */
+int grpc_fork_support_enabled(void);
+
+// Test only:  Must be called before grpc_init(), and overrides
+// environment variables/compile flags
+void grpc_enable_fork_support(int enable);
+
+#endif /* GRPC_CORE_LIB_SUPPORT_FORK_H */

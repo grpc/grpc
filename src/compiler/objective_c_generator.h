@@ -25,6 +25,7 @@ namespace grpc_objective_c_generator {
 
 using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
+using ::grpc::protobuf::FileDescriptor;
 using ::grpc::string;
 
 // Returns forward declaration of classes in the generated header file.
