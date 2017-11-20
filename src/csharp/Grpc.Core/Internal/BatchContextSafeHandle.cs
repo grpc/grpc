@@ -21,6 +21,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Grpc.Core;
 using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -36,6 +37,8 @@ namespace Grpc.Core.Internal
     {
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<BatchContextSafeHandle>();
+
+        CompletionCallbackData completionCallbackData;
 
         private BatchContextSafeHandle()
         {
@@ -54,7 +57,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public BatchCompletionDelegate CompletionCallback { get; set; }
+        public void SetCompletionCallback(BatchCompletionDelegate callback, object state)
+        {
+            GrpcPreconditions.CheckState(completionCallbackData.Callback == null);
+            GrpcPreconditions.CheckNotNull(callback, nameof(callback));
+            completionCallbackData = new CompletionCallbackData(callback, state);
+        }
 
         // Gets data of recv_initial_metadata completion.
         public Metadata GetReceivedInitialMetadata()
@@ -62,13 +70,13 @@ namespace Grpc.Core.Internal
             IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_initial_metadata(this);
             return MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
         }
-            
+
         // Gets data of recv_status_on_client completion.
         public ClientSideStatus GetReceivedStatusOnClient()
         {
             UIntPtr detailsLength;
             IntPtr detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
-            string details = MarshalUtils.PtrToStringUTF8(detailsPtr, (int) detailsLength.ToUInt32());
+            string details = MarshalUtils.PtrToStringUTF8(detailsPtr, (int)detailsLength.ToUInt32());
             var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
 
             IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
@@ -95,7 +103,7 @@ namespace Grpc.Core.Internal
         {
             return Native.grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
         }
-            
+
         protected override bool ReleaseHandle()
         {
             Native.grpcsharp_batch_context_destroy(handle);
@@ -106,7 +114,7 @@ namespace Grpc.Core.Internal
         {
             try
             {
-                CompletionCallback(success, this);
+                completionCallbackData.Callback(success, this, completionCallbackData.State);
             }
             catch (Exception e)
             {
@@ -114,9 +122,21 @@ namespace Grpc.Core.Internal
             }
             finally
             {
-                CompletionCallback = null;
+                completionCallbackData = default(CompletionCallbackData);
                 Dispose();
             }
+        }
+
+        struct CompletionCallbackData
+        {
+            public CompletionCallbackData(BatchCompletionDelegate callback, object state)
+            {
+                this.Callback = callback;
+                this.State = state;
+            }
+
+            public BatchCompletionDelegate Callback { get; }
+            public object State { get; }
         }
     }
 }

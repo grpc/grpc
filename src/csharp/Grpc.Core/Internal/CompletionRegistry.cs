@@ -25,7 +25,7 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx);
+    internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx, object state);
 
     internal delegate void RequestCallCompletionDelegate(bool success, RequestCallContextSafeHandle ctx);
 
@@ -53,9 +53,9 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
+        public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback, object state)
         {
-            ctx.CompletionCallback = callback;
+            ctx.SetCompletionCallback(callback, state);
             Register(ctx.Handle, ctx);
         }
 
