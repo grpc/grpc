@@ -16,13 +16,17 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
+#ifndef GRPC_TEST_CORE_UTIL_TRACER_UTIL_H
+#define GRPC_TEST_CORE_UTIL_TRACER_UTIL_H
 
-#ifdef GRPC_WINSOCK_SOCKET
+namespace grpc_core {
+class TraceFlag;
 
-#include "src/core/lib/debug/trace.h"
+namespace testing {
+// enables the TraceFlag passed to it. Used for testing purposes.
+void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
 
-grpc_core::TraceFlag grpc_polling_trace(false,
-                                        "polling"); /* Disabled by default */
+}  // namespace testing
+}  // namespace grpc_core
 
-#endif  // GRPC_WINSOCK_SOCKET
+#endif /* GRPC_TEST_CORE_UTIL_TRACER_UTIL_H */

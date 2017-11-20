@@ -23,13 +23,9 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
-extern grpc_tracer_flag grpc_http_trace;
-extern grpc_tracer_flag grpc_flowctl_trace;
-extern grpc_tracer_flag grpc_trace_http2_stream_state;
-
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_chttp2_refcount;
-#endif
+extern grpc_core::TraceFlag grpc_http_trace;
+extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;
 
 grpc_transport* grpc_create_chttp2_transport(
     grpc_exec_ctx* exec_ctx, const grpc_channel_args* channel_args,

@@ -25,9 +25,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_metadata;
-#endif
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
 
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.

@@ -36,7 +36,7 @@
 // when it is done with the action that was kicked off by the original
 // callback.
 
-extern grpc_tracer_flag grpc_call_combiner_trace;
+extern grpc_core::TraceFlag grpc_call_combiner_trace;
 
 typedef struct {
   gpr_atm size;  // size_t, num closures in queue or currently executing

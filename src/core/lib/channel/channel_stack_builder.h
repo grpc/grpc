@@ -156,6 +156,6 @@ grpc_error* grpc_channel_stack_builder_finish(
 void grpc_channel_stack_builder_destroy(grpc_exec_ctx* exec_ctx,
                                         grpc_channel_stack_builder* builder);
 
-extern grpc_tracer_flag grpc_trace_channel_stack_builder;
+extern grpc_core::TraceFlag grpc_trace_channel_stack_builder;
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H */

@@ -29,9 +29,7 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_security_connector_refcount;
-#endif
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 
 /* --- status enum. --- */
 

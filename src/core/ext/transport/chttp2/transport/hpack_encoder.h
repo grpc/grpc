@@ -34,6 +34,8 @@
 /* maximum table size we'll actually use */
 #define GRPC_CHTTP2_HPACKC_MAX_TABLE_SIZE (1024 * 1024)
 
+extern grpc_core::TraceFlag grpc_http_trace;
+
 typedef struct {
   uint32_t filter_elems_sum;
   uint32_t max_table_size;

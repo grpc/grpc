@@ -31,6 +31,8 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/support/string.h"
 
+grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
+
 namespace grpc_core {
 namespace chttp2 {
 

@@ -24,7 +24,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-extern grpc_tracer_flag tsi_tracing_enabled;
+extern grpc_core::TraceFlag tsi_tracing_enabled;
 
 /* Base for tsi_frame_protector implementations.
    See transport_security_interface.h for documentation. */
