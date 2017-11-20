@@ -81,9 +81,7 @@ typedef struct {
 
   grpc_slice_buffer* incoming_buffer;
   grpc_slice_buffer* outgoing_buffer;
-  /** slice within outgoing_buffer to write next */
-  size_t outgoing_slice_idx;
-  /** byte within outgoing_buffer->slices[outgoing_slice_idx] to write next */
+  /** byte within outgoing_buffer->slices[0] to write next */
   size_t outgoing_byte_idx;
 
   grpc_closure* read_cb;
@@ -532,23 +530,26 @@ static bool tcp_flush(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
 
+  // We always start at zero, because we eagerly unref and trim the slice
+  // buffer as we write
+  size_t outgoing_slice_idx = 0;
+
   for (;;) {
     sending_length = 0;
-    unwind_slice_idx = tcp->outgoing_slice_idx;
+    unwind_slice_idx = outgoing_slice_idx;
     unwind_byte_idx = tcp->outgoing_byte_idx;
-    for (iov_size = 0; tcp->outgoing_slice_idx != tcp->outgoing_buffer->count &&
+    for (iov_size = 0; outgoing_slice_idx != tcp->outgoing_buffer->count &&
                        iov_size != MAX_WRITE_IOVEC;
          iov_size++) {
       iov[iov_size].iov_base =
           GRPC_SLICE_START_PTR(
-              tcp->outgoing_buffer->slices[tcp->outgoing_slice_idx]) +
+              tcp->outgoing_buffer->slices[outgoing_slice_idx]) +
           tcp->outgoing_byte_idx;
       iov[iov_size].iov_len =
-          GRPC_SLICE_LENGTH(
-              tcp->outgoing_buffer->slices[tcp->outgoing_slice_idx]) -
+          GRPC_SLICE_LENGTH(tcp->outgoing_buffer->slices[outgoing_slice_idx]) -
           tcp->outgoing_byte_idx;
       sending_length += iov[iov_size].iov_len;
-      tcp->outgoing_slice_idx++;
+      outgoing_slice_idx++;
       tcp->outgoing_byte_idx = 0;
     }
     GPR_ASSERT(iov_size > 0);
@@ -574,16 +575,25 @@ static bool tcp_flush(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
 
     if (sent_length < 0) {
       if (errno == EAGAIN) {
-        tcp->outgoing_slice_idx = unwind_slice_idx;
         tcp->outgoing_byte_idx = unwind_byte_idx;
+        // unref all and forget about all slices that have been written to this
+        // point
+        for (size_t idx = 0; idx < unwind_slice_idx; ++idx) {
+          grpc_slice_unref_internal(
+              exec_ctx, grpc_slice_buffer_take_first(tcp->outgoing_buffer));
+        }
         return false;
       } else if (errno == EPIPE) {
         *error = grpc_error_set_int(GRPC_OS_ERROR(errno, "sendmsg"),
                                     GRPC_ERROR_INT_GRPC_STATUS,
                                     GRPC_STATUS_UNAVAILABLE);
+        grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                                   tcp->outgoing_buffer);
         return true;
       } else {
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
+        grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                                   tcp->outgoing_buffer);
         return true;
       }
     }
@@ -593,9 +603,9 @@ static bool tcp_flush(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
     while (trailing > 0) {
       size_t slice_length;
 
-      tcp->outgoing_slice_idx--;
-      slice_length = GRPC_SLICE_LENGTH(
-          tcp->outgoing_buffer->slices[tcp->outgoing_slice_idx]);
+      outgoing_slice_idx--;
+      slice_length =
+          GRPC_SLICE_LENGTH(tcp->outgoing_buffer->slices[outgoing_slice_idx]);
       if (slice_length > trailing) {
         tcp->outgoing_byte_idx = slice_length - trailing;
         break;
@@ -604,11 +614,13 @@ static bool tcp_flush(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
       }
     }
 
-    if (tcp->outgoing_slice_idx == tcp->outgoing_buffer->count) {
+    if (outgoing_slice_idx == tcp->outgoing_buffer->count) {
       *error = GRPC_ERROR_NONE;
+      grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
+                                                 tcp->outgoing_buffer);
       return true;
     }
-  };
+  }
 }
 
 static void tcp_handle_write(grpc_exec_ctx* exec_ctx, void* arg /* grpc_tcp */,
@@ -672,7 +684,6 @@ static void tcp_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
     return;
   }
   tcp->outgoing_buffer = buf;
-  tcp->outgoing_slice_idx = 0;
   tcp->outgoing_byte_idx = 0;
 
   if (!tcp_flush(exec_ctx, tcp, &error)) {
