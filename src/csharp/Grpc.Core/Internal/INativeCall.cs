@@ -20,25 +20,12 @@ using Grpc.Core;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void UnaryResponseClientHandler(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders);
-
-    // Received status for streaming response calls.
-    internal delegate void ReceivedStatusOnClientHandler(bool success, ClientSideStatus receivedStatus);
-
-    internal delegate void ReceivedMessageHandler(bool success, byte[] receivedMessage);
-
-    internal delegate void ReceivedResponseHeadersHandler(bool success, Metadata responseHeaders);
-
-    internal delegate void SendCompletionHandler(bool success);
-
-    internal delegate void ReceivedCloseOnServerHandler(bool success, bool cancelled);
-
-
     internal interface IUnaryResponseClientCallback
     {
         void OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders);
     }
 
+    // Received status for streaming response calls.
     internal interface IReceivedStatusOnClientCallback
     {
         void OnReceivedStatusOnClient(bool success, ClientSideStatus receivedStatus);
