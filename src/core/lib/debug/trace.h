@@ -92,6 +92,7 @@ class DebugOnlyTraceFlag {
  public:
   DebugOnlyTraceFlag(bool default_enabled, const char* name) {}
   bool enabled() { return false; }
+
  private:
   void set_enabled(bool enabled) {}
 };

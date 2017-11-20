@@ -21,7 +21,8 @@
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/compression/stream_compression_gzip.h"
 
-extern const grpc_stream_compression_vtable grpc_stream_compression_identity_vtable;
+extern const grpc_stream_compression_vtable
+    grpc_stream_compression_identity_vtable;
 
 bool grpc_stream_compress(grpc_stream_compression_context* ctx,
                           grpc_slice_buffer* in, grpc_slice_buffer* out,
