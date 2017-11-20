@@ -71,10 +71,7 @@ void grpc_error_get_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
   if (code != nullptr) *code = status;
 
   if (error_string != NULL && status != GRPC_STATUS_OK) {
-    const char* str = grpc_error_string(error);
-    if (str != nullptr) {
-      *error_string = gpr_strdup(str);
-    }
+    *error_string = gpr_strdup(grpc_error_string(error));
   }
 
   if (http_error != nullptr) {
