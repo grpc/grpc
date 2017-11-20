@@ -77,7 +77,10 @@ namespace Grpc.Microbenchmarks
             benchmark.Init();
             foreach (int threadCount in new int[] {1, 1, 2, 4, 8, 12})
             {
-                benchmark.Run(threadCount, 4 * 1000 * 1000);
+                foreach (bool useSharedRegistry in new bool[] {false, true})
+                {
+                    benchmark.Run(threadCount, 4 * 1000 * 1000, useSharedRegistry);
+                }
             }
             benchmark.Cleanup();
         }
