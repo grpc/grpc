@@ -551,7 +551,7 @@ static void destroy_call(grpc_exec_ctx* exec_ctx, void* call,
 
   get_final_status(exec_ctx, c, set_status_value_directly,
                    &c->final_info.final_status, nullptr,
-                   &c->final_info.error_string);
+                   c->final_info.error_string);
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
 

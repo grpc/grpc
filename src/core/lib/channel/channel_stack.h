@@ -84,7 +84,7 @@ typedef struct {
 typedef struct {
   grpc_call_stats stats;
   grpc_status_code final_status;
-  const char* error_string;
+  const char** error_string;
 } grpc_call_final_info;
 
 /* Channel filters specify:
