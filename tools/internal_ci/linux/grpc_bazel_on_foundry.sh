@@ -13,8 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex -o igncr || set -ex
+set -ex
 
+mkdir -p /tmpfs/tmp/bazel-canary
+ln -f "${KOKORO_GFILE_DIR}/bazel-canary" /tmpfs/tmp/bazel-canary/bazel
+chmod 755 "${KOKORO_GFILE_DIR}/bazel-canary"
+export PATH="/tmpfs/tmp/bazel-canary:${PATH}"
+# This should show /tmpfs/tmp/bazel-canary/bazel
 which bazel
 chmod +x "${KOKORO_GFILE_DIR}/bazel_wrapper.py"
 
