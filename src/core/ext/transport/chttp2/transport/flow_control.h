@@ -19,6 +19,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <grpc/support/useful.h>
