@@ -286,8 +286,8 @@ static void fd_destroy(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   fd->freelist_next = fd_freelist;
   fd_freelist = fd;
 
-  fd->read_closure.Destroy();
-  fd->write_closure.Destroy();
+  fd->read_closure->DestroyEvent();
+  fd->write_closure->DestroyEvent();
 
   gpr_mu_unlock(&fd_freelist_mu);
 }
@@ -340,6 +340,8 @@ static grpc_fd* fd_create(int fd, const char* name) {
 
   if (new_fd == nullptr) {
     new_fd = (grpc_fd*)gpr_malloc(sizeof(grpc_fd));
+    new_fd->read_closure.Init();
+    new_fd->write_closure.Init();
   }
 
   gpr_mu_init(&new_fd->pollable_mu);
@@ -347,8 +349,8 @@ static grpc_fd* fd_create(int fd, const char* name) {
   new_fd->pollable_obj = nullptr;
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
-  new_fd->read_closure.Init();
-  new_fd->write_closure.Init();
+  new_fd->read_closure->InitEvent();
+  new_fd->write_closure->InitEvent();
   gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = nullptr;
