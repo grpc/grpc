@@ -35,25 +35,25 @@ namespace grpc_core {
 // in this file.
 namespace manual_ctor_impl {
 
-// is_one_of returns true it a class, Needle, is present in a variadic list of
-// classes, Haystack.
-template <class Needle, class... Haystack>
+// is_one_of returns true it a class, Member, is present in a variadic list of
+// classes, List.
+template <class Member, class... List>
 class is_one_of;
 
-template <class Needle, class... Haystack>
-class is_one_of<Needle, Needle, Haystack...> {
+template <class Member, class... List>
+class is_one_of<Member, Member, List...> {
  public:
   static constexpr const bool value = true;
 };
 
-template <class Needle, class A, class... Haystack>
-class is_one_of<Needle, A, Haystack...> {
+template <class Member, class A, class... List>
+class is_one_of<Member, A, List...> {
  public:
-  static constexpr const bool value = is_one_of<Needle, Haystack...>::value;
+  static constexpr const bool value = is_one_of<Member, List...>::value;
 };
 
-template <class Needle>
-class is_one_of<Needle> {
+template <class Member>
+class is_one_of<Member> {
  public:
   static constexpr const bool value = false;
 };
