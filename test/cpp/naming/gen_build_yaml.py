@@ -249,6 +249,8 @@ def main():
           resolver_component_data, _TARGET_RECORDS_TO_SKIP[_GCLOUD]),
       'resolver_component_test_cases': _resolver_test_cases(
           resolver_component_data, _TARGET_RECORDS_TO_SKIP[_TWISTED]),
+      'resolver_component_with_bind9_test_cases': _resolver_test_cases(
+          resolver_component_data, _TARGET_RECORDS_TO_SKIP[_BIND9]),
       'resolver_component_tests_health_check_record_name': '%s.%s' % (
           _SERVER_HEALTH_CHECK_RECORD_NAME,
           resolver_component_data['resolver_tests_common_zone_name']),
