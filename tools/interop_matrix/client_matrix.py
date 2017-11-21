@@ -63,6 +63,7 @@ LANG_RELEASE_MATRIX = {
         'v1.5.0',
         'v1.6.1',
         'v1.7.0',
+        'v1.8.0',
     ],
     'python': [
         'v1.0.x',
