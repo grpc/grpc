@@ -25,16 +25,35 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-void grpc_lfev_init(gpr_atm *state);
-void grpc_lfev_destroy(gpr_atm *state);
-bool grpc_lfev_is_shutdown(gpr_atm *state);
+namespace grpc_core {
 
-void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                         grpc_closure *closure, const char *variable);
-/* Returns true on first successful shutdown */
-bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                            grpc_error *shutdown_err);
-void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                         const char *variable);
+class LockfreeEvent {
+ public:
+  LockfreeEvent();
+
+  LockfreeEvent(const LockfreeEvent&) = delete;
+  LockfreeEvent& operator=(const LockfreeEvent&) = delete;
+
+  // These methods are used to initialize and destroy the internal state. These
+  // cannot be done in constructor and destructor because SetReady may be called
+  // when the event is destroyed and put in a freelist.
+  void InitEvent();
+  void DestroyEvent();
+
+  bool IsShutdown() const {
+    return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
+  }
+
+  void NotifyOn(grpc_exec_ctx* exec_ctx, grpc_closure* closure);
+  bool SetShutdown(grpc_exec_ctx* exec_ctx, grpc_error* error);
+  void SetReady(grpc_exec_ctx* exec_ctx);
+
+ private:
+  enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
+
+  gpr_atm state_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H */

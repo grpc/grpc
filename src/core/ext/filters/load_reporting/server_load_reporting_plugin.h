@@ -23,6 +23,10 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Identifiers for the invocation point of the users LR callback */
 typedef enum grpc_load_reporting_source {
   GRPC_LR_POINT_UNKNOWN = 0,
@@ -45,15 +49,19 @@ typedef struct grpc_load_reporting_call_data {
 
   /** Only valid when \a source is \a GRPC_LR_POINT_CALL_DESTRUCTION, that is,
    * once the call has completed */
-  const grpc_call_final_info *final_info;
+  const grpc_call_final_info* final_info;
 
-  const char *initial_md_string;  /**< value string for LR's initial md key */
-  const char *trailing_md_string; /**< value string for LR's trailing md key */
-  const char *method_name;        /**< Corresponds to :path header */
+  const char* initial_md_string;  /**< value string for LR's initial md key */
+  const char* trailing_md_string; /**< value string for LR's trailing md key */
+  const char* method_name;        /**< Corresponds to :path header */
 } grpc_load_reporting_call_data;
 
 /** Return a \a grpc_arg enabling load reporting */
 grpc_arg grpc_load_reporting_enable_arg();
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_PLUGIN_H \
-          */
+        */

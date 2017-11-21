@@ -21,7 +21,15 @@
 
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_WINSOCK_SOCKET
+
 #include "src/core/lib/iomgr/socket_windows.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum {
   GRPC_IOCP_WORK_WORK,
@@ -29,12 +37,18 @@ typedef enum {
   GRPC_IOCP_WORK_KICK
 } grpc_iocp_work_status;
 
-grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
-                                     gpr_timespec deadline);
+grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx* exec_ctx,
+                                     grpc_millis deadline);
 void grpc_iocp_init(void);
 void grpc_iocp_kick(void);
 void grpc_iocp_flush(void);
 void grpc_iocp_shutdown(void);
-void grpc_iocp_add_socket(grpc_winsocket *);
+void grpc_iocp_add_socket(grpc_winsocket*);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOCP_WINDOWS_H */

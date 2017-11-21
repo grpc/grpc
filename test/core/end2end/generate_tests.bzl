@@ -21,7 +21,8 @@ load("//bazel:grpc_build_system.bzl", "grpc_sh_test", "grpc_cc_binary", "grpc_cc
 def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
                     name_resolution=True, secure=True, tracing=False,
                     platforms=['windows', 'linux', 'mac', 'posix'],
-                    is_inproc=False, is_http2=True, supports_proxy_auth=False):
+                    is_inproc=False, is_http2=True, supports_proxy_auth=False,
+                    supports_write_buffering=True):
   return struct(
     fullstack=fullstack,
     includes_proxy=includes_proxy,
@@ -31,7 +32,8 @@ def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
     tracing=tracing,
     is_inproc=is_inproc,
     is_http2=is_http2,
-    supports_proxy_auth=supports_proxy_auth
+    supports_proxy_auth=supports_proxy_auth,
+    supports_write_buffering=supports_write_buffering
     #platforms=platforms
   )
 
@@ -56,20 +58,19 @@ END2END_FIXTURES = {
     'h2_sockpair+trace': fixture_options(fullstack=False, dns_resolver=False,
                                          tracing=True),
     'h2_ssl': fixture_options(secure=True),
-    'h2_ssl_cert': fixture_options(secure=True),
     'h2_ssl_proxy': fixture_options(includes_proxy=True, secure=True),
     'h2_uds': fixture_options(dns_resolver=False,
                               platforms=['linux', 'mac', 'posix']),
     'inproc': fixture_options(fullstack=False, dns_resolver=False,
                               name_resolution=False, is_inproc=True,
-                              is_http2=False),
+                              is_http2=False, supports_write_buffering=False),
 }
 
 
 def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
                  proxyable=True, secure=False, traceable=False,
                  exclude_inproc=False, needs_http2=False,
-                 needs_proxy_auth=False):
+                 needs_proxy_auth=False, needs_write_buffering=False):
   return struct(
     needs_fullstack=needs_fullstack,
     needs_dns=needs_dns,
@@ -79,7 +80,8 @@ def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
     traceable=traceable,
     exclude_inproc=exclude_inproc,
     needs_http2=needs_http2,
-    needs_proxy_auth=needs_proxy_auth
+    needs_proxy_auth=needs_proxy_auth,
+    needs_write_buffering=needs_write_buffering
   )
 
 
@@ -145,8 +147,8 @@ END2END_TESTS = {
     'authority_not_supported': test_options(),
     'filter_latency': test_options(),
     'workaround_cronet_compression': test_options(),
-    'write_buffering': test_options(),
-    'write_buffering_at_end': test_options(),
+    'write_buffering': test_options(needs_write_buffering=True),
+    'write_buffering_at_end': test_options(needs_write_buffering=True),
 }
 
 
@@ -175,20 +177,23 @@ def compatible(fopt, topt):
   if topt.needs_proxy_auth:
     if not fopt.supports_proxy_auth:
       return False
+  if topt.needs_write_buffering:
+    if not fopt.supports_write_buffering:
+      return False
   return True
 
 
 def grpc_end2end_tests():
   grpc_cc_library(
     name = 'end2end_tests',
-    srcs = ['end2end_tests.c', 'end2end_test_utils.c'] + [
-             'tests/%s.c' % t
+    srcs = ['end2end_tests.cc', 'end2end_test_utils.cc'] + [
+             'tests/%s.cc' % t
              for t in sorted(END2END_TESTS.keys())],
     hdrs = [
       'tests/cancel_test_helpers.h',
       'end2end_tests.h'
     ],
-    language = "C",
+    language = "C++",
     deps = [
       ':cq_verifier',
       ':ssl_test_data',
@@ -200,8 +205,8 @@ def grpc_end2end_tests():
   for f, fopt in END2END_FIXTURES.items():
     grpc_cc_binary(
       name = '%s_test' % f,
-      srcs = ['fixtures/%s.c' % f],
-      language = "C",
+      srcs = ['fixtures/%s.cc' % f],
+      language = "C++",
       deps = [
         ':end2end_tests',
         '//test/core/util:grpc_test_util',

@@ -26,6 +26,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// Handshakers are used to perform initial handshakes on a connection
 /// before the client sends the initial request.  Some examples of what
 /// a handshaker can be used for includes support for HTTP CONNECT on
@@ -145,7 +149,7 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
     grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
-    gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
+    grpc_millis deadline, grpc_tcp_server_acceptor* acceptor,
     grpc_iomgr_cb_func on_handshake_done, void* user_data);
 
 /// Add \a mgr to the server side list of all pending handshake managers, the
@@ -163,5 +167,9 @@ void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
 // Not thread-safe. Caller needs to synchronize.
 void grpc_handshake_manager_pending_list_shutdown_all(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

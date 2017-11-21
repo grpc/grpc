@@ -22,18 +22,22 @@
 #include "src/core/ext/filters/client_channel/resolver_factory.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void grpc_resolver_registry_init();
 void grpc_resolver_registry_shutdown(void);
 
 /** Set the default URI prefix to \a default_prefix. */
-void grpc_resolver_registry_set_default_prefix(const char *default_prefix);
+void grpc_resolver_registry_set_default_prefix(const char* default_prefix);
 
 /** Register a resolver type.
     URI's of \a scheme will be resolved with the given resolver.
     If \a priority is greater than zero, then the resolver will be eligible
     to resolve names that are passed in with no scheme. Higher priority
     resolvers will be tried before lower priority schemes. */
-void grpc_register_resolver_type(grpc_resolver_factory *factory);
+void grpc_register_resolver_type(grpc_resolver_factory* factory);
 
 /** Create a resolver given \a target.
     First tries to parse \a target as a URI. If this succeeds, tries
@@ -48,22 +52,26 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     (typically the set of arguments passed in from the client API).
     \a pollset_set is used to drive IO in the name resolution process, it
     should not be NULL. */
-grpc_resolver *grpc_resolver_create(grpc_exec_ctx *exec_ctx, const char *target,
-                                    const grpc_channel_args *args,
-                                    grpc_pollset_set *pollset_set,
-                                    grpc_combiner *combiner);
+grpc_resolver* grpc_resolver_create(grpc_exec_ctx* exec_ctx, const char* target,
+                                    const grpc_channel_args* args,
+                                    grpc_pollset_set* pollset_set,
+                                    grpc_combiner* combiner);
 
 /** Find a resolver factory given a name and return an (owned-by-the-caller)
  *  reference to it */
-grpc_resolver_factory *grpc_resolver_factory_lookup(const char *name);
+grpc_resolver_factory* grpc_resolver_factory_lookup(const char* name);
 
 /** Given a target, return a (freshly allocated with gpr_malloc) string
     representing the default authority to pass from a client. */
-char *grpc_get_default_authority(grpc_exec_ctx *exec_ctx, const char *target);
+char* grpc_get_default_authority(grpc_exec_ctx* exec_ctx, const char* target);
 
 /** Returns a newly allocated string containing \a target, adding the
     default prefix if needed. */
-char *grpc_resolver_factory_add_default_prefix_if_needed(
-    grpc_exec_ctx *exec_ctx, const char *target);
+char* grpc_resolver_factory_add_default_prefix_if_needed(
+    grpc_exec_ctx* exec_ctx, const char* target);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_REGISTRY_H */

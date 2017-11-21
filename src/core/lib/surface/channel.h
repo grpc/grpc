@@ -23,13 +23,17 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
-grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
-                                  const grpc_channel_args *args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport *optional_transport);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-grpc_channel *grpc_channel_create_with_builder(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+grpc_channel* grpc_channel_create(grpc_exec_ctx* exec_ctx, const char* target,
+                                  const grpc_channel_args* args,
+                                  grpc_channel_stack_type channel_stack_type,
+                                  grpc_transport* optional_transport);
+
+grpc_channel* grpc_channel_create_with_builder(
+    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder,
     grpc_channel_stack_type channel_stack_type);
 
 /** Create a call given a grpc_channel, in order to call \a method.
@@ -40,37 +44,37 @@ grpc_channel *grpc_channel_create_with_builder(
     non-NULL, it must be a server-side call. It will be used to propagate
     properties from the server call to this new client call, depending on the
     value of \a propagation_mask (see propagation_bits.h for possible values) */
-grpc_call *grpc_channel_create_pollset_set_call(
-    grpc_exec_ctx *exec_ctx, grpc_channel *channel, grpc_call *parent_call,
-    uint32_t propagation_mask, grpc_pollset_set *pollset_set, grpc_slice method,
-    const grpc_slice *host, gpr_timespec deadline, void *reserved);
+grpc_call* grpc_channel_create_pollset_set_call(
+    grpc_exec_ctx* exec_ctx, grpc_channel* channel, grpc_call* parent_call,
+    uint32_t propagation_mask, grpc_pollset_set* pollset_set, grpc_slice method,
+    const grpc_slice* host, grpc_millis deadline, void* reserved);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
-grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
+grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);
 
 /** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
     status_code.
 
     The returned elem is owned by the caller. */
-grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx *exec_ctx,
-                                                grpc_channel *channel,
+grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_exec_ctx* exec_ctx,
+                                                grpc_channel* channel,
                                                 int status_code);
 
-size_t grpc_channel_get_call_size_estimate(grpc_channel *channel);
-void grpc_channel_update_call_size_estimate(grpc_channel *channel, size_t size);
+size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
+void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 
 #ifndef NDEBUG
-void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);
-void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
-                                 const char *reason);
+void grpc_channel_internal_ref(grpc_channel* channel, const char* reason);
+void grpc_channel_internal_unref(grpc_exec_ctx* exec_ctx, grpc_channel* channel,
+                                 const char* reason);
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
   grpc_channel_internal_ref(channel, reason)
 #define GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, reason) \
   grpc_channel_internal_unref(exec_ctx, channel, reason)
 #else
-void grpc_channel_internal_ref(grpc_channel *channel);
-void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel *channel);
+void grpc_channel_internal_ref(grpc_channel* channel);
+void grpc_channel_internal_unref(grpc_exec_ctx* exec_ctx,
+                                 grpc_channel* channel);
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
   grpc_channel_internal_ref(channel)
 #define GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, reason) \
@@ -79,6 +83,10 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
 
 /** Return the channel's compression options. */
 grpc_compression_options grpc_channel_compression_options(
-    const grpc_channel *channel);
+    const grpc_channel* channel);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */

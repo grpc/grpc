@@ -19,6 +19,10 @@
 
 #include "src/core/lib/transport/metadata.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Hash table implementation.
  *
  * This implementation uses open addressing
@@ -35,7 +39,7 @@ typedef struct grpc_slice_hash_table grpc_slice_hash_table;
 
 typedef struct grpc_slice_hash_table_entry {
   grpc_slice key;
-  void *value; /* Must not be NULL. */
+  void* value; /* Must not be NULL. */
 } grpc_slice_hash_table_entry;
 
 /** Creates a new hash table of containing \a entries, which is an array
@@ -44,18 +48,18 @@ typedef struct grpc_slice_hash_table_entry {
     value_cmp will be used to compare values in the context of \a
     grpc_slice_hash_table_cmp. If NULL, raw pointer (\a GPR_ICMP) comparison
     will be used. */
-grpc_slice_hash_table *grpc_slice_hash_table_create(
-    size_t num_entries, grpc_slice_hash_table_entry *entries,
-    void (*destroy_value)(grpc_exec_ctx *exec_ctx, void *value),
-    int (*value_cmp)(void *a, void *b));
+grpc_slice_hash_table* grpc_slice_hash_table_create(
+    size_t num_entries, grpc_slice_hash_table_entry* entries,
+    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value),
+    int (*value_cmp)(void* a, void* b));
 
-grpc_slice_hash_table *grpc_slice_hash_table_ref(grpc_slice_hash_table *table);
-void grpc_slice_hash_table_unref(grpc_exec_ctx *exec_ctx,
-                                 grpc_slice_hash_table *table);
+grpc_slice_hash_table* grpc_slice_hash_table_ref(grpc_slice_hash_table* table);
+void grpc_slice_hash_table_unref(grpc_exec_ctx* exec_ctx,
+                                 grpc_slice_hash_table* table);
 
 /** Returns the value from \a table associated with \a key.
     Returns NULL if \a key is not found. */
-void *grpc_slice_hash_table_get(const grpc_slice_hash_table *table,
+void* grpc_slice_hash_table_get(const grpc_slice_hash_table* table,
                                 const grpc_slice key);
 
 /** Compares \a a vs. \a b.
@@ -64,7 +68,11 @@ void *grpc_slice_hash_table_get(const grpc_slice_hash_table *table,
  *  - else, it contains fewer (resp. more) entries,
  *  - else, if strcmp(a_key, b_key) < 1 (resp. > 1),
  *  - else, if value_cmp(a_value, b_value) < 1 (resp. > 1). */
-int grpc_slice_hash_table_cmp(const grpc_slice_hash_table *a,
-                              const grpc_slice_hash_table *b);
+int grpc_slice_hash_table_cmp(const grpc_slice_hash_table* a,
+                              const grpc_slice_hash_table* b);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H */

@@ -21,12 +21,20 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
-  grpc_endpoint *client;
-  grpc_endpoint *server;
+  grpc_endpoint* client;
+  grpc_endpoint* server;
 } grpc_endpoint_pair;
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
-                                                   grpc_channel_args *args);
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
+                                                   grpc_channel_args* args);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H */

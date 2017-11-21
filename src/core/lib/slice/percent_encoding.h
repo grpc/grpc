@@ -30,6 +30,10 @@
 
 #include <grpc/slice.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* URL percent encoding spec bitfield (usabel as 'unreserved_bytes' in
    grpc_percent_encode_slice, grpc_strict_percent_decode_slice).
    Flags [A-Za-z0-9-_.~] as unreserved bytes for the percent encoding routines
@@ -45,7 +49,7 @@ extern const uint8_t grpc_compatible_percent_encoding_unreserved_bytes[256 / 8];
    unreserved_bytes is a bitfield indicating which bytes are considered
    unreserved and thus do not need percent encoding */
 grpc_slice grpc_percent_encode_slice(grpc_slice slice,
-                                     const uint8_t *unreserved_bytes);
+                                     const uint8_t* unreserved_bytes);
 /* Percent-decode a slice, strictly.
    If the input is legal (contains no unreserved bytes, and legal % encodings),
    returns true and sets *slice_out to the decoded slice.
@@ -53,11 +57,15 @@ grpc_slice grpc_percent_encode_slice(grpc_slice slice,
    unreserved_bytes is a bitfield indicating which bytes are considered
    unreserved and thus do not need percent encoding */
 bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
-                                      const uint8_t *unreserved_bytes,
-                                      grpc_slice *slice_out);
+                                      const uint8_t* unreserved_bytes,
+                                      grpc_slice* slice_out);
 /* Percent-decode a slice, permissively.
    If a % triplet can not be decoded, pass it through verbatim.
    This cannot fail. */
 grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SLICE_PERCENT_ENCODING_H */

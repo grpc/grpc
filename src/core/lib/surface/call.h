@@ -30,90 +30,89 @@ extern "C" {
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 
-typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
-                                           grpc_call *call, int success,
-                                           void *user_data);
+typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx* exec_ctx,
+                                           grpc_call* call, int success,
+                                           void* user_data);
 
 typedef struct grpc_call_create_args {
-  grpc_channel *channel;
+  grpc_channel* channel;
 
-  grpc_call *parent;
+  grpc_call* parent;
   uint32_t propagation_mask;
 
-  grpc_completion_queue *cq;
+  grpc_completion_queue* cq;
   /* if not NULL, it'll be used in lieu of cq */
-  grpc_pollset_set *pollset_set_alternative;
+  grpc_pollset_set* pollset_set_alternative;
 
-  const void *server_transport_data;
+  const void* server_transport_data;
 
-  grpc_mdelem *add_initial_metadata;
+  grpc_mdelem* add_initial_metadata;
   size_t add_initial_metadata_count;
 
-  gpr_timespec send_deadline;
+  grpc_millis send_deadline;
 } grpc_call_create_args;
 
 /* Create a new call based on \a args.
    Regardless of success or failure, always returns a valid new call into *call
    */
-grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
-                             const grpc_call_create_args *args,
-                             grpc_call **call);
+grpc_error* grpc_call_create(grpc_exec_ctx* exec_ctx,
+                             const grpc_call_create_args* args,
+                             grpc_call** call);
 
-void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                                    grpc_completion_queue *cq);
+void grpc_call_set_completion_queue(grpc_exec_ctx* exec_ctx, grpc_call* call,
+                                    grpc_completion_queue* cq);
 
 #ifndef NDEBUG
-void grpc_call_internal_ref(grpc_call *call, const char *reason);
-void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                              const char *reason);
+void grpc_call_internal_ref(grpc_call* call, const char* reason);
+void grpc_call_internal_unref(grpc_exec_ctx* exec_ctx, grpc_call* call,
+                              const char* reason);
 #define GRPC_CALL_INTERNAL_REF(call, reason) \
   grpc_call_internal_ref(call, reason)
 #define GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, reason) \
   grpc_call_internal_unref(exec_ctx, call, reason)
 #else
-void grpc_call_internal_ref(grpc_call *call);
-void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *call);
+void grpc_call_internal_ref(grpc_call* call);
+void grpc_call_internal_unref(grpc_exec_ctx* exec_ctx, grpc_call* call);
 #define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call)
 #define GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, reason) \
   grpc_call_internal_unref(exec_ctx, call)
 #endif
 
-grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
+grpc_call_stack* grpc_call_get_call_stack(grpc_call* call);
 
-grpc_call_error grpc_call_start_batch_and_execute(grpc_exec_ctx *exec_ctx,
-                                                  grpc_call *call,
-                                                  const grpc_op *ops,
+grpc_call_error grpc_call_start_batch_and_execute(grpc_exec_ctx* exec_ctx,
+                                                  grpc_call* call,
+                                                  const grpc_op* ops,
                                                   size_t nops,
-                                                  grpc_closure *closure);
+                                                  grpc_closure* closure);
 
 /* Given the top call_element, get the call object. */
-grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
+grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
 
-void grpc_call_log_batch(const char *file, int line, gpr_log_severity severity,
-                         grpc_call *call, const grpc_op *ops, size_t nops,
-                         void *tag);
+void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
+                         grpc_call* call, const grpc_op* ops, size_t nops,
+                         void* tag);
 
 /* Set a context pointer.
    No thread safety guarantees are made wrt this value. */
 /* TODO(#9731): add exec_ctx to destroy */
-void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
-                           void *value, void (*destroy)(void *value));
+void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
+                           void* value, void (*destroy)(void* value));
 /* Get a context pointer. */
-void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
+void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
-  if (GRPC_TRACER_ON(grpc_api_trace))                  \
-  grpc_call_log_batch(sev, call, ops, nops, tag)
+  if (grpc_api_trace.enabled()) grpc_call_log_batch(sev, call, ops, nops, tag)
 
-uint8_t grpc_call_is_client(grpc_call *call);
+uint8_t grpc_call_is_client(grpc_call* call);
 
 /* Return an appropriate compression algorithm for the requested compression \a
  * level in the context of \a call. */
 grpc_compression_algorithm grpc_call_compression_for_level(
-    grpc_call *call, grpc_compression_level level);
+    grpc_call* call, grpc_compression_level level);
 
-extern grpc_tracer_flag grpc_call_error_trace;
-extern grpc_tracer_flag grpc_compression_trace;
+extern grpc_core::TraceFlag grpc_call_error_trace;
+extern grpc_core::TraceFlag grpc_compression_trace;
 
 #ifdef __cplusplus
 }

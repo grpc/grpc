@@ -28,12 +28,14 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/tls.h>
 
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/support/env.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -99,10 +101,26 @@ class PollingOverrider {
 
 class Verifier {
  public:
-  explicit Verifier(bool spin) : spin_(spin) {}
+  explicit Verifier(bool spin) : spin_(spin), lambda_run_(false) {}
   // Expect sets the expected ok value for a specific tag
   Verifier& Expect(int i, bool expect_ok) {
-    expectations_[tag(i)] = expect_ok;
+    return ExpectUnless(i, expect_ok, false);
+  }
+  // ExpectUnless sets the expected ok value for a specific tag
+  // unless the tag was already marked seen (as a result of ExpectMaybe)
+  Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
+    if (!seen) {
+      expectations_[tag(i)] = expect_ok;
+    }
+    return *this;
+  }
+  // ExpectMaybe sets the expected ok value for a specific tag, but does not
+  // require it to appear
+  // If it does, sets *seen to true
+  Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
+    if (!*seen) {
+      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+    }
     return *this;
   }
 
@@ -122,13 +140,20 @@ class Verifier {
     } else {
       EXPECT_TRUE(cq->Next(&got_tag, &ok));
     }
-    auto it = expectations_.find(got_tag);
-    EXPECT_TRUE(it != expectations_.end());
-    if (!ignore_ok) {
-      EXPECT_EQ(it->second, ok);
-    }
-    expectations_.erase(it);
+    GotTag(got_tag, ok, ignore_ok);
     return detag(got_tag);
+  }
+
+  template <typename T>
+  CompletionQueue::NextStatus DoOnceThenAsyncNext(
+      CompletionQueue* cq, void** got_tag, bool* ok, T deadline,
+      std::function<void(void)> lambda) {
+    if (lambda_run_) {
+      return cq->AsyncNext(got_tag, ok, deadline);
+    } else {
+      lambda_run_ = true;
+      return cq->DoThenAsyncNext(lambda, got_tag, ok, deadline);
+    }
   }
 
   // Verify keeps calling Next until all currently set
@@ -138,11 +163,12 @@ class Verifier {
   // This version of Verify allows optionally ignoring the
   // outcome of the expectation
   void Verify(CompletionQueue* cq, bool ignore_ok) {
-    GPR_ASSERT(!expectations_.empty());
+    GPR_ASSERT(!expectations_.empty() || !maybe_expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
     }
   }
+
   // This version of Verify stops after a certain deadline
   void Verify(CompletionQueue* cq,
               std::chrono::system_clock::time_point deadline) {
@@ -177,17 +203,86 @@ class Verifier {
           EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
                     CompletionQueue::GOT_EVENT);
         }
-        auto it = expectations_.find(got_tag);
-        EXPECT_TRUE(it != expectations_.end());
-        EXPECT_EQ(it->second, ok);
-        expectations_.erase(it);
+        GotTag(got_tag, ok, false);
+      }
+    }
+  }
+
+  // This version of Verify stops after a certain deadline, and uses the
+  // DoThenAsyncNext API
+  // to call the lambda
+  void Verify(CompletionQueue* cq,
+              std::chrono::system_clock::time_point deadline,
+              std::function<void(void)> lambda) {
+    if (expectations_.empty()) {
+      bool ok;
+      void* got_tag;
+      if (spin_) {
+        while (std::chrono::system_clock::now() < deadline) {
+          EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
+                    CompletionQueue::TIMEOUT);
+        }
+      } else {
+        EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
+                  CompletionQueue::TIMEOUT);
+      }
+    } else {
+      while (!expectations_.empty()) {
+        bool ok;
+        void* got_tag;
+        if (spin_) {
+          for (;;) {
+            GPR_ASSERT(std::chrono::system_clock::now() < deadline);
+            auto r = DoOnceThenAsyncNext(
+                cq, &got_tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME), lambda);
+            if (r == CompletionQueue::TIMEOUT) continue;
+            if (r == CompletionQueue::GOT_EVENT) break;
+            gpr_log(GPR_ERROR, "unexpected result from AsyncNext");
+            abort();
+          }
+        } else {
+          EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
+                    CompletionQueue::GOT_EVENT);
+        }
+        GotTag(got_tag, ok, false);
       }
     }
   }
 
  private:
+  void GotTag(void* got_tag, bool ok, bool ignore_ok) {
+    auto it = expectations_.find(got_tag);
+    if (it != expectations_.end()) {
+      if (!ignore_ok) {
+        EXPECT_EQ(it->second, ok);
+      }
+      expectations_.erase(it);
+    } else {
+      auto it2 = maybe_expectations_.find(got_tag);
+      if (it2 != maybe_expectations_.end()) {
+        if (it2->second.seen != nullptr) {
+          EXPECT_FALSE(*it2->second.seen);
+          *it2->second.seen = true;
+        }
+        if (!ignore_ok) {
+          EXPECT_EQ(it2->second.ok, ok);
+        }
+      } else {
+        gpr_log(GPR_ERROR, "Unexpected tag: %p", tag);
+        abort();
+      }
+    }
+  }
+
+  struct MaybeExpect {
+    bool ok;
+    bool* seen;
+  };
+
   std::map<void*, bool> expectations_;
+  std::map<void*, MaybeExpect> maybe_expectations_;
   bool spin_;
+  bool lambda_run_;
 };
 
 bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
@@ -223,11 +318,8 @@ class TestScenario {
   bool disable_blocking;
   bool inproc;
   bool health_check_service;
-  // Although the below grpc::string's are logically const, we can't declare
-  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
-  // manage vector insertion using a copy constructor
-  grpc::string credentials_type;
-  grpc::string message_content;
+  const grpc::string credentials_type;
+  const grpc::string message_content;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -366,9 +458,18 @@ TEST_P(AsyncEnd2endTest, SequentialRpcs) {
 }
 
 TEST_P(AsyncEnd2endTest, ReconnectChannel) {
+  // GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS is set to 100ms in main()
   if (GetParam().inproc) {
     return;
   }
+  int poller_slowdown_factor = 1;
+  // It needs 2 pollset_works to reconnect the channel with polling engine
+  // "poll"
+  char* s = gpr_getenv("GRPC_POLL_STRATEGY");
+  if (s != nullptr && 0 == strcmp(s, "poll")) {
+    poller_slowdown_factor = 2;
+  }
+  gpr_free(s);
   ResetStub();
   SendRpc(1);
   server_->Shutdown();
@@ -378,10 +479,13 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   while (cq_->Next(&ignored_tag, &ignored_ok))
     ;
   BuildAndStartServer();
-  // It needs more than kConnectivityCheckIntervalMsec time to reconnect the
-  // channel.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_millis(1600, GPR_TIMESPAN)));
+  // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
+  // reconnect the channel.
+  gpr_sleep_until(gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME),
+      gpr_time_from_millis(
+          300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
+          GPR_TIMESPAN)));
   SendRpc(1);
 }
 
@@ -450,6 +554,60 @@ TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
       .Expect(3, true)
       .Expect(4, true)
       .Verify(cq_.get(), std::chrono::system_clock::time_point::max());
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.ok());
+}
+
+// Test a simple RPC using the async version of Next
+TEST_P(AsyncEnd2endTest, DoThenAsyncNextRpc) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  send_request.set_message(GetParam().message_content);
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
+      stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+
+  std::chrono::system_clock::time_point time_now(
+      std::chrono::system_clock::now());
+  std::chrono::system_clock::time_point time_limit(
+      std::chrono::system_clock::now() + std::chrono::seconds(10));
+  Verifier(GetParam().disable_blocking).Verify(cq_.get(), time_now);
+  Verifier(GetParam().disable_blocking).Verify(cq_.get(), time_now);
+
+  auto resp_writer_ptr = &response_writer;
+  auto lambda_2 = [&, this, resp_writer_ptr]() {
+    gpr_log(GPR_ERROR, "CALLED");
+    service_->RequestEcho(&srv_ctx, &recv_request, resp_writer_ptr, cq_.get(),
+                          cq_.get(), tag(2));
+  };
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .Verify(cq_.get(), time_limit, lambda_2);
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  auto recv_resp_ptr = &recv_response;
+  auto status_ptr = &recv_status;
+  send_response.set_message(recv_request.message());
+  auto lambda_3 = [&, this, resp_writer_ptr, send_response]() {
+    resp_writer_ptr->Finish(send_response, Status::OK, tag(3));
+  };
+  response_reader->Finish(recv_resp_ptr, status_ptr, tag(4));
+  Verifier(GetParam().disable_blocking)
+      .Expect(3, true)
+      .Expect(4, true)
+      .Verify(cq_.get(), std::chrono::system_clock::time_point::max(),
+              lambda_3);
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
@@ -539,31 +697,19 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
 
   cli_stream->Write(send_request, tag(3));
 
-  // 65536(64KB) is the default flow control window size. Should change this
-  // number when default flow control window size changes. For the write of
-  // send_request larger than the flow control window size, tag:3 will not come
-  // up until server read is initiated. For write of send_request smaller than
-  // the flow control window size, the request can take the free ride with
-  // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking)
-        .Expect(2, true)
-        .Expect(3, true)
-        .Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-  }
+  bool seen3 = false;
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .ExpectMaybe(3, true, &seen3)
+      .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking)
-        .Expect(3, true)
-        .Expect(4, true)
-        .Verify(cq_.get());
-  }
+  Verifier(GetParam().disable_blocking)
+      .ExpectUnless(3, true, seen3)
+      .Expect(4, true)
+      .Verify(cq_.get());
 
   EXPECT_EQ(send_request.message(), recv_request.message());
 
@@ -834,31 +980,19 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
 
   cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
 
-  // 65536(64KB) is the default flow control window size. Should change this
-  // number when default flow control window size changes. For the write of
-  // send_request larger than the flow control window size, tag:3 will not come
-  // up until server read is initiated. For write of send_request smaller than
-  // the flow control window size, the request can take the free ride with
-  // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking)
-        .Expect(2, true)
-        .Expect(3, true)
-        .Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-  }
+  bool seen3 = false;
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .ExpectMaybe(3, true, &seen3)
+      .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking)
-        .Expect(3, true)
-        .Expect(4, true)
-        .Verify(cq_.get());
-  }
+  Verifier(GetParam().disable_blocking)
+      .ExpectUnless(3, true, seen3)
+      .Expect(4, true)
+      .Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   srv_stream.Read(&recv_request, tag(5));
@@ -902,31 +1036,19 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
 
   cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
 
-  // 65536(64KB) is the default flow control window size. Should change this
-  // number when default flow control window size changes. For the write of
-  // send_request larger than the flow control window size, tag:3 will not come
-  // up until server read is initiated. For write of send_request smaller than
-  // the flow control window size, the request can take the free ride with
-  // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking)
-        .Expect(2, true)
-        .Expect(3, true)
-        .Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-  }
+  bool seen3 = false;
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .ExpectMaybe(3, true, &seen3)
+      .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking)
-        .Expect(3, true)
-        .Expect(4, true)
-        .Verify(cq_.get());
-  }
+  Verifier(GetParam().disable_blocking)
+      .ExpectUnless(3, true, seen3)
+      .Expect(4, true)
+      .Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   srv_stream.Read(&recv_request, tag(5));
@@ -1305,7 +1427,6 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       ServerTryCancelRequestPhase server_try_cancel) {
     ResetStub();
 
-    EchoRequest send_request;
     EchoRequest recv_request;
     EchoResponse send_response;
     EchoResponse recv_response;
@@ -1316,31 +1437,24 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
     // Initiate the 'RequestStream' call on client
+    CompletionQueue cli_cq;
+
     std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
-        stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
-    Verifier(GetParam().disable_blocking).Expect(1, true).Verify(cq_.get());
+        stub_->AsyncRequestStream(&cli_ctx, &recv_response, &cli_cq, tag(1)));
 
     // On the server, request to be notified of 'RequestStream' calls
     // and receive the 'RequestStream' call just made by the client
     srv_ctx.AsyncNotifyWhenDone(tag(11));
     service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                                    tag(2));
+    std::thread t1([this, &cli_cq] {
+      Verifier(GetParam().disable_blocking).Expect(1, true).Verify(&cli_cq);
+    });
     Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-
-    // Client sends 3 messages (tags 3, 4 and 5)
-    for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-      send_request.set_message("Ping " + grpc::to_string(tag_idx));
-      cli_stream->Write(send_request, tag(tag_idx));
-      Verifier(GetParam().disable_blocking)
-          .Expect(tag_idx, true)
-          .Verify(cq_.get());
-    }
-    cli_stream->WritesDone(tag(6));
-    Verifier(GetParam().disable_blocking).Expect(6, true).Verify(cq_.get());
+    t1.join();
 
     bool expected_server_cq_result = true;
-    bool ignore_cq_result = false;
-    bool want_done_tag = false;
+    bool expected_client_cq_result = true;
 
     if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
       srv_ctx.TryCancel();
@@ -1348,10 +1462,36 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       EXPECT_TRUE(srv_ctx.IsCancelled());
 
       // Since cancellation is done before server reads any results, we know
-      // for sure that all cq results will return false from this point forward
+      // for sure that all server cq results will return false from this
+      // point forward
       expected_server_cq_result = false;
+      expected_client_cq_result = false;
     }
 
+    bool ignore_client_cq_result =
+        (server_try_cancel == CANCEL_DURING_PROCESSING) ||
+        (server_try_cancel == CANCEL_BEFORE_PROCESSING);
+
+    std::thread cli_thread([&cli_cq, &cli_stream, &expected_client_cq_result,
+                            &ignore_client_cq_result, this] {
+      EchoRequest send_request;
+      // Client sends 3 messages (tags 3, 4 and 5)
+      for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
+        send_request.set_message("Ping " + grpc::to_string(tag_idx));
+        cli_stream->Write(send_request, tag(tag_idx));
+        Verifier(GetParam().disable_blocking)
+            .Expect(tag_idx, expected_client_cq_result)
+            .Verify(&cli_cq, ignore_client_cq_result);
+      }
+      cli_stream->WritesDone(tag(6));
+      // Ignore ok on WritesDone since cancel can affect it
+      Verifier(GetParam().disable_blocking)
+          .Expect(6, expected_client_cq_result)
+          .Verify(&cli_cq, ignore_client_cq_result);
+    });
+
+    bool ignore_cq_result = false;
+    bool want_done_tag = false;
     std::thread* server_try_cancel_thd = nullptr;
 
     auto verif = Verifier(GetParam().disable_blocking);
@@ -1388,6 +1528,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       }
     }
 
+    cli_thread.join();
+
     if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
       delete server_try_cancel_thd;
@@ -1416,9 +1558,15 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Client will see the cancellation
     cli_stream->Finish(&recv_status, tag(10));
-    Verifier(GetParam().disable_blocking).Expect(10, true).Verify(cq_.get());
+    Verifier(GetParam().disable_blocking).Expect(10, true).Verify(&cli_cq);
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
+
+    cli_cq.Shutdown();
+    void* dummy_tag;
+    bool dummy_ok;
+    while (cli_cq.Next(&dummy_tag, &dummy_ok)) {
+    }
   }
 
   // Helper for testing server-streaming RPCs which are cancelled on the server.
@@ -1440,7 +1588,6 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EchoRequest send_request;
     EchoRequest recv_request;
     EchoResponse send_response;
-    EchoResponse recv_response;
     Status recv_status;
     ClientContext cli_ctx;
     ServerContext srv_ctx;
@@ -1448,20 +1595,29 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     send_request.set_message("Ping");
     // Initiate the 'ResponseStream' call on the client
+    CompletionQueue cli_cq;
     std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
-        stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
-    Verifier(GetParam().disable_blocking).Expect(1, true).Verify(cq_.get());
+        stub_->AsyncResponseStream(&cli_ctx, send_request, &cli_cq, tag(1)));
     // On the server, request to be notified of 'ResponseStream' calls and
     // receive the call just made by the client
     srv_ctx.AsyncNotifyWhenDone(tag(11));
     service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                     cq_.get(), cq_.get(), tag(2));
+
+    std::thread t1([this, &cli_cq] {
+      Verifier(GetParam().disable_blocking).Expect(1, true).Verify(&cli_cq);
+    });
     Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
+    t1.join();
+
     EXPECT_EQ(send_request.message(), recv_request.message());
 
     bool expected_cq_result = true;
     bool ignore_cq_result = false;
     bool want_done_tag = false;
+    bool expected_client_cq_result = true;
+    bool ignore_client_cq_result =
+        (server_try_cancel != CANCEL_BEFORE_PROCESSING);
 
     if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
       srv_ctx.TryCancel();
@@ -1471,7 +1627,20 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       // We know for sure that all cq results will be false from this point
       // since the server cancelled the RPC
       expected_cq_result = false;
+      expected_client_cq_result = false;
     }
+
+    std::thread cli_thread([&cli_cq, &cli_stream, &expected_client_cq_result,
+                            &ignore_client_cq_result, this] {
+      // Client attempts to read the three messages from the server
+      for (int tag_idx = 6; tag_idx <= 8; tag_idx++) {
+        EchoResponse recv_response;
+        cli_stream->Read(&recv_response, tag(tag_idx));
+        Verifier(GetParam().disable_blocking)
+            .Expect(tag_idx, expected_client_cq_result)
+            .Verify(&cli_cq, ignore_client_cq_result);
+      }
+    });
 
     std::thread* server_try_cancel_thd = nullptr;
 
@@ -1520,10 +1689,6 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       srv_ctx.TryCancel();
       want_done_tag = true;
       verif.Expect(11, true);
-
-      // Client reads may fail bacause it is notified that the stream is
-      // cancelled.
-      ignore_cq_result = true;
     }
 
     if (want_done_tag) {
@@ -1532,13 +1697,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       want_done_tag = false;
     }
 
-    // Client attemts to read the three messages from the server
-    for (int tag_idx = 6; tag_idx <= 8; tag_idx++) {
-      cli_stream->Read(&recv_response, tag(tag_idx));
-      Verifier(GetParam().disable_blocking)
-          .Expect(tag_idx, expected_cq_result)
-          .Verify(cq_.get(), ignore_cq_result);
-    }
+    cli_thread.join();
 
     // The RPC has been cancelled at this point for sure (i.e irrespective of
     // the value of `server_try_cancel` is). So, from this point forward, we
@@ -1550,9 +1709,15 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Client will see the cancellation
     cli_stream->Finish(&recv_status, tag(10));
-    Verifier(GetParam().disable_blocking).Expect(10, true).Verify(cq_.get());
+    Verifier(GetParam().disable_blocking).Expect(10, true).Verify(&cli_cq);
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
+
+    cli_cq.Shutdown();
+    void* dummy_tag;
+    bool dummy_ok;
+    while (cli_cq.Next(&dummy_tag, &dummy_ok)) {
+    }
   }
 
   // Helper for testing bidirectinal-streaming RPCs which are cancelled on the
@@ -1585,37 +1750,51 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // Initiate the call from the client side
     std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
         cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
-    Verifier(GetParam().disable_blocking).Expect(1, true).Verify(cq_.get());
 
     // On the server, request to be notified of the 'BidiStream' call and
     // receive the call just made by the client
     srv_ctx.AsyncNotifyWhenDone(tag(11));
     service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                                 tag(2));
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
+    Verifier(GetParam().disable_blocking)
+        .Expect(1, true)
+        .Expect(2, true)
+        .Verify(cq_.get());
+
+    auto verif = Verifier(GetParam().disable_blocking);
 
     // Client sends the first and the only message
     send_request.set_message("Ping");
     cli_stream->Write(send_request, tag(3));
-    Verifier(GetParam().disable_blocking).Expect(3, true).Verify(cq_.get());
+    verif.Expect(3, true);
 
     bool expected_cq_result = true;
     bool ignore_cq_result = false;
     bool want_done_tag = false;
 
+    int got_tag, got_tag2;
+    bool tag_3_done = false;
+
     if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
       srv_ctx.TryCancel();
-      Verifier(GetParam().disable_blocking).Expect(11, true).Verify(cq_.get());
-      EXPECT_TRUE(srv_ctx.IsCancelled());
-
-      // We know for sure that all cq results will be false from this point
-      // since the server cancelled the RPC
+      verif.Expect(11, true);
+      // We know for sure that all server cq results will be false from
+      // this point since the server cancelled the RPC. However, we can't
+      // say for sure about the client
       expected_cq_result = false;
+      ignore_cq_result = true;
+
+      do {
+        got_tag = verif.Next(cq_.get(), ignore_cq_result);
+        GPR_ASSERT(((got_tag == 3) && !tag_3_done) || (got_tag == 11));
+        if (got_tag == 3) {
+          tag_3_done = true;
+        }
+      } while (got_tag != 11);
+      EXPECT_TRUE(srv_ctx.IsCancelled());
     }
 
     std::thread* server_try_cancel_thd = nullptr;
-
-    auto verif = Verifier(GetParam().disable_blocking);
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
@@ -1631,39 +1810,42 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       verif.Expect(11, true);
     }
 
-    int got_tag;
     srv_stream.Read(&recv_request, tag(4));
     verif.Expect(4, expected_cq_result);
-    got_tag = verif.Next(cq_.get(), ignore_cq_result);
-    GPR_ASSERT((got_tag == 4) || (got_tag == 11 && want_done_tag));
-    if (got_tag == 11) {
+    got_tag = tag_3_done ? 3 : verif.Next(cq_.get(), ignore_cq_result);
+    got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
+    GPR_ASSERT((got_tag == 3) || (got_tag == 4) ||
+               (got_tag == 11 && want_done_tag));
+    GPR_ASSERT((got_tag2 == 3) || (got_tag2 == 4) ||
+               (got_tag2 == 11 && want_done_tag));
+    // If we get 3 and 4, we don't need to wait for 11, but if
+    // we get 11, we should also clear 3 and 4
+    if (got_tag + got_tag2 != 7) {
       EXPECT_TRUE(srv_ctx.IsCancelled());
       want_done_tag = false;
-      // Now get the other entry that we were waiting on
-      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 4);
+      got_tag = verif.Next(cq_.get(), ignore_cq_result);
+      GPR_ASSERT((got_tag == 3) || (got_tag == 4));
     }
 
     send_response.set_message("Pong");
     srv_stream.Write(send_response, tag(5));
     verif.Expect(5, expected_cq_result);
-    got_tag = verif.Next(cq_.get(), ignore_cq_result);
-    GPR_ASSERT((got_tag == 5) || (got_tag == 11 && want_done_tag));
-    if (got_tag == 11) {
-      EXPECT_TRUE(srv_ctx.IsCancelled());
-      want_done_tag = false;
-      // Now get the other entry that we were waiting on
-      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 5);
-    }
 
     cli_stream->Read(&recv_response, tag(6));
     verif.Expect(6, expected_cq_result);
     got_tag = verif.Next(cq_.get(), ignore_cq_result);
-    GPR_ASSERT((got_tag == 6) || (got_tag == 11 && want_done_tag));
-    if (got_tag == 11) {
+    got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
+    GPR_ASSERT((got_tag == 5) || (got_tag == 6) ||
+               (got_tag == 11 && want_done_tag));
+    GPR_ASSERT((got_tag2 == 5) || (got_tag2 == 6) ||
+               (got_tag2 == 11 && want_done_tag));
+    // If we get 5 and 6, we don't need to wait for 11, but if
+    // we get 11, we should also clear 5 and 6
+    if (got_tag + got_tag2 != 11) {
       EXPECT_TRUE(srv_ctx.IsCancelled());
       want_done_tag = false;
-      // Now get the other entry that we were waiting on
-      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 6);
+      got_tag = verif.Next(cq_.get(), ignore_cq_result);
+      GPR_ASSERT((got_tag == 5) || (got_tag == 6));
     }
 
     // This is expected to succeed in all cases
@@ -1788,7 +1970,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   GPR_ASSERT(!credentials_types.empty());
 
   messages.push_back("Hello");
-  for (int sz = 1; sz < test_big_limit; sz *= 2) {
+  for (int sz = 1; sz <= test_big_limit; sz *= 32) {
     grpc::string big_msg;
     for (int i = 0; i < sz * 1024; i++) {
       char c = 'a' + (i % 26);
@@ -1831,6 +2013,9 @@ INSTANTIATE_TEST_CASE_P(AsyncEnd2endServerTryCancel,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  // Change the backup poll interval from 5s to 100ms to speed up the
+  // ReconnectChannel test
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "100");
   grpc_test_init(argc, argv);
   gpr_tls_init(&g_is_async_end2end_test);
   ::testing::InitGoogleTest(&argc, argv);

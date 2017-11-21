@@ -24,25 +24,29 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* one listening port */
 typedef struct grpc_tcp_listener {
   int fd;
-  grpc_fd *emfd;
-  grpc_tcp_server *server;
+  grpc_fd* emfd;
+  grpc_tcp_server* server;
   grpc_resolved_address addr;
   int port;
   unsigned port_index;
   unsigned fd_index;
   grpc_closure read_closure;
   grpc_closure destroyed_closure;
-  struct grpc_tcp_listener *next;
+  struct grpc_tcp_listener* next;
   /* sibling is a linked list of all listeners for a given port. add_port and
      clone_port place all new listeners in the same sibling list. A member of
      the 'sibling' list is also a member of the 'next' list. The head of each
      sibling list has is_sibling==0, and subsequent members of sibling lists
      have is_sibling==1. is_sibling allows separate sibling lists to be
      identified while iterating through 'next'. */
-  struct grpc_tcp_listener *sibling;
+  struct grpc_tcp_listener* sibling;
   int is_sibling;
 } grpc_tcp_listener;
 
@@ -51,7 +55,7 @@ struct grpc_tcp_server {
   gpr_refcount refs;
   /* Called whenever accept() succeeds on a server port. */
   grpc_tcp_server_cb on_accept_cb;
-  void *on_accept_cb_arg;
+  void* on_accept_cb_arg;
 
   gpr_mu mu;
 
@@ -70,18 +74,18 @@ struct grpc_tcp_server {
   bool expand_wildcard_addrs;
 
   /* linked list of server ports */
-  grpc_tcp_listener *head;
-  grpc_tcp_listener *tail;
+  grpc_tcp_listener* head;
+  grpc_tcp_listener* tail;
   unsigned nports;
 
   /* List of closures passed to shutdown_starting_add(). */
   grpc_closure_list shutdown_starting;
 
   /* shutdown callback */
-  grpc_closure *shutdown_complete;
+  grpc_closure* shutdown_complete;
 
   /* all pollsets interested in new connections */
-  grpc_pollset **pollsets;
+  grpc_pollset** pollsets;
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
 
@@ -89,32 +93,36 @@ struct grpc_tcp_server {
   gpr_atm next_pollset_to_assign;
 
   /* channel args for this server */
-  grpc_channel_args *channel_args;
+  grpc_channel_args* channel_args;
 };
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the
    socket, and return the \a listener. */
-grpc_error *grpc_tcp_server_add_addr(grpc_tcp_server *s,
-                                     const grpc_resolved_address *addr,
+grpc_error* grpc_tcp_server_add_addr(grpc_tcp_server* s,
+                                     const grpc_resolved_address* addr,
                                      unsigned port_index, unsigned fd_index,
-                                     grpc_dualstack_mode *dsmode,
-                                     grpc_tcp_listener **listener);
+                                     grpc_dualstack_mode* dsmode,
+                                     grpc_tcp_listener** listener);
 
 /* Get all addresses assigned to network interfaces on the machine and create a
    listener for each. requested_port is the port to use for every listener, or 0
    to select one random port that will be used for every listener. Set *out_port
    to the port selected. Return GRPC_ERROR_NONE only if all listeners were
    added. */
-grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
+grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
                                                 unsigned port_index,
                                                 int requested_port,
-                                                int *out_port);
+                                                int* out_port);
 
 /* Prepare a recently-created socket for listening. */
-grpc_error *grpc_tcp_server_prepare_socket(int fd,
-                                           const grpc_resolved_address *addr,
-                                           bool so_reuseport, int *port);
+grpc_error* grpc_tcp_server_prepare_socket(int fd,
+                                           const grpc_resolved_address* addr,
+                                           bool so_reuseport, int* port);
 /* Ruturn true if the platform supports ifaddrs */
 bool grpc_tcp_server_have_ifaddrs(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H */

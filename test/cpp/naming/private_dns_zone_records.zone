@@ -11,30 +11,30 @@ _grpclb._tcp.srv-ipv6-multi-target                                              
 ipv6-multi-target                                                                                                               2100    IN  AAAA    2607:f8b0:400a:801::1002
 ipv6-multi-target                                                                                                               2100    IN  AAAA    2607:f8b0:400a:801::1003
 ipv6-multi-target                                                                                                               2100    IN  AAAA    2607:f8b0:400a:801::1004
-srv-ipv4-simple-service-config                                                                                                  2100    IN  TXT     (
+_grpc_config.srv-ipv4-simple-service-config                                                                                     2100    IN  TXT     (
     "grpc_config=[{\\\"serviceConfig\\\":{\\\"loadBalancingPolicy\\\":\\\"round_robin\\\",\\\"methodConfig\\\":[{\\\"name\\\":[{\\\"method\\\":\\\"Foo\\\",\\\"service\\\":\\\"SimpleService\\\"}],\\\"waitForReady\\\":true}]}}]"
 )
-ipv4-simple-service-config                                                                                                      2100    IN  A       1.2.3.4
 _grpclb._tcp.srv-ipv4-simple-service-config                                                                                     2100    IN  SRV     0 0 1234 ipv4-simple-service-config.resolver-tests-version-5.grpctestingexp.
+ipv4-simple-service-config                                                                                                      2100    IN  A       1.2.3.4
 ipv4-no-srv-simple-service-config                                                                                               2100    IN  A       1.2.3.4
-ipv4-no-srv-simple-service-config                                                                                               2100    IN  TXT     (
+_grpc_config.ipv4-no-srv-simple-service-config                                                                                  2100    IN  TXT     (
     "grpc_config=[{\\\"serviceConfig\\\":{\\\"loadBalancingPolicy\\\":\\\"round_robin\\\",\\\"methodConfig\\\":[{\\\"name\\\":[{\\\"method\\\":\\\"Foo\\\",\\\"service\\\":\\\"NoSrvSimpleService\\\"}],\\\"waitForReady\\\":true}]}}]"
 )
-ipv4-no-config-for-cpp                                                                                                          2100    IN  A       1.2.3.4
-ipv4-no-config-for-cpp                                                                                                          2100    IN  TXT     (
+_grpc_config.ipv4-no-config-for-cpp                                                                                             2100    IN  TXT     (
     "grpc_config=[{\\\"clientLanguage\\\":[\\\"python\\\"],\\\"serviceConfig\\\":{\\\"loadBalancingPolicy\\\":\\\"round_robin\\\",\\\"methodConfig\\\":[{\\\"name\\\":[{\\\"method\\\":\\\"Foo\\\",\\\"service\\\":\\\"PythonService\\\"}],\\\"waitForReady\\\":true}]}}]"
 )
+ipv4-no-config-for-cpp                                                                                                          2100    IN  A       1.2.3.4
 ipv4-cpp-config-has-zero-percentage                                                                                             2100    IN  A       1.2.3.4
-ipv4-cpp-config-has-zero-percentage                                                                                             2100    IN  TXT     (
+_grpc_config.ipv4-cpp-config-has-zero-percentage                                                                                2100    IN  TXT     (
     "grpc_config=[{\\\"percentage\\\":0,\\\"serviceConfig\\\":{\\\"loadBalancingPolicy\\\":\\\"round_robin\\\",\\\"methodConfig\\\":[{\\\"name\\\":[{\\\"method\\\":\\\"Foo\\\",\\\"service\\\":\\\"CppService\\\"}],\\\"waitForReady\\\":true}]}}]"
 )
-ipv4-second-language-is-cpp                                                                                                     2100    IN  A       1.2.3.4
-ipv4-second-language-is-cpp                                                                                                     2100    IN  TXT     (
+_grpc_config.ipv4-second-language-is-cpp                                                                                        2100    IN  TXT     (
     "grpc_config=[{\\\"clientLanguage\\\":[\\\"go\\\"],\\\"serviceConfig\\\":{\\\"loadBalancingPolicy\\\":\\\"round_robin\\\",\\\"methodConfig\\\":[{\\\"name\\\":[{\\\"method\\\":\\\"Foo\\\",\\\"service\\\":\\\"GoService\\\",\\\"waitForReady\\\":true}]}]}},{\\\"clientLanguage\\\":[\\\"c++\\\"],\\\"serviceConfig\\\":{\\\""
     "loadBalancingPolicy\\\":\\\"round_robin\\\",\\\"methodConfig\\\":[{\\\"name\\\":[{\\\"method\\\":\\\"Foo\\\",\\\"service\\\":\\\"CppService\\\",\\\"waitForReady\\\":true}]}]}}]"
 )
+ipv4-second-language-is-cpp                                                                                                     2100    IN  A       1.2.3.4
 ipv4-config-with-percentages                                                                                                    2100    IN  A       1.2.3.4
-ipv4-config-with-percentages                                                                                                    2100    IN  TXT     (
+_grpc_config.ipv4-config-with-percentages                                                                                       2100    IN  TXT     (
     "grpc_config=[{\\\"percentage\\\":0,\\\"serviceConfig\\\":{\\\"loadBalancingPolicy\\\":\\\"round_robin\\\",\\\"methodConfig\\\":[{\\\"name\\\":[{\\\"method\\\":\\\"Foo\\\",\\\"service\\\":\\\"NeverPickedService\\\"}],\\\"waitForReady\\\":true}]}},{\\\"percentage\\\":100,\\\"serviceConfig\\\":{\\\"loadBalancin"
     "gPolicy\\\":\\\"round_robin\\\",\\\"methodConfig\\\":[{\\\"name\\\":[{\\\"method\\\":\\\"Foo\\\",\\\"service\\\":\\\"AlwaysPickedService\\\"}],\\\"waitForReady\\\":true}]}}]"
 )

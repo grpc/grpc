@@ -189,6 +189,8 @@
   doc: Number of HTTP2 writes initiated due to 'ping_response'
 - counter: http2_initiate_write_due_to_force_rst_stream
   doc: Number of HTTP2 writes initiated due to 'force_rst_stream'
+- counter: http2_spurious_writes_begun
+  doc: Number of HTTP2 writes initiated with nothing to write
 - counter: hpack_recv_indexed
   doc: Number of HPACK indexed fields received
 - counter: hpack_recv_lithdr_incidx
@@ -243,6 +245,16 @@
   doc: Number of final items scheduled against combiner locks
 - counter: combiner_locks_offloaded
   doc: Number of combiner locks offloaded to different threads
+# call combiner locks
+- counter: call_combiner_locks_initiated
+  doc: Number of call combiner lock entries by process
+       (first items queued to a call combiner)
+- counter: call_combiner_locks_scheduled_items
+  doc: Number of items scheduled against call combiner locks
+- counter: call_combiner_set_notify_on_cancel
+  doc: Number of times a cancellation callback was set on a call combiner
+- counter: call_combiner_cancelled
+  doc: Number of times a call combiner was cancelled
 # executor
 - counter: executor_scheduled_short_items
   doc: Number of finite runtime closures scheduled against the executor
@@ -270,3 +282,13 @@
 - counter: server_slowpath_requests_queued
   doc: How many times was the server slow path taken (indicates too few
        outstanding requests)
+# cq
+- counter: cq_ev_queue_trylock_failures
+  doc: Number of lock (trylock) acquisition failures on completion queue event
+       queue. High value here indicates high contention on completion queues
+- counter: cq_ev_queue_trylock_successes
+  doc: Number of lock (trylock) acquisition successes on completion queue event
+       queue.
+- counter: cq_ev_queue_transient_pop_failures
+  doc: Number of times NULL was popped out of completion queue's event queue
+       even though the event queue was not empty

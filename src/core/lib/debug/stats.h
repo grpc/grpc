@@ -23,12 +23,16 @@
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_stats_data {
   gpr_atm counters[GRPC_STATS_COUNTER_COUNT];
   gpr_atm histograms[GRPC_STATS_HISTOGRAM_BUCKETS];
 } grpc_stats_data;
 
-extern grpc_stats_data *grpc_stats_per_cpu_storage;
+extern grpc_stats_data* grpc_stats_per_cpu_storage;
 
 #define GRPC_THREAD_STATS_DATA(exec_ctx) \
   (&grpc_stats_per_cpu_storage[(exec_ctx)->starting_cpu])
@@ -45,17 +49,21 @@ extern grpc_stats_data *grpc_stats_per_cpu_storage;
 
 void grpc_stats_init(void);
 void grpc_stats_shutdown(void);
-void grpc_stats_collect(grpc_stats_data *output);
+void grpc_stats_collect(grpc_stats_data* output);
 // c = b-a
-void grpc_stats_diff(const grpc_stats_data *b, const grpc_stats_data *a,
-                     grpc_stats_data *c);
-char *grpc_stats_data_as_json(const grpc_stats_data *data);
-int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx *exec_ctx, int value,
-                                      const int *table, int table_size);
-double grpc_stats_histo_percentile(const grpc_stats_data *data,
+void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
+                     grpc_stats_data* c);
+char* grpc_stats_data_as_json(const grpc_stats_data* data);
+int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx* exec_ctx, int value,
+                                      const int* table, int table_size);
+double grpc_stats_histo_percentile(const grpc_stats_data* data,
                                    grpc_stats_histograms histogram,
                                    double percentile);
-size_t grpc_stats_histo_count(const grpc_stats_data *data,
+size_t grpc_stats_histo_count(const grpc_stats_data* data,
                               grpc_stats_histograms histogram);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

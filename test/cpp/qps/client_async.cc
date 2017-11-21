@@ -149,9 +149,9 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   // Specify which protected members we are using since there is no
   // member name resolution until the template types are fully resolved
  public:
+  using Client::NextIssuer;
   using Client::SetupLoadTest;
   using Client::closed_loop_;
-  using Client::NextIssuer;
   using ClientImpl<StubType, RequestType>::cores_;
   using ClientImpl<StubType, RequestType>::channels_;
   using ClientImpl<StubType, RequestType>::request_;
@@ -236,31 +236,56 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     this->EndThreads();  // this needed for resolution
   }
 
-  bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) override final {
+  ClientRpcContext* ProcessTag(size_t thread_idx, void* tag) {
+    ClientRpcContext* ctx = ClientRpcContext::detag(tag);
+    if (shutdown_state_[thread_idx]->shutdown) {
+      ctx->TryCancel();
+      delete ctx;
+      bool ok;
+      while (cli_cqs_[cq_[thread_idx]]->Next(&tag, &ok)) {
+        ctx = ClientRpcContext::detag(tag);
+        ctx->TryCancel();
+        delete ctx;
+      }
+      return nullptr;
+    }
+    return ctx;
+  }
+
+  void ThreadFunc(size_t thread_idx, Client::Thread* t) override final {
     void* got_tag;
     bool ok;
 
-    if (cli_cqs_[cq_[thread_idx]]->Next(&got_tag, &ok)) {
-      // Got a regular event, so process it
-      ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
-      // Proceed while holding a lock to make sure that
-      // this thread isn't supposed to shut down
-      std::lock_guard<std::mutex> l(shutdown_state_[thread_idx]->mutex);
-      if (shutdown_state_[thread_idx]->shutdown) {
-        ctx->TryCancel();
-        delete ctx;
-        return true;
+    HistogramEntry entry;
+    HistogramEntry* entry_ptr = &entry;
+    if (!cli_cqs_[cq_[thread_idx]]->Next(&got_tag, &ok)) {
+      return;
+    }
+    std::mutex* shutdown_mu = &shutdown_state_[thread_idx]->mutex;
+    shutdown_mu->lock();
+    ClientRpcContext* ctx = ProcessTag(thread_idx, got_tag);
+    if (ctx == nullptr) {
+      shutdown_mu->unlock();
+      return;
+    }
+    while (cli_cqs_[cq_[thread_idx]]->DoThenAsyncNext(
+        [&, ctx, ok, entry_ptr, shutdown_mu]() {
+          if (!ctx->RunNextState(ok, entry_ptr)) {
+            // The RPC and callback are done, so clone the ctx
+            // and kickstart the new one
+            ctx->StartNewClone(cli_cqs_[cq_[thread_idx]].get());
+            delete ctx;
+          }
+          shutdown_mu->unlock();
+        },
+        &got_tag, &ok, gpr_inf_future(GPR_CLOCK_REALTIME))) {
+      t->UpdateHistogram(entry_ptr);
+      shutdown_mu->lock();
+      ctx = ProcessTag(thread_idx, got_tag);
+      if (ctx == nullptr) {
+        shutdown_mu->unlock();
+        return;
       }
-      if (!ctx->RunNextState(ok, entry)) {
-        // The RPC and callback are done, so clone the ctx
-        // and kickstart the new one
-        ctx->StartNewClone(cli_cqs_[cq_[thread_idx]].get());
-        delete ctx;
-      }
-      return true;
-    } else {
-      // queue is shutting down, so we must be  done
-      return true;
     }
   }
 

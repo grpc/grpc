@@ -21,7 +21,15 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const grpc_channel_filter grpc_client_load_reporting_filter;
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H \
-          */
+        */

@@ -22,7 +22,7 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_tracer_flag grpc_api_trace;
+extern grpc_core::TraceFlag grpc_api_trace;
 
 /* Provide unwrapping macros because we're in C89 and variadic macros weren't
    introduced until C99... */
@@ -43,7 +43,7 @@ extern grpc_tracer_flag grpc_api_trace;
 /* Due to the limitations of C89's preprocessor, the arity of the var-arg list
    'nargs' must be specified. */
 #define GRPC_API_TRACE(fmt, nargs, args)                      \
-  if (GRPC_TRACER_ON(grpc_api_trace)) {                       \
+  if (grpc_api_trace.enabled()) {                             \
     gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
   }
 

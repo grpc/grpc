@@ -63,8 +63,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-  'linux': ['epollsig', 'epoll1', 'poll', 'poll-cv'],
-# TODO(ctiller, sreecha): enable epollex, epoll-thread-pool
+  'linux': ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv'],
   'mac': ['poll'],
 }
 
@@ -117,6 +116,13 @@ def run_shell_command(cmd, env=None, cwd=None):
                        e.cmd, e.returncode, e.output)
     raise
 
+def max_parallel_tests_for_current_platform():
+  # Too much test parallelization has only been seen to be a problem
+  # so far on windows.
+  if jobset.platform_string() == 'windows':
+    return 64
+  return 1024
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
 
@@ -142,18 +148,16 @@ class Config(object):
     for k, v in environ.items():
       actual_environ[k] = v
     if not flaky and shortname and shortname in flaky_tests:
-      print('Setting %s to flaky' % shortname)
       flaky = True
     if shortname in shortname_to_cpu:
-      print('Update CPU cost for %s: %f -> %f' % (shortname, cpu_cost, shortname_to_cpu[shortname]))
       cpu_cost = shortname_to_cpu[shortname]
     return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
-                          flake_retries=5 if flaky or args.allow_flakes else 0,
-                          timeout_retries=3 if flaky or args.allow_flakes else 0)
+                          flake_retries=4 if flaky or args.allow_flakes else 0,
+                          timeout_retries=1 if flaky or args.allow_flakes else 0)
 
 
 def get_c_tests(travis, test_lang) :
@@ -277,9 +281,10 @@ class CLanguage(object):
       if self._use_cmake and target.get('boringssl', False):
         # cmake doesn't build boringssl tests
         continue
+      auto_timeout_scaling = target.get('auto_timeout_scaling', True)
       polling_strategies = (_POLLING_STRATEGIES.get(self.platform, ['all'])
                             if target.get('uses_polling', True)
-                            else ['all'])
+                            else ['none'])
       if self.args.iomgr_platform == 'uv':
         polling_strategies = ['all']
       for polling_strategy in polling_strategies:
@@ -291,22 +296,30 @@ class CLanguage(object):
         if resolver:
           env['GRPC_DNS_RESOLVER'] = resolver
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
-        timeout_scaling = 1
-        if polling_strategy == 'poll-cv':
-          timeout_scaling *= 5
-
         if polling_strategy in target.get('excluded_poll_engines', []):
           continue
 
-        # Scale overall test timeout if running under various sanitizers.
-        config = self.args.config
-        if ('asan' in config
-            or config == 'msan'
-            or config == 'tsan'
-            or config == 'ubsan'
-            or config == 'helgrind'
-            or config == 'memcheck'):
-          timeout_scaling *= 20
+        timeout_scaling = 1
+        if auto_timeout_scaling:
+          config = self.args.config
+          if ('asan' in config
+              or config == 'msan'
+              or config == 'tsan'
+              or config == 'ubsan'
+              or config == 'helgrind'
+              or config == 'memcheck'):
+            # Scale overall test timeout if running under various sanitizers.
+            # scaling value is based on historical data analysis
+            timeout_scaling *= 3
+          elif polling_strategy == 'poll-cv':
+            # scale test timeout if running with poll-cv
+            # sanitizer and poll-cv scaling is not cumulative to ensure
+            # reasonable timeout values.
+            # TODO(jtattermusch): based on historical data and 5min default
+            # test timeout poll-cv scaling is currently not useful.
+            # Leaving here so it can be reintroduced if the default test timeout
+            # is decreased in the future.
+            timeout_scaling *= 1
 
         if self.config.build_config in target['exclude_configs']:
           continue
@@ -323,11 +336,29 @@ class CLanguage(object):
         if cpu_cost == 'capacity':
           cpu_cost = multiprocessing.cpu_count()
         if os.path.isfile(binary):
-          if 'gtest' in target and target['gtest']:
-            # here we parse the output of --gtest_list_tests to build up a
-            # complete list of the tests contained in a binary
-            # for each test, we then add a job to run, filtering for just that
-            # test
+          list_test_command = None
+          filter_test_command = None
+
+          # these are the flag defined by gtest and benchmark framework to list
+          # and filter test runs. We use them to split each individual test
+          # into its own JobSpec, and thus into its own process.
+          if 'benchmark' in target and target['benchmark']:
+            with open(os.devnull, 'w') as fnull:
+              tests = subprocess.check_output([binary, '--benchmark_list_tests'],
+                                              stderr=fnull)
+            for line in tests.split('\n'):
+              test = line.strip()
+              if not test: continue
+              cmdline = [binary, '--benchmark_filter=%s$' % test] + target['args']
+              out.append(self.config.job_spec(cmdline,
+                                              shortname='%s %s' % (' '.join(cmdline), shortname_ext),
+                                              cpu_cost=cpu_cost,
+                                              timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
+                                              environ=env))
+          elif 'gtest' in target and target['gtest']:
+            # here we parse the output of --gtest_list_tests to build up a complete
+            # list of the tests contained in a binary for each test, we then
+            # add a job to run, filtering for just that test.
             with open(os.devnull, 'w') as fnull:
               tests = subprocess.check_output([binary, '--gtest_list_tests'],
                                               stderr=fnull)
@@ -346,7 +377,7 @@ class CLanguage(object):
                 out.append(self.config.job_spec(cmdline,
                                                 shortname='%s %s' % (' '.join(cmdline), shortname_ext),
                                                 cpu_cost=cpu_cost,
-                                                timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
+                                                timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
@@ -505,90 +536,6 @@ class RemoteNodeLanguage(object):
     return 'grpc-node'
 
 
-class NodeLanguage(object):
-
-  def __init__(self):
-    self.platform = platform_string()
-
-  def configure(self, config, args):
-    self.config = config
-    self.args = args
-    # Note: electron ABI only depends on major and minor version, so that's all
-    # we should specify in the compiler argument
-    _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5', 'node6',
-                                         'node7', 'node8',
-                                         'electron1.3', 'electron1.6'])
-    if self.args.compiler == 'default':
-      self.runtime = 'node'
-      self.node_version = '8'
-    else:
-      if self.args.compiler.startswith('electron'):
-        self.runtime = 'electron'
-        self.node_version = self.args.compiler[8:]
-      else:
-        self.runtime = 'node'
-        # Take off the word "node"
-        self.node_version = self.args.compiler[4:]
-
-  def test_specs(self):
-    if self.platform == 'windows':
-      return [self.config.job_spec(['tools\\run_tests\\helper_scripts\\run_node.bat'])]
-    else:
-      run_script = 'run_node'
-      if self.runtime == 'electron':
-        run_script += '_electron'
-      return [self.config.job_spec(['tools/run_tests/helper_scripts/{}.sh'.format(run_script),
-                                    self.node_version],
-                                   None,
-                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
-
-  def pre_build_steps(self):
-    if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
-    else:
-      build_script = 'pre_build_node'
-      if self.runtime == 'electron':
-        build_script += '_electron'
-      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
-               self.node_version]]
-
-  def make_targets(self):
-    return []
-
-  def make_options(self):
-    return []
-
-  def build_steps(self):
-    if self.platform == 'windows':
-      if self.config == 'dbg':
-        config_flag = '--debug'
-      else:
-        config_flag = '--release'
-      return [['tools\\run_tests\\helper_scripts\\build_node.bat',
-               config_flag]]
-    else:
-      build_script = 'build_node'
-      if self.runtime == 'electron':
-        build_script += '_electron'
-        # building for electron requires a patch version
-        self.node_version += '.0'
-      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
-               self.node_version]]
-
-  def post_tests_steps(self):
-    return []
-
-  def makefile_name(self):
-    return 'Makefile'
-
-  def dockerfile_dir(self):
-    return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(self.args.arch)
-
-  def __str__(self):
-    return 'node'
-
-
 class PhpLanguage(object):
 
   def configure(self, config, args):
@@ -701,7 +648,7 @@ class PythonLanguage(object):
     return [config.build for config in self.pythons]
 
   def post_tests_steps(self):
-    if self.config != 'gcov':
+    if self.config.build_config != 'gcov':
       return []
     else:
       return [['tools/run_tests/helper_scripts/post_tests_python.sh']]
@@ -1072,54 +1019,6 @@ class Sanity(object):
   def __str__(self):
     return 'sanity'
 
-class NodeExpressLanguage(object):
-  """Dummy Node express test target to enable running express performance
-  benchmarks"""
-
-  def __init__(self):
-    self.platform = platform_string()
-
-  def configure(self, config, args):
-    self.config = config
-    self.args = args
-    _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5', 'node6'])
-    if self.args.compiler == 'default':
-      self.node_version = '4'
-    else:
-      # Take off the word "node"
-      self.node_version = self.args.compiler[4:]
-
-  def test_specs(self):
-    return []
-
-  def pre_build_steps(self):
-    if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
-    else:
-      return [['tools/run_tests/helper_scripts/pre_build_node.sh', self.node_version]]
-
-  def make_targets(self):
-    return []
-
-  def make_options(self):
-    return []
-
-  def build_steps(self):
-    return []
-
-  def post_tests_steps(self):
-    return []
-
-  def makefile_name(self):
-    return 'Makefile'
-
-  def dockerfile_dir(self):
-    return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(self.args.arch)
-
-  def __str__(self):
-    return 'node_express'
-
 # different configurations we can run under
 with open('tools/run_tests/generated/configs.json') as f:
   _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
@@ -1129,8 +1028,6 @@ _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
     'grpc-node': RemoteNodeLanguage(),
-    'node': NodeLanguage(),
-    'node_express': NodeExpressLanguage(),
     'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
@@ -1280,7 +1177,6 @@ argp.add_argument('--compiler',
                            'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc_musl',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
-                           'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
                            'cmake', 'cmake_vs2015', 'cmake_vs2017'],
@@ -1486,7 +1382,7 @@ def build_step_environ(cfg):
   return environ
 
 build_steps = list(set(
-                   jobset.JobSpec(cmdline, environ=build_step_environ(build_config), flake_retries=5)
+                   jobset.JobSpec(cmdline, environ=build_step_environ(build_config), flake_retries=2)
                    for l in languages
                    for cmdline in l.pre_build_steps()))
 if make_targets:
@@ -1544,8 +1440,11 @@ class BuildAndRunError(object):
 
 
 def _has_epollexclusive():
+  binary = 'bins/%s/check_epollexclusive' % args.config
+  if not os.path.exists(binary):
+    return False
   try:
-    subprocess.check_call('bins/%s/check_epollexclusive' % args.config)
+    subprocess.check_call(binary)
     return True
   except subprocess.CalledProcessError, e:
     return False
@@ -1618,7 +1517,7 @@ def _build_and_run(
       jobset.message('START', 'Running tests quietly, only failing tests will be reported', do_newline=True)
     num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
-        travis=args.travis, maxjobs=args.jobs,
+        travis=args.travis, maxjobs=args.jobs, maxjobs_cpu_agnostic=max_parallel_tests_for_current_platform(),
         stop_on_failure=args.stop_on_failure,
         quiet_success=args.quiet_success, max_time=args.max_time)
     if resultset:
@@ -1641,7 +1540,7 @@ def _build_and_run(
                                            suite_name=args.report_suite_name)
 
   number_failures, _ = jobset.run(
-      post_tests_steps, maxjobs=1, stop_on_failure=True,
+      post_tests_steps, maxjobs=1, stop_on_failure=False,
       newline_on_success=newline_on_success, travis=args.travis)
 
   out = []

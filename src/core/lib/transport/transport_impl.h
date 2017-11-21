@@ -21,52 +21,60 @@
 
 #include "src/core/lib/transport/transport.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_transport_vtable {
   /* Memory required for a single stream element - this is allocated by upper
      layers and initialized by the transport */
   size_t sizeof_stream; /* = sizeof(transport stream) */
 
   /* name of this transport implementation */
-  const char *name;
+  const char* name;
 
   /* implementation of grpc_transport_init_stream */
-  int (*init_stream)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                     grpc_stream *stream, grpc_stream_refcount *refcount,
-                     const void *server_data, gpr_arena *arena);
+  int (*init_stream)(grpc_exec_ctx* exec_ctx, grpc_transport* self,
+                     grpc_stream* stream, grpc_stream_refcount* refcount,
+                     const void* server_data, gpr_arena* arena);
 
   /* implementation of grpc_transport_set_pollset */
-  void (*set_pollset)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                      grpc_stream *stream, grpc_pollset *pollset);
+  void (*set_pollset)(grpc_exec_ctx* exec_ctx, grpc_transport* self,
+                      grpc_stream* stream, grpc_pollset* pollset);
 
   /* implementation of grpc_transport_set_pollset */
-  void (*set_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                          grpc_stream *stream, grpc_pollset_set *pollset_set);
+  void (*set_pollset_set)(grpc_exec_ctx* exec_ctx, grpc_transport* self,
+                          grpc_stream* stream, grpc_pollset_set* pollset_set);
 
   /* implementation of grpc_transport_perform_stream_op */
-  void (*perform_stream_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                            grpc_stream *stream,
-                            grpc_transport_stream_op_batch *op);
+  void (*perform_stream_op)(grpc_exec_ctx* exec_ctx, grpc_transport* self,
+                            grpc_stream* stream,
+                            grpc_transport_stream_op_batch* op);
 
   /* implementation of grpc_transport_perform_op */
-  void (*perform_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                     grpc_transport_op *op);
+  void (*perform_op)(grpc_exec_ctx* exec_ctx, grpc_transport* self,
+                     grpc_transport_op* op);
 
   /* implementation of grpc_transport_destroy_stream */
-  void (*destroy_stream)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                         grpc_stream *stream,
-                         grpc_closure *then_schedule_closure);
+  void (*destroy_stream)(grpc_exec_ctx* exec_ctx, grpc_transport* self,
+                         grpc_stream* stream,
+                         grpc_closure* then_schedule_closure);
 
   /* implementation of grpc_transport_destroy */
-  void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_transport *self);
+  void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_transport* self);
 
   /* implementation of grpc_transport_get_endpoint */
-  grpc_endpoint *(*get_endpoint)(grpc_exec_ctx *exec_ctx, grpc_transport *self);
+  grpc_endpoint* (*get_endpoint)(grpc_exec_ctx* exec_ctx, grpc_transport* self);
 } grpc_transport_vtable;
 
 /* an instance of a grpc transport */
 struct grpc_transport {
   /* pointer to a vtable defining operations on this transport */
-  const grpc_transport_vtable *vtable;
+  const grpc_transport_vtable* vtable;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H */

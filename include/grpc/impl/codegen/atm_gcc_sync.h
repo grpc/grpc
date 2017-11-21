@@ -25,6 +25,7 @@
 
 typedef intptr_t gpr_atm;
 #define GPR_ATM_MAX INTPTR_MAX
+#define GPR_ATM_MIN INTPTR_MIN
 
 #define GPR_ATM_COMPILE_BARRIER_() __asm__ __volatile__("" : : : "memory")
 
@@ -37,24 +38,24 @@ typedef intptr_t gpr_atm;
 
 #define gpr_atm_full_barrier() (__sync_synchronize())
 
-static __inline gpr_atm gpr_atm_acq_load(const gpr_atm *p) {
+static __inline gpr_atm gpr_atm_acq_load(const gpr_atm* p) {
   gpr_atm value = *p;
   GPR_ATM_LS_BARRIER_();
   return value;
 }
 
-static __inline gpr_atm gpr_atm_no_barrier_load(const gpr_atm *p) {
+static __inline gpr_atm gpr_atm_no_barrier_load(const gpr_atm* p) {
   gpr_atm value = *p;
   GPR_ATM_COMPILE_BARRIER_();
   return value;
 }
 
-static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
+static __inline void gpr_atm_rel_store(gpr_atm* p, gpr_atm value) {
   GPR_ATM_LS_BARRIER_();
   *p = value;
 }
 
-static __inline void gpr_atm_no_barrier_store(gpr_atm *p, gpr_atm value) {
+static __inline void gpr_atm_no_barrier_store(gpr_atm* p, gpr_atm value) {
   GPR_ATM_COMPILE_BARRIER_();
   *p = value;
 }
@@ -71,7 +72,7 @@ static __inline void gpr_atm_no_barrier_store(gpr_atm *p, gpr_atm value) {
 #define gpr_atm_rel_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
 #define gpr_atm_full_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
 
-static __inline gpr_atm gpr_atm_full_xchg(gpr_atm *p, gpr_atm n) {
+static __inline gpr_atm gpr_atm_full_xchg(gpr_atm* p, gpr_atm n) {
   gpr_atm cur;
   do {
     cur = gpr_atm_acq_load(p);

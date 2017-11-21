@@ -9,80 +9,62 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * Results of a single benchmark scenario.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.ScenarioResult</code>
+ * Generated from protobuf message <code>grpc.testing.ScenarioResult</code>
  */
 class ScenarioResult extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <pre>
      * Inputs used to run the scenario.
-     * </pre>
      *
-     * <code>.grpc.testing.Scenario scenario = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.Scenario scenario = 1;</code>
      */
     private $scenario = null;
     /**
-     * <pre>
      * Histograms from all clients merged into one histogram.
-     * </pre>
      *
-     * <code>.grpc.testing.HistogramData latencies = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.HistogramData latencies = 2;</code>
      */
     private $latencies = null;
     /**
-     * <pre>
      * Client stats for each client
-     * </pre>
      *
-     * <code>repeated .grpc.testing.ClientStats client_stats = 3;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.ClientStats client_stats = 3;</code>
      */
     private $client_stats;
     /**
-     * <pre>
      * Server stats for each server
-     * </pre>
      *
-     * <code>repeated .grpc.testing.ServerStats server_stats = 4;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.ServerStats server_stats = 4;</code>
      */
     private $server_stats;
     /**
-     * <pre>
      * Number of cores available to each server
-     * </pre>
      *
-     * <code>repeated int32 server_cores = 5;</code>
+     * Generated from protobuf field <code>repeated int32 server_cores = 5;</code>
      */
     private $server_cores;
     /**
-     * <pre>
      * An after-the-fact computed summary
-     * </pre>
      *
-     * <code>.grpc.testing.ScenarioResultSummary summary = 6;</code>
+     * Generated from protobuf field <code>.grpc.testing.ScenarioResultSummary summary = 6;</code>
      */
     private $summary = null;
     /**
-     * <pre>
      * Information on success or failure of each worker
-     * </pre>
      *
-     * <code>repeated bool client_success = 7;</code>
+     * Generated from protobuf field <code>repeated bool client_success = 7;</code>
      */
     private $client_success;
     /**
-     * <code>repeated bool server_success = 8;</code>
+     * Generated from protobuf field <code>repeated bool server_success = 8;</code>
      */
     private $server_success;
     /**
-     * <pre>
      * Number of failed requests (one row per status code seen)
-     * </pre>
      *
-     * <code>repeated .grpc.testing.RequestResultCount request_results = 9;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.RequestResultCount request_results = 9;</code>
      */
     private $request_results;
 
@@ -92,11 +74,10 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Inputs used to run the scenario.
-     * </pre>
      *
-     * <code>.grpc.testing.Scenario scenario = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.Scenario scenario = 1;</code>
+     * @return \Grpc\Testing\Scenario
      */
     public function getScenario()
     {
@@ -104,24 +85,25 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Inputs used to run the scenario.
-     * </pre>
      *
-     * <code>.grpc.testing.Scenario scenario = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.Scenario scenario = 1;</code>
+     * @param \Grpc\Testing\Scenario $var
+     * @return $this
      */
-    public function setScenario(&$var)
+    public function setScenario($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\Scenario::class);
         $this->scenario = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Histograms from all clients merged into one histogram.
-     * </pre>
      *
-     * <code>.grpc.testing.HistogramData latencies = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.HistogramData latencies = 2;</code>
+     * @return \Grpc\Testing\HistogramData
      */
     public function getLatencies()
     {
@@ -129,24 +111,25 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Histograms from all clients merged into one histogram.
-     * </pre>
      *
-     * <code>.grpc.testing.HistogramData latencies = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.HistogramData latencies = 2;</code>
+     * @param \Grpc\Testing\HistogramData $var
+     * @return $this
      */
-    public function setLatencies(&$var)
+    public function setLatencies($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\HistogramData::class);
         $this->latencies = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Client stats for each client
-     * </pre>
      *
-     * <code>repeated .grpc.testing.ClientStats client_stats = 3;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.ClientStats client_stats = 3;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getClientStats()
     {
@@ -154,24 +137,25 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Client stats for each client
-     * </pre>
      *
-     * <code>repeated .grpc.testing.ClientStats client_stats = 3;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.ClientStats client_stats = 3;</code>
+     * @param \Grpc\Testing\ClientStats[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
      */
-    public function setClientStats(&$var)
+    public function setClientStats($var)
     {
-        GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\ClientStats::class);
-        $this->client_stats = $var;
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\ClientStats::class);
+        $this->client_stats = $arr;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Server stats for each server
-     * </pre>
      *
-     * <code>repeated .grpc.testing.ServerStats server_stats = 4;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.ServerStats server_stats = 4;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getServerStats()
     {
@@ -179,24 +163,25 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Server stats for each server
-     * </pre>
      *
-     * <code>repeated .grpc.testing.ServerStats server_stats = 4;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.ServerStats server_stats = 4;</code>
+     * @param \Grpc\Testing\ServerStats[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
      */
-    public function setServerStats(&$var)
+    public function setServerStats($var)
     {
-        GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\ServerStats::class);
-        $this->server_stats = $var;
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\ServerStats::class);
+        $this->server_stats = $arr;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Number of cores available to each server
-     * </pre>
      *
-     * <code>repeated int32 server_cores = 5;</code>
+     * Generated from protobuf field <code>repeated int32 server_cores = 5;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getServerCores()
     {
@@ -204,24 +189,25 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Number of cores available to each server
-     * </pre>
      *
-     * <code>repeated int32 server_cores = 5;</code>
+     * Generated from protobuf field <code>repeated int32 server_cores = 5;</code>
+     * @param int[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
      */
-    public function setServerCores(&$var)
+    public function setServerCores($var)
     {
-        GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::INT32);
-        $this->server_cores = $var;
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::INT32);
+        $this->server_cores = $arr;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * An after-the-fact computed summary
-     * </pre>
      *
-     * <code>.grpc.testing.ScenarioResultSummary summary = 6;</code>
+     * Generated from protobuf field <code>.grpc.testing.ScenarioResultSummary summary = 6;</code>
+     * @return \Grpc\Testing\ScenarioResultSummary
      */
     public function getSummary()
     {
@@ -229,24 +215,25 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * An after-the-fact computed summary
-     * </pre>
      *
-     * <code>.grpc.testing.ScenarioResultSummary summary = 6;</code>
+     * Generated from protobuf field <code>.grpc.testing.ScenarioResultSummary summary = 6;</code>
+     * @param \Grpc\Testing\ScenarioResultSummary $var
+     * @return $this
      */
-    public function setSummary(&$var)
+    public function setSummary($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\ScenarioResultSummary::class);
         $this->summary = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Information on success or failure of each worker
-     * </pre>
      *
-     * <code>repeated bool client_success = 7;</code>
+     * Generated from protobuf field <code>repeated bool client_success = 7;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getClientSuccess()
     {
@@ -254,20 +241,23 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Information on success or failure of each worker
-     * </pre>
      *
-     * <code>repeated bool client_success = 7;</code>
+     * Generated from protobuf field <code>repeated bool client_success = 7;</code>
+     * @param bool[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
      */
-    public function setClientSuccess(&$var)
+    public function setClientSuccess($var)
     {
-        GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::BOOL);
-        $this->client_success = $var;
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::BOOL);
+        $this->client_success = $arr;
+
+        return $this;
     }
 
     /**
-     * <code>repeated bool server_success = 8;</code>
+     * Generated from protobuf field <code>repeated bool server_success = 8;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getServerSuccess()
     {
@@ -275,20 +265,23 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>repeated bool server_success = 8;</code>
+     * Generated from protobuf field <code>repeated bool server_success = 8;</code>
+     * @param bool[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
      */
-    public function setServerSuccess(&$var)
+    public function setServerSuccess($var)
     {
-        GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::BOOL);
-        $this->server_success = $var;
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::BOOL);
+        $this->server_success = $arr;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Number of failed requests (one row per status code seen)
-     * </pre>
      *
-     * <code>repeated .grpc.testing.RequestResultCount request_results = 9;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.RequestResultCount request_results = 9;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getRequestResults()
     {
@@ -296,16 +289,18 @@ class ScenarioResult extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Number of failed requests (one row per status code seen)
-     * </pre>
      *
-     * <code>repeated .grpc.testing.RequestResultCount request_results = 9;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.RequestResultCount request_results = 9;</code>
+     * @param \Grpc\Testing\RequestResultCount[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
      */
-    public function setRequestResults(&$var)
+    public function setRequestResults($var)
     {
-        GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\RequestResultCount::class);
-        $this->request_results = $var;
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\RequestResultCount::class);
+        $this->request_results = $arr;
+
+        return $this;
     }
 
 }

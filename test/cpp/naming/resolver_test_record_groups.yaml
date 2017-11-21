@@ -58,7 +58,7 @@ resolver_component_tests:
     - {TTL: '2100', data: 0 0 1234 ipv4-simple-service-config, type: SRV}
     ipv4-simple-service-config:
     - {TTL: '2100', data: 1.2.3.4, type: A}
-    srv-ipv4-simple-service-config:
+    _grpc_config.srv-ipv4-simple-service-config:
     - {TTL: '2100',
       type: TXT}
 - expected_addrs:
@@ -69,6 +69,7 @@ resolver_component_tests:
   records:
     ipv4-no-srv-simple-service-config:
     - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-no-srv-simple-service-config:
     - {TTL: '2100',
       type: TXT}
 - expected_addrs:
@@ -79,6 +80,7 @@ resolver_component_tests:
   records:
     ipv4-no-config-for-cpp:
     - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-no-config-for-cpp:
     - {TTL: '2100',
       type: TXT}
 - expected_addrs:
@@ -89,6 +91,7 @@ resolver_component_tests:
   records:
     ipv4-cpp-config-has-zero-percentage:
     - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-cpp-config-has-zero-percentage:
     - {TTL: '2100',
       type: TXT}
 - expected_addrs:
@@ -99,6 +102,7 @@ resolver_component_tests:
   records:
     ipv4-second-language-is-cpp:
     - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-second-language-is-cpp:
     - {TTL: '2100',
       type: TXT}
 - expected_addrs:
@@ -109,6 +113,7 @@ resolver_component_tests:
   records:
     ipv4-config-with-percentages:
     - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-config-with-percentages:
     - {TTL: '2100',
       type: TXT}
 - expected_addrs:
@@ -145,5 +150,6 @@ resolver_component_tests:
   records:
     ipv4-config-causing-fallback-to-tcp:
     - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-config-causing-fallback-to-tcp:
     - {TTL: '2100',
       type: TXT}

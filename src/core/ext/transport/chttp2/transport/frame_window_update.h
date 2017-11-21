@@ -24,6 +24,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/transport.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
   uint8_t byte;
   uint8_t is_connection_update;
@@ -31,12 +35,16 @@ typedef struct {
 } grpc_chttp2_window_update_parser;
 
 grpc_slice grpc_chttp2_window_update_create(
-    uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats *stats);
+    uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats* stats);
 
-grpc_error *grpc_chttp2_window_update_parser_begin_frame(
-    grpc_chttp2_window_update_parser *parser, uint32_t length, uint8_t flags);
-grpc_error *grpc_chttp2_window_update_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser, grpc_chttp2_transport *t,
-    grpc_chttp2_stream *s, grpc_slice slice, int is_last);
+grpc_error* grpc_chttp2_window_update_parser_begin_frame(
+    grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags);
+grpc_error* grpc_chttp2_window_update_parser_parse(
+    grpc_exec_ctx* exec_ctx, void* parser, grpc_chttp2_transport* t,
+    grpc_chttp2_stream* s, grpc_slice slice, int is_last);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_WINDOW_UPDATE_H */

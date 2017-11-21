@@ -28,22 +28,26 @@
 /** Mask of all valid internal flags. */
 #define GRPC_WRITE_INTERNAL_USED_MASK (GRPC_WRITE_INTERNAL_COMPRESS)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_byte_stream grpc_byte_stream;
 
 typedef struct {
-  bool (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-               size_t max_size_hint, grpc_closure *on_complete);
-  grpc_error *(*pull)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-                      grpc_slice *slice);
-  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-                   grpc_error *error);
-  void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
+  bool (*next)(grpc_exec_ctx* exec_ctx, grpc_byte_stream* byte_stream,
+               size_t max_size_hint, grpc_closure* on_complete);
+  grpc_error* (*pull)(grpc_exec_ctx* exec_ctx, grpc_byte_stream* byte_stream,
+                      grpc_slice* slice);
+  void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_byte_stream* byte_stream,
+                   grpc_error* error);
+  void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_byte_stream* byte_stream);
 } grpc_byte_stream_vtable;
 
 struct grpc_byte_stream {
   uint32_t length;
   uint32_t flags;
-  const grpc_byte_stream_vtable *vtable;
+  const grpc_byte_stream_vtable* vtable;
 };
 
 // Returns true if the bytes are available immediately (in which case
@@ -52,18 +56,18 @@ struct grpc_byte_stream {
 //
 // max_size_hint can be set as a hint as to the maximum number
 // of bytes that would be acceptable to read.
-bool grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                           grpc_byte_stream *byte_stream, size_t max_size_hint,
-                           grpc_closure *on_complete);
+bool grpc_byte_stream_next(grpc_exec_ctx* exec_ctx,
+                           grpc_byte_stream* byte_stream, size_t max_size_hint,
+                           grpc_closure* on_complete);
 
 // Returns the next slice in the byte stream when it is ready (indicated by
 // either grpc_byte_stream_next returning true or on_complete passed to
 // grpc_byte_stream_next is called).
 //
 // Once a slice is returned into *slice, it is owned by the caller.
-grpc_error *grpc_byte_stream_pull(grpc_exec_ctx *exec_ctx,
-                                  grpc_byte_stream *byte_stream,
-                                  grpc_slice *slice);
+grpc_error* grpc_byte_stream_pull(grpc_exec_ctx* exec_ctx,
+                                  grpc_byte_stream* byte_stream,
+                                  grpc_slice* slice);
 
 // Shuts down the byte stream.
 //
@@ -72,12 +76,12 @@ grpc_error *grpc_byte_stream_pull(grpc_exec_ctx *exec_ctx,
 //
 // The next call to grpc_byte_stream_pull() (if any) will return the error
 // passed to grpc_byte_stream_shutdown().
-void grpc_byte_stream_shutdown(grpc_exec_ctx *exec_ctx,
-                               grpc_byte_stream *byte_stream,
-                               grpc_error *error);
+void grpc_byte_stream_shutdown(grpc_exec_ctx* exec_ctx,
+                               grpc_byte_stream* byte_stream,
+                               grpc_error* error);
 
-void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
-                              grpc_byte_stream *byte_stream);
+void grpc_byte_stream_destroy(grpc_exec_ctx* exec_ctx,
+                              grpc_byte_stream* byte_stream);
 
 // grpc_slice_buffer_stream
 //
@@ -87,13 +91,13 @@ void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
 
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
-  grpc_slice_buffer *backing_buffer;
+  grpc_slice_buffer* backing_buffer;
   size_t cursor;
-  grpc_error *shutdown_error;
+  grpc_error* shutdown_error;
 } grpc_slice_buffer_stream;
 
-void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
-                                   grpc_slice_buffer *slice_buffer,
+void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream* stream,
+                                   grpc_slice_buffer* slice_buffer,
                                    uint32_t flags);
 
 // grpc_caching_byte_stream
@@ -110,29 +114,33 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
 // grpc_byte_stream_cache at the same time.
 
 typedef struct {
-  grpc_byte_stream *underlying_stream;
+  grpc_byte_stream* underlying_stream;
   grpc_slice_buffer cache_buffer;
 } grpc_byte_stream_cache;
 
 // Takes ownership of underlying_stream.
-void grpc_byte_stream_cache_init(grpc_byte_stream_cache *cache,
-                                 grpc_byte_stream *underlying_stream);
+void grpc_byte_stream_cache_init(grpc_byte_stream_cache* cache,
+                                 grpc_byte_stream* underlying_stream);
 
 // Must not be called while still in use by a grpc_caching_byte_stream.
-void grpc_byte_stream_cache_destroy(grpc_exec_ctx *exec_ctx,
-                                    grpc_byte_stream_cache *cache);
+void grpc_byte_stream_cache_destroy(grpc_exec_ctx* exec_ctx,
+                                    grpc_byte_stream_cache* cache);
 
 typedef struct {
   grpc_byte_stream base;
-  grpc_byte_stream_cache *cache;
+  grpc_byte_stream_cache* cache;
   size_t cursor;
-  grpc_error *shutdown_error;
+  grpc_error* shutdown_error;
 } grpc_caching_byte_stream;
 
-void grpc_caching_byte_stream_init(grpc_caching_byte_stream *stream,
-                                   grpc_byte_stream_cache *cache);
+void grpc_caching_byte_stream_init(grpc_caching_byte_stream* stream,
+                                   grpc_byte_stream_cache* cache);
 
 // Resets the byte stream to the start of the underlying stream.
-void grpc_caching_byte_stream_reset(grpc_caching_byte_stream *stream);
+void grpc_caching_byte_stream_reset(grpc_caching_byte_stream* stream);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H */

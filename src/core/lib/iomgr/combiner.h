@@ -26,6 +26,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/mpscq.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Provides serialized access to some resource.
 // Each action queued on a combiner is executed serially in a borrowed thread.
 // The actual thread executing actions may change over time (but there will only
@@ -33,7 +37,7 @@
 
 // Initialize the lock, with an optional workqueue to shift load to when
 // necessary
-grpc_combiner *grpc_combiner_create(void);
+grpc_combiner* grpc_combiner_create(void);
 
 #ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_ARGS \
@@ -51,16 +55,20 @@ grpc_combiner *grpc_combiner_create(void);
 
 // Ref/unref the lock, for when we're sharing the lock ownership
 // Prefer to use the macros above
-grpc_combiner *grpc_combiner_ref(grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS);
-void grpc_combiner_unref(grpc_exec_ctx *exec_ctx,
-                         grpc_combiner *lock GRPC_COMBINER_DEBUG_ARGS);
+grpc_combiner* grpc_combiner_ref(grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS);
+void grpc_combiner_unref(grpc_exec_ctx* exec_ctx,
+                         grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS);
 // Fetch a scheduler to schedule closures against
-grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *lock);
+grpc_closure_scheduler* grpc_combiner_scheduler(grpc_combiner* lock);
 // Scheduler to execute \a action within the lock just prior to unlocking.
-grpc_closure_scheduler *grpc_combiner_finally_scheduler(grpc_combiner *lock);
+grpc_closure_scheduler* grpc_combiner_finally_scheduler(grpc_combiner* lock);
 
-bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx);
+bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx* exec_ctx);
 
-extern grpc_tracer_flag grpc_combiner_trace;
+extern grpc_core::TraceFlag grpc_combiner_trace;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */

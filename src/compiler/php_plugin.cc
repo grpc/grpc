@@ -24,19 +24,19 @@
 #include "src/compiler/php_generator.h"
 #include "src/compiler/php_generator_helpers.h"
 
+using google::protobuf::compiler::ParseGeneratorParameter;
 using grpc_php_generator::GenerateFile;
 using grpc_php_generator::GetPHPServiceFilename;
-using google::protobuf::compiler::ParseGeneratorParameter;
 
 class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   PHPGrpcGenerator() {}
   ~PHPGrpcGenerator() {}
 
-  bool Generate(const grpc::protobuf::FileDescriptor *file,
-                const grpc::string &parameter,
-                grpc::protobuf::compiler::GeneratorContext *context,
-                grpc::string *error) const {
+  bool Generate(const grpc::protobuf::FileDescriptor* file,
+                const grpc::string& parameter,
+                grpc::protobuf::compiler::GeneratorContext* context,
+                grpc::string* error) const {
     if (file->service_count() == 0) {
       return true;
     }
@@ -71,7 +71,7 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   PHPGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

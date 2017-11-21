@@ -382,6 +382,11 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_http2_spurious_writes_begun", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_hpack_recv_indexed", 
         "type": "INTEGER"
       }, 
@@ -512,6 +517,26 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_call_combiner_locks_initiated", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_locks_scheduled_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_set_notify_on_cancel", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_cancelled", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_executor_scheduled_short_items", 
         "type": "INTEGER"
       }, 
@@ -548,6 +573,21 @@
       {
         "mode": "NULLABLE", 
         "name": "core_server_slowpath_requests_queued", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_trylock_failures", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_trylock_successes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_transient_pop_failures", 
         "type": "INTEGER"
       }, 
       {
@@ -1174,6 +1214,11 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_http2_spurious_writes_begun", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_hpack_recv_indexed", 
         "type": "INTEGER"
       }, 
@@ -1304,6 +1349,26 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_call_combiner_locks_initiated", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_locks_scheduled_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_set_notify_on_cancel", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_cancelled", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_executor_scheduled_short_items", 
         "type": "INTEGER"
       }, 
@@ -1340,6 +1405,21 @@
       {
         "mode": "NULLABLE", 
         "name": "core_server_slowpath_requests_queued", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_trylock_failures", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_trylock_successes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_transient_pop_failures", 
         "type": "INTEGER"
       }, 
       {

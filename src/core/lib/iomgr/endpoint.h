@@ -26,6 +26,10 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* An endpoint caps a streaming channel between two communicating processes.
    Examples may be: a tcp socket, <stdin+stdout>, or some shared memory. */
 
@@ -33,19 +37,21 @@ typedef struct grpc_endpoint grpc_endpoint;
 typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
 
 struct grpc_endpoint_vtable {
-  void (*read)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-               grpc_slice_buffer *slices, grpc_closure *cb);
-  void (*write)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                grpc_slice_buffer *slices, grpc_closure *cb);
-  void (*add_to_pollset)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                         grpc_pollset *pollset);
-  void (*add_to_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                             grpc_pollset_set *pollset);
-  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep, grpc_error *why);
-  void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
-  grpc_resource_user *(*get_resource_user)(grpc_endpoint *ep);
-  char *(*get_peer)(grpc_endpoint *ep);
-  int (*get_fd)(grpc_endpoint *ep);
+  void (*read)(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+               grpc_slice_buffer* slices, grpc_closure* cb);
+  void (*write)(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                grpc_slice_buffer* slices, grpc_closure* cb);
+  void (*add_to_pollset)(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                         grpc_pollset* pollset);
+  void (*add_to_pollset_set)(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                             grpc_pollset_set* pollset);
+  void (*delete_from_pollset_set)(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                                  grpc_pollset_set* pollset);
+  void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep, grpc_error* why);
+  void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep);
+  grpc_resource_user* (*get_resource_user)(grpc_endpoint* ep);
+  char* (*get_peer)(grpc_endpoint* ep);
+  int (*get_fd)(grpc_endpoint* ep);
 };
 
 /* When data is available on the connection, calls the callback with slices.
@@ -53,14 +59,14 @@ struct grpc_endpoint_vtable {
    indicates the endpoint is closed.
    Valid slices may be placed into \a slices even when the callback is
    invoked with error != GRPC_ERROR_NONE. */
-void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                        grpc_slice_buffer *slices, grpc_closure *cb);
+void grpc_endpoint_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                        grpc_slice_buffer* slices, grpc_closure* cb);
 
-char *grpc_endpoint_get_peer(grpc_endpoint *ep);
+char* grpc_endpoint_get_peer(grpc_endpoint* ep);
 
 /* Get the file descriptor used by \a ep. Return -1 if \a ep is not using an fd.
-   */
-int grpc_endpoint_get_fd(grpc_endpoint *ep);
+ */
+int grpc_endpoint_get_fd(grpc_endpoint* ep);
 
 /* Write slices out to the socket.
 
@@ -72,27 +78,36 @@ int grpc_endpoint_get_fd(grpc_endpoint *ep);
    No guarantee is made to the content of slices after a write EXCEPT that
    it is a valid slice buffer.
    */
-void grpc_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                         grpc_slice_buffer *slices, grpc_closure *cb);
+void grpc_endpoint_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                         grpc_slice_buffer* slices, grpc_closure* cb);
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */
-void grpc_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                            grpc_error *why);
-void grpc_endpoint_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
+void grpc_endpoint_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                            grpc_error* why);
+void grpc_endpoint_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep);
 
-/* Add an endpoint to a pollset, so that when the pollset is polled, events from
-   this endpoint are considered */
-void grpc_endpoint_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                                  grpc_pollset *pollset);
-void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
-                                      grpc_endpoint *ep,
-                                      grpc_pollset_set *pollset_set);
+/* Add an endpoint to a pollset or pollset_set, so that when the pollset is
+   polled, events from this endpoint are considered */
+void grpc_endpoint_add_to_pollset(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                                  grpc_pollset* pollset);
+void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx* exec_ctx,
+                                      grpc_endpoint* ep,
+                                      grpc_pollset_set* pollset_set);
 
-grpc_resource_user *grpc_endpoint_get_resource_user(grpc_endpoint *endpoint);
+/* Delete an endpoint from a pollset_set */
+void grpc_endpoint_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
+                                           grpc_endpoint* ep,
+                                           grpc_pollset_set* pollset_set);
+
+grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* endpoint);
 
 struct grpc_endpoint {
-  const grpc_endpoint_vtable *vtable;
+  const grpc_endpoint_vtable* vtable;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_H */

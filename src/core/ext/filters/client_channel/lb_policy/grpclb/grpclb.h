@@ -21,9 +21,17 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Returns a load balancing factory for the glb policy, which tries to connect
  * to a load balancing server to decide the next successfully connected
  * subchannel to pick. */
-grpc_lb_policy_factory *grpc_glb_lb_factory_create();
+grpc_lb_policy_factory* grpc_glb_lb_factory_create();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H */

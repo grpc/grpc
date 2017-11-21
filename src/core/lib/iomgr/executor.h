@@ -21,6 +21,10 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
   GRPC_EXECUTOR_SHORT,
   GRPC_EXECUTOR_LONG
@@ -31,18 +35,22 @@ typedef enum {
  * This mechanism is meant to outsource work (grpc_closure instances) to a
  * thread, for those cases where blocking isn't an option but there isn't a
  * non-blocking solution available. */
-void grpc_executor_init(grpc_exec_ctx *exec_ctx);
+void grpc_executor_init(grpc_exec_ctx* exec_ctx);
 
-grpc_closure_scheduler *grpc_executor_scheduler(grpc_executor_job_length);
+grpc_closure_scheduler* grpc_executor_scheduler(grpc_executor_job_length);
 
 /** Shutdown the executor, running all pending work as part of the call */
-void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx);
+void grpc_executor_shutdown(grpc_exec_ctx* exec_ctx);
 
 /** Is the executor multi-threaded? */
 bool grpc_executor_is_threaded();
 
 /* enable/disable threading - must be called after grpc_executor_init and before
    grpc_executor_shutdown */
-void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool enable);
+void grpc_executor_set_threading(grpc_exec_ctx* exec_ctx, bool enable);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */

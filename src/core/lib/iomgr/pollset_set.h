@@ -21,6 +21,10 @@
 
 #include "src/core/lib/iomgr/pollset.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* A grpc_pollset_set is a set of pollsets that are interested in an
    action. Adding a pollset to a pollset_set automatically adds any
    fd's (etc) that have been registered with the set_set to that pollset.
@@ -28,20 +32,24 @@
 
 typedef struct grpc_pollset_set grpc_pollset_set;
 
-grpc_pollset_set *grpc_pollset_set_create(void);
-void grpc_pollset_set_destroy(grpc_exec_ctx *exec_ctx,
-                              grpc_pollset_set *pollset_set);
-void grpc_pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
-                                  grpc_pollset_set *pollset_set,
-                                  grpc_pollset *pollset);
-void grpc_pollset_set_del_pollset(grpc_exec_ctx *exec_ctx,
-                                  grpc_pollset_set *pollset_set,
-                                  grpc_pollset *pollset);
-void grpc_pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
-                                      grpc_pollset_set *bag,
-                                      grpc_pollset_set *item);
-void grpc_pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
-                                      grpc_pollset_set *bag,
-                                      grpc_pollset_set *item);
+grpc_pollset_set* grpc_pollset_set_create(void);
+void grpc_pollset_set_destroy(grpc_exec_ctx* exec_ctx,
+                              grpc_pollset_set* pollset_set);
+void grpc_pollset_set_add_pollset(grpc_exec_ctx* exec_ctx,
+                                  grpc_pollset_set* pollset_set,
+                                  grpc_pollset* pollset);
+void grpc_pollset_set_del_pollset(grpc_exec_ctx* exec_ctx,
+                                  grpc_pollset_set* pollset_set,
+                                  grpc_pollset* pollset);
+void grpc_pollset_set_add_pollset_set(grpc_exec_ctx* exec_ctx,
+                                      grpc_pollset_set* bag,
+                                      grpc_pollset_set* item);
+void grpc_pollset_set_del_pollset_set(grpc_exec_ctx* exec_ctx,
+                                      grpc_pollset_set* bag,
+                                      grpc_pollset_set* item);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_SET_H */

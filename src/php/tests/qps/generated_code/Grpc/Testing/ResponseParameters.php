@@ -9,40 +9,32 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * Configuration for a particular response.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.ResponseParameters</code>
+ * Generated from protobuf message <code>grpc.testing.ResponseParameters</code>
  */
 class ResponseParameters extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <pre>
      * Desired payload sizes in responses from the server.
-     * </pre>
      *
-     * <code>int32 size = 1;</code>
+     * Generated from protobuf field <code>int32 size = 1;</code>
      */
     private $size = 0;
     /**
-     * <pre>
      * Desired interval between consecutive responses in the response stream in
      * microseconds.
-     * </pre>
      *
-     * <code>int32 interval_us = 2;</code>
+     * Generated from protobuf field <code>int32 interval_us = 2;</code>
      */
     private $interval_us = 0;
     /**
-     * <pre>
      * Whether to request the server to compress the response. This field is
      * "nullable" in order to interoperate seamlessly with clients not able to
      * implement the full compression tests by introspecting the call to verify
      * the response's compression status.
-     * </pre>
      *
-     * <code>.grpc.testing.BoolValue compressed = 3;</code>
+     * Generated from protobuf field <code>.grpc.testing.BoolValue compressed = 3;</code>
      */
     private $compressed = null;
 
@@ -52,11 +44,10 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Desired payload sizes in responses from the server.
-     * </pre>
      *
-     * <code>int32 size = 1;</code>
+     * Generated from protobuf field <code>int32 size = 1;</code>
+     * @return int
      */
     public function getSize()
     {
@@ -64,25 +55,26 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Desired payload sizes in responses from the server.
-     * </pre>
      *
-     * <code>int32 size = 1;</code>
+     * Generated from protobuf field <code>int32 size = 1;</code>
+     * @param int $var
+     * @return $this
      */
     public function setSize($var)
     {
         GPBUtil::checkInt32($var);
         $this->size = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Desired interval between consecutive responses in the response stream in
      * microseconds.
-     * </pre>
      *
-     * <code>int32 interval_us = 2;</code>
+     * Generated from protobuf field <code>int32 interval_us = 2;</code>
+     * @return int
      */
     public function getIntervalUs()
     {
@@ -90,28 +82,29 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Desired interval between consecutive responses in the response stream in
      * microseconds.
-     * </pre>
      *
-     * <code>int32 interval_us = 2;</code>
+     * Generated from protobuf field <code>int32 interval_us = 2;</code>
+     * @param int $var
+     * @return $this
      */
     public function setIntervalUs($var)
     {
         GPBUtil::checkInt32($var);
         $this->interval_us = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Whether to request the server to compress the response. This field is
      * "nullable" in order to interoperate seamlessly with clients not able to
      * implement the full compression tests by introspecting the call to verify
      * the response's compression status.
-     * </pre>
      *
-     * <code>.grpc.testing.BoolValue compressed = 3;</code>
+     * Generated from protobuf field <code>.grpc.testing.BoolValue compressed = 3;</code>
+     * @return \Grpc\Testing\BoolValue
      */
     public function getCompressed()
     {
@@ -119,19 +112,21 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Whether to request the server to compress the response. This field is
      * "nullable" in order to interoperate seamlessly with clients not able to
      * implement the full compression tests by introspecting the call to verify
      * the response's compression status.
-     * </pre>
      *
-     * <code>.grpc.testing.BoolValue compressed = 3;</code>
+     * Generated from protobuf field <code>.grpc.testing.BoolValue compressed = 3;</code>
+     * @param \Grpc\Testing\BoolValue $var
+     * @return $this
      */
-    public function setCompressed(&$var)
+    public function setCompressed($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\BoolValue::class);
         $this->compressed = $var;
+
+        return $this;
     }
 
 }

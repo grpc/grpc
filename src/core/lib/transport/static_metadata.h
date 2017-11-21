@@ -27,6 +27,10 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "src/core/lib/transport/metadata.h"
 
 #define GRPC_STATIC_MDSTR_COUNT 100
@@ -537,30 +541,30 @@ typedef enum {
 } grpc_metadata_batch_callouts_index;
 
 typedef union {
-  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];
+  struct grpc_linked_mdelem* array[GRPC_BATCH_CALLOUTS_COUNT];
   struct {
-    struct grpc_linked_mdelem *path;
-    struct grpc_linked_mdelem *method;
-    struct grpc_linked_mdelem *status;
-    struct grpc_linked_mdelem *authority;
-    struct grpc_linked_mdelem *scheme;
-    struct grpc_linked_mdelem *te;
-    struct grpc_linked_mdelem *grpc_message;
-    struct grpc_linked_mdelem *grpc_status;
-    struct grpc_linked_mdelem *grpc_payload_bin;
-    struct grpc_linked_mdelem *grpc_encoding;
-    struct grpc_linked_mdelem *grpc_accept_encoding;
-    struct grpc_linked_mdelem *grpc_server_stats_bin;
-    struct grpc_linked_mdelem *grpc_tags_bin;
-    struct grpc_linked_mdelem *grpc_trace_bin;
-    struct grpc_linked_mdelem *content_type;
-    struct grpc_linked_mdelem *content_encoding;
-    struct grpc_linked_mdelem *accept_encoding;
-    struct grpc_linked_mdelem *grpc_internal_encoding_request;
-    struct grpc_linked_mdelem *grpc_internal_stream_encoding_request;
-    struct grpc_linked_mdelem *user_agent;
-    struct grpc_linked_mdelem *host;
-    struct grpc_linked_mdelem *lb_token;
+    struct grpc_linked_mdelem* path;
+    struct grpc_linked_mdelem* method;
+    struct grpc_linked_mdelem* status;
+    struct grpc_linked_mdelem* authority;
+    struct grpc_linked_mdelem* scheme;
+    struct grpc_linked_mdelem* te;
+    struct grpc_linked_mdelem* grpc_message;
+    struct grpc_linked_mdelem* grpc_status;
+    struct grpc_linked_mdelem* grpc_payload_bin;
+    struct grpc_linked_mdelem* grpc_encoding;
+    struct grpc_linked_mdelem* grpc_accept_encoding;
+    struct grpc_linked_mdelem* grpc_server_stats_bin;
+    struct grpc_linked_mdelem* grpc_tags_bin;
+    struct grpc_linked_mdelem* grpc_trace_bin;
+    struct grpc_linked_mdelem* content_type;
+    struct grpc_linked_mdelem* content_encoding;
+    struct grpc_linked_mdelem* accept_encoding;
+    struct grpc_linked_mdelem* grpc_internal_encoding_request;
+    struct grpc_linked_mdelem* grpc_internal_stream_encoding_request;
+    struct grpc_linked_mdelem* user_agent;
+    struct grpc_linked_mdelem* host;
+    struct grpc_linked_mdelem* lb_token;
   } named;
 } grpc_metadata_batch_callouts;
 
@@ -584,4 +588,7 @@ extern const uint8_t grpc_static_accept_stream_encoding_metadata[4];
   (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table                                  \
                         [grpc_static_accept_stream_encoding_metadata[(algs)]], \
                     GRPC_MDELEM_STORAGE_STATIC))
+#ifdef __cplusplus
+}
+#endif
 #endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */

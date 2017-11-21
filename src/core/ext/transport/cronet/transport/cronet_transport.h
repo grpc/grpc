@@ -21,8 +21,16 @@
 
 #include "src/core/lib/transport/transport.h"
 
-grpc_transport *grpc_create_cronet_transport(void *engine, const char *target,
-                                             const grpc_channel_args *args,
-                                             void *reserved);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
+                                             const grpc_channel_args* args,
+                                             void* reserved);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H */

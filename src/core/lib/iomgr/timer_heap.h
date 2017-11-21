@@ -21,22 +21,30 @@
 
 #include "src/core/lib/iomgr/timer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
-  grpc_timer **timers;
+  grpc_timer** timers;
   uint32_t timer_count;
   uint32_t timer_capacity;
 } grpc_timer_heap;
 
 /* return 1 if the new timer is the first timer in the heap */
-int grpc_timer_heap_add(grpc_timer_heap *heap, grpc_timer *timer);
+int grpc_timer_heap_add(grpc_timer_heap* heap, grpc_timer* timer);
 
-void grpc_timer_heap_init(grpc_timer_heap *heap);
-void grpc_timer_heap_destroy(grpc_timer_heap *heap);
+void grpc_timer_heap_init(grpc_timer_heap* heap);
+void grpc_timer_heap_destroy(grpc_timer_heap* heap);
 
-void grpc_timer_heap_remove(grpc_timer_heap *heap, grpc_timer *timer);
-grpc_timer *grpc_timer_heap_top(grpc_timer_heap *heap);
-void grpc_timer_heap_pop(grpc_timer_heap *heap);
+void grpc_timer_heap_remove(grpc_timer_heap* heap, grpc_timer* timer);
+grpc_timer* grpc_timer_heap_top(grpc_timer_heap* heap);
+void grpc_timer_heap_pop(grpc_timer_heap* heap);
 
-int grpc_timer_heap_is_empty(grpc_timer_heap *heap);
+int grpc_timer_heap_is_empty(grpc_timer_heap* heap);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H */

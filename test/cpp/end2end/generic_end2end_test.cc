@@ -145,7 +145,7 @@ class GenericEnd2endTest : public ::testing::Test {
 
       if (check_deadline) {
         EXPECT_TRUE(gpr_time_similar(deadline, srv_ctx.raw_deadline(),
-                                     gpr_time_from_millis(100, GPR_TIMESPAN)));
+                                     gpr_time_from_millis(1000, GPR_TIMESPAN)));
       }
 
       ByteBuffer recv_buffer;
@@ -216,9 +216,10 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
 
     std::unique_ptr<ByteBuffer> cli_send_buffer =
         SerializeToByteBuffer(&send_request);
+    // Use the same cq as server so that events can be polled in time.
     std::unique_ptr<GenericClientAsyncResponseReader> call =
         generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName,
-                                        *cli_send_buffer.get(), &cli_cq_);
+                                        *cli_send_buffer.get(), srv_cq_.get());
     call->StartCall();
     ByteBuffer cli_recv_buffer;
     call->Finish(&cli_recv_buffer, &recv_status, tag(1));
@@ -226,7 +227,7 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
     generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
                                  srv_cq_.get(), tag(4));
 
-    verify_ok(srv_cq_.get(), 4, true);
+    server_ok(4);
     EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
     EXPECT_EQ(kMethodName, srv_ctx.method());
 
@@ -245,7 +246,7 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
     stream.Finish(Status::OK, tag(7));
     server_ok(7);
 
-    client_ok(1);
+    verify_ok(srv_cq_.get(), 1, true);
     EXPECT_TRUE(ParseFromByteBuffer(&cli_recv_buffer, &recv_response));
     EXPECT_EQ(send_response.message(), recv_response.message());
     EXPECT_TRUE(recv_status.ok());
@@ -321,8 +322,9 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
 TEST_F(GenericEnd2endTest, Deadline) {
   ResetStub();
-  SendRpc(1, true, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                gpr_time_from_seconds(10, GPR_TIMESPAN)));
+  SendRpc(1, true,
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                       gpr_time_from_seconds(10, GPR_TIMESPAN)));
 }
 
 }  // namespace

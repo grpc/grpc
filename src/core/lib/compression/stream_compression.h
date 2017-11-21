@@ -26,11 +26,15 @@
 
 #include "src/core/lib/transport/static_metadata.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_stream_compression_vtable grpc_stream_compression_vtable;
 
 /* Stream compression/decompression context */
 typedef struct grpc_stream_compression_context {
-  const grpc_stream_compression_vtable *vtable;
+  const grpc_stream_compression_vtable* vtable;
 } grpc_stream_compression_context;
 
 typedef enum grpc_stream_compression_method {
@@ -49,16 +53,16 @@ typedef enum grpc_stream_compression_flush {
 } grpc_stream_compression_flush;
 
 struct grpc_stream_compression_vtable {
-  bool (*compress)(grpc_stream_compression_context *ctx, grpc_slice_buffer *in,
-                   grpc_slice_buffer *out, size_t *output_size,
+  bool (*compress)(grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
+                   grpc_slice_buffer* out, size_t* output_size,
                    size_t max_output_size, grpc_stream_compression_flush flush);
-  bool (*decompress)(grpc_stream_compression_context *ctx,
-                     grpc_slice_buffer *in, grpc_slice_buffer *out,
-                     size_t *output_size, size_t max_output_size,
-                     bool *end_of_context);
-  grpc_stream_compression_context *(*context_create)(
+  bool (*decompress)(grpc_stream_compression_context* ctx,
+                     grpc_slice_buffer* in, grpc_slice_buffer* out,
+                     size_t* output_size, size_t max_output_size,
+                     bool* end_of_context);
+  grpc_stream_compression_context* (*context_create)(
       grpc_stream_compression_method method);
-  void (*context_destroy)(grpc_stream_compression_context *ctx);
+  void (*context_destroy)(grpc_stream_compression_context* ctx);
 };
 
 /**
@@ -74,9 +78,9 @@ struct grpc_stream_compression_vtable {
  * previous compressed bytes. It allows corresponding decompression context to
  * be dropped when reaching this boundary.
  */
-bool grpc_stream_compress(grpc_stream_compression_context *ctx,
-                          grpc_slice_buffer *in, grpc_slice_buffer *out,
-                          size_t *output_size, size_t max_output_size,
+bool grpc_stream_compress(grpc_stream_compression_context* ctx,
+                          grpc_slice_buffer* in, grpc_slice_buffer* out,
+                          size_t* output_size, size_t max_output_size,
                           grpc_stream_compression_flush flush);
 
 /**
@@ -86,29 +90,33 @@ bool grpc_stream_compress(grpc_stream_compression_context *ctx,
  * it is set to false. The total number of bytes emitted is outputed in \a
  * output_size.
  */
-bool grpc_stream_decompress(grpc_stream_compression_context *ctx,
-                            grpc_slice_buffer *in, grpc_slice_buffer *out,
-                            size_t *output_size, size_t max_output_size,
-                            bool *end_of_context);
+bool grpc_stream_decompress(grpc_stream_compression_context* ctx,
+                            grpc_slice_buffer* in, grpc_slice_buffer* out,
+                            size_t* output_size, size_t max_output_size,
+                            bool* end_of_context);
 
 /**
  * Creates a stream compression context. \a pending_bytes_buffer is the input
  * buffer for compression/decompression operations. \a method specifies whether
  * the context is for compression or decompression.
  */
-grpc_stream_compression_context *grpc_stream_compression_context_create(
+grpc_stream_compression_context* grpc_stream_compression_context_create(
     grpc_stream_compression_method method);
 
 /**
  * Destroys a stream compression context.
  */
 void grpc_stream_compression_context_destroy(
-    grpc_stream_compression_context *ctx);
+    grpc_stream_compression_context* ctx);
 
 /**
  * Parse stream compression method based on algorithm name
  */
 int grpc_stream_compression_method_parse(
-    grpc_slice value, bool is_compress, grpc_stream_compression_method *method);
+    grpc_slice value, bool is_compress, grpc_stream_compression_method* method);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

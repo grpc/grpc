@@ -23,7 +23,15 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* compute the hash of key (length len) */
-uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed);
+uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SUPPORT_MURMUR_HASH_H */

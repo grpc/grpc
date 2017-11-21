@@ -21,7 +21,15 @@
 
 #include <grpc/support/time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void gpr_precise_clock_init(void);
-void gpr_precise_clock_now(gpr_timespec *clk);
+void gpr_precise_clock_now(gpr_timespec* clk);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SUPPORT_TIME_PRECISE_H */

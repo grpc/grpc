@@ -29,16 +29,29 @@
    otherwise specified.
 */
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_WINSOCK_SOCKET
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/socket_windows.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Create a tcp endpoint given a winsock handle.
  * Takes ownership of the handle.
  */
-grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
-                               grpc_channel_args *channel_args,
-                               char *peer_string);
+grpc_endpoint* grpc_tcp_create(grpc_exec_ctx* exec_ctx, grpc_winsocket* socket,
+                               grpc_channel_args* channel_args,
+                               const char* peer_string);
 
-grpc_error *grpc_tcp_prepare_socket(SOCKET sock);
+grpc_error* grpc_tcp_prepare_socket(SOCKET sock);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_WINDOWS_H */

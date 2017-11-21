@@ -16,11 +16,13 @@
  *
  */
 
-extern "C" {
 #include "src/core/lib/debug/stats.h"
-}
+
+#include <mutex>
+#include <thread>
 
 #include <grpc/grpc.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
 
@@ -79,37 +81,65 @@ static int FindExpectedBucket(int i, int j) {
          grpc_stats_histo_bucket_boundaries[i] - 1;
 }
 
-TEST(StatsTest, IncHistogram) {
-  for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
-    std::vector<int> test_values;
-    for (int j = -1000;
-         j <
-         grpc_stats_histo_bucket_boundaries[i]
-                                           [grpc_stats_histo_buckets[i] - 1] +
-             1000;
-         j++) {
-      test_values.push_back(j);
-    }
-    std::random_shuffle(test_values.begin(), test_values.end());
-    if (test_values.size() > 10000) {
-      test_values.resize(10000);
-    }
+class HistogramTest : public ::testing::TestWithParam<int> {};
+
+TEST_P(HistogramTest, IncHistogram) {
+  const int kHistogram = GetParam();
+  std::vector<std::thread> threads;
+  int cur_bucket = 0;
+  auto run = [kHistogram](const std::vector<int>& test_values,
+                          int expected_bucket) {
+    gpr_log(GPR_DEBUG, "expected_bucket:%d nvalues=%" PRIdPTR, expected_bucket,
+            test_values.size());
     for (auto j : test_values) {
       Snapshot snapshot;
 
-      int expected_bucket = FindExpectedBucket(i, j);
-
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_stats_inc_histogram[i](&exec_ctx, j);
+      grpc_stats_inc_histogram[kHistogram](&exec_ctx, j);
       grpc_exec_ctx_finish(&exec_ctx);
 
       auto delta = snapshot.delta();
 
-      EXPECT_EQ(delta.histograms[grpc_stats_histo_start[i] + expected_bucket],
-                1);
+      EXPECT_EQ(
+          delta
+              .histograms[grpc_stats_histo_start[kHistogram] + expected_bucket],
+          1)
+          << "\nhistogram:" << kHistogram
+          << "\nexpected_bucket:" << expected_bucket << "\nj:" << j;
+    }
+  };
+  std::vector<int> test_values;
+  // largest bucket boundary for current histogram type.
+  int max_bucket_boundary =
+      grpc_stats_histo_bucket_boundaries[kHistogram]
+                                        [grpc_stats_histo_buckets[kHistogram] -
+                                         1];
+  for (int j = -1000; j < max_bucket_boundary + 1000;) {
+    int expected_bucket = FindExpectedBucket(kHistogram, j);
+    if (cur_bucket != expected_bucket) {
+      threads.emplace_back(
+          [test_values, run, cur_bucket]() { run(test_values, cur_bucket); });
+      cur_bucket = expected_bucket;
+      test_values.clear();
+    }
+    test_values.push_back(j);
+    if (j < max_bucket_boundary &&
+        FindExpectedBucket(kHistogram, j + 1000) == expected_bucket &&
+        FindExpectedBucket(kHistogram, j - 1000) == expected_bucket) {
+      // if we are far from bucket boundary, skip values to speed-up the tests
+      j += 500;
+    } else {
+      j++;
     }
   }
+  run(test_values, cur_bucket);
+  for (auto& t : threads) {
+    t.join();
+  }
 }
+
+INSTANTIATE_TEST_CASE_P(HistogramTestCases, HistogramTest,
+                        ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
 
 }  // namespace testing
 }  // namespace grpc

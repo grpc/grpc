@@ -25,11 +25,9 @@
 #include <grpc/support/log.h>
 #include "test/cpp/microbenchmarks/helpers.h"
 
-extern "C" {
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/completion_queue.h"
-}
 
 struct grpc_pollset {
   gpr_mu mu;
@@ -73,16 +71,16 @@ static void cq_done_cb(grpc_exec_ctx* exec_ctx, void* done_arg,
 /* Queues a completion tag if deadline is > 0.
  * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
 static grpc_error* pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
-                                grpc_pollset_worker** worker, gpr_timespec now,
-                                gpr_timespec deadline) {
-  if (gpr_time_cmp(deadline, gpr_time_0(GPR_CLOCK_MONOTONIC)) == 0) {
+                                grpc_pollset_worker** worker,
+                                grpc_millis deadline) {
+  if (deadline == 0) {
     gpr_log(GPR_DEBUG, "no-op");
     return GRPC_ERROR_NONE;
   }
 
   gpr_mu_unlock(&ps->mu);
   GPR_ASSERT(grpc_cq_begin_op(g_cq, g_tag));
-  grpc_cq_end_op(exec_ctx, g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, NULL,
+  grpc_cq_end_op(exec_ctx, g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
                  (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
   grpc_exec_ctx_flush(exec_ctx);
   gpr_mu_lock(&ps->mu);
@@ -110,7 +108,7 @@ static void setup() {
   g_old_vtable = grpc_get_event_engine_test_only();
   grpc_set_event_engine_test_only(&g_vtable);
 
-  g_cq = grpc_completion_queue_create_for_next(NULL);
+  g_cq = grpc_completion_queue_create_for_next(nullptr);
 }
 
 static void teardown() {
@@ -118,7 +116,7 @@ static void teardown() {
 
   /* Drain any events */
   gpr_timespec deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
-  while (grpc_completion_queue_next(g_cq, deadline, NULL).type !=
+  while (grpc_completion_queue_next(g_cq, deadline, nullptr).type !=
          GRPC_QUEUE_SHUTDOWN) {
     /* Do nothing */
   }
@@ -153,7 +151,7 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   }
 
   while (state.KeepRunning()) {
-    GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, NULL).type ==
+    GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
                GRPC_OP_COMPLETE);
   }
 

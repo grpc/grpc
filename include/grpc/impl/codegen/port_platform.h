@@ -241,6 +241,29 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#elif defined(__OpenBSD__)
+#define GPR_PLATFORM_STRING "openbsd"
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#define GPR_OPENBSD 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
 #elif defined(__native_client__)
 #define GPR_PLATFORM_STRING "nacl"
 #ifndef _BSD_SOURCE
@@ -273,6 +296,27 @@
 #error "Could not auto-detect platform"
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
+
+/*
+ *  There are platforms for which TLS should not be used even though the
+ * compiler makes it seem like it's supported (Android NDK < r12b for example).
+ * This is primarily because of linker problems and toolchain misconfiguration:
+ * TLS isn't supported until NDK r12b per
+ * https://developer.android.com/ndk/downloads/revision_history.html
+ * Since NDK r16, `__NDK_MAJOR__` and `__NDK_MINOR__` are defined in
+ * <android/ndk-version.h>. For NDK < r16, users should define these macros,
+ * e.g. `-D__NDK_MAJOR__=11 -D__NKD_MINOR__=0` for NDK r11. */
+#if defined(__ANDROID__) && defined(__clang__) && defined(GPR_GCC_TLS)
+#if __has_include(<android/ndk-version.h>)
+#include <android/ndk-version.h>
+#endif /* __has_include(<android/ndk-version.h>) */
+#if defined(__ANDROID__) && defined(__clang__) && defined(__NDK_MAJOR__) && \
+    defined(__NDK_MINOR__) &&                                               \
+    ((__NDK_MAJOR__ < 12) || ((__NDK_MAJOR__ == 12) && (__NDK_MINOR__ < 1)))
+#undef GPR_GCC_TLS
+#define GPR_PTHREAD_TLS 1
+#endif
+#endif /*defined(__ANDROID__) && defined(__clang__) && defined(GPR_GCC_TLS) */
 
 #if defined(__has_include)
 #if __has_include(<atomic>)
@@ -414,5 +458,9 @@ typedef unsigned __int64 uint64_t;
 #define GPR_ATTRIBUTE_NO_TSAN
 #endif /* GPR_ATTRIBUTE_NO_TSAN (2) */
 #endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
+
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

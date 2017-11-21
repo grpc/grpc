@@ -30,11 +30,13 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -198,10 +200,7 @@ class TestScenario {
   void Log() const;
   bool use_proxy;
   bool inproc;
-  // Although the below grpc::string is logically const, we can't declare
-  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
-  // manage vector insertion using a copy constructor
-  grpc::string credentials_type;
+  const grpc::string credentials_type;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -223,7 +222,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),
-        special_service_("special") {
+        special_service_("special"),
+        first_picked_port_(0) {
     GetParam().Log();
   }
 
@@ -232,10 +232,14 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       server_->Shutdown();
       if (proxy_server_) proxy_server_->Shutdown();
     }
+    if (first_picked_port_ > 0) {
+      grpc_recycle_unused_port(first_picked_port_);
+    }
   }
 
   void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
     int port = grpc_pick_unused_port_or_die();
+    first_picked_port_ = port;
     server_address_ << "127.0.0.1:" << port;
     // Setup server
     BuildAndStartServer(processor);
@@ -331,6 +335,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
   grpc::string user_agent_prefix_;
+  int first_picked_port_;
 };
 
 static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
@@ -701,13 +706,25 @@ TEST_P(End2endTest, ReconnectChannel) {
   if (GetParam().inproc) {
     return;
   }
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
+  int poller_slowdown_factor = 1;
+  // It needs 2 pollset_works to reconnect the channel with polling engine
+  // "poll"
+  char* s = gpr_getenv("GRPC_POLL_STRATEGY");
+  if (s != nullptr && 0 == strcmp(s, "poll")) {
+    poller_slowdown_factor = 2;
+  }
+  gpr_free(s);
   ResetStub();
   SendRpc(stub_.get(), 1, false);
   RestartServer(std::shared_ptr<AuthMetadataProcessor>());
-  // It needs more than kConnectivityCheckIntervalMsec time to reconnect the
-  // channel.
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_millis(1600, GPR_TIMESPAN)));
+  // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
+  // reconnect the channel.
+  gpr_sleep_until(gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME),
+      gpr_time_from_millis(
+          300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
+          GPR_TIMESPAN)));
   SendRpc(stub_.get(), 1, false);
 }
 
@@ -1131,7 +1148,7 @@ TEST_P(End2endTest, ChannelState) {
   CompletionQueue cq;
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::milliseconds(10);
-  channel_->NotifyOnStateChange(GRPC_CHANNEL_IDLE, deadline, &cq, NULL);
+  channel_->NotifyOnStateChange(GRPC_CHANNEL_IDLE, deadline, &cq, nullptr);
   void* tag;
   bool ok = true;
   cq.Next(&tag, &ok);
@@ -1283,6 +1300,8 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_skip_cancelled_check(true);
+  // Let server sleep for 2 ms first to guarantee expiry
+  request.mutable_param()->set_server_sleep_us(2 * 1000);
 
   ClientContext context;
   std::chrono::system_clock::time_point deadline =
@@ -1410,6 +1429,10 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
 }
 
 TEST_P(ProxyEnd2endTest, Peer) {
+  // Peer is not meaningful for inproc
+  if (GetParam().inproc) {
+    return;
+  }
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1778,11 +1801,10 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
     credentials_types.push_back(kInsecureCredentialsType);
   }
   GPR_ASSERT(!credentials_types.empty());
-  for (auto it = credentials_types.begin(); it != credentials_types.end();
-       ++it) {
-    scenarios.emplace_back(false, false, *it);
+  for (const auto& cred : credentials_types) {
+    scenarios.emplace_back(false, false, cred);
     if (use_proxy) {
-      scenarios.emplace_back(true, false, *it);
+      scenarios.emplace_back(true, false, cred);
     }
   }
   if (test_inproc && insec_ok()) {
@@ -1801,7 +1823,7 @@ INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
 
 INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(true, true,
-                                                                true, false)));
+                                                                true, true)));
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, false,

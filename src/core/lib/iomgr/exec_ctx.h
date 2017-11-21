@@ -19,10 +19,19 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EXEC_CTX_H
 #define GRPC_CORE_LIB_IOMGR_EXEC_CTX_H
 
+#include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
+
 #include "src/core/lib/iomgr/closure.h"
 
-/* #define GRPC_EXECUTION_CONTEXT_SANITIZER 1 */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef gpr_atm grpc_millis;
+
+#define GRPC_MILLIS_INF_FUTURE GPR_ATM_MAX
+#define GRPC_MILLIS_INF_PAST GPR_ATM_MIN
 
 /** A workqueue represents a list of work to be executed asynchronously.
     Forward declared here to avoid a circular dependency with workqueue.h. */
@@ -59,13 +68,16 @@ typedef struct grpc_combiner grpc_combiner;
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
   /** currently active combiner: updated only via combiner.c */
-  grpc_combiner *active_combiner;
+  grpc_combiner* active_combiner;
   /** last active combiner in the active combiner list */
-  grpc_combiner *last_combiner;
+  grpc_combiner* last_combiner;
   uintptr_t flags;
   unsigned starting_cpu;
-  void *check_ready_to_finish_arg;
-  bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
+  void* check_ready_to_finish_arg;
+  bool (*check_ready_to_finish)(grpc_exec_ctx* exec_ctx, void* arg);
+
+  bool now_is_valid;
+  grpc_millis now;
 };
 
 /* initializer for grpc_exec_ctx:
@@ -73,7 +85,7 @@ struct grpc_exec_ctx {
 #define GRPC_EXEC_CTX_INITIALIZER(flags, finish_check, finish_check_arg) \
   {                                                                      \
     GRPC_CLOSURE_LIST_INIT, NULL, NULL, flags, gpr_cpu_current_cpu(),    \
-        finish_check_arg, finish_check                                   \
+        finish_check_arg, finish_check, false, 0                         \
   }
 
 /* initialize an execution context at the top level of an API call into grpc
@@ -81,29 +93,39 @@ struct grpc_exec_ctx {
 #define GRPC_EXEC_CTX_INIT \
   GRPC_EXEC_CTX_INITIALIZER(GRPC_EXEC_CTX_FLAG_IS_FINISHED, NULL, NULL)
 
-extern grpc_closure_scheduler *grpc_schedule_on_exec_ctx;
+extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
 
-bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx);
+bool grpc_exec_ctx_has_work(grpc_exec_ctx* exec_ctx);
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
  *  Caller must guarantee that no interfering locks are held.
  *  Returns true if work was performed, false otherwise. */
-bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx);
+bool grpc_exec_ctx_flush(grpc_exec_ctx* exec_ctx);
 /** Finish any pending work for a grpc_exec_ctx. Must be called before
  *  the instance is destroyed, or work may be lost. */
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx);
+void grpc_exec_ctx_finish(grpc_exec_ctx* exec_ctx);
 /** Returns true if we'd like to leave this execution context as soon as
     possible: useful for deciding whether to do something more or not depending
     on outside context */
-bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx);
+bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx* exec_ctx);
 /** A finish check that is never ready to finish */
-bool grpc_never_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored);
+bool grpc_never_ready_to_finish(grpc_exec_ctx* exec_ctx, void* arg_ignored);
 /** A finish check that is always ready to finish */
-bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored);
+bool grpc_always_ready_to_finish(grpc_exec_ctx* exec_ctx, void* arg_ignored);
 
 void grpc_exec_ctx_global_init(void);
 
 void grpc_exec_ctx_global_init(void);
 void grpc_exec_ctx_global_shutdown(void);
+
+grpc_millis grpc_exec_ctx_now(grpc_exec_ctx* exec_ctx);
+void grpc_exec_ctx_invalidate_now(grpc_exec_ctx* exec_ctx);
+gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
+grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
+grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */
