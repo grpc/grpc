@@ -1,4 +1,4 @@
-<%def name="resolver_gce_integration_tests_runner(tests, records, resolver_tests_common_zone_name)">#!/bin/bash
+<%def name="resolver_gce_integration_tests_runner(tests, record_names_and_types, resolver_tests_common_zone_name)">#!/bin/bash
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,7 +33,7 @@ make resolver_component_test
 echo "Sanity check DNS records are resolveable with dig:"
 EXIT_CODE=0
 
-% for r in records:
+% for r in record_names_and_types:
 ONE_FAILED=0
 dig ${r['type']} ${r['name']}.${resolver_tests_common_zone_name} | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then

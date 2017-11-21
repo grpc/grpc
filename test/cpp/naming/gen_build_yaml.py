@@ -57,9 +57,9 @@ def _data_for_type(r_type,
   if r_type in ['A', 'AAAA']:
     return r_data
   if r_type == 'SRV':
-    target = r_data.split(' ')[3]
+    target = r_data.split()[3]
     uploadable_target = '%s.%s' % (target, common_zone_name)
-    uploadable = r_data.split(' ')
+    uploadable = r_data.split()
     uploadable[3] = uploadable_target
     return '%s' % ' '.join(uploadable)
   if r_type == 'TXT':
@@ -131,14 +131,14 @@ def _bind_zone_file_lines(test_cases,
                                               r_data))
   return out
 
-def get_record_names_and_types_from_zone_file_lines(zone_file_lines):
+def _get_record_names_and_types_from_zone_file_entries(zone_file_entries):
   names = []
-  for line in zone_file_lines:
-    if line.split(' ')[0] == '$ORIGIN':
+  for entry in zone_file_entries:
+    if entry.split()[0] == '$ORIGIN':
       continue
     names.append({
-        'name': line.split(' ')[0],
-        'type': line.split(' ')[3],
+        'name': entry.split()[0],
+        'type': entry.split()[3],
     })
   return names
 
@@ -222,9 +222,6 @@ def main():
     resolver_component_data = yaml.load(f)
   integration_test_zone_file_entries = _create_zone_file_entries(
       _GCLOUD, resolver_component_data, False)
-  integration_test_record_names = \
-      get_record_names_and_types_from_zone_file_lines(
-      integration_test_zone_file_entries)
   json_out = {
       'resolver_tests_common_zone_name': \
           resolver_component_data['resolver_tests_common_zone_name'],
@@ -235,7 +232,9 @@ def main():
           _create_zone_file_entries(_TWISTED, resolver_component_data, True),
       'bind9_dns_server_test_zone_file_entries': \
           _create_zone_file_entries(_BIND9, resolver_component_data, True),
-      'integration_test_record_names': integration_test_record_names,
+      'integration_test_record_names_and_types': \
+           _get_record_names_and_types_from_zone_file_entries(
+               integration_test_zone_file_entries),
       'resolver_gce_integration_test_cases': _resolver_test_cases(
           resolver_component_data, _TARGET_RECORDS_TO_SKIP[_GCLOUD]),
       'resolver_component_test_cases': _resolver_test_cases(
