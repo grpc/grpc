@@ -465,16 +465,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
           grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
       if (new_lb_policy == nullptr) {
         gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
-      } else {
-        reresolution_request_args* args =
-            (reresolution_request_args*)gpr_zalloc(sizeof(*args));
-        args->chand = chand;
-        args->lb_policy = new_lb_policy;
-        GRPC_CLOSURE_INIT(&args->closure, request_reresolution_locked, args,
-                          grpc_combiner_scheduler(chand->combiner));
-        GRPC_CHANNEL_STACK_REF(chand->owning_stack, "re-resolution");
-        grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, new_lb_policy,
-                                                    &args->closure);
       }
     }
     // Find service config.
@@ -607,6 +597,15 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
                                        chand->interested_parties);
       GRPC_CLOSURE_LIST_SCHED(exec_ctx,
                               &chand->waiting_for_resolver_result_closures);
+      reresolution_request_args* args =
+          (reresolution_request_args*)gpr_zalloc(sizeof(*args));
+      args->chand = chand;
+      args->lb_policy = new_lb_policy;
+      GRPC_CLOSURE_INIT(&args->closure, request_reresolution_locked, args,
+                        grpc_combiner_scheduler(chand->combiner));
+      GRPC_CHANNEL_STACK_REF(chand->owning_stack, "re-resolution");
+      grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, new_lb_policy,
+                                                  &args->closure);
       if (chand->exit_idle_when_lb_policy_arrives) {
         grpc_lb_policy_exit_idle_locked(exec_ctx, new_lb_policy);
         chand->exit_idle_when_lb_policy_arrives = false;
