@@ -20,8 +20,12 @@ import os
 import json
 import argparse
 
+_GCLOUD = 'gcloud'
+_TWISTED = 'twisted'
+_BIND9 = 'bind9'
+
 def convert_service_config_to_txt_data(service_config_json_path,
-                                       format_style):
+                                       zone_file_type):
   with open(service_config_json_path) as service_config_json_in:
     r_data = json.dumps(json.load(service_config_json_in))
     r_data = r_data.replace(' ', '').replace('\n', '')
@@ -31,19 +35,15 @@ def convert_service_config_to_txt_data(service_config_json_path,
     while len(r_data[cur:]) > 0:
       next_chunk = ''
       while len(next_chunk) < 255 and len(r_data[cur:]) > 0:
-        if r_data[cur] == '"' and format_style in ['gcloud', 'bind9']:
-          # Observably, gcloud requires quotation marks within TXT
-          # strings to be escaped, and the backslashes used for
-          # escaping are added towards the single-string 255 character
-          # limit. However, twisted BindAuthority requires that inner
-          # quotation marks are not escaped.
+        if r_data[cur] == '"' and zone_file_type in [_GCLOUD, _BIND9]:
+          # Unlike gcloud and bind9 zone file parsers, twisted
+          # BindAuthority requires that inner quotation marks are
+          # not escaped.
           to_add = '\\"'
-          while len(to_add) > 0:
-            if len(next_chunk) == 255:
-              chunks.append(next_chunk)
-              next_chunk = ''
-            next_chunk += to_add[0]
-            to_add = to_add[1:]
+          if len(next_chunk) + len(to_add) > 255:
+            chunks.append(next_chunk)
+            next_chunk = ''
+          next_chunk += to_add
         else:
           next_chunk += r_data[cur]
         cur += 1
@@ -53,7 +53,7 @@ def convert_service_config_to_txt_data(service_config_json_path,
       if len(c) > 255:
         raise Exception(('Bug: TXT string is > 255 character length limit. '
                          'Length: %s' % len(c)))
-      if format_style == 'gcloud':
+      if zone_file_type == _GCLOUD:
         # Observably, gcloud dns zone file parser also requires that
         # "inner" backslashes and "inner" quotation marks themselves
         # be escaped, and it also requires that each "TXT string" be
@@ -61,7 +61,7 @@ def convert_service_config_to_txt_data(service_config_json_path,
         # and "outer backslashes" are not counted towards the
         # single-string 255 character limit.
         c = c.replace('\\"', '\\\\\\"')
-      if format_style in ['gcloud', 'bind9']:
+      if zone_file_type in [_GCLOUD, _BIND9]:
         c = '\"%s\"' % c
       out += '    %s\n' % c
     out += ')'
@@ -75,10 +75,10 @@ def main():
                     type=str,
                     help=('Path to a JSON file containing a grpc '
                           'service config.'))
-  argp.add_argument('-f', '--format',
-                  choices=['gcloud', 'bind9', 'twisted'],
+  argp.add_argument('-z', '--zone_file_type',
+                  choices=[_GCLOUD, _BIND9, _TWISTED],
                   nargs='+',
-                  default=['twisted'],
+                  default=[_TWISTED],
                   help=('Create the TXT record data in a format that '
                         'is suitable for a particular server '
                         'or zone-file-parser'))

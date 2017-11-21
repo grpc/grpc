@@ -1,0 +1,4 @@
+%YAML 1.2
+--- |
+  <%namespace file="zone_file_defs.include" import="*"/>\
+  ${zone_file(bind9_dns_server_test_zone_file_entries)}

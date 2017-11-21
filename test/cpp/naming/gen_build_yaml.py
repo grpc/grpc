@@ -26,11 +26,19 @@ import service_config_utils
 _SERVER_HEALTH_CHECK_RECORD_NAME = 'dummy-health-check'
 _SERVER_HEALTH_CHECK_RECORD_DATA = '123.123.123.123'
 
-_TARGET_RECORDS_TO_SKIP_AGAINST_GCE = [
-  # TODO: enable this once able to upload the very large TXT record
-  # in this group to GCE DNS.
-  'ipv4-config-causing-fallback-to-tcp',
-]
+_GCLOUD = 'gcloud'
+_TWISTED = 'twisted'
+_BIND9 = 'bind9'
+
+_TARGET_RECORDS_TO_SKIP = {
+  _GCLOUD: [
+      # TODO: enable this once able to upload the very large TXT record
+      # in this group to GCE DNS.
+      'ipv4-config-causing-fallback-to-tcp',
+  ],
+  _TWISTED: [],
+  _BIND9: [],
+}
 
 def _append_zone_name(name, zone_name):
   return '%s.%s' % (name, zone_name)
@@ -45,7 +53,7 @@ def _data_for_type(r_type,
                    r_data,
                    common_zone_name,
                    record_name,
-                   use_gcloud_format):
+                   zone_file_type):
   if r_type in ['A', 'AAAA']:
     return r_data
   if r_type == 'SRV':
@@ -59,7 +67,8 @@ def _data_for_type(r_type,
                             'It is meant to be read from json file')
     path = 'test/cpp/naming/service_configs/%s.json' % record_name
     return service_config_utils.convert_service_config_to_txt_data(
-        path, use_gcloud_format and 'gcloud' or 'twisted')
+        path, zone_file_type)
+  assert False, 'Unexpected record type: %s' % r_type
 
 def _fill_column(data, col_width):
   return data + ' ' * (col_width - len(data))
@@ -79,9 +88,9 @@ def _create_bind_format_line(record_name, r_ttl, r_type, r_data):
 
 def _bind_zone_file_lines(test_cases,
                           common_zone_name,
-                          for_gce_dns):
+                          zone_file_type):
   out = []
-  if for_gce_dns:
+  if zone_file_type != _TWISTED:
     # For the python DNS server's zone file, we need to avoid use of
     # the $ORIGIN keyword and instead use FQDN in all names in the
     # zone file, because older versions of twisted have a bug in which
@@ -92,9 +101,8 @@ def _bind_zone_file_lines(test_cases,
     # compatible with older versions of twisted.
     out.append('$ORIGIN %s' % common_zone_name)
   for group in test_cases:
-    if for_gce_dns:
-      if group['record_to_resolve'] in _TARGET_RECORDS_TO_SKIP_AGAINST_GCE:
-        continue
+    if group['record_to_resolve'] in _TARGET_RECORDS_TO_SKIP[zone_file_type]:
+      continue
     for record_name in group['records'].keys():
       r_ttl = None
       all_r_data = {}
@@ -111,11 +119,11 @@ def _bind_zone_file_lines(test_cases,
                                                  r_data.get('data'),
                                                  common_zone_name,
                                                  record_name,
-                                                 for_gce_dns))
+                                                 zone_file_type))
       for r_type in all_r_data.keys():
         for r_data in all_r_data[r_type]:
           name_for_line = record_name
-          if not for_gce_dns:
+          if zone_file_type == _TWISTED:
             name_for_line += '.%s' % common_zone_name
           out.append(_create_bind_format_line(name_for_line,
                                               r_ttl,
@@ -134,30 +142,41 @@ def get_record_names_and_types_from_zone_file_lines(zone_file_lines):
     })
   return names
 
-def _auxiliary_records_for_local_dns_server(common_zone_name):
+def _auxiliary_records_for_local_dns_server(common_zone_name, zone_file_type):
+  if zone_file_type == _BIND9:
+    soa_name = '@'
+    zone_ns_name = '@'
+    ns1_name = 'ns1'
+    health_check_record_name = _SERVER_HEALTH_CHECK_RECORD_NAME
+  else:
+    assert zone_file_type == _TWISTED
+    soa_name = common_zone_name
+    zone_ns_name = common_zone_name
+    ns1_name = 'ns1.%s' % common_zone_name
+    health_check_record_name = '%s.%s' % (_SERVER_HEALTH_CHECK_RECORD_NAME, common_zone_name)
   return [
       _create_bind_format_line(
-          common_zone_name,
+          soa_name,
           '0',
           'SOA',
           'ns1.%s dummy-admin-address.com 0 0 0 0 0' % common_zone_name),
       _create_bind_format_line(
-          common_zone_name,
+          zone_ns_name,
           '0',
           'NS',
           'ns1.%s' % common_zone_name),
       _create_bind_format_line(
-          'ns1.%s' % common_zone_name,
+          ns1_name,
           '0',
           'A',
           '127.0.0.1'),
       _create_bind_format_line(
-          'ns1.%s' % common_zone_name,
+          ns1_name,
           '0',
           'AAAA',
           '::1'),
       _create_bind_format_line(
-          '%s.%s' % (_SERVER_HEALTH_CHECK_RECORD_NAME, common_zone_name),
+          health_check_record_name,
           '0',
           'A',
           _SERVER_HEALTH_CHECK_RECORD_DATA),
@@ -184,22 +203,28 @@ def _resolver_test_cases(resolver_component_data, records_to_skip):
     })
   return out
 
+def _create_zone_file_entries(zone_file_type,
+                              resolver_component_data,
+                              add_auxiliary_records):
+  zone_file_entries = _bind_zone_file_lines(
+      resolver_component_data['resolver_component_tests'],
+      resolver_component_data['resolver_tests_common_zone_name'],
+      zone_file_type)
+  if add_auxiliary_records:
+    zone_file_entries += _auxiliary_records_for_local_dns_server(
+        resolver_component_data['resolver_tests_common_zone_name'],
+        zone_file_type)
+  return zone_file_entries
+
 def main():
   resolver_component_data = ''
   with open('test/cpp/naming/resolver_test_record_groups.yaml') as f:
     resolver_component_data = yaml.load(f)
-  integration_test_zone_file_entries = _bind_zone_file_lines(
-      resolver_component_data['resolver_component_tests'],
-      resolver_component_data['resolver_tests_common_zone_name'],
-      True)
+  integration_test_zone_file_entries = _create_zone_file_entries(
+      _GCLOUD, resolver_component_data, False)
   integration_test_record_names = \
       get_record_names_and_types_from_zone_file_lines(
       integration_test_zone_file_entries)
-  local_dns_server_test_zone_file_entries = _bind_zone_file_lines(
-      resolver_component_data['resolver_component_tests'],
-      resolver_component_data['resolver_tests_common_zone_name'],
-      False) + _auxiliary_records_for_local_dns_server(
-          resolver_component_data['resolver_tests_common_zone_name'])
   json_out = {
       'resolver_tests_common_zone_name': \
           resolver_component_data['resolver_tests_common_zone_name'],
@@ -207,12 +232,14 @@ def main():
           _gce_dns_zone_id(resolver_component_data),
       'integration_test_zone_file_entries': integration_test_zone_file_entries,
       'local_dns_server_test_zone_file_entries': \
-          local_dns_server_test_zone_file_entries,
+          _create_zone_file_entries(_TWISTED, resolver_component_data, True),
+      'bind9_dns_server_test_zone_file_entries': \
+          _create_zone_file_entries(_BIND9, resolver_component_data, True),
       'integration_test_record_names': integration_test_record_names,
       'resolver_gce_integration_test_cases': _resolver_test_cases(
-          resolver_component_data, _TARGET_RECORDS_TO_SKIP_AGAINST_GCE),
+          resolver_component_data, _TARGET_RECORDS_TO_SKIP[_GCLOUD]),
       'resolver_component_test_cases': _resolver_test_cases(
-          resolver_component_data, []),
+          resolver_component_data, _TARGET_RECORDS_TO_SKIP[_TWISTED]),
       'resolver_component_tests_health_check_record_name': '%s.%s' % (
           _SERVER_HEALTH_CHECK_RECORD_NAME,
           resolver_component_data['resolver_tests_common_zone_name']),
