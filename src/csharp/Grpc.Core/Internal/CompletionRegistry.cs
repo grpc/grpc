@@ -19,7 +19,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
@@ -35,7 +37,7 @@ namespace Grpc.Core.Internal
 
         readonly GrpcEnvironment environment;
         readonly Dictionary<IntPtr, IOpCompletionCallback> dict = new Dictionary<IntPtr, IOpCompletionCallback>(new IntPtrComparer());
-        readonly object myLock = new object();
+        SpinLock spinLock = new SpinLock(Debugger.IsAttached);
         IntPtr lastRegisteredKey;  // only for testing
 
         public CompletionRegistry(GrpcEnvironment environment)
@@ -46,10 +48,18 @@ namespace Grpc.Core.Internal
         public void Register(IntPtr key, IOpCompletionCallback callback)
         {
             environment.DebugStats.PendingBatchCompletions.Increment();
-            lock (myLock)
+
+            bool lockTaken = false;
+            try
             {
+                spinLock.Enter(ref lockTaken);
+
                 dict.Add(key, callback);
                 this.lastRegisteredKey = key;
+            }
+            finally
+            {
+                if (lockTaken) spinLock.Exit();
             }
         }
 
@@ -68,10 +78,17 @@ namespace Grpc.Core.Internal
         public IOpCompletionCallback Extract(IntPtr key)
         {
             IOpCompletionCallback value = null;
-            lock (myLock)
+            bool lockTaken = false;
+            try
             {
+                spinLock.Enter(ref lockTaken);
+
                 value = dict[key];
                 dict.Remove(key);
+            }
+            finally
+            {
+                if (lockTaken) spinLock.Exit();
             }
             environment.DebugStats.PendingBatchCompletions.Decrement();
             return value;
