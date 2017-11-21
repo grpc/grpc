@@ -588,10 +588,12 @@ class CallOpClientRecvStatus {
       binary_error_details =
           grpc::string(iter->second.begin(), iter->second.length());
     }
-    *recv_status_ = Status(static_cast<StatusCode>(status_code_),
-                           grpc::string(GRPC_SLICE_START_PTR(error_message_),
-                                        GRPC_SLICE_END_PTR(error_message_)),
-                           binary_error_details, grpc::string(error_string_));
+    *recv_status_ =
+        Status(static_cast<StatusCode>(status_code_),
+               grpc::string(GRPC_SLICE_START_PTR(error_message_),
+                            GRPC_SLICE_END_PTR(error_message_)),
+               binary_error_details,
+               error_string_ != nullptr ? grpc::string(error_string_) : "");
     g_core_codegen_interface->grpc_slice_unref(error_message_);
     g_core_codegen_interface->gpr_free((void*)error_string_);
     recv_status_ = nullptr;
