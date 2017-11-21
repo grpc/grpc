@@ -1,20 +1,20 @@
-$ORIGIN resolver-tests-version-5.grpctestingexp.
-_grpclb._tcp.srv-ipv4-single-target                                                                                             2100    IN  SRV     0 0 1234 ipv4-single-target.resolver-tests-version-5.grpctestingexp.
+$ORIGIN resolver-tests-version-6.grpctestingexp.
+_grpclb._tcp.srv-ipv4-single-target                                                                                             2100    IN  SRV     0 0 1234 ipv4-single-target.resolver-tests-version-6.grpctestingexp.
 ipv4-single-target                                                                                                              2100    IN  A       1.2.3.4
-_grpclb._tcp.srv-ipv4-multi-target                                                                                              2100    IN  SRV     0 0 1234 ipv4-multi-target.resolver-tests-version-5.grpctestingexp.
+_grpclb._tcp.srv-ipv4-multi-target                                                                                              2100    IN  SRV     0 0 1234 ipv4-multi-target.resolver-tests-version-6.grpctestingexp.
 ipv4-multi-target                                                                                                               2100    IN  A       1.2.3.5
 ipv4-multi-target                                                                                                               2100    IN  A       1.2.3.6
 ipv4-multi-target                                                                                                               2100    IN  A       1.2.3.7
-_grpclb._tcp.srv-ipv6-single-target                                                                                             2100    IN  SRV     0 0 1234 ipv6-single-target.resolver-tests-version-5.grpctestingexp.
+_grpclb._tcp.srv-ipv6-single-target                                                                                             2100    IN  SRV     0 0 1234 ipv6-single-target.resolver-tests-version-6.grpctestingexp.
 ipv6-single-target                                                                                                              2100    IN  AAAA    2607:f8b0:400a:801::1001
-_grpclb._tcp.srv-ipv6-multi-target                                                                                              2100    IN  SRV     0 0 1234 ipv6-multi-target.resolver-tests-version-5.grpctestingexp.
+_grpclb._tcp.srv-ipv6-multi-target                                                                                              2100    IN  SRV     0 0 1234 ipv6-multi-target.resolver-tests-version-6.grpctestingexp.
 ipv6-multi-target                                                                                                               2100    IN  AAAA    2607:f8b0:400a:801::1002
 ipv6-multi-target                                                                                                               2100    IN  AAAA    2607:f8b0:400a:801::1003
 ipv6-multi-target                                                                                                               2100    IN  AAAA    2607:f8b0:400a:801::1004
 _grpc_config.srv-ipv4-simple-service-config                                                                                     2100    IN  TXT     (
     "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"SimpleService\"}],\"waitForReady\":true}]}}]"
 )
-_grpclb._tcp.srv-ipv4-simple-service-config                                                                                     2100    IN  SRV     0 0 1234 ipv4-simple-service-config.resolver-tests-version-5.grpctestingexp.
+_grpclb._tcp.srv-ipv4-simple-service-config                                                                                     2100    IN  SRV     0 0 1234 ipv4-simple-service-config.resolver-tests-version-6.grpctestingexp.
 ipv4-simple-service-config                                                                                                      2100    IN  A       1.2.3.4
 ipv4-no-srv-simple-service-config                                                                                               2100    IN  A       1.2.3.4
 _grpc_config.ipv4-no-srv-simple-service-config                                                                                  2100    IN  TXT     (
@@ -38,10 +38,10 @@ _grpc_config.ipv4-config-with-percentages                                       
     "grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NeverPickedService\"}],\"waitForReady\":true}]}},{\"percentage\":100,\"serviceConfig\":{\"loadBalancin"
     "gPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"AlwaysPickedService\"}],\"waitForReady\":true}]}}]"
 )
-_grpclb._tcp.srv-ipv4-target-has-backend-and-balancer                                                                           2100    IN  SRV     0 0 1234 balancer-for-ipv4-has-backend-and-balancer.resolver-tests-version-5.grpctestingexp.
+_grpclb._tcp.srv-ipv4-target-has-backend-and-balancer                                                                           2100    IN  SRV     0 0 1234 balancer-for-ipv4-has-backend-and-balancer.resolver-tests-version-6.grpctestingexp.
 balancer-for-ipv4-has-backend-and-balancer                                                                                      2100    IN  A       1.2.3.4
 srv-ipv4-target-has-backend-and-balancer                                                                                        2100    IN  A       1.2.3.4
-_grpclb._tcp.srv-ipv6-target-has-backend-and-balancer                                                                           2100    IN  SRV     0 0 1234 balancer-for-ipv6-has-backend-and-balancer.resolver-tests-version-5.grpctestingexp.
+_grpclb._tcp.srv-ipv6-target-has-backend-and-balancer                                                                           2100    IN  SRV     0 0 1234 balancer-for-ipv6-has-backend-and-balancer.resolver-tests-version-6.grpctestingexp.
 balancer-for-ipv6-has-backend-and-balancer                                                                                      2100    IN  AAAA    2607:f8b0:400a:801::1002
 srv-ipv6-target-has-backend-and-balancer                                                                                        2100    IN  AAAA    2607:f8b0:400a:801::1002
 _grpc_config.ipv4-config-causing-fallback-to-tcp                                                                                2100    IN  TXT     (
@@ -54,17 +54,17 @@ _grpc_config.ipv4-config-causing-fallback-to-tcp                                
 )
 ipv4-config-causing-fallback-to-tcp                                                                                             2100    IN  A       1.2.3.4
 simple-ipv4-from-cname                                                                                                          2100    IN  A       11.22.33.44
-simple-cname-to-ipv4                                                                                                            2100    IN  CNAME   simple-ipv4-from-cname.resolver-tests-version-5.grpctestingexp.
+simple-cname-to-ipv4                                                                                                            2100    IN  CNAME   simple-ipv4-from-cname.resolver-tests-version-6.grpctestingexp.
 simple-ipv6-from-cname                                                                                                          2100    IN  AAAA    3ffe::1234
-simple-cname-to-ipv6                                                                                                            2100    IN  CNAME   simple-ipv6-from-cname.resolver-tests-version-5.grpctestingexp.
+simple-cname-to-ipv6                                                                                                            2100    IN  CNAME   simple-ipv6-from-cname.resolver-tests-version-6.grpctestingexp.
 target-of-cname-chain-to-ipv4                                                                                                   2100    IN  A       10.20.30.40
-middle-of-cname-chain-to-ipv4                                                                                                   2100    IN  CNAME   target-of-cname-chain-to-ipv4.resolver-tests-version-5.grpctestingexp.
-chained-cname-to-ipv4                                                                                                           2100    IN  CNAME   middle-of-cname-chain-to-ipv4.resolver-tests-version-5.grpctestingexp.
+middle-of-cname-chain-to-ipv4                                                                                                   2100    IN  CNAME   target-of-cname-chain-to-ipv4.resolver-tests-version-6.grpctestingexp.
+chained-cname-to-ipv4                                                                                                           2100    IN  CNAME   middle-of-cname-chain-to-ipv4.resolver-tests-version-6.grpctestingexp.
 target-of-cname-chain-to-ipv6                                                                                                   2100    IN  AAAA    fec0::5678
-chained-cname-to-ipv6                                                                                                           2100    IN  CNAME   middle-of-cname-chain-to-ipv6.resolver-tests-version-5.grpctestingexp.
-middle-of-cname-chain-to-ipv6                                                                                                   2100    IN  CNAME   target-of-cname-chain-to-ipv6.resolver-tests-version-5.grpctestingexp.
-@                                                                                                                               0       IN  SOA     ns1.resolver-tests-version-5.grpctestingexp. dummy-admin-address.com 0 0 0 0 0
-@                                                                                                                               0       IN  NS      ns1.resolver-tests-version-5.grpctestingexp.
+chained-cname-to-ipv6                                                                                                           2100    IN  CNAME   middle-of-cname-chain-to-ipv6.resolver-tests-version-6.grpctestingexp.
+middle-of-cname-chain-to-ipv6                                                                                                   2100    IN  CNAME   target-of-cname-chain-to-ipv6.resolver-tests-version-6.grpctestingexp.
+@                                                                                                                               0       IN  SOA     ns1.resolver-tests-version-6.grpctestingexp. dummy-admin-address.com 0 0 0 0 0
+@                                                                                                                               0       IN  NS      ns1.resolver-tests-version-6.grpctestingexp.
 ns1                                                                                                                             0       IN  A       127.0.0.1
 ns1                                                                                                                             0       IN  AAAA    ::1
 dummy-health-check                                                                                                              0       IN  A       123.123.123.123
