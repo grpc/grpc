@@ -122,7 +122,7 @@ static void partly_done(grpc_exec_ctx* exec_ctx, state_watcher* w,
   gpr_mu_lock(&w->mu);
 
   if (due_to_completion) {
-    if (GRPC_TRACER_ON(grpc_trace_operation_failures)) {
+    if (grpc_trace_operation_failures.enabled()) {
       GRPC_LOG_IF_ERROR("watch_completion_error", GRPC_ERROR_REF(error));
     }
     GRPC_ERROR_UNREF(error);

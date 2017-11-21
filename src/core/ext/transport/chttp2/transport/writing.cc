@@ -51,8 +51,7 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* ping already in-flight: wait */
-    if (GRPC_TRACER_ON(grpc_http_trace) ||
-        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%s: Ping delayed [%p]: already pinging",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string);
     }
@@ -61,8 +60,7 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
   if (t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
     /* need to receive something of substance before sending a ping again */
-    if (GRPC_TRACER_ON(grpc_http_trace) ||
-        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%s: Ping delayed [%p]: too many recent pings: %d/%d",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string,
               t->ping_state.pings_before_data_required,
@@ -81,8 +79,7 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
   }
   if (next_allowed_ping > now) {
     /* not enough elapsed time between successive pings */
-    if (GRPC_TRACER_ON(grpc_http_trace) ||
-        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "%s: Ping delayed [%p]: not enough time elapsed since last ping",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string);
@@ -103,8 +100,7 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
   GRPC_STATS_INC_HTTP2_PINGS_SENT(exec_ctx);
   t->ping_state.last_ping_sent_time = now;
-  if (GRPC_TRACER_ON(grpc_http_trace) ||
-      GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+  if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
     gpr_log(GPR_DEBUG, "%s: Ping sent [%p]: %d/%d",
             t->is_client ? "CLIENT" : "SERVER", t->peer_string,
             t->ping_state.pings_before_data_required,
@@ -322,7 +318,7 @@ class DataSendContext {
         GPR_MIN(stream_remote_window(), t_->flow_control->remote_window()));
   }
 
-  bool AnyOutgoing() const { return max_outgoing() != 0; }
+  bool AnyOutgoing() const { return max_outgoing() > 0; }
 
   void FlushCompressedBytes() {
     uint32_t send_bytes =

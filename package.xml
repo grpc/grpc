@@ -426,7 +426,6 @@
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/call_combiner.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/closure.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.cc" role="src" />

@@ -316,12 +316,36 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_plugin_support",
+    srcs = [
+        "src/compiler/cpp_generator.cc",
+        "src/compiler/csharp_generator.cc",
+        "src/compiler/node_generator.cc",
+        "src/compiler/objective_c_generator.cc",
+        "src/compiler/php_generator.cc",
+        "src/compiler/python_generator.cc",
+        "src/compiler/ruby_generator.cc",
+    ],
     hdrs = [
         "src/compiler/config.h",
+        "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
+        "src/compiler/csharp_generator.h",
+        "src/compiler/csharp_generator_helpers.h",
         "src/compiler/generator_helpers.h",
+        "src/compiler/node_generator.h",
+        "src/compiler/node_generator_helpers.h",
+        "src/compiler/objective_c_generator.h",
+        "src/compiler/objective_c_generator_helpers.h",
+        "src/compiler/php_generator.h",
+        "src/compiler/php_generator_helpers.h",
         "src/compiler/protobuf_plugin.h",
+        "src/compiler/python_generator.h",
         "src/compiler/python_generator_helpers.h",
+        "src/compiler/python_private_generator.h",
+        "src/compiler/ruby_generator.h",
+        "src/compiler/ruby_generator_helpers-inl.h",
+        "src/compiler/ruby_generator_map-inl.h",
+        "src/compiler/ruby_generator_string-inl.h",
         "src/compiler/schema_interface.h",
     ],
     external_deps = [
@@ -335,93 +359,43 @@ grpc_cc_library(
 
 grpc_proto_plugin(
     name = "grpc_cpp_plugin",
-    srcs = [
-        "src/compiler/cpp_generator.cc",
-        "src/compiler/cpp_plugin.cc",
-    ],
-    hdrs = [
-        "src/compiler/cpp_generator.h",
-    ],
+    srcs = ["src/compiler/cpp_plugin.cc"],
     deps = [":grpc_plugin_support"],
 )
 
 grpc_proto_plugin(
     name = "grpc_csharp_plugin",
-    srcs = [
-        "src/compiler/csharp_generator.cc",
-        "src/compiler/csharp_plugin.cc",
-    ],
-    hdrs = [
-        "src/compiler/csharp_generator.h",
-        "src/compiler/csharp_generator_helpers.h",
-    ],
+    srcs = ["src/compiler/csharp_plugin.cc"],
     deps = [":grpc_plugin_support"],
 )
 
 grpc_proto_plugin(
     name = "grpc_node_plugin",
-    srcs = [
-        "src/compiler/node_generator.cc",
-        "src/compiler/node_plugin.cc",
-    ],
-    hdrs = [
-        "src/compiler/node_generator.h",
-        "src/compiler/node_generator_helpers.h",
-    ],
+    srcs = ["src/compiler/node_plugin.cc"],
     deps = [":grpc_plugin_support"],
 )
 
 grpc_proto_plugin(
     name = "grpc_objective_c_plugin",
-    srcs = [
-        "src/compiler/objective_c_generator.cc",
-        "src/compiler/objective_c_plugin.cc",
-    ],
-    hdrs = [
-        "src/compiler/objective_c_generator.h",
-        "src/compiler/objective_c_generator_helpers.h",
-    ],
+    srcs = ["src/compiler/objective_c_plugin.cc"],
     deps = [":grpc_plugin_support"],
 )
 
 grpc_proto_plugin(
     name = "grpc_php_plugin",
-    srcs = [
-        "src/compiler/php_generator.cc",
-        "src/compiler/php_plugin.cc",
-    ],
-    hdrs = [
-        "src/compiler/php_generator.h",
-        "src/compiler/php_generator_helpers.h",
-    ],
+    srcs = ["src/compiler/php_plugin.cc"],
     deps = [":grpc_plugin_support"],
 )
 
 grpc_proto_plugin(
     name = "grpc_python_plugin",
-    srcs = [
-        "src/compiler/python_generator.cc",
-        "src/compiler/python_plugin.cc",
-    ],
-    hdrs = [
-        "src/compiler/python_generator.h",
-        "src/compiler/python_private_generator.h",
-    ],
+    srcs = ["src/compiler/python_plugin.cc"],
     deps = [":grpc_plugin_support"],
 )
 
 grpc_proto_plugin(
     name = "grpc_ruby_plugin",
-    srcs = [
-        "src/compiler/ruby_generator.cc",
-        "src/compiler/ruby_plugin.cc",
-    ],
-    hdrs = [
-        "src/compiler/ruby_generator.h",
-        "src/compiler/ruby_generator_helpers-inl.h",
-        "src/compiler/ruby_generator_map-inl.h",
-        "src/compiler/ruby_generator_string-inl.h",
-    ],
+    srcs = ["src/compiler/ruby_plugin.cc"],
     deps = [":grpc_plugin_support"],
 )
 
@@ -585,7 +559,6 @@ grpc_cc_library(
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",
         "src/core/lib/iomgr/call_combiner.cc",
-        "src/core/lib/iomgr/closure.cc",
         "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/endpoint.cc",
         "src/core/lib/iomgr/endpoint_pair_posix.cc",

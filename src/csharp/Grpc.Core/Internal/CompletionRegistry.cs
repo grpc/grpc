@@ -25,9 +25,7 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void OpCompletionDelegate(bool success);
-
-    internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx);
+    internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx, object state);
 
     internal delegate void RequestCallCompletionDelegate(bool success, RequestCallContextSafeHandle ctx);
 
@@ -36,7 +34,8 @@ namespace Grpc.Core.Internal
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<CompletionRegistry>();
 
         readonly GrpcEnvironment environment;
-        readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>(new IntPtrComparer());
+        readonly Dictionary<IntPtr, IOpCompletionCallback> dict = new Dictionary<IntPtr, IOpCompletionCallback>(new IntPtrComparer());
+        readonly object myLock = new object();
         IntPtr lastRegisteredKey;  // only for testing
 
         public CompletionRegistry(GrpcEnvironment environment)
@@ -44,77 +43,46 @@ namespace Grpc.Core.Internal
             this.environment = environment;
         }
 
-        public void Register(IntPtr key, OpCompletionDelegate callback)
+        public void Register(IntPtr key, IOpCompletionCallback callback)
         {
             environment.DebugStats.PendingBatchCompletions.Increment();
-            GrpcPreconditions.CheckState(dict.TryAdd(key, callback));
-            this.lastRegisteredKey = key;
+            lock (myLock)
+            {
+                dict.Add(key, callback);
+                this.lastRegisteredKey = key;
+            }
         }
 
-        public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
+        public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback, object state)
         {
-            OpCompletionDelegate opCallback = ((success) => HandleBatchCompletion(success, ctx, callback));
-            Register(ctx.Handle, opCallback);
+            ctx.SetCompletionCallback(callback, state);
+            Register(ctx.Handle, ctx);
         }
 
         public void RegisterRequestCallCompletion(RequestCallContextSafeHandle ctx, RequestCallCompletionDelegate callback)
         {
-            OpCompletionDelegate opCallback = ((success) => HandleRequestCallCompletion(success, ctx, callback));
-            Register(ctx.Handle, opCallback);
+            ctx.CompletionCallback = callback;
+            Register(ctx.Handle, ctx);
         }
 
-        public OpCompletionDelegate Extract(IntPtr key)
+        public IOpCompletionCallback Extract(IntPtr key)
         {
-            OpCompletionDelegate value;
-            GrpcPreconditions.CheckState(dict.TryRemove(key, out value));
+            IOpCompletionCallback value = null;
+            lock (myLock)
+            {
+                value = dict[key];
+                dict.Remove(key);
+            }
             environment.DebugStats.PendingBatchCompletions.Decrement();
             return value;
         }
 
         /// <summary>
-        /// For testing purposes only.
+        /// For testing purposes only. NOT threadsafe.
         /// </summary>
         public IntPtr LastRegisteredKey
         {
             get { return this.lastRegisteredKey; }
-        }
-
-        private static void HandleBatchCompletion(bool success, BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
-        {
-            try
-            {
-                callback(success, ctx);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Exception occured while invoking batch completion delegate.");
-            }
-            finally
-            {
-                if (ctx != null)
-                {
-                    ctx.Dispose();
-                }
-            }
-        }
-
-        private static void HandleRequestCallCompletion(bool success, RequestCallContextSafeHandle ctx, RequestCallCompletionDelegate callback)
-        {
-            try
-            {
-                callback(success, ctx);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Exception occured while invoking request call completion delegate.");
-            }
-            finally
-            {
-                if (ctx != null)
-                {
-                    ctx.Dispose();
-                }
-            }
         }
 
         /// <summary>

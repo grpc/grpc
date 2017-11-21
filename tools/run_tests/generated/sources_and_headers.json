@@ -7995,7 +7995,6 @@
       "src/core/lib/http/httpcli.cc", 
       "src/core/lib/http/parser.cc", 
       "src/core/lib/iomgr/call_combiner.cc", 
-      "src/core/lib/iomgr/closure.cc", 
       "src/core/lib/iomgr/combiner.cc", 
       "src/core/lib/iomgr/endpoint.cc", 
       "src/core/lib/iomgr/endpoint_pair_posix.cc", 
@@ -8920,6 +8919,7 @@
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.h"
     ], 
     "is_filegroup": true, 
@@ -8954,6 +8954,8 @@
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.cc", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/tracer_util.cc", 
+      "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.cc", 
       "test/core/util/trickle_endpoint.h"
     ], 

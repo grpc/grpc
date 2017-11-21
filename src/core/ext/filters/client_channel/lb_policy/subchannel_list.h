@@ -88,7 +88,7 @@ struct grpc_lb_subchannel_list {
   /** backpointer to owning policy */
   grpc_lb_policy* policy;
 
-  grpc_tracer_flag* tracer;
+  grpc_core::TraceFlag* tracer;
 
   /** all our subchannels */
   size_t num_subchannels;
@@ -121,7 +121,7 @@ struct grpc_lb_subchannel_list {
 };
 
 grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
-    grpc_exec_ctx* exec_ctx, grpc_lb_policy* p, grpc_tracer_flag* tracer,
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* p, grpc_core::TraceFlag* tracer,
     const grpc_lb_addresses* addresses, const grpc_lb_policy_args* args,
     grpc_iomgr_cb_func connectivity_changed_cb);
 

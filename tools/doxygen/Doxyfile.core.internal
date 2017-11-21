@@ -1073,7 +1073,6 @@ src/core/lib/iomgr/README.md \
 src/core/lib/iomgr/block_annotate.h \
 src/core/lib/iomgr/call_combiner.cc \
 src/core/lib/iomgr/call_combiner.h \
-src/core/lib/iomgr/closure.cc \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.cc \
 src/core/lib/iomgr/combiner.h \
