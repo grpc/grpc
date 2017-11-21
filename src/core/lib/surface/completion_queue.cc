@@ -1030,7 +1030,8 @@ static void cq_shutdown_next(grpc_exec_ctx* exec_ctx,
 
 grpc_event grpc_completion_queue_next(grpc_completion_queue* cq,
                                       gpr_timespec deadline, void* reserved) {
-  return cq->vtable->next(cq, deadline, reserved);
+  return cq->vtable->next(
+      cq, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC), reserved);
 }
 
 static int add_plucker(grpc_completion_queue* cq, void* tag,
@@ -1213,7 +1214,8 @@ done:
 
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
                                        gpr_timespec deadline, void* reserved) {
-  return cq->vtable->pluck(cq, tag, deadline, reserved);
+  return cq->vtable->pluck(
+      cq, tag, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC), reserved);
 }
 
 static void cq_finish_shutdown_pluck(grpc_exec_ctx* exec_ctx,
