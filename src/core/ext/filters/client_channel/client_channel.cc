@@ -57,7 +57,7 @@
 /* Client channel implementation */
 
 grpc_tracer_flag grpc_client_channel_trace =
-    GRPC_TRACER_INITIALIZER(true, "client_channel");
+    GRPC_TRACER_INITIALIZER(false, "client_channel");
 
 /*************************************************************************
  * METHOD-CONFIG TABLE
@@ -250,9 +250,6 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx* exec_ctx,
           /* mask= */ GRPC_INITIAL_METADATA_WAIT_FOR_READY,
           /* check= */ 0, GRPC_ERROR_REF(error));
     } else if (state == GRPC_CHANNEL_SHUTDOWN) {
-      grpc_lb_policy_try_reresolve(exec_ctx, chand->lb_policy,
-                                   &grpc_client_channel_trace,
-                                   GRPC_ERROR_CANCELLED);
       /* cancel all picks */
       grpc_lb_policy_cancel_picks_locked(exec_ctx, chand->lb_policy,
                                          /* mask= */ 0, /* check= */ 0,
@@ -380,9 +377,7 @@ static void request_reresolution_locked(grpc_exec_ctx* exec_ctx, void* arg,
   // If this invocation is for a stale LB policy, treat it as an LB shutdown
   // signal.
   if (args->lb_policy != chand->lb_policy || error != GRPC_ERROR_NONE ||
-      chand->resolver == NULL ||
-      grpc_connectivity_state_get(&chand->state_tracker, nullptr) ==
-          GRPC_CHANNEL_SHUTDOWN) {
+      chand->resolver == NULL) {
     GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->owning_stack, "re-resolution");
     gpr_free(args);
     return;
@@ -394,7 +389,6 @@ static void request_reresolution_locked(grpc_exec_ctx* exec_ctx, void* arg,
   // Give back the closure to the LB policy.
   grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, chand->lb_policy,
                                               &args->closure);
-  ;
 }
 
 static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
@@ -565,9 +559,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
         gpr_log(GPR_DEBUG, "chand=%p: unreffing lb_policy=%p", chand,
                 chand->lb_policy);
       }
-      grpc_lb_policy_try_reresolve(exec_ctx, chand->lb_policy,
-                                   &grpc_client_channel_trace,
-                                   GRPC_ERROR_CANCELLED);
       grpc_pollset_set_del_pollset_set(exec_ctx,
                                        chand->lb_policy->interested_parties,
                                        chand->interested_parties);
@@ -588,11 +579,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
       grpc_resolver_shutdown_locked(exec_ctx, chand->resolver);
       GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
       chand->resolver = nullptr;
-    }
-    if (chand->lb_policy != nullptr) {
-      grpc_lb_policy_try_reresolve(exec_ctx, chand->lb_policy,
-                                   &grpc_client_channel_trace,
-                                   GRPC_ERROR_CANCELLED);
     }
     set_channel_connectivity_state_locked(
         exec_ctx, chand, GRPC_CHANNEL_SHUTDOWN,
@@ -667,11 +653,6 @@ static void start_transport_op_locked(grpc_exec_ctx* exec_ctx, void* arg,
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    if (chand->lb_policy != nullptr) {
-      grpc_lb_policy_try_reresolve(exec_ctx, chand->lb_policy,
-                                   &grpc_client_channel_trace,
-                                   GRPC_ERROR_CANCELLED);
-    }
     if (chand->resolver != nullptr) {
       set_channel_connectivity_state_locked(
           exec_ctx, chand, GRPC_CHANNEL_SHUTDOWN,
@@ -686,9 +667,6 @@ static void start_transport_op_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                 &chand->waiting_for_resolver_result_closures);
       }
       if (chand->lb_policy != nullptr) {
-        grpc_lb_policy_try_reresolve(exec_ctx, chand->lb_policy,
-                                     &grpc_client_channel_trace,
-                                     GRPC_ERROR_CANCELLED);
         grpc_pollset_set_del_pollset_set(exec_ctx,
                                          chand->lb_policy->interested_parties,
                                          chand->interested_parties);
@@ -832,9 +810,6 @@ static void cc_destroy_channel_elem(grpc_exec_ctx* exec_ctx,
     grpc_client_channel_factory_unref(exec_ctx, chand->client_channel_factory);
   }
   if (chand->lb_policy != nullptr) {
-    grpc_lb_policy_try_reresolve(exec_ctx, chand->lb_policy,
-                                 &grpc_client_channel_trace,
-                                 GRPC_ERROR_CANCELLED);
     grpc_pollset_set_del_pollset_set(exec_ctx,
                                      chand->lb_policy->interested_parties,
                                      chand->interested_parties);
@@ -1421,11 +1396,6 @@ static void cc_start_transport_stream_op_batch(
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: failing batch with error: %s",
               chand, calld, grpc_error_string(calld->error));
-    }
-    if (chand->lb_policy != nullptr) {
-      grpc_lb_policy_try_reresolve(exec_ctx, chand->lb_policy,
-                                   &grpc_client_channel_trace,
-                                   GRPC_ERROR_CANCELLED);
     }
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, batch, GRPC_ERROR_REF(calld->error), calld->call_combiner);
