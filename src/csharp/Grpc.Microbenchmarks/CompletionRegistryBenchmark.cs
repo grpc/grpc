@@ -52,18 +52,26 @@ namespace Grpc.Microbenchmarks
         {
             var completionRegistry = new CompletionRegistry(environment);
             var ctx = BatchContextSafeHandle.Create();
-            var completionDelegate = new OpCompletionDelegate((success) => {});
   
             var stopwatch = Stopwatch.StartNew();
             for (int i = 0; i < iterations; i++)
             {
-                completionRegistry.Register(ctx.DangerousGetHandle(), completionDelegate);
+                completionRegistry.Register(ctx.Handle, ctx);
                 var callback = completionRegistry.Extract(completionRegistry.LastRegisteredKey);
+                // NOTE: we are not calling the callback to avoid disposing ctx.
             }
             stopwatch.Stop();
             Console.WriteLine("Elapsed millis: " + stopwatch.ElapsedMilliseconds);          
 
             ctx.Dispose();
+        }
+
+        private class NopCompletionCallback : IOpCompletionCallback
+        {
+            public void OnComplete(bool success)
+            {
+
+            }
         }
     }
 }

@@ -20,15 +20,22 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using Grpc.Core;
+using Grpc.Core.Logging;
 
 namespace Grpc.Core.Internal
 {
+    internal interface IOpCompletionCallback
+    {
+        void OnComplete(bool success);
+    }
+
     /// <summary>
     /// grpcsharp_batch_context
     /// </summary>
-    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid
+    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback
     {
         static readonly NativeMethods Native = NativeMethods.Get();
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<BatchContextSafeHandle>();
 
         private BatchContextSafeHandle()
         {
@@ -46,6 +53,8 @@ namespace Grpc.Core.Internal
                 return handle;
             }
         }
+
+        public BatchCompletionDelegate CompletionCallback { get; set; }
 
         // Gets data of recv_initial_metadata completion.
         public Metadata GetReceivedInitialMetadata()
@@ -91,6 +100,23 @@ namespace Grpc.Core.Internal
         {
             Native.grpcsharp_batch_context_destroy(handle);
             return true;
+        }
+
+        void IOpCompletionCallback.OnComplete(bool success)
+        {
+            try
+            {
+                CompletionCallback(success, this);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Exception occured while invoking batch completion delegate.");
+            }
+            finally
+            {
+                CompletionCallback = null;
+                Dispose();
+            }
         }
     }
 }
