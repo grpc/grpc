@@ -424,17 +424,19 @@ class ServerCredentials(object):
         self._credentials = credentials
 
 
-class ServerCertificateConfig(object):
-    """A certificate config for use with an SSL-enabled Server, e.g., can
-    be returned in the certificate config fetching callback.
+class ServerCertificateConfiguration(object):
+    """A certificate configuration for use with an SSL-enabled Server.
+
+    Instances of this class can be returned in the certificate configuration
+    fetching callback.
 
     This class has no supported interface -- it exists to define the
     type of its instances and its instances exist to be passed to
     other functions.
     """
 
-    def __init__(self, cert_config):
-        self._cert_config = cert_config
+    def __init__(self, certificate_configuration):
+        self._certificate_configuration = certificate_configuration
 
 
 ########################  Multi-Callable Interfaces  ###########################
@@ -1265,9 +1267,9 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
             ], require_client_auth))
 
 
-def ssl_server_certificate_config(private_key_certificate_chain_pairs,
-                                  root_certificates=None):
-    """Creates a ServerCertificateConfig for use with an SSL-enabled Server.
+def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,
+                                         root_certificates=None):
+    """Creates a ServerCertificateConfiguration for use with a Server.
 
     Args:
       private_key_certificate_chain_pairs: A collection of pairs of
@@ -1277,38 +1279,38 @@ def ssl_server_certificate_config(private_key_certificate_chain_pairs,
         certificates that the server will use to verify client authentication.
 
     Returns:
-      A ServerCertificateConfig that can be returned in the certificate config
-      fetching callback.
+      A ServerCertificateConfiguration that can be returned in the certificate
+        configuration fetching callback.
     """
     if len(private_key_certificate_chain_pairs) == 0:
         raise ValueError(
             'At least one private key-certificate chain pair is required!')
     else:
-        return ServerCertificateConfig(
+        return ServerCertificateConfiguration(
             _cygrpc.server_certificate_config_ssl(root_certificates, [
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
             ]))
 
 
-def ssl_server_credentials_dynamic_cert_config(initial_cert_config,
-                                               cert_config_fetcher,
-                                               require_client_auth=False):
+def dynamic_ssl_server_credentials(initial_certificate_configuration,
+                                   certificate_configuration_fetcher,
+                                   require_client_authentication=False):
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
     Args:
-      initial_cert_config (ServerCertificateConfig): the certificate
-        config with which the server will be initialized.
-      cert_config_fetcher (callable): a callable that takes no
-        arguments and should return a ServerCertificateConfig to
-        replace the server's current cert, or None for no change
+      initial_certificate_configuration (ServerCertificateConfiguration): The
+        certificate configuration with which the server will be initialized.
+      certificate_configuration_fetcher (callable): A callable that takes no
+        arguments and should return a ServerCertificateConfiguration to
+        replace the server's current certificate, or None for no change
         (i.e., the server will continue its current certificate
         config). The library will call this callback on *every* new
         client connection before starting the TLS handshake with the
         client, thus allowing the user application to optionally
-        return a new ServerCertificateConfig that the server will then
+        return a new ServerCertificateConfiguration that the server will then
         use for the handshake.
-      require_client_auth: A boolean indicating whether or not to
+      require_client_authentication: A boolean indicating whether or not to
         require clients to be authenticated.
 
     Returns:
@@ -1316,7 +1318,8 @@ def ssl_server_credentials_dynamic_cert_config(initial_cert_config,
     """
     return ServerCredentials(
         _cygrpc.server_credentials_ssl_dynamic_cert_config(
-            initial_cert_config, cert_config_fetcher, require_client_auth))
+            initial_certificate_configuration,
+            certificate_configuration_fetcher, require_client_authentication))
 
 
 def channel_ready_future(channel):
@@ -1401,19 +1404,19 @@ __all__ = ('FutureTimeoutError', 'FutureCancelledError', 'Future',
            'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext',
            'Call', 'ChannelCredentials', 'CallCredentials',
            'AuthMetadataContext', 'AuthMetadataPluginCallback',
-           'AuthMetadataPlugin', 'ServerCertificateConfig', 'ServerCredentials',
-           'UnaryUnaryMultiCallable', 'UnaryStreamMultiCallable',
-           'StreamUnaryMultiCallable', 'StreamStreamMultiCallable', 'Channel',
-           'ServicerContext', 'RpcMethodHandler', 'HandlerCallDetails',
-           'GenericRpcHandler', 'ServiceRpcHandler', 'Server',
-           'unary_unary_rpc_method_handler', 'unary_stream_rpc_method_handler',
-           'stream_unary_rpc_method_handler',
+           'AuthMetadataPlugin', 'ServerCertificateConfiguration',
+           'ServerCredentials', 'UnaryUnaryMultiCallable',
+           'UnaryStreamMultiCallable', 'StreamUnaryMultiCallable',
+           'StreamStreamMultiCallable', 'Channel', 'ServicerContext',
+           'RpcMethodHandler', 'HandlerCallDetails', 'GenericRpcHandler',
+           'ServiceRpcHandler', 'Server', 'unary_unary_rpc_method_handler',
+           'unary_stream_rpc_method_handler', 'stream_unary_rpc_method_handler',
            'stream_stream_rpc_method_handler',
            'method_handlers_generic_handler', 'ssl_channel_credentials',
            'metadata_call_credentials', 'access_token_call_credentials',
            'composite_call_credentials', 'composite_channel_credentials',
-           'ssl_server_credentials', 'ssl_server_certificate_config',
-           'ssl_server_credentials_dynamic_cert_config', 'channel_ready_future',
+           'ssl_server_credentials', 'ssl_server_certificate_configuration',
+           'dynamic_ssl_server_credentials', 'channel_ready_future',
            'insecure_channel', 'secure_channel', 'server',)
 
 ############################### Extension Shims ################################

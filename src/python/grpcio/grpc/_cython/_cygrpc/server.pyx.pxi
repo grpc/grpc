@@ -28,7 +28,7 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
   if not credentials.initial_cert_config_fetched:
     # C-core is asking for the initial cert config
     credentials.initial_cert_config_fetched = True
-    cert_config = credentials.initial_cert_config._cert_config
+    cert_config = credentials.initial_cert_config._certificate_configuration
   else:
     user_cb = credentials.cert_config_fetcher
     try:
@@ -38,13 +38,15 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
       return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
     if cert_config_wrapper is None:
       return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
-    elif not isinstance(cert_config_wrapper, grpc.ServerCertificateConfig):
-      logging.error('Error fetching certificate config: certificate '
-                    'config must be of type grpc.ServerCertificateConfig, '
-                    'not %s' % type(cert_config_wrapper).__name__)
+    elif not isinstance(
+        cert_config_wrapper, grpc.ServerCertificateConfiguration):
+      logging.error(
+          'Error fetching certificate configuration: certificate '
+          'configuration must be of type grpc.ServerCertificateConfiguration, '
+          'not %s' % type(cert_config_wrapper).__name__)
       return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
     else:
-      cert_config = cert_config_wrapper._cert_config
+      cert_config = cert_config_wrapper._certificate_configuration
   config[0] = <grpc_ssl_server_certificate_config*>cert_config.c_cert_config
   # our caller will assume ownership of memory, so we have to recreate
   # a copy of c_cert_config here

@@ -338,8 +338,9 @@ def server_certificate_config_ssl(pem_root_certs, pem_key_cert_pairs):
 def server_credentials_ssl_dynamic_cert_config(initial_cert_config,
                                                cert_config_fetcher,
                                                bint force_client_auth):
-  if not isinstance(initial_cert_config, grpc.ServerCertificateConfig):
-    raise TypeError('initial_cert_config must be a grpc.ServerCertificateConfig')
+  if not isinstance(initial_cert_config, grpc.ServerCertificateConfiguration):
+    raise TypeError(
+        'initial_cert_config must be a grpc.ServerCertificateConfiguration')
   if not callable(cert_config_fetcher):
     raise TypeError('cert_config_fetcher must be callable')
   cdef ServerCredentials credentials = ServerCredentials()
