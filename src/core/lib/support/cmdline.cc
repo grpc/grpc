@@ -56,7 +56,7 @@ struct gpr_cmdline {
 static int normal_state(gpr_cmdline* cl, const char* arg);
 
 gpr_cmdline* gpr_cmdline_create(const char* description) {
-  gpr_cmdline* cl = (gpr_cmdline*)gpr_zalloc(sizeof(gpr_cmdline));
+  gpr_cmdline* cl = static_cast<gpr_cmdline*>(gpr_zalloc(sizeof(gpr_cmdline)));
 
   cl->description = description;
   cl->state = normal_state;
@@ -85,7 +85,7 @@ static void add_arg(gpr_cmdline* cl, const char* name, const char* help,
     GPR_ASSERT(0 != strcmp(a->name, name));
   }
 
-  a = (arg*)gpr_zalloc(sizeof(arg));
+  a = static_cast<arg*>(gpr_zalloc(sizeof(arg)));
   a->name = name;
   a->help = help;
   a->type = type;
@@ -223,13 +223,13 @@ static int value_state(gpr_cmdline* cl, const char* str) {
                 cl->cur_arg->name);
         return print_usage_and_die(cl);
       }
-      *(int*)cl->cur_arg->value = (int)intval;
+      *static_cast<int*>(cl->cur_arg->value) = (int)intval;
       break;
     case ARGTYPE_BOOL:
       if (0 == strcmp(str, "1") || 0 == strcmp(str, "true")) {
-        *(int*)cl->cur_arg->value = 1;
+        *static_cast<int*>(cl->cur_arg->value) = 1;
       } else if (0 == strcmp(str, "0") || 0 == strcmp(str, "false")) {
-        *(int*)cl->cur_arg->value = 0;
+        *static_cast<int*>(cl->cur_arg->value) = 0;
       } else {
         fprintf(stderr, "expected boolean, got '%s' for %s\n", str,
                 cl->cur_arg->name);
@@ -237,7 +237,7 @@ static int value_state(gpr_cmdline* cl, const char* str) {
       }
       break;
     case ARGTYPE_STRING:
-      *(const char**)cl->cur_arg->value = str;
+      *static_cast<const char**>(cl->cur_arg->value) = str;
       break;
   }
 
@@ -281,14 +281,14 @@ static int normal_state(gpr_cmdline* cl, const char* str) {
         fprintf(stderr, "%s is not a flag argument\n", str);
         return print_usage_and_die(cl);
       }
-      *(int*)cl->cur_arg->value = 0;
+      *static_cast<int*>(cl->cur_arg->value) = 0;
       return 1; /* early out */
     }
     eq = strchr(str, '=');
     if (eq != nullptr) {
       /* copy the string into a temp buffer and extract the name */
-      tmp = (char*)gpr_malloc((size_t)(eq - str + 1));
-      memcpy(tmp, str, (size_t)(eq - str));
+      tmp = static_cast<char*>(gpr_malloc(static_cast<size_t>(eq - str + 1)));
+      memcpy(tmp, str, static_cast<size_t>(eq - str));
       tmp[eq - str] = 0;
       arg_name = tmp;
     } else {
@@ -306,7 +306,7 @@ static int normal_state(gpr_cmdline* cl, const char* str) {
       cl->state = value_state;
     } else {
       /* flag parameter: just set the value */
-      *(int*)cl->cur_arg->value = 1;
+      *static_cast<int*>(cl->cur_arg->value) = 1;
     }
   } else {
     r = extra_state(cl, str);
