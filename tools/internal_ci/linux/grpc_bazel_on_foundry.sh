@@ -15,6 +15,9 @@
 
 set -ex
 
+mkdir -p ${KOKORO_KEYSTORE_DIR}
+cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
+
 mkdir -p /tmpfs/tmp/bazel-canary
 ln -f "${KOKORO_GFILE_DIR}/bazel-canary" /tmpfs/tmp/bazel-canary/bazel
 chmod 755 "${KOKORO_GFILE_DIR}/bazel-canary"
@@ -44,5 +47,5 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --genrule_strategy=remote  \
   --experimental_strict_action_env=true \
   --experimental_remote_platform_override='properties:{ name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-fl@sha256:b80da64e2a6f75af122bbb70021ebaab98b073f144ab04653c0de49bd943d8e9" }' \
-  --crosstool_top=@bazel_toolchains//configs/debian8_clang/0.1.0/bazel_0.6.0:toolchain \
-  -- //test/...
+  --crosstool_top=@bazel_toolchains//configs/debian8_clang/0.2.0/bazel_0.7.0:toolchain \
+  -- //test/core/iomgr/...
