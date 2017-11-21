@@ -230,7 +230,7 @@ namespace Grpc.Core.Internal
 
         IReceivedCloseOnServerCallback ReceiveCloseOnServerCallback => this;
 
-        void IReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(bool success, bool cancelled)
+        void IReceivedCloseOnServerCallback.OnReceivedCloseOnServer(bool success, bool cancelled)
         {
             HandleFinishedServerside(success, cancelled);
         }

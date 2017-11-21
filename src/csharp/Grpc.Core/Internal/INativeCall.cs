@@ -53,7 +53,7 @@ namespace Grpc.Core.Internal
 
     internal interface IReceivedCloseOnServerCallback
     {
-        void OnReceivedCloseOnServerHandler(bool success, bool cancelled);
+        void OnReceivedCloseOnServer(bool success, bool cancelled);
     }
 
     /// <summary>

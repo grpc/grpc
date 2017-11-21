@@ -47,7 +47,7 @@ namespace Grpc.Core.Internal
         static readonly BatchCompletionDelegate CompletionHandler_ISendStatusFromServerCompletionCallback =
             (success, context, state) => ((ISendStatusFromServerCompletionCallback)state).OnSendStatusFromServerCompletion(success);
         static readonly BatchCompletionDelegate CompletionHandler_IReceivedCloseOnServerCallback =
-            (success, context, state) => ((IReceivedCloseOnServerCallback)state).OnReceivedCloseOnServerHandler(success, context.GetReceivedCloseOnServerCancelled());
+            (success, context, state) => ((IReceivedCloseOnServerCallback)state).OnReceivedCloseOnServer(success, context.GetReceivedCloseOnServerCancelled());
 
         const uint GRPC_WRITE_BUFFER_HINT = 1;
         CompletionQueueSafeHandle completionQueue;

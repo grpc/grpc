@@ -64,7 +64,7 @@ namespace Grpc.Core.Internal.Tests
         public void CancelNotificationAfterStartDisposes()
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
-            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
@@ -76,7 +76,7 @@ namespace Grpc.Core.Internal.Tests
 
             var moveNextTask = requestStream.MoveNext();
 
-            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
             Assert.IsFalse(moveNextTask.Result);
 
@@ -89,7 +89,7 @@ namespace Grpc.Core.Internal.Tests
             var finishedTask = asyncCallServer.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
 
-            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
 
             // Check that starting a read after cancel notification has been processed is legal.
             var moveNextTask = requestStream.MoveNext();
@@ -110,7 +110,7 @@ namespace Grpc.Core.Internal.Tests
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(false, null);
             Assert.IsFalse(moveNextTask.Result);
 
-            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
@@ -120,7 +120,7 @@ namespace Grpc.Core.Internal.Tests
             var finishedTask = asyncCallServer.ServerSideCallAsync();
             var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
-            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
 
             // TODO(jtattermusch): should we throw a different exception type instead?
             Assert.Throws(typeof(InvalidOperationException), () => responseStream.WriteAsync("request1"));
@@ -137,7 +137,7 @@ namespace Grpc.Core.Internal.Tests
             fakeCall.SendCompletionCallback.OnSendCompletion(false);
             Assert.ThrowsAsync(typeof(IOException), async () => await writeTask);
 
-            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
@@ -156,7 +156,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.DoesNotThrowAsync(async () => await writeTask);
             Assert.DoesNotThrowAsync(async () => await writeStatusTask);
 
-            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
 
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
@@ -171,7 +171,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await responseStream.WriteAsync("request1"));
 
             fakeCall.SendStatusFromServerCallback.OnSendStatusFromServerCompletion(true);
-            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
 
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
