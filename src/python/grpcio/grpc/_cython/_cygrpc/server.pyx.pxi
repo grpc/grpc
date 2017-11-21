@@ -14,8 +14,44 @@
 
 cimport cpython
 
+import logging
 import time
+import grpc
 
+cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapper(
+        void* user_data, grpc_ssl_server_certificate_config **config) with gil:
+  # This is a credentials.ServerCertificateConfig
+  cdef ServerCertificateConfig cert_config = None
+  if not user_data:
+    raise ValueError('internal error: user_data must be specified')
+  credentials = <ServerCredentials>user_data
+  if not credentials.initial_cert_config_fetched:
+    # C-core is asking for the initial cert config
+    credentials.initial_cert_config_fetched = True
+    cert_config = credentials.initial_cert_config._cert_config
+  else:
+    user_cb = credentials.cert_config_fetcher
+    try:
+      cert_config_wrapper = user_cb()
+    except Exception:
+      logging.exception('Error fetching certificate config')
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    if cert_config_wrapper is None:
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+    elif not isinstance(cert_config_wrapper, grpc.ServerCertificateConfig):
+      logging.error('Error fetching certificate config: certificate '
+                    'config must be of type grpc.ServerCertificateConfig, '
+                    'not %s' % type(cert_config_wrapper).__name__)
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    else:
+      cert_config = cert_config_wrapper._cert_config
+  config[0] = <grpc_ssl_server_certificate_config*>cert_config.c_cert_config
+  # our caller will assume ownership of memory, so we have to recreate
+  # a copy of c_cert_config here
+  cert_config.c_cert_config = grpc_ssl_server_certificate_config_create(
+      cert_config.c_pem_root_certs, cert_config.c_ssl_pem_key_cert_pairs,
+      cert_config.c_ssl_pem_key_cert_pairs_count)
+  return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
 
 cdef class Server:
 

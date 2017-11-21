@@ -54,9 +54,9 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 
-#define GRPC_POLLING_TRACE(...)             \
-  if (GRPC_TRACER_ON(grpc_polling_trace)) { \
-    gpr_log(GPR_INFO, __VA_ARGS__);         \
+#define GRPC_POLLING_TRACE(...)       \
+  if (grpc_polling_trace.enabled()) { \
+    gpr_log(GPR_INFO, __VA_ARGS__);   \
   }
 
 static int grpc_wakeup_signal = -1;
@@ -289,7 +289,7 @@ static void pi_unref(grpc_exec_ctx* exec_ctx, polling_island* pi);
 #ifndef NDEBUG
 static void pi_add_ref_dbg(polling_island* pi, const char* reason,
                            const char* file, int line) {
-  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+  if (grpc_polling_trace.enabled()) {
     gpr_atm old_cnt = gpr_atm_acq_load(&pi->ref_count);
     gpr_log(GPR_DEBUG,
             "Add ref pi: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
@@ -301,7 +301,7 @@ static void pi_add_ref_dbg(polling_island* pi, const char* reason,
 
 static void pi_unref_dbg(grpc_exec_ctx* exec_ctx, polling_island* pi,
                          const char* reason, const char* file, int line) {
-  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+  if (grpc_polling_trace.enabled()) {
     gpr_atm old_cnt = gpr_atm_acq_load(&pi->ref_count);
     gpr_log(GPR_DEBUG,
             "Unref pi: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
@@ -733,7 +733,7 @@ static gpr_mu fd_freelist_mu;
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                    int line) {
-  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+  if (grpc_trace_fd_refcount.enabled()) {
     gpr_log(GPR_DEBUG,
             "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
             fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
@@ -750,7 +750,7 @@ static void ref_by(grpc_fd* fd, int n) {
 #ifndef NDEBUG
 static void unref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                      int line) {
-  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+  if (grpc_trace_fd_refcount.enabled()) {
     gpr_log(GPR_DEBUG,
             "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
             fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
@@ -767,8 +767,8 @@ static void unref_by(grpc_fd* fd, int n) {
     fd_freelist = fd;
     grpc_iomgr_unregister_object(&fd->iomgr_object);
 
-    fd->read_closure.Destroy();
-    fd->write_closure.Destroy();
+    fd->read_closure->DestroyEvent();
+    fd->write_closure->DestroyEvent();
 
     gpr_mu_unlock(&fd_freelist_mu);
   } else {
@@ -819,6 +819,8 @@ static grpc_fd* fd_create(int fd, const char* name) {
   if (new_fd == nullptr) {
     new_fd = (grpc_fd*)gpr_malloc(sizeof(grpc_fd));
     gpr_mu_init(&new_fd->po.mu);
+    new_fd->read_closure.Init();
+    new_fd->write_closure.Init();
   }
 
   /* Note: It is not really needed to get the new_fd->po.mu lock here. If this
@@ -833,8 +835,8 @@ static grpc_fd* fd_create(int fd, const char* name) {
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
   new_fd->orphaned = false;
-  new_fd->read_closure.Init();
-  new_fd->write_closure.Init();
+  new_fd->read_closure->InitEvent();
+  new_fd->write_closure->InitEvent();
   gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = nullptr;
