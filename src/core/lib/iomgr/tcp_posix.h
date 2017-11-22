@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-extern grpc_tracer_flag grpc_tcp_trace;
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 /* Create a tcp endpoint given a file desciptor and a read slice size.
    Takes ownership of fd. */

@@ -756,6 +756,21 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "gpr_manual_constructor_test", 
+    "src": [
+      "test/core/support/manual_constructor_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "gpr_mpscq_test", 
     "src": [
       "test/core/support/mpscq_test.cc"
@@ -7867,6 +7882,7 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/profiling/timers.h", 
+      "src/core/lib/support/abstract.h", 
       "src/core/lib/support/arena.h", 
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
@@ -7915,6 +7931,7 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/profiling/timers.h", 
+      "src/core/lib/support/abstract.h", 
       "src/core/lib/support/arena.h", 
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
@@ -8955,6 +8972,7 @@
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.h"
     ], 
     "is_filegroup": true, 
@@ -8989,6 +9007,8 @@
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.cc", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/tracer_util.cc", 
+      "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.cc", 
       "test/core/util/trickle_endpoint.h"
     ], 

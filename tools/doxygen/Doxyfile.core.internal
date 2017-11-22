@@ -1267,6 +1267,7 @@ src/core/lib/slice/slice_intern.cc \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
+src/core/lib/support/abstract.h \
 src/core/lib/support/alloc.cc \
 src/core/lib/support/arena.cc \
 src/core/lib/support/arena.h \

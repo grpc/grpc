@@ -18,6 +18,7 @@
 
 #include "src/core/lib/transport/error_utils.h"
 
+#include <grpc/support/string_util.h>
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/transport/status_conversion.h"
 
@@ -41,8 +42,8 @@ static grpc_error* recursively_find_error_with_field(grpc_error* error,
 
 void grpc_error_get_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
                            grpc_millis deadline, grpc_status_code* code,
-                           grpc_slice* slice,
-                           grpc_http2_error_code* http_error) {
+                           grpc_slice* slice, grpc_http2_error_code* http_error,
+                           const char** error_string) {
   // Start with the parent error and recurse through the tree of children
   // until we find the first one that has a status code.
   grpc_error* found_error =
@@ -68,6 +69,10 @@ void grpc_error_get_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
         exec_ctx, (grpc_http2_error_code)integer, deadline);
   }
   if (code != nullptr) *code = status;
+
+  if (error_string != NULL && status != GRPC_STATUS_OK) {
+    *error_string = gpr_strdup(grpc_error_string(error));
+  }
 
   if (http_error != nullptr) {
     if (grpc_error_get_int(found_error, GRPC_ERROR_INT_HTTP2_ERROR, &integer)) {

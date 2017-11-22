@@ -19,15 +19,17 @@
 using System;
 using System.Runtime.InteropServices;
 using Grpc.Core;
+using Grpc.Core.Logging;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
     /// grpcsharp_request_call_context
     /// </summary>
-    internal class RequestCallContextSafeHandle : SafeHandleZeroIsInvalid
+    internal class RequestCallContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback
     {
         static readonly NativeMethods Native = NativeMethods.Get();
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<RequestCallContextSafeHandle>();
 
         private RequestCallContextSafeHandle()
         {
@@ -45,6 +47,8 @@ namespace Grpc.Core.Internal
                 return handle;
             }
         }
+
+        public RequestCallCompletionDelegate CompletionCallback { get; set; }
 
         // Gets data of server_rpc_new completion.
         public ServerRpcNew GetServerRpcNew(Server server)
@@ -71,6 +75,23 @@ namespace Grpc.Core.Internal
         {
             Native.grpcsharp_request_call_context_destroy(handle);
             return true;
+        }
+
+        void IOpCompletionCallback.OnComplete(bool success)
+        {
+            try
+            {
+                CompletionCallback(success, this);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Exception occured while invoking request call completion delegate.");
+            }
+            finally
+            {
+                CompletionCallback = null;
+                Dispose();
+            }
         }
     }
 }
