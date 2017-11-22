@@ -1073,7 +1073,6 @@ src/core/lib/iomgr/README.md \
 src/core/lib/iomgr/block_annotate.h \
 src/core/lib/iomgr/call_combiner.cc \
 src/core/lib/iomgr/call_combiner.h \
-src/core/lib/iomgr/closure.cc \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.cc \
 src/core/lib/iomgr/combiner.h \
@@ -1268,6 +1267,7 @@ src/core/lib/slice/slice_intern.cc \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
+src/core/lib/support/abstract.h \
 src/core/lib/support/alloc.cc \
 src/core/lib/support/arena.cc \
 src/core/lib/support/arena.h \

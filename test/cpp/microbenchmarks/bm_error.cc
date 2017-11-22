@@ -251,7 +251,7 @@ static void BM_ErrorGetStatus(benchmark::State& state) {
     grpc_status_code status;
     grpc_slice slice;
     grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
-                          &status, &slice, nullptr);
+                          &status, &slice, nullptr, nullptr);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);
@@ -265,7 +265,7 @@ static void BM_ErrorGetStatusCode(benchmark::State& state) {
   while (state.KeepRunning()) {
     grpc_status_code status;
     grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
-                          &status, nullptr, nullptr);
+                          &status, nullptr, nullptr, nullptr);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);
@@ -279,7 +279,7 @@ static void BM_ErrorHttpError(benchmark::State& state) {
   while (state.KeepRunning()) {
     grpc_http2_error_code error;
     grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
-                          nullptr, nullptr, &error);
+                          nullptr, nullptr, &error, nullptr);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);

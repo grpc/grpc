@@ -44,10 +44,8 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_adapter.h"
 
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_security_connector_refcount =
-    GRPC_TRACER_INITIALIZER(false, "security_connector_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
+    false, "security_connector_refcount");
 
 /* -- Constants. -- */
 
@@ -198,7 +196,7 @@ grpc_security_connector* grpc_security_connector_ref(
     grpc_security_connector* sc, const char* file, int line,
     const char* reason) {
   if (sc == nullptr) return nullptr;
-  if (GRPC_TRACER_ON(grpc_trace_security_connector_refcount)) {
+  if (grpc_trace_security_connector_refcount.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&sc->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECURITY_CONNECTOR:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", sc,
@@ -219,7 +217,7 @@ void grpc_security_connector_unref(grpc_exec_ctx* exec_ctx,
                                    const char* file, int line,
                                    const char* reason) {
   if (sc == nullptr) return;
-  if (GRPC_TRACER_ON(grpc_trace_security_connector_refcount)) {
+  if (grpc_trace_security_connector_refcount.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&sc->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECURITY_CONNECTOR:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", sc,

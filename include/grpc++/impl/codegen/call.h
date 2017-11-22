@@ -579,6 +579,7 @@ class CallOpClientRecvStatus {
     op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &error_message_;
+    op->data.recv_status_on_client.error_string = nullptr;
     op->flags = 0;
     op->reserved = NULL;
   }
