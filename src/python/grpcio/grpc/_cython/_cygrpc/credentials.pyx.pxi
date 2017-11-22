@@ -303,7 +303,7 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.references.append(pem_root_certs)
   credentials.references.append(pem_key_cert_pairs)
-  cdef char * c_pem_root_certs = _get_c_pem_root_certs(pem_root_certs)
+  cdef const char * c_pem_root_certs = _get_c_pem_root_certs(pem_root_certs)
   credentials.c_ssl_pem_key_cert_pairs_count = len(pem_key_cert_pairs)
   credentials.c_ssl_pem_key_cert_pairs = _create_c_ssl_pem_key_cert_pairs(pem_key_cert_pairs)
   cdef grpc_ssl_server_certificate_config *c_cert_config = NULL
