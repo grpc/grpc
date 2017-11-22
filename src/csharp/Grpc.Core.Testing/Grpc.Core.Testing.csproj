@@ -8,7 +8,7 @@
     <AssemblyTitle>gRPC C# Core Testing</AssemblyTitle>
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Grpc.Core.Testing</AssemblyName>
     <PackageId>Grpc.Core.Testing</PackageId>
