@@ -290,7 +290,7 @@ static void run_test(const char* response_payload,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   grpc_endpoint_destroy(state.tcp);
   cleanup_rpc();
-
+  grpc_core::ExecCtx::Get()->Flush();
   test_tcp_server_destroy(&test_server);
 
   grpc_shutdown();

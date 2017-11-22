@@ -46,7 +46,7 @@ grpc_poll_function_type grpc_poll_function = poll;
 
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
-static const grpc_event_engine_vtable* g_event_engine;
+static const grpc_event_engine_vtable* g_event_engine = nullptr;
 static const char* g_poll_strategy_name = nullptr;
 
 typedef const grpc_event_engine_vtable* (*event_engine_factory_fn)(

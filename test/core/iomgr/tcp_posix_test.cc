@@ -549,6 +549,7 @@ int main(int argc, char** argv) {
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, &destroyed);
 
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_shutdown();
   gpr_free(g_pollset);
 

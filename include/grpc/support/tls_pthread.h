@@ -30,6 +30,7 @@ struct gpr_pthread_thread_local {
 };
 
 #define GPR_TLS_DECL(name) static struct gpr_pthread_thread_local name = {0}
+#define GPR_TLS_NON_STATIC_DECL(name) struct gpr_pthread_thread_local name = {0}
 
 #define gpr_tls_init(tls) GPR_ASSERT(0 == pthread_key_create(&(tls)->key, NULL))
 #define gpr_tls_destroy(tls) pthread_key_delete((tls)->key)

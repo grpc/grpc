@@ -65,7 +65,7 @@ typedef struct {
   grpc_pollset* pollset;
 } grpc_tcp;
 
-static void tcp_free(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp) {
+static void tcp_free(grpc_tcp* tcp) {
   grpc_resource_user_unref(tcp->resource_user);
   gpr_free(tcp->handle);
   gpr_free(tcp->peer_string);
@@ -126,11 +126,9 @@ static void alloc_uv_buf(uv_handle_t* handle, size_t suggested_size,
    * allocation was successful. So slices[0] should always exist here */
   buf->base = (char*)GRPC_SLICE_START_PTR(tcp->read_slices->slices[0]);
   buf->len = GRPC_SLICE_LENGTH(tcp->read_slices->slices[0]);
-  grpc_exec_ctx_finish();
 }
 
-static void call_read_cb(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
-                         grpc_error* error) {
+static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
   grpc_closure* cb = tcp->read_cb;
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
@@ -147,7 +145,7 @@ static void call_read_cb(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
   }
   tcp->read_slices = NULL;
   tcp->read_cb = NULL;
-  GRPC_CLOSURE_RUN(exec_ctx, cb, error);
+  GRPC_CLOSURE_RUN(, cb, error);
 }
 
 static void read_callback(uv_stream_t* stream, ssize_t nread,
@@ -165,7 +163,7 @@ static void read_callback(uv_stream_t* stream, ssize_t nread,
   uv_read_stop(stream);
   if (nread == UV_EOF) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF");
-    grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, tcp->read_slices);
+    grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
   } else if (nread > 0) {
     // Successful read
     error = GRPC_ERROR_NONE;
@@ -175,15 +173,14 @@ static void read_callback(uv_stream_t* stream, ssize_t nread,
       grpc_slice_buffer_init(&garbage);
       grpc_slice_buffer_trim_end(
           tcp->read_slices, tcp->read_slices->length - (size_t)nread, &garbage);
-      grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, &garbage);
+      grpc_slice_buffer_reset_and_unref_internal(&garbage);
     }
   } else {
     // nread < 0: Error
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed");
-    grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, tcp->read_slices);
+    grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
   }
   call_read_cb(tcp, error);
-  grpc_exec_ctx_finish();
 }
 
 static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
@@ -246,7 +243,6 @@ static void write_callback(uv_write_t* req, int status) {
   }
   gpr_free(tcp->write_buffers);
   GRPC_CLOSURE_SCHED(cb, error);
-  grpc_exec_ctx_finish();
 }
 
 static void uv_endpoint_write(grpc_endpoint* ep,
@@ -306,7 +302,6 @@ static void uv_endpoint_write(grpc_endpoint* ep,
 
 static void uv_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {
   // No-op. We're ignoring pollsets currently
-  (void)exec_ctx;
   (void)ep;
   (void)pollset;
   grpc_tcp* tcp = (grpc_tcp*)ep;
@@ -316,7 +311,6 @@ static void uv_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {
 static void uv_add_to_pollset_set(grpc_endpoint* ep,
                                   grpc_pollset_set* pollset) {
   // No-op. We're ignoring pollsets currently
-  (void)exec_ctx;
   (void)ep;
   (void)pollset;
 }
@@ -324,7 +318,6 @@ static void uv_add_to_pollset_set(grpc_endpoint* ep,
 static void uv_delete_from_pollset_set(grpc_endpoint* ep,
                                        grpc_pollset_set* pollset) {
   // No-op. We're ignoring pollsets currently
-  (void)exec_ctx;
   (void)ep;
   (void)pollset;
 }

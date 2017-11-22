@@ -29,6 +29,9 @@ struct gpr_msvc_thread_local {
 #define GPR_TLS_DECL(name) \
   static __declspec(thread) struct gpr_msvc_thread_local name = {0}
 
+#define GPR_TLS_NON_STATIC_DECL(name) \
+  __declspec(thread) struct gpr_msvc_thread_local name = {0}
+
 #define gpr_tls_init(tls) \
   do {                    \
   } while (0)

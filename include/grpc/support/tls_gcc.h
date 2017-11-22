@@ -37,6 +37,10 @@ struct gpr_gcc_thread_local {
   static bool name##_inited = false; \
   static __thread struct gpr_gcc_thread_local name = {0, &(name##_inited)}
 
+#define GPR_TLS_NON_STATIC_DECL(name) \
+  bool name##_inited = false;         \
+  __thread struct gpr_gcc_thread_local name = {0, &(name##_inited)}
+
 #define gpr_tls_init(tls)                  \
   do {                                     \
     GPR_ASSERT(*((tls)->inited) == false); \
@@ -70,6 +74,9 @@ struct gpr_gcc_thread_local {
 
 #define GPR_TLS_DECL(name) \
   static __thread struct gpr_gcc_thread_local name = {0}
+
+#define GPR_TLS_NON_STATIC_DECL(name) \
+  __thread struct gpr_gcc_thread_local name = {0}
 
 #define gpr_tls_init(tls) \
   do {                    \

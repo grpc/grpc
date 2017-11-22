@@ -241,6 +241,7 @@ int grpc_pick_port_using_server(void) {
   grpc_pollset_shutdown(grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
 
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_shutdown();
 
   return pr.port;

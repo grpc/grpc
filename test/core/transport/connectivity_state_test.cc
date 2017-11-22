@@ -107,6 +107,7 @@ static void test_subscribe_then_destroy(void) {
   GPR_ASSERT(g_counter == 0);
   grpc_connectivity_state_destroy(&tracker);
 
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(g_counter == 1);
 }
@@ -126,7 +127,7 @@ static void test_subscribe_with_failure_then_destroy(void) {
   GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(g_counter == 0);
   grpc_connectivity_state_destroy(&tracker);
-
+  grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(g_counter == 1);
 }

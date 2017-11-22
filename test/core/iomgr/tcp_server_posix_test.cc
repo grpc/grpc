@@ -411,6 +411,7 @@ static void test_connect(size_t num_connects,
   GPR_ASSERT(grpc_tcp_server_port_fd(s, 0, 0) >= 0);
 
   grpc_tcp_server_unref(s);
+  grpc_core::ExecCtx::Get()->Flush();
 
   /* Weak ref lost. */
   GPR_ASSERT(weak_ref.server == nullptr);
