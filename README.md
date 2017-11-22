@@ -30,7 +30,6 @@ Libraries in different languages may be in different states of development. We a
 | Shared C [core library] | [src/core](src/core)                | 1.6     |
 | C++                     | [src/cpp](src/cpp)                  | 1.6     |
 | Ruby                    | [src/ruby](src/ruby)                | 1.6     |
-| NodeJS                  | [src/node](src/node)                | 1.6     |
 | Python                  | [src/python](src/python)            | 1.6     |
 | PHP                     | [src/php](src/php)                  | 1.6     |
 | C#                      | [src/csharp](src/csharp)            | 1.6     |
@@ -38,7 +37,8 @@ Libraries in different languages may be in different states of development. We a
 
 Java source code is in the [grpc-java](http://github.com/grpc/grpc-java)
 repository. Go source code is in the
-[grpc-go](http://github.com/grpc/grpc-go) repository.
+[grpc-go](http://github.com/grpc/grpc-go) repository. NodeJS source code is in the
+[grpc-node](https://github.com/grpc/grpc-node) repository.
 
 See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
 repository.
