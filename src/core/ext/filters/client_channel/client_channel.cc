@@ -376,12 +376,12 @@ static void request_reresolution_locked(grpc_exec_ctx* exec_ctx, void* arg,
   // If this invocation is for a stale LB policy, treat it as an LB shutdown
   // signal.
   if (args->lb_policy != chand->lb_policy || error != GRPC_ERROR_NONE ||
-      chand->resolver == NULL) {
+      chand->resolver == nullptr) {
     GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->owning_stack, "re-resolution");
     gpr_free(args);
     return;
   }
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p: started name re-resolving", chand);
   }
   grpc_resolver_channel_saw_error_locked(exec_ctx, chand->resolver);

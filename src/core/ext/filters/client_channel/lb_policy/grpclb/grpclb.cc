@@ -768,7 +768,7 @@ static void create_rr_locked(grpc_exec_ctx* exec_ctx, glb_lb_policy* glb_policy,
   }
   grpc_lb_policy_set_reresolve_closure_locked(
       exec_ctx, new_rr_policy, glb_policy->base.request_reresolution);
-  glb_policy->base.request_reresolution = NULL;
+  glb_policy->base.request_reresolution = nullptr;
   glb_policy->rr_policy = new_rr_policy;
   grpc_error* rr_state_error = nullptr;
   const grpc_connectivity_state rr_state =
@@ -1881,8 +1881,8 @@ static void glb_set_reresolve_closure_locked(
     grpc_closure* request_reresolution) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)policy;
   GPR_ASSERT(!glb_policy->shutting_down);
-  GPR_ASSERT(glb_policy->base.request_reresolution == NULL);
-  if (glb_policy->rr_policy != NULL) {
+  GPR_ASSERT(glb_policy->base.request_reresolution == nullptr);
+  if (glb_policy->rr_policy != nullptr) {
     grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, glb_policy->rr_policy,
                                                 request_reresolution);
   } else {

@@ -625,7 +625,7 @@ static void rr_set_reresolve_closure_locked(
     grpc_closure* request_reresolution) {
   round_robin_lb_policy* p = (round_robin_lb_policy*)policy;
   GPR_ASSERT(!p->shutdown);
-  GPR_ASSERT(policy->request_reresolution == NULL);
+  GPR_ASSERT(policy->request_reresolution == nullptr);
   policy->request_reresolution = request_reresolution;
 }
 
