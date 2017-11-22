@@ -63,7 +63,6 @@ static bool maybe_add_required_filter(grpc_channel_stack_builder* builder,
 }
 
 extern "C" void grpc_http_filters_init(void) {
-  grpc_register_tracer(&grpc_compression_trace);
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_optional_filter, &compress_filter);

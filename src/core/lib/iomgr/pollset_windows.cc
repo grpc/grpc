@@ -30,10 +30,7 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_fd_refcount =
-    GRPC_TRACER_INITIALIZER(false, "fd_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 
 gpr_mu grpc_polling_mu;
 static grpc_pollset_worker* g_active_poller;

@@ -28,7 +28,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/support/murmur_hash.h"
 
-extern "C" grpc_tracer_flag grpc_http_trace;
+extern grpc_core::TraceFlag grpc_http_trace;
 
 static struct {
   const char* key;
@@ -242,7 +242,7 @@ void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
   if (tbl->max_bytes == max_bytes) {
     return;
   }
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Update hpack parser max size to %d", max_bytes);
   }
   while (tbl->mem_used > max_bytes) {
@@ -265,7 +265,7 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
     gpr_free(msg);
     return err;
   }
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Update hpack parser table size to %d", bytes);
   }
   while (tbl->mem_used > bytes) {

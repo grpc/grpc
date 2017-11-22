@@ -42,11 +42,8 @@
 #define MIN_QUEUE_WINDOW_DURATION 0.01
 #define MAX_QUEUE_WINDOW_DURATION 1
 
-extern "C" {
-grpc_tracer_flag grpc_timer_trace = GRPC_TRACER_INITIALIZER(false, "timer");
-grpc_tracer_flag grpc_timer_check_trace =
-    GRPC_TRACER_INITIALIZER(false, "timer_check");
-}
+grpc_core::TraceFlag grpc_timer_trace(false, "timer");
+grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
 
 /* A "timer shard". Contains a 'heap' and a 'list' of timers. All timers with
  * deadlines earlier than 'queue_deadline" cap are maintained in the heap and
@@ -252,8 +249,6 @@ void grpc_timer_list_init() {
   g_shared_mutables.min_timer = grpc_core::ExecCtx::Get()->Now();
   gpr_tls_init(&g_last_seen_min_timer);
   gpr_tls_set(&g_last_seen_min_timer, 0);
-  grpc_register_tracer(&grpc_timer_trace);
-  grpc_register_tracer(&grpc_timer_check_trace);
 
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
@@ -338,7 +333,7 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
   timer->hash_table_next = nullptr;
 #endif
 
-  if (GRPC_TRACER_ON(grpc_timer_trace)) {
+  if (grpc_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "TIMER %p: SET %" PRIdPTR " now %" PRIdPTR " call %p[%p]", timer,
             deadline, grpc_core::ExecCtx::Get()->Now(), closure, closure->cb);
@@ -374,7 +369,7 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
     timer->heap_index = INVALID_HEAP_INDEX;
     list_join(&shard->list, timer);
   }
-  if (GRPC_TRACER_ON(grpc_timer_trace)) {
+  if (grpc_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "  .. add to shard %d with queue_deadline_cap=%" PRIdPTR
             " => is_first_timer=%s",
@@ -396,7 +391,7 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
      grpc_timer_check. */
   if (is_first_timer) {
     gpr_mu_lock(&g_shared_mutables.mu);
-    if (GRPC_TRACER_ON(grpc_timer_trace)) {
+    if (grpc_timer_trace.enabled()) {
       gpr_log(GPR_DEBUG, "  .. old shard min_deadline=%" PRIdPTR,
               shard->min_deadline);
     }
@@ -426,7 +421,7 @@ void grpc_timer_cancel(grpc_timer* timer) {
 
   timer_shard* shard = &g_shards[GPR_HASH_POINTER(timer, g_num_shards)];
   gpr_mu_lock(&shard->mu);
-  if (GRPC_TRACER_ON(grpc_timer_trace)) {
+  if (grpc_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TIMER %p: CANCEL pending=%s", timer,
             timer->pending ? "true" : "false");
   }
@@ -467,7 +462,7 @@ static int refill_heap(timer_shard* shard, gpr_atm now) {
       saturating_add(GPR_MAX(now, shard->queue_deadline_cap),
                      (gpr_atm)(deadline_delta * 1000.0));
 
-  if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+  if (grpc_timer_check_trace.enabled()) {
     gpr_log(GPR_DEBUG, "  .. shard[%d]->queue_deadline_cap --> %" PRIdPTR,
             (int)(shard - g_shards), shard->queue_deadline_cap);
   }
@@ -475,7 +470,7 @@ static int refill_heap(timer_shard* shard, gpr_atm now) {
     next = timer->next;
 
     if (timer->deadline < shard->queue_deadline_cap) {
-      if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+      if (grpc_timer_check_trace.enabled()) {
         gpr_log(GPR_DEBUG, "  .. add timer with deadline %" PRIdPTR " to heap",
                 timer->deadline);
       }
@@ -492,7 +487,7 @@ static int refill_heap(timer_shard* shard, gpr_atm now) {
 static grpc_timer* pop_one(timer_shard* shard, gpr_atm now) {
   grpc_timer* timer;
   for (;;) {
-    if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+    if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG, "  .. shard[%d]: heap_empty=%s",
               (int)(shard - g_shards),
               grpc_timer_heap_is_empty(&shard->heap) ? "true" : "false");
@@ -502,13 +497,13 @@ static grpc_timer* pop_one(timer_shard* shard, gpr_atm now) {
       if (!refill_heap(shard, now)) return nullptr;
     }
     timer = grpc_timer_heap_top(&shard->heap);
-    if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+    if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "  .. check top timer deadline=%" PRIdPTR " now=%" PRIdPTR,
               timer->deadline, now);
     }
     if (timer->deadline > now) return nullptr;
-    if (GRPC_TRACER_ON(grpc_timer_trace)) {
+    if (grpc_timer_trace.enabled()) {
       gpr_log(GPR_DEBUG, "TIMER %p: FIRE %" PRIdPTR "ms late via %s scheduler",
               timer, now - timer->deadline,
               timer->closure->scheduler->vtable->name);
@@ -532,7 +527,7 @@ static size_t pop_timers(timer_shard* shard, gpr_atm now,
   }
   *new_min_deadline = compute_min_deadline(shard);
   gpr_mu_unlock(&shard->mu);
-  if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+  if (grpc_timer_check_trace.enabled()) {
     gpr_log(GPR_DEBUG, "  .. shard[%d] popped %" PRIdPTR,
             (int)(shard - g_shards), n);
   }
@@ -555,7 +550,7 @@ static grpc_timer_check_result run_some_expired_timers(gpr_atm now,
     gpr_mu_lock(&g_shared_mutables.mu);
     result = GRPC_TIMERS_CHECKED_AND_EMPTY;
 
-    if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+    if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG, "  .. shard[%d]->min_deadline = %" PRIdPTR,
               (int)(g_shard_queue[0] - g_shards),
               g_shard_queue[0]->min_deadline);
@@ -572,7 +567,7 @@ static grpc_timer_check_result run_some_expired_timers(gpr_atm now,
         result = GRPC_TIMERS_FIRED;
       }
 
-      if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+      if (grpc_timer_check_trace.enabled()) {
         gpr_log(GPR_DEBUG,
                 "  .. result --> %d"
                 ", shard[%d]->min_deadline %" PRIdPTR " --> %" PRIdPTR
@@ -616,7 +611,7 @@ grpc_timer_check_result grpc_timer_check(grpc_millis* next) {
     if (next != nullptr) {
       *next = GPR_MIN(*next, min_timer);
     }
-    if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+    if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "TIMER CHECK SKIP: now=%" PRIdPTR " min_timer=%" PRIdPTR, now,
               min_timer);
@@ -630,7 +625,7 @@ grpc_timer_check_result grpc_timer_check(grpc_millis* next) {
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");
 
   // tracing
-  if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+  if (grpc_timer_check_trace.enabled()) {
     char* next_str;
     if (next == nullptr) {
       next_str = gpr_strdup("NULL");
@@ -648,7 +643,7 @@ grpc_timer_check_result grpc_timer_check(grpc_millis* next) {
   grpc_timer_check_result r =
       run_some_expired_timers(now, next, shutdown_error);
   // tracing
-  if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+  if (grpc_timer_check_trace.enabled()) {
     char* next_str;
     if (next == nullptr) {
       next_str = gpr_strdup("NULL");

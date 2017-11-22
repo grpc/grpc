@@ -126,7 +126,7 @@
 #define GRPC_GRPCLB_RECONNECT_JITTER 0.2
 #define GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS 10000
 
-grpc_tracer_flag grpc_lb_glb_trace = GRPC_TRACER_INITIALIZER(false, "glb");
+grpc_core::TraceFlag grpc_lb_glb_trace(false, "glb");
 
 /* add lb_token of selected subchannel (address) to the call's initial
  * metadata */
@@ -216,7 +216,7 @@ static void wrapped_rr_closure(void* arg, grpc_error* error) {
     } else {
       grpc_grpclb_client_stats_unref(wc_arg->client_stats);
     }
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+    if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO, "[grpclb %p] Unreffing RR %p", wc_arg->glb_policy,
               wc_arg->rr_policy);
     }
@@ -622,7 +622,7 @@ static void update_lb_connectivity_status_locked(
       GPR_ASSERT(rr_state_error == GRPC_ERROR_NONE);
   }
 
-  if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+  if (grpc_lb_glb_trace.enabled()) {
     gpr_log(
         GPR_INFO,
         "[grpclb %p] Setting grpclb's state to %s from new RR policy %p state.",
@@ -653,7 +653,7 @@ static bool pick_from_internal_rr_locked(
     }
     if (server->drop) {
       // Not using the RR policy, so unref it.
-      if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+      if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO, "[grpclb %p] Unreffing RR %p for drop", glb_policy,
                 wc_arg->rr_policy);
       }
@@ -683,7 +683,7 @@ static bool pick_from_internal_rr_locked(
       (void**)&wc_arg->lb_token, &wc_arg->wrapper_closure);
   if (pick_done) {
     /* synchronous grpc_lb_policy_pick call. Unref the RR policy. */
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+    if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO, "[grpclb %p] Unreffing RR %p", glb_policy,
               wc_arg->rr_policy);
     }
@@ -799,7 +799,7 @@ static void create_rr_locked(glb_lb_policy* glb_policy,
     pp->wrapped_on_complete_arg.rr_policy = glb_policy->rr_policy;
     pp->wrapped_on_complete_arg.client_stats =
         grpc_grpclb_client_stats_ref(glb_policy->client_stats);
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+    if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO,
               "[grpclb %p] Pending pick about to (async) PICK from RR %p",
               glb_policy, glb_policy->rr_policy);
@@ -814,7 +814,7 @@ static void create_rr_locked(glb_lb_policy* glb_policy,
     glb_policy->pending_pings = pping->next;
     GRPC_LB_POLICY_REF(glb_policy->rr_policy, "rr_handover_pending_ping");
     pping->wrapped_notify_arg.rr_policy = glb_policy->rr_policy;
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+    if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO, "[grpclb %p] Pending ping about to PING from RR %p",
               glb_policy, glb_policy->rr_policy);
     }
@@ -829,14 +829,14 @@ static void rr_handover_locked(glb_lb_policy* glb_policy) {
   grpc_lb_policy_args* args = lb_policy_args_create(glb_policy);
   GPR_ASSERT(args != nullptr);
   if (glb_policy->rr_policy != nullptr) {
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+    if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Updating RR policy %p", glb_policy,
               glb_policy->rr_policy);
     }
     grpc_lb_policy_update_locked(glb_policy->rr_policy, args);
   } else {
     create_rr_locked(glb_policy, args);
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+    if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Created new RR policy %p", glb_policy,
               glb_policy->rr_policy);
     }
@@ -1169,7 +1169,7 @@ static int glb_pick_locked(grpc_lb_policy* pol,
     // need to make sure we aren't trying to pick from a RR policy instance
     // that's in shutdown.
     if (rr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
-      if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+      if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] NOT picking from from RR %p: RR conn state=%s",
                 glb_policy, glb_policy->rr_policy,
@@ -1179,7 +1179,7 @@ static int glb_pick_locked(grpc_lb_policy* pol,
                        on_complete);
       pick_done = false;
     } else {  // RR not in shutdown
-      if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+      if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO, "[grpclb %p] about to PICK from RR %p", glb_policy,
                 glb_policy->rr_policy);
       }
@@ -1202,8 +1202,8 @@ static int glb_pick_locked(grpc_lb_policy* pol,
       pick_done = pick_from_internal_rr_locked(
           glb_policy, pick_args, false /* force_async */, target, wc_arg);
     }
-  } else {  // glb_policy->rr_policy == nullptr
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+  } else {  // glb_policy->rr_policy == NULL
+    if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "[grpclb %p] No RR policy. Adding to grpclb's pending picks",
               glb_policy);
@@ -1250,7 +1250,7 @@ static void lb_call_on_retry_timer_locked(void* arg, grpc_error* error) {
   glb_policy->retry_timer_active = false;
   if (!glb_policy->shutting_down && glb_policy->lb_call == nullptr &&
       error == GRPC_ERROR_NONE) {
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+    if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server", glb_policy);
     }
     query_for_backends_locked(glb_policy);
@@ -1269,7 +1269,7 @@ static void maybe_restart_lb_call(glb_lb_policy* glb_policy) {
     /* if we aren't shutting down, restart the LB client call after some time */
     grpc_millis next_try = grpc_backoff_step(&glb_policy->lb_call_backoff_state)
                                .next_attempt_start_time;
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+    if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
               glb_policy);
       grpc_millis timeout = next_try - grpc_core::ExecCtx::Get()->Now();
@@ -1315,6 +1315,9 @@ static void client_load_report_done_locked(void* arg, grpc_error* error) {
   if (error != GRPC_ERROR_NONE || glb_policy->lb_call == nullptr) {
     glb_policy->client_load_report_timer_pending = false;
     GRPC_LB_POLICY_WEAK_UNREF(&glb_policy->base, "client_load_report");
+    if (glb_policy->lb_call == nullptr) {
+      maybe_restart_lb_call(glb_policy);
+    }
     return;
   }
   schedule_next_client_load_report(glb_policy);
@@ -1461,7 +1464,7 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy) {
 
   lb_call_init_locked(glb_policy);
 
-  if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+  if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Query for backends (lb_channel: %p, lb_call: %p)",
             glb_policy, glb_policy->lb_channel, glb_policy->lb_call);
@@ -1551,7 +1554,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
         glb_policy->client_stats_report_interval = GPR_MAX(
             GPR_MS_PER_SEC, grpc_grpclb_duration_to_millis(
                                 &response->client_stats_report_interval));
-        if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+        if (grpc_lb_glb_trace.enabled()) {
           gpr_log(GPR_INFO,
                   "[grpclb %p] Received initial LB response message; "
                   "client load reporting interval = %" PRIdPTR " milliseconds",
@@ -1563,7 +1566,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
         glb_policy->client_load_report_timer_pending = true;
         GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "client_load_report");
         schedule_next_client_load_report(glb_policy);
-      } else if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+      } else if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] Received initial LB response message; client load "
                 "reporting NOT enabled",
@@ -1576,7 +1579,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
           grpc_grpclb_response_parse_serverlist(response_slice);
       if (serverlist != nullptr) {
         GPR_ASSERT(glb_policy->lb_call != nullptr);
-        if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+        if (grpc_lb_glb_trace.enabled()) {
           gpr_log(GPR_INFO,
                   "[grpclb %p] Serverlist with %" PRIuPTR " servers received",
                   glb_policy, serverlist->num_servers);
@@ -1594,7 +1597,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
         if (serverlist->num_servers > 0) {
           if (grpc_grpclb_serverlist_equals(glb_policy->serverlist,
                                             serverlist)) {
-            if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+            if (grpc_lb_glb_trace.enabled()) {
               gpr_log(GPR_INFO,
                       "[grpclb %p] Incoming server list identical to current, "
                       "ignoring.",
@@ -1622,7 +1625,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
             rr_handover_locked(glb_policy);
           }
         } else {
-          if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+          if (grpc_lb_glb_trace.enabled()) {
             gpr_log(GPR_INFO,
                     "[grpclb %p] Received empty server list, ignoring.",
                     glb_policy);
@@ -1669,7 +1672,7 @@ static void lb_on_fallback_timer_locked(void* arg, grpc_error* error) {
    * actually runs, don't fall back. */
   if (glb_policy->serverlist == nullptr) {
     if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
-      if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+      if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] Falling back to use backends from resolver",
                 glb_policy);
@@ -1684,7 +1687,7 @@ static void lb_on_fallback_timer_locked(void* arg, grpc_error* error) {
 static void lb_on_server_status_received_locked(void* arg, grpc_error* error) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
   GPR_ASSERT(glb_policy->lb_call != nullptr);
-  if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+  if (grpc_lb_glb_trace.enabled()) {
     char* status_details =
         grpc_slice_to_c_string(glb_policy->lb_call_status_details);
     gpr_log(GPR_INFO,
@@ -1863,7 +1866,7 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
   GPR_ASSERT(uri->path[0] != '\0');
   glb_policy->server_name =
       gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
-  if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+  if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Will use '%s' as the server name for LB request.",
             glb_policy, glb_policy->server_name);
@@ -1957,10 +1960,6 @@ static bool maybe_add_client_load_reporting_filter(
 
 extern "C" void grpc_lb_policy_grpclb_init() {
   grpc_register_lb_policy(grpc_glb_lb_factory_create());
-  grpc_register_tracer(&grpc_lb_glb_trace);
-#ifndef NDEBUG
-  grpc_register_tracer(&grpc_trace_lb_policy_refcount);
-#endif
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_client_load_reporting_filter,

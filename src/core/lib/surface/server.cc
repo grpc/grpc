@@ -59,8 +59,7 @@ typedef struct registered_method registered_method;
 
 typedef enum { BATCH_CALL, REGISTERED_CALL } requested_call_type;
 
-grpc_tracer_flag grpc_server_channel_trace =
-    GRPC_TRACER_INITIALIZER(false, "server_channel");
+grpc_core::TraceFlag grpc_server_channel_trace(false, "server_channel");
 
 typedef struct requested_call {
   gpr_mpscq_node request_link; /* must be first */
@@ -343,14 +342,8 @@ static void request_matcher_kill_requests(grpc_server* server,
                                           grpc_error* error) {
   requested_call* rc;
   for (size_t i = 0; i < server->cq_count; i++) {
-    /* Here we know:
-       1. no requests are being added (since the server is shut down)
-       2. no other threads are pulling (since the shut down process is single
-          threaded)
-       So, we can ignore the queue lock and just pop, with the guarantee that a
-       NULL returned here truly means that the queue is empty */
-    while ((rc = (requested_call*)gpr_mpscq_pop(
-                &rm->requests_per_cq[i].queue)) != nullptr) {
+    while ((rc = (requested_call*)gpr_locked_mpscq_pop(
+                &rm->requests_per_cq[i])) != nullptr) {
       fail_call(server, i, rc, GRPC_ERROR_REF(error));
     }
   }
@@ -425,7 +418,7 @@ static void destroy_channel(channel_data* chand, grpc_error* error) {
   GRPC_CLOSURE_INIT(&chand->finish_destroy_channel_closure,
                     finish_destroy_channel, chand, grpc_schedule_on_exec_ctx);
 
-  if (GRPC_TRACER_ON(grpc_server_channel_trace) && error != GRPC_ERROR_NONE) {
+  if (grpc_server_channel_trace.enabled() && error != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Disconnected client: %s", msg);
   }

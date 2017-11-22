@@ -65,7 +65,7 @@ extern "C" {
     maintain lists of users (which users arrange to leave before they are
     destroyed) */
 
-extern grpc_tracer_flag grpc_resource_quota_trace;
+extern grpc_core::TraceFlag grpc_resource_quota_trace;
 
 grpc_resource_quota* grpc_resource_quota_ref_internal(
     grpc_resource_quota* resource_quota);

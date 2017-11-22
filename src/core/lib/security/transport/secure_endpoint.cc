@@ -61,8 +61,7 @@ typedef struct {
   gpr_refcount ref;
 } secure_endpoint;
 
-grpc_tracer_flag grpc_trace_secure_endpoint =
-    GRPC_TRACER_INITIALIZER(false, "secure_endpoint");
+grpc_core::TraceFlag grpc_trace_secure_endpoint(false, "secure_endpoint");
 
 static void destroy(secure_endpoint* secure_ep) {
   secure_endpoint* ep = secure_ep;
@@ -85,7 +84,7 @@ static void destroy(secure_endpoint* secure_ep) {
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
 static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
                                   const char* file, int line) {
-  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+  if (grpc_trace_secure_endpoint.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -98,7 +97,7 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
 
 static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
                                 const char* file, int line) {
-  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+  if (grpc_trace_secure_endpoint.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -127,7 +126,7 @@ static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void call_read_cb(secure_endpoint* ep, grpc_error* error) {
-  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+  if (grpc_trace_secure_endpoint.enabled()) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char* data = grpc_dump_slice(ep->read_buffer->slices[i],
@@ -263,7 +262,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
   grpc_slice_buffer_reset_and_unref_internal(&ep->output_buffer);
 
-  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+  if (grpc_trace_secure_endpoint.enabled()) {
     for (i = 0; i < slices->count; i++) {
       char* data =
           grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);

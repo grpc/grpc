@@ -29,11 +29,8 @@
 
 #include <uv.h>
 
-extern "C" {
-grpc_tracer_flag grpc_timer_trace = GRPC_TRACER_INITIALIZER(false, "timer");
-grpc_tracer_flag grpc_timer_check_trace =
-    GRPC_TRACER_INITIALIZER(false, "timer_check");
-}
+grpc_core::TraceFlag grpc_timer_trace(false, "timer");
+grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
 
 static void timer_close_callback(uv_handle_t* handle) { gpr_free(handle); }
 

@@ -30,6 +30,7 @@
 
 grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
                            grpc_slice* output) {
+  grpc_core::ExecCtx exec_ctx;
   unsigned char* contents = nullptr;
   size_t contents_size = 0;
   grpc_slice result = grpc_empty_slice();

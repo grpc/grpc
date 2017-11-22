@@ -104,7 +104,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \

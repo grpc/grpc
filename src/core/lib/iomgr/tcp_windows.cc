@@ -49,7 +49,7 @@
 #define GRPC_FIONBIO FIONBIO
 #endif
 
-grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false, "tcp");
+grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
 
 static grpc_error* set_non_block(SOCKET sock) {
   int status;
@@ -123,7 +123,7 @@ static void tcp_free(grpc_tcp* tcp) {
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
                       int line) {
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
@@ -136,7 +136,7 @@ static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
 
 static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
                     int line) {
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,

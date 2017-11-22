@@ -27,14 +27,11 @@
 
 /* These trace flags default to 1. The corresponding lines are only traced
    if grpc_api_trace is also truthy */
-extern grpc_tracer_flag grpc_cq_pluck_trace;
-extern grpc_tracer_flag grpc_cq_event_timeout_trace;
-extern grpc_tracer_flag grpc_trace_operation_failures;
-
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_pending_tags;
-extern grpc_tracer_flag grpc_trace_cq_refcount;
-#endif
+extern grpc_core::TraceFlag grpc_cq_pluck_trace;
+extern grpc_core::TraceFlag grpc_cq_event_timeout_trace;
+extern grpc_core::TraceFlag grpc_trace_operation_failures;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount;
 
 #ifdef __cplusplus
 extern "C" {

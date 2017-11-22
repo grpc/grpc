@@ -88,9 +88,11 @@ typedef struct proxy_connection {
 
   grpc_slice_buffer client_read_buffer;
   grpc_slice_buffer client_deferred_write_buffer;
+  bool client_is_writing;
   grpc_slice_buffer client_write_buffer;
   grpc_slice_buffer server_read_buffer;
   grpc_slice_buffer server_deferred_write_buffer;
+  bool server_is_writing;
   grpc_slice_buffer server_write_buffer;
 
   grpc_http_parser http_parser;
@@ -141,6 +143,7 @@ static void proxy_connection_failed(proxy_connection* conn, bool is_client,
 // Callback for writing proxy data to the client.
 static void on_client_write_done(void* arg, grpc_error* error) {
   proxy_connection* conn = (proxy_connection*)arg;
+  conn->client_is_writing = false;
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(conn, true /* is_client */,
                             "HTTP proxy client write", error);
@@ -153,6 +156,7 @@ static void on_client_write_done(void* arg, grpc_error* error) {
   if (conn->client_deferred_write_buffer.length > 0) {
     grpc_slice_buffer_move_into(&conn->client_deferred_write_buffer,
                                 &conn->client_write_buffer);
+    conn->client_is_writing = true;
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
                         &conn->on_client_write_done);
   } else {
@@ -164,6 +168,7 @@ static void on_client_write_done(void* arg, grpc_error* error) {
 // Callback for writing proxy data to the backend server.
 static void on_server_write_done(void* arg, grpc_error* error) {
   proxy_connection* conn = (proxy_connection*)arg;
+  conn->server_is_writing = false;
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(conn, false /* is_client */,
                             "HTTP proxy server write", error);
@@ -176,6 +181,7 @@ static void on_server_write_done(void* arg, grpc_error* error) {
   if (conn->server_deferred_write_buffer.length > 0) {
     grpc_slice_buffer_move_into(&conn->server_deferred_write_buffer,
                                 &conn->server_write_buffer);
+    conn->server_is_writing = true;
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
                         &conn->on_server_write_done);
   } else {
@@ -199,13 +205,14 @@ static void on_client_read_done(void* arg, grpc_error* error) {
   // the current write is finished.
   //
   // Otherwise, move the read data into the write buffer and write it.
-  if (conn->server_write_buffer.length > 0) {
+  if (conn->server_is_writing) {
     grpc_slice_buffer_move_into(&conn->client_read_buffer,
                                 &conn->server_deferred_write_buffer);
   } else {
     grpc_slice_buffer_move_into(&conn->client_read_buffer,
                                 &conn->server_write_buffer);
     proxy_connection_ref(conn, "client_read");
+    conn->server_is_writing = true;
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
                         &conn->on_server_write_done);
   }
@@ -229,13 +236,14 @@ static void on_server_read_done(void* arg, grpc_error* error) {
   // the current write is finished.
   //
   // Otherwise, move the read data into the write buffer and write it.
-  if (conn->client_write_buffer.length > 0) {
+  if (conn->client_is_writing) {
     grpc_slice_buffer_move_into(&conn->server_read_buffer,
                                 &conn->client_deferred_write_buffer);
   } else {
     grpc_slice_buffer_move_into(&conn->server_read_buffer,
                                 &conn->client_write_buffer);
     proxy_connection_ref(conn, "server_read");
+    conn->client_is_writing = true;
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
                         &conn->on_client_write_done);
   }
@@ -247,6 +255,7 @@ static void on_server_read_done(void* arg, grpc_error* error) {
 // Callback to write the HTTP response for the CONNECT request.
 static void on_write_response_done(void* arg, grpc_error* error) {
   proxy_connection* conn = (proxy_connection*)arg;
+  conn->client_is_writing = false;
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(conn, true /* is_client */,
                             "HTTP proxy write response", error);
@@ -286,6 +295,7 @@ static void on_server_connect_done(void* arg, grpc_error* error) {
   grpc_slice slice =
       grpc_slice_from_copied_string("HTTP/1.0 200 connected\r\n\r\n");
   grpc_slice_buffer_add(&conn->client_write_buffer, slice);
+  conn->client_is_writing = true;
   grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
                       &conn->on_write_response_done);
 }
@@ -429,9 +439,11 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
                     grpc_combiner_scheduler(conn->proxy->combiner));
   grpc_slice_buffer_init(&conn->client_read_buffer);
   grpc_slice_buffer_init(&conn->client_deferred_write_buffer);
+  conn->client_is_writing = false;
   grpc_slice_buffer_init(&conn->client_write_buffer);
   grpc_slice_buffer_init(&conn->server_read_buffer);
   grpc_slice_buffer_init(&conn->server_deferred_write_buffer);
+  conn->server_is_writing = false;
   grpc_slice_buffer_init(&conn->server_write_buffer);
   grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST,
                         &conn->http_request);
