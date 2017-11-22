@@ -364,7 +364,7 @@ namespace Grpc.Core
                 {
                     if (!hooksRegistered)
                     {
-#if NETSTANDARD1_5
+#if (NETSTANDARD1_5 || NETSTANDARD2_0)
                         System.Runtime.Loader.AssemblyLoadContext.Default.Unloading += (assemblyLoadContext) => { HandleShutdown(); };
 #else
                         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => { HandleShutdown(); };
