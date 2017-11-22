@@ -20,7 +20,10 @@
     }
   }, 
   {
-    "config": "msan"
+    "config": "msan", 
+    "environ": {
+      "MSAN_OPTIONS": "poison_in_dtor=1"
+    }
   }, 
   {
     "config": "basicprof"
