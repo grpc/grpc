@@ -274,10 +274,10 @@ def call_credentials_metadata_plugin(CredentialsMetadataPlugin plugin):
   return credentials
 
 cdef const char* _get_c_pem_root_certs(pem_root_certs):
-  cdef char *c_pem_root_certs = NULL
-  if pem_root_certs is not None:
-    c_pem_root_certs = pem_root_certs
-  return c_pem_root_certs
+  if pem_root_certs is None:
+    return NULL
+  else:
+    return pem_root_certs
 
 cdef grpc_ssl_pem_key_cert_pair* _create_c_ssl_pem_key_cert_pairs(pem_key_cert_pairs):
   # return a malloc'ed grpc_ssl_pem_key_cert_pair from a _list_ of SslPemKeyCertPair
