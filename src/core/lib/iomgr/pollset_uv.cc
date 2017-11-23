@@ -139,7 +139,7 @@ grpc_error* grpc_pollset_work(grpc_pollset* pollset,
       uv_run(uv_default_loop(), UV_RUN_NOWAIT);
     }
   }
-  if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
+  if (!grpc_closure_list_empty(*grpc_core::ExecCtx::Get()->closure_list())) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   gpr_mu_lock(&grpc_polling_mu);

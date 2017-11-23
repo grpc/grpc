@@ -62,7 +62,7 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
     gpr_mu_unlock(mu);
     grpc_core::ExecCtx::Get()->Flush();
   }
-
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
   track_counters.Finish(state);
 }
@@ -124,7 +124,7 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
-
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
   track_counters.Finish(state);
 }
@@ -152,7 +152,7 @@ static void BM_PollAddFd(benchmark::State& state) {
   gpr_mu_lock(mu);
   grpc_pollset_shutdown(ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
-
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
   track_counters.Finish(state);
 }
@@ -248,7 +248,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
-
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_wakeup_fd_destroy(&wakeup_fd);
   gpr_free(ps);
   track_counters.Finish(state);

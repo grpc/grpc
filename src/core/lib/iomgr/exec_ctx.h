@@ -47,6 +47,12 @@ typedef struct grpc_combiner grpc_combiner;
    should be given to not delete said call/channel from this exec_ctx */
 #define GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP 2
 
+extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
+
+gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
+grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
+grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
+
 namespace grpc_core {
 /** Execution context.
  *  A bag of data that collects information along a callstack.
@@ -164,7 +170,11 @@ on outside context */
   static void GlobalInit(void);
 
   /** Global shutdown for ExecCtx. Called by iomgr */
-  static void GlobalShutdown(void);
+  static void GlobalShutdown(void) {
+#ifdef GPR_PTHREAD_TLS
+    gpr_tls_destroy(&exec_ctx_);
+#endif
+  }
 
   /** Gets pointer to current exec_ctx */
   static ExecCtx* Get() {
@@ -205,14 +215,6 @@ on outside context */
   ExecCtx* last_exec_ctx_ = Get();
 };
 }  // namespace grpc_core
-
-extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
-
-gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
-grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
-grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
-
-void grpc_exec_ctx_maybe_update_start_time();
 
 #ifdef __cplusplus
 }

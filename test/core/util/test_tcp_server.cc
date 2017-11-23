@@ -106,7 +106,7 @@ void test_tcp_server_destroy(test_tcp_server* server) {
   grpc_pollset_shutdown(server->pollset,
                         GRPC_CLOSURE_CREATE(finish_pollset, server->pollset,
                                             grpc_schedule_on_exec_ctx));
-
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(server->pollset);
   grpc_shutdown();
 }

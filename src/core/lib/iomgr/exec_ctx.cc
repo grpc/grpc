@@ -108,6 +108,13 @@ namespace grpc_core {
 thread_local ExecCtx* ExecCtx::exec_ctx_ = nullptr;
 #endif
 
+void ExecCtx::GlobalInit(void) {
+  g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+#ifdef GPR_PTHREAD_TLS
+  gpr_tls_init(&exec_ctx_);
+#endif
+}
+
 bool ExecCtx::Flush() {
   bool did_something = 0;
   GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
@@ -129,19 +136,6 @@ bool ExecCtx::Flush() {
   GPR_ASSERT(combiner_data_.active_combiner == nullptr);
   GPR_TIMER_END("grpc_exec_ctx_flush", 0);
   return did_something;
-}
-
-void ExecCtx::GlobalInit(void) {
-  g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
-#ifdef GPR_PTHREAD_TLS
-  gpr_tls_init(&exec_ctx_);
-#endif
-}
-
-void ExecCtx::GlobalShutdown(void) {
-#ifdef GPR_PTHREAD_TLS
-  gpr_tls_destroy(&exec_ctx_);
-#endif
 }
 
 grpc_millis ExecCtx::Now() {
