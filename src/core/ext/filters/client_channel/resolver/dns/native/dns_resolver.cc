@@ -32,6 +32,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/support/alloc_new.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
@@ -70,7 +71,7 @@ typedef struct {
   grpc_timer retry_timer;
   grpc_closure on_retry;
   /** retry backoff state */
-  grpc_backoff backoff_state;
+  grpc_core::Backoff* backoff;
 
   /** currently resolving addresses */
   grpc_resolved_addresses* addresses;
@@ -113,7 +114,7 @@ static void dns_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
                                          grpc_resolver* resolver) {
   dns_resolver* r = (dns_resolver*)resolver;
   if (!r->resolving) {
-    grpc_backoff_reset(&r->backoff_state);
+    r->backoff->Reset();
     dns_start_resolving_locked(exec_ctx, r);
   }
 }
@@ -126,7 +127,7 @@ static void dns_next_locked(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
   r->next_completion = on_complete;
   r->target_result = target_result;
   if (r->resolved_version == 0 && !r->resolving) {
-    grpc_backoff_reset(&r->backoff_state);
+    r->backoff->Reset();
     dns_start_resolving_locked(exec_ctx, r);
   } else {
     dns_maybe_finish_next_locked(exec_ctx, r);
@@ -170,8 +171,7 @@ static void dns_on_resolved_locked(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_resolved_addresses_destroy(r->addresses);
     grpc_lb_addresses_destroy(exec_ctx, addresses);
   } else {
-    grpc_millis next_try =
-        grpc_backoff_step(exec_ctx, &r->backoff_state).next_attempt_start_time;
+    grpc_millis next_try = r->backoff->Step(exec_ctx).next_attempt_start_time;
     grpc_millis timeout = next_try - grpc_exec_ctx_now(exec_ctx);
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
@@ -233,6 +233,7 @@ static void dns_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
   grpc_channel_args_destroy(exec_ctx, r->channel_args);
+  gpr_free(r->backoff);
   gpr_free(r);
 }
 
@@ -257,11 +258,14 @@ static grpc_resolver* dns_create(grpc_exec_ctx* exec_ctx,
     grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,
                                      args->pollset_set);
   }
-  grpc_backoff_init(
-      &r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000,
-      GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER, GRPC_DNS_RECONNECT_JITTER,
-      GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
-      GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
+  grpc_core::Backoff::Options backoff_options;
+  backoff_options
+      .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000)
+      .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
+      .set_jitter(GRPC_DNS_RECONNECT_JITTER)
+      .set_min_connect_timeout(GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000)
+      .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
+  r->backoff = GPR_NEW(grpc_core::Backoff(backoff_options));
   return &r->base;
 }
 

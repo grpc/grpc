@@ -21,63 +21,85 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
 
-typedef struct {
-  /// const:  how long to wait after the first failure before retrying
-  grpc_millis initial_backoff;
+class Backoff {
+ public:
+  class Options;
+  struct Result;
 
-  /// const: factor with which to multiply backoff after a failed retry
-  double multiplier;
+  /// Initialize backoff machinery - does not need to be destroyed
+  explicit Backoff(const Options& options);
 
-  /// const: amount to randomize backoffs
-  double jitter;
+  /// Begin retry loop: returns the deadlines to be used for the current attempt
+  /// and the subsequent retry, if any.
+  Result Begin(grpc_exec_ctx* exec_ctx);
+  /// Step a retry loop: returns the deadlines to be used for the current
+  /// attempt and the subsequent retry, if any.
+  Result Step(grpc_exec_ctx* exec_ctx);
+  /// Reset the backoff, so the next grpc_backoff_step will be a
+  /// grpc_backoff_begin.
+  void Reset();
 
-  /// const: minimum time between retries
-  grpc_millis min_connect_timeout;
+  void SetRandomSeed(unsigned int seed);
 
-  /// const: maximum time between retries
-  grpc_millis max_backoff;
+  class Options {
+   public:
+    Options& set_initial_backoff(grpc_millis initial_backoff) {
+      initial_backoff_ = initial_backoff;
+      return *this;
+    }
+    Options& set_multiplier(double multiplier) {
+      multiplier_ = multiplier;
+      return *this;
+    }
+    Options& set_jitter(double jitter) {
+      jitter_ = jitter;
+      return *this;
+    }
+    Options& set_min_connect_timeout(grpc_millis min_connect_timeout) {
+      min_connect_timeout_ = min_connect_timeout;
+      return *this;
+    }
+    Options& set_max_backoff(grpc_millis max_backoff) {
+      max_backoff_ = max_backoff;
+      return *this;
+    }
+    /// how long to wait after the first failure before retrying
+    grpc_millis initial_backoff() const { return initial_backoff_; }
+    /// factor with which to multiply backoff after a failed retry
+    double multiplier() const { return multiplier_; }
+    /// amount to randomize backoffs
+    double jitter() const { return jitter_; }
+    /// minimum time between retries
+    grpc_millis min_connect_timeout() const { return min_connect_timeout_; }
+    /// maximum time between retries
+    grpc_millis max_backoff() const { return max_backoff_; }
 
+   private:
+    grpc_millis initial_backoff_;
+    double multiplier_;
+    double jitter_;
+    grpc_millis min_connect_timeout_;
+    grpc_millis max_backoff_;
+  };  // class Options
+
+  struct Result {
+    /// Deadline to be used for the current attempt.
+    grpc_millis current_deadline;
+    /// Deadline to be used for the next attempt, following the backoff
+    /// strategy.
+    grpc_millis next_attempt_start_time;
+  };
+
+ private:
+  const Options options_;
   /// current delay before retries
-  grpc_millis current_backoff;
+  grpc_millis current_backoff_;
 
-  /// random number generator
-  uint32_t rng_state;
-} grpc_backoff;
+  unsigned int seed;
+};
 
-typedef struct {
-  /// Deadline to be used for the current attempt.
-  grpc_millis current_deadline;
-
-  /// Deadline to be used for the next attempt, following the backoff strategy.
-  grpc_millis next_attempt_start_time;
-} grpc_backoff_result;
-
-/// Initialize backoff machinery - does not need to be destroyed
-void grpc_backoff_init(grpc_backoff* backoff, grpc_millis initial_backoff,
-                       double multiplier, double jitter,
-                       grpc_millis min_connect_timeout,
-                       grpc_millis max_backoff);
-
-/// Begin retry loop: returns the deadlines to be used for the current attempt
-/// and the subsequent retry, if any.
-grpc_backoff_result grpc_backoff_begin(grpc_exec_ctx* exec_ctx,
-                                       grpc_backoff* backoff);
-
-/// Step a retry loop: returns the deadlines to be used for the current attempt
-/// and the subsequent retry, if any.
-grpc_backoff_result grpc_backoff_step(grpc_exec_ctx* exec_ctx,
-                                      grpc_backoff* backoff);
-
-/// Reset the backoff, so the next grpc_backoff_step will be a
-/// grpc_backoff_begin.
-void grpc_backoff_reset(grpc_backoff* backoff);
-
-#ifdef __cplusplus
-}
-#endif
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_BACKOFF_BACKOFF_H */

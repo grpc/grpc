@@ -39,6 +39,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/alloc_new.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -72,6 +73,9 @@ typedef struct external_state_watcher {
 } external_state_watcher;
 
 struct grpc_subchannel {
+  grpc_subchannel(const grpc_core::Backoff::Options& backoff_options)
+      : backoff(backoff_options) {}
+
   grpc_connector* connector;
 
   /** refcount
@@ -118,8 +122,8 @@ struct grpc_subchannel {
   external_state_watcher root_external_state_watcher;
 
   /** backoff state */
-  grpc_backoff backoff_state;
-  grpc_backoff_result backoff_result;
+  grpc_core::Backoff backoff;
+  grpc_core::Backoff::Result backoff_result;
 
   /** do we have an active alarm? */
   bool have_alarm;
@@ -283,6 +287,52 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx* exec_ctx,
   }
 }
 
+static grpc_core::Backoff::Options extract_backoff_options(
+    const grpc_channel_args* args) {
+  int initial_backoff_ms =
+      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
+  int min_connect_timeout_ms =
+      GRPC_SUBCHANNEL_RECONNECT_MIN_BACKOFF_SECONDS * 1000;
+  int max_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
+  bool fixed_reconnect_backoff = false;
+  if (args != nullptr) {
+    for (size_t i = 0; i < args->num_args; i++) {
+      if (0 == strcmp(args->args[i].key,
+                      "grpc.testing.fixed_reconnect_backoff_ms")) {
+        fixed_reconnect_backoff = true;
+        initial_backoff_ms = min_connect_timeout_ms = max_backoff_ms =
+            grpc_channel_arg_get_integer(&args->args[i],
+                                         {initial_backoff_ms, 100, INT_MAX});
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
+        fixed_reconnect_backoff = false;
+        min_connect_timeout_ms = grpc_channel_arg_get_integer(
+            &args->args[i], {min_connect_timeout_ms, 100, INT_MAX});
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
+        fixed_reconnect_backoff = false;
+        max_backoff_ms = grpc_channel_arg_get_integer(
+            &args->args[i], {max_backoff_ms, 100, INT_MAX});
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS)) {
+        fixed_reconnect_backoff = false;
+        initial_backoff_ms = grpc_channel_arg_get_integer(
+            &args->args[i], {initial_backoff_ms, 100, INT_MAX});
+      }
+    }
+  }
+  grpc_core::Backoff::Options backoff_options;
+  backoff_options.set_initial_backoff(initial_backoff_ms)
+      .set_multiplier(fixed_reconnect_backoff
+                          ? 1.0
+                          : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER)
+      .set_jitter(fixed_reconnect_backoff ? 0.0
+                                          : GRPC_SUBCHANNEL_RECONNECT_JITTER)
+      .set_min_connect_timeout(min_connect_timeout_ms)
+      .set_max_backoff(max_backoff_ms);
+  return backoff_options;
+}
+
 grpc_subchannel* grpc_subchannel_create(grpc_exec_ctx* exec_ctx,
                                         grpc_connector* connector,
                                         const grpc_subchannel_args* args) {
@@ -294,7 +344,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_exec_ctx* exec_ctx,
   }
 
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED(exec_ctx);
-  c = (grpc_subchannel*)gpr_zalloc(sizeof(*c));
+  c = GPR_NEW(grpc_subchannel(extract_backoff_options(args->args)));
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
@@ -336,7 +386,8 @@ grpc_subchannel* grpc_subchannel_create(grpc_exec_ctx* exec_ctx,
                                "subchannel");
   int initial_backoff_ms =
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
-  int min_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MIN_BACKOFF_SECONDS * 1000;
+  int min_connect_timeout_ms =
+      GRPC_SUBCHANNEL_RECONNECT_MIN_BACKOFF_SECONDS * 1000;
   int max_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
   bool fixed_reconnect_backoff = false;
   if (c->args) {
@@ -344,14 +395,14 @@ grpc_subchannel* grpc_subchannel_create(grpc_exec_ctx* exec_ctx,
       if (0 == strcmp(c->args->args[i].key,
                       "grpc.testing.fixed_reconnect_backoff_ms")) {
         fixed_reconnect_backoff = true;
-        initial_backoff_ms = min_backoff_ms = max_backoff_ms =
+        initial_backoff_ms = min_connect_timeout_ms = max_backoff_ms =
             grpc_channel_arg_get_integer(&c->args->args[i],
                                          {initial_backoff_ms, 100, INT_MAX});
       } else if (0 == strcmp(c->args->args[i].key,
                              GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
-        min_backoff_ms = grpc_channel_arg_get_integer(
-            &c->args->args[i], {min_backoff_ms, 100, INT_MAX});
+        min_connect_timeout_ms = grpc_channel_arg_get_integer(
+            &c->args->args[i], {min_connect_timeout_ms, 100, INT_MAX});
       } else if (0 == strcmp(c->args->args[i].key,
                              GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
@@ -365,12 +416,15 @@ grpc_subchannel* grpc_subchannel_create(grpc_exec_ctx* exec_ctx,
       }
     }
   }
-  grpc_backoff_init(
-      &c->backoff_state, initial_backoff_ms,
-      fixed_reconnect_backoff ? 1.0
-                              : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
-      fixed_reconnect_backoff ? 0.0 : GRPC_SUBCHANNEL_RECONNECT_JITTER,
-      min_backoff_ms, max_backoff_ms);
+  grpc_core::Backoff::Options backoff_options;
+  backoff_options.set_initial_backoff(initial_backoff_ms)
+      .set_multiplier(fixed_reconnect_backoff
+                          ? 1.0
+                          : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER)
+      .set_jitter(fixed_reconnect_backoff ? 0.0
+                                          : GRPC_SUBCHANNEL_RECONNECT_JITTER)
+      .set_min_connect_timeout(min_connect_timeout_ms)
+      .set_max_backoff(max_backoff_ms);
   gpr_mu_init(&c->mu);
 
   return grpc_subchannel_index_register(exec_ctx, key, c);
@@ -429,7 +483,7 @@ static void on_alarm(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   }
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
-    c->backoff_result = grpc_backoff_step(exec_ctx, &c->backoff_state);
+    c->backoff_result = c->backoff.Step(exec_ctx);
     continue_connect_locked(exec_ctx, c);
     gpr_mu_unlock(&c->mu);
   } else {
@@ -466,7 +520,7 @@ static void maybe_start_connecting_locked(grpc_exec_ctx* exec_ctx,
 
   if (!c->backoff_begun) {
     c->backoff_begun = true;
-    c->backoff_result = grpc_backoff_begin(exec_ctx, &c->backoff_state);
+    c->backoff_result = c->backoff.Begin(exec_ctx);
     continue_connect_locked(exec_ctx, c);
   } else {
     GPR_ASSERT(!c->have_alarm);

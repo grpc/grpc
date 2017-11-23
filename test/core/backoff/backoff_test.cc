@@ -23,24 +23,32 @@
 
 #include "test/core/util/test_config.h"
 
+namespace grpc_core {
+namespace {
+
 static void test_constant_backoff(void) {
-  grpc_backoff backoff;
   const grpc_millis initial_backoff = 200;
   const double multiplier = 1.0;
   const double jitter = 0.0;
   const grpc_millis min_connect_timeout = 100;
   const grpc_millis max_backoff = 1000;
-  grpc_backoff_init(&backoff, initial_backoff, multiplier, jitter,
-                    min_connect_timeout, max_backoff);
+  Backoff::Options options;
+  options.set_initial_backoff(initial_backoff)
+      .set_multiplier(multiplier)
+      .set_jitter(jitter)
+      .set_min_connect_timeout(min_connect_timeout)
+      .set_max_backoff(max_backoff);
+  Backoff backoff(options);
+
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_backoff_result next_deadlines = grpc_backoff_begin(&exec_ctx, &backoff);
+  Backoff::Result next_deadlines = backoff.Begin(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
              initial_backoff);
   GPR_ASSERT(next_deadlines.next_attempt_start_time -
                  grpc_exec_ctx_now(&exec_ctx) ==
              initial_backoff);
   for (int i = 0; i < 10000; i++) {
-    next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+    next_deadlines = backoff.Step(&exec_ctx);
     GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
                initial_backoff);
     GPR_ASSERT(next_deadlines.next_attempt_start_time -
@@ -52,16 +60,20 @@ static void test_constant_backoff(void) {
 }
 
 static void test_min_connect(void) {
-  grpc_backoff backoff;
   const grpc_millis initial_backoff = 100;
   const double multiplier = 1.0;
   const double jitter = 0.0;
   const grpc_millis min_connect_timeout = 200;
   const grpc_millis max_backoff = 1000;
-  grpc_backoff_init(&backoff, initial_backoff, multiplier, jitter,
-                    min_connect_timeout, max_backoff);
+  Backoff::Options options;
+  options.set_initial_backoff(initial_backoff)
+      .set_multiplier(multiplier)
+      .set_jitter(jitter)
+      .set_min_connect_timeout(min_connect_timeout)
+      .set_max_backoff(max_backoff);
+  Backoff backoff(options);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_backoff_result next = grpc_backoff_begin(&exec_ctx, &backoff);
+  Backoff::Result next = backoff.Begin(&exec_ctx);
   // Because the min_connect_timeout > initial_backoff, current_deadline is used
   // as the deadline for the current attempt.
   GPR_ASSERT(next.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
@@ -74,57 +86,61 @@ static void test_min_connect(void) {
 }
 
 static void test_no_jitter_backoff(void) {
-  grpc_backoff backoff;
   const grpc_millis initial_backoff = 2;
   const double multiplier = 2.0;
   const double jitter = 0.0;
   const grpc_millis min_connect_timeout = 1;
   const grpc_millis max_backoff = 513;
-  grpc_backoff_init(&backoff, initial_backoff, multiplier, jitter,
-                    min_connect_timeout, max_backoff);
+  Backoff::Options options;
+  options.set_initial_backoff(initial_backoff)
+      .set_multiplier(multiplier)
+      .set_jitter(jitter)
+      .set_min_connect_timeout(min_connect_timeout)
+      .set_max_backoff(max_backoff);
+  Backoff backoff(options);
   // x_1 = 2
   // x_n = 2**i + x_{i-1} ( = 2**(n+1) - 2 )
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   exec_ctx.now = 0;
   exec_ctx.now_is_valid = true;
-  grpc_backoff_result next_deadlines = grpc_backoff_begin(&exec_ctx, &backoff);
+  Backoff::Result next_deadlines = backoff.Begin(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline ==
              next_deadlines.next_attempt_start_time);
   GPR_ASSERT(next_deadlines.current_deadline == 2);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 6);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 14);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 30);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 62);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 126);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 254);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 510);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 1022);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   // Hit the maximum timeout. From this point onwards, retries will increase
   // only by max timeout.
   GPR_ASSERT(next_deadlines.current_deadline == 1535);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 2048);
   exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+  next_deadlines = backoff.Step(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline == 2561);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -136,14 +152,18 @@ static void test_jitter_backoff(void) {
   const grpc_millis min_connect_timeout = 100;
   const double multiplier = 1.0;
   const double jitter = 0.1;
-  grpc_backoff backoff;
-  grpc_backoff_init(&backoff, initial_backoff, multiplier, jitter,
-                    min_connect_timeout, max_backoff);
+  Backoff::Options options;
+  options.set_initial_backoff(initial_backoff)
+      .set_multiplier(multiplier)
+      .set_jitter(jitter)
+      .set_min_connect_timeout(min_connect_timeout)
+      .set_max_backoff(max_backoff);
+  Backoff backoff(options);
 
-  backoff.rng_state = 0;  // force consistent PRNG
+  backoff.SetRandomSeed(0);  // force consistent PRNG
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_backoff_result next_deadlines = grpc_backoff_begin(&exec_ctx, &backoff);
+  Backoff::Result next_deadlines = backoff.Begin(&exec_ctx);
   GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
              initial_backoff);
   GPR_ASSERT(next_deadlines.next_attempt_start_time -
@@ -156,7 +176,7 @@ static void test_jitter_backoff(void) {
       (grpc_millis)((double)current_backoff * (1 + jitter));
 
   for (int i = 0; i < 10000; i++) {
-    next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
+    next_deadlines = backoff.Step(&exec_ctx);
     // next-now must be within (jitter*100)% of the current backoff (which
     // increases by * multiplier up to max_backoff).
     const grpc_millis timeout_millis =
@@ -173,15 +193,17 @@ static void test_jitter_backoff(void) {
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }
+}  // namespace
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   gpr_time_init();
 
-  test_constant_backoff();
-  test_min_connect();
-  test_no_jitter_backoff();
-  test_jitter_backoff();
+  grpc_core::test_constant_backoff();
+  grpc_core::test_min_connect();
+  grpc_core::test_no_jitter_backoff();
+  grpc_core::test_jitter_backoff();
 
   return 0;
 }
