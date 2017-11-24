@@ -87,7 +87,7 @@ class Channel(object):
         self._channel.unsubscribe(callback)
 
 
-def insecure_channel(host, port):
+def insecure_channel(host, port, options):
     """Creates an insecure Channel to a remote host.
 
   Args:
@@ -99,7 +99,7 @@ def insecure_channel(host, port):
     A Channel to the remote host through which RPCs may be conducted.
   """
     channel = grpc.insecure_channel(host
-                                    if port is None else '%s:%d' % (host, port))
+                                    if port is None else '%s:%d' % (host, port), options=options)
     return Channel(channel)
 
 
