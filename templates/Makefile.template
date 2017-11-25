@@ -304,6 +304,9 @@
   CORE_VERSION = ${settings.core_version}
   CPP_VERSION = ${settings.cpp_version}
   CSHARP_VERSION = ${settings.csharp_version}
+  CORE_VERSION_MAJOR = ${settings.core_version.major}
+  CPP_VERSION_MAJOR = ${settings.cpp_version.major}
+  CSHARP_VERSION_MAJOR = ${settings.csharp_version.major}
 
   CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
   CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -381,9 +384,9 @@
   SHARED_EXT_CPP = dll
   SHARED_EXT_CSHARP = dll
   SHARED_PREFIX =
-  SHARED_VERSION_CORE = -${settings.core_version.major}
-  SHARED_VERSION_CPP = -${settings.cpp_version.major}
-  SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
+  SHARED_VERSION_CORE = -$(CORE_VERSION_MAJOR)
+  SHARED_VERSION_CPP = -$(CPP_VERSION_MAJOR)
+  SHARED_VERSION_CSHARP = -$(CSHARP_VERSION_MAJOR)
   else ifeq ($(SYSTEM),Darwin)
   EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = dylib
@@ -1347,7 +1350,7 @@
   ifeq ($(SYSTEM),MINGW32)
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]})-dll.a $(prefix)/lib/lib${lib.name}.a
   else ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.$(${lang_to_var[lib.language]}_VERSION_MAJOR)
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
   endif
   % endif
@@ -1607,8 +1610,8 @@
   ifeq ($(SYSTEM),Darwin)
   	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
   else
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.$(${lang_to_var[lib.language]}_VERSION_MAJOR) -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.$(${lang_to_var[lib.language]}_VERSION_MAJOR)
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
   endif
   endif
