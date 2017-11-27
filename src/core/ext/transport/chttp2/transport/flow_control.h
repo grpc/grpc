@@ -137,16 +137,17 @@ class TransportFlowControlBase {
  public:
   TransportFlowControlBase() {}
   virtual ~TransportFlowControlBase() {}
-  virtual uint32_t MaybeSendUpdate(bool writing_anyway) {abort();}
-  virtual FlowControlAction MakeAction() {abort();}
-  virtual FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx) {abort();}
-  virtual void StreamSentData(int64_t size) {abort();}
-  virtual grpc_error* RecvData(int64_t incoming_frame_size) {abort();}
-  virtual void RecvUpdate(uint32_t size) {abort();}
+  virtual uint32_t MaybeSendUpdate(bool writing_anyway) { abort(); }
+  virtual FlowControlAction MakeAction() { abort(); }
+  virtual FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx) { abort(); }
+  virtual void StreamSentData(int64_t size) { abort(); }
+  virtual grpc_error* RecvData(int64_t incoming_frame_size) { abort(); }
+  virtual void RecvUpdate(uint32_t size) { abort(); }
+  // TODO(ncteisen): maybe completely encapsulate this inside FlowControl
   virtual BdpEstimator* bdp_estimator() { return nullptr; }
   int64_t remote_window() const { return remote_window_; }
   virtual int64_t target_window() const { return target_initial_window_size_; }
-  int64_t announced_window()  const{ return announced_window_; }
+  int64_t announced_window() const { return announced_window_; }
 
   GRPC_ABSTRACT_BASE_CLASS
 
@@ -154,6 +155,28 @@ class TransportFlowControlBase {
   int64_t remote_window_ = kDefaultWindow;
   int64_t target_initial_window_size_ = kDefaultWindow;
   int64_t announced_window_ = kDefaultWindow;
+};
+
+const int64_t kMaxWindow = (int64_t)((1u << 31) - 1);
+
+class TransportFlowControlDisabled final : public TransportFlowControlBase {
+ public:
+  TransportFlowControlDisabled() {
+    remote_window_ = kMaxWindow;
+    target_initial_window_size_ = kMaxWindow;
+    announced_window_ = kMaxWindow;
+  }
+  virtual uint32_t MaybeSendUpdate(bool writing_anyway) { return 0; }
+  virtual FlowControlAction MakeAction() { return FlowControlAction(); }
+  virtual FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx) {
+    return FlowControlAction();
+  }
+  virtual void StreamSentData(int64_t size) {}
+  virtual grpc_error* RecvData(int64_t incoming_frame_size) {
+    return GRPC_ERROR_NONE;
+  }
+  virtual void RecvUpdate(uint32_t size) {}
+  virtual int64_t target_window() const { return kMaxWindow; }
 };
 
 class TransportFlowControl final : public TransportFlowControlBase {
@@ -172,7 +195,9 @@ class TransportFlowControl final : public TransportFlowControlBase {
 
   // Reads the flow control data and returns and actionable struct that will
   // tell chttp2 exactly what it needs to do
-  FlowControlAction MakeAction() override { return UpdateAction(FlowControlAction()); }
+  FlowControlAction MakeAction() override {
+    return UpdateAction(FlowControlAction());
+  }
 
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
@@ -274,14 +299,16 @@ class StreamFlowControlBase {
  public:
   StreamFlowControlBase() {}
   virtual ~StreamFlowControlBase() {}
-  virtual FlowControlAction UpdateAction(FlowControlAction action) {abort();}
-  virtual FlowControlAction MakeAction() {abort();}
-  virtual void SentData(int64_t outgoing_frame_size) {abort();}
-  virtual grpc_error* RecvData(int64_t incoming_frame_size) {abort();}
-  virtual uint32_t MaybeSendUpdate() {abort();}
-  virtual void RecvUpdate(uint32_t size) {abort();}
+  virtual FlowControlAction UpdateAction(FlowControlAction action) { abort(); }
+  virtual FlowControlAction MakeAction() { abort(); }
+  virtual void SentData(int64_t outgoing_frame_size) { abort(); }
+  virtual grpc_error* RecvData(int64_t incoming_frame_size) { abort(); }
+  virtual uint32_t MaybeSendUpdate() { abort(); }
+  virtual void RecvUpdate(uint32_t size) { abort(); }
   virtual void IncomingByteStreamUpdate(size_t max_size_hint,
-                                        size_t have_already) {abort();}
+                                        size_t have_already) {
+    abort();
+  }
   int64_t remote_window_delta() { return remote_window_delta_; }
   int64_t local_window_delta() { return local_window_delta_; }
   int64_t announced_window_delta() { return announced_window_delta_; }
@@ -292,6 +319,22 @@ class StreamFlowControlBase {
   int64_t remote_window_delta_ = 0;
   int64_t local_window_delta_ = 0;
   int64_t announced_window_delta_ = 0;
+};
+
+class StreamFlowControlDisabled : public StreamFlowControlBase {
+ public:
+  virtual FlowControlAction UpdateAction(FlowControlAction action) {
+    return action;
+  }
+  virtual FlowControlAction MakeAction() { return FlowControlAction(); }
+  virtual void SentData(int64_t outgoing_frame_size) {}
+  virtual grpc_error* RecvData(int64_t incoming_frame_size) {
+    return GRPC_ERROR_NONE;
+  }
+  virtual uint32_t MaybeSendUpdate() { return 0; }
+  virtual void RecvUpdate(uint32_t size) {}
+  virtual void IncomingByteStreamUpdate(size_t max_size_hint,
+                                        size_t have_already) {}
 };
 
 class StreamFlowControl final : public StreamFlowControlBase {

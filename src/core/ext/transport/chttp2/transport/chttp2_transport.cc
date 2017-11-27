@@ -544,8 +544,22 @@ static void init_transport(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
     }
   }
 
-  t->flow_control.Init<grpc_core::chttp2::TransportFlowControl>(exec_ctx, t,
-                                                                enable_bdp);
+  // Tune the heck out of this
+  const uint32_t kFrameSize = 1024 * 1024;
+
+  if (true /* disable flow control*/) {
+    t->flow_control.Init<grpc_core::chttp2::TransportFlowControlDisabled>();
+    t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE] =
+        kFrameSize;
+    t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE] =
+        kFrameSize;
+    t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE] =
+        kFrameSize;
+    enable_bdp = false;
+  } else {
+    t->flow_control.Init<grpc_core::chttp2::TransportFlowControl>(exec_ctx, t,
+                                                                  enable_bdp);
+  }
 
   /* No pings allowed before receiving a header or data frame. */
   t->ping_state.pings_before_data_required = 0;
@@ -717,10 +731,14 @@ static int init_stream(grpc_exec_ctx* exec_ctx, grpc_transport* gt,
     post_destructive_reclaimer(exec_ctx, t);
   }
 
-  s->flow_control.Init<grpc_core::chttp2::StreamFlowControl>(
-      static_cast<grpc_core::chttp2::TransportFlowControl *>(
-          t->flow_control.get()),
-      s);
+  if (true /* disable flow control */) {
+    s->flow_control.Init<grpc_core::chttp2::StreamFlowControlDisabled>();
+  } else {
+    s->flow_control.Init<grpc_core::chttp2::StreamFlowControl>(
+        static_cast<grpc_core::chttp2::TransportFlowControl*>(
+            t->flow_control.get()),
+        s);
+  }
   GPR_TIMER_END("init_stream", 0);
 
   return 0;
@@ -2518,8 +2536,11 @@ static void read_action_locked(grpc_exec_ctx* exec_ctx, void* tp,
     grpc_error* errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
                              GRPC_ERROR_NONE};
     for (; i < t->read_buffer.count && errors[1] == GRPC_ERROR_NONE; i++) {
-      t->flow_control->bdp_estimator()->AddIncomingBytes(
-          (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
+      grpc_core::BdpEstimator* bdp_est = t->flow_control->bdp_estimator();
+      if (bdp_est) {
+        bdp_est->AddIncomingBytes(
+            (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
+      }
       errors[1] =
           grpc_chttp2_perform_read(exec_ctx, t, t->read_buffer.slices[i]);
     }

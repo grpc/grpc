@@ -353,7 +353,8 @@ struct grpc_chttp2_transport {
 
   grpc_core::PolymorphicManualConstructor<
       grpc_core::chttp2::TransportFlowControlBase,
-      grpc_core::chttp2::TransportFlowControl>
+      grpc_core::chttp2::TransportFlowControl,
+      grpc_core::chttp2::TransportFlowControlDisabled>
       flow_control;
   /** initial window change. This is tracked as we parse settings frames from
    * the remote peer. If there is a positive delta, then we will make all
@@ -530,7 +531,8 @@ struct grpc_chttp2_stream {
 
   grpc_core::PolymorphicManualConstructor<
       grpc_core::chttp2::StreamFlowControlBase,
-      grpc_core::chttp2::StreamFlowControl>
+      grpc_core::chttp2::StreamFlowControl,
+      grpc_core::chttp2::StreamFlowControlDisabled>
       flow_control;
 
   grpc_slice_buffer flow_controlled_buffer;
