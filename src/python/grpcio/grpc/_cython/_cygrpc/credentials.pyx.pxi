@@ -274,10 +274,10 @@ def call_credentials_metadata_plugin(CredentialsMetadataPlugin plugin):
   return credentials
 
 cdef const char* _get_c_pem_root_certs(pem_root_certs):
-  cdef char *c_pem_root_certs = NULL
-  if pem_root_certs is not None:
-    c_pem_root_certs = pem_root_certs
-  return c_pem_root_certs
+  if pem_root_certs is None:
+    return NULL
+  else:
+    return pem_root_certs
 
 cdef grpc_ssl_pem_key_cert_pair* _create_c_ssl_pem_key_cert_pairs(pem_key_cert_pairs):
   # return a malloc'ed grpc_ssl_pem_key_cert_pair from a _list_ of SslPemKeyCertPair
@@ -303,7 +303,7 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.references.append(pem_root_certs)
   credentials.references.append(pem_key_cert_pairs)
-  cdef char * c_pem_root_certs = _get_c_pem_root_certs(pem_root_certs)
+  cdef const char * c_pem_root_certs = _get_c_pem_root_certs(pem_root_certs)
   credentials.c_ssl_pem_key_cert_pairs_count = len(pem_key_cert_pairs)
   credentials.c_ssl_pem_key_cert_pairs = _create_c_ssl_pem_key_cert_pairs(pem_key_cert_pairs)
   cdef grpc_ssl_server_certificate_config *c_cert_config = NULL
@@ -338,8 +338,9 @@ def server_certificate_config_ssl(pem_root_certs, pem_key_cert_pairs):
 def server_credentials_ssl_dynamic_cert_config(initial_cert_config,
                                                cert_config_fetcher,
                                                bint force_client_auth):
-  if not isinstance(initial_cert_config, grpc.ServerCertificateConfig):
-    raise TypeError('initial_cert_config must be a grpc.ServerCertificateConfig')
+  if not isinstance(initial_cert_config, grpc.ServerCertificateConfiguration):
+    raise TypeError(
+        'initial_cert_config must be a grpc.ServerCertificateConfiguration')
   if not callable(cert_config_fetcher):
     raise TypeError('cert_config_fetcher must be callable')
   cdef ServerCredentials credentials = ServerCredentials()

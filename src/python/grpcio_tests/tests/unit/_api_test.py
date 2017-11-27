@@ -30,7 +30,7 @@ class AllTest(unittest.TestCase):
             'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext',
             'Call', 'ChannelCredentials', 'CallCredentials',
             'AuthMetadataContext', 'AuthMetadataPluginCallback',
-            'AuthMetadataPlugin', 'ServerCertificateConfig',
+            'AuthMetadataPlugin', 'ServerCertificateConfiguration',
             'ServerCredentials', 'UnaryUnaryMultiCallable',
             'UnaryStreamMultiCallable', 'StreamUnaryMultiCallable',
             'StreamStreamMultiCallable', 'Channel', 'ServicerContext',
@@ -42,10 +42,9 @@ class AllTest(unittest.TestCase):
             'method_handlers_generic_handler', 'ssl_channel_credentials',
             'metadata_call_credentials', 'access_token_call_credentials',
             'composite_call_credentials', 'composite_channel_credentials',
-            'ssl_server_credentials', 'ssl_server_certificate_config',
-            'ssl_server_credentials_dynamic_cert_config',
-            'channel_ready_future', 'insecure_channel', 'secure_channel',
-            'server',)
+            'ssl_server_credentials', 'ssl_server_certificate_configuration',
+            'dynamic_ssl_server_credentials', 'channel_ready_future',
+            'insecure_channel', 'secure_channel', 'server',)
 
         six.assertCountEqual(self, expected_grpc_code_elements,
                              _from_grpc_import_star.GRPC_ELEMENTS)

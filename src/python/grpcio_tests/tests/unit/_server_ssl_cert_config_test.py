@@ -11,11 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-This tests server certificate rotation support.
+"""Tests server certificate rotation.
 
-Here we test various aspects of gRPC Python, and in some cases C-core
-by extension, support for server certificate rotation.
+Here we test various aspects of gRPC Python, and in some cases gRPC
+Core by extension, support for server certificate rotation.
 
 * ServerSSLCertReloadTestWithClientAuth: test ability to rotate
   server's SSL cert for use in future channels with clients while not
@@ -27,7 +26,7 @@ by extension, support for server certificate rotation.
   not authenticate the client.
 
 * ServerSSLCertReloadTestCertConfigReuse: tests gRPC Python's ability
-  to deal with user's reuse of ServerCertificateConfig instances.
+  to deal with user's reuse of ServerCertificateConfiguration instances.
 """
 
 import abc
@@ -140,14 +139,14 @@ class _ServerSSLCertReloadTest(
         services_pb2_grpc.add_FirstServiceServicer_to_server(
             _server_application.FirstServiceServicer(), self.server)
         switch_cert_on_client_num = 10
-        initial_cert_config = grpc.ssl_server_certificate_config(
+        initial_cert_config = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_1_PEM, SERVER_CERT_CHAIN_1_PEM)],
             root_certificates=CA_2_PEM)
         self.cert_config_fetcher = CertConfigFetcher()
-        server_credentials = grpc.ssl_server_credentials_dynamic_cert_config(
+        server_credentials = grpc.dynamic_ssl_server_credentials(
             initial_cert_config,
             self.cert_config_fetcher,
-            require_client_auth=self.require_client_auth())
+            require_client_authentication=self.require_client_auth())
         self.port = self.server.add_secure_port('[::]:0', server_credentials)
         self.server.start()
 
@@ -285,7 +284,7 @@ class _ServerSSLCertReloadTest(
 
         # moment of truth!! client should reject server because the
         # server switch cert...
-        cert_config = grpc.ssl_server_certificate_config(
+        cert_config = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_2_PEM, SERVER_CERT_CHAIN_2_PEM)],
             root_certificates=CA_1_PEM)
         self.cert_config_fetcher.reset()
@@ -362,18 +361,18 @@ class ServerSSLCertConfigFetcherParamsChecks(unittest.TestCase):
 
     def test_check_on_initial_config(self):
         with self.assertRaises(TypeError):
-            grpc.ssl_server_credentials_dynamic_cert_config(None, str)
+            grpc.dynamic_ssl_server_credentials(None, str)
         with self.assertRaises(TypeError):
-            grpc.ssl_server_credentials_dynamic_cert_config(1, str)
+            grpc.dynamic_ssl_server_credentials(1, str)
 
     def test_check_on_config_fetcher(self):
-        cert_config = grpc.ssl_server_certificate_config(
+        cert_config = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_2_PEM, SERVER_CERT_CHAIN_2_PEM)],
             root_certificates=CA_1_PEM)
         with self.assertRaises(TypeError):
-            grpc.ssl_server_credentials_dynamic_cert_config(cert_config, None)
+            grpc.dynamic_ssl_server_credentials(cert_config, None)
         with self.assertRaises(TypeError):
-            grpc.ssl_server_credentials_dynamic_cert_config(cert_config, 1)
+            grpc.dynamic_ssl_server_credentials(cert_config, 1)
 
 
 class ServerSSLCertReloadTestWithClientAuth(_ServerSSLCertReloadTest):
@@ -393,14 +392,14 @@ class ServerSSLCertReloadTestWithoutClientAuth(_ServerSSLCertReloadTest):
 
 
 class ServerSSLCertReloadTestCertConfigReuse(_ServerSSLCertReloadTest):
-    """Ensures that `ServerCertificateConfig` instances can be reused.
+    """Ensures that `ServerCertificateConfiguration` instances can be reused.
 
-    Because C-core takes ownership of the
+    Because gRPC Core takes ownership of the
     `grpc_ssl_server_certificate_config` encapsulated by
-    `ServerCertificateConfig`, this test reuses the same
-    `ServerCertificateConfig` instances multiple times to make sure
+    `ServerCertificateConfiguration`, this test reuses the same
+    `ServerCertificateConfiguration` instances multiple times to make sure
     gRPC Python takes care of maintaining the validity of
-    `ServerCertificateConfig` instances, so that such instances can be
+    `ServerCertificateConfiguration` instances, so that such instances can be
     re-used by user application.
     """
 
@@ -411,17 +410,17 @@ class ServerSSLCertReloadTestCertConfigReuse(_ServerSSLCertReloadTest):
         self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         services_pb2_grpc.add_FirstServiceServicer_to_server(
             _server_application.FirstServiceServicer(), self.server)
-        self.cert_config_A = grpc.ssl_server_certificate_config(
+        self.cert_config_A = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_1_PEM, SERVER_CERT_CHAIN_1_PEM)],
             root_certificates=CA_2_PEM)
-        self.cert_config_B = grpc.ssl_server_certificate_config(
+        self.cert_config_B = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_2_PEM, SERVER_CERT_CHAIN_2_PEM)],
             root_certificates=CA_1_PEM)
         self.cert_config_fetcher = CertConfigFetcher()
-        server_credentials = grpc.ssl_server_credentials_dynamic_cert_config(
+        server_credentials = grpc.dynamic_ssl_server_credentials(
             self.cert_config_A,
             self.cert_config_fetcher,
-            require_client_auth=True)
+            require_client_authentication=True)
         self.port = self.server.add_secure_port('[::]:0', server_credentials)
         self.server.start()
 
