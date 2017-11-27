@@ -68,8 +68,8 @@ namespace Grpc.Core.Internal
             GrpcPreconditions.CheckArgument(poolSize >= completionQueueCount,
                 "Thread pool size cannot be smaller than the number of completion queues used.");
 
-            this.runCompletionQueueEventCallbackSuccess = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, true));
-            this.runCompletionQueueEventCallbackFailure = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, false));
+            this.runCompletionQueueEventCallbackSuccess = new WaitCallback((callback) => RunCompletionQueueEventCallback((IOpCompletionCallback) callback, true));
+            this.runCompletionQueueEventCallbackFailure = new WaitCallback((callback) => RunCompletionQueueEventCallback((IOpCompletionCallback) callback, false));
         }
 
         public void Start()
@@ -225,11 +225,11 @@ namespace Grpc.Core.Internal
             return list.AsReadOnly();
         }
 
-        private void RunCompletionQueueEventCallback(OpCompletionDelegate callback, bool success)
+        private void RunCompletionQueueEventCallback(IOpCompletionCallback callback, bool success)
         {
             try
             {
-                callback(success);
+                callback.OnComplete(success);
             }
             catch (Exception e)
             {

@@ -174,7 +174,7 @@ grpc::string GetServices(const FileDescriptor* file) {
     grpc::string leading_comments = GetRubyComments(file, true);
     if (!leading_comments.empty()) {
       out.Print("# Original file comments:\n");
-      out.Print(leading_comments.c_str());
+      out.PrintRaw(leading_comments.c_str());
     }
 
     out.Print("\n");

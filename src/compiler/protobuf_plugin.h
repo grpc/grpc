@@ -141,6 +141,7 @@ class ProtoBufPrinter : public grpc_generator::Printer {
   }
 
   void Print(const char* string) { printer_.Print(string); }
+  void PrintRaw(const char* string) { printer_.PrintRaw(string); }
   void Indent() { printer_.Indent(); }
   void Outdent() { printer_.Outdent(); }
 

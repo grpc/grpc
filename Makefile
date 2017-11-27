@@ -114,7 +114,7 @@ CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang++
 LDXX_msan = clang++
-CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
@@ -328,6 +328,7 @@ ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 endif
 CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp
+COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
@@ -990,6 +991,7 @@ gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
 gpr_histogram_test: $(BINDIR)/$(CONFIG)/gpr_histogram_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
+gpr_manual_constructor_test: $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test
 gpr_mpscq_test: $(BINDIR)/$(CONFIG)/gpr_mpscq_test
 gpr_spinlock_test: $(BINDIR)/$(CONFIG)/gpr_spinlock_test
 gpr_stack_lockfree_test: $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test
@@ -1385,6 +1387,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_histogram_test \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
+  $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test \
   $(BINDIR)/$(CONFIG)/gpr_mpscq_test \
   $(BINDIR)/$(CONFIG)/gpr_spinlock_test \
   $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test \
@@ -1834,6 +1837,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_log_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_manual_constructor_test"
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test || ( echo test gpr_manual_constructor_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_mpscq_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_mpscq_test || ( echo test gpr_mpscq_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_spinlock_test"
@@ -2583,6 +2588,16 @@ $(OBJDIR)/$(CONFIG)/src/compiler/%.o : src/compiler/%.cc
 	$(E) "[HOSTCXX] Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+$(OBJDIR)/$(CONFIG)/src/core/%.o : src/core/%.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+$(OBJDIR)/$(CONFIG)/test/core/%.o : test/core/%.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(E) "[CXX]     Compiling $<"
@@ -10148,6 +10163,38 @@ deps_gpr_log_test: $(GPR_LOG_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GPR_LOG_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GPR_MANUAL_CONSTRUCTOR_TEST_SRC = \
+    test/core/support/manual_constructor_test.cc \
+
+GPR_MANUAL_CONSTRUCTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_MANUAL_CONSTRUCTOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gpr_manual_constructor_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gpr_manual_constructor_test: $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/manual_constructor_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_gpr_manual_constructor_test: $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS:.o=.dep)
 endif
 endif
 

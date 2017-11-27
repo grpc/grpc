@@ -60,7 +60,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            Tuple<TResponse,WriteFlags> responseTuple = null;
+            AsyncCallServer<TRequest,TResponse>.ResponseWithFlags? responseWithFlags = null;
             var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
@@ -68,7 +68,7 @@ namespace Grpc.Core.Internal
                 var request = requestStream.Current;
                 var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             } 
             catch (Exception e)
             {
@@ -80,7 +80,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -177,13 +177,13 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            Tuple<TResponse,WriteFlags> responseTuple = null;
+            AsyncCallServer<TRequest, TResponse>.ResponseWithFlags? responseWithFlags = null;
             var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 var response = await handler(requestStream, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             }
             catch (Exception e)
             {
@@ -196,7 +196,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
