@@ -50,8 +50,11 @@ void grpc_iomgr_init() {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_core::ExecCtx::GlobalInit();
-  grpc_executor_init();
-  grpc_timer_list_init();
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_executor_init();
+    grpc_timer_list_init();
+  }
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = (char*)"root";
   grpc_network_status_init();
