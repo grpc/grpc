@@ -146,8 +146,8 @@ static elem_struct* search_elems(elem_struct* elems, size_t count,
     size_t b = (size_t)rand() % count;
     GPR_SWAP(size_t, search_order[a], search_order[b]);
   }
-  elem_struct* out = NULL;
-  for (size_t i = 0; out == NULL && i < count; i++) {
+  elem_struct* out = nullptr;
+  for (size_t i = 0; out == nullptr && i < count; i++) {
     if (elems[search_order[i]].inserted == inserted) {
       out = &elems[search_order[i]];
     }
@@ -174,7 +174,7 @@ static void test2(void) {
     if (r <= 550) {
       /* 55% of the time we try to add something */
       elem_struct* el = search_elems(elems, GPR_ARRAY_SIZE(elems), false);
-      if (el != NULL) {
+      if (el != nullptr) {
         el->elem.deadline = random_deadline();
         grpc_timer_heap_add(&pq, &el->elem);
         el->inserted = true;
@@ -184,7 +184,7 @@ static void test2(void) {
     } else if (r <= 650) {
       /* 10% of the time we try to remove something */
       elem_struct* el = search_elems(elems, GPR_ARRAY_SIZE(elems), true);
-      if (el != NULL) {
+      if (el != nullptr) {
         grpc_timer_heap_remove(&pq, &el->elem);
         el->inserted = false;
         num_inserted--;
@@ -207,10 +207,10 @@ static void test2(void) {
     }
 
     if (num_inserted) {
-      gpr_atm* min_deadline = NULL;
+      gpr_atm* min_deadline = nullptr;
       for (size_t i = 0; i < elems_size; i++) {
         if (elems[i].inserted) {
-          if (min_deadline == NULL) {
+          if (min_deadline == nullptr) {
             min_deadline = &elems[i].elem.deadline;
           } else {
             if (elems[i].elem.deadline < *min_deadline) {

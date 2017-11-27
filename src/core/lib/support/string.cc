@@ -35,7 +35,7 @@ char* gpr_strdup(const char* src) {
   size_t len;
 
   if (!src) {
-    return NULL;
+    return nullptr;
   }
 
   len = strlen(src) + 1;
@@ -53,7 +53,7 @@ typedef struct {
 } dump_out;
 
 static dump_out dump_out_create(void) {
-  dump_out r = {0, 0, NULL};
+  dump_out r = {0, 0, nullptr};
   return r;
 }
 
@@ -223,7 +223,7 @@ char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
     out_length += slen;
   }
   out[out_length] = 0;
-  if (final_length != NULL) {
+  if (final_length != nullptr) {
     *final_length = out_length;
   }
   return out;
@@ -278,7 +278,7 @@ static void add_string_to_split(const char* beg, const char* end, char*** strs,
 void gpr_string_split(const char* input, const char* sep, char*** strs,
                       size_t* nstrs) {
   const char* next;
-  *strs = NULL;
+  *strs = nullptr;
   *nstrs = 0;
   size_t capstrs = 0;
   while ((next = strstr(input, sep))) {
@@ -289,7 +289,7 @@ void gpr_string_split(const char* input, const char* sep, char*** strs,
 }
 
 void* gpr_memrchr(const void* s, int c, size_t n) {
-  if (s == NULL) return NULL;
+  if (s == nullptr) return nullptr;
   char* b = (char*)s;
   size_t i;
   for (i = 0; i < n; i++) {
@@ -297,12 +297,12 @@ void* gpr_memrchr(const void* s, int c, size_t n) {
       return &b[n - i - 1];
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 bool gpr_is_true(const char* s) {
   size_t i;
-  if (s == NULL) {
+  if (s == nullptr) {
     return false;
   }
   static const char* truthy[] = {"yes", "true", "1"};

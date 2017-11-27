@@ -32,9 +32,13 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_UV
+
 #include <uv.h>
 
-extern grpc_tracer_flag grpc_tcp_trace;
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 
@@ -49,5 +53,7 @@ grpc_endpoint* grpc_tcp_create(uv_tcp_t* handle,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* GRPC_UV */
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_UV_H */

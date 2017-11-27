@@ -30,11 +30,12 @@ static void test_custom_allocs() {
   const gpr_allocation_functions default_fns = gpr_get_allocation_functions();
   intptr_t addr_to_free = 0;
   char* i;
-  gpr_allocation_functions fns = {fake_malloc, NULL, fake_realloc, fake_free};
+  gpr_allocation_functions fns = {fake_malloc, nullptr, fake_realloc,
+                                  fake_free};
 
   gpr_set_allocation_functions(fns);
   GPR_ASSERT((void*)(size_t)0xdeadbeef == gpr_malloc(0xdeadbeef));
-  GPR_ASSERT((void*)(size_t)0xcafed00d == gpr_realloc(0, 0xcafed00d));
+  GPR_ASSERT((void*)(size_t)0xcafed00d == gpr_realloc(nullptr, 0xcafed00d));
 
   gpr_free(&addr_to_free);
   GPR_ASSERT(addr_to_free == (intptr_t)0xdeadd00d);

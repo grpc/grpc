@@ -34,7 +34,7 @@ static void sigint_handler(int x) { got_sigint = 1; }
 
 const char* bad_ssl_addr(int argc, char** argv) {
   gpr_cmdline* cl;
-  const char* addr = NULL;
+  const char* addr = nullptr;
   cl = gpr_cmdline_create("test server");
   gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
   gpr_cmdline_parse(cl, argc, argv);
@@ -48,17 +48,17 @@ void bad_ssl_run(grpc_server* server) {
   int shutdown_finished = 0;
   grpc_event ev;
   grpc_call_error error;
-  grpc_call* s = NULL;
+  grpc_call* s = nullptr;
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
 
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_completion_queue* shutdown_cq;
 
   grpc_call_details_init(&call_details);
   grpc_metadata_array_init(&request_metadata_recv);
 
-  grpc_server_register_completion_queue(server, cq, NULL);
+  grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
   error = grpc_server_request_call(server, &s, &call_details,
@@ -69,12 +69,12 @@ void bad_ssl_run(grpc_server* server) {
   while (!shutdown_finished) {
     if (got_sigint && !shutdown_started) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
-      shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
-      grpc_server_shutdown_and_notify(server, shutdown_cq, NULL);
-      GPR_ASSERT(
-          grpc_completion_queue_pluck(shutdown_cq, NULL,
-                                      grpc_timeout_seconds_to_deadline(5), NULL)
-              .type == GRPC_OP_COMPLETE);
+      shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
+      grpc_server_shutdown_and_notify(server, shutdown_cq, nullptr);
+      GPR_ASSERT(grpc_completion_queue_pluck(
+                     shutdown_cq, nullptr, grpc_timeout_seconds_to_deadline(5),
+                     nullptr)
+                     .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
@@ -83,7 +83,7 @@ void bad_ssl_run(grpc_server* server) {
         cq,
         gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                      gpr_time_from_micros(1000000, GPR_TIMESPAN)),
-        NULL);
+        nullptr);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
         GPR_ASSERT(ev.tag == (void*)1);
@@ -98,7 +98,7 @@ void bad_ssl_run(grpc_server* server) {
     }
   }
 
-  GPR_ASSERT(s == NULL);
+  GPR_ASSERT(s == nullptr);
   grpc_call_details_destroy(&call_details);
   grpc_metadata_array_destroy(&request_metadata_recv);
 }

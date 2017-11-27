@@ -40,7 +40,7 @@ static void* thread_body(void* v) {
   struct thd_arg a = *(struct thd_arg*)v;
   free(v);
   (*a.body)(a.arg);
-  return NULL;
+  return nullptr;
 }
 
 int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
@@ -51,7 +51,7 @@ int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
   /* don't use gpr_malloc as we may cause an infinite recursion with
    * the profiling code */
   struct thd_arg* a = (struct thd_arg*)malloc(sizeof(*a));
-  GPR_ASSERT(a != NULL);
+  GPR_ASSERT(a != nullptr);
   a->body = thd_body;
   a->arg = arg;
 
@@ -75,6 +75,6 @@ int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
 
 gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)pthread_self(); }
 
-void gpr_thd_join(gpr_thd_id t) { pthread_join((pthread_t)t, NULL); }
+void gpr_thd_join(gpr_thd_id t) { pthread_join((pthread_t)t, nullptr); }
 
 #endif /* GPR_POSIX_SYNC */

@@ -64,10 +64,10 @@ namespace Grpc.Core.Internal
             return Native.grpcsharp_channel_check_connectivity_state(this, tryToConnect ? 1 : 0);
         }
 
-        public void WatchConnectivityState(ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq, BatchCompletionDelegate callback)
+        public void WatchConnectivityState(ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq, BatchCompletionDelegate callback, object callbackState)
         {
             var ctx = BatchContextSafeHandle.Create();
-            cq.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+            cq.CompletionRegistry.RegisterBatchCompletion(ctx, callback, callbackState);
             Native.grpcsharp_channel_watch_connectivity_state(this, lastObservedState, deadline, cq, ctx);
         }
 

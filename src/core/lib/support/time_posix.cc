@@ -158,7 +158,7 @@ void gpr_sleep_until(gpr_timespec until) {
 
     delta = gpr_time_sub(until, now);
     delta_ts = timespec_from_gpr(delta);
-    ns_result = nanosleep(&delta_ts, NULL);
+    ns_result = nanosleep(&delta_ts, nullptr);
     if (ns_result == 0) {
       break;
     }

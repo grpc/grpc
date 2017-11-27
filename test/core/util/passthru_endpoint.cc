@@ -85,12 +85,12 @@ static void me_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
   gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
   if (m->parent->shutdown) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown");
-  } else if (m->on_read != NULL) {
+  } else if (m->on_read != nullptr) {
     for (size_t i = 0; i < slices->count; i++) {
       grpc_slice_buffer_add(m->on_read_out, grpc_slice_copy(slices->slices[i]));
     }
     GRPC_CLOSURE_SCHED(exec_ctx, m->on_read, GRPC_ERROR_NONE);
-    m->on_read = NULL;
+    m->on_read = nullptr;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
       grpc_slice_buffer_add(&m->read_buffer,
@@ -120,14 +120,14 @@ static void me_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
     GRPC_CLOSURE_SCHED(
         exec_ctx, m->on_read,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
-    m->on_read = NULL;
+    m->on_read = nullptr;
   }
   m = other_half(m);
   if (m->on_read) {
     GRPC_CLOSURE_SCHED(
         exec_ctx, m->on_read,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
-    m->on_read = NULL;
+    m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->parent->mu);
   grpc_resource_user_shutdown(exec_ctx, m->resource_user);
@@ -182,7 +182,7 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->base.vtable = &vtable;
   m->parent = parent;
   grpc_slice_buffer_init(&m->read_buffer);
-  m->on_read = NULL;
+  m->on_read = nullptr;
   char* name;
   gpr_asprintf(&name, "passthru_endpoint_%s_%" PRIxPTR, half_name,
                (intptr_t)parent);
@@ -197,7 +197,7 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
   passthru_endpoint* m = (passthru_endpoint*)gpr_malloc(sizeof(*m));
   m->halves = 2;
   m->shutdown = 0;
-  m->stats = stats == NULL ? &m->dummy_stats : stats;
+  m->stats = stats == nullptr ? &m->dummy_stats : stats;
   memset(m->stats, 0, sizeof(*m->stats));
   half_init(&m->client, m, resource_quota, "client");
   half_init(&m->server, m, resource_quota, "server");

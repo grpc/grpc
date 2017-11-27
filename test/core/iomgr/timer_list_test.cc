@@ -28,11 +28,12 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tracer_util.h"
 
 #define MAX_CB 30
 
-extern "C" grpc_tracer_flag grpc_timer_trace;
-extern "C" grpc_tracer_flag grpc_timer_check_trace;
+extern grpc_core::TraceFlag grpc_timer_trace;
+extern grpc_core::TraceFlag grpc_timer_check_trace;
 
 static int cb_called[MAX_CB][2];
 
@@ -48,8 +49,8 @@ static void add_test(void) {
   gpr_log(GPR_INFO, "add_test");
 
   grpc_timer_list_init(&exec_ctx);
-  grpc_timer_trace.value = 1;
-  grpc_timer_check_trace.value = 1;
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_millis start = grpc_exec_ctx_now(&exec_ctx);
@@ -70,7 +71,7 @@ static void add_test(void) {
 
   /* collect timers.  Only the first batch should be ready. */
   exec_ctx.now = start + 500;
-  GPR_ASSERT(grpc_timer_check(&exec_ctx, NULL) == GRPC_TIMERS_FIRED);
+  GPR_ASSERT(grpc_timer_check(&exec_ctx, nullptr) == GRPC_TIMERS_FIRED);
   grpc_exec_ctx_finish(&exec_ctx);
   for (i = 0; i < 20; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
@@ -78,7 +79,7 @@ static void add_test(void) {
   }
 
   exec_ctx.now = start + 600;
-  GPR_ASSERT(grpc_timer_check(&exec_ctx, NULL) ==
+  GPR_ASSERT(grpc_timer_check(&exec_ctx, nullptr) ==
              GRPC_TIMERS_CHECKED_AND_EMPTY);
   grpc_exec_ctx_finish(&exec_ctx);
   for (i = 0; i < 30; i++) {
@@ -88,7 +89,7 @@ static void add_test(void) {
 
   /* collect the rest of the timers */
   exec_ctx.now = start + 1500;
-  GPR_ASSERT(grpc_timer_check(&exec_ctx, NULL) == GRPC_TIMERS_FIRED);
+  GPR_ASSERT(grpc_timer_check(&exec_ctx, nullptr) == GRPC_TIMERS_FIRED);
   grpc_exec_ctx_finish(&exec_ctx);
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
@@ -96,7 +97,7 @@ static void add_test(void) {
   }
 
   exec_ctx.now = start + 1600;
-  GPR_ASSERT(grpc_timer_check(&exec_ctx, NULL) ==
+  GPR_ASSERT(grpc_timer_check(&exec_ctx, nullptr) ==
              GRPC_TIMERS_CHECKED_AND_EMPTY);
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
@@ -117,8 +118,8 @@ void destruction_test(void) {
   exec_ctx.now_is_valid = true;
   exec_ctx.now = 0;
   grpc_timer_list_init(&exec_ctx);
-  grpc_timer_trace.value = 1;
-  grpc_timer_check_trace.value = 1;
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_timer_init(
@@ -137,7 +138,7 @@ void destruction_test(void) {
       &exec_ctx, &timers[4], 1,
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)4, grpc_schedule_on_exec_ctx));
   exec_ctx.now = 2;
-  GPR_ASSERT(grpc_timer_check(&exec_ctx, NULL) == GRPC_TIMERS_FIRED);
+  GPR_ASSERT(grpc_timer_check(&exec_ctx, nullptr) == GRPC_TIMERS_FIRED);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(1 == cb_called[4][1]);
   grpc_timer_cancel(&exec_ctx, &timers[0]);

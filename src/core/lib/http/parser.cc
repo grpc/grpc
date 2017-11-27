@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-grpc_tracer_flag grpc_http1_trace = GRPC_TRACER_INITIALIZER(false, "http1");
+grpc_core::TraceFlag grpc_http1_trace(false, "http1");
 
 static char* buf2str(void* buffer, size_t length) {
   char* out = (char*)gpr_malloc(length + 1);
@@ -152,9 +152,9 @@ static grpc_error* add_header(grpc_http_parser* parser) {
   uint8_t* beg = parser->cur_line;
   uint8_t* cur = beg;
   uint8_t* end = beg + parser->cur_line_length;
-  size_t* hdr_count = NULL;
-  grpc_http_header** hdrs = NULL;
-  grpc_http_header hdr = {NULL, NULL};
+  size_t* hdr_count = nullptr;
+  grpc_http_header** hdrs = nullptr;
+  grpc_http_header hdr = {nullptr, nullptr};
   grpc_error* error = GRPC_ERROR_NONE;
 
   GPR_ASSERT(cur != end);
@@ -240,8 +240,8 @@ static grpc_error* finish_line(grpc_http_parser* parser,
 }
 
 static grpc_error* addbyte_body(grpc_http_parser* parser, uint8_t byte) {
-  size_t* body_length = NULL;
-  char** body = NULL;
+  size_t* body_length = nullptr;
+  char** body = nullptr;
 
   if (parser->type == GRPC_HTTP_RESPONSE) {
     body_length = &parser->http.response->body_length;
@@ -294,7 +294,7 @@ static grpc_error* addbyte(grpc_http_parser* parser, uint8_t byte,
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
       if (parser->cur_line_length >= GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) {
-        if (GRPC_TRACER_ON(grpc_http1_trace))
+        if (grpc_http1_trace.enabled())
           gpr_log(GPR_ERROR, "HTTP header max line length (%d) exceeded",
                   GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -352,7 +352,7 @@ grpc_error* grpc_http_parser_parse(grpc_http_parser* parser, grpc_slice slice,
     grpc_error* err =
         addbyte(parser, GRPC_SLICE_START_PTR(slice)[i], &found_body_start);
     if (err != GRPC_ERROR_NONE) return err;
-    if (found_body_start && start_of_body != NULL) *start_of_body = i + 1;
+    if (found_body_start && start_of_body != nullptr) *start_of_body = i + 1;
   }
   return GRPC_ERROR_NONE;
 }

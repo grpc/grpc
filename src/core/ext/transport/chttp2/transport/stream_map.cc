@@ -62,7 +62,7 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
 
   GPR_ASSERT(count == 0 || keys[count - 1] < key);
   GPR_ASSERT(value);
-  GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == NULL);
+  GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
 
   if (count == capacity) {
     if (map->free > capacity / 4) {
@@ -92,7 +92,7 @@ static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
   void** values = map->values;
   uint32_t mid_key;
 
-  if (max_idx == 0) return NULL;
+  if (max_idx == 0) return nullptr;
 
   while (min_idx < max_idx) {
     /* find the midpoint, avoiding overflow */
@@ -109,29 +109,29 @@ static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
   void** pvalue = find(map, key);
-  void* out = NULL;
-  if (pvalue != NULL) {
+  void* out = nullptr;
+  if (pvalue != nullptr) {
     out = *pvalue;
-    *pvalue = NULL;
-    map->free += (out != NULL);
+    *pvalue = nullptr;
+    map->free += (out != nullptr);
     /* recognize complete emptyness and ensure we can skip
      * defragmentation later */
     if (map->free == map->count) {
       map->free = map->count = 0;
     }
-    GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == NULL);
+    GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
   }
   return out;
 }
 
 void* grpc_chttp2_stream_map_find(grpc_chttp2_stream_map* map, uint32_t key) {
   void** pvalue = find(map, key);
-  return pvalue != NULL ? *pvalue : NULL;
+  return pvalue != nullptr ? *pvalue : nullptr;
 }
 
 size_t grpc_chttp2_stream_map_size(grpc_chttp2_stream_map* map) {
@@ -140,11 +140,12 @@ size_t grpc_chttp2_stream_map_size(grpc_chttp2_stream_map* map) {
 
 void* grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map* map) {
   if (map->count == map->free) {
-    return NULL;
+    return nullptr;
   }
   if (map->free != 0) {
     map->count = compact(map->keys, map->values, map->count);
     map->free = 0;
+    GPR_ASSERT(map->count > 0);
   }
   return map->values[((size_t)rand()) % map->count];
 }

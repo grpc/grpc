@@ -53,7 +53,8 @@ static void on_finish(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   g_done = 1;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&g_pops), NULL)));
+      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&g_pops),
+                        nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -83,7 +84,7 @@ static void test_get(int port) {
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops),
@@ -124,7 +125,7 @@ static void test_post(int port) {
   grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops),

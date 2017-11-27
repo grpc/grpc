@@ -33,6 +33,11 @@ load(
     "grpc_generate_one_off_targets",
 )
 
+config_setting(
+    name = "grpc_no_ares",
+    values = {"define": "grpc_no_ares=true"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "generous"
 
@@ -476,6 +481,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/profiling/timers.h",
+        "src/core/lib/support/abstract.h",
         "src/core/lib/support/arena.h",
         "src/core/lib/support/atomic.h",
         "src/core/lib/support/atomic_with_atm.h",
@@ -555,7 +561,6 @@ grpc_cc_library(
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",
         "src/core/lib/iomgr/call_combiner.cc",
-        "src/core/lib/iomgr/closure.cc",
         "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/endpoint.cc",
         "src/core/lib/iomgr/endpoint_pair_posix.cc",

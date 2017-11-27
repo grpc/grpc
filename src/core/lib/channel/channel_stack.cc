@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-grpc_tracer_flag grpc_trace_channel = GRPC_TRACER_INITIALIZER(false, "channel");
+grpc_core::TraceFlag grpc_trace_channel(false, "channel");
 
 /* Memory layouts.
 
@@ -225,7 +225,7 @@ void grpc_call_stack_destroy(grpc_exec_ctx* exec_ctx, grpc_call_stack* stack,
   for (i = 0; i < count; i++) {
     elems[i].filter->destroy_call_elem(
         exec_ctx, &elems[i], final_info,
-        i == count - 1 ? then_schedule_closure : NULL);
+        i == count - 1 ? then_schedule_closure : nullptr);
   }
 }
 

@@ -53,7 +53,7 @@ static grpc_subchannel_key* create_key(
     memcpy((grpc_channel_filter*)k->args.filters, args->filters,
            sizeof(*k->args.filters) * k->args.filter_count);
   } else {
-    k->args.filters = NULL;
+    k->args.filters = nullptr;
   }
   k->args.args = copy_channel_args(args->args);
   return k;
@@ -162,10 +162,10 @@ grpc_subchannel* grpc_subchannel_index_find(grpc_exec_ctx* exec_ctx,
 grpc_subchannel* grpc_subchannel_index_register(grpc_exec_ctx* exec_ctx,
                                                 grpc_subchannel_key* key,
                                                 grpc_subchannel* constructed) {
-  grpc_subchannel* c = NULL;
+  grpc_subchannel* c = nullptr;
   bool need_to_unref_constructed;
 
-  while (c == NULL) {
+  while (c == nullptr) {
     need_to_unref_constructed = false;
 
     // Compare and swap loop:
@@ -176,10 +176,10 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_exec_ctx* exec_ctx,
 
     // - Check to see if a subchannel already exists
     c = (grpc_subchannel*)gpr_avl_get(index, key, exec_ctx);
-    if (c != NULL) {
+    if (c != nullptr) {
       c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "index_register");
     }
-    if (c != NULL) {
+    if (c != nullptr) {
       // yes -> we're done
       need_to_unref_constructed = true;
     } else {

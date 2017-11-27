@@ -28,12 +28,27 @@ cdef class CallCredentials:
   cdef list references
 
 
+cdef class ServerCertificateConfig:
+
+  cdef grpc_ssl_server_certificate_config *c_cert_config
+  cdef const char *c_pem_root_certs
+  cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
+  cdef size_t c_ssl_pem_key_cert_pairs_count
+  cdef list references
+
+
 cdef class ServerCredentials:
 
   cdef grpc_server_credentials *c_credentials
   cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
   cdef size_t c_ssl_pem_key_cert_pairs_count
   cdef list references
+  # the cert config related state is used only if this credentials is
+  # created with cert config/fetcher
+  cdef object initial_cert_config
+  cdef object cert_config_fetcher
+  # whether C-core has asked for the initial_cert_config
+  cdef bint initial_cert_config_fetched
 
 
 cdef class CredentialsMetadataPlugin:

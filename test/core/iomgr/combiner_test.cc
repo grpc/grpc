@@ -51,7 +51,7 @@ static void test_execute_one(void) {
                      GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
-             NULL);
+             nullptr);
   GRPC_COMBINER_UNREF(&exec_ctx, lock, "test_execute_one");
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -116,7 +116,7 @@ static void test_execute_many(void) {
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     GPR_ASSERT(gpr_event_wait(&ta[i].done,
-                              gpr_inf_future(GPR_CLOCK_REALTIME)) != NULL);
+                              gpr_inf_future(GPR_CLOCK_REALTIME)) != nullptr);
     gpr_thd_join(thds[i]);
   }
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -150,7 +150,7 @@ static void test_execute_finally(void) {
       GRPC_ERROR_NONE);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(gpr_event_wait(&got_in_finally,
-                            grpc_timeout_seconds_to_deadline(5)) != NULL);
+                            grpc_timeout_seconds_to_deadline(5)) != nullptr);
   GRPC_COMBINER_UNREF(&exec_ctx, lock, "test_execute_finally");
   grpc_exec_ctx_finish(&exec_ctx);
 }

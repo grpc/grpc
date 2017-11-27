@@ -29,14 +29,13 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/profiling/timers.h"
 
-grpc_tracer_flag grpc_combiner_trace =
-    GRPC_TRACER_INITIALIZER(false, "combiner");
+grpc_core::TraceFlag grpc_combiner_trace(false, "combiner");
 
-#define GRPC_COMBINER_TRACE(fn)                \
-  do {                                         \
-    if (GRPC_TRACER_ON(grpc_combiner_trace)) { \
-      fn;                                      \
-    }                                          \
+#define GRPC_COMBINER_TRACE(fn)          \
+  do {                                   \
+    if (grpc_combiner_trace.enabled()) { \
+      fn;                                \
+    }                                    \
   } while (0)
 
 #define STATE_UNORPHANED 1
@@ -106,7 +105,7 @@ static void start_destroy(grpc_exec_ctx* exec_ctx, grpc_combiner* lock) {
 
 #ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)                                \
-  if (GRPC_TRACER_ON(grpc_combiner_trace)) {                               \
+  if (grpc_combiner_trace.enabled()) {                                     \
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                            \
             "C:%p %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op),        \
             gpr_atm_no_barrier_load(&lock->refs.count),                    \
@@ -132,8 +131,8 @@ grpc_combiner* grpc_combiner_ref(grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS) {
 
 static void push_last_on_exec_ctx(grpc_exec_ctx* exec_ctx,
                                   grpc_combiner* lock) {
-  lock->next_combiner_on_this_exec_ctx = NULL;
-  if (exec_ctx->active_combiner == NULL) {
+  lock->next_combiner_on_this_exec_ctx = nullptr;
+  if (exec_ctx->active_combiner == nullptr) {
     exec_ctx->active_combiner = exec_ctx->last_combiner = lock;
   } else {
     exec_ctx->last_combiner->next_combiner_on_this_exec_ctx = lock;
@@ -145,7 +144,7 @@ static void push_first_on_exec_ctx(grpc_exec_ctx* exec_ctx,
                                    grpc_combiner* lock) {
   lock->next_combiner_on_this_exec_ctx = exec_ctx->active_combiner;
   exec_ctx->active_combiner = lock;
-  if (lock->next_combiner_on_this_exec_ctx == NULL) {
+  if (lock->next_combiner_on_this_exec_ctx == nullptr) {
     exec_ctx->last_combiner = lock;
   }
 }
@@ -190,8 +189,8 @@ static void combiner_exec(grpc_exec_ctx* exec_ctx, grpc_closure* cl,
 static void move_next(grpc_exec_ctx* exec_ctx) {
   exec_ctx->active_combiner =
       exec_ctx->active_combiner->next_combiner_on_this_exec_ctx;
-  if (exec_ctx->active_combiner == NULL) {
-    exec_ctx->last_combiner = NULL;
+  if (exec_ctx->active_combiner == nullptr) {
+    exec_ctx->last_combiner = nullptr;
   }
 }
 
@@ -210,7 +209,7 @@ static void queue_offload(grpc_exec_ctx* exec_ctx, grpc_combiner* lock) {
 bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx* exec_ctx) {
   GPR_TIMER_BEGIN("combiner.continue_exec_ctx", 0);
   grpc_combiner* lock = exec_ctx->active_combiner;
-  if (lock == NULL) {
+  if (lock == nullptr) {
     GPR_TIMER_END("combiner.continue_exec_ctx", 0);
     return false;
   }
@@ -244,7 +243,7 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx* exec_ctx) {
     gpr_mpscq_node* n = gpr_mpscq_pop(&lock->queue);
     GRPC_COMBINER_TRACE(
         gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
-    if (n == NULL) {
+    if (n == nullptr) {
       // queue is in an inconsistent state: use this as a cue that we should
       // go off and do something else for a while (and come back later)
       GPR_TIMER_MARK("delay_busy", 0);
@@ -263,10 +262,10 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx* exec_ctx) {
     GPR_TIMER_END("combiner.exec1", 0);
   } else {
     grpc_closure* c = lock->final_list.head;
-    GPR_ASSERT(c != NULL);
+    GPR_ASSERT(c != nullptr);
     grpc_closure_list_init(&lock->final_list);
     int loops = 0;
-    while (c != NULL) {
+    while (c != nullptr) {
       GPR_TIMER_BEGIN("combiner.exec_1final", 0);
       GRPC_COMBINER_TRACE(
           gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c));
