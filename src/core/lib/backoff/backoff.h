@@ -23,6 +23,8 @@
 
 namespace grpc_core {
 
+/// Implementation of the backoff mechanism described in
+/// doc/connection-backoff.md
 class Backoff {
  public:
   class Options;
