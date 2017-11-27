@@ -1031,11 +1031,13 @@ src/core/lib/support/arena.h \
 src/core/lib/support/atomic.h \
 src/core/lib/support/atomic_with_atm.h \
 src/core/lib/support/atomic_with_std.h \
+src/core/lib/support/debug_location.h \
 src/core/lib/support/env.h \
 src/core/lib/support/manual_constructor.h \
 src/core/lib/support/memory.h \
 src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.h \
+src/core/lib/support/reference_counted.h \
 src/core/lib/support/spinlock.h \
 src/core/lib/support/stack_lockfree.h \
 src/core/lib/support/string.h \

@@ -1165,6 +1165,7 @@ qps_openloop_test: $(BINDIR)/$(CONFIG)/qps_openloop_test
 qps_worker: $(BINDIR)/$(CONFIG)/qps_worker
 reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
 reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
+reference_counted_test: $(BINDIR)/$(CONFIG)/reference_counted_test
 secure_auth_context_test: $(BINDIR)/$(CONFIG)/secure_auth_context_test
 secure_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
 server_builder_plugin_test: $(BINDIR)/$(CONFIG)/server_builder_plugin_test
@@ -1601,6 +1602,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/qps_worker \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
+  $(BINDIR)/$(CONFIG)/reference_counted_test \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
@@ -1727,6 +1729,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/qps_worker \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
+  $(BINDIR)/$(CONFIG)/reference_counted_test \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
@@ -2130,6 +2133,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/proto_utils_test || ( echo test proto_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_openloop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/qps_openloop_test || ( echo test qps_openloop_test failed ; exit 1 )
+	$(E) "[RUN]     Testing reference_counted_test"
+	$(Q) $(BINDIR)/$(CONFIG)/reference_counted_test || ( echo test reference_counted_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_auth_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_auth_context_test || ( echo test secure_auth_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_sync_unary_ping_pong_test"
@@ -2836,6 +2841,7 @@ LIBGPR_SRC = \
     src/core/lib/support/log_windows.cc \
     src/core/lib/support/mpscq.cc \
     src/core/lib/support/murmur_hash.cc \
+    src/core/lib/support/reference_counted.cc \
     src/core/lib/support/stack_lockfree.cc \
     src/core/lib/support/string.cc \
     src/core/lib/support/string_posix.cc \
@@ -16493,6 +16499,49 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+
+
+REFERENCE_COUNTED_TEST_SRC = \
+    test/core/support/reference_counted_test.cc \
+
+REFERENCE_COUNTED_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(REFERENCE_COUNTED_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/reference_counted_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/reference_counted_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/reference_counted_test: $(PROTOBUF_DEP) $(REFERENCE_COUNTED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(REFERENCE_COUNTED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/reference_counted_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/reference_counted_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_reference_counted_test: $(REFERENCE_COUNTED_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(REFERENCE_COUNTED_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 SECURE_AUTH_CONTEXT_TEST_SRC = \

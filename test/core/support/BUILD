@@ -233,3 +233,16 @@ grpc_cc_test(
         "gtest",
     ],
 )
+
+grpc_cc_test(
+    name = "reference_counted_test",
+    srcs = ["reference_counted_test.cc"],
+    language = "C++",
+    deps = [
+        "//:reference_counted",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)

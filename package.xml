@@ -101,11 +101,13 @@
     <file baseinstalldir="/" name="src/core/lib/support/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_atm.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_std.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/debug_location.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/reference_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
@@ -135,6 +137,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/reference_counted.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.cc" role="src" />
