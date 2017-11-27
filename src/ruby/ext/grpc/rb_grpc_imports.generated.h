@@ -337,7 +337,7 @@ extern grpc_composite_call_credentials_create_type grpc_composite_call_credentia
 typedef grpc_call_credentials*(*grpc_google_compute_engine_credentials_create_type)(void* reserved);
 extern grpc_google_compute_engine_credentials_create_type grpc_google_compute_engine_credentials_create_import;
 #define grpc_google_compute_engine_credentials_create grpc_google_compute_engine_credentials_create_import
-typedef gpr_timespec(*grpc_max_auth_token_lifetime_type)();
+typedef gpr_timespec(*grpc_max_auth_token_lifetime_type)(void);
 extern grpc_max_auth_token_lifetime_type grpc_max_auth_token_lifetime_import;
 #define grpc_max_auth_token_lifetime grpc_max_auth_token_lifetime_import
 typedef grpc_call_credentials*(*grpc_service_account_jwt_access_credentials_create_type)(const char* json_key, gpr_timespec token_lifetime, void* reserved);
@@ -589,7 +589,7 @@ extern gpr_free_aligned_type gpr_free_aligned_import;
 typedef void(*gpr_set_allocation_functions_type)(gpr_allocation_functions functions);
 extern gpr_set_allocation_functions_type gpr_set_allocation_functions_import;
 #define gpr_set_allocation_functions gpr_set_allocation_functions_import
-typedef gpr_allocation_functions(*gpr_get_allocation_functions_type)();
+typedef gpr_allocation_functions(*gpr_get_allocation_functions_type)(void);
 extern gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
 #define gpr_get_allocation_functions gpr_get_allocation_functions_import
 typedef gpr_avl(*gpr_avl_create_type)(const gpr_avl_vtable* vtable);
@@ -712,7 +712,7 @@ extern gpr_log_message_type gpr_log_message_import;
 typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
 extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
 #define gpr_set_log_verbosity gpr_set_log_verbosity_import
-typedef void(*gpr_log_verbosity_init_type)();
+typedef void(*gpr_log_verbosity_init_type)(void);
 extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 #define gpr_log_verbosity_init gpr_log_verbosity_init_import
 typedef void(*gpr_set_log_function_type)(gpr_log_func func);
