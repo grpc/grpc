@@ -39,8 +39,8 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/support/alloc_new.h"
 #include "src/core/lib/support/env.h"
+#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/service_config.h"
 
@@ -90,7 +90,7 @@ typedef struct {
   bool have_retry_timer;
   grpc_timer retry_timer;
   /** retry backoff state */
-  grpc_core::Backoff* backoff;
+  grpc_core::ManualConstructor<grpc_core::Backoff> backoff;
 
   /** currently resolving addresses */
   grpc_lb_addresses* lb_addresses;
@@ -353,7 +353,6 @@ static void dns_ares_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
   gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
   grpc_channel_args_destroy(exec_ctx, r->channel_args);
-  gpr_free(r->backoff);
   gpr_free(r);
 }
 
@@ -389,7 +388,7 @@ static grpc_resolver* dns_ares_create(grpc_exec_ctx* exec_ctx,
       .set_jitter(GRPC_DNS_RECONNECT_JITTER)
       .set_min_connect_timeout(GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000)
       .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
-  r->backoff = GPR_NEW(grpc_core::Backoff(backoff_options));
+  r->backoff.Init(grpc_core::Backoff(backoff_options));
   GRPC_CLOSURE_INIT(&r->dns_ares_on_retry_timer_locked,
                     dns_ares_on_retry_timer_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));

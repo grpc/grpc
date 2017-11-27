@@ -113,7 +113,7 @@
 #include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/alloc_new.h"
+#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -398,7 +398,7 @@ typedef struct glb_lb_policy {
   grpc_slice lb_call_status_details;
 
   /** LB call retry backoff state */
-  grpc_core::Backoff* lb_call_backoff;
+  grpc_core::ManualConstructor<grpc_core::Backoff> lb_call_backoff;
 
   /** LB call retry timer */
   grpc_timer lb_call_retry_timer;
@@ -987,7 +987,6 @@ static void glb_destroy(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   }
   grpc_fake_resolver_response_generator_unref(glb_policy->response_generator);
   grpc_subchannel_index_unref();
-  gpr_free(glb_policy->lb_call_backoff);
   gpr_free(glb_policy);
 }
 
@@ -1469,7 +1468,8 @@ static void lb_call_init_locked(grpc_exec_ctx* exec_ctx,
       .set_jitter(GRPC_GRPCLB_RECONNECT_JITTER)
       .set_min_connect_timeout(GRPC_GRPCLB_MIN_CONNECT_TIMEOUT_SECONDS * 1000)
       .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
-  glb_policy->lb_call_backoff = GPR_NEW(grpc_core::Backoff(backoff_options));
+
+  glb_policy->lb_call_backoff.Init(backoff_options);
 
   glb_policy->seen_initial_response = false;
   glb_policy->last_client_load_report_counters_were_zero = false;
