@@ -95,10 +95,6 @@ Pod::Spec.new do |s|
     # :sha1 => '??',
   }
 
-  # gRPC podspecs depend on fix for https://github.com/CocoaPods/CocoaPods/issues/6024,
-  # which was released in Cocoapods v1.2.0.
-  s.cocoapods_version = '>= 1.2.0'
-
   repo_root = '../..'
   plugin = 'grpc_objective_c_plugin'
 
