@@ -67,7 +67,8 @@ class ServerThread {
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
     GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
                                            grpc_timeout_seconds_to_deadline(1),
-                                           nullptr).type == GRPC_OP_COMPLETE);
+                                           nullptr)
+                   .type == GRPC_OP_COMPLETE);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
     grpc_completion_queue_destroy(cq_);
@@ -98,8 +99,8 @@ class Client {
   void Connect() {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resolved_addresses* server_addresses = nullptr;
-    grpc_error* error = grpc_blocking_resolve_address(server_address_,
-                                                      "80", &server_addresses);
+    grpc_error* error =
+        grpc_blocking_resolve_address(server_address_, "80", &server_addresses);
     ASSERT_EQ(GRPC_ERROR_NONE, error) << grpc_error_string(error);
     ASSERT_GE(server_addresses->naddrs, 1UL);
     pollset_ = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
@@ -107,12 +108,12 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(&exec_ctx, pollset_set, pollset_);
     EventState state;
-    grpc_tcp_client_connect(&exec_ctx, state.closure(), &endpoint_,
-                            pollset_set, nullptr /* channel_args */,
-                            server_addresses->addrs, 1000);
-    ASSERT_TRUE(PollUntilDone(&exec_ctx, &state,
-                              grpc_timespec_to_millis_round_up(
-                                  gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+    grpc_tcp_client_connect(&exec_ctx, state.closure(), &endpoint_, pollset_set,
+                            nullptr /* channel_args */, server_addresses->addrs,
+                            1000);
+    ASSERT_TRUE(PollUntilDone(
+        &exec_ctx, &state,
+        grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
     ASSERT_EQ(GRPC_ERROR_NONE, state.error());
     grpc_pollset_set_destroy(&exec_ctx, pollset_set);
     grpc_endpoint_add_to_pollset(&exec_ctx, endpoint_, pollset_);
@@ -195,10 +196,9 @@ class Client {
     while (true) {
       grpc_pollset_worker* worker = nullptr;
       gpr_mu_lock(mu_);
-      GRPC_LOG_IF_ERROR(
-          "grpc_pollset_work",
-          grpc_pollset_work(exec_ctx, pollset_, &worker,
-                            grpc_exec_ctx_now(exec_ctx) + 1000));
+      GRPC_LOG_IF_ERROR("grpc_pollset_work",
+                        grpc_pollset_work(exec_ctx, pollset_, &worker,
+                                          grpc_exec_ctx_now(exec_ctx) + 1000));
       gpr_mu_unlock(mu_);
       if (state != nullptr && state->done()) return true;
       if (grpc_exec_ctx_now(exec_ctx) >= deadline) return false;
