@@ -24,7 +24,7 @@
 #include <memory>
 #include <thread>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
