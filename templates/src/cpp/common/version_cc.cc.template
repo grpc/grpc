@@ -25,4 +25,4 @@
 
   namespace grpc {
   grpc::string Version() { return "${settings.cpp_version}"; }
-  }
+  }  // namespace grpc

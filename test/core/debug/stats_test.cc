@@ -16,9 +16,7 @@
  *
  */
 
-extern "C" {
 #include "src/core/lib/debug/stats.h"
-}
 
 #include <mutex>
 #include <thread>
@@ -111,13 +109,12 @@ TEST_P(HistogramTest, IncHistogram) {
     }
   };
   std::vector<int> test_values;
-  for (int j = -1000;
-       j <
-       grpc_stats_histo_bucket_boundaries[kHistogram]
-                                         [grpc_stats_histo_buckets[kHistogram] -
-                                          1] +
-           1000;
-       j++) {
+  // largest bucket boundary for current histogram type.
+  int max_bucket_boundary =
+      grpc_stats_histo_bucket_boundaries[kHistogram]
+                                        [grpc_stats_histo_buckets[kHistogram] -
+                                         1];
+  for (int j = -1000; j < max_bucket_boundary + 1000;) {
     int expected_bucket = FindExpectedBucket(kHistogram, j);
     if (cur_bucket != expected_bucket) {
       threads.emplace_back(
@@ -126,6 +123,14 @@ TEST_P(HistogramTest, IncHistogram) {
       test_values.clear();
     }
     test_values.push_back(j);
+    if (j < max_bucket_boundary &&
+        FindExpectedBucket(kHistogram, j + 1000) == expected_bucket &&
+        FindExpectedBucket(kHistogram, j - 1000) == expected_bucket) {
+      // if we are far from bucket boundary, skip values to speed-up the tests
+      j += 500;
+    } else {
+      j++;
+    }
   }
   run(test_values, cur_bucket);
   for (auto& t : threads) {

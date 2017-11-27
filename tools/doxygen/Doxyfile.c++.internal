@@ -1026,6 +1026,7 @@ src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice_hash_table.h \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.h \
+src/core/lib/support/abstract.h \
 src/core/lib/support/arena.h \
 src/core/lib/support/atomic.h \
 src/core/lib/support/atomic_with_atm.h \

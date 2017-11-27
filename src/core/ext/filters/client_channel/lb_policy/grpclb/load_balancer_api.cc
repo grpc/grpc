@@ -23,9 +23,9 @@
 #include <grpc/support/alloc.h>
 
 /* invoked once for every Server in ServerList */
-static bool count_serverlist(pb_istream_t *stream, const pb_field_t *field,
-                             void **arg) {
-  grpc_grpclb_serverlist *sl = (grpc_grpclb_serverlist *)*arg;
+static bool count_serverlist(pb_istream_t* stream, const pb_field_t* field,
+                             void** arg) {
+  grpc_grpclb_serverlist* sl = (grpc_grpclb_serverlist*)*arg;
   grpc_grpclb_server server;
   if (!pb_decode(stream, grpc_lb_v1_Server_fields, &server)) {
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
@@ -40,16 +40,16 @@ typedef struct decode_serverlist_arg {
    * which index of the serverlist are we currently decoding */
   size_t decoding_idx;
   /* The decoded serverlist */
-  grpc_grpclb_serverlist *serverlist;
+  grpc_grpclb_serverlist* serverlist;
 } decode_serverlist_arg;
 
 /* invoked once for every Server in ServerList */
-static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
-                              void **arg) {
-  decode_serverlist_arg *dec_arg = (decode_serverlist_arg *)*arg;
+static bool decode_serverlist(pb_istream_t* stream, const pb_field_t* field,
+                              void** arg) {
+  decode_serverlist_arg* dec_arg = (decode_serverlist_arg*)*arg;
   GPR_ASSERT(dec_arg->serverlist->num_servers >= dec_arg->decoding_idx);
-  grpc_grpclb_server *server =
-      (grpc_grpclb_server *)gpr_zalloc(sizeof(grpc_grpclb_server));
+  grpc_grpclb_server* server =
+      (grpc_grpclb_server*)gpr_zalloc(sizeof(grpc_grpclb_server));
   if (!pb_decode(stream, grpc_lb_v1_Server_fields, server)) {
     gpr_free(server);
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
@@ -59,9 +59,9 @@ static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
   return true;
 }
 
-grpc_grpclb_request *grpc_grpclb_request_create(const char *lb_service_name) {
-  grpc_grpclb_request *req =
-      (grpc_grpclb_request *)gpr_malloc(sizeof(grpc_grpclb_request));
+grpc_grpclb_request* grpc_grpclb_request_create(const char* lb_service_name) {
+  grpc_grpclb_request* req =
+      (grpc_grpclb_request*)gpr_malloc(sizeof(grpc_grpclb_request));
   req->has_client_stats = false;
   req->has_initial_request = true;
   req->initial_request.has_name = true;
@@ -71,25 +71,25 @@ grpc_grpclb_request *grpc_grpclb_request_create(const char *lb_service_name) {
 }
 
 static void populate_timestamp(gpr_timespec timestamp,
-                               struct _grpc_lb_v1_Timestamp *timestamp_pb) {
+                               struct _grpc_lb_v1_Timestamp* timestamp_pb) {
   timestamp_pb->has_seconds = true;
   timestamp_pb->seconds = timestamp.tv_sec;
   timestamp_pb->has_nanos = true;
   timestamp_pb->nanos = timestamp.tv_nsec;
 }
 
-static bool encode_string(pb_ostream_t *stream, const pb_field_t *field,
-                          void *const *arg) {
-  char *str = (char *)*arg;
+static bool encode_string(pb_ostream_t* stream, const pb_field_t* field,
+                          void* const* arg) {
+  char* str = (char*)*arg;
   if (!pb_encode_tag_for_field(stream, field)) return false;
-  return pb_encode_string(stream, (uint8_t *)str, strlen(str));
+  return pb_encode_string(stream, (uint8_t*)str, strlen(str));
 }
 
-static bool encode_drops(pb_ostream_t *stream, const pb_field_t *field,
-                         void *const *arg) {
-  grpc_grpclb_dropped_call_counts *drop_entries =
-      (grpc_grpclb_dropped_call_counts *)*arg;
-  if (drop_entries == NULL) return true;
+static bool encode_drops(pb_ostream_t* stream, const pb_field_t* field,
+                         void* const* arg) {
+  grpc_grpclb_dropped_call_counts* drop_entries =
+      (grpc_grpclb_dropped_call_counts*)*arg;
+  if (drop_entries == nullptr) return true;
   for (size_t i = 0; i < drop_entries->num_entries; ++i) {
     if (!pb_encode_tag_for_field(stream, field)) return false;
     grpc_lb_v1_ClientStatsPerToken drop_message;
@@ -105,10 +105,10 @@ static bool encode_drops(pb_ostream_t *stream, const pb_field_t *field,
   return true;
 }
 
-grpc_grpclb_request *grpc_grpclb_load_report_request_create_locked(
-    grpc_grpclb_client_stats *client_stats) {
-  grpc_grpclb_request *req =
-      (grpc_grpclb_request *)gpr_zalloc(sizeof(grpc_grpclb_request));
+grpc_grpclb_request* grpc_grpclb_load_report_request_create_locked(
+    grpc_grpclb_client_stats* client_stats) {
+  grpc_grpclb_request* req =
+      (grpc_grpclb_request*)gpr_zalloc(sizeof(grpc_grpclb_request));
   req->has_client_stats = true;
   req->client_stats.has_timestamp = true;
   populate_timestamp(gpr_now(GPR_CLOCK_REALTIME), &req->client_stats.timestamp);
@@ -123,12 +123,12 @@ grpc_grpclb_request *grpc_grpclb_load_report_request_create_locked(
       &req->client_stats.num_calls_finished,
       &req->client_stats.num_calls_finished_with_client_failed_to_send,
       &req->client_stats.num_calls_finished_known_received,
-      (grpc_grpclb_dropped_call_counts **)&req->client_stats
+      (grpc_grpclb_dropped_call_counts**)&req->client_stats
           .calls_finished_with_drop.arg);
   return req;
 }
 
-grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request) {
+grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request* request) {
   size_t encoded_length;
   pb_ostream_t sizestream;
   pb_ostream_t outputstream;
@@ -145,10 +145,10 @@ grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request) {
   return slice;
 }
 
-void grpc_grpclb_request_destroy(grpc_grpclb_request *request) {
+void grpc_grpclb_request_destroy(grpc_grpclb_request* request) {
   if (request->has_client_stats) {
-    grpc_grpclb_dropped_call_counts *drop_entries =
-        (grpc_grpclb_dropped_call_counts *)
+    grpc_grpclb_dropped_call_counts* drop_entries =
+        (grpc_grpclb_dropped_call_counts*)
             request->client_stats.calls_finished_with_drop.arg;
     grpc_grpclb_dropped_call_counts_destroy(drop_entries);
   }
@@ -156,7 +156,7 @@ void grpc_grpclb_request_destroy(grpc_grpclb_request *request) {
 }
 
 typedef grpc_lb_v1_LoadBalanceResponse grpc_grpclb_response;
-grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
+grpc_grpclb_initial_response* grpc_grpclb_initial_response_parse(
     grpc_slice encoded_grpc_grpclb_response) {
   pb_istream_t stream =
       pb_istream_from_buffer(GRPC_SLICE_START_PTR(encoded_grpc_grpclb_response),
@@ -165,13 +165,13 @@ grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
   memset(&res, 0, sizeof(grpc_grpclb_response));
   if (!pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res)) {
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return NULL;
+    return nullptr;
   }
 
-  if (!res.has_initial_response) return NULL;
+  if (!res.has_initial_response) return nullptr;
 
-  grpc_grpclb_initial_response *initial_res =
-      (grpc_grpclb_initial_response *)gpr_malloc(
+  grpc_grpclb_initial_response* initial_res =
+      (grpc_grpclb_initial_response*)gpr_malloc(
           sizeof(grpc_grpclb_initial_response));
   memcpy(initial_res, &res.initial_response,
          sizeof(grpc_grpclb_initial_response));
@@ -179,14 +179,14 @@ grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
   return initial_res;
 }
 
-grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
+grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
     grpc_slice encoded_grpc_grpclb_response) {
   pb_istream_t stream =
       pb_istream_from_buffer(GRPC_SLICE_START_PTR(encoded_grpc_grpclb_response),
                              GRPC_SLICE_LENGTH(encoded_grpc_grpclb_response));
   pb_istream_t stream_at_start = stream;
-  grpc_grpclb_serverlist *sl =
-      (grpc_grpclb_serverlist *)gpr_zalloc(sizeof(grpc_grpclb_serverlist));
+  grpc_grpclb_serverlist* sl =
+      (grpc_grpclb_serverlist*)gpr_zalloc(sizeof(grpc_grpclb_serverlist));
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));
   // First pass: count number of servers.
@@ -196,12 +196,12 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
   if (!status) {
     gpr_free(sl);
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return NULL;
+    return nullptr;
   }
   // Second pass: populate servers.
   if (sl->num_servers > 0) {
-    sl->servers = (grpc_grpclb_server **)gpr_zalloc(
-        sizeof(grpc_grpclb_server *) * sl->num_servers);
+    sl->servers = (grpc_grpclb_server**)gpr_zalloc(sizeof(grpc_grpclb_server*) *
+                                                   sl->num_servers);
     decode_serverlist_arg decode_arg;
     memset(&decode_arg, 0, sizeof(decode_arg));
     decode_arg.serverlist = sl;
@@ -212,7 +212,7 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
     if (!status) {
       grpc_grpclb_destroy_serverlist(sl);
       gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-      return NULL;
+      return nullptr;
     }
   }
   if (res.server_list.has_expiration_interval) {
@@ -221,8 +221,8 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
   return sl;
 }
 
-void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist *serverlist) {
-  if (serverlist == NULL) {
+void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist* serverlist) {
+  if (serverlist == nullptr) {
     return;
   }
   for (size_t i = 0; i < serverlist->num_servers; i++) {
@@ -232,26 +232,26 @@ void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist *serverlist) {
   gpr_free(serverlist);
 }
 
-grpc_grpclb_serverlist *grpc_grpclb_serverlist_copy(
-    const grpc_grpclb_serverlist *sl) {
-  grpc_grpclb_serverlist *copy =
-      (grpc_grpclb_serverlist *)gpr_zalloc(sizeof(grpc_grpclb_serverlist));
+grpc_grpclb_serverlist* grpc_grpclb_serverlist_copy(
+    const grpc_grpclb_serverlist* sl) {
+  grpc_grpclb_serverlist* copy =
+      (grpc_grpclb_serverlist*)gpr_zalloc(sizeof(grpc_grpclb_serverlist));
   copy->num_servers = sl->num_servers;
   memcpy(&copy->expiration_interval, &sl->expiration_interval,
          sizeof(grpc_grpclb_duration));
-  copy->servers = (grpc_grpclb_server **)gpr_malloc(
-      sizeof(grpc_grpclb_server *) * sl->num_servers);
+  copy->servers = (grpc_grpclb_server**)gpr_malloc(sizeof(grpc_grpclb_server*) *
+                                                   sl->num_servers);
   for (size_t i = 0; i < sl->num_servers; i++) {
     copy->servers[i] =
-        (grpc_grpclb_server *)gpr_malloc(sizeof(grpc_grpclb_server));
+        (grpc_grpclb_server*)gpr_malloc(sizeof(grpc_grpclb_server));
     memcpy(copy->servers[i], sl->servers[i], sizeof(grpc_grpclb_server));
   }
   return copy;
 }
 
-bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist *lhs,
-                                   const grpc_grpclb_serverlist *rhs) {
-  if (lhs == NULL || rhs == NULL) {
+bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist* lhs,
+                                   const grpc_grpclb_serverlist* rhs) {
+  if (lhs == nullptr || rhs == nullptr) {
     return false;
   }
   if (lhs->num_servers != rhs->num_servers) {
@@ -269,13 +269,13 @@ bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist *lhs,
   return true;
 }
 
-bool grpc_grpclb_server_equals(const grpc_grpclb_server *lhs,
-                               const grpc_grpclb_server *rhs) {
+bool grpc_grpclb_server_equals(const grpc_grpclb_server* lhs,
+                               const grpc_grpclb_server* rhs) {
   return memcmp(lhs, rhs, sizeof(grpc_grpclb_server)) == 0;
 }
 
-int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
-                                 const grpc_grpclb_duration *rhs) {
+int grpc_grpclb_duration_compare(const grpc_grpclb_duration* lhs,
+                                 const grpc_grpclb_duration* rhs) {
   GPR_ASSERT(lhs && rhs);
   if (lhs->has_seconds && rhs->has_seconds) {
     if (lhs->seconds < rhs->seconds) return -1;
@@ -299,13 +299,13 @@ int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
   return 0;
 }
 
-grpc_millis grpc_grpclb_duration_to_millis(grpc_grpclb_duration *duration_pb) {
+grpc_millis grpc_grpclb_duration_to_millis(grpc_grpclb_duration* duration_pb) {
   return (grpc_millis)(
       (duration_pb->has_seconds ? duration_pb->seconds : 0) * GPR_MS_PER_SEC +
       (duration_pb->has_nanos ? duration_pb->nanos : 0) / GPR_NS_PER_MS);
 }
 
 void grpc_grpclb_initial_response_destroy(
-    grpc_grpclb_initial_response *response) {
+    grpc_grpclb_initial_response* response) {
   gpr_free(response);
 }

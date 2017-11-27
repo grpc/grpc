@@ -29,7 +29,7 @@ extern "C" {
 
 /* Conversion of grpc status codes to http2 error codes (for RST_STREAM) */
 grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status);
-grpc_status_code grpc_http2_error_to_grpc_status(grpc_exec_ctx *exec_ctx,
+grpc_status_code grpc_http2_error_to_grpc_status(grpc_exec_ctx* exec_ctx,
                                                  grpc_http2_error_code error,
                                                  grpc_millis deadline);
 

@@ -19,6 +19,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <grpc/support/useful.h>
@@ -30,7 +31,13 @@
 struct grpc_chttp2_transport;
 struct grpc_chttp2_stream;
 
-extern "C" grpc_tracer_flag grpc_flowctl_trace;
+extern grpc_core::TraceFlag grpc_flowctl_trace;
+
+namespace grpc {
+namespace testing {
+class TrickledCHTTP2;  // to make this a friend
+}  // namespace testing
+}  // namespace grpc
 
 namespace grpc_core {
 namespace chttp2 {
@@ -112,7 +119,7 @@ class FlowControlTrace {
             StreamFlowControl* sfc);
   void Finish();
 
-  const bool enabled_ = GRPC_TRACER_ON(grpc_flowctl_trace);
+  const bool enabled_ = grpc_flowctl_trace.enabled();
 
   TransportFlowControl* tfc_;
   StreamFlowControl* sfc_;
@@ -203,6 +210,7 @@ class TransportFlowControl {
   }
 
  private:
+  friend class ::grpc::testing::TrickledCHTTP2;
   double TargetLogBdp();
   double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
   FlowControlAction::Urgency DeltaUrgency(int32_t value,
@@ -297,6 +305,7 @@ class StreamFlowControl {
   }
 
  private:
+  friend class ::grpc::testing::TrickledCHTTP2;
   TransportFlowControl* const tfc_;
   const grpc_chttp2_stream* const s_;
 

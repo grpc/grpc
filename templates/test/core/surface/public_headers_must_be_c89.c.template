@@ -35,9 +35,21 @@
       assert(hdr[0:len(pfx)] == pfx)
       hdrs.add(hdr[len(pfx):])
   hdrs = sorted(list(hdrs))
+  fns = list()
+  for api in c_apis:
+    if is_platform_header(api.header):
+      continue
+    fns.append(api.name)
   %>\
   % for hdr in hdrs:
   #include <${hdr}>
   % endfor
 
-  int main(int argc, char **argv) { return 0; }
+  #include <stdio.h>
+
+  int main(int argc, char **argv) {
+    % for fn in fns:
+    printf("%lx", (unsigned long) ${fn});
+    % endfor
+    return 0;
+  }

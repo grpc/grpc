@@ -25,9 +25,9 @@
 extern "C" {
 #endif
 
-grpc_transport *grpc_create_cronet_transport(void *engine, const char *target,
-                                             const grpc_channel_args *args,
-                                             void *reserved);
+grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
+                                             const grpc_channel_args* args,
+                                             void* reserved);
 
 #ifdef __cplusplus
 }

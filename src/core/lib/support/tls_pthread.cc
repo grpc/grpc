@@ -22,8 +22,8 @@
 
 #include <grpc/support/tls.h>
 
-intptr_t gpr_tls_set(struct gpr_pthread_thread_local *tls, intptr_t value) {
-  GPR_ASSERT(0 == pthread_setspecific(tls->key, (void *)value));
+intptr_t gpr_tls_set(struct gpr_pthread_thread_local* tls, intptr_t value) {
+  GPR_ASSERT(0 == pthread_setspecific(tls->key, (void*)value));
   return value;
 }
 

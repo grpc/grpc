@@ -24,14 +24,14 @@ BAD_SSL_TESTS = ['cert', 'alpn']
 def grpc_bad_ssl_tests():
   native.cc_library(
       name = 'bad_ssl_test_server',
-      srcs = ['server_common.c'],
+      srcs = ['server_common.cc'],
       hdrs = ['server_common.h'],
       deps = ['//test/core/util:grpc_test_util', '//:grpc', '//test/core/end2end:ssl_test_data']
   )
   for t in BAD_SSL_TESTS:
     native.cc_test(
         name = 'bad_ssl_%s_server' % t,
-        srcs = ['servers/%s.c' % t],
+        srcs = ['servers/%s.cc' % t],
         deps = [':bad_ssl_test_server'],
     )
 

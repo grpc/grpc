@@ -21,7 +21,7 @@
 
 namespace grpc_core {
 
-PidController::PidController(const Args &args)
+PidController::PidController(const Args& args)
     : last_control_value_(args.initial_control_value()), args_(args) {}
 
 double PidController::Update(double error, double dt) {

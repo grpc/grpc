@@ -29,34 +29,34 @@ extern "C" {
     shared amongst channels */
 
 /** Create a key that can be used to uniquely identify a subchannel */
-grpc_subchannel_key *grpc_subchannel_key_create(
-    const grpc_subchannel_args *args);
+grpc_subchannel_key* grpc_subchannel_key_create(
+    const grpc_subchannel_args* args);
 
 /** Destroy a subchannel key */
-void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
-                                 grpc_subchannel_key *key);
+void grpc_subchannel_key_destroy(grpc_exec_ctx* exec_ctx,
+                                 grpc_subchannel_key* key);
 
 /** Given a subchannel key, find the subchannel registered for it.
     Returns NULL if no such channel exists.
     Thread-safe. */
-grpc_subchannel *grpc_subchannel_index_find(grpc_exec_ctx *exec_ctx,
-                                            grpc_subchannel_key *key);
+grpc_subchannel* grpc_subchannel_index_find(grpc_exec_ctx* exec_ctx,
+                                            grpc_subchannel_key* key);
 
 /** Register a subchannel against a key.
     Takes ownership of \a constructed.
     Returns the registered subchannel. This may be different from
     \a constructed in the case of a registration race. */
-grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
-                                                grpc_subchannel_key *key,
-                                                grpc_subchannel *constructed);
+grpc_subchannel* grpc_subchannel_index_register(grpc_exec_ctx* exec_ctx,
+                                                grpc_subchannel_key* key,
+                                                grpc_subchannel* constructed);
 
 /** Remove \a constructed as the registered subchannel for \a key. */
-void grpc_subchannel_index_unregister(grpc_exec_ctx *exec_ctx,
-                                      grpc_subchannel_key *key,
-                                      grpc_subchannel *constructed);
+void grpc_subchannel_index_unregister(grpc_exec_ctx* exec_ctx,
+                                      grpc_subchannel_key* key,
+                                      grpc_subchannel* constructed);
 
-int grpc_subchannel_key_compare(const grpc_subchannel_key *a,
-                                const grpc_subchannel_key *b);
+int grpc_subchannel_key_compare(const grpc_subchannel_key* a,
+                                const grpc_subchannel_key* b);
 
 /** Initialize the subchannel index (global) */
 void grpc_subchannel_index_init(void);

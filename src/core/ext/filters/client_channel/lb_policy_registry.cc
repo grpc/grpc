@@ -24,7 +24,7 @@
 
 #define MAX_POLICIES 10
 
-static grpc_lb_policy_factory *g_all_of_the_lb_policies[MAX_POLICIES];
+static grpc_lb_policy_factory* g_all_of_the_lb_policies[MAX_POLICIES];
 static int g_number_of_lb_policies = 0;
 
 void grpc_lb_policy_registry_init(void) { g_number_of_lb_policies = 0; }
@@ -36,7 +36,7 @@ void grpc_lb_policy_registry_shutdown(void) {
   }
 }
 
-void grpc_register_lb_policy(grpc_lb_policy_factory *factory) {
+void grpc_register_lb_policy(grpc_lb_policy_factory* factory) {
   int i;
   for (i = 0; i < g_number_of_lb_policies; i++) {
     GPR_ASSERT(0 != gpr_stricmp(factory->vtable->name,
@@ -47,10 +47,10 @@ void grpc_register_lb_policy(grpc_lb_policy_factory *factory) {
   g_all_of_the_lb_policies[g_number_of_lb_policies++] = factory;
 }
 
-static grpc_lb_policy_factory *lookup_factory(const char *name) {
+static grpc_lb_policy_factory* lookup_factory(const char* name) {
   int i;
 
-  if (name == NULL) return NULL;
+  if (name == nullptr) return nullptr;
 
   for (i = 0; i < g_number_of_lb_policies; i++) {
     if (0 == gpr_stricmp(name, g_all_of_the_lb_policies[i]->vtable->name)) {
@@ -58,13 +58,13 @@ static grpc_lb_policy_factory *lookup_factory(const char *name) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
-grpc_lb_policy *grpc_lb_policy_create(grpc_exec_ctx *exec_ctx, const char *name,
-                                      grpc_lb_policy_args *args) {
-  grpc_lb_policy_factory *factory = lookup_factory(name);
-  grpc_lb_policy *lb_policy =
+grpc_lb_policy* grpc_lb_policy_create(grpc_exec_ctx* exec_ctx, const char* name,
+                                      grpc_lb_policy_args* args) {
+  grpc_lb_policy_factory* factory = lookup_factory(name);
+  grpc_lb_policy* lb_policy =
       grpc_lb_policy_factory_create_lb_policy(exec_ctx, factory, args);
   return lb_policy;
 }

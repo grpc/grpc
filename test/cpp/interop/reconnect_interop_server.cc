@@ -53,9 +53,9 @@ using grpc::ServerWriter;
 using grpc::SslServerCredentialsOptions;
 using grpc::Status;
 using grpc::testing::Empty;
-using grpc::testing::ReconnectService;
 using grpc::testing::ReconnectInfo;
 using grpc::testing::ReconnectParams;
+using grpc::testing::ReconnectService;
 
 static bool got_sigint = false;
 
