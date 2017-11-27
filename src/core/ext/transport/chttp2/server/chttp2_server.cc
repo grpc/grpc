@@ -81,7 +81,9 @@ static void server_connection_state_unref(
 
 static void on_timeout(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   server_connection_state* connection_state = (server_connection_state*)arg;
-  if (error == GRPC_ERROR_NONE) {
+  // Note that we may be called with GRPC_ERROR_NONE when the timer fires
+  // or with an error indicating that the timer system is being shut down.
+  if (error != GRPC_ERROR_CANCELLED) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->disconnect_with_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Did not receive HTTP/2 settings before handshake timeout");
