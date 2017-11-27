@@ -148,7 +148,7 @@ int grpc_sockaddr_to_string(char** out,
   grpc_resolved_address addr_normalized;
   char ntop_buf[INET6_ADDRSTRLEN];
   const void* ip = nullptr;
-  int port;
+  int port = 0;
   uint32_t sin6_scope_id = 0;
   int ret;
 
