@@ -145,7 +145,7 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
   }
   tcp->read_slices = NULL;
   tcp->read_cb = NULL;
-  GRPC_CLOSURE_RUN(, cb, error);
+  GRPC_CLOSURE_RUN(cb, error);
 }
 
 static void read_callback(uv_stream_t* stream, ssize_t nread,

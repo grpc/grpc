@@ -171,15 +171,15 @@ on outside context */
 
   /** Global shutdown for ExecCtx. Called by iomgr */
   static void GlobalShutdown(void) {
-#ifdef GPR_PTHREAD_TLS
+#ifdef TLS_NO_SUPPORT
     gpr_tls_destroy(&exec_ctx_);
 #endif
   }
 
   /** Gets pointer to current exec_ctx */
   static ExecCtx* Get() {
-#ifdef GPR_PTHREAD_TLS
-    return (ExecCtx*)gpr_tls_get(&exec_ctx_);
+#ifdef TLS_NO_SUPPORT
+    return reinterpret_cast<ExecCtx*>(gpr_tls_get(&exec_ctx_));
 #else
     return exec_ctx_;
 #endif
@@ -192,8 +192,8 @@ on outside context */
  private:
   /** Set exec_ctx_ to exec_ctx */
   void Set(ExecCtx* exec_ctx) {
-#ifdef GPR_PTHREAD_THS
-    gpr_tls_set(&exec_ctx_, exec_ctx);
+#ifdef TLS_NO_SUPPORT
+    gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
 #else
     exec_ctx_ = exec_ctx;
 #endif
@@ -207,8 +207,8 @@ on outside context */
   bool now_is_valid_ = false;
   grpc_millis now_ = 0;
 
-#ifdef GPR_PTHREAD_TLS
-  GPR_TLS_DECL(exec_ctx_);
+#ifdef TLS_NO_SUPPORT
+  GPR_TLS_CLASS_DECL(exec_ctx_);
 #else
   static thread_local ExecCtx* exec_ctx_;
 #endif

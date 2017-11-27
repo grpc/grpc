@@ -33,12 +33,18 @@ struct gpr_gcc_thread_local {
   bool* inited;
 };
 
+/** Use GPR_TLS_DECL to declare tls static variables outside a class */
 #define GPR_TLS_DECL(name)           \
   static bool name##_inited = false; \
   static __thread struct gpr_gcc_thread_local name = {0, &(name##_inited)}
 
-#define GPR_TLS_NON_STATIC_DECL(name) \
-  bool name##_inited = false;         \
+/** Use GPR_TLS_CLASS_DECL to declare tls static variable members of a class.
+ *  GPR_TLS_CLASS_DEF needs to be called to define this member. */
+#define GPR_TLS_CLASS_DECL(name)     \
+  static bool name##_inited = false; \
+  static __thread struct gpr_gcc_thread_local name
+
+#define GPR_TLS_CLASS_DEF(name) \
   __thread struct gpr_gcc_thread_local name = {0, &(name##_inited)}
 
 #define gpr_tls_init(tls)                  \
@@ -75,8 +81,10 @@ struct gpr_gcc_thread_local {
 #define GPR_TLS_DECL(name) \
   static __thread struct gpr_gcc_thread_local name = {0}
 
-#define GPR_TLS_NON_STATIC_DECL(name) \
-  __thread struct gpr_gcc_thread_local name = {0}
+#define GPR_TLS_CLASS_DECL(name) \
+  static __thread struct gpr_gcc_thread_local name
+
+#define GPR_TLS_CLASS_DEF(name) __thread struct gpr_gcc_thread_local name = {0}
 
 #define gpr_tls_init(tls) \
   do {                    \
