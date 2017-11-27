@@ -187,6 +187,11 @@ grpc_error* grpc_chttp2_settings_parser_parse(grpc_exec_ctx* exec_ctx, void* p,
         if (grpc_wire_id_to_setting_id(parser->id, &id)) {
           const grpc_chttp2_setting_parameters* sp =
               &grpc_chttp2_settings_parameters[id];
+          if ((id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE ||
+               id == GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE) &&
+              true /* disable flow conrtol */) {
+            continue;
+          }
           if (parser->value < sp->min_value || parser->value > sp->max_value) {
             switch (sp->invalid_value_behavior) {
               case GRPC_CHTTP2_CLAMP_INVALID_VALUE:
