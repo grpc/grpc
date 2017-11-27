@@ -101,7 +101,7 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
        ++it) {
     size_t start_pos = it->find_first_not_of(' ');
     if (start_pos != grpc::string::npos) {
-      out->Print(it->c_str() + start_pos);
+      out->PrintRaw(it->c_str() + start_pos);
     }
     out->Print("\n");
   }
