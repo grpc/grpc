@@ -51,6 +51,7 @@ typedef struct {
 static grpc_error* blocking_resolve_address_impl(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
+  grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;
   char* host;
