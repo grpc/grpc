@@ -181,7 +181,6 @@
         'src/core/lib/support/log_windows.cc',
         'src/core/lib/support/mpscq.cc',
         'src/core/lib/support/murmur_hash.cc',
-        'src/core/lib/support/stack_lockfree.cc',
         'src/core/lib/support/string.cc',
         'src/core/lib/support/string_posix.cc',
         'src/core/lib/support/string_util_windows.cc',

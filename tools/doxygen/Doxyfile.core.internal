@@ -774,6 +774,7 @@ doc/connectivity-semantics-and-api.md \
 doc/core/grpc-error.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
+doc/core/transport_explainer.md \
 doc/cpp-style-guide.md \
 doc/environment_variables.md \
 doc/epoll-polling-engine.md \
@@ -1299,8 +1300,6 @@ src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.cc \
 src/core/lib/support/murmur_hash.h \
 src/core/lib/support/spinlock.h \
-src/core/lib/support/stack_lockfree.cc \
-src/core/lib/support/stack_lockfree.h \
 src/core/lib/support/string.cc \
 src/core/lib/support/string.h \
 src/core/lib/support/string_posix.cc \
