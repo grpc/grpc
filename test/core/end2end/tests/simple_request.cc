@@ -101,6 +101,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
+  uint8_t trailing_metadata_available = 2;
   int was_cancelled = 2;
   char* peer;
   grpc_stats_data* before =
@@ -141,6 +142,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.trailing_metadata_available =
+      &trailing_metadata_available;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -204,6 +207,7 @@ static void simple_request_body(grpc_end2end_test_config config,
                                 config);
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(trailing_metadata_available == 1);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

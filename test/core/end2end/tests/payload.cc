@@ -127,6 +127,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
+  uint8_t trailing_metadata_available = 2;
   int was_cancelled = 2;
 
   gpr_timespec deadline = n_seconds_from_now(60);
@@ -160,6 +161,8 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.trailing_metadata_available =
+      &trailing_metadata_available;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -235,6 +238,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
+  GPR_ASSERT(trailing_metadata_available == 0);
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   GPR_ASSERT(

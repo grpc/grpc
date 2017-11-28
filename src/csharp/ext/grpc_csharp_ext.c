@@ -718,6 +718,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
   ops[0].op = GRPC_OP_RECV_INITIAL_METADATA;
   ops[0].data.recv_initial_metadata.recv_initial_metadata =
       &(ctx->recv_initial_metadata);
+  ops[0].data.recv_initial_metadata.trailing_metadata_available = NULL;
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 

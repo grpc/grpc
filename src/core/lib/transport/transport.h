@@ -177,7 +177,7 @@ struct grpc_transport_stream_op_batch_payload {
     // If not NULL, will be set to true if trailing metadata is
     // immediately available.  This may be a signal that we received a
     // Trailers-Only response.
-    bool* trailing_metadata_available;
+    uint8_t* trailing_metadata_available;
     // If non-NULL, will be set by the transport to the peer string
     // (a char*, which the caller takes ownership of).
     gpr_atm* peer_string;

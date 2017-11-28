@@ -1947,6 +1947,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
             &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
         stream_op_payload->recv_initial_metadata.recv_initial_metadata_ready =
             &call->receiving_initial_metadata_ready;
+        stream_op_payload->recv_initial_metadata.trailing_metadata_available =
+            op->data.recv_initial_metadata.trailing_metadata_available;
         if (!call->is_client) {
           stream_op_payload->recv_initial_metadata.peer_string =
               &call->peer_string;

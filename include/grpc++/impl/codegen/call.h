@@ -547,6 +547,7 @@ class CallOpRecvInitialMetadata {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
     op->data.recv_initial_metadata.recv_initial_metadata = metadata_map_->arr();
+    op->data.recv_initial_metadata.trailing_metadata_available = nullptr;
     op->flags = 0;
     op->reserved = NULL;
   }
