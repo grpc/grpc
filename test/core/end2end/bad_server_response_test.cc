@@ -298,6 +298,7 @@ static void run_test(const char* response_payload,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
 
   /* status defined in hpack static table */
   run_test(HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1, GRPC_STATUS_CANCELLED,
@@ -336,5 +337,6 @@ int main(int argc, char** argv) {
   run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,
            HTTP1_DETAIL_MSG);
 
+  grpc_shutdown();
   return 0;
 }

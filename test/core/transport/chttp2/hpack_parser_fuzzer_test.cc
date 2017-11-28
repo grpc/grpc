@@ -37,13 +37,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   grpc_chttp2_hpack_parser parser;
-  grpc_core::ExecCtx _local_exec_ctx;
-  grpc_chttp2_hpack_parser_init(&parser);
-  parser.on_header = onhdr;
-  GRPC_ERROR_UNREF(grpc_chttp2_hpack_parser_parse(
-      &parser, grpc_slice_from_static_buffer(data, size)));
-  grpc_chttp2_hpack_parser_destroy(&parser);
-
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_chttp2_hpack_parser_init(&parser);
+    parser.on_header = onhdr;
+    GRPC_ERROR_UNREF(grpc_chttp2_hpack_parser_parse(
+        &parser, grpc_slice_from_static_buffer(data, size)));
+    grpc_chttp2_hpack_parser_destroy(&parser);
+  }
   grpc_shutdown();
   return 0;
 }

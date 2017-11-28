@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
@@ -76,58 +77,61 @@ static grpc_slice base64_decode_with_length(const char* s,
       s, grpc_chttp2_base64_decode_with_length(base64_encode(s), strlen(s)));
 
 int main(int argc, char** argv) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_init();
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
 
-  /* ENCODE_AND_DECODE tests grpc_chttp2_base64_decode_with_length(), which
-     takes encoded base64 strings without pad chars, but output length is
-     required. */
-  /* Base64 test vectors from RFC 4648 */
-  ENCODE_AND_DECODE("");
-  ENCODE_AND_DECODE("f");
-  ENCODE_AND_DECODE("foo");
-  ENCODE_AND_DECODE("fo");
-  ENCODE_AND_DECODE("foob");
-  ENCODE_AND_DECODE("fooba");
-  ENCODE_AND_DECODE("foobar");
+    /* ENCODE_AND_DECODE tests grpc_chttp2_base64_decode_with_length(), which
+       takes encoded base64 strings without pad chars, but output length is
+       required. */
+    /* Base64 test vectors from RFC 4648 */
+    ENCODE_AND_DECODE("");
+    ENCODE_AND_DECODE("f");
+    ENCODE_AND_DECODE("foo");
+    ENCODE_AND_DECODE("fo");
+    ENCODE_AND_DECODE("foob");
+    ENCODE_AND_DECODE("fooba");
+    ENCODE_AND_DECODE("foobar");
 
-  ENCODE_AND_DECODE("\xc0\xc1\xc2\xc3\xc4\xc5");
+    ENCODE_AND_DECODE("\xc0\xc1\xc2\xc3\xc4\xc5");
 
-  /* Base64 test vectors from RFC 4648, with pad chars */
-  /* BASE64("") = "" */
-  EXPECT_SLICE_EQ("", base64_decode(""));
-  /* BASE64("f") = "Zg==" */
-  EXPECT_SLICE_EQ("f", base64_decode("Zg=="));
-  /* BASE64("fo") = "Zm8=" */
-  EXPECT_SLICE_EQ("fo", base64_decode("Zm8="));
-  /* BASE64("foo") = "Zm9v" */
-  EXPECT_SLICE_EQ("foo", base64_decode("Zm9v"));
-  /* BASE64("foob") = "Zm9vYg==" */
-  EXPECT_SLICE_EQ("foob", base64_decode("Zm9vYg=="));
-  /* BASE64("fooba") = "Zm9vYmE=" */
-  EXPECT_SLICE_EQ("fooba", base64_decode("Zm9vYmE="));
-  /* BASE64("foobar") = "Zm9vYmFy" */
-  EXPECT_SLICE_EQ("foobar", base64_decode("Zm9vYmFy"));
+    /* Base64 test vectors from RFC 4648, with pad chars */
+    /* BASE64("") = "" */
+    EXPECT_SLICE_EQ("", base64_decode(""));
+    /* BASE64("f") = "Zg==" */
+    EXPECT_SLICE_EQ("f", base64_decode("Zg=="));
+    /* BASE64("fo") = "Zm8=" */
+    EXPECT_SLICE_EQ("fo", base64_decode("Zm8="));
+    /* BASE64("foo") = "Zm9v" */
+    EXPECT_SLICE_EQ("foo", base64_decode("Zm9v"));
+    /* BASE64("foob") = "Zm9vYg==" */
+    EXPECT_SLICE_EQ("foob", base64_decode("Zm9vYg=="));
+    /* BASE64("fooba") = "Zm9vYmE=" */
+    EXPECT_SLICE_EQ("fooba", base64_decode("Zm9vYmE="));
+    /* BASE64("foobar") = "Zm9vYmFy" */
+    EXPECT_SLICE_EQ("foobar", base64_decode("Zm9vYmFy"));
 
-  EXPECT_SLICE_EQ("\xc0\xc1\xc2\xc3\xc4\xc5", base64_decode("wMHCw8TF"));
+    EXPECT_SLICE_EQ("\xc0\xc1\xc2\xc3\xc4\xc5", base64_decode("wMHCw8TF"));
 
-  // Test illegal input length in grpc_chttp2_base64_decode
-  EXPECT_SLICE_EQ("", base64_decode("a"));
-  EXPECT_SLICE_EQ("", base64_decode("ab"));
-  EXPECT_SLICE_EQ("", base64_decode("abc"));
+    // Test illegal input length in grpc_chttp2_base64_decode
+    EXPECT_SLICE_EQ("", base64_decode("a"));
+    EXPECT_SLICE_EQ("", base64_decode("ab"));
+    EXPECT_SLICE_EQ("", base64_decode("abc"));
 
-  // Test illegal charactors in grpc_chttp2_base64_decode
-  EXPECT_SLICE_EQ("", base64_decode("Zm:v"));
-  EXPECT_SLICE_EQ("", base64_decode("Zm=v"));
+    // Test illegal charactors in grpc_chttp2_base64_decode
+    EXPECT_SLICE_EQ("", base64_decode("Zm:v"));
+    EXPECT_SLICE_EQ("", base64_decode("Zm=v"));
 
-  // Test output_length longer than max possible output length in
-  // grpc_chttp2_base64_decode_with_length
-  EXPECT_SLICE_EQ("", base64_decode_with_length("Zg", 2));
-  EXPECT_SLICE_EQ("", base64_decode_with_length("Zm8", 3));
-  EXPECT_SLICE_EQ("", base64_decode_with_length("Zm9v", 4));
+    // Test output_length longer than max possible output length in
+    // grpc_chttp2_base64_decode_with_length
+    EXPECT_SLICE_EQ("", base64_decode_with_length("Zg", 2));
+    EXPECT_SLICE_EQ("", base64_decode_with_length("Zm8", 3));
+    EXPECT_SLICE_EQ("", base64_decode_with_length("Zm9v", 4));
 
-  // Test illegal charactors in grpc_chttp2_base64_decode_with_length
-  EXPECT_SLICE_EQ("", base64_decode_with_length("Zm:v", 3));
-  EXPECT_SLICE_EQ("", base64_decode_with_length("Zm=v", 3));
-
+    // Test illegal charactors in grpc_chttp2_base64_decode_with_length
+    EXPECT_SLICE_EQ("", base64_decode_with_length("Zm:v", 3));
+    EXPECT_SLICE_EQ("", base64_decode_with_length("Zm=v", 3));
+  }
+  grpc_shutdown();
   return all_ok ? 0 : 1;
 }

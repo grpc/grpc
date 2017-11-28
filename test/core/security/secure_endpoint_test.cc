@@ -205,19 +205,21 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
-
   grpc_init();
-  g_pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
-  grpc_pollset_init(g_pollset, &g_mu);
-  grpc_endpoint_tests(configs[0], g_pollset, g_mu);
-  grpc_endpoint_tests(configs[1], g_pollset, g_mu);
-  test_leftover(configs[2], 1);
-  test_leftover(configs[3], 1);
-  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                    grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(g_pollset, &destroyed);
+
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    g_pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+    grpc_pollset_init(g_pollset, &g_mu);
+    grpc_endpoint_tests(configs[0], g_pollset, g_mu);
+    grpc_endpoint_tests(configs[1], g_pollset, g_mu);
+    test_leftover(configs[2], 1);
+    test_leftover(configs[3], 1);
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
+                      grpc_schedule_on_exec_ctx);
+    grpc_pollset_shutdown(g_pollset, &destroyed);
+  }
 
   grpc_shutdown();
 

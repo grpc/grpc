@@ -156,10 +156,12 @@ static void test_unix_socket_path_name_too_long(void) {
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_core::ExecCtx _local_exec_ctx;
-  test_unix_socket();
-  test_unix_socket_path_name_too_long();
-  grpc_executor_shutdown();
+
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    test_unix_socket();
+    test_unix_socket_path_name_too_long();
+  }
 
   grpc_shutdown();
   return 0;

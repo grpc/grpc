@@ -369,6 +369,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_no_op();
   for (int k = 0; k <= 1; k++) {
     for (int v = 0; v <= 1; v++) {
@@ -383,5 +384,6 @@ int main(int argc, char** argv) {
   test_create_many_persistant_metadata();
   test_things_stick_around();
   test_user_data_works();
+  grpc_shutdown();
   return 0;
 }

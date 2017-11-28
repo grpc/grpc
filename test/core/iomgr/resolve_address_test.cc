@@ -242,16 +242,18 @@ static void test_unparseable_hostports(void) {
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_core::ExecCtx _local_exec_ctx;
-  test_localhost();
-  test_default_port();
-  test_non_numeric_default_port();
-  test_missing_default_port();
-  test_ipv6_with_port();
-  test_ipv6_without_port();
-  test_invalid_ip_addresses();
-  test_unparseable_hostports();
-  grpc_executor_shutdown();
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    test_localhost();
+    test_default_port();
+    test_non_numeric_default_port();
+    test_missing_default_port();
+    test_ipv6_with_port();
+    test_ipv6_without_port();
+    test_invalid_ip_addresses();
+    test_unparseable_hostports();
+    grpc_executor_shutdown();
+  }
 
   grpc_shutdown();
   return 0;

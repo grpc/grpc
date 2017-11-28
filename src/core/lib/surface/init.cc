@@ -153,23 +153,28 @@ void grpc_shutdown(void) {
   if (grpc_core::ExecCtx::Get()) {
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_core::ExecCtx _local_exec_ctx(0);
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
-    grpc_executor_shutdown();
-    grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-    for (i = g_number_of_plugins; i >= 0; i--) {
-      if (g_all_of_the_plugins[i].destroy != nullptr) {
-        g_all_of_the_plugins[i].destroy();
+    {
+      {
+        grpc_core::ExecCtx _local_exec_ctx(0);
+        grpc_executor_shutdown();
+        grpc_timer_manager_set_threading(
+            false);  // shutdown timer_manager thread
+        for (i = g_number_of_plugins; i >= 0; i--) {
+          if (g_all_of_the_plugins[i].destroy != nullptr) {
+            g_all_of_the_plugins[i].destroy();
+          }
+        }
+        grpc_mdctx_global_shutdown();
+        grpc_handshaker_factory_registry_shutdown();
       }
+      grpc_iomgr_shutdown();
+      gpr_timers_global_destroy();
+      grpc_tracer_shutdown();
+      grpc_slice_intern_shutdown();
+      grpc_stats_shutdown();
     }
-    grpc_iomgr_shutdown();
-    gpr_timers_global_destroy();
-    grpc_tracer_shutdown();
-    grpc_mdctx_global_shutdown();
-    grpc_handshaker_factory_registry_shutdown();
-    grpc_slice_intern_shutdown();
-    grpc_stats_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
 }

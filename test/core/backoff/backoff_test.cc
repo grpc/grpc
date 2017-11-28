@@ -18,6 +18,7 @@
 
 #include "src/core/lib/backoff/backoff.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
@@ -174,6 +175,7 @@ static void test_jitter_backoff(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   gpr_time_init();
 
   test_constant_backoff();
@@ -181,5 +183,6 @@ int main(int argc, char** argv) {
   test_no_jitter_backoff();
   test_jitter_backoff();
 
+  grpc_shutdown();
   return 0;
 }

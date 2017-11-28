@@ -421,24 +421,25 @@ void pollset_set_test_empty_pollset() {
 }
 
 int main(int argc, char** argv) {
-  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
-  const char* poll_strategy = grpc_get_poll_strategy_name();
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    const char* poll_strategy = grpc_get_poll_strategy_name();
 
-  if (poll_strategy != nullptr &&
-      (strcmp(poll_strategy, "epollsig") == 0 ||
-       strcmp(poll_strategy, "epoll-threadpool") == 0)) {
-    pollset_set_test_basic();
-    pollset_set_test_dup_fds();
-    pollset_set_test_empty_pollset();
-  } else {
-    gpr_log(GPR_INFO,
-            "Skipping the test. The test is only relevant for 'epoll' "
-            "strategy. and the current strategy is: '%s'",
-            poll_strategy);
+    if (poll_strategy != nullptr &&
+        (strcmp(poll_strategy, "epollsig") == 0 ||
+         strcmp(poll_strategy, "epoll-threadpool") == 0)) {
+      pollset_set_test_basic();
+      pollset_set_test_dup_fds();
+      pollset_set_test_empty_pollset();
+    } else {
+      gpr_log(GPR_INFO,
+              "Skipping the test. The test is only relevant for 'epoll' "
+              "strategy. and the current strategy is: '%s'",
+              poll_strategy);
+    }
   }
-
   grpc_shutdown();
   return 0;
 }

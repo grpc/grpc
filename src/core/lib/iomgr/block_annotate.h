@@ -46,6 +46,11 @@ void gpr_thd_end_blocking_region();
     gpr_thd_end_blocking_region();              \
     grpc_core::ExecCtx::Get()->InvalidateNow(); \
   } while (0)
+#define GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX \
+  do {                                                  \
+    gpr_thd_end_blocking_region();                      \
+  } while (0)
+
 #else
 #define GRPC_SCHEDULING_START_BLOCKING_REGION \
   do {                                        \
@@ -53,6 +58,9 @@ void gpr_thd_end_blocking_region();
 #define GRPC_SCHEDULING_END_BLOCKING_REGION     \
   do {                                          \
     grpc_core::ExecCtx::Get()->InvalidateNow(); \
+  } while (0)
+#define GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX \
+  do {                                                  \
   } while (0)
 #endif
 

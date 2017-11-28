@@ -31,24 +31,26 @@ int main(int argc, char** argv) {
 
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_core::ExecCtx _local_exec_ctx;
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
 
-  /* set max # of file descriptors to a low value, and
-     verify we can create and destroy many more than this number
-     of descriptors */
-  rlim.rlim_cur = rlim.rlim_max = 10;
-  GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("fd_conservation_posix_test");
+    /* set max # of file descriptors to a low value, and
+       verify we can create and destroy many more than this number
+       of descriptors */
+    rlim.rlim_cur = rlim.rlim_max = 10;
+    GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
+    grpc_resource_quota* resource_quota =
+        grpc_resource_quota_create("fd_conservation_posix_test");
 
-  for (i = 0; i < 100; i++) {
-    p = grpc_iomgr_create_endpoint_pair("test", NULL);
-    grpc_endpoint_destroy(p.client);
-    grpc_endpoint_destroy(p.server);
-    grpc_core::ExecCtx::Get()->Flush();
+    for (i = 0; i < 100; i++) {
+      p = grpc_iomgr_create_endpoint_pair("test", NULL);
+      grpc_endpoint_destroy(p.client);
+      grpc_endpoint_destroy(p.server);
+      grpc_core::ExecCtx::Get()->Flush();
+    }
+
+    grpc_resource_quota_unref(resource_quota);
   }
-
-  grpc_resource_quota_unref(resource_quota);
 
   grpc_shutdown();
   return 0;

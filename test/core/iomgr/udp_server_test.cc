@@ -291,25 +291,27 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(g_pollset, &g_mu);
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(g_pollset, &g_mu);
 
-  test_no_op();
-  test_no_op_with_start();
-  test_no_op_with_port();
-  test_no_op_with_port_and_socket_factory();
-  test_no_op_with_port_and_start();
-  test_receive(1);
-  test_receive(10);
+    test_no_op();
+    test_no_op_with_start();
+    test_no_op_with_port();
+    test_no_op_with_port_and_socket_factory();
+    test_no_op_with_port_and_start();
+    test_receive(1);
+    test_receive(10);
 
-  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                    grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(g_pollset, &destroyed);
-  grpc_core::ExecCtx::Get()->Flush();
-  gpr_free(g_pollset);
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
+                      grpc_schedule_on_exec_ctx);
+    grpc_pollset_shutdown(g_pollset, &destroyed);
+    grpc_core::ExecCtx::Get()->Flush();
+    gpr_free(g_pollset);
+  }
   grpc_shutdown();
   return 0;
 }

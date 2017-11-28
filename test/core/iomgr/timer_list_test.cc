@@ -25,6 +25,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 #include "test/core/util/test_config.h"
@@ -151,9 +152,11 @@ void destruction_test(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_core::ExecCtx::GlobalInit();
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   add_test();
   destruction_test();
+  grpc_core::ExecCtx::GlobalShutdown();
   return 0;
 }
 

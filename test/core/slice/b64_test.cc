@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -201,6 +202,7 @@ static void test_unpadded_decode(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_simple_encode_decode_b64_no_multiline();
   test_simple_encode_decode_b64_multiline();
   test_simple_encode_decode_b64_urlsafe_no_multiline();
@@ -212,5 +214,6 @@ int main(int argc, char** argv) {
   test_url_safe_unsafe_mismatch_failure();
   test_rfc4648_test_vectors();
   test_unpadded_decode();
+  grpc_shutdown();
   return 0;
 }

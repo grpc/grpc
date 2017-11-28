@@ -231,8 +231,10 @@ static void test_slice_hash_table_not_eq() {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_core::ExecCtx::GlobalInit();
   test_slice_hash_table();
   test_slice_hash_table_eq();
   test_slice_hash_table_not_eq();
+  grpc_core::ExecCtx::GlobalShutdown();
   return 0;
 }

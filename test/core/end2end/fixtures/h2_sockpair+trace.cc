@@ -126,7 +126,6 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char** argv) {
   size_t i;
-  grpc_core::ExecCtx _local_exec_ctx;
 
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */

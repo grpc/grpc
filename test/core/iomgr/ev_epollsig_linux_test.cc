@@ -301,17 +301,19 @@ int main(int argc, char** argv) {
   const char* poll_strategy = nullptr;
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_core::ExecCtx _local_exec_ctx;
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
 
-  poll_strategy = grpc_get_poll_strategy_name();
-  if (poll_strategy != nullptr && strcmp(poll_strategy, "epollsig") == 0) {
-    test_add_fd_to_pollset();
-    test_threading();
-  } else {
-    gpr_log(GPR_INFO,
-            "Skipping the test. The test is only relevant for 'epollsig' "
-            "strategy. and the current strategy is: '%s'",
-            poll_strategy);
+    poll_strategy = grpc_get_poll_strategy_name();
+    if (poll_strategy != nullptr && strcmp(poll_strategy, "epollsig") == 0) {
+      test_add_fd_to_pollset();
+      test_threading();
+    } else {
+      gpr_log(GPR_INFO,
+              "Skipping the test. The test is only relevant for 'epollsig' "
+              "strategy. and the current strategy is: '%s'",
+              poll_strategy);
+    }
   }
 
   grpc_shutdown();

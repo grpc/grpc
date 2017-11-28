@@ -30,7 +30,6 @@
 
 grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
                            grpc_slice* output) {
-  grpc_core::ExecCtx exec_ctx;
   unsigned char* contents = nullptr;
   size_t contents_size = 0;
   grpc_slice result = grpc_empty_slice();
@@ -74,6 +73,6 @@ end:
     GRPC_ERROR_UNREF(error);
     error = error_out;
   }
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
   return error;
 }

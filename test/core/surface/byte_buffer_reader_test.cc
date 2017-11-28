@@ -265,6 +265,7 @@ static void test_byte_buffer_copy(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_read_one_slice();
   test_read_one_slice_malloc();
   test_read_none_compressed_slice();
@@ -274,5 +275,6 @@ int main(int argc, char** argv) {
   test_byte_buffer_from_reader();
   test_byte_buffer_copy();
   test_readall();
+  grpc_shutdown();
   return 0;
 }

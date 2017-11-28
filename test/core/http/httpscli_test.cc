@@ -195,11 +195,12 @@ int main(int argc, char** argv) {
   test_get(port);
   test_post(port);
 
-  grpc_httpcli_context_destroy(&g_context);
-  GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops,
-                    grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(grpc_polling_entity_pollset(&g_pops), &destroyed);
-
+  {
+    grpc_httpcli_context_destroy(&g_context);
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops,
+                      grpc_schedule_on_exec_ctx);
+    grpc_pollset_shutdown(grpc_polling_entity_pollset(&g_pops), &destroyed);
+  }
   grpc_shutdown();
 
   gpr_free(grpc_polling_entity_pollset(&g_pops));

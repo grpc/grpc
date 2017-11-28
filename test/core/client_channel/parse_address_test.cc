@@ -24,6 +24,7 @@
 #include <sys/un.h>
 #endif
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -90,9 +91,12 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
 
   test_grpc_parse_unix("unix:/path/name", "/path/name");
   test_grpc_parse_ipv4("ipv4:192.0.2.1:12345", "192.0.2.1", 12345);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1]:12345", "2001:db8::1", 12345, 0);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1%252]:12345", "2001:db8::1", 12345, 2);
+
+  grpc_shutdown();
 }

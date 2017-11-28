@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -119,6 +120,7 @@ static void test_query_parts() {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_succeeds("http://www.google.com", "http", "www.google.com", "", "", "");
   test_succeeds("dns:///foo", "dns", "", "/foo", "", "");
   test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "", "",
@@ -146,5 +148,6 @@ int main(int argc, char** argv) {
   test_fails("http://foo?bar#lol#");
 
   test_query_parts();
+  grpc_shutdown();
   return 0;
 }

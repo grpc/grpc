@@ -483,6 +483,7 @@ static void test_parse_refresh_token_failure_no_refresh_token(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_parse_json_key_success();
   test_parse_json_key_failure_bad_json();
   test_parse_json_key_failure_no_type();
@@ -497,5 +498,6 @@ int main(int argc, char** argv) {
   test_parse_refresh_token_failure_no_client_id();
   test_parse_refresh_token_failure_no_client_secret();
   test_parse_refresh_token_failure_no_refresh_token();
+  grpc_shutdown();
   return 0;
 }

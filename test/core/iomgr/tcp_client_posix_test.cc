@@ -188,21 +188,24 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_core::ExecCtx _local_exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset_set = grpc_pollset_set_create();
-  g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(g_pollset, &g_mu);
-  grpc_pollset_set_add_pollset(g_pollset_set, g_pollset);
 
-  test_succeeds();
-  gpr_log(GPR_ERROR, "End of first test");
-  test_fails();
-  grpc_pollset_set_destroy(g_pollset_set);
-  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                    grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(g_pollset, &destroyed);
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    g_pollset_set = grpc_pollset_set_create();
+    g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(g_pollset, &g_mu);
+    grpc_pollset_set_add_pollset(g_pollset_set, g_pollset);
+
+    test_succeeds();
+    gpr_log(GPR_ERROR, "End of first test");
+    test_fails();
+    grpc_pollset_set_destroy(g_pollset_set);
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
+                      grpc_schedule_on_exec_ctx);
+    grpc_pollset_shutdown(g_pollset, &destroyed);
+  }
 
   grpc_shutdown();
   gpr_free(g_pollset);

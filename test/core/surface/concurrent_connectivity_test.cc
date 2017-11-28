@@ -224,10 +224,12 @@ int run_concurrent_connectivity_test() {
 
   gpr_atm_rel_store(&args.stop, 1);
   gpr_thd_join(server);
-  grpc_core::ExecCtx _local_exec_ctx;
-  grpc_pollset_shutdown(args.pollset,
-                        GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
-                                            grpc_schedule_on_exec_ctx));
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_pollset_shutdown(
+        args.pollset, GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
+                                          grpc_schedule_on_exec_ctx));
+  }
 
   grpc_shutdown();
   return 0;

@@ -77,6 +77,7 @@ namespace grpc_core {
 class ExecCtx {
  public:
   /** Default Constructor */
+
   ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) { Set(this); }
 
   /** Parameterised Constructor */
@@ -84,7 +85,6 @@ class ExecCtx {
 
   /** Destructor */
   ~ExecCtx() {
-    GPR_ASSERT(Get() == this);
     flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
     Set(last_exec_ctx_);

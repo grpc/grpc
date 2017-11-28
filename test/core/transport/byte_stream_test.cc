@@ -18,6 +18,7 @@
 
 #include "src/core/lib/transport/byte_stream.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -253,11 +254,13 @@ static void test_caching_byte_stream_shared_cache(void) {
 }
 
 int main(int argc, char** argv) {
+  grpc_init();
   grpc_test_init(argc, argv);
   test_slice_buffer_stream_basic();
   test_slice_buffer_stream_shutdown();
   test_caching_byte_stream_basic();
   test_caching_byte_stream_reset();
   test_caching_byte_stream_shared_cache();
+  grpc_shutdown();
   return 0;
 }

@@ -147,29 +147,31 @@ int main(int argc, char** argv) {
   grpc_dns_lookup_ares = my_dns_lookup_ares;
   grpc_channel_args* result = (grpc_channel_args*)1;
 
-  grpc_core::ExecCtx _local_exec_ctx;
-  grpc_resolver* resolver = create_resolver("dns:test");
-  gpr_event ev1;
-  gpr_event_init(&ev1);
-  call_resolver_next_after_locking(
-      resolver, &result,
-      GRPC_CLOSURE_CREATE(on_done, &ev1, grpc_schedule_on_exec_ctx));
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(wait_loop(5, &ev1));
-  GPR_ASSERT(result == nullptr);
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_resolver* resolver = create_resolver("dns:test");
+    gpr_event ev1;
+    gpr_event_init(&ev1);
+    call_resolver_next_after_locking(
+        resolver, &result,
+        GRPC_CLOSURE_CREATE(on_done, &ev1, grpc_schedule_on_exec_ctx));
+    grpc_core::ExecCtx::Get()->Flush();
+    GPR_ASSERT(wait_loop(5, &ev1));
+    GPR_ASSERT(result == nullptr);
 
-  gpr_event ev2;
-  gpr_event_init(&ev2);
-  call_resolver_next_after_locking(
-      resolver, &result,
-      GRPC_CLOSURE_CREATE(on_done, &ev2, grpc_schedule_on_exec_ctx));
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(wait_loop(30, &ev2));
-  GPR_ASSERT(result != nullptr);
+    gpr_event ev2;
+    gpr_event_init(&ev2);
+    call_resolver_next_after_locking(
+        resolver, &result,
+        GRPC_CLOSURE_CREATE(on_done, &ev2, grpc_schedule_on_exec_ctx));
+    grpc_core::ExecCtx::Get()->Flush();
+    GPR_ASSERT(wait_loop(30, &ev2));
+    GPR_ASSERT(result != nullptr);
 
-  grpc_channel_args_destroy(result);
-  GRPC_RESOLVER_UNREF(resolver, "test");
-  GRPC_COMBINER_UNREF(g_combiner, "test");
+    grpc_channel_args_destroy(result);
+    GRPC_RESOLVER_UNREF(resolver, "test");
+    GRPC_COMBINER_UNREF(g_combiner, "test");
+  }
 
   grpc_shutdown();
   gpr_mu_destroy(&g_mu);

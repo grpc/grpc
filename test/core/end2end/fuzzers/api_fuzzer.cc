@@ -745,8 +745,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   input_stream inp = {data, data + size};
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;
-  grpc_init();
   grpc_timer_manager_set_threading(false);
+  grpc_init();
   {
     grpc_core::ExecCtx _local_exec_ctx;
     grpc_executor_set_threading(false);

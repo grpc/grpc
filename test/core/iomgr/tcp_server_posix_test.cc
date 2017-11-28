@@ -423,7 +423,6 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_core::ExecCtx _local_exec_ctx;
   grpc_arg chan_args[1];
   chan_args[0].type = GRPC_ARG_INTEGER;
   chan_args[0].key = const_cast<char*>(GRPC_ARG_EXPAND_WILDCARD_ADDRS);
@@ -436,58 +435,61 @@ int main(int argc, char** argv) {
       static_cast<test_addrs*>(gpr_zalloc(sizeof(*dst_addrs)));
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(g_pollset, &g_mu);
+  {
+    grpc_core::ExecCtx _local_exec_ctx;
+    g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(g_pollset, &g_mu);
 
-  test_no_op();
-  test_no_op_with_start();
-  test_no_op_with_port();
-  test_no_op_with_port_and_start();
+    test_no_op();
+    test_no_op_with_start();
+    test_no_op_with_port();
+    test_no_op_with_port_and_start();
 
-  if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
-    gpr_log(GPR_ERROR, "getifaddrs: %s", strerror(errno));
-    return EXIT_FAILURE;
-  }
-  dst_addrs->naddrs = 0;
-  for (ifa_it = ifa; ifa_it != nullptr && dst_addrs->naddrs < MAX_ADDRS;
-       ifa_it = ifa_it->ifa_next) {
-    if (ifa_it->ifa_addr == nullptr) {
-      continue;
-    } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
-      dst_addrs->addrs[dst_addrs->naddrs].addr.len = sizeof(struct sockaddr_in);
-    } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
-      dst_addrs->addrs[dst_addrs->naddrs].addr.len =
-          sizeof(struct sockaddr_in6);
-    } else {
-      continue;
+    if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
+      gpr_log(GPR_ERROR, "getifaddrs: %s", strerror(errno));
+      return EXIT_FAILURE;
     }
-    memcpy(dst_addrs->addrs[dst_addrs->naddrs].addr.addr, ifa_it->ifa_addr,
-           dst_addrs->addrs[dst_addrs->naddrs].addr.len);
-    GPR_ASSERT(
-        grpc_sockaddr_set_port(&dst_addrs->addrs[dst_addrs->naddrs].addr, 0));
-    test_addr_init_str(&dst_addrs->addrs[dst_addrs->naddrs]);
-    ++dst_addrs->naddrs;
+    dst_addrs->naddrs = 0;
+    for (ifa_it = ifa; ifa_it != nullptr && dst_addrs->naddrs < MAX_ADDRS;
+         ifa_it = ifa_it->ifa_next) {
+      if (ifa_it->ifa_addr == nullptr) {
+        continue;
+      } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
+        dst_addrs->addrs[dst_addrs->naddrs].addr.len =
+            sizeof(struct sockaddr_in);
+      } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
+        dst_addrs->addrs[dst_addrs->naddrs].addr.len =
+            sizeof(struct sockaddr_in6);
+      } else {
+        continue;
+      }
+      memcpy(dst_addrs->addrs[dst_addrs->naddrs].addr.addr, ifa_it->ifa_addr,
+             dst_addrs->addrs[dst_addrs->naddrs].addr.len);
+      GPR_ASSERT(
+          grpc_sockaddr_set_port(&dst_addrs->addrs[dst_addrs->naddrs].addr, 0));
+      test_addr_init_str(&dst_addrs->addrs[dst_addrs->naddrs]);
+      ++dst_addrs->naddrs;
+    }
+    freeifaddrs(ifa);
+    ifa = nullptr;
+
+    /* Connect to same addresses as listeners. */
+    test_connect(1, nullptr, nullptr, false);
+    test_connect(10, nullptr, nullptr, false);
+
+    /* Set dst_addrs->addrs[i].len=0 for dst_addrs that are unreachable with a
+       "::" listener. */
+    test_connect(1, nullptr, dst_addrs, true);
+
+    /* Test connect(2) with dst_addrs. */
+    test_connect(1, &channel_args, dst_addrs, false);
+    /* Test connect(2) with dst_addrs. */
+    test_connect(10, &channel_args, dst_addrs, false);
+
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
+                      grpc_schedule_on_exec_ctx);
+    grpc_pollset_shutdown(g_pollset, &destroyed);
   }
-  freeifaddrs(ifa);
-  ifa = nullptr;
-
-  /* Connect to same addresses as listeners. */
-  test_connect(1, nullptr, nullptr, false);
-  test_connect(10, nullptr, nullptr, false);
-
-  /* Set dst_addrs->addrs[i].len=0 for dst_addrs that are unreachable with a
-     "::" listener. */
-  test_connect(1, nullptr, dst_addrs, true);
-
-  /* Test connect(2) with dst_addrs. */
-  test_connect(1, &channel_args, dst_addrs, false);
-  /* Test connect(2) with dst_addrs. */
-  test_connect(10, &channel_args, dst_addrs, false);
-
-  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                    grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(g_pollset, &destroyed);
-
   grpc_shutdown();
   gpr_free(dst_addrs);
   gpr_free(g_pollset);

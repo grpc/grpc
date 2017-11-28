@@ -84,62 +84,66 @@ void grpc_iomgr_shutdown() {
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
 
-  grpc_timer_manager_shutdown();
-  grpc_iomgr_platform_flush();
-  grpc_executor_shutdown();
+  {
+    grpc_core::ExecCtx _local_exec_ctx(0);
+    grpc_timer_manager_shutdown();
+    grpc_iomgr_platform_flush();
+    grpc_executor_shutdown();
 
-  gpr_mu_lock(&g_mu);
-  g_shutdown = 1;
-  while (g_root_object.next != &g_root_object) {
-    if (gpr_time_cmp(
-            gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
-            gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
+    gpr_mu_lock(&g_mu);
+    g_shutdown = 1;
+    while (g_root_object.next != &g_root_object) {
+      if (gpr_time_cmp(
+              gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
+              gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
+        if (g_root_object.next != &g_root_object) {
+          gpr_log(GPR_DEBUG,
+                  "Waiting for %" PRIuPTR " iomgr objects to be destroyed",
+                  count_objects());
+        }
+        last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
+      }
+      grpc_core::ExecCtx::Get()->SetNowIomgrShutdown();
+      if (grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED) {
+        gpr_mu_unlock(&g_mu);
+        grpc_core::ExecCtx::Get()->Flush();
+        grpc_iomgr_platform_flush();
+        gpr_mu_lock(&g_mu);
+        continue;
+      }
       if (g_root_object.next != &g_root_object) {
-        gpr_log(GPR_DEBUG,
-                "Waiting for %" PRIuPTR " iomgr objects to be destroyed",
-                count_objects());
-      }
-      last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
-    }
-    grpc_core::ExecCtx::Get()->SetNowIomgrShutdown();
-    if (grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED) {
-      gpr_mu_unlock(&g_mu);
-      grpc_core::ExecCtx::Get()->Flush();
-      grpc_iomgr_platform_flush();
-      gpr_mu_lock(&g_mu);
-      continue;
-    }
-    if (g_root_object.next != &g_root_object) {
-      if (grpc_iomgr_abort_on_leaks()) {
-        gpr_log(GPR_DEBUG,
-                "Failed to free %" PRIuPTR
-                " iomgr objects before shutdown deadline: "
-                "memory leaks are likely",
-                count_objects());
-        dump_objects("LEAKED");
-        abort();
-      }
-      gpr_timespec short_deadline = gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
-      if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline)) {
-        if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) > 0) {
-          if (g_root_object.next != &g_root_object) {
-            gpr_log(GPR_DEBUG,
-                    "Failed to free %" PRIuPTR
-                    " iomgr objects before shutdown deadline: "
-                    "memory leaks are likely",
-                    count_objects());
-            dump_objects("LEAKED");
+        if (grpc_iomgr_abort_on_leaks()) {
+          gpr_log(GPR_DEBUG,
+                  "Failed to free %" PRIuPTR
+                  " iomgr objects before shutdown deadline: "
+                  "memory leaks are likely",
+                  count_objects());
+          dump_objects("LEAKED");
+          abort();
+        }
+        gpr_timespec short_deadline =
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_millis(100, GPR_TIMESPAN));
+        if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline)) {
+          if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) >
+              0) {
+            if (g_root_object.next != &g_root_object) {
+              gpr_log(GPR_DEBUG,
+                      "Failed to free %" PRIuPTR
+                      " iomgr objects before shutdown deadline: "
+                      "memory leaks are likely",
+                      count_objects());
+              dump_objects("LEAKED");
+            }
+            break;
           }
-          break;
         }
       }
     }
-  }
-  gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(&g_mu);
 
-  grpc_timer_list_shutdown();
-  grpc_core::ExecCtx::Get()->Flush();
+    grpc_timer_list_shutdown();
+  }
 
   /* ensure all threads have left g_mu */
   gpr_mu_lock(&g_mu);
