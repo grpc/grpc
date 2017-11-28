@@ -548,6 +548,10 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
       GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
       chand->resolver = nullptr;
     }
+    if (chand->lb_policy != nullptr) {
+      GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
+      chand->lb_policy = nullptr;
+    }
     set_channel_connectivity_state_locked(
         exec_ctx, chand, GRPC_CHANNEL_SHUTDOWN,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
