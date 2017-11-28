@@ -77,6 +77,15 @@ argp.add_argument('--keep',
                   action='store_true',
                   help='keep the created local images after uploading to GCR')
 
+argp.add_argument('--reuse_git_root',
+                  default=False,
+                  action='store_const',
+                  const=True,                  
+                  help='reuse the repo dir. If False, the existing git root '
+                  'directory will removed before a clean checkout, because '
+                  'reusing the repo can cause git checkout error if you switch '
+                  'between releases.')
+
 
 args = argp.parse_args()
 
@@ -133,7 +142,7 @@ def build_image_jobspec(runtime, env, gcr_tag, stack_base):
   }
   build_env.update(env)
   build_job = jobset.JobSpec(
-          cmdline=[os.path.join(stack_base, _IMAGE_BUILDER)],
+          cmdline=[_IMAGE_BUILDER],
           environ=build_env,
           shortname='build_docker_%s' % runtime,
           timeout_seconds=30*60)
@@ -226,6 +235,11 @@ def checkout_grpc_stack(lang, release):
   # For example, 'git@github.com:grpc/grpc-go.git' should use 'grpc-go'.
   repo_dir = os.path.splitext(os.path.basename(repo))[0]
   stack_base = os.path.join(args.git_checkout_root, repo_dir)
+
+  # Clean up leftover repo dir if necessary.
+  if not args.reuse_git_root and os.path.exists(stack_base):
+    jobset.message('START', 'Removing git checkout root.', do_newline=True)
+    shutil.rmtree(stack_base)
 
   if not os.path.exists(stack_base):
     subprocess.check_call(['git', 'clone', '--recursive', repo],

@@ -48,6 +48,20 @@ module Grpc
         @status_mutex.synchronize { @statuses["#{service}"] = status }
       end
 
+      # Adds given health status for all given services
+      def set_status_for_services(status, *services)
+        @status_mutex.synchronize do
+          services.each { |service| @statuses["#{service}"] = status }
+        end
+      end
+
+      # Adds health status for each service given within hash
+      def add_statuses(service_statuses = {})
+        @status_mutex.synchronize do
+          service_statuses.each_pair { |service, status| @statuses["#{service}"] = status }
+        end
+      end
+
       # Clears the status for the given service.
       def clear_status(service)
         @status_mutex.synchronize { @statuses.delete("#{service}") }

@@ -50,7 +50,7 @@
                    dispatchQueue:dispatch_get_main_queue()];
 }
 
-- (void)enqueueValue:(id)value completionHandler:(void (^)())handler {
+- (void)enqueueValue:(id)value completionHandler:(void (^)(void))handler {
   dispatch_async(_writeableQueue, ^{
     // We're racing a possible cancellation performed by another thread. To turn all already-
     // enqueued messages into noops, cancellation nillifies the writeable property. If we get it

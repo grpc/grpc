@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 5.0.0-dev
-  g_stands_for: generous
-  version: 1.8.0-dev
+  g_stands_for: glossy
+  version: 1.9.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -49,7 +49,6 @@ filegroups:
   - src/core/lib/support/log_windows.cc
   - src/core/lib/support/mpscq.cc
   - src/core/lib/support/murmur_hash.cc
-  - src/core/lib/support/stack_lockfree.cc
   - src/core/lib/support/string.cc
   - src/core/lib/support/string_posix.cc
   - src/core/lib/support/string_util_windows.cc
@@ -115,7 +114,6 @@ filegroups:
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/spinlock.h
-  - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
   - src/core/lib/support/time_precise.h
@@ -2253,16 +2251,6 @@ targets:
   language: c
   src:
   - test/core/support/spinlock_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: gpr_stack_lockfree_test
-  cpu_cost: 7
-  build: test
-  language: c
-  src:
-  - test/core/support/stack_lockfree_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -4926,8 +4914,8 @@ configs:
   msan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins
-      -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
-      -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0
+      -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang++
@@ -4935,6 +4923,8 @@ configs:
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
     compile_the_world: true
+    test_environ:
+      MSAN_OPTIONS: poison_in_dtor=1
   mutrace:
     CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
