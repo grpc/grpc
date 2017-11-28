@@ -774,6 +774,7 @@ doc/connectivity-semantics-and-api.md \
 doc/core/grpc-error.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
+doc/core/transport_explainer.md \
 doc/cpp-style-guide.md \
 doc/environment_variables.md \
 doc/epoll-polling-engine.md \
