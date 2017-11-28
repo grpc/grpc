@@ -406,110 +406,114 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
   grpc_server_retry_throttle_data* retry_throttle_data = nullptr;
   grpc_slice_hash_table* method_params_table = nullptr;
   if (chand->resolver_result != nullptr) {
-    // Find LB policy name.
-    const char* lb_policy_name = nullptr;
-    const grpc_arg* channel_arg =
-        grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
-    if (channel_arg != nullptr) {
-      GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-      lb_policy_name = channel_arg->value.string;
-    }
-    // Special case: If at least one balancer address is present, we use
-    // the grpclb policy, regardless of what the resolver actually specified.
-    channel_arg =
-        grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
-    if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-      grpc_lb_addresses* addresses =
-          (grpc_lb_addresses*)channel_arg->value.pointer.p;
-      bool found_balancer_address = false;
-      for (size_t i = 0; i < addresses->num_addresses; ++i) {
-        if (addresses->addresses[i].is_balancer) {
-          found_balancer_address = true;
-          break;
-        }
-      }
-      if (found_balancer_address) {
-        if (lb_policy_name != nullptr &&
-            strcmp(lb_policy_name, "grpclb") != 0) {
-          gpr_log(GPR_INFO,
-                  "resolver requested LB policy %s but provided at least one "
-                  "balancer address -- forcing use of grpclb LB policy",
-                  lb_policy_name);
-        }
-        lb_policy_name = "grpclb";
-      }
-    }
-    // Use pick_first if nothing was specified and we didn't select grpclb
-    // above.
-    if (lb_policy_name == nullptr) lb_policy_name = "pick_first";
-    grpc_lb_policy_args lb_policy_args;
-    lb_policy_args.args = chand->resolver_result;
-    lb_policy_args.client_channel_factory = chand->client_channel_factory;
-    lb_policy_args.combiner = chand->combiner;
-    // Check to see if we're already using the right LB policy.
-    // Note: It's safe to use chand->info_lb_policy_name here without
-    // taking a lock on chand->info_mu, because this function is the
-    // only thing that modifies its value, and it can only be invoked
-    // once at any given time.
-    lb_policy_name_changed =
-        chand->info_lb_policy_name == nullptr ||
-        strcmp(chand->info_lb_policy_name, lb_policy_name) != 0;
-    if (chand->lb_policy != nullptr && !lb_policy_name_changed) {
-      // Continue using the same LB policy.  Update with new addresses.
-      lb_policy_updated = true;
-      grpc_lb_policy_update_locked(exec_ctx, chand->lb_policy, &lb_policy_args);
-    } else {
-      // Instantiate new LB policy.
-      new_lb_policy =
-          grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
-      if (new_lb_policy == nullptr) {
-        gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
-      } else {
-        reresolution_request_args* args =
-            (reresolution_request_args*)gpr_zalloc(sizeof(*args));
-        args->chand = chand;
-        args->lb_policy = new_lb_policy;
-        GRPC_CLOSURE_INIT(&args->closure, request_reresolution_locked, args,
-                          grpc_combiner_scheduler(chand->combiner));
-        GRPC_CHANNEL_STACK_REF(chand->owning_stack, "re-resolution");
-        grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, new_lb_policy,
-                                                    &args->closure);
-      }
-    }
-    // Find service config.
-    channel_arg =
-        grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
-    if (channel_arg != nullptr) {
-      GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-      service_config_json = gpr_strdup(channel_arg->value.string);
-      grpc_service_config* service_config =
-          grpc_service_config_create(service_config_json);
-      if (service_config != nullptr) {
-        channel_arg =
-            grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVER_URI);
-        GPR_ASSERT(channel_arg != nullptr);
+    if (chand->resolver != nullptr) {
+      // Find LB policy name.
+      const char* lb_policy_name = nullptr;
+      const grpc_arg* channel_arg = grpc_channel_args_find(
+          chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
+      if (channel_arg != nullptr) {
         GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-        grpc_uri* uri =
-            grpc_uri_parse(exec_ctx, channel_arg->value.string, true);
-        GPR_ASSERT(uri->path[0] != '\0');
-        service_config_parsing_state parsing_state;
-        memset(&parsing_state, 0, sizeof(parsing_state));
-        parsing_state.server_name =
-            uri->path[0] == '/' ? uri->path + 1 : uri->path;
-        grpc_service_config_parse_global_params(
-            service_config, parse_retry_throttle_params, &parsing_state);
-        grpc_uri_destroy(uri);
-        retry_throttle_data = parsing_state.retry_throttle_data;
-        method_params_table = grpc_service_config_create_method_config_table(
-            exec_ctx, service_config, method_parameters_create_from_json,
-            method_parameters_ref_wrapper, method_parameters_unref_wrapper);
-        grpc_service_config_destroy(service_config);
+        lb_policy_name = channel_arg->value.string;
       }
+      // Special case: If at least one balancer address is present, we use
+      // the grpclb policy, regardless of what the resolver actually specified.
+      channel_arg =
+          grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
+      if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
+        grpc_lb_addresses* addresses =
+            (grpc_lb_addresses*)channel_arg->value.pointer.p;
+        bool found_balancer_address = false;
+        for (size_t i = 0; i < addresses->num_addresses; ++i) {
+          if (addresses->addresses[i].is_balancer) {
+            found_balancer_address = true;
+            break;
+          }
+        }
+        if (found_balancer_address) {
+          if (lb_policy_name != nullptr &&
+              strcmp(lb_policy_name, "grpclb") != 0) {
+            gpr_log(GPR_INFO,
+                    "resolver requested LB policy %s but provided at least one "
+                    "balancer address -- forcing use of grpclb LB policy",
+                    lb_policy_name);
+          }
+          lb_policy_name = "grpclb";
+        }
+      }
+      // Use pick_first if nothing was specified and we didn't select grpclb
+      // above.
+      if (lb_policy_name == nullptr) lb_policy_name = "pick_first";
+      grpc_lb_policy_args lb_policy_args;
+      lb_policy_args.args = chand->resolver_result;
+      lb_policy_args.client_channel_factory = chand->client_channel_factory;
+      lb_policy_args.combiner = chand->combiner;
+      // Check to see if we're already using the right LB policy.
+      // Note: It's safe to use chand->info_lb_policy_name here without
+      // taking a lock on chand->info_mu, because this function is the
+      // only thing that modifies its value, and it can only be invoked
+      // once at any given time.
+      lb_policy_name_changed =
+          chand->info_lb_policy_name == nullptr ||
+          strcmp(chand->info_lb_policy_name, lb_policy_name) != 0;
+      if (chand->lb_policy != nullptr && !lb_policy_name_changed) {
+        // Continue using the same LB policy.  Update with new addresses.
+        lb_policy_updated = true;
+        grpc_lb_policy_update_locked(exec_ctx, chand->lb_policy,
+                                     &lb_policy_args);
+      } else {
+        // Instantiate new LB policy.
+        new_lb_policy =
+            grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
+        if (new_lb_policy == nullptr) {
+          gpr_log(GPR_ERROR, "could not create LB policy \"%s\"",
+                  lb_policy_name);
+        } else {
+          reresolution_request_args* args =
+              (reresolution_request_args*)gpr_zalloc(sizeof(*args));
+          args->chand = chand;
+          args->lb_policy = new_lb_policy;
+          GRPC_CLOSURE_INIT(&args->closure, request_reresolution_locked, args,
+                            grpc_combiner_scheduler(chand->combiner));
+          GRPC_CHANNEL_STACK_REF(chand->owning_stack, "re-resolution");
+          grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, new_lb_policy,
+                                                      &args->closure);
+        }
+      }
+      // Find service config.
+      channel_arg = grpc_channel_args_find(chand->resolver_result,
+                                           GRPC_ARG_SERVICE_CONFIG);
+      if (channel_arg != nullptr) {
+        GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+        service_config_json = gpr_strdup(channel_arg->value.string);
+        grpc_service_config* service_config =
+            grpc_service_config_create(service_config_json);
+        if (service_config != nullptr) {
+          channel_arg = grpc_channel_args_find(chand->resolver_result,
+                                               GRPC_ARG_SERVER_URI);
+          GPR_ASSERT(channel_arg != nullptr);
+          GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+          grpc_uri* uri =
+              grpc_uri_parse(exec_ctx, channel_arg->value.string, true);
+          GPR_ASSERT(uri->path[0] != '\0');
+          service_config_parsing_state parsing_state;
+          memset(&parsing_state, 0, sizeof(parsing_state));
+          parsing_state.server_name =
+              uri->path[0] == '/' ? uri->path + 1 : uri->path;
+          grpc_service_config_parse_global_params(
+              service_config, parse_retry_throttle_params, &parsing_state);
+          grpc_uri_destroy(uri);
+          retry_throttle_data = parsing_state.retry_throttle_data;
+          method_params_table = grpc_service_config_create_method_config_table(
+              exec_ctx, service_config, method_parameters_create_from_json,
+              method_parameters_ref_wrapper, method_parameters_unref_wrapper);
+          grpc_service_config_destroy(service_config);
+        }
+      }
+      // Before we clean up, save a copy of lb_policy_name, since it might
+      // be pointing to data inside chand->resolver_result.
+      // The copy will be saved in chand->lb_policy_name below.
+      lb_policy_name_dup = gpr_strdup(lb_policy_name);
     }
-    // Before we clean up, save a copy of lb_policy_name, since it might
-    // be pointing to data inside chand->resolver_result.
-    // The copy will be saved in chand->lb_policy_name below.
-    lb_policy_name_dup = gpr_strdup(lb_policy_name);
     grpc_channel_args_destroy(exec_ctx, chand->resolver_result);
     chand->resolver_result = nullptr;
   }
