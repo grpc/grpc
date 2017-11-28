@@ -29,7 +29,7 @@
 bool squelch = true;
 bool leak_check = true;
 
-int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   struct grpc_memory_counters counters;
   grpc_memory_counters_init();
   grpc_slice input = grpc_slice_from_copied_buffer((const char*)data, size);
