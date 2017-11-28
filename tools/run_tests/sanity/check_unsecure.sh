@@ -19,6 +19,6 @@ set -e
 # Make sure that there is no path from a known unsecure target
 # to an SSL library
 
-[[ $(bazel query "somepath(//test/cpp/microbenchmarks:helpers, //external:libssl)" 2>/dev/null | wc -l) -eq 0 ]]
+test `bazel query "somepath(//test/cpp/microbenchmarks:helpers, //external:libssl)" 2>/dev/null | wc -l` -eq 0
 
 # Fall through with the exit code of that command
