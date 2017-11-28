@@ -52,7 +52,7 @@ namespace Grpc.Microbenchmarks
 
         private void ThreadBody(int iterations, int payloadSize)
         {
-            var completionRegistry = new CompletionRegistry(environment, () => environment.BatchContextPool.Lease());
+            var completionRegistry = new CompletionRegistry(environment, () => environment.BatchContextPool.Lease(), () => RequestCallContextSafeHandle.Create());
             var cq = CompletionQueueSafeHandle.CreateAsync(completionRegistry);
             var call = CreateFakeCall(cq);
 
