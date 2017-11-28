@@ -59,7 +59,7 @@ namespace Grpc.Core.Internal
             this.sharedCapacity = sharedCapacity;
             this.threadLocalData = new ThreadLocal<ThreadLocalData>(() => new ThreadLocalData(threadLocalCapacity), false);
             this.threadLocalCapacity = threadLocalCapacity;
-            this.rentLimit = threadLocalCapacity / 2;
+            this.rentLimit = threadLocalCapacity != 1 ? threadLocalCapacity / 2 : 1;
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Grpc.Core.Internal
             // next time we try to lease we will just create those
             // instead of trying to grab them from the shared queue.
             // This is to guarantee we won't be accessing the shared queue too often.
-            localData.CreateBudget += rentLimit - itemsMoved;
+            localData.CreateBudget = rentLimit - itemsMoved;
 
             return leasedItem ?? itemFactory();
         }
@@ -156,7 +156,7 @@ namespace Grpc.Core.Internal
             // next time we try to return we will just dispose the item
             // instead of trying to return them to the shared queue.
             // This is to guarantee we won't be accessing the shared queue too often.
-            localData.DisposeBudget += returnLimit - itemsReturned;
+            localData.DisposeBudget = returnLimit - itemsReturned;
 
             if (itemsReturned == 0)
             {
