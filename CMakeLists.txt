@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.8.0-dev")
+set(PACKAGE_VERSION   "1.9.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -433,7 +433,6 @@ add_dependencies(buildtests_c gpr_log_test)
 add_dependencies(buildtests_c gpr_manual_constructor_test)
 add_dependencies(buildtests_c gpr_mpscq_test)
 add_dependencies(buildtests_c gpr_spinlock_test)
-add_dependencies(buildtests_c gpr_stack_lockfree_test)
 add_dependencies(buildtests_c gpr_string_test)
 add_dependencies(buildtests_c gpr_sync_test)
 add_dependencies(buildtests_c gpr_thd_test)
@@ -807,7 +806,6 @@ add_library(gpr
   src/core/lib/support/log_windows.cc
   src/core/lib/support/mpscq.cc
   src/core/lib/support/murmur_hash.cc
-  src/core/lib/support/stack_lockfree.cc
   src/core/lib/support/string.cc
   src/core/lib/support/string_posix.cc
   src/core/lib/support/string_util_windows.cc
@@ -6467,34 +6465,6 @@ target_include_directories(gpr_spinlock_test
 )
 
 target_link_libraries(gpr_spinlock_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(gpr_stack_lockfree_test
-  test/core/support/stack_lockfree_test.cc
-)
-
-
-target_include_directories(gpr_stack_lockfree_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
-)
-
-target_link_libraries(gpr_stack_lockfree_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr

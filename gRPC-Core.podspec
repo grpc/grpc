@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.8.0-dev'
+  version = '1.9.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -198,7 +198,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
                       'src/core/lib/support/spinlock.h',
-                      'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
                       'src/core/lib/support/time_precise.h',
@@ -226,7 +225,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/log_windows.cc',
                       'src/core/lib/support/mpscq.cc',
                       'src/core/lib/support/murmur_hash.cc',
-                      'src/core/lib/support/stack_lockfree.cc',
                       'src/core/lib/support/string.cc',
                       'src/core/lib/support/string_posix.cc',
                       'src/core/lib/support/string_util_windows.cc',
@@ -718,7 +716,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
                               'src/core/lib/support/spinlock.h',
-                              'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
                               'src/core/lib/support/time_precise.h',
