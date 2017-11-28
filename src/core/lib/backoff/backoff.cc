@@ -19,24 +19,31 @@
 #include "src/core/lib/backoff/backoff.h"
 
 #include <algorithm>
-#include <cstdlib>
 
 #include <grpc/support/useful.h>
 
 namespace grpc_core {
 
 namespace {
-static double generate_uniform_random_number_between(double a, double b) {
+
+/* Generate a random number between 0 and 1. We roll our own RNG because seeding
+ * rand() modifies a global variable we have no control over. */
+double generate_uniform_random_number(uint32_t* rng_state) {
+  *rng_state = (1103515245 * *rng_state + 12345) % ((uint32_t)1 << 31);
+  return *rng_state / (double)((uint32_t)1 << 31);
+}
+
+double generate_uniform_random_number_between(uint32_t* rng_state, double a,
+                                              double b) {
   if (a == b) return a;
   if (a > b) GPR_SWAP(double, a, b);  // make sure a < b
   const double range = b - a;
-  const double zero_to_one_rand = rand() / (double)RAND_MAX;
-  return a + zero_to_one_rand * range;
+  return a + generate_uniform_random_number(rng_state) * range;
 }
 }  // namespace
 
 Backoff::Backoff(const Options& options) : options_(options) {
-  seed = (unsigned int)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
+  rng_state_ = (unsigned int)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
 }
 
 Backoff::Result Backoff::Begin(grpc_exec_ctx* exec_ctx) {
@@ -52,7 +59,7 @@ Backoff::Result Backoff::Step(grpc_exec_ctx* exec_ctx) {
       (grpc_millis)(std::min(current_backoff_ * options_.multiplier(),
                              (double)options_.max_backoff()));
   const double jitter = generate_uniform_random_number_between(
-      -options_.jitter() * current_backoff_,
+      &rng_state_, -options_.jitter() * current_backoff_,
       options_.jitter() * current_backoff_);
   const grpc_millis current_timeout = std::max(
       (grpc_millis)(current_backoff_ + jitter), options_.min_connect_timeout());
@@ -64,6 +71,6 @@ Backoff::Result Backoff::Step(grpc_exec_ctx* exec_ctx) {
 
 void Backoff::Reset() { current_backoff_ = options_.initial_backoff(); }
 
-void Backoff::SetRandomSeed(uint32_t seed) { srand(seed); }
+void Backoff::SetRandomSeed(uint32_t seed) { rng_state_ = seed; }
 
 }  // namespace grpc_core

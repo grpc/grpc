@@ -98,8 +98,7 @@ class Backoff {
   const Options options_;
   /// current delay before retries
   grpc_millis current_backoff_;
-
-  unsigned int seed;
+  uint32_t rng_state_;
 };
 
 }  // namespace grpc_core
