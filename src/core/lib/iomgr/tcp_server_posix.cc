@@ -56,14 +56,13 @@
 
 static gpr_once check_init = GPR_ONCE_INIT;
 static bool has_so_reuseport = false;
+static grpc_error* so_reuseport_error = NULL;
 
 static void init(void) {
 #ifndef GPR_MANYLINUX1
   int s = socket(AF_INET, SOCK_STREAM, 0);
   if (s >= 0) {
-    has_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
-                                         grpc_set_socket_reuse_port(s, 1));
-    close(s);
+    so_reuseport_error = grpc_set_socket_reuse_port(s, 1);
   }
 #endif
 }
@@ -80,8 +79,17 @@ grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->so_reuseport =
-            has_so_reuseport && (args->args[i].value.integer != 0);
+        s->so_reuseport = (args->args[i].value.integer != 0);
+        if (args->args[i].value.integer == 0) {
+          s->so_reuseport = false;
+          if (!so_reuseport_error) {
+            GRPC_ERROR_UNREF(so_reuseport_error);
+            so_reuseport_error = NULL;            
+          }
+        } else {
+          s->so_reuseport =
+            (so_reuseport_error == NULL) && (args->args[i].value.integer != 0);
+        }
       } else {
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
@@ -97,6 +105,12 @@ grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
       }
     }
   }
+
+  if (!so_reuseport_error) {
+    GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
+      grpc_set_socket_reuse_port(s, 1));
+  }
+
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
