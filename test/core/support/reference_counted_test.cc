@@ -17,7 +17,10 @@
  */
 
 #include "src/core/lib/support/reference_counted.h"
+
 #include <gtest/gtest.h>
+
+#include "src/core/lib/support/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -39,12 +42,12 @@ TEST(ReferenceCounted, StackAllocatedWithExtraRef) {
 }
 
 TEST(ReferenceCounted, HeapAllocated) {
-  Foo* foo = new Foo();
+  Foo* foo = New<Foo>();
   foo->Unref();
 }
 
 TEST(ReferenceCounted, HeapAllocatedWithExtraRef) {
-  Foo* foo = new Foo();
+  Foo* foo = New<Foo>();
   foo->Ref();
   foo->Unref();
   foo->Unref();

@@ -39,6 +39,10 @@ class ReferenceCounted {
   ReferenceCounted& operator=(const ReferenceCounted&) = delete;
 
  protected:
+  // Allow Delete() to access destructor.
+  template<typename T>
+  friend void Delete(T*);
+
   explicit ReferenceCounted(TraceFlag* trace_flag) : trace_flag_(trace_flag) {
     gpr_ref_init(&refs_, 1);
   }

@@ -20,6 +20,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/support/memory.h"
+
 namespace grpc_core {
 
 void ReferenceCounted::Ref(const DebugLocation& location, const char* reason) {
@@ -49,7 +51,7 @@ bool ReferenceCounted::Unref(const DebugLocation& location,
 
 bool ReferenceCounted::Unref() {
   if (gpr_unref(&refs_)) {
-    delete this;
+    Delete(this);
     return true;
   }
   return false;
