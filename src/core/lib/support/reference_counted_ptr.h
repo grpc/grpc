@@ -27,15 +27,13 @@ namespace grpc_core {
 
 // A smart pointer class for objects that provide Ref() and Unref() methods,
 // such as those provided by the ReferenceCounted base class.
-template<typename T>
+template <typename T>
 class ReferenceCountedPtr {
  public:
   ReferenceCountedPtr() {}
 
   // If value is non-null, we take ownership of a ref to it.
-  explicit ReferenceCountedPtr(T* value) {
-    value_ = value;
-  }
+  explicit ReferenceCountedPtr(T* value) { value_ = value; }
 
   // Move support.
   ReferenceCountedPtr(ReferenceCountedPtr&& other) {
@@ -80,7 +78,7 @@ class ReferenceCountedPtr {
   T* value_ = nullptr;
 };
 
-template<typename T, typename... Args>
+template <typename T, typename... Args>
 inline ReferenceCountedPtr<T> MakeReferenceCounted(Args&&... args) {
   return ReferenceCountedPtr<T>(New<T>(std::forward<Args>(args)...));
 }

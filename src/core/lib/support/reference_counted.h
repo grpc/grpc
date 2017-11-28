@@ -40,7 +40,7 @@ class ReferenceCounted {
 
  protected:
   // Allow Delete() to access destructor.
-  template<typename T>
+  template <typename T>
   friend void Delete(T*);
 
   explicit ReferenceCounted(TraceFlag* trace_flag) : trace_flag_(trace_flag) {

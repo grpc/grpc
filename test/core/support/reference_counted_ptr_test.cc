@@ -41,9 +41,7 @@ class Foo : public ReferenceCounted {
   int value_;
 };
 
-TEST(ReferenceCountedPtr, DefaultConstructor) {
-  ReferenceCountedPtr<Foo> foo;
-}
+TEST(ReferenceCountedPtr, DefaultConstructor) { ReferenceCountedPtr<Foo> foo; }
 
 TEST(ReferenceCountedPtr, ExplicitConstructorEmpty) {
   ReferenceCountedPtr<Foo> foo(nullptr);

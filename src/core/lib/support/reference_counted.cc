@@ -34,9 +34,7 @@ void ReferenceCounted::Ref(const DebugLocation& location, const char* reason) {
   Ref();
 }
 
-void ReferenceCounted::Ref() {
-  gpr_ref(&refs_);
-}
+void ReferenceCounted::Ref() { gpr_ref(&refs_); }
 
 bool ReferenceCounted::Unref(const DebugLocation& location,
                              const char* reason) {

@@ -31,9 +31,7 @@ class Foo : public ReferenceCounted {
   Foo() : ReferenceCounted(nullptr) {}
 };
 
-TEST(ReferenceCounted, StackAllocated) {
-  Foo foo;
-}
+TEST(ReferenceCounted, StackAllocated) { Foo foo; }
 
 TEST(ReferenceCounted, StackAllocatedWithExtraRef) {
   Foo foo;

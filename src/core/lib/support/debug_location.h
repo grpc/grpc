@@ -28,6 +28,7 @@ class DebugLocation {
   bool Log() const { return true; }
   const char* file() const { return file_; }
   int line() const { return line_; }
+
  private:
   const char* file_;
   const int line_;
