@@ -139,6 +139,7 @@
     _op.op = GRPC_OP_RECV_INITIAL_METADATA;
     grpc_metadata_array_init(&_headers);
     _op.data.recv_initial_metadata.recv_initial_metadata = &_headers;
+    _op.data.recv_initial_metadata.trailing_metadata_available = NULL;
     if (handler) {
       // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;

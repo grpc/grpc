@@ -655,6 +655,7 @@ def operation_receive_initial_metadata(int flags):
   op._received_metadata = MetadataArray()
   op.c_op.data.receive_initial_metadata.receive_initial_metadata = (
       &op._received_metadata.c_metadata_array)
+  op.c_op.data.receive_initial_metadata.trailing_metadata_available = NULL
   op.is_valid = True
   return op
 
