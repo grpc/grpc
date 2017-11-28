@@ -49,7 +49,6 @@ filegroups:
   - src/core/lib/support/log_windows.cc
   - src/core/lib/support/mpscq.cc
   - src/core/lib/support/murmur_hash.cc
-  - src/core/lib/support/stack_lockfree.cc
   - src/core/lib/support/string.cc
   - src/core/lib/support/string_posix.cc
   - src/core/lib/support/string_util_windows.cc
@@ -115,7 +114,6 @@ filegroups:
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/spinlock.h
-  - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
   - src/core/lib/support/time_precise.h
@@ -2242,16 +2240,6 @@ targets:
   language: c
   src:
   - test/core/support/spinlock_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: gpr_stack_lockfree_test
-  cpu_cost: 7
-  build: test
-  language: c
-  src:
-  - test/core/support/stack_lockfree_test.cc
   deps:
   - gpr_test_util
   - gpr
