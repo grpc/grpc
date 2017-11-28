@@ -21,8 +21,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
 #define TEST_VECTOR(raw, encoded, dict) \

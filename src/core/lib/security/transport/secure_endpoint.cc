@@ -27,13 +27,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include "src/core/gpr/string.h"
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
 #define STAGING_BUFFER_SIZE 8192

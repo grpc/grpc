@@ -25,9 +25,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/profiling/timers.h"
 
 grpc_core::TraceFlag grpc_combiner_trace(false, "combiner");
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2015 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,32 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_ATOMIC_H
-#define GRPC_CORE_LIB_SUPPORT_ATOMIC_H
-
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_HAS_CXX11_ATOMIC
-#include "src/core/lib/support/atomic_with_std.h"
-#else
-#include "src/core/lib/support/atomic_with_atm.h"
-#endif
+#ifdef GPR_POSIX_ENV
 
-#endif /* GRPC_CORE_LIB_SUPPORT_ATOMIC_H */
+#include "src/core/gpr/env.h"
+
+#include <stdlib.h>
+
+#include <grpc/support/log.h>
+
+#include <grpc/support/string_util.h>
+#include "src/core/gpr/string.h"
+
+const char* gpr_getenv_silent(const char* name, char** dst) {
+  *dst = gpr_getenv(name);
+  return NULL;
+}
+
+char* gpr_getenv(const char* name) {
+  char* result = getenv(name);
+  return result == NULL ? result : gpr_strdup(result);
+}
+
+void gpr_setenv(const char* name, const char* value) {
+  int res = setenv(name, value, 1);
+  GPR_ASSERT(res == 0);
+}
+
+#endif /* GPR_POSIX_ENV */

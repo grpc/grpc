@@ -22,8 +22,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/gpr/env.h"
+#include "src/core/gpr/string.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)

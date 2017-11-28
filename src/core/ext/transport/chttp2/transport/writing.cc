@@ -22,8 +22,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/http2_errors.h"
 

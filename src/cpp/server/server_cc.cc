@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
-#include "src/core/lib/profiling/timers.h"
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/server/health/default_health_check_service.h"

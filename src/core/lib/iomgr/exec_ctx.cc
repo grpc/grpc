@@ -22,8 +22,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/profiling/timers.h"
 
 bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx* exec_ctx) {
   if ((exec_ctx->flags & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {

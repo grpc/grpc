@@ -25,13 +25,13 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
+#include "src/core/gpr/string.h"
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
 

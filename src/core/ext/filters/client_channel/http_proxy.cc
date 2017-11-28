@@ -29,10 +29,10 @@
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/gpr/env.h"
+#include "src/core/gpr/string.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/b64.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 
 /**
  * Parses the 'http_proxy' env var and returns the proxy hostname to resolve or

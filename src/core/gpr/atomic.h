@@ -16,27 +16,15 @@
  *
  */
 
-#include "src/core/gpr/vector.h"
-#include <gtest/gtest.h>
-#include "test/core/util/test_config.h"
+#ifndef GRPC_CORE_LIB_SUPPORT_ATOMIC_H
+#define GRPC_CORE_LIB_SUPPORT_ATOMIC_H
 
-namespace grpc_core {
-namespace testing {
+#include <grpc/support/port_platform.h>
 
-TEST(InlinedVectorTest, CreateAndIterate) {
-  InlinedVector<int, 1> v{1, 2, 3};
-  int sum = 0;
-  for (auto i : v) {
-    sum += i;
-  }
-  EXPECT_EQ(6, sum);
-}
+#ifdef GPR_HAS_CXX11_ATOMIC
+#include "src/core/gpr/atomic_with_std.h"
+#else
+#include "src/core/gpr/atomic_with_atm.h"
+#endif
 
-}  // namespace testing
-}  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+#endif /* GRPC_CORE_LIB_SUPPORT_ATOMIC_H */

@@ -28,7 +28,7 @@
 #include <process.h>
 #include <sys/timeb.h>
 
-#include "src/core/lib/support/time_precise.h"
+#include "src/core/gpr/time_precise.h"
 
 static LARGE_INTEGER g_start_time;
 static double g_time_scale;

@@ -20,9 +20,9 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H
 
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/gpr/arena.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 

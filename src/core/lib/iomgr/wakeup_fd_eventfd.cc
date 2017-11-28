@@ -26,8 +26,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/profiling/timers.h"
 
 static grpc_error* eventfd_create(grpc_wakeup_fd* fd_info) {
   int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);

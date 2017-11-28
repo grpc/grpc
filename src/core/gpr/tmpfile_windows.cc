@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_MSYS_TMPFILE
+#ifdef GPR_WINDOWS_TMPFILE
 
 #include <io.h>
 #include <stdio.h>
@@ -29,30 +29,41 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/string_windows.h"
-#include "src/core/lib/support/tmpfile.h"
+#include "src/core/gpr/string_windows.h"
+#include "src/core/gpr/tmpfile.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename_out) {
   FILE* result = NULL;
-  char tmp_filename[MAX_PATH];
+  LPTSTR template_string = NULL;
+  TCHAR tmp_path[MAX_PATH];
+  TCHAR tmp_filename[MAX_PATH];
+  DWORD status;
   UINT success;
 
   if (tmp_filename_out != NULL) *tmp_filename_out = NULL;
 
+  /* Convert our prefix to TCHAR. */
+  template_string = gpr_char_to_tchar(prefix);
+  GPR_ASSERT(template_string);
+
+  /* Get the path to the best temporary folder available. */
+  status = GetTempPath(MAX_PATH, tmp_path);
+  if (status == 0 || status > MAX_PATH) goto end;
+
   /* Generate a unique filename with our template + temporary path. */
-  success = GetTempFileNameA(".", prefix, 0, tmp_filename);
-  fprintf(stderr, "success = %d\n", success);
+  success = GetTempFileName(tmp_path, template_string, 0, tmp_filename);
+  if (!success) goto end;
 
-  if (success) {
-    /* Open a file there. */
-    result = fopen(tmp_filename, "wb+");
-    fprintf(stderr, "result = %p\n", result);
-  }
-  if (result != NULL && tmp_filename_out) {
-    *tmp_filename_out = gpr_strdup(tmp_filename);
+  /* Open a file there. */
+  if (_tfopen_s(&result, tmp_filename, TEXT("wb+")) != 0) goto end;
+
+end:
+  if (result && tmp_filename_out) {
+    *tmp_filename_out = gpr_tchar_to_char(tmp_filename);
   }
 
+  gpr_free(template_string);
   return result;
 }
 
-#endif /* GPR_MSYS_TMPFILE */
+#endif /* GPR_WINDOWS_TMPFILE */

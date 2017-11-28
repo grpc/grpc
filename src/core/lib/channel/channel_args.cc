@@ -28,8 +28,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/gpr/string.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/support/string.h"
 
 static grpc_arg copy_arg(const grpc_arg* src) {
   grpc_arg dst;

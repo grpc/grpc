@@ -21,8 +21,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/gpr/env.h"
+#include "src/core/gpr/string.h"
 
 #include <stdio.h>
 #include <string.h>

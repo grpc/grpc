@@ -18,7 +18,7 @@
 
 /* Test of gpr synchronization support. */
 
-#include "src/core/lib/support/spinlock.h"
+#include "src/core/gpr/spinlock.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>

@@ -24,11 +24,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/gpr/string.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_adapter.h"
 

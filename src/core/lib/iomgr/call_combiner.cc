@@ -21,8 +21,8 @@
 #include <inttypes.h>
 
 #include <grpc/support/log.h>
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/profiling/timers.h"
 
 grpc_core::TraceFlag grpc_call_combiner_trace(false, "call_combiner");
 

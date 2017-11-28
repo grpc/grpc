@@ -22,7 +22,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
 #include <string.h>
-#include "src/core/lib/profiling/timers.h"
+#include "src/core/gpr/timers.h"
 
 static void* zalloc_with_calloc(size_t sz) { return calloc(sz, 1); }
 

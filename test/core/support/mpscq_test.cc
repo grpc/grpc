@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/support/mpscq.h"
+#include "src/core/gpr/mpscq.h"
 
 #include <stdlib.h>
 

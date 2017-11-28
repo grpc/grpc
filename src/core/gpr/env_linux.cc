@@ -25,7 +25,7 @@
 
 #ifdef GPR_LINUX_ENV
 
-#include "src/core/lib/support/env.h"
+#include "src/core/gpr/env.h"
 
 #include <dlfcn.h>
 #include <features.h>
@@ -36,7 +36,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/gpr/string.h"
 
 const char* gpr_getenv_silent(const char* name, char** dst) {
   const char* insecure_func_used = nullptr;

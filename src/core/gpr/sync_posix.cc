@@ -25,7 +25,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <time.h>
-#include "src/core/lib/profiling/timers.h"
+#include "src/core/gpr/timers.h"
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
 gpr_atm gpr_mu_locks = 0;

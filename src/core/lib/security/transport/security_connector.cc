@@ -28,6 +28,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include "src/core/gpr/env.h"
+#include "src/core/gpr/string.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -38,8 +40,6 @@
 #include "src/core/lib/security/transport/lb_targets_info.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_adapter.h"
