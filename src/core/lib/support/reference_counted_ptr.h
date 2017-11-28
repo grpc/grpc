@@ -87,4 +87,4 @@ inline ReferenceCountedPtr<T> MakeReferenceCounted(Args&&... args) {
 
 }  // namespace grpc_core
 
-#endif // GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_PTR_H
+#endif /* GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_PTR_H */

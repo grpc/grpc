@@ -45,4 +45,4 @@ class DebugLocation {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SUPPORT_DEBUG_LOCATION_H
+#endif /* GRPC_CORE_LIB_SUPPORT_DEBUG_LOCATION_H */

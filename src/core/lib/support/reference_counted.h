@@ -56,4 +56,4 @@ class ReferenceCounted {
 
 }  // namespace grpc_core
 
-#endif // GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_H
+#endif /* GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_H */
