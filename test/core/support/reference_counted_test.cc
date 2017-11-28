@@ -31,14 +31,6 @@ class Foo : public ReferenceCounted {
   Foo() {}
 };
 
-TEST(ReferenceCounted, StackAllocated) { Foo foo; }
-
-TEST(ReferenceCounted, StackAllocatedWithExtraRef) {
-  Foo foo;
-  foo.Ref();
-  foo.Unref();
-}
-
 TEST(ReferenceCounted, HeapAllocated) {
   Foo* foo = New<Foo>();
   foo->Unref();
