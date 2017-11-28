@@ -108,6 +108,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/reference_counted.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/reference_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />

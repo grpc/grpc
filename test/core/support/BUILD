@@ -246,3 +246,17 @@ grpc_cc_test(
         "gtest",
     ],
 )
+
+grpc_cc_test(
+    name = "reference_counted_ptr_test",
+    srcs = ["reference_counted_ptr_test.cc"],
+    language = "C++",
+    deps = [
+        "//:reference_counted",
+        "//:reference_counted_ptr",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)

@@ -96,6 +96,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/mpscq.h )
   s.files += %w( src/core/lib/support/murmur_hash.h )
   s.files += %w( src/core/lib/support/reference_counted.h )
+  s.files += %w( src/core/lib/support/reference_counted_ptr.h )
   s.files += %w( src/core/lib/support/spinlock.h )
   s.files += %w( src/core/lib/support/stack_lockfree.h )
   s.files += %w( src/core/lib/support/string.h )

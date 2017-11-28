@@ -1038,6 +1038,7 @@ src/core/lib/support/memory.h \
 src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.h \
 src/core/lib/support/reference_counted.h \
+src/core/lib/support/reference_counted_ptr.h \
 src/core/lib/support/spinlock.h \
 src/core/lib/support/stack_lockfree.h \
 src/core/lib/support/string.h \

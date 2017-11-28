@@ -117,6 +117,7 @@ filegroups:
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/reference_counted.h
+  - src/core/lib/support/reference_counted_ptr.h
   - src/core/lib/support/spinlock.h
   - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
@@ -4544,6 +4545,20 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: reference_counted_ptr_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/reference_counted_ptr_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: reference_counted_test
   gtest: true
   build: test

@@ -555,6 +555,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "reference_counted_ptr",
+    public_hdrs = ["src/core/lib/support/reference_counted_ptr.h"],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
         "src/core/lib/backoff/backoff.cc",
