@@ -19,6 +19,10 @@
 #ifndef GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_PTR_H
 #define GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_PTR_H
 
+#include <utility>
+
+#include "src/core/lib/support/memory.h"
+
 namespace grpc_core {
 
 // A smart pointer class for objects that provide Ref() and Unref() methods,
@@ -75,6 +79,11 @@ class ReferenceCountedPtr {
  private:
   T* value_ = nullptr;
 };
+
+template<typename T, typename... Args>
+inline ReferenceCountedPtr<T> MakeReferenceCounted(Args&&... args) {
+  return ReferenceCountedPtr<T>(New<T>(std::forward<Args>(args)...));
+}
 
 }  // namespace grpc_core
 

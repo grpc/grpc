@@ -31,11 +31,14 @@ namespace testing {
 
 class Foo : public ReferenceCounted {
  public:
-  Foo() : ReferenceCounted(nullptr) {}
+  Foo() : ReferenceCounted(nullptr), value_(0) {}
 
-  void log() { 
-    gpr_log(GPR_INFO, "==> log()");
-  }
+  explicit Foo(int value) : ReferenceCounted(nullptr), value_(value) {}
+
+  int value() const { return value_; }
+
+ private:
+  int value_;
 };
 
 TEST(ReferenceCountedPtr, DefaultConstructor) {
@@ -120,9 +123,19 @@ TEST(ReferenceCountedPtr, ResetFromNullToNull) {
 
 TEST(ReferenceCountedPtr, DerefernceOperators) {
   ReferenceCountedPtr<Foo> foo(New<Foo>());
-  foo->log();
+  foo->value();
   Foo& foo_ref = *foo;
-  foo_ref.log();
+  foo_ref.value();
+}
+
+TEST(MakeReferenceCounted, NoArgs) {
+  ReferenceCountedPtr<Foo> foo = MakeReferenceCounted<Foo>();
+  EXPECT_EQ(0, foo->value());
+}
+
+TEST(MakeReferenceCounted, Args) {
+  ReferenceCountedPtr<Foo> foo = MakeReferenceCounted<Foo>(3);
+  EXPECT_EQ(3, foo->value());
 }
 
 }  // namespace testing
