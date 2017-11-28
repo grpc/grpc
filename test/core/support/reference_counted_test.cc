@@ -25,24 +25,43 @@
 
 namespace grpc_core {
 namespace testing {
+namespace {
 
 class Foo : public ReferenceCounted {
  public:
   Foo() {}
 };
 
-TEST(ReferenceCounted, HeapAllocated) {
+TEST(ReferenceCounted, Basic) {
   Foo* foo = New<Foo>();
   foo->Unref();
 }
 
-TEST(ReferenceCounted, HeapAllocatedWithExtraRef) {
+TEST(ReferenceCounted, ExtraRef) {
   Foo* foo = New<Foo>();
   foo->Ref();
   foo->Unref();
   foo->Unref();
 }
 
+TraceFlag foo_tracer(true, "foo");
+
+class FooWithTracing : public ReferenceCounted {
+ public:
+  FooWithTracing() : ReferenceCounted(&foo_tracer) {}
+};
+
+TEST(ReferenceCounted, WithTracing) {
+  FooWithTracing* foo = New<FooWithTracing>();
+  foo->Ref(DEBUG_LOCATION, "extra_ref");
+  foo->Unref(DEBUG_LOCATION, "extra_ref");
+  // Can use the no-argument methods, too.
+  foo->Ref();
+  foo->Unref();
+  foo->Unref(DEBUG_LOCATION, "original_ref");
+}
+
+}  // namespace
 }  // namespace testing
 }  // namespace grpc_core
 
