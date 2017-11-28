@@ -418,7 +418,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "nanopb",
-        "libssl",
     ],
     language = "c++",
     public_hdrs = [
