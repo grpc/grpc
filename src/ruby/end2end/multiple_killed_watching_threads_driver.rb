@@ -26,6 +26,8 @@ def watch_state(ch)
     fail "non-idle state: #{state}" unless state == IDLE
     ch.watch_connectivity_state(IDLE, Time.now + 360)
   end
+  # sleep to get the thread into the middle of a
+  # "watch connectivity state" call
   sleep 0.1
   thd.kill
 end
