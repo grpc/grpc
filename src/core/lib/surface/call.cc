@@ -1158,14 +1158,8 @@ static grpc_error* aggregate_batch_errors(batch_control* bctl) {
   } else if (count == 1) {
     return GRPC_ERROR_REF(errors[0]);
   } else {
-    grpc_error* error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Call batch failed");
-    int i = 0;
-    while (errors[i] != GRPC_ERROR_NONE) {
-      error = grpc_error_add_child(error, errors[i]);
-      i++;
-    }
-    return error;
+    return GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Call batch failed",
+                                                            errors, count);
   }
 }
 
