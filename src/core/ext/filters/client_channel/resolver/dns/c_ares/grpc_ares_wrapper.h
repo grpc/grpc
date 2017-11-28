@@ -25,13 +25,13 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
+extern grpc_core::TraceFlag grpc_trace_cares_address_sorting;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct grpc_ares_request grpc_ares_request;
-
-extern grpc_tracer_flag grpc_trace_cares_address_sorting;
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
    designated in \a name, otherwise use the port in \a name. grpc_ares_init()

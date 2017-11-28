@@ -47,8 +47,8 @@
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
 
-grpc_tracer_flag grpc_trace_cares_address_sorting =
-    GRPC_TRACER_INITIALIZER(false, "cares_address_sorting");
+grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
+                                                      "cares_address_sorting");
 
 struct grpc_ares_request {
   /** indicates the DNS server to use, if specified */
@@ -118,7 +118,7 @@ static void log_address_sorting_list(grpc_lb_addresses* lb_addrs,
 }
 
 void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs) {
-  if (GRPC_TRACER_ON(grpc_trace_cares_address_sorting)) {
+  if (grpc_trace_cares_address_sorting.enabled()) {
     log_address_sorting_list(lb_addrs, "input");
   }
   address_sorting_sortable* sortables = (address_sorting_sortable*)gpr_zalloc(
@@ -138,7 +138,7 @@ void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs) {
   gpr_free(sortables);
   gpr_free(lb_addrs->addresses);
   lb_addrs->addresses = sorted_lb_addrs;
-  if (GRPC_TRACER_ON(grpc_trace_cares_address_sorting)) {
+  if (grpc_trace_cares_address_sorting.enabled()) {
     log_address_sorting_list(lb_addrs, "output");
   }
 }

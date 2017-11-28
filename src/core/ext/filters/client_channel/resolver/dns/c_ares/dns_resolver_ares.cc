@@ -432,7 +432,6 @@ extern "C" void grpc_resolver_dns_ares_init(void) {
   /* TODO(zyc): Turn on c-ares based resolver by default after the address
      sorter and the CNAME support are added. */
   if (resolver != nullptr && gpr_stricmp(resolver, "ares") == 0) {
-    grpc_register_tracer(&grpc_trace_cares_address_sorting);
     address_sorting_init();
     grpc_error* error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
