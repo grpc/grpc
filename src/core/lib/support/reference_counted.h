@@ -20,19 +20,46 @@
 #define GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_H
 
 #include <grpc/support/sync.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/support/debug_location.h"
+#include "src/core/lib/support/memory.h"
 
 namespace grpc_core {
 
+// A base class for reference-counted objects.
+// New objects should be created via New() and start with a refcount of 1.
+// When the refcount reaches 0, the object will be deleted via Delete().
 class ReferenceCounted {
  public:
-  void Ref();
-  void Ref(const DebugLocation& location, const char* reason);
+  void Ref() { gpr_ref(&refs_); }
 
-  bool Unref();
-  bool Unref(const DebugLocation& location, const char* reason);
+  void Ref(const DebugLocation& location, const char* reason) {
+    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
+      gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
+      gpr_log(GPR_DEBUG, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
+              trace_flag_->name(), this, location.file(), location.line(),
+              old_refs, old_refs + 1, reason);
+    }
+    Ref();
+  }
+
+  void Unref() {
+    if (gpr_unref(&refs_)) {
+      Delete(this);
+    }
+  }
+
+  void Unref(const DebugLocation& location, const char* reason) {
+    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
+      gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
+      gpr_log(GPR_DEBUG, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
+              trace_flag_->name(), this, location.file(), location.line(),
+              old_refs, old_refs - 1, reason);
+    }
+    Unref();
+  }
 
   // Not copyable nor movable.
   ReferenceCounted(const ReferenceCounted&) = delete;
@@ -43,6 +70,8 @@ class ReferenceCounted {
   template <typename T>
   friend void Delete(T*);
 
+  ReferenceCounted() : ReferenceCounted(nullptr) {}
+
   explicit ReferenceCounted(TraceFlag* trace_flag) : trace_flag_(trace_flag) {
     gpr_ref_init(&refs_, 1);
   }
@@ -50,7 +79,7 @@ class ReferenceCounted {
   virtual ~ReferenceCounted() {}
 
  private:
-  TraceFlag* trace_flag_;
+  TraceFlag* trace_flag_ = nullptr;
   gpr_refcount refs_;
 };
 

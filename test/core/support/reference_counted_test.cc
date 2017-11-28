@@ -28,7 +28,7 @@ namespace testing {
 
 class Foo : public ReferenceCounted {
  public:
-  Foo() : ReferenceCounted(nullptr) {}
+  Foo() {}
 };
 
 TEST(ReferenceCounted, StackAllocated) { Foo foo; }

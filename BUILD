@@ -545,7 +545,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "reference_counted",
-    srcs = ["src/core/lib/support/reference_counted.cc"],
     public_hdrs = ["src/core/lib/support/reference_counted.h"],
     language = "c++",
     deps = [

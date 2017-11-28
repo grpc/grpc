@@ -138,7 +138,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/reference_counted.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.cc" role="src" />

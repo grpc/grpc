@@ -53,8 +53,10 @@ class ReferenceCountedPtr {
     value_ = other.value_;
   }
   ReferenceCountedPtr& operator=(const ReferenceCountedPtr& other) {
-    if (value_ != nullptr) value_->Unref();
+    // Note: Order of reffing and unreffing is important here in case value_
+    // and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->Ref();
+    if (value_ != nullptr) value_->Unref();
     value_ = other.value_;
     return *this;
   }

@@ -126,7 +126,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/log_windows.cc )
   s.files += %w( src/core/lib/support/mpscq.cc )
   s.files += %w( src/core/lib/support/murmur_hash.cc )
-  s.files += %w( src/core/lib/support/reference_counted.cc )
   s.files += %w( src/core/lib/support/stack_lockfree.cc )
   s.files += %w( src/core/lib/support/string.cc )
   s.files += %w( src/core/lib/support/string_posix.cc )

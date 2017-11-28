@@ -1299,7 +1299,6 @@ src/core/lib/support/mpscq.cc \
 src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.cc \
 src/core/lib/support/murmur_hash.h \
-src/core/lib/support/reference_counted.cc \
 src/core/lib/support/reference_counted.h \
 src/core/lib/support/reference_counted_ptr.h \
 src/core/lib/support/spinlock.h \

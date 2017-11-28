@@ -79,6 +79,19 @@ TEST(ReferenceCountedPtr, CopyAssignment) {
   EXPECT_EQ(foo.get(), foo2.get());
 }
 
+TEST(ReferenceCountedPtr, CopyAssignmentWhenEmpty) {
+  ReferenceCountedPtr<Foo> foo;
+  ReferenceCountedPtr<Foo> foo2;
+  foo2 = foo;
+  EXPECT_EQ(nullptr, foo.get());
+  EXPECT_EQ(nullptr, foo2.get());
+}
+
+TEST(ReferenceCountedPtr, CopyAssignmentToSelf) {
+  ReferenceCountedPtr<Foo> foo(New<Foo>());
+  foo = foo;
+}
+
 TEST(ReferenceCountedPtr, EnclosedScope) {
   ReferenceCountedPtr<Foo> foo(New<Foo>());
   {

@@ -21,6 +21,9 @@
 
 namespace grpc_core {
 
+// Used for tracking file and line where a call is made for debug builds.
+// No-op for non-debug builds.
+// Callers can use the DEBUG_LOCATION macro in either case.
 #ifndef NDEBUG
 class DebugLocation {
  public:
