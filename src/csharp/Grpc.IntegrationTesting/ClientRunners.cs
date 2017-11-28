@@ -72,7 +72,7 @@ namespace Grpc.IntegrationTesting
                 Logger.Warning("ClientConfig.CoreList is not supported for C#. Ignoring the value");
             }
 
-            var channels = CreateChannels(config.ClientChannels, config.ServerTargets, config.SecurityParams);
+            var channels = CreateChannels(config.ClientChannels, config.ServerTargets, config.SecurityParams, config.ChannelArgs);
 
             return new ClientRunnerImpl(channels,
                 config.ClientType,
@@ -84,19 +84,20 @@ namespace Grpc.IntegrationTesting
                 () => GetNextProfiler());
         }
 
-        private static List<Channel> CreateChannels(int clientChannels, IEnumerable<string> serverTargets, SecurityParams securityParams)
+        private static List<Channel> CreateChannels(int clientChannels, IEnumerable<string> serverTargets, SecurityParams securityParams, IEnumerable<ChannelArg> channelArguments)
         {
             GrpcPreconditions.CheckArgument(clientChannels > 0, "clientChannels needs to be at least 1.");
             GrpcPreconditions.CheckArgument(serverTargets.Count() > 0, "at least one serverTarget needs to be specified.");
 
             var credentials = securityParams != null ? TestCredentials.CreateSslCredentials() : ChannelCredentials.Insecure;
-            List<ChannelOption> channelOptions = null;
+            var channelOptions = new List<ChannelOption>();
             if (securityParams != null && securityParams.ServerHostOverride != "")
             {
-                channelOptions = new List<ChannelOption>
-                {
-                    new ChannelOption(ChannelOptions.SslTargetNameOverride, securityParams.ServerHostOverride)
-                };
+                channelOptions.Add(new ChannelOption(ChannelOptions.SslTargetNameOverride, securityParams.ServerHostOverride));
+            }
+            foreach (var channelArgument in channelArguments)
+            {
+                channelOptions.Add(channelArgument.ToChannelOption());
             }
 
             var result = new List<Channel>();

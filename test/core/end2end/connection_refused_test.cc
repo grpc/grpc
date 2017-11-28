@@ -53,11 +53,11 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  cq = grpc_completion_queue_create_for_next(NULL);
+  cq = grpc_completion_queue_create_for_next(nullptr);
   cqv = cq_verifier_create(cq);
 
   /* if using service config, create channel args */
-  grpc_channel_args* args = NULL;
+  grpc_channel_args* args = nullptr;
   if (use_service_config) {
     GPR_ASSERT(wait_for_ready);
     grpc_arg arg;
@@ -80,12 +80,13 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   char* addr;
   gpr_join_host_port(&addr, "127.0.0.1", port);
   gpr_log(GPR_INFO, "server: %s", addr);
-  chan = grpc_insecure_channel_create(addr, args, NULL);
+  chan = grpc_insecure_channel_create(addr, args, nullptr);
   grpc_slice host = grpc_slice_from_static_string("nonexistant");
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
-  call = grpc_channel_create_call(
-      chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-      grpc_slice_from_static_string("/service/method"), &host, deadline, NULL);
+  call =
+      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                               grpc_slice_from_static_string("/service/method"),
+                               &host, deadline, nullptr);
 
   gpr_free(addr);
 
@@ -96,17 +97,18 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->flags = (wait_for_ready && !use_service_config)
                   ? GRPC_INITIAL_METADATA_WAIT_FOR_READY
                   : 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
-                                 call, ops, (size_t)(op - ops), tag(1), NULL));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
+                                                   (size_t)(op - ops), tag(1),
+                                                   nullptr));
   /* verify that all tags get completed */
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
@@ -118,9 +120,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   }
 
   grpc_completion_queue_shutdown(cq);
-  while (
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
-          .type != GRPC_QUEUE_SHUTDOWN)
+  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    nullptr)
+             .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
   grpc_call_unref(call);
@@ -132,7 +134,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    if (args != NULL) grpc_channel_args_destroy(&exec_ctx, args);
+    if (args != nullptr) grpc_channel_args_destroy(&exec_ctx, args);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 

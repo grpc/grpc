@@ -68,7 +68,7 @@ static void chttp2_connector_unref(grpc_exec_ctx* exec_ctx,
     gpr_mu_destroy(&c->mu);
     // If handshaking is not yet in progress, destroy the endpoint.
     // Otherwise, the handshaker will do this for us.
-    if (c->endpoint != NULL) grpc_endpoint_destroy(exec_ctx, c->endpoint);
+    if (c->endpoint != nullptr) grpc_endpoint_destroy(exec_ctx, c->endpoint);
     gpr_free(c);
   }
 }
@@ -78,13 +78,13 @@ static void chttp2_connector_shutdown(grpc_exec_ctx* exec_ctx,
   chttp2_connector* c = (chttp2_connector*)con;
   gpr_mu_lock(&c->mu);
   c->shutdown = true;
-  if (c->handshake_mgr != NULL) {
+  if (c->handshake_mgr != nullptr) {
     grpc_handshake_manager_shutdown(exec_ctx, c->handshake_mgr,
                                     GRPC_ERROR_REF(why));
   }
   // If handshaking is not yet in progress, shutdown the endpoint.
   // Otherwise, the handshaker will do this for us.
-  if (!c->connecting && c->endpoint != NULL) {
+  if (!c->connecting && c->endpoint != nullptr) {
     grpc_endpoint_shutdown(exec_ctx, c->endpoint, GRPC_ERROR_REF(why));
   }
   gpr_mu_unlock(&c->mu);
@@ -125,10 +125,10 @@ static void on_handshake_done(grpc_exec_ctx* exec_ctx, void* arg,
     c->result->channel_args = args->args;
   }
   grpc_closure* notify = c->notify;
-  c->notify = NULL;
+  c->notify = nullptr;
   GRPC_CLOSURE_SCHED(exec_ctx, notify, error);
   grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
-  c->handshake_mgr = NULL;
+  c->handshake_mgr = nullptr;
   gpr_mu_unlock(&c->mu);
   chttp2_connector_unref(exec_ctx, (grpc_connector*)c);
 }
@@ -142,8 +142,8 @@ static void start_handshake_locked(grpc_exec_ctx* exec_ctx,
                                    c->args.interested_parties);
   grpc_handshake_manager_do_handshake(
       exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
-      c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
-  c->endpoint = NULL;  // Endpoint handed off to handshake manager.
+      c->args.deadline, nullptr /* acceptor */, on_handshake_done, c);
+  c->endpoint = nullptr;  // Endpoint handed off to handshake manager.
 }
 
 static void connected(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
@@ -159,15 +159,15 @@ static void connected(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
     }
     memset(c->result, 0, sizeof(*c->result));
     grpc_closure* notify = c->notify;
-    c->notify = NULL;
+    c->notify = nullptr;
     GRPC_CLOSURE_SCHED(exec_ctx, notify, error);
-    if (c->endpoint != NULL) {
+    if (c->endpoint != nullptr) {
       grpc_endpoint_shutdown(exec_ctx, c->endpoint, GRPC_ERROR_REF(error));
     }
     gpr_mu_unlock(&c->mu);
     chttp2_connector_unref(exec_ctx, (grpc_connector*)arg);
   } else {
-    GPR_ASSERT(c->endpoint != NULL);
+    GPR_ASSERT(c->endpoint != nullptr);
     start_handshake_locked(exec_ctx, c);
     gpr_mu_unlock(&c->mu);
   }
@@ -182,11 +182,11 @@ static void chttp2_connector_connect(grpc_exec_ctx* exec_ctx,
   grpc_resolved_address addr;
   grpc_get_subchannel_address_arg(exec_ctx, args->channel_args, &addr);
   gpr_mu_lock(&c->mu);
-  GPR_ASSERT(c->notify == NULL);
+  GPR_ASSERT(c->notify == nullptr);
   c->notify = notify;
   c->args = *args;
   c->result = result;
-  GPR_ASSERT(c->endpoint == NULL);
+  GPR_ASSERT(c->endpoint == nullptr);
   chttp2_connector_ref(con);  // Ref taken for callback.
   GRPC_CLOSURE_INIT(&c->connected, connected, c, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(!c->connecting);

@@ -430,6 +430,7 @@ add_dependencies(buildtests_c gpr_env_test)
 add_dependencies(buildtests_c gpr_histogram_test)
 add_dependencies(buildtests_c gpr_host_port_test)
 add_dependencies(buildtests_c gpr_log_test)
+add_dependencies(buildtests_c gpr_manual_constructor_test)
 add_dependencies(buildtests_c gpr_mpscq_test)
 add_dependencies(buildtests_c gpr_spinlock_test)
 add_dependencies(buildtests_c gpr_stack_lockfree_test)
@@ -461,6 +462,9 @@ add_dependencies(buildtests_c handshake_client)
 endif()
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_server)
+endif()
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c handshake_server_with_readahead_handshaker)
 endif()
 add_dependencies(buildtests_c hpack_parser_test)
 add_dependencies(buildtests_c hpack_table_test)
@@ -675,6 +679,7 @@ endif()
 add_dependencies(buildtests_cxx channel_arguments_test)
 add_dependencies(buildtests_cxx channel_filter_test)
 add_dependencies(buildtests_cxx cli_call_test)
+add_dependencies(buildtests_cxx client_channel_stress_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx client_crash_test)
 endif()
@@ -971,7 +976,6 @@ add_library(grpc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -1311,7 +1315,6 @@ add_library(grpc_cronet
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -1612,6 +1615,7 @@ add_library(grpc_test_util
   test/core/util/port.cc
   test/core/util/port_server_client.cc
   test/core/util/slice_splitter.cc
+  test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
@@ -1632,7 +1636,6 @@ add_library(grpc_test_util
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -1877,6 +1880,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/port.cc
   test/core/util/port_server_client.cc
   test/core/util/slice_splitter.cc
+  test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
@@ -1897,7 +1901,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -2148,7 +2151,6 @@ add_library(grpc_unsecure
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -2894,7 +2896,6 @@ add_library(grpc++_cronet
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -6310,6 +6311,33 @@ target_link_libraries(gpr_log_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(gpr_manual_constructor_test
+  test/core/support/manual_constructor_test.cc
+)
+
+
+target_include_directories(gpr_manual_constructor_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(gpr_manual_constructor_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(gpr_mpscq_test
   test/core/support/mpscq_test.cc
 )
@@ -7128,6 +7156,7 @@ if(_gRPC_PLATFORM_LINUX)
 
 add_executable(handshake_server
   test/core/handshake/server_ssl.cc
+  test/core/handshake/server_ssl_common.cc
 )
 
 
@@ -7145,6 +7174,39 @@ target_include_directories(handshake_server
 )
 
 target_link_libraries(handshake_server
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+add_executable(handshake_server_with_readahead_handshaker
+  test/core/handshake/readahead_handshaker_server_ssl.cc
+  test/core/handshake/server_ssl_common.cc
+)
+
+
+target_include_directories(handshake_server_with_readahead_handshaker
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(handshake_server_with_readahead_handshaker
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -9828,6 +9890,53 @@ target_link_libraries(cli_call_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_cli_libs
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(client_channel_stress_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
+  test/cpp/client/client_channel_stress_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v1/load_balancer.proto
+)
+
+target_include_directories(client_channel_stress_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_channel_stress_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++

@@ -31,6 +31,8 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/support/string.h"
 
+grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
+
 namespace grpc_core {
 namespace chttp2 {
 
@@ -312,7 +314,9 @@ double TransportFlowControl::SmoothLogBdp(grpc_exec_ctx* exec_ctx,
   double bdp_error = value - pid_controller_.last_control_value();
   const double dt = (double)(now - last_pid_update_) * 1e-3;
   last_pid_update_ = now;
-  return pid_controller_.Update(bdp_error, dt);
+  // Limit dt to 100ms
+  const double kMaxDt = 0.1;
+  return pid_controller_.Update(bdp_error, dt > kMaxDt ? kMaxDt : dt);
 }
 
 FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(

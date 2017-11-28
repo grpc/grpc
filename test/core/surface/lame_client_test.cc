@@ -50,14 +50,14 @@ void test_transport_op(grpc_channel* channel) {
   GRPC_CLOSURE_INIT(&transport_op_cb, verify_connectivity, &state,
                     grpc_schedule_on_exec_ctx);
 
-  op = grpc_make_transport_op(NULL);
+  op = grpc_make_transport_op(nullptr);
   op->on_connectivity_state_change = &transport_op_cb;
   op->connectivity_state = &state;
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   elem->filter->start_transport_op(&exec_ctx, elem, op);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, NULL,
+  GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, nullptr,
                     grpc_schedule_on_exec_ctx);
   op = grpc_make_transport_op(&transport_op_cb);
   elem->filter->start_transport_op(&exec_ctx, elem, op);
@@ -93,12 +93,13 @@ int main(int argc, char** argv) {
   GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN ==
              grpc_channel_check_connectivity_state(chan, 0));
 
-  cq = grpc_completion_queue_create_for_next(NULL);
+  cq = grpc_completion_queue_create_for_next(nullptr);
 
   grpc_slice host = grpc_slice_from_static_string("anywhere");
-  call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  grpc_slice_from_static_string("/Foo"), &host,
-                                  grpc_timeout_seconds_to_deadline(100), NULL);
+  call =
+      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                               grpc_slice_from_static_string("/Foo"), &host,
+                               grpc_timeout_seconds_to_deadline(100), nullptr);
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 
@@ -107,14 +108,14 @@ int main(int argc, char** argv) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */
@@ -128,9 +129,9 @@ int main(int argc, char** argv) {
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(2), NULL);
+  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */

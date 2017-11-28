@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
   gpr_set_log_function(test_callback);
   gpr_log_message(GPR_INFO, "hello 1 2 3");
   gpr_log(GPR_INFO, "hello %d %d %d", 1, 2, 3);
-  gpr_set_log_function(NULL);
+  gpr_set_log_function(nullptr);
 
   /* gpr_log_verbosity_init() will be effective only once, and only before
    * gpr_set_log_verbosity() is called */

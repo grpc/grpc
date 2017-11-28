@@ -44,7 +44,7 @@ static void test(const char* name, size_t init_size, const size_t* allocs,
     gpr_strvec_add(&v, s);
   }
   gpr_strvec_add(&v, gpr_strdup("}"));
-  s = gpr_strvec_flatten(&v, NULL);
+  s = gpr_strvec_flatten(&v, nullptr);
   gpr_strvec_destroy(&v);
   gpr_log(GPR_INFO, "%s", s);
   gpr_free(s);

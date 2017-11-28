@@ -31,43 +31,43 @@ namespace Grpc.Core.Internal.Tests
     /// </summary>
     internal class FakeNativeCall : INativeCall
     {
-        public UnaryResponseClientHandler UnaryResponseClientHandler
+        public IUnaryResponseClientCallback UnaryResponseClientCallback
         {
             get;
             set;
         }
 
-        public ReceivedStatusOnClientHandler ReceivedStatusOnClientHandler
+        public IReceivedStatusOnClientCallback ReceivedStatusOnClientCallback
         {
             get;
             set;
         }
 
-        public ReceivedMessageHandler ReceivedMessageHandler
+        public IReceivedMessageCallback ReceivedMessageCallback
         {
             get;
             set;
         }
 
-        public ReceivedResponseHeadersHandler ReceivedResponseHeadersHandler
+        public IReceivedResponseHeadersCallback ReceivedResponseHeadersCallback
         {
             get;
             set;
         }
 
-        public SendCompletionHandler SendCompletionHandler
+        public ISendCompletionCallback SendCompletionCallback
         {
             get;
             set;
         }
 
-        public SendCompletionHandler SendStatusFromServerHandler
+        public ISendStatusFromServerCompletionCallback SendStatusFromServerCallback
         {
             get;
             set;
         }
 
-        public ReceivedCloseOnServerHandler ReceivedCloseOnServerHandler
+        public IReceivedCloseOnServerCallback ReceivedCloseOnServerCallback
         {
             get;
             set;
@@ -100,9 +100,9 @@ namespace Grpc.Core.Internal.Tests
             return "PEER";
         }
 
-        public void StartUnary(UnaryResponseClientHandler callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartUnary(IUnaryResponseClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            UnaryResponseClientHandler = callback;
+            UnaryResponseClientCallback = callback;
         }
 
         public void StartUnary(BatchContextSafeHandle ctx, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
@@ -110,55 +110,55 @@ namespace Grpc.Core.Internal.Tests
             throw new NotImplementedException();
         }
 
-        public void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartClientStreaming(IUnaryResponseClientCallback callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            UnaryResponseClientHandler = callback;
+            UnaryResponseClientCallback = callback;
         }
 
-        public void StartServerStreaming(ReceivedStatusOnClientHandler callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartServerStreaming(IReceivedStatusOnClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            ReceivedStatusOnClientHandler = callback;
+            ReceivedStatusOnClientCallback = callback;
         }
 
-        public void StartDuplexStreaming(ReceivedStatusOnClientHandler callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartDuplexStreaming(IReceivedStatusOnClientCallback callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            ReceivedStatusOnClientHandler = callback;
+            ReceivedStatusOnClientCallback = callback;
         }
 
-        public void StartReceiveMessage(ReceivedMessageHandler callback)
+        public void StartReceiveMessage(IReceivedMessageCallback callback)
         {
-            ReceivedMessageHandler = callback;
+            ReceivedMessageCallback = callback;
         }
 
-        public void StartReceiveInitialMetadata(ReceivedResponseHeadersHandler callback)
+        public void StartReceiveInitialMetadata(IReceivedResponseHeadersCallback callback)
         {
-            ReceivedResponseHeadersHandler = callback;
+            ReceivedResponseHeadersCallback = callback;
         }
 
-        public void StartSendInitialMetadata(SendCompletionHandler callback, MetadataArraySafeHandle metadataArray)
+        public void StartSendInitialMetadata(ISendCompletionCallback callback, MetadataArraySafeHandle metadataArray)
         {
-            SendCompletionHandler = callback;
+            SendCompletionCallback = callback;
         }
 
-        public void StartSendMessage(SendCompletionHandler callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
+        public void StartSendMessage(ISendCompletionCallback callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
         {
-            SendCompletionHandler = callback;
+            SendCompletionCallback = callback;
         }
 
-        public void StartSendCloseFromClient(SendCompletionHandler callback)
+        public void StartSendCloseFromClient(ISendCompletionCallback callback)
         {
-            SendCompletionHandler = callback;
+            SendCompletionCallback = callback;
         }
 
-        public void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
+        public void StartSendStatusFromServer(ISendStatusFromServerCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
             byte[] optionalPayload, WriteFlags writeFlags)
         {
-            SendStatusFromServerHandler = callback;
+            SendStatusFromServerCallback = callback;
         }
 
-        public void StartServerSide(ReceivedCloseOnServerHandler callback)
+        public void StartServerSide(IReceivedCloseOnServerCallback callback)
         {
-            ReceivedCloseOnServerHandler = callback;
+            ReceivedCloseOnServerCallback = callback;
         }
 
         public void Dispose()

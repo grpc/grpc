@@ -139,6 +139,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "manual_constructor_test",
+    srcs = ["manual_constructor_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "spinlock_test",
     srcs = ["spinlock_test.cc"],
     language = "C++",

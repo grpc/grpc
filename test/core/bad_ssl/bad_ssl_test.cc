@@ -36,7 +36,7 @@ static void* tag(intptr_t t) { return (void*)t; }
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(NULL, NULL, NULL);
+      grpc_ssl_credentials_create(nullptr, nullptr, nullptr);
   grpc_channel* channel;
   grpc_call* c;
 
@@ -46,7 +46,7 @@ static void run_test(const char* target, size_t nops) {
   grpc_status_code status;
   grpc_call_error error;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
 
   grpc_op ops[6];
@@ -64,36 +64,36 @@ static void run_test(const char* target, size_t nops) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  channel = grpc_secure_channel_create(ssl_creds, target, &args, NULL);
+  channel = grpc_secure_channel_create(ssl_creds, target, &args, nullptr);
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
-  c = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+  c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
-                               deadline, NULL);
+                               deadline, nullptr);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, nops, tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, nops, tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);

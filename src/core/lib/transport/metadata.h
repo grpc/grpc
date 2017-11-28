@@ -25,9 +25,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_metadata;
-#endif
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
 
 #ifdef __cplusplus
 extern "C" {

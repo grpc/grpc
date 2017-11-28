@@ -62,7 +62,7 @@ bool grpc_is_epollexclusive_available(void) {
      EPOLLEXCLUSIVE enabled kernels - specifically the combination of
      EPOLLONESHOT and EPOLLEXCLUSIVE */
   ev.events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT);
-  ev.data.ptr = NULL;
+  ev.data.ptr = nullptr;
   if (epoll_ctl(fd, EPOLL_CTL_ADD, evfd, &ev) != 0) {
     if (errno != EINVAL) {
       if (!logged_why_not) {

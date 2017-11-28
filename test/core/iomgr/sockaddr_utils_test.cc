@@ -81,21 +81,21 @@ static void test_sockaddr_is_v4mapped(void) {
 
   /* v4mapped input should succeed. */
   input6 = make_addr6(kMapped, sizeof(kMapped));
-  GPR_ASSERT(grpc_sockaddr_is_v4mapped(&input6, NULL));
+  GPR_ASSERT(grpc_sockaddr_is_v4mapped(&input6, nullptr));
   GPR_ASSERT(grpc_sockaddr_is_v4mapped(&input6, &output4));
   expect4 = make_addr4(kIPv4, sizeof(kIPv4));
   GPR_ASSERT(memcmp(&expect4, &output4, sizeof(expect4)) == 0);
 
   /* Non-v4mapped input should fail. */
   input6 = make_addr6(kNotQuiteMapped, sizeof(kNotQuiteMapped));
-  GPR_ASSERT(!grpc_sockaddr_is_v4mapped(&input6, NULL));
+  GPR_ASSERT(!grpc_sockaddr_is_v4mapped(&input6, nullptr));
   GPR_ASSERT(!grpc_sockaddr_is_v4mapped(&input6, &output4));
   /* Output is unchanged. */
   GPR_ASSERT(memcmp(&expect4, &output4, sizeof(expect4)) == 0);
 
   /* Plain IPv4 input should also fail. */
   input4 = make_addr4(kIPv4, sizeof(kIPv4));
-  GPR_ASSERT(!grpc_sockaddr_is_v4mapped(&input4, NULL));
+  GPR_ASSERT(!grpc_sockaddr_is_v4mapped(&input4, nullptr));
 }
 
 static void test_sockaddr_to_v4mapped(void) {
@@ -176,7 +176,7 @@ static void expect_sockaddr_str(const char* expected,
   char* str;
   gpr_log(GPR_INFO, "  expect_sockaddr_str(%s)", expected);
   result = grpc_sockaddr_to_string(&str, addr, normalize);
-  GPR_ASSERT(str != NULL);
+  GPR_ASSERT(str != nullptr);
   GPR_ASSERT(result >= 0);
   GPR_ASSERT((size_t)result == strlen(str));
   GPR_ASSERT(strcmp(expected, str) == 0);
@@ -188,7 +188,7 @@ static void expect_sockaddr_uri(const char* expected,
   char* str;
   gpr_log(GPR_INFO, "  expect_sockaddr_uri(%s)", expected);
   str = grpc_sockaddr_to_uri(addr);
-  GPR_ASSERT(str != NULL);
+  GPR_ASSERT(str != nullptr);
   GPR_ASSERT(strcmp(expected, str) == 0);
   gpr_free(str);
 }
@@ -238,7 +238,7 @@ static void test_sockaddr_to_string(void) {
   dummy_addr->sa_family = 123;
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 0);
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 1);
-  GPR_ASSERT(grpc_sockaddr_to_uri(&dummy) == NULL);
+  GPR_ASSERT(grpc_sockaddr_to_uri(&dummy) == nullptr);
 }
 
 static void test_sockaddr_set_get_port(void) {

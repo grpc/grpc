@@ -29,6 +29,8 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
+    internal delegate void NativeCallbackTestDelegate(bool success);
+
     /// <summary>
     /// Provides access to all native methods provided by <c>NativeExtension</c>.
     /// An extra level of indirection is added to P/Invoke calls to allow intelligent loading
@@ -420,7 +422,7 @@ namespace Grpc.Core.Internal
             public delegate Timespec gprsharp_convert_clock_type_delegate(Timespec t, ClockType targetClock);
             public delegate int gprsharp_sizeof_timespec_delegate();
 
-            public delegate CallError grpcsharp_test_callback_delegate([MarshalAs(UnmanagedType.FunctionPtr)] OpCompletionDelegate callback);
+            public delegate CallError grpcsharp_test_callback_delegate([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback);
             public delegate IntPtr grpcsharp_test_nop_delegate(IntPtr ptr);
             public delegate void grpcsharp_test_override_method_delegate(string methodName, string variant);
         }

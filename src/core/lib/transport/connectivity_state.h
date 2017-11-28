@@ -47,7 +47,7 @@ typedef struct {
   char* name;
 } grpc_connectivity_state_tracker;
 
-extern grpc_tracer_flag grpc_connectivity_state_trace;
+extern grpc_core::TraceFlag grpc_connectivity_state_trace;
 
 /** enum --> string conversion */
 const char* grpc_connectivity_state_name(grpc_connectivity_state state);

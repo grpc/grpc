@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
       grpc_resource_quota_create("fd_conservation_posix_test");
 
   for (i = 0; i < 100; i++) {
-    p = grpc_iomgr_create_endpoint_pair("test", NULL);
+    p = grpc_iomgr_create_endpoint_pair("test", nullptr);
     grpc_endpoint_destroy(&exec_ctx, p.client);
     grpc_endpoint_destroy(&exec_ctx, p.server);
     grpc_exec_ctx_flush(&exec_ctx);

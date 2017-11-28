@@ -41,7 +41,7 @@ static void test_strdup(void) {
   GPR_ASSERT(0 == strcmp(src1, dst1));
   gpr_free(dst1);
 
-  GPR_ASSERT(NULL == gpr_strdup(NULL));
+  GPR_ASSERT(nullptr == gpr_strdup(nullptr));
 }
 
 static void expect_dump(const char* buf, size_t len, uint32_t flags,
@@ -271,9 +271,9 @@ static void test_stricmp(void) {
 static void test_memrchr(void) {
   LOG_TEST_NAME("test_memrchr");
 
-  GPR_ASSERT(NULL == gpr_memrchr(NULL, 'a', 0));
-  GPR_ASSERT(NULL == gpr_memrchr("", 'a', 0));
-  GPR_ASSERT(NULL == gpr_memrchr("hello", 'b', 5));
+  GPR_ASSERT(nullptr == gpr_memrchr(nullptr, 'a', 0));
+  GPR_ASSERT(nullptr == gpr_memrchr("", 'a', 0));
+  GPR_ASSERT(nullptr == gpr_memrchr("hello", 'b', 5));
   GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'h', 5), "hello"));
   GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'o', 5), "o"));
   GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'l', 5), "lo"));
@@ -289,7 +289,7 @@ static void test_is_true(void) {
   GPR_ASSERT(true == gpr_is_true("yes"));
   GPR_ASSERT(true == gpr_is_true("YES"));
   GPR_ASSERT(true == gpr_is_true("1"));
-  GPR_ASSERT(false == gpr_is_true(NULL));
+  GPR_ASSERT(false == gpr_is_true(nullptr));
   GPR_ASSERT(false == gpr_is_true(""));
   GPR_ASSERT(false == gpr_is_true("0"));
 }

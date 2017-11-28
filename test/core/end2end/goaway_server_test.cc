@@ -106,19 +106,19 @@ static grpc_ares_request* my_dns_lookup_ares(
     gpr_mu_unlock(&g_mu);
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
-    *lb_addrs = grpc_lb_addresses_create(1, NULL);
+    *lb_addrs = grpc_lb_addresses_create(1, nullptr);
     struct sockaddr_in* sa = static_cast<struct sockaddr_in*>(
         gpr_zalloc(sizeof(struct sockaddr_in)));
     sa->sin_family = AF_INET;
     sa->sin_addr.s_addr = htonl(0x7f000001);
     sa->sin_port = htons((uint16_t)g_resolve_port);
-    grpc_lb_addresses_set_address(*lb_addrs, 0, sa, sizeof(*sa), false, NULL,
-                                  NULL);
+    grpc_lb_addresses_set_address(*lb_addrs, 0, sa, sizeof(*sa), false, nullptr,
+                                  nullptr);
     gpr_free(sa);
     gpr_mu_unlock(&g_mu);
   }
   GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
-  return NULL;
+  return nullptr;
 }
 
 int main(int argc, char** argv) {
@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
   grpc_metadata_array_init(&request_metadata2);
   grpc_call_details_init(&request_details2);
 
-  cq = grpc_completion_queue_create_for_next(NULL);
+  cq = grpc_completion_queue_create_for_next(nullptr);
   cqv = cq_verifier_create(cq);
 
   /* reserve two ports */
@@ -176,24 +176,25 @@ int main(int argc, char** argv) {
   client_args.num_args = 1;
 
   /* create a channel that picks first amongst the servers */
-  grpc_channel* chan = grpc_insecure_channel_create("test", &client_args, NULL);
+  grpc_channel* chan =
+      grpc_insecure_channel_create("test", &client_args, nullptr);
   /* and an initial call to them */
   grpc_slice host = grpc_slice_from_static_string("127.0.0.1");
   grpc_call* call1 =
-      grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
-                               grpc_timeout_seconds_to_deadline(20), NULL);
+                               grpc_timeout_seconds_to_deadline(20), nullptr);
   /* send initial metadata to probe connectivity */
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
                                                    (size_t)(op - ops),
-                                                   tag(0x101), NULL));
+                                                   tag(0x101), nullptr));
   /* and receive status to probe termination */
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -202,17 +203,17 @@ int main(int argc, char** argv) {
   op->data.recv_status_on_client.status = &status1;
   op->data.recv_status_on_client.status_details = &details1;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
                                                    (size_t)(op - ops),
-                                                   tag(0x102), NULL));
+                                                   tag(0x102), nullptr));
 
   /* bring a server up on the first port */
-  grpc_server* server1 = grpc_server_create(NULL, NULL);
+  grpc_server* server1 = grpc_server_create(nullptr, nullptr);
   gpr_asprintf(&addr, "127.0.0.1:%d", port1);
   grpc_server_add_insecure_http2_port(server1, addr);
-  grpc_server_register_completion_queue(server1, cq, NULL);
+  grpc_server_register_completion_queue(server1, cq, nullptr);
   gpr_free(addr);
   grpc_server_start(server1);
 
@@ -244,7 +245,7 @@ int main(int argc, char** argv) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call1, ops,
                                                    (size_t)(op - ops),
-                                                   tag(0x302), NULL));
+                                                   tag(0x302), nullptr));
 
   /* shutdown first server:
    * we should see a connectivity change and then nothing */
@@ -256,20 +257,20 @@ int main(int argc, char** argv) {
 
   /* and a new call: should go through to server2 when we start it */
   grpc_call* call2 =
-      grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
-                               grpc_timeout_seconds_to_deadline(20), NULL);
+                               grpc_timeout_seconds_to_deadline(20), nullptr);
   /* send initial metadata to probe connectivity */
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,
                                                    (size_t)(op - ops),
-                                                   tag(0x201), NULL));
+                                                   tag(0x201), nullptr));
   /* and receive status to probe termination */
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -278,18 +279,18 @@ int main(int argc, char** argv) {
   op->data.recv_status_on_client.status = &status2;
   op->data.recv_status_on_client.status_details = &details2;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,
                                                    (size_t)(op - ops),
-                                                   tag(0x202), NULL));
+                                                   tag(0x202), nullptr));
 
   /* and bring up second server */
   set_resolve_port(port2);
-  grpc_server* server2 = grpc_server_create(NULL, NULL);
+  grpc_server* server2 = grpc_server_create(nullptr, nullptr);
   gpr_asprintf(&addr, "127.0.0.1:%d", port2);
   grpc_server_add_insecure_http2_port(server2, addr);
-  grpc_server_register_completion_queue(server2, cq, NULL);
+  grpc_server_register_completion_queue(server2, cq, nullptr);
   gpr_free(addr);
   grpc_server_start(server2);
 
@@ -313,14 +314,14 @@ int main(int argc, char** argv) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call2, ops,
                                                    (size_t)(op - ops),
-                                                   tag(0x402), NULL));
+                                                   tag(0x402), nullptr));
 
   /* shutdown second server: we should see nothing */
   grpc_server_shutdown_and_notify(server2, cq, tag(0xdead2));
   cq_verify_empty(cqv);
 
-  grpc_call_cancel(call1, NULL);
-  grpc_call_cancel(call2, NULL);
+  grpc_call_cancel(call1, nullptr);
+  grpc_call_cancel(call2, nullptr);
 
   /* now everything else should finish */
   CQ_EXPECT_COMPLETION(cqv, tag(0x102), 1);

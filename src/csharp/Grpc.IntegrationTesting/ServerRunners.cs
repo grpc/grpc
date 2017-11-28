@@ -78,7 +78,8 @@ namespace Grpc.IntegrationTesting
                 throw new ArgumentException("Unsupported ServerType");
             }
 
-            var server = new Server
+            var channelOptions = new List<ChannelOption>(config.ChannelArgs.Select((arg) => arg.ToChannelOption()));
+            var server = new Server(channelOptions)
             {
                 Services = { service },
                 Ports = { new ServerPort("[::]", config.Port, credentials) }
