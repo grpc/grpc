@@ -79,9 +79,9 @@ static grpc_millis n_sec_deadline(int seconds) {
 
 static void actually_poll(void* argsp) {
   args_struct* args = static_cast<args_struct*>(argsp);
-  grpc_core::ExecCtx _local_exec_ctx;
   grpc_millis deadline = n_sec_deadline(10);
   while (true) {
+    grpc_core::ExecCtx _local_exec_ctx;
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
       break;

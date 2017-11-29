@@ -142,7 +142,6 @@ static void free_completion(void* arg, grpc_cq_completion* completion) {
 static void producer_thread(void* arg) {
   test_thread_options* opt = static_cast<test_thread_options*>(arg);
   int i;
-  grpc_core::ExecCtx _local_exec_ctx;
 
   gpr_log(GPR_INFO, "producer %d started", opt->id);
   gpr_event_set(&opt->on_started, (void*)(intptr_t)1);
@@ -159,6 +158,7 @@ static void producer_thread(void* arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_cq_end_op(opt->cc, (void*)(intptr_t)1, GRPC_ERROR_NONE,
                    free_completion, nullptr,
                    static_cast<grpc_cq_completion*>(
