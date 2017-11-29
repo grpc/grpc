@@ -639,9 +639,6 @@ static grpc_error* init_header_frame_parser(grpc_exec_ctx* exec_ctx,
     case 0:
       if (t->is_client && t->header_eof) {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing Trailers-Only"));
-        if (s->trailing_metadata_available != nullptr) {
-          *s->trailing_metadata_available = true;
-        }
         t->hpack_parser.on_header = on_trailing_header;
         s->received_trailing_metadata = true;
       } else {

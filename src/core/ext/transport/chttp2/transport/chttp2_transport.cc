@@ -1863,6 +1863,15 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_exec_ctx* exec_ctx,
     }
     grpc_chttp2_incoming_metadata_buffer_publish(
         exec_ctx, &s->metadata_buffer[0], s->recv_initial_metadata);
+    if (s->trailing_metadata_available != nullptr) {
+      // We set trailing_metadata_available to true if we've either
+      // already received trailing metadata or encountered an error,
+      // because in either case, we will immediately return a
+      // recv_trailing_metadata op.
+      *s->trailing_metadata_available =
+          s->received_trailing_metadata || s->seen_error;
+      s->trailing_metadata_available = nullptr;
+    }
     null_then_run_closure(exec_ctx, &s->recv_initial_metadata_ready,
                           GRPC_ERROR_NONE);
   }
