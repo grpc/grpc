@@ -208,7 +208,6 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(nullptr != strstr(error_string, "xyz"));
   GPR_ASSERT(nullptr != strstr(error_string, "description"));
   GPR_ASSERT(nullptr != strstr(error_string, "Error received from peer"));
-  GPR_ASSERT(nullptr != strstr(error_string, "src/core/lib/surface/call.cc"));
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_message"));
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_status"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
