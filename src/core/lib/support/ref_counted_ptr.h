@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_PTR_H
-#define GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_PTR_H
+#ifndef GRPC_CORE_LIB_SUPPORT_REF_COUNTED_PTR_H
+#define GRPC_CORE_LIB_SUPPORT_REF_COUNTED_PTR_H
 
 #include <utility>
 
@@ -26,21 +26,21 @@
 namespace grpc_core {
 
 // A smart pointer class for objects that provide Ref() and Unref() methods,
-// such as those provided by the ReferenceCounted base class.
+// such as those provided by the RefCounted base class.
 template <typename T>
-class ReferenceCountedPtr {
+class RefCountedPtr {
  public:
-  ReferenceCountedPtr() {}
+  RefCountedPtr() {}
 
   // If value is non-null, we take ownership of a ref to it.
-  explicit ReferenceCountedPtr(T* value) { value_ = value; }
+  explicit RefCountedPtr(T* value) { value_ = value; }
 
   // Move support.
-  ReferenceCountedPtr(ReferenceCountedPtr&& other) {
+  RefCountedPtr(RefCountedPtr&& other) {
     value_ = other.value_;
     other.value_ = nullptr;
   }
-  ReferenceCountedPtr& operator=(ReferenceCountedPtr&& other) {
+  RefCountedPtr& operator=(RefCountedPtr&& other) {
     if (value_ != nullptr) value_->Unref();
     value_ = other.value_;
     other.value_ = nullptr;
@@ -48,11 +48,11 @@ class ReferenceCountedPtr {
   }
 
   // Copy support.
-  ReferenceCountedPtr(const ReferenceCountedPtr& other) {
+  RefCountedPtr(const RefCountedPtr& other) {
     if (other.value_ != nullptr) other.value_->Ref();
     value_ = other.value_;
   }
-  ReferenceCountedPtr& operator=(const ReferenceCountedPtr& other) {
+  RefCountedPtr& operator=(const RefCountedPtr& other) {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->Ref();
@@ -61,7 +61,7 @@ class ReferenceCountedPtr {
     return *this;
   }
 
-  ~ReferenceCountedPtr() {
+  ~RefCountedPtr() {
     if (value_ != nullptr) value_->Unref();
   }
 
@@ -81,10 +81,10 @@ class ReferenceCountedPtr {
 };
 
 template <typename T, typename... Args>
-inline ReferenceCountedPtr<T> MakeReferenceCounted(Args&&... args) {
-  return ReferenceCountedPtr<T>(New<T>(std::forward<Args>(args)...));
+inline RefCountedPtr<T> MakeRefCounted(Args&&... args) {
+  return RefCountedPtr<T>(New<T>(std::forward<Args>(args)...));
 }
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_PTR_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_REF_COUNTED_PTR_H */

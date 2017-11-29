@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_H
-#define GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_H
+#ifndef GRPC_CORE_LIB_SUPPORT_REF_COUNTED_H
+#define GRPC_CORE_LIB_SUPPORT_REF_COUNTED_H
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -31,7 +31,7 @@ namespace grpc_core {
 // A base class for reference-counted objects.
 // New objects should be created via New() and start with a refcount of 1.
 // When the refcount reaches 0, the object will be deleted via Delete().
-class ReferenceCounted {
+class RefCounted {
  public:
   void Ref() { gpr_ref(&refs_); }
 
@@ -42,29 +42,29 @@ class ReferenceCounted {
   }
 
   // Not copyable nor movable.
-  ReferenceCounted(const ReferenceCounted&) = delete;
-  ReferenceCounted& operator=(const ReferenceCounted&) = delete;
+  RefCounted(const RefCounted&) = delete;
+  RefCounted& operator=(const RefCounted&) = delete;
 
  protected:
   // Allow Delete() to access destructor.
   template <typename T>
   friend void Delete(T*);
 
-  ReferenceCounted() { gpr_ref_init(&refs_, 1); }
+  RefCounted() { gpr_ref_init(&refs_, 1); }
 
-  virtual ~ReferenceCounted() {}
+  virtual ~RefCounted() {}
 
  private:
   gpr_refcount refs_;
 };
 
-// An alternative version of the ReferenceCounted base class that
+// An alternative version of the RefCounted base class that
 // supports tracing.  This is intended to be used in cases where the
 // object will be handled both by idiomatic C++ code using smart
 // pointers and legacy code that is manually calling Ref() and Unref().
 // Once all of our code is converted to idiomatic C++, we may be able to
 // eliminate this class.
-class ReferenceCountedWithTracing {
+class RefCountedWithTracing {
  public:
   void Ref() { gpr_ref(&refs_); }
 
@@ -95,23 +95,22 @@ class ReferenceCountedWithTracing {
   }
 
   // Not copyable nor movable.
-  ReferenceCountedWithTracing(const ReferenceCountedWithTracing&) = delete;
-  ReferenceCountedWithTracing& operator=(const ReferenceCountedWithTracing&) =
-      delete;
+  RefCountedWithTracing(const RefCountedWithTracing&) = delete;
+  RefCountedWithTracing& operator=(const RefCountedWithTracing&) = delete;
 
  protected:
   // Allow Delete() to access destructor.
   template <typename T>
   friend void Delete(T*);
 
-  ReferenceCountedWithTracing() : ReferenceCountedWithTracing(nullptr) {}
+  RefCountedWithTracing() : RefCountedWithTracing(nullptr) {}
 
-  explicit ReferenceCountedWithTracing(TraceFlag* trace_flag)
+  explicit RefCountedWithTracing(TraceFlag* trace_flag)
       : trace_flag_(trace_flag) {
     gpr_ref_init(&refs_, 1);
   }
 
-  virtual ~ReferenceCountedWithTracing() {}
+  virtual ~RefCountedWithTracing() {}
 
  private:
   TraceFlag* trace_flag_ = nullptr;
@@ -120,4 +119,4 @@ class ReferenceCountedWithTracing {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_REF_COUNTED_H */

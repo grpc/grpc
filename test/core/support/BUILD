@@ -235,11 +235,11 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "reference_counted_test",
-    srcs = ["reference_counted_test.cc"],
+    name = "ref_counted_test",
+    srcs = ["ref_counted_test.cc"],
     language = "C++",
     deps = [
-        "//:reference_counted",
+        "//:ref_counted",
         "//test/core/util:gpr_test_util",
     ],
     external_deps = [
@@ -248,12 +248,12 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "reference_counted_ptr_test",
-    srcs = ["reference_counted_ptr_test.cc"],
+    name = "ref_counted_ptr_test",
+    srcs = ["ref_counted_ptr_test.cc"],
     language = "C++",
     deps = [
-        "//:reference_counted",
-        "//:reference_counted_ptr",
+        "//:ref_counted",
+        "//:ref_counted_ptr",
         "//test/core/util:gpr_test_util",
     ],
     external_deps = [

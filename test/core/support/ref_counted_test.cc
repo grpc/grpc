@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/support/reference_counted.h"
+#include "src/core/lib/support/ref_counted.h"
 
 #include <gtest/gtest.h>
 
@@ -27,17 +27,17 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class Foo : public ReferenceCounted {
+class Foo : public RefCounted {
  public:
   Foo() {}
 };
 
-TEST(ReferenceCounted, Basic) {
+TEST(RefCounted, Basic) {
   Foo* foo = New<Foo>();
   foo->Unref();
 }
 
-TEST(ReferenceCounted, ExtraRef) {
+TEST(RefCounted, ExtraRef) {
   Foo* foo = New<Foo>();
   foo->Ref();
   foo->Unref();
@@ -46,12 +46,12 @@ TEST(ReferenceCounted, ExtraRef) {
 
 TraceFlag foo_tracer(true, "foo");
 
-class FooWithTracing : public ReferenceCountedWithTracing {
+class FooWithTracing : public RefCountedWithTracing {
  public:
-  FooWithTracing() : ReferenceCountedWithTracing(&foo_tracer) {}
+  FooWithTracing() : RefCountedWithTracing(&foo_tracer) {}
 };
 
-TEST(ReferenceCountedWithTracing, Basic) {
+TEST(RefCountedWithTracing, Basic) {
   FooWithTracing* foo = New<FooWithTracing>();
   foo->Ref(DEBUG_LOCATION, "extra_ref");
   foo->Unref(DEBUG_LOCATION, "extra_ref");

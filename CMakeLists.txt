@@ -739,8 +739,8 @@ endif()
 add_dependencies(buildtests_cxx qps_worker)
 add_dependencies(buildtests_cxx reconnect_interop_client)
 add_dependencies(buildtests_cxx reconnect_interop_server)
-add_dependencies(buildtests_cxx reference_counted_ptr_test)
-add_dependencies(buildtests_cxx reference_counted_test)
+add_dependencies(buildtests_cxx ref_counted_ptr_test)
+add_dependencies(buildtests_cxx ref_counted_test)
 add_dependencies(buildtests_cxx secure_auth_context_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx secure_sync_unary_ping_pong_test)
@@ -12262,14 +12262,14 @@ target_link_libraries(reconnect_interop_server
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(reference_counted_ptr_test
-  test/core/support/reference_counted_ptr_test.cc
+add_executable(ref_counted_ptr_test
+  test/core/support/ref_counted_ptr_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
-target_include_directories(reference_counted_ptr_test
+target_include_directories(ref_counted_ptr_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
@@ -12288,7 +12288,7 @@ target_include_directories(reference_counted_ptr_test
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(reference_counted_ptr_test
+target_link_libraries(ref_counted_ptr_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -12302,14 +12302,14 @@ target_link_libraries(reference_counted_ptr_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(reference_counted_test
-  test/core/support/reference_counted_test.cc
+add_executable(ref_counted_test
+  test/core/support/ref_counted_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
-target_include_directories(reference_counted_test
+target_include_directories(ref_counted_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
@@ -12328,7 +12328,7 @@ target_include_directories(reference_counted_test
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(reference_counted_test
+target_link_libraries(ref_counted_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util

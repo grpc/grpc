@@ -544,8 +544,8 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "reference_counted",
-    public_hdrs = ["src/core/lib/support/reference_counted.h"],
+    name = "ref_counted",
+    public_hdrs = ["src/core/lib/support/ref_counted.h"],
     language = "c++",
     deps = [
         "grpc_trace",
@@ -554,8 +554,8 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "reference_counted_ptr",
-    public_hdrs = ["src/core/lib/support/reference_counted_ptr.h"],
+    name = "ref_counted_ptr",
+    public_hdrs = ["src/core/lib/support/ref_counted_ptr.h"],
     language = "c++",
 )
 

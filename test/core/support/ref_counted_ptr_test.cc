@@ -16,21 +16,21 @@
  *
  */
 
-#include "src/core/lib/support/reference_counted_ptr.h"
+#include "src/core/lib/support/ref_counted_ptr.h"
 
 #include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/support/memory.h"
-#include "src/core/lib/support/reference_counted.h"
+#include "src/core/lib/support/ref_counted.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
-class Foo : public ReferenceCounted {
+class Foo : public RefCounted {
  public:
   Foo() : value_(0) {}
 
@@ -42,76 +42,76 @@ class Foo : public ReferenceCounted {
   int value_;
 };
 
-TEST(ReferenceCountedPtr, DefaultConstructor) { ReferenceCountedPtr<Foo> foo; }
+TEST(RefCountedPtr, DefaultConstructor) { RefCountedPtr<Foo> foo; }
 
-TEST(ReferenceCountedPtr, ExplicitConstructorEmpty) {
-  ReferenceCountedPtr<Foo> foo(nullptr);
+TEST(RefCountedPtr, ExplicitConstructorEmpty) {
+  RefCountedPtr<Foo> foo(nullptr);
 }
 
-TEST(ReferenceCountedPtr, ExplicitConstructor) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
+TEST(RefCountedPtr, ExplicitConstructor) {
+  RefCountedPtr<Foo> foo(New<Foo>());
 }
 
-TEST(ReferenceCountedPtr, MoveConstructor) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
-  ReferenceCountedPtr<Foo> foo2(std::move(foo));
+TEST(RefCountedPtr, MoveConstructor) {
+  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo2(std::move(foo));
   EXPECT_EQ(nullptr, foo.get());
   EXPECT_NE(nullptr, foo2.get());
 }
 
-TEST(ReferenceCountedPtr, MoveAssignment) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
-  ReferenceCountedPtr<Foo> foo2 = std::move(foo);
+TEST(RefCountedPtr, MoveAssignment) {
+  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo2 = std::move(foo);
   EXPECT_EQ(nullptr, foo.get());
   EXPECT_NE(nullptr, foo2.get());
 }
 
-TEST(ReferenceCountedPtr, CopyConstructor) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
-  ReferenceCountedPtr<Foo> foo2(foo);
+TEST(RefCountedPtr, CopyConstructor) {
+  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo2(foo);
   EXPECT_NE(nullptr, foo.get());
   EXPECT_EQ(foo.get(), foo2.get());
 }
 
-TEST(ReferenceCountedPtr, CopyAssignment) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
-  ReferenceCountedPtr<Foo> foo2 = foo;
+TEST(RefCountedPtr, CopyAssignment) {
+  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> foo2 = foo;
   EXPECT_NE(nullptr, foo.get());
   EXPECT_EQ(foo.get(), foo2.get());
 }
 
-TEST(ReferenceCountedPtr, CopyAssignmentWhenEmpty) {
-  ReferenceCountedPtr<Foo> foo;
-  ReferenceCountedPtr<Foo> foo2;
+TEST(RefCountedPtr, CopyAssignmentWhenEmpty) {
+  RefCountedPtr<Foo> foo;
+  RefCountedPtr<Foo> foo2;
   foo2 = foo;
   EXPECT_EQ(nullptr, foo.get());
   EXPECT_EQ(nullptr, foo2.get());
 }
 
-TEST(ReferenceCountedPtr, CopyAssignmentToSelf) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
+TEST(RefCountedPtr, CopyAssignmentToSelf) {
+  RefCountedPtr<Foo> foo(New<Foo>());
   foo = foo;
 }
 
-TEST(ReferenceCountedPtr, EnclosedScope) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
+TEST(RefCountedPtr, EnclosedScope) {
+  RefCountedPtr<Foo> foo(New<Foo>());
   {
-    ReferenceCountedPtr<Foo> foo2(std::move(foo));
+    RefCountedPtr<Foo> foo2(std::move(foo));
     EXPECT_EQ(nullptr, foo.get());
     EXPECT_NE(nullptr, foo2.get());
   }
   EXPECT_EQ(nullptr, foo.get());
 }
 
-TEST(ReferenceCountedPtr, ResetFromNullToNonNull) {
-  ReferenceCountedPtr<Foo> foo;
+TEST(RefCountedPtr, ResetFromNullToNonNull) {
+  RefCountedPtr<Foo> foo;
   EXPECT_EQ(nullptr, foo.get());
   foo.reset(New<Foo>());
   EXPECT_NE(nullptr, foo.get());
 }
 
-TEST(ReferenceCountedPtr, ResetFromNonNullToNonNull) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
+TEST(RefCountedPtr, ResetFromNonNullToNonNull) {
+  RefCountedPtr<Foo> foo(New<Foo>());
   EXPECT_NE(nullptr, foo.get());
   Foo* original = foo.get();
   foo.reset(New<Foo>());
@@ -119,46 +119,46 @@ TEST(ReferenceCountedPtr, ResetFromNonNullToNonNull) {
   EXPECT_NE(original, foo.get());
 }
 
-TEST(ReferenceCountedPtr, ResetFromNonNullToNull) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
+TEST(RefCountedPtr, ResetFromNonNullToNull) {
+  RefCountedPtr<Foo> foo(New<Foo>());
   EXPECT_NE(nullptr, foo.get());
   foo.reset();
   EXPECT_EQ(nullptr, foo.get());
 }
 
-TEST(ReferenceCountedPtr, ResetFromNullToNull) {
-  ReferenceCountedPtr<Foo> foo;
+TEST(RefCountedPtr, ResetFromNullToNull) {
+  RefCountedPtr<Foo> foo;
   EXPECT_EQ(nullptr, foo.get());
   foo.reset(nullptr);
   EXPECT_EQ(nullptr, foo.get());
 }
 
-TEST(ReferenceCountedPtr, DerefernceOperators) {
-  ReferenceCountedPtr<Foo> foo(New<Foo>());
+TEST(RefCountedPtr, DerefernceOperators) {
+  RefCountedPtr<Foo> foo(New<Foo>());
   foo->value();
   Foo& foo_ref = *foo;
   foo_ref.value();
 }
 
-TEST(MakeReferenceCounted, NoArgs) {
-  ReferenceCountedPtr<Foo> foo = MakeReferenceCounted<Foo>();
+TEST(MakeRefCounted, NoArgs) {
+  RefCountedPtr<Foo> foo = MakeRefCounted<Foo>();
   EXPECT_EQ(0, foo->value());
 }
 
-TEST(MakeReferenceCounted, Args) {
-  ReferenceCountedPtr<Foo> foo = MakeReferenceCounted<Foo>(3);
+TEST(MakeRefCounted, Args) {
+  RefCountedPtr<Foo> foo = MakeRefCounted<Foo>(3);
   EXPECT_EQ(3, foo->value());
 }
 
 TraceFlag foo_tracer(true, "foo");
 
-class FooWithTracing : public ReferenceCountedWithTracing {
+class FooWithTracing : public RefCountedWithTracing {
  public:
-  FooWithTracing() : ReferenceCountedWithTracing(&foo_tracer) {}
+  FooWithTracing() : RefCountedWithTracing(&foo_tracer) {}
 };
 
-TEST(ReferenceCountedPtr, ReferenceCountedWithTracing) {
-  ReferenceCountedPtr<FooWithTracing> foo(New<FooWithTracing>());
+TEST(RefCountedPtr, RefCountedWithTracing) {
+  RefCountedPtr<FooWithTracing> foo(New<FooWithTracing>());
   foo->Ref(DEBUG_LOCATION, "foo");
   foo->Unref(DEBUG_LOCATION, "foo");
 }

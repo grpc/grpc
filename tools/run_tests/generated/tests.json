@@ -4138,7 +4138,7 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
-    "name": "reference_counted_ptr_test", 
+    "name": "ref_counted_ptr_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -4162,7 +4162,7 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
-    "name": "reference_counted_test", 
+    "name": "ref_counted_test", 
     "platforms": [
       "linux", 
       "mac", 
