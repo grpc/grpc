@@ -66,7 +66,11 @@ RUN apt-get update && apt-get install -y \
 # Install Python packages from PyPI
 RUN pip install --upgrade pip==9.0.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0 twisted==17.5.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.10.0 twisted==17.5.0
+
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 #========================
 # Sanity test dependencies
@@ -100,11 +104,11 @@ RUN curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.4.4/ba
 RUN chmod +x ./bazel-0.4.4-installer-linux-x86_64.sh
 RUN ./bazel-0.4.4-installer-linux-x86_64.sh
 
-RUN apt-get update && apt-get -y install wget
-RUN echo "deb http://llvm.org/apt/jessie/ llvm-toolchain-jessie-3.8 main" >> /etc/apt/sources.list
-RUN echo "deb-src http://llvm.org/apt/jessie/ llvm-toolchain-jessie-3.8 main" >> /etc/apt/sources.list
-RUN wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | apt-key add -
-RUN apt-get update && apt-get -y install clang-format-3.8
+RUN apt-get update && apt-get -y install wget xz-utils
+RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-format /usr/local/bin/clang-format
+ENV CLANG_FORMAT=clang-format
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc

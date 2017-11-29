@@ -45,9 +45,9 @@ using std::make_pair;
 using std::map;
 using std::pair;
 using std::replace;
+using std::set;
 using std::tuple;
 using std::vector;
-using std::set;
 
 namespace grpc_python_generator {
 
@@ -101,7 +101,7 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
        ++it) {
     size_t start_pos = it->find_first_not_of(' ');
     if (start_pos != grpc::string::npos) {
-      out->Print(it->c_str() + start_pos);
+      out->PrintRaw(it->c_str() + start_pos);
     }
     out->Print("\n");
   }

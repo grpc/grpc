@@ -33,7 +33,9 @@ gpr_atm gpr_counter_atm_cas = 0;
 gpr_atm gpr_counter_atm_add = 0;
 #endif
 
-void gpr_mu_init(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_init(mu, NULL) == 0); }
+void gpr_mu_init(gpr_mu* mu) {
+  GPR_ASSERT(pthread_mutex_init(mu, nullptr) == 0);
+}
 
 void gpr_mu_destroy(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_destroy(mu) == 0); }
 
@@ -63,7 +65,9 @@ int gpr_mu_trylock(gpr_mu* mu) {
 
 /*----------------------------------------*/
 
-void gpr_cv_init(gpr_cv* cv) { GPR_ASSERT(pthread_cond_init(cv, NULL) == 0); }
+void gpr_cv_init(gpr_cv* cv) {
+  GPR_ASSERT(pthread_cond_init(cv, nullptr) == 0);
+}
 
 void gpr_cv_destroy(gpr_cv* cv) { GPR_ASSERT(pthread_cond_destroy(cv) == 0); }
 

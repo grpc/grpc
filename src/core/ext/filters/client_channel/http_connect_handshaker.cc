@@ -65,10 +65,10 @@ static void http_connect_handshaker_unref(grpc_exec_ctx* exec_ctx,
                                           http_connect_handshaker* handshaker) {
   if (gpr_unref(&handshaker->refcount)) {
     gpr_mu_destroy(&handshaker->mu);
-    if (handshaker->endpoint_to_destroy != NULL) {
+    if (handshaker->endpoint_to_destroy != nullptr) {
       grpc_endpoint_destroy(exec_ctx, handshaker->endpoint_to_destroy);
     }
-    if (handshaker->read_buffer_to_destroy != NULL) {
+    if (handshaker->read_buffer_to_destroy != nullptr) {
       grpc_slice_buffer_destroy_internal(exec_ctx,
                                          handshaker->read_buffer_to_destroy);
       gpr_free(handshaker->read_buffer_to_destroy);
@@ -85,11 +85,11 @@ static void http_connect_handshaker_unref(grpc_exec_ctx* exec_ctx,
 static void cleanup_args_for_failure_locked(
     grpc_exec_ctx* exec_ctx, http_connect_handshaker* handshaker) {
   handshaker->endpoint_to_destroy = handshaker->args->endpoint;
-  handshaker->args->endpoint = NULL;
+  handshaker->args->endpoint = nullptr;
   handshaker->read_buffer_to_destroy = handshaker->args->read_buffer;
-  handshaker->args->read_buffer = NULL;
+  handshaker->args->read_buffer = nullptr;
   grpc_channel_args_destroy(exec_ctx, handshaker->args->args);
-  handshaker->args->args = NULL;
+  handshaker->args->args = nullptr;
 }
 
 // If the handshake failed or we're shutting down, clean up and invoke the
@@ -260,7 +260,7 @@ static void http_connect_handshaker_do_handshake(
   // If not found, invoke on_handshake_done without doing anything.
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
-  if (arg == NULL) {
+  if (arg == nullptr) {
     // Set shutdown to true so that subsequent calls to
     // http_connect_handshaker_shutdown() do nothing.
     gpr_mu_lock(&handshaker->mu);
@@ -273,11 +273,11 @@ static void http_connect_handshaker_do_handshake(
   char* server_name = arg->value.string;
   // Get headers from channel args.
   arg = grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_HEADERS);
-  grpc_http_header* headers = NULL;
+  grpc_http_header* headers = nullptr;
   size_t num_headers = 0;
-  char** header_strings = NULL;
+  char** header_strings = nullptr;
   size_t num_header_strings = 0;
-  if (arg != NULL) {
+  if (arg != nullptr) {
     GPR_ASSERT(arg->type == GRPC_ARG_STRING);
     gpr_string_split(arg->value.string, "\n", &header_strings,
                      &num_header_strings);
@@ -285,7 +285,7 @@ static void http_connect_handshaker_do_handshake(
                                             num_header_strings);
     for (size_t i = 0; i < num_header_strings; ++i) {
       char* sep = strchr(header_strings[i], ':');
-      if (sep == NULL) {
+      if (sep == nullptr) {
         gpr_log(GPR_ERROR, "skipping unparseable HTTP CONNECT header: %s",
                 header_strings[i]);
         continue;

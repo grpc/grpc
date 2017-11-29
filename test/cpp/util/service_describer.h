@@ -36,7 +36,7 @@ grpc::string SummarizeService(const grpc::protobuf::ServiceDescriptor* service);
 
 grpc::string SummarizeMethod(const grpc::protobuf::MethodDescriptor* method);
 
-}  // namespase testing
+}  // namespace testing
 }  // namespace grpc
 
 #endif  // GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H

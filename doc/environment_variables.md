@@ -49,6 +49,7 @@ some configuration as environment variables that can be set.
   - connectivity_state - traces connectivity state changes to channels
   - channel_stack_builder - traces information about channel stacks being built
   - executor - traces grpc's internal thread pool ('the executor')
+  - glb - traces the grpclb load balancer
   - http - traces state in the http2 transport engine
   - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC
@@ -56,11 +57,12 @@ some configuration as environment variables that can be set.
   - flowctl - traces http2 flow control
   - op_failure - traces error information when failure is pushed onto a
     completion queue
-  - round_robin - traces the round_robin load balancing policy
   - pick_first - traces the pick first load balancing policy
   - plugin_credentials - traces plugin credentials
+  - pollable_refcount - traces reference counting of 'pollable' objects (only 
+    in DEBUG)
   - resource_quota - trace resource quota objects internals
-  - glb - traces the grpclb load balancer
+  - round_robin - traces the round_robin load balancing policy
   - queue_pluck
   - queue_timeout
   - server_channel - lightweight trace of significant server channel events
@@ -118,10 +120,10 @@ some configuration as environment variables that can be set.
     perform name resolution
   - ares - a DNS resolver based around the c-ares library
 
-* GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER
-  The channel connectivity watcher uses one extra thread to check the channel
-  state every 500 ms on the client side. It can help reconnect disconnected
-  client channels (mostly due to idleness), so that the next RPC on this channel
-  won't fail. Set to 1 to turn off this watcher and save a thread. Please note
-  this is a temporary work-around, it will be removed in the future once we have
-  support for automatically reestablishing failed connections.
+* GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS
+  Default: 5000
+  Declares the interval between two backup polls on client channels. These polls
+  are run in the timer thread so that gRPC can process connection failures while
+  there is no active polling thread. They help reconnect disconnected client
+  channels (mostly due to idleness), so that the next RPC on this channel won't
+  fail. Set to 0 to turn off the backup polls.

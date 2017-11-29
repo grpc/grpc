@@ -42,7 +42,7 @@ typedef struct call_data {
 // Find the user agent metadata element in the batch
 static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
                                   grpc_mdelem* md) {
-  if (batch->idx.named.user_agent != NULL) {
+  if (batch->idx.named.user_agent != nullptr) {
     *md = batch->idx.named.user_agent->md;
     return true;
   }
@@ -104,7 +104,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   call_data* calld = (call_data*)elem->call_data;
-  calld->next_recv_initial_metadata_ready = NULL;
+  calld->next_recv_initial_metadata_ready = nullptr;
   calld->workaround_active = false;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
@@ -142,7 +142,7 @@ static bool parse_user_agent(grpc_mdelem md) {
   long major_version, minor_version;
 
   char* head = strtok(user_agent_str, " ");
-  while (head != NULL) {
+  while (head != nullptr) {
     if (!grpc_objc_specifier_seen &&
         0 == strncmp(head, grpc_objc_specifier, grpc_objc_specifier_len)) {
       major_version_str = head + grpc_objc_specifier_len;
@@ -153,11 +153,11 @@ static bool parse_user_agent(grpc_mdelem md) {
       break;
     }
 
-    head = strtok(NULL, " ");
+    head = strtok(nullptr, " ");
   }
   if (grpc_objc_specifier_seen) {
     major_version_str = strtok(major_version_str, ".");
-    minor_version_str = strtok(NULL, ".");
+    minor_version_str = strtok(nullptr, ".");
     major_version = atol(major_version_str);
     minor_version = atol(minor_version_str);
   }
@@ -186,20 +186,20 @@ static bool register_workaround_cronet_compression(
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const grpc_arg* a = grpc_channel_args_find(
       channel_args, GRPC_ARG_WORKAROUND_CRONET_COMPRESSION);
-  if (a == NULL) {
+  if (a == nullptr) {
     return true;
   }
   if (grpc_channel_arg_get_bool(a, false) == false) {
     return true;
   }
   return grpc_channel_stack_builder_prepend_filter(
-      builder, &grpc_workaround_cronet_compression_filter, NULL, NULL);
+      builder, &grpc_workaround_cronet_compression_filter, nullptr, nullptr);
 }
 
 extern "C" void grpc_workaround_cronet_compression_filter_init(void) {
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, GRPC_WORKAROUND_PRIORITY_HIGH,
-      register_workaround_cronet_compression, NULL);
+      register_workaround_cronet_compression, nullptr);
   grpc_register_workaround(GRPC_WORKAROUND_ID_CRONET_COMPRESSION,
                            parse_user_agent);
 }

@@ -38,16 +38,16 @@ typedef struct grpc_rb_server_credentials {
   /* Holder of ruby objects involved in constructing the server credentials */
   VALUE mark;
   /* The actual server credentials */
-  grpc_server_credentials *wrapped;
+  grpc_server_credentials* wrapped;
 } grpc_rb_server_credentials;
 
 /* Destroys the server credentials instances. */
-static void grpc_rb_server_credentials_free(void *p) {
-  grpc_rb_server_credentials *wrapper = NULL;
+static void grpc_rb_server_credentials_free(void* p) {
+  grpc_rb_server_credentials* wrapper = NULL;
   if (p == NULL) {
     return;
   };
-  wrapper = (grpc_rb_server_credentials *)p;
+  wrapper = (grpc_rb_server_credentials*)p;
 
   /* Delete the wrapped object if the mark object is Qnil, which indicates that
      no other object is the actual owner. */
@@ -60,12 +60,12 @@ static void grpc_rb_server_credentials_free(void *p) {
 }
 
 /* Protects the mark object from GC */
-static void grpc_rb_server_credentials_mark(void *p) {
-  grpc_rb_server_credentials *wrapper = NULL;
+static void grpc_rb_server_credentials_mark(void* p) {
+  grpc_rb_server_credentials* wrapper = NULL;
   if (p == NULL) {
     return;
   }
-  wrapper = (grpc_rb_server_credentials *)p;
+  wrapper = (grpc_rb_server_credentials*)p;
 
   /* If it's not already cleaned up, mark the mark object */
   if (wrapper->mark != Qnil) {
@@ -90,7 +90,7 @@ static const rb_data_type_t grpc_rb_server_credentials_data_type = {
 
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_server_credentials_alloc(VALUE cls) {
-  grpc_rb_server_credentials *wrapper = ALLOC(grpc_rb_server_credentials);
+  grpc_rb_server_credentials* wrapper = ALLOC(grpc_rb_server_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_rb_server_credentials_data_type,
@@ -128,9 +128,9 @@ static VALUE sym_private_key;
 static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
                                              VALUE pem_key_certs,
                                              VALUE force_client_auth) {
-  grpc_rb_server_credentials *wrapper = NULL;
-  grpc_server_credentials *creds = NULL;
-  grpc_ssl_pem_key_cert_pair *key_cert_pairs = NULL;
+  grpc_rb_server_credentials* wrapper = NULL;
+  grpc_server_credentials* creds = NULL;
+  grpc_ssl_pem_key_cert_pair* key_cert_pairs = NULL;
   VALUE cert = Qnil;
   VALUE key = Qnil;
   VALUE key_cert = Qnil;
@@ -235,8 +235,8 @@ void Init_grpc_server_credentials() {
 }
 
 /* Gets the wrapped grpc_server_credentials from the ruby wrapper */
-grpc_server_credentials *grpc_rb_get_wrapped_server_credentials(VALUE v) {
-  grpc_rb_server_credentials *wrapper = NULL;
+grpc_server_credentials* grpc_rb_get_wrapped_server_credentials(VALUE v) {
+  grpc_rb_server_credentials* wrapper = NULL;
   TypedData_Get_Struct(v, grpc_rb_server_credentials,
                        &grpc_rb_server_credentials_data_type, wrapper);
   return wrapper->wrapped;

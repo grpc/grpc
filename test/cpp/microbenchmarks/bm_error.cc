@@ -21,10 +21,8 @@
 #include <benchmark/benchmark.h>
 #include <memory>
 
-extern "C" {
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/error_utils.h"
-}
 
 #include "test/cpp/microbenchmarks/helpers.h"
 
@@ -253,7 +251,7 @@ static void BM_ErrorGetStatus(benchmark::State& state) {
     grpc_status_code status;
     grpc_slice slice;
     grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
-                          &status, &slice, NULL);
+                          &status, &slice, nullptr, nullptr);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);
@@ -267,7 +265,7 @@ static void BM_ErrorGetStatusCode(benchmark::State& state) {
   while (state.KeepRunning()) {
     grpc_status_code status;
     grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
-                          &status, NULL, NULL);
+                          &status, nullptr, nullptr, nullptr);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);
@@ -280,8 +278,8 @@ static void BM_ErrorHttpError(benchmark::State& state) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (state.KeepRunning()) {
     grpc_http2_error_code error;
-    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(), NULL,
-                          NULL, &error);
+    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
+                          nullptr, nullptr, &error, nullptr);
   }
   grpc_exec_ctx_finish(&exec_ctx);
   track_counters.Finish(state);
