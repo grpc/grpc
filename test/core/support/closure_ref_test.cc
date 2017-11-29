@@ -23,7 +23,7 @@
 namespace grpc_core {
 namespace testing {
 
-static int counter;
+static int g_counter;
 
 class Incrementer {
  public:
@@ -34,18 +34,18 @@ class Incrementer {
   int* const p_;
 };
 
-void IncCounter() { ++counter; }
-void IncCounterBy(int n) { counter += n; }
+void IncCounter() { ++g_counter; }
+void IncCounterBy(int n) { g_counter += n; }
 
 TEST(ClosureRef, SimpleTests) {
   // simple closures around functions, member functions
-  counter = 0;
+  g_counter = 0;
   ClosureRef<> cb1 =
       NonLockingScheduler::MakeClosureWithArgs<>::FromFreeFunction<
           IncCounter>();
   ClosureRef<int> cb2 = NonLockingScheduler::MakeClosureWithArgs<
       int>::FromFreeFunction<IncCounterBy>();
-  Incrementer incrementer(&counter);
+  Incrementer incrementer(&g_counter);
   ClosureRef<> cb3 = NonLockingScheduler::MakeClosureWithArgs<>::
       FromNonRefCountedMemberFunction<Incrementer, &Incrementer::Inc>(
           &incrementer);
@@ -58,7 +58,7 @@ TEST(ClosureRef, SimpleTests) {
   EXPECT_DEATH_IF_SUPPORTED(cb2.UnsafeRun(7), "");
   EXPECT_DEATH_IF_SUPPORTED(cb3.UnsafeRun(), "");
 
-  EXPECT_EQ(4, counter);
+  EXPECT_EQ(4, g_counter);
 
   // empty closure test
   ClosureRef<> empty;
@@ -66,36 +66,41 @@ TEST(ClosureRef, SimpleTests) {
 }
 
 TEST(ClosureRef, Lambda) {
-  counter = 0;
+  g_counter = 0;
   ClosureRef<> cb =
       NonLockingScheduler::MakeClosureWithArgs<>::AllocFromFunctor(
-          []() { counter++; });
-  EXPECT_EQ(0, counter);
+          []() { g_counter++; });
+  EXPECT_EQ(0, g_counter);
   cb.UnsafeRun();
-  EXPECT_EQ(1, counter);
+  EXPECT_EQ(1, g_counter);
 }
 
 TEST(ClosureRef, Move) {
-  counter = 0;
+  g_counter = 0;
   ClosureRef<> cb1 =
       NonLockingScheduler::MakeClosureWithArgs<>::FromFreeFunction<
           IncCounter>();
   ClosureRef<> cb2 = std::move(cb1);
   cb2.UnsafeRun();
+  EXPECT_EQ(1, g_counter);
   EXPECT_DEATH_IF_SUPPORTED(cb1.UnsafeRun(), "");
   EXPECT_DEATH_IF_SUPPORTED(cb2.UnsafeRun(), "");
+  EXPECT_EQ(1, g_counter);
 }
 
 TEST(ClosureRef, MoveBack) {
-  counter = 0;
+  g_counter = 0;
   ClosureRef<> cb1 =
       NonLockingScheduler::MakeClosureWithArgs<>::FromFreeFunction<
           IncCounter>();
   ClosureRef<> cb2 = std::move(cb1);
   cb1 = std::move(cb2);
-  cb1.UnsafeRun();
-  EXPECT_DEATH_IF_SUPPORTED(cb1.UnsafeRun(), "");
   EXPECT_DEATH_IF_SUPPORTED(cb2.UnsafeRun(), "");
+  EXPECT_EQ(0, g_counter);
+  cb1.UnsafeRun();
+  EXPECT_EQ(1, g_counter);
+  EXPECT_DEATH_IF_SUPPORTED(cb1.UnsafeRun(), "");
+  EXPECT_EQ(1, g_counter);
 }
 
 TEST(ClosureRef, RefCountedMember) {
