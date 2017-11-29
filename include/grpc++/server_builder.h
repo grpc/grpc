@@ -127,7 +127,7 @@ class ServerBuilder {
       bool is_frequently_polled = true);
 
   //////////////////////////////////////////////////////////////////////////////
-  // RegisterService variants
+  // Less commonly used RegisterService variants
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
@@ -137,6 +137,8 @@ class ServerBuilder {
 
   /// Register a generic service.
   /// Matches requests with any :authority
+  /// This is mostly useful for writing generic gRPC Proxies where the exact
+  /// serialization format is unknown
   ServerBuilder& RegisterAsyncGenericService(AsyncGenericService* service);
 
   //////////////////////////////////////////////////////////////////////////////
