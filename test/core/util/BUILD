@@ -53,6 +53,7 @@ grpc_cc_library(
         "parse_hexstring.cc",
         "passthru_endpoint.cc",
         "port.cc",
+        "port_hermetic.cc",
         "port_server_client.cc",
         "reconnect_server.cc",
         "slice_splitter.cc",
@@ -72,6 +73,9 @@ grpc_cc_library(
         "test_tcp_server.h",
         "tracer_util.h",
         "trickle_endpoint.h",
+    ],
+    defines = [
+        "GRPC_HERMETIC_TESTS=1",
     ],
     language = "C++",
     deps = [

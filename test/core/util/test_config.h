@@ -33,7 +33,7 @@ gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s);
 /* Converts a given timeout (in milliseconds) to a deadline. */
 gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 
-#ifndef GRPC_TEST_CUSTOM_PICK_PORT
+#if !defined(GRPC_TEST_CUSTOM_PICK_PORT) && !defined(GRPC_HERMETIC_TESTS)
 #define GRPC_TEST_PICK_PORT
 #endif
 

@@ -1622,6 +1622,7 @@ add_library(grpc_test_util
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
   test/core/util/port.cc
+  test/core/util/port_hermetic.cc
   test/core/util/port_server_client.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -1890,6 +1891,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
   test/core/util/port.cc
+  test/core/util/port_hermetic.cc
   test/core/util/port_server_client.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
