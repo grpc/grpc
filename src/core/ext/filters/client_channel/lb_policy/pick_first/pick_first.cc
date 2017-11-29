@@ -418,7 +418,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
               ? GRPC_CHANNEL_TRANSIENT_FAILURE
               : sd->curr_connectivity_state;
       if (publish_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        /* if the selected channel goes bad, request a re-resolution */
+        // if the selected channel goes bad, request a re-resolution.
         grpc_lb_policy_try_reresolve(
             exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
       }
@@ -432,9 +432,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
         grpc_lb_subchannel_list_unref_for_connectivity_watch(
             exec_ctx, sd->subchannel_list, "pf_selected_shutdown");
-        grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
-                                                   "pf_selected_shutdown");
-        p->subchannel_list = nullptr;
+        grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd,
+                                                 "pf_selected_shutdown");
       }
     }
     return;
