@@ -127,7 +127,7 @@ static void start_max_age_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
                   &chand->close_max_age_channel);
   gpr_mu_unlock(&chand->max_age_timer_mu);
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  op->on_connectivity_state_change = &chand->channel_connectivity_changed,
+  op->on_connectivity_state_change = &chand->channel_connectivity_changed;
   op->connectivity_state = &chand->connectivity_state;
   grpc_channel_next_op(exec_ctx,
                        grpc_channel_stack_element(chand->channel_stack, 0), op);
@@ -222,7 +222,7 @@ static void channel_connectivity_changed(grpc_exec_ctx* exec_ctx, void* arg,
   channel_data* chand = (channel_data*)arg;
   if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->on_connectivity_state_change = &chand->channel_connectivity_changed,
+    op->on_connectivity_state_change = &chand->channel_connectivity_changed;
     op->connectivity_state = &chand->connectivity_state;
     grpc_channel_next_op(
         exec_ctx, grpc_channel_stack_element(chand->channel_stack, 0), op);

@@ -101,7 +101,7 @@ grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
                                                void* buffer, size_t length) {
   slice_stream_ref(&refcount->slice_refcount);
   grpc_slice res;
-  res.refcount = &refcount->slice_refcount,
+  res.refcount = &refcount->slice_refcount;
   res.data.refcounted.bytes = (uint8_t*)buffer;
   res.data.refcounted.length = length;
   return res;
