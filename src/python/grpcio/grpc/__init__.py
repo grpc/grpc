@@ -359,15 +359,14 @@ class ChannelCredentials(object):
 
 
 class CallCredentials(object):
-    """An encapsulation of the data required to assert an identity over a
-       channel.
+    """An encapsulation of the data required to assert an identity over a call.
 
-  A CallCredentials may be composed with ChannelCredentials to always assert
-  identity for every call over that Channel.
+    A CallCredentials may be composed with ChannelCredentials to always assert
+    identity for every call over that Channel.
 
-  This class has no supported interface - it exists to define the type of its
-  instances and its instances exist to be passed to other functions.
-  """
+    This class has no supported interface - it exists to define the type of its
+    instances and its instances exist to be passed to other functions.
+    """
 
     def __init__(self, credentials):
         self._credentials = credentials
@@ -1157,16 +1156,7 @@ def ssl_channel_credentials(root_certificates=None,
         _cygrpc.channel_credentials_ssl(root_certificates, pair))
 
 
-def metadata_call_credentials(metadata_plugin, name=None):
-    """Construct CallCredentials from an AuthMetadataPlugin.
-
-  Args:
-    metadata_plugin: An AuthMetadataPlugin to use for authentication.
-    name: An optional name for the plugin.
-
-  Returns:
-    A CallCredentials.
-  """
+def _metadata_call_credentials(metadata_plugin, name):
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
     if name is None:
         try:
@@ -1180,20 +1170,33 @@ def metadata_call_credentials(metadata_plugin, name=None):
                                                           effective_name))
 
 
+def metadata_call_credentials(metadata_plugin, name=None):
+    """Construct CallCredentials from an AuthMetadataPlugin.
+
+    Args:
+      metadata_plugin: An AuthMetadataPlugin to use for authentication.
+      name: An optional name for the plugin.
+
+    Returns:
+      A CallCredentials.
+    """
+    return _metadata_call_credentials(metadata_plugin, name)
+
+
 def access_token_call_credentials(access_token):
     """Construct CallCredentials from an access token.
 
-  Args:
-    access_token: A string to place directly in the http request
-      authorization header, for example
-      "authorization: Bearer <access_token>".
+    Args:
+      access_token: A string to place directly in the http request
+        authorization header, for example
+        "authorization: Bearer <access_token>".
 
-  Returns:
-    A CallCredentials.
-  """
+    Returns:
+      A CallCredentials.
+    """
     from grpc import _auth  # pylint: disable=cyclic-import
-    return metadata_call_credentials(
-        _auth.AccessTokenCallCredentials(access_token))
+    return _metadata_call_credentials(
+        _auth.AccessTokenCallCredentials(access_token), None)
 
 
 def composite_call_credentials(*call_credentials):
