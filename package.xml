@@ -101,14 +101,11 @@
     <file baseinstalldir="/" name="src/core/lib/support/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_atm.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_std.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/debug_location.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/reference_counted.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/reference_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
@@ -359,6 +356,9 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/debug_location.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/reference_counted.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/reference_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/alarm_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
