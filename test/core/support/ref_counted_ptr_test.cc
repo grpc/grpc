@@ -48,9 +48,7 @@ TEST(RefCountedPtr, ExplicitConstructorEmpty) {
   RefCountedPtr<Foo> foo(nullptr);
 }
 
-TEST(RefCountedPtr, ExplicitConstructor) {
-  RefCountedPtr<Foo> foo(New<Foo>());
-}
+TEST(RefCountedPtr, ExplicitConstructor) { RefCountedPtr<Foo> foo(New<Foo>()); }
 
 TEST(RefCountedPtr, MoveConstructor) {
   RefCountedPtr<Foo> foo(New<Foo>());
