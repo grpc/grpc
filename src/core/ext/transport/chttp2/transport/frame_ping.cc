@@ -29,7 +29,7 @@ static bool g_disable_ping_ack = false;
 
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
-  uint8_t *p = GRPC_SLICE_START_PTR(slice);
+  uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   *p++ = 0;
   *p++ = 0;
@@ -52,13 +52,13 @@ grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   return slice;
 }
 
-grpc_error *grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser *parser,
+grpc_error* grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser* parser,
                                                 uint32_t length,
                                                 uint8_t flags) {
   if (flags & 0xfe || length != 8) {
-    char *msg;
+    char* msg;
     gpr_asprintf(&msg, "invalid ping: length=%d, flags=%02x", length, flags);
-    grpc_error *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return error;
   }
@@ -68,14 +68,14 @@ grpc_error *grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser *parser,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
-                                          grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s,
+grpc_error* grpc_chttp2_ping_parser_parse(grpc_exec_ctx* exec_ctx, void* parser,
+                                          grpc_chttp2_transport* t,
+                                          grpc_chttp2_stream* s,
                                           grpc_slice slice, int is_last) {
-  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
-  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
-  uint8_t *cur = beg;
-  grpc_chttp2_ping_parser *p = (grpc_chttp2_ping_parser *)parser;
+  uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t* const end = GRPC_SLICE_END_PTR(slice);
+  uint8_t* cur = beg;
+  grpc_chttp2_ping_parser* p = (grpc_chttp2_ping_parser*)parser;
 
   while (p->byte != 8 && cur != end) {
     p->opaque_8bytes |= (((uint64_t)*cur) << (56 - 8 * p->byte));
@@ -112,7 +112,7 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);
-          t->ping_acks = (uint64_t *)gpr_realloc(
+          t->ping_acks = (uint64_t*)gpr_realloc(
               t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks));
         }
         t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;

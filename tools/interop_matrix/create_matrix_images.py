@@ -77,6 +77,15 @@ argp.add_argument('--keep',
                   action='store_true',
                   help='keep the created local images after uploading to GCR')
 
+argp.add_argument('--reuse_git_root',
+                  default=False,
+                  action='store_const',
+                  const=True,                  
+                  help='reuse the repo dir. If False, the existing git root '
+                  'directory will removed before a clean checkout, because '
+                  'reusing the repo can cause git checkout error if you switch '
+                  'between releases.')
+
 
 args = argp.parse_args()
 
@@ -116,12 +125,13 @@ def add_files_to_image(image, with_files, label=None):
   subprocess.check_output(build_cmd)
   dockerjob.remove_image(orig_tag, skip_nonexistent=True)
 
-def build_image_jobspec(runtime, env, gcr_tag):
+def build_image_jobspec(runtime, env, gcr_tag, stack_base):
   """Build interop docker image for a language with runtime.
 
   runtime: a <lang><version> string, for example go1.8.
   env:     dictionary of env to passed to the build script.
   gcr_tag: the tag for the docker image (i.e. v1.3.0).
+  stack_base: the local gRPC repo path.
   """
   basename = 'grpc_interop_%s' % runtime
   tag = '%s/%s:%s' % (args.gcr_path, basename, gcr_tag)
@@ -172,13 +182,14 @@ def build_all_images_for_release(lang, release):
 
   env = {}
   # If we not using current tree or the sibling for grpc stack, do checkout.
+  stack_base = ''
   if args.git_checkout:
     stack_base = checkout_grpc_stack(lang, release)
-    var ={'go': 'GRPC_GO_ROOT', 'java': 'GRPC_JAVA_ROOT'}.get(lang, 'GRPC_ROOT')
+    var ={'go': 'GRPC_GO_ROOT', 'java': 'GRPC_JAVA_ROOT', 'node': 'GRPC_NODE_ROOT'}.get(lang, 'GRPC_ROOT')
     env[var] = stack_base
 
   for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:
-    job = build_image_jobspec(runtime, env, release)
+    job = build_image_jobspec(runtime, env, release, stack_base)
     docker_images.append(job.tag)
     build_jobs.append(job)
 
@@ -225,7 +236,11 @@ def checkout_grpc_stack(lang, release):
   repo_dir = os.path.splitext(os.path.basename(repo))[0]
   stack_base = os.path.join(args.git_checkout_root, repo_dir)
 
-  # Assume the directory is reusable for git checkout.
+  # Clean up leftover repo dir if necessary.
+  if not args.reuse_git_root and os.path.exists(stack_base):
+    jobset.message('START', 'Removing git checkout root.', do_newline=True)
+    shutil.rmtree(stack_base)
+
   if not os.path.exists(stack_base):
     subprocess.check_call(['git', 'clone', '--recursive', repo],
                           cwd=os.path.dirname(stack_base))
@@ -238,7 +253,9 @@ def checkout_grpc_stack(lang, release):
   output = subprocess.check_output(
       ['git', 'checkout', release], cwd=stack_base, stderr=subprocess.STDOUT)
   commit_log = subprocess.check_output(['git', 'log', '-1'], cwd=stack_base)
-  jobset.message('SUCCESS', 'git checkout', output + commit_log, do_newline=True)
+  jobset.message('SUCCESS', 'git checkout', 
+                 '%s: %s' % (str(output), commit_log), 
+                 do_newline=True)
 
   # Write git log to commit_log so it can be packaged with the docker image.
   with open(os.path.join(stack_base, 'commit_log'), 'w') as f:

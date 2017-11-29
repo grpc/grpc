@@ -27,9 +27,9 @@
 extern "C" {
 #endif
 
-grpc_endpoint *grpc_tcp_client_create_from_fd(
-    grpc_exec_ctx *exec_ctx, grpc_fd *fd, const grpc_channel_args *channel_args,
-    const char *addr_str);
+grpc_endpoint* grpc_tcp_client_create_from_fd(
+    grpc_exec_ctx* exec_ctx, grpc_fd* fd, const grpc_channel_args* channel_args,
+    const char* addr_str);
 
 #ifdef __cplusplus
 }

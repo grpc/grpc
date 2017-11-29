@@ -32,10 +32,8 @@
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
-extern "C" {
 #include "src/core/lib/support/env.h"
 #include "test/core/util/port.h"
-}
 
 DEFINE_bool(
     running_under_bazel, false,
@@ -62,16 +60,16 @@ static void register_sighandler() {
   struct sigaction act;
   memset(&act, 0, sizeof(act));
   act.sa_handler = sighandler;
-  sigaction(SIGINT, &act, NULL);
-  sigaction(SIGTERM, &act, NULL);
+  sigaction(SIGINT, &act, nullptr);
+  sigaction(SIGTERM, &act, nullptr);
 }
 
 namespace {
 
 const int kTestTimeoutSeconds = 60 * 2;
 
-void RunSigHandlingThread(SubProcess *test_driver, gpr_mu *test_driver_mu,
-                          gpr_cv *test_driver_cv, int *test_driver_done) {
+void RunSigHandlingThread(SubProcess* test_driver, gpr_mu* test_driver_mu,
+                          gpr_cv* test_driver_cv, int* test_driver_done) {
   gpr_timespec overall_deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_seconds(kTestTimeoutSeconds, GPR_TIMESPAN));
@@ -94,7 +92,7 @@ void RunSigHandlingThread(SubProcess *test_driver, gpr_mu *test_driver_mu,
   test_driver->Interrupt();
   return;
 }
-}
+}  // namespace
 
 namespace grpc {
 
@@ -106,7 +104,7 @@ void InvokeResolverComponentTestsRunner(std::string test_runner_bin_path,
                                         std::string records_config_path) {
   int test_dns_server_port = grpc_pick_unused_port_or_die();
 
-  SubProcess *test_driver = new SubProcess(
+  SubProcess* test_driver = new SubProcess(
       {test_runner_bin_path, "--test_bin_path=" + test_bin_path,
        "--dns_server_bin_path=" + dns_server_bin_path,
        "--records_config_path=" + records_config_path,
@@ -153,7 +151,7 @@ void InvokeResolverComponentTestsRunner(std::string test_runner_bin_path,
 
 }  // namespace grpc
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
   GPR_ASSERT(FLAGS_test_bin_name != "");

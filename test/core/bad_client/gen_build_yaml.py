@@ -30,7 +30,7 @@ BAD_CLIENT_TESTS = {
     'headers': default_test_options._replace(cpu_cost=0.2),
     'initial_settings_frame': default_test_options._replace(cpu_cost=0.2),
     'head_of_line_blocking': default_test_options,
-    'large_metadata': default_test_options,
+    # 'large_metadata': default_test_options, #disabling as per issue #11745
     'server_registered_method': default_test_options,
     'simple_request': default_test_options,
     'window_overflow': default_test_options,
@@ -46,7 +46,7 @@ def main():
             'build': 'private',
             'language': 'c',
             'src': [
-              'test/core/bad_client/bad_client.c'
+              'test/core/bad_client/bad_client.cc'
             ],
             'headers': [
               'test/core/bad_client/bad_client.h'
@@ -66,7 +66,7 @@ def main():
               'build': 'test',
               'language': 'c',
               'secure': 'no',
-              'src': ['test/core/bad_client/tests/%s.c' % t],
+              'src': ['test/core/bad_client/tests/%s.cc' % t],
               'vs_proj_dir': 'test',
               'exclude_iomgrs': ['uv'],
               'deps': [

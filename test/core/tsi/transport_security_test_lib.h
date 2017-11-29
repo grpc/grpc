@@ -21,9 +21,7 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <grpc/support/sync.h>
 
 #define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 32
 #define TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE 128
@@ -57,29 +55,29 @@ typedef struct tsi_test_frame_protector_config tsi_test_frame_protector_config;
 /* V-table for tsi_test_fixture operations that are implemented differently in
    different TSI implementations. */
 typedef struct tsi_test_fixture_vtable {
-  void (*setup_handshakers)(tsi_test_fixture *fixture);
-  void (*check_handshaker_peers)(tsi_test_fixture *fixture);
-  void (*destruct)(tsi_test_fixture *fixture);
+  void (*setup_handshakers)(tsi_test_fixture* fixture);
+  void (*check_handshaker_peers)(tsi_test_fixture* fixture);
+  void (*destruct)(tsi_test_fixture* fixture);
 } tsi_test_fixture_vtable;
 
 struct tsi_test_fixture {
-  const tsi_test_fixture_vtable *vtable;
+  const tsi_test_fixture_vtable* vtable;
   /* client/server TSI handshaker used to perform TSI handshakes, and will get
      instantiated during the call to setup_handshakers. */
-  tsi_handshaker *client_handshaker;
-  tsi_handshaker *server_handshaker;
+  tsi_handshaker* client_handshaker;
+  tsi_handshaker* server_handshaker;
   /* client/server TSI handshaker results used to store the result of TSI
      handshake. If the handshake fails, the result will store NULL upon
      finishing the handshake. */
-  tsi_handshaker_result *client_result;
-  tsi_handshaker_result *server_result;
+  tsi_handshaker_result* client_result;
+  tsi_handshaker_result* server_result;
   /* size of buffer used to store data received from the peer. */
   size_t handshake_buffer_size;
   /* simulated channels between client and server. If the server (client)
      wants to send data to the client (server), he will write data to
      client_channel (server_channel), which will be read by client (server). */
-  uint8_t *client_channel;
-  uint8_t *server_channel;
+  uint8_t* client_channel;
+  uint8_t* server_channel;
   /* size of data written to the client/server channel. */
   size_t bytes_written_to_client_channel;
   size_t bytes_written_to_server_channel;
@@ -87,7 +85,7 @@ struct tsi_test_fixture {
   size_t bytes_read_from_client_channel;
   size_t bytes_read_from_server_channel;
   /* tsi_test_frame_protector_config instance */
-  tsi_test_frame_protector_config *config;
+  tsi_test_frame_protector_config* config;
   /* a flag indicating if client has finished TSI handshake first (i.e., before
      server).
      The flag should be referred if and only if TSI handshake finishes
@@ -119,8 +117,8 @@ struct tsi_test_frame_protector_config {
   size_t client_max_output_protected_frame_size;
   size_t server_max_output_protected_frame_size;
   /* pointer that points to client/server message to be protected. */
-  uint8_t *client_message;
-  uint8_t *server_message;
+  uint8_t* client_message;
+  uint8_t* server_message;
   /* size of client/server message. */
   size_t client_message_size;
   size_t server_message_size;
@@ -131,7 +129,7 @@ struct tsi_test_frame_protector_config {
    corresponding parameter with a default value or not. If it's false, it will
    be set with a specific value which is usually much smaller than the default.
    Both values are defined with #define directive. */
-tsi_test_frame_protector_config *tsi_test_frame_protector_config_create(
+tsi_test_frame_protector_config* tsi_test_frame_protector_config_create(
     bool use_default_read_buffer_allocated_size,
     bool use_default_message_buffer_allocated_size,
     bool use_default_protected_buffer_size, bool use_default_client_message,
@@ -143,38 +141,34 @@ tsi_test_frame_protector_config *tsi_test_frame_protector_config_create(
 /* This method sets different buffer and frame sizes of a
    tsi_test_frame_protector_config instance with user provided values. */
 void tsi_test_frame_protector_config_set_buffer_size(
-    tsi_test_frame_protector_config *config, size_t read_buffer_allocated_size,
+    tsi_test_frame_protector_config* config, size_t read_buffer_allocated_size,
     size_t message_buffer_allocated_size, size_t protected_buffer_size,
     size_t client_max_output_protected_frame_size,
     size_t server_max_output_protected_frame_size);
 
 /* This method destroys a tsi_test_frame_protector_config instance. */
 void tsi_test_frame_protector_config_destroy(
-    tsi_test_frame_protector_config *config);
+    tsi_test_frame_protector_config* config);
 
 /* This method initializes members of tsi_test_fixture instance.
    Note that the struct instance should be allocated before making
    this call. */
-void tsi_test_fixture_init(tsi_test_fixture *fixture);
+void tsi_test_fixture_init(tsi_test_fixture* fixture);
 
 /* This method destroys a tsi_test_fixture instance. Note that the
    fixture intance must be dynamically allocated and will be freed by
    this function. */
-void tsi_test_fixture_destroy(tsi_test_fixture *fixture);
+void tsi_test_fixture_destroy(tsi_test_fixture* fixture);
 
 /* This method performs a full TSI handshake between a client and a server.
    Note that the test library will implement the new TSI handshaker API to
    perform handshakes. */
-void tsi_test_do_handshake(tsi_test_fixture *fixture);
+void tsi_test_do_handshake(tsi_test_fixture* fixture);
 
 /* This method performs a round trip test between the client and the server.
    That is, the client sends a protected message to a server who receives the
    message, and unprotects it. The same operation is triggered again with
    the client and server switching its role. */
-void tsi_test_do_round_trip(tsi_test_fixture *fixture);
-
-#ifdef __cplusplus
-}
-#endif
+void tsi_test_do_round_trip(tsi_test_fixture* fixture);
 
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_

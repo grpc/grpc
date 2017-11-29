@@ -13,8 +13,8 @@
  <date>2017-08-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.8.0dev</release>
-  <api>1.8.0dev</api>
+  <release>1.9.0dev</release>
+  <api>1.9.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -96,6 +96,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/abstract.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_atm.h" role="src" />
@@ -106,7 +107,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_precise.h" role="src" />
@@ -134,7 +134,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_util_windows.cc" role="src" />
@@ -193,6 +192,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_goaway.h" role="src" />
@@ -241,6 +241,7 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.h" role="src" />
@@ -353,6 +354,7 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/alarm_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
@@ -393,28 +395,11 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_plugin.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/aggregation.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/base_resources.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/census_rpc_stats.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map_internal.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/trace_context.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/trace_label.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/trace_propagation.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/trace_status.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/trace_string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/tracing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h" role="src" />
@@ -439,7 +424,6 @@
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/call_combiner.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/closure.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.cc" role="src" />
@@ -613,6 +597,7 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/channel_connectivity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.cc" role="src" />
@@ -652,6 +637,7 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc" role="src" />
@@ -661,21 +647,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/base_resources.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/context.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/grpc_plugin.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/initialize.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/mlog.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/operation.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/placeholders.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/resource.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/trace_context.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/tracing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc" role="src" />
