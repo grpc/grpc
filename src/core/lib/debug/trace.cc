@@ -75,8 +75,7 @@ void TraceFlagList::LogAllTracers() {
 }
 
 // Flags register themselves on the list during construction
-TraceFlag::TraceFlag(bool default_enabled, const char* name)
-    : name_(name) {
+TraceFlag::TraceFlag(bool default_enabled, const char* name) : name_(name) {
   set_enabled(default_enabled);
   TraceFlagList::Add(this);
 }
