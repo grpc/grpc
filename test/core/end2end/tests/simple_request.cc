@@ -201,7 +201,7 @@ static void simple_request_body(grpc_end2end_test_config config,
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  // the following sanity check makes sure that the requested error string is 
+  // the following sanity check makes sure that the requested error string is
   // correctly populated by the core. It looks for certain substrings that are
   // not likely to change much. Some parts of the error, like time created,
   // obviously are not checked.
@@ -210,7 +210,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(nullptr != strstr(error_string, "Error received from peer"));
   GPR_ASSERT(nullptr != strstr(error_string, "src/core/lib/surface/call.cc"));
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_message"));
-  GPR_ASSERT(nullptr != strstr(error_string, "grpc_status"));  
+  GPR_ASSERT(nullptr != strstr(error_string, "grpc_status"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
