@@ -349,7 +349,7 @@ static grpc_error* add_addr_to_server(grpc_tcp_server* s,
 static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
                                                 unsigned port_index,
                                                 int requested_port,
-                                                grpc_tcp_listener **listener) {
+                                                grpc_tcp_listener** listener) {
   grpc_resolved_address wild4;
   grpc_resolved_address wild6;
   grpc_tcp_listener* sp = nullptr;
@@ -359,12 +359,14 @@ static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
 
   grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
   /* Try listening on IPv6 first. */
-  if ((v6_err = add_addr_to_server(s, &wild6, port_index, &sp)) == GRPC_ERROR_NONE) {
+  if ((v6_err = add_addr_to_server(s, &wild6, port_index, &sp)) ==
+      GRPC_ERROR_NONE) {
     *listener = sp;
     return GRPC_ERROR_NONE;
   }
 
-  if ((v4_err = add_addr_to_server(s, &wild4, port_index, &sp2)) == GRPC_ERROR_NONE) {
+  if ((v4_err = add_addr_to_server(s, &wild4, port_index, &sp2)) ==
+      GRPC_ERROR_NONE) {
     *listener = sp2;
     return GRPC_ERROR_NONE;
   }
