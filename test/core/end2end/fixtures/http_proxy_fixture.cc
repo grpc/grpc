@@ -137,11 +137,14 @@ static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
   const char* msg = grpc_error_string(error);
   gpr_log(GPR_INFO, "%s: %s", prefix, msg);
 
-  grpc_endpoint_shutdown(exec_ctx, conn->client_endpoint,
-                         GRPC_ERROR_REF(error));
-  if (conn->server_endpoint != nullptr) {
-    grpc_endpoint_shutdown(exec_ctx, conn->server_endpoint,
+  if (is_client) {
+    grpc_endpoint_shutdown(exec_ctx, conn->client_endpoint,
                            GRPC_ERROR_REF(error));
+  } else {
+    if (conn->server_endpoint != nullptr) {
+      grpc_endpoint_shutdown(exec_ctx, conn->server_endpoint,
+                             GRPC_ERROR_REF(error));
+    }
   }
   proxy_connection_unref(exec_ctx, conn, "conn_failed");
 }
