@@ -801,21 +801,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "gpr_stack_lockfree_test", 
-    "src": [
-      "test/core/support/stack_lockfree_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "gpr_string_test", 
     "src": [
       "test/core/support/string_test.cc"
@@ -4295,25 +4280,6 @@
     "name": "transport_pid_controller_test", 
     "src": [
       "test/core/transport/pid_controller_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "vector_test", 
-    "src": [
-      "test/core/support/vector_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7808,7 +7774,6 @@
       "src/core/lib/support/log_windows.cc", 
       "src/core/lib/support/mpscq.cc", 
       "src/core/lib/support/murmur_hash.cc", 
-      "src/core/lib/support/stack_lockfree.cc", 
       "src/core/lib/support/string.cc", 
       "src/core/lib/support/string_posix.cc", 
       "src/core/lib/support/string_util_windows.cc", 
@@ -7878,7 +7843,6 @@
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/spinlock.h", 
-      "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
       "src/core/lib/support/time_precise.h", 
@@ -7927,7 +7891,6 @@
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/spinlock.h", 
-      "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
       "src/core/lib/support/time_precise.h", 
@@ -8261,7 +8224,6 @@
       "src/core/lib/support/debug_location.h", 
       "src/core/lib/support/ref_counted.h", 
       "src/core/lib/support/ref_counted_ptr.h", 
-      "src/core/lib/support/vector.h", 
       "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -8400,7 +8362,6 @@
       "src/core/lib/support/debug_location.h", 
       "src/core/lib/support/ref_counted.h", 
       "src/core/lib/support/ref_counted_ptr.h", 
-      "src/core/lib/support/vector.h", 
       "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 

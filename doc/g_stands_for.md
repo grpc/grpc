@@ -12,3 +12,4 @@ future), and the corresponding version numbers that used them:
 - 1.6 'g' stands for 'garcia'
 - 1.7 'g' stands for 'gambit'
 - 1.8 'g' stands for 'generous'
+- 1.9 'g' stands for 'glossy'

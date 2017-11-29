@@ -94,6 +94,7 @@ on experience with the tools involved.
 ### Building using CMake (RECOMMENDED)
 
 Builds gRPC C and C++ with boringssl.
+- Install [Git](https://git-scm.com/).
 - Install Visual Studio 2015 or 2017 (Visual C++ compiler will be used).
 - Install [CMake](https://cmake.org/download/).
 - Install [Active State Perl](https://www.activestate.com/activeperl/) (`choco install activeperl`)
@@ -106,11 +107,14 @@ Builds gRPC C and C++ with boringssl.
 Please note that when using Ninja, you'll still need Visual C++ (part of Visual Studio)
 installed to be able to compile the C/C++ sources.
 ```
+> powershell git clone --recursive -b ((New-Object System.Net.WebClient).DownloadString(\"https://grpc.io/release\").Trim()) https://github.com/grpc/grpc
+> cd grpc
 > md .build
 > cd .build
 > call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
 > cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
 > cmake --build .
+> ninja
 ```
 
 #### cmake: Using Visual Studio 2015 (can only build with OPENSSL_NO_ASM).
