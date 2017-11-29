@@ -21,12 +21,16 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include <gtest/gtest.h>
 #include "test/core/util/test_config.h"
 
-namespace grpc_core {
+namespace grpc {
+namespace testing {
 namespace {
 
-static void test_constant_backoff(void) {
+using grpc_core::Backoff;
+
+TEST(BackOffTest, ConstantBackOff) {
   const grpc_millis initial_backoff = 200;
   const double multiplier = 1.0;
   const double jitter = 0.0;
@@ -59,7 +63,7 @@ static void test_constant_backoff(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void test_min_connect(void) {
+TEST(BackOffTest, MinConnect) {
   const grpc_millis initial_backoff = 100;
   const double multiplier = 1.0;
   const double jitter = 0.0;
@@ -85,7 +89,7 @@ static void test_min_connect(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void test_no_jitter_backoff(void) {
+TEST(BackOffTest, NoJitterBackOff) {
   const grpc_millis initial_backoff = 2;
   const double multiplier = 2.0;
   const double jitter = 0.0;
@@ -145,7 +149,7 @@ static void test_no_jitter_backoff(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void test_jitter_backoff(void) {
+TEST(BackOffTest, JitterBackOff) {
   const grpc_millis initial_backoff = 500;
   grpc_millis current_backoff = initial_backoff;
   const grpc_millis max_backoff = 1000;
@@ -193,17 +197,13 @@ static void test_jitter_backoff(void) {
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }
+
 }  // namespace
-}  // namespace grpc_core
+}  // namespace testing
+}  // namespace grpc
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  gpr_time_init();
-
-  grpc_core::test_constant_backoff();
-  grpc_core::test_min_connect();
-  grpc_core::test_no_jitter_backoff();
-  grpc_core::test_jitter_backoff();
-
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
