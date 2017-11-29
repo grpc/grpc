@@ -26,17 +26,17 @@
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
-                    alwayslink = 0, defines = []):
+                    alwayslink = 0):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
   native.cc_library(
     name = name,
     srcs = srcs,
-    defines = select({
-        "//:grpc_no_ares": ["GRPC_ARES=0"],
-	"//conditions:default": defines,
-    }),
+    defines = select({"//:grpc_no_ares": ["GRPC_ARES=0"],
+                      "//conditions:default": [],}) +
+              select({"//:remote_execution":  ["GRPC_HERMETIC_TESTS=1"],
+                      "//conditions:default": [],}),
     hdrs = hdrs + public_hdrs,
     deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,

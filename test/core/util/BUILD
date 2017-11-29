@@ -74,9 +74,6 @@ grpc_cc_library(
         "tracer_util.h",
         "trickle_endpoint.h",
     ],
-    defines = [
-        "GRPC_HERMETIC_TESTS=1",
-    ],
     language = "C++",
     deps = [
         ":gpr_test_util",
