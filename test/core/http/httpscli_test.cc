@@ -89,7 +89,7 @@ static void test_get(int port) {
         "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
                                           &worker, n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
-
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
@@ -129,7 +129,7 @@ static void test_post(int port) {
         "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
                                           &worker, n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
-
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
@@ -144,7 +144,6 @@ static void destroy_pops(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_core::ExecCtx _local_exec_ctx;
   gpr_subprocess* server;
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
@@ -196,6 +195,7 @@ int main(int argc, char** argv) {
   test_post(port);
 
   {
+    grpc_core::ExecCtx _local_exec_ctx;
     grpc_httpcli_context_destroy(&g_context);
     GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops,
                       grpc_schedule_on_exec_ctx);

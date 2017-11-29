@@ -46,15 +46,12 @@ static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 
 void grpc_iomgr_init() {
+  grpc_core::ExecCtx _local_exec_ctx;
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
-  grpc_core::ExecCtx::GlobalInit();
-  {
-    grpc_core::ExecCtx _local_exec_ctx;
-    grpc_executor_init();
-    grpc_timer_list_init();
-  }
+  grpc_executor_init();
+  grpc_timer_list_init();
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = (char*)"root";
   grpc_network_status_init();
@@ -85,7 +82,6 @@ void grpc_iomgr_shutdown() {
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
 
   {
-    grpc_core::ExecCtx _local_exec_ctx(0);
     grpc_timer_manager_shutdown();
     grpc_iomgr_platform_flush();
     grpc_executor_shutdown();
@@ -141,8 +137,8 @@ void grpc_iomgr_shutdown() {
       }
     }
     gpr_mu_unlock(&g_mu);
-
     grpc_timer_list_shutdown();
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   /* ensure all threads have left g_mu */
@@ -150,7 +146,6 @@ void grpc_iomgr_shutdown() {
   gpr_mu_unlock(&g_mu);
 
   grpc_iomgr_platform_shutdown();
-  grpc_core::ExecCtx::GlobalShutdown();
   grpc_network_status_shutdown();
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_rcv);

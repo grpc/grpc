@@ -110,7 +110,7 @@ static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void cronet_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  grpc_exec_ctx _local_exec_ctx;
+  grpc_core::ExecCtx _local_exec_ctx;
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
 
   grpc_channel_args *new_client_args = grpc_channel_args_copy(client_args);

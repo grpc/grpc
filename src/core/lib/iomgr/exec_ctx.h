@@ -170,19 +170,11 @@ on outside context */
   static void GlobalInit(void);
 
   /** Global shutdown for ExecCtx. Called by iomgr */
-  static void GlobalShutdown(void) {
-#ifdef TLS_NO_SUPPORT
-    gpr_tls_destroy(&exec_ctx_);
-#endif
-  }
+  static void GlobalShutdown(void) { gpr_tls_destroy(&exec_ctx_); }
 
   /** Gets pointer to current exec_ctx */
   static ExecCtx* Get() {
-#ifdef TLS_NO_SUPPORT
     return reinterpret_cast<ExecCtx*>(gpr_tls_get(&exec_ctx_));
-#else
-    return exec_ctx_;
-#endif
   }
 
  protected:
@@ -192,11 +184,7 @@ on outside context */
  private:
   /** Set exec_ctx_ to exec_ctx */
   void Set(ExecCtx* exec_ctx) {
-#ifdef TLS_NO_SUPPORT
     gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
-#else
-    exec_ctx_ = exec_ctx;
-#endif
   }
 
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
@@ -207,11 +195,7 @@ on outside context */
   bool now_is_valid_ = false;
   grpc_millis now_ = 0;
 
-#ifdef TLS_NO_SUPPORT
   GPR_TLS_CLASS_DECL(exec_ctx_);
-#else
-  static thread_local ExecCtx* exec_ctx_;
-#endif
   ExecCtx* last_exec_ctx_ = Get();
 };
 }  // namespace grpc_core

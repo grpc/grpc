@@ -36,12 +36,10 @@ int main(int argc, char** argv) {
   /* TODO(yashkt) Calling grpc_init breaks tests. Fix the tests and replace
    * grpc_core::ExecCtx::GlobalInit with grpc_init and GlobalShutdown with
    * grpc_shutdown */
-  grpc_core::ExecCtx::GlobalInit();
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("load_file", grpc_load_file(argv[1], 0, &buffer)));
   LLVMFuzzerTestOneInput(GRPC_SLICE_START_PTR(buffer),
                          GRPC_SLICE_LENGTH(buffer));
-  grpc_core::ExecCtx::GlobalShutdown();
   grpc_core::ExecCtx::GlobalInit();
   grpc_slice_unref(buffer);
   grpc_core::ExecCtx::GlobalShutdown();

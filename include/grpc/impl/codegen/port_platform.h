@@ -182,7 +182,6 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
-#define TLS_NO_SUPPORT 1 /* thread-local storage not supported. Use GPR_TLS */
 #if TARGET_OS_IPHONE
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
