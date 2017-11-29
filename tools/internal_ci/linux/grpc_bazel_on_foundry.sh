@@ -46,6 +46,6 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --strategy=Closure=remote  \
   --genrule_strategy=remote  \
   --experimental_strict_action_env=true \
-  --experimental_remote_platform_override='properties:{ name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-fl@sha256:b80da64e2a6f75af122bbb70021ebaab98b073f144ab04653c0de49bd943d8e9" }' \
+  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-fl@sha256:aa20628a902f06a11a015caa94b0432eb60690de2d2525bd046b9eea046f5d8a" }' \
   --crosstool_top=@bazel_toolchains//configs/debian8_clang/0.2.0/bazel_0.7.0:toolchain \
-  -- //test/core/iomgr/...
+  -- //test/...
