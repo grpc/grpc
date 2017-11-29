@@ -558,6 +558,10 @@ typedef struct grpc_op {
       grpc_metadata_array* trailing_metadata;
       grpc_status_code* status;
       grpc_slice* status_details;
+      /** If this is not nullptr, it will be populated with the full fidelity
+       * error string for debugging purposes. The application is responsible
+       * for freeing the data. */
+      const char** error_string;
     } recv_status_on_client;
     struct grpc_op_recv_close_on_server {
       /** out argument, set to 1 if the call failed in any way (seen as a

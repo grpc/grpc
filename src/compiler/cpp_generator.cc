@@ -104,7 +104,7 @@ grpc::string GetHeaderPrologue(grpc_generator::File* file,
     grpc::string leading_comments = file->GetLeadingComments("//");
     if (!leading_comments.empty()) {
       printer->Print(vars, "// Original file comments:\n");
-      printer->Print(leading_comments.c_str());
+      printer->PrintRaw(leading_comments.c_str());
     }
     printer->Print(vars, "#ifndef GRPC_$filename_identifier$__INCLUDED\n");
     printer->Print(vars, "#define GRPC_$filename_identifier$__INCLUDED\n");

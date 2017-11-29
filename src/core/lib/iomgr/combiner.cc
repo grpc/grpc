@@ -29,14 +29,13 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/profiling/timers.h"
 
-grpc_tracer_flag grpc_combiner_trace =
-    GRPC_TRACER_INITIALIZER(false, "combiner");
+grpc_core::TraceFlag grpc_combiner_trace(false, "combiner");
 
-#define GRPC_COMBINER_TRACE(fn)                \
-  do {                                         \
-    if (GRPC_TRACER_ON(grpc_combiner_trace)) { \
-      fn;                                      \
-    }                                          \
+#define GRPC_COMBINER_TRACE(fn)          \
+  do {                                   \
+    if (grpc_combiner_trace.enabled()) { \
+      fn;                                \
+    }                                    \
   } while (0)
 
 #define STATE_UNORPHANED 1
@@ -106,7 +105,7 @@ static void start_destroy(grpc_exec_ctx* exec_ctx, grpc_combiner* lock) {
 
 #ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)                                \
-  if (GRPC_TRACER_ON(grpc_combiner_trace)) {                               \
+  if (grpc_combiner_trace.enabled()) {                                     \
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                            \
             "C:%p %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op),        \
             gpr_atm_no_barrier_load(&lock->refs.count),                    \

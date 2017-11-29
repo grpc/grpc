@@ -29,12 +29,13 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 def serve():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port', help='the port on which to serve', type=int)
+    parser.add_argument(
+        '--port', type=int, required=True, help='the port on which to serve')
     parser.add_argument(
         '--use_tls',
-        help='require a secure connection',
         default=False,
-        type=resources.parse_bool)
+        type=resources.parse_bool,
+        help='require a secure connection')
     args = parser.parse_args()
 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

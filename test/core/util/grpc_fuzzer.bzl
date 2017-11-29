@@ -19,8 +19,7 @@ def grpc_fuzzer(name, corpus, srcs = [], deps = [], **kwargs):
     name = name,
     srcs = srcs,
     deps = deps + ["//test/core/util:fuzzer_corpus_test"],
-    data = [corpus],
-    args = ['--directory', '$(location %s)' % corpus],
+    data = native.glob([corpus + "/**"]),
     external_deps = [
       'gtest',
     ],
