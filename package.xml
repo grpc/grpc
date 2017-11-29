@@ -13,8 +13,8 @@
  <date>2017-08-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.8.0dev</release>
-  <api>1.8.0dev</api>
+  <release>1.9.0dev</release>
+  <api>1.9.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -107,7 +107,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_precise.h" role="src" />
@@ -135,7 +134,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_util_windows.cc" role="src" />
@@ -356,7 +354,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/alarm_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />

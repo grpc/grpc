@@ -139,7 +139,7 @@ static bool parse_user_agent(grpc_mdelem md) {
   bool grpc_objc_specifier_seen = false;
   bool cronet_specifier_seen = false;
   char *major_version_str = user_agent_str, *minor_version_str;
-  long major_version, minor_version;
+  long major_version = 0, minor_version = 0;
 
   char* head = strtok(user_agent_str, " ");
   while (head != nullptr) {
