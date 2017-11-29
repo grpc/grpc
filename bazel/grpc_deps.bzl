@@ -59,54 +59,58 @@ def grpc_deps():
         actual = "@com_github_gflags_gflags//:gflags",
     )
 
-    native.http_archive(
+    _maybe(native.http_archive,
         name = "boringssl",
         # on the master-with-bazel branch
         url = "https://boringssl.googlesource.com/boringssl/+archive/886e7d75368e3f4fab3f4d0d3584e4abfc557755.tar.gz",
     )
 
-    native.new_http_archive(
+    _maybe(native.new_http_archive,
         name = "com_github_madler_zlib",
         build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
         strip_prefix = "zlib-cacf7f1d4e3d44d871b605da3b647f07d718623f",
         url = "https://github.com/madler/zlib/archive/cacf7f1d4e3d44d871b605da3b647f07d718623f.tar.gz",
     )
 
-    native.http_archive(
+    _maybe(native.http_archive,
         name = "com_google_protobuf",
         strip_prefix = "protobuf-2761122b810fe8861004ae785cc3ab39f384d342",
         url = "https://github.com/google/protobuf/archive/2761122b810fe8861004ae785cc3ab39f384d342.tar.gz",
     )
 
-    native.new_http_archive(
+    _maybe(native.new_http_archive,
         name = "com_github_google_googletest",
         build_file = "@com_github_grpc_grpc//third_party:gtest.BUILD",
         strip_prefix = "googletest-ec44c6c1675c25b9827aacd08c02433cccde7780",
         url = "https://github.com/google/googletest/archive/ec44c6c1675c25b9827aacd08c02433cccde7780.tar.gz",
     )
 
-    native.http_archive(
+    _maybe(native.http_archive,
         name = "com_github_gflags_gflags",
         strip_prefix = "gflags-30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e",
         url = "https://github.com/gflags/gflags/archive/30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e.tar.gz",
     )
 
-    native.new_http_archive(
+    _maybe(native.new_http_archive,
         name = "com_github_google_benchmark",
         build_file = "@com_github_grpc_grpc//third_party:benchmark.BUILD",
         strip_prefix = "benchmark-5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8",
         url = "https://github.com/google/benchmark/archive/5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8.tar.gz",
     )
 
-    native.new_http_archive(
+    _maybe(native.new_http_archive,
         name = "com_github_cares_cares",
         build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
         strip_prefix = "c-ares-3be1924221e1326df520f8498d704a5c4c8d0cce",
         url = "https://github.com/c-ares/c-ares/archive/3be1924221e1326df520f8498d704a5c4c8d0cce.tar.gz",
     )
 
-    native.http_archive(
+    _maybe(native.http_archive,
         name = "com_google_absl",
         strip_prefix = "abseil-cpp-cc4bed2d74f7c8717e31f9579214ab52a9c9c610",
         url = "https://github.com/abseil/abseil-cpp/archive/cc4bed2d74f7c8717e31f9579214ab52a9c9c610.tar.gz",
     )
+
+def _maybe(repo_rule, name, **kwargs):
+    if name not in native.existing_rules():
+        repo_rule(name=name, **kwargs)
