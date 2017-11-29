@@ -832,7 +832,7 @@ static void channel_connectivity_changed(grpc_exec_ctx* exec_ctx, void* cd,
   grpc_server* server = chand->server;
   if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->on_connectivity_state_change = &chand->channel_connectivity_changed,
+    op->on_connectivity_state_change = &chand->channel_connectivity_changed;
     op->connectivity_state = &chand->connectivity_state;
     grpc_channel_next_op(exec_ctx,
                          grpc_channel_stack_element(
