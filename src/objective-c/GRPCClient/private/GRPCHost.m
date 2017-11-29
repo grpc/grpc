@@ -93,7 +93,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
     if (!connectivityMonitor) {
       connectivityMonitor =
       [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
-      void (^handler)() = ^{
+      void (^handler)(void) = ^{
         [GRPCHost flushChannelCache];
       };
       [connectivityMonitor handleLossWithHandler:handler
