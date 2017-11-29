@@ -428,9 +428,13 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         // Renew notification.
         grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
       } else {
+        p->selected = nullptr;
         grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
         grpc_lb_subchannel_list_unref_for_connectivity_watch(
             exec_ctx, sd->subchannel_list, "pf_selected_shutdown");
+        grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
+                                                   "pf_selected_shutdown");
+        p->subchannel_list = nullptr;
       }
     }
     return;
