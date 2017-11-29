@@ -122,8 +122,8 @@ class Client {
   }
 
   // Reads until an error is returned.
-  // Returns false if no error is returned by the deadline.
-  bool Read() {
+  // Returns true if an error was encountered before the deadline.
+  bool ReadUntilError() {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_slice_buffer read_buffer;
     grpc_slice_buffer_init(&read_buffer);
@@ -233,7 +233,7 @@ TEST(SettingsTimeout, Basic) {
   client.Connect();
   // Client read.  Should fail due to server dropping connection.
   gpr_log(GPR_INFO, "starting client read");
-  EXPECT_TRUE(client.Read());
+  EXPECT_TRUE(client.ReadUntilError());
   // Shut down client.
   gpr_log(GPR_INFO, "shutting down client");
   client.Shutdown();
