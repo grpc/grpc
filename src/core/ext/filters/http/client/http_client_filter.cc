@@ -71,7 +71,7 @@ typedef struct channel_data {
 static grpc_error* client_filter_incoming_metadata(grpc_exec_ctx* exec_ctx,
                                                    grpc_call_element* elem,
                                                    grpc_metadata_batch* b) {
-  if (b->idx.named.status != NULL) {
+  if (b->idx.named.status != nullptr) {
     if (grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
       grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.status);
     } else {
@@ -93,7 +93,7 @@ static grpc_error* client_filter_incoming_metadata(grpc_exec_ctx* exec_ctx,
     }
   }
 
-  if (b->idx.named.grpc_message != NULL) {
+  if (b->idx.named.grpc_message != nullptr) {
     grpc_slice pct_decoded_msg = grpc_permissive_percent_decode_slice(
         GRPC_MDVALUE(b->idx.named.grpc_message->md));
     if (grpc_slice_is_equivalent(pct_decoded_msg,
@@ -105,7 +105,7 @@ static grpc_error* client_filter_incoming_metadata(grpc_exec_ctx* exec_ctx,
     }
   }
 
-  if (b->idx.named.content_type != NULL) {
+  if (b->idx.named.content_type != nullptr) {
     if (!grpc_mdelem_eq(b->idx.named.content_type->md,
                         GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
       if (grpc_slice_buf_start_eq(GRPC_MDVALUE(b->idx.named.content_type->md),
@@ -292,7 +292,7 @@ static grpc_error* update_path_for_get(grpc_exec_ctx* exec_ctx,
 static void remove_if_present(grpc_exec_ctx* exec_ctx,
                               grpc_metadata_batch* batch,
                               grpc_metadata_batch_callouts_index idx) {
-  if (batch->idx.array[idx] != NULL) {
+  if (batch->idx.array[idx] != nullptr) {
     grpc_metadata_batch_remove(exec_ctx, batch, batch->idx.array[idx]);
   }
 }
@@ -450,7 +450,7 @@ static grpc_mdelem scheme_from_args(const grpc_channel_args* args) {
   size_t j;
   grpc_mdelem valid_schemes[] = {GRPC_MDELEM_SCHEME_HTTP,
                                  GRPC_MDELEM_SCHEME_HTTPS};
-  if (args != NULL) {
+  if (args != nullptr) {
     for (i = 0; i < args->num_args; ++i) {
       if (args->args[i].type == GRPC_ARG_STRING &&
           strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME) == 0) {
@@ -467,7 +467,7 @@ static grpc_mdelem scheme_from_args(const grpc_channel_args* args) {
 }
 
 static size_t max_payload_size_from_args(const grpc_channel_args* args) {
-  if (args != NULL) {
+  if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; ++i) {
       if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET)) {
         if (args->args[i].type != GRPC_ARG_INTEGER) {
@@ -524,7 +524,7 @@ static grpc_slice user_agent_from_args(const grpc_channel_args* args,
     }
   }
 
-  tmp = gpr_strvec_flatten(&v, NULL);
+  tmp = gpr_strvec_flatten(&v, nullptr);
   gpr_strvec_destroy(&v);
   result = grpc_slice_intern(grpc_slice_from_static_string(tmp));
   gpr_free(tmp);
@@ -538,7 +538,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element_args* args) {
   channel_data* chand = (channel_data*)elem->channel_data;
   GPR_ASSERT(!args->is_last);
-  GPR_ASSERT(args->optional_transport != NULL);
+  GPR_ASSERT(args->optional_transport != nullptr);
   chand->static_scheme = scheme_from_args(args->channel_args);
   chand->max_payload_size_for_get =
       max_payload_size_from_args(args->channel_args);

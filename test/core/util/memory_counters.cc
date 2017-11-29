@@ -43,7 +43,7 @@ static void guard_free(void* vptr);
 
 static void* guard_malloc(size_t size) {
   size_t* ptr;
-  if (!size) return NULL;
+  if (!size) return nullptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
@@ -55,12 +55,12 @@ static void* guard_malloc(size_t size) {
 
 static void* guard_realloc(void* vptr, size_t size) {
   size_t* ptr = (size_t*)vptr;
-  if (vptr == NULL) {
+  if (vptr == nullptr) {
     return guard_malloc(size);
   }
   if (size == 0) {
     guard_free(vptr);
-    return NULL;
+    return nullptr;
   }
   --ptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
@@ -81,7 +81,7 @@ static void guard_free(void* vptr) {
   g_old_allocs.free_fn(ptr);
 }
 
-struct gpr_allocation_functions g_guard_allocs = {guard_malloc, NULL,
+struct gpr_allocation_functions g_guard_allocs = {guard_malloc, nullptr,
                                                   guard_realloc, guard_free};
 
 void grpc_memory_counters_init() {

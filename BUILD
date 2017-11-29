@@ -418,7 +418,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "nanopb",
-        "libssl",
     ],
     language = "c++",
     public_hdrs = [
@@ -455,7 +454,6 @@ grpc_cc_library(
         "src/core/lib/support/log_windows.cc",
         "src/core/lib/support/mpscq.cc",
         "src/core/lib/support/murmur_hash.cc",
-        "src/core/lib/support/stack_lockfree.cc",
         "src/core/lib/support/string.cc",
         "src/core/lib/support/string_posix.cc",
         "src/core/lib/support/string_util_windows.cc",
@@ -480,6 +478,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/profiling/timers.h",
+        "src/core/lib/support/abstract.h",
         "src/core/lib/support/arena.h",
         "src/core/lib/support/atomic.h",
         "src/core/lib/support/atomic_with_atm.h",
@@ -489,20 +488,21 @@ grpc_cc_library(
         "src/core/lib/support/function.h",
         "src/core/lib/support/vector.h",
         "src/core/lib/support/manual_constructor.h",
+        "src/core/lib/support/memory.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
         "src/core/lib/support/spinlock.h",
-        "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
         "src/core/lib/support/time_precise.h",
         "src/core/lib/support/tmpfile.h",
+        "src/core/lib/support/vector.h",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
-        "@com_google_absl//absl/container:inlined_vector"
+        "@com_google_absl//absl/container:inlined_vector",
     ],
 )
 
@@ -559,7 +559,6 @@ grpc_cc_library(
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",
         "src/core/lib/iomgr/call_combiner.cc",
-        "src/core/lib/iomgr/closure.cc",
         "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/endpoint.cc",
         "src/core/lib/iomgr/endpoint_pair_posix.cc",
@@ -673,6 +672,7 @@ grpc_cc_library(
         "src/core/lib/transport/transport_op_string.cc",
     ],
     hdrs = [
+        "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
@@ -691,6 +691,7 @@ grpc_cc_library(
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
+        "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
@@ -735,7 +736,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_posix.h",
         "src/core/lib/iomgr/socket_windows.h",
         "src/core/lib/iomgr/sys_epoll_wrapper.h",
-        "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",
@@ -791,7 +791,6 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
-        "src/core/lib/backoff/backoff.h",
     ],
     external_deps = [
         "zlib",
@@ -1251,8 +1250,8 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_decoder.h",
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
-        "src/core/ext/transport/chttp2/transport/frame.h",
         "src/core/ext/transport/chttp2/transport/flow_control.h",
+        "src/core/ext/transport/chttp2/transport/frame.h",
         "src/core/ext/transport/chttp2/transport/frame_data.h",
         "src/core/ext/transport/chttp2/transport/frame_goaway.h",
         "src/core/ext/transport/chttp2/transport/frame_ping.h",

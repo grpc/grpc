@@ -41,15 +41,15 @@
  * responsibility to gpr_free user_cred.
  */
 static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
-  GPR_ASSERT(user_cred != NULL);
-  char* proxy_name = NULL;
+  GPR_ASSERT(user_cred != nullptr);
+  char* proxy_name = nullptr;
   char* uri_str = gpr_getenv("http_proxy");
-  char** authority_strs = NULL;
+  char** authority_strs = nullptr;
   size_t authority_nstrs;
-  if (uri_str == NULL) return NULL;
+  if (uri_str == nullptr) return nullptr;
   grpc_uri* uri =
       grpc_uri_parse(exec_ctx, uri_str, false /* suppress_errors */);
-  if (uri == NULL || uri->authority == NULL) {
+  if (uri == nullptr || uri->authority == nullptr) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
     goto done;
   }
@@ -73,7 +73,7 @@ static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
     for (size_t i = 0; i < authority_nstrs; i++) {
       gpr_free(authority_strs[i]);
     }
-    proxy_name = NULL;
+    proxy_name = nullptr;
   }
   gpr_free(authority_strs);
 done:
@@ -88,13 +88,13 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
                                   const grpc_channel_args* args,
                                   char** name_to_resolve,
                                   grpc_channel_args** new_args) {
-  char* user_cred = NULL;
+  char* user_cred = nullptr;
   *name_to_resolve = get_http_proxy_server(exec_ctx, &user_cred);
-  if (*name_to_resolve == NULL) return false;
-  char* no_proxy_str = NULL;
+  if (*name_to_resolve == nullptr) return false;
+  char* no_proxy_str = nullptr;
   grpc_uri* uri =
       grpc_uri_parse(exec_ctx, server_uri, false /* suppress_errors */);
-  if (uri == NULL || uri->path[0] == '\0') {
+  if (uri == nullptr || uri->path[0] == '\0') {
     gpr_log(GPR_ERROR,
             "'http_proxy' environment variable set, but cannot "
             "parse server URI '%s' -- not using proxy",
@@ -107,7 +107,7 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
     goto no_use_proxy;
   }
   no_proxy_str = gpr_getenv("no_proxy");
-  if (no_proxy_str != NULL) {
+  if (no_proxy_str != nullptr) {
     static const char* NO_PROXY_SEPARATOR = ",";
     bool use_proxy = true;
     char* server_host;
@@ -149,7 +149,7 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
   args_to_add[0] = grpc_channel_arg_string_create(
       (char*)GRPC_ARG_HTTP_CONNECT_SERVER,
       uri->path[0] == '/' ? uri->path + 1 : uri->path);
-  if (user_cred != NULL) {
+  if (user_cred != nullptr) {
     /* Use base64 encoding for user credentials as stated in RFC 7617 */
     char* encoded_user_cred =
         grpc_base64_encode(user_cred, strlen(user_cred), 0, 0);
@@ -167,9 +167,9 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
   gpr_free(user_cred);
   return true;
 no_use_proxy:
-  if (uri != NULL) grpc_uri_destroy(uri);
+  if (uri != nullptr) grpc_uri_destroy(uri);
   gpr_free(*name_to_resolve);
-  *name_to_resolve = NULL;
+  *name_to_resolve = nullptr;
   gpr_free(user_cred);
   return false;
 }

@@ -185,7 +185,7 @@ GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
 GRPCAPI grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     void* reserved);
 
-GRPCAPI gpr_timespec grpc_max_auth_token_lifetime();
+GRPCAPI gpr_timespec grpc_max_auth_token_lifetime(void);
 
 /** Creates a JWT credentials object. May return NULL if the input is invalid.
    - json_key is the JSON key string containing the client's private key.

@@ -19,6 +19,8 @@
 /* This check is for testing only. */
 #ifndef GRPC_UV
 
+#include <grpc/support/alloc.h>
+
 #include "test/core/end2end/cq_verifier_internal.h"
 
 /* the verifier itself */
@@ -27,13 +29,12 @@ struct cq_verifier {
   grpc_completion_queue* cq;
   /* start of expectation list */
   expectation* first_expectation;
-  uv_timer_t timer;
 };
 
 cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
   cq_verifier* v = static_cast<cq_verifier*>(gpr_malloc(sizeof(cq_verifier)));
   v->cq = cq;
-  cq_verifier_set_first_expectation(v, NULL);
+  cq_verifier_set_first_expectation(v, nullptr);
   return v;
 }
 
@@ -53,7 +54,7 @@ void cq_verifier_set_first_expectation(cq_verifier* v, expectation* e) {
 grpc_event cq_verifier_next_event(cq_verifier* v, int timeout_seconds) {
   const gpr_timespec deadline =
       grpc_timeout_seconds_to_deadline(timeout_seconds);
-  return grpc_completion_queue_next(v->cq, deadline, NULL);
+  return grpc_completion_queue_next(v->cq, deadline, nullptr);
 }
 
 #endif /* GRPC_UV */

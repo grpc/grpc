@@ -61,7 +61,7 @@ TEST_F(ProtoUtilsTest, TinyBackupThenNext) {
   EXPECT_FALSE(peer.have_backup());
   // On the next allocation, the returned slice is non-inlined.
   ASSERT_TRUE(writer.Next(&data, &size));
-  EXPECT_TRUE(peer.slice().refcount != NULL);
+  EXPECT_TRUE(peer.slice().refcount != nullptr);
   EXPECT_EQ(block_size, size);
 
   // Cleanup.

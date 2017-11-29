@@ -32,8 +32,8 @@ void test_unknown_scheme_target(void) {
   grpc_resolver_registry_shutdown();
   grpc_resolver_registry_init();
 
-  chan = grpc_insecure_channel_create("blah://blah", NULL, NULL);
-  GPR_ASSERT(chan != NULL);
+  chan = grpc_insecure_channel_create("blah://blah", nullptr, nullptr);
+  GPR_ASSERT(chan != nullptr);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_element* elem =

@@ -26,7 +26,7 @@
 
 /* --- Tracing. --- */
 
-grpc_tracer_flag tsi_tracing_enabled = GRPC_TRACER_INITIALIZER(false, "tsi");
+grpc_core::TraceFlag tsi_tracing_enabled(false, "tsi");
 
 /* --- tsi_result common implementation. --- */
 
@@ -74,12 +74,13 @@ tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
                                        size_t* unprotected_bytes_size,
                                        unsigned char* protected_output_frames,
                                        size_t* protected_output_frames_size) {
-  if (self == NULL || self->vtable == NULL || unprotected_bytes == NULL ||
-      unprotected_bytes_size == NULL || protected_output_frames == NULL ||
-      protected_output_frames_size == NULL) {
+  if (self == nullptr || self->vtable == nullptr ||
+      unprotected_bytes == nullptr || unprotected_bytes_size == nullptr ||
+      protected_output_frames == nullptr ||
+      protected_output_frames_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  if (self->vtable->protect == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->protect == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->protect(self, unprotected_bytes, unprotected_bytes_size,
                                protected_output_frames,
                                protected_output_frames_size);
@@ -88,11 +89,13 @@ tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
 tsi_result tsi_frame_protector_protect_flush(
     tsi_frame_protector* self, unsigned char* protected_output_frames,
     size_t* protected_output_frames_size, size_t* still_pending_size) {
-  if (self == NULL || self->vtable == NULL || protected_output_frames == NULL ||
-      protected_output_frames_size == NULL || still_pending_size == NULL) {
+  if (self == nullptr || self->vtable == nullptr ||
+      protected_output_frames == nullptr ||
+      protected_output_frames_size == nullptr ||
+      still_pending_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  if (self->vtable->protect_flush == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->protect_flush == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->protect_flush(self, protected_output_frames,
                                      protected_output_frames_size,
                                      still_pending_size);
@@ -102,19 +105,20 @@ tsi_result tsi_frame_protector_unprotect(
     tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
     size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
     size_t* unprotected_bytes_size) {
-  if (self == NULL || self->vtable == NULL || protected_frames_bytes == NULL ||
-      protected_frames_bytes_size == NULL || unprotected_bytes == NULL ||
-      unprotected_bytes_size == NULL) {
+  if (self == nullptr || self->vtable == nullptr ||
+      protected_frames_bytes == nullptr ||
+      protected_frames_bytes_size == nullptr || unprotected_bytes == nullptr ||
+      unprotected_bytes_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  if (self->vtable->unprotect == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->unprotect == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->unprotect(self, protected_frames_bytes,
                                  protected_frames_bytes_size, unprotected_bytes,
                                  unprotected_bytes_size);
 }
 
 void tsi_frame_protector_destroy(tsi_frame_protector* self) {
-  if (self == NULL) return;
+  if (self == nullptr) return;
   self->vtable->destroy(self);
 }
 
@@ -125,36 +129,38 @@ void tsi_frame_protector_destroy(tsi_frame_protector* self) {
 tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
                                                     unsigned char* bytes,
                                                     size_t* bytes_size) {
-  if (self == NULL || self->vtable == NULL || bytes == NULL ||
-      bytes_size == NULL) {
+  if (self == nullptr || self->vtable == nullptr || bytes == nullptr ||
+      bytes_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
-  if (self->vtable->get_bytes_to_send_to_peer == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->get_bytes_to_send_to_peer == nullptr)
+    return TSI_UNIMPLEMENTED;
   return self->vtable->get_bytes_to_send_to_peer(self, bytes, bytes_size);
 }
 
 tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
                                                   const unsigned char* bytes,
                                                   size_t* bytes_size) {
-  if (self == NULL || self->vtable == NULL || bytes == NULL ||
-      bytes_size == NULL) {
+  if (self == nullptr || self->vtable == nullptr || bytes == nullptr ||
+      bytes_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
-  if (self->vtable->process_bytes_from_peer == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->process_bytes_from_peer == nullptr)
+    return TSI_UNIMPLEMENTED;
   return self->vtable->process_bytes_from_peer(self, bytes, bytes_size);
 }
 
 tsi_result tsi_handshaker_get_result(tsi_handshaker* self) {
-  if (self == NULL || self->vtable == NULL) return TSI_INVALID_ARGUMENT;
+  if (self == nullptr || self->vtable == nullptr) return TSI_INVALID_ARGUMENT;
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
-  if (self->vtable->get_result == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->get_result == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->get_result(self);
 }
 
 tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer) {
-  if (self == NULL || self->vtable == NULL || peer == NULL) {
+  if (self == nullptr || self->vtable == nullptr || peer == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   memset(peer, 0, sizeof(tsi_peer));
@@ -162,7 +168,7 @@ tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer) {
   if (tsi_handshaker_get_result(self) != TSI_OK) {
     return TSI_FAILED_PRECONDITION;
   }
-  if (self->vtable->extract_peer == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->extract_peer == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->extract_peer(self, peer);
 }
 
@@ -170,12 +176,12 @@ tsi_result tsi_handshaker_create_frame_protector(
     tsi_handshaker* self, size_t* max_protected_frame_size,
     tsi_frame_protector** protector) {
   tsi_result result;
-  if (self == NULL || self->vtable == NULL || protector == NULL) {
+  if (self == nullptr || self->vtable == nullptr || protector == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   if (tsi_handshaker_get_result(self) != TSI_OK) return TSI_FAILED_PRECONDITION;
-  if (self->vtable->create_frame_protector == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->create_frame_protector == nullptr) return TSI_UNIMPLEMENTED;
   result = self->vtable->create_frame_protector(self, max_protected_frame_size,
                                                 protector);
   if (result == TSI_OK) {
@@ -189,16 +195,16 @@ tsi_result tsi_handshaker_next(
     size_t received_bytes_size, const unsigned char** bytes_to_send,
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void* user_data) {
-  if (self == NULL || self->vtable == NULL) return TSI_INVALID_ARGUMENT;
+  if (self == nullptr || self->vtable == nullptr) return TSI_INVALID_ARGUMENT;
   if (self->handshaker_result_created) return TSI_FAILED_PRECONDITION;
-  if (self->vtable->next == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->next == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->next(self, received_bytes, received_bytes_size,
                             bytes_to_send, bytes_to_send_size,
                             handshaker_result, cb, user_data);
 }
 
 void tsi_handshaker_destroy(tsi_handshaker* self) {
-  if (self == NULL) return;
+  if (self == nullptr) return;
   self->vtable->destroy(self);
 }
 
@@ -206,21 +212,21 @@ void tsi_handshaker_destroy(tsi_handshaker* self) {
 
 tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
                                               tsi_peer* peer) {
-  if (self == NULL || self->vtable == NULL || peer == NULL) {
+  if (self == nullptr || self->vtable == nullptr || peer == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   memset(peer, 0, sizeof(tsi_peer));
-  if (self->vtable->extract_peer == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->extract_peer == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->extract_peer(self, peer);
 }
 
 tsi_result tsi_handshaker_result_create_frame_protector(
     const tsi_handshaker_result* self, size_t* max_protected_frame_size,
     tsi_frame_protector** protector) {
-  if (self == NULL || self->vtable == NULL || protector == NULL) {
+  if (self == nullptr || self->vtable == nullptr || protector == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  if (self->vtable->create_frame_protector == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->create_frame_protector == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->create_frame_protector(self, max_protected_frame_size,
                                               protector);
 }
@@ -228,16 +234,16 @@ tsi_result tsi_handshaker_result_create_frame_protector(
 tsi_result tsi_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
     size_t* bytes_size) {
-  if (self == NULL || self->vtable == NULL || bytes == NULL ||
-      bytes_size == NULL) {
+  if (self == nullptr || self->vtable == nullptr || bytes == nullptr ||
+      bytes_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  if (self->vtable->get_unused_bytes == NULL) return TSI_UNIMPLEMENTED;
+  if (self->vtable->get_unused_bytes == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->get_unused_bytes(self, bytes, bytes_size);
 }
 
 void tsi_handshaker_result_destroy(tsi_handshaker_result* self) {
-  if (self == NULL) return;
+  if (self == nullptr) return;
   self->vtable->destroy(self);
 }
 
@@ -259,20 +265,20 @@ static void tsi_peer_destroy_list_property(tsi_peer_property* children,
 }
 
 void tsi_peer_property_destruct(tsi_peer_property* property) {
-  if (property->name != NULL) {
+  if (property->name != nullptr) {
     gpr_free(property->name);
   }
-  if (property->value.data != NULL) {
+  if (property->value.data != nullptr) {
     gpr_free(property->value.data);
   }
   *property = tsi_init_peer_property(); /* Reset everything to 0. */
 }
 
 void tsi_peer_destruct(tsi_peer* self) {
-  if (self == NULL) return;
-  if (self->properties != NULL) {
+  if (self == nullptr) return;
+  if (self->properties != nullptr) {
     tsi_peer_destroy_list_property(self->properties, self->property_count);
-    self->properties = NULL;
+    self->properties = nullptr;
   }
   self->property_count = 0;
 }
@@ -280,7 +286,7 @@ void tsi_peer_destruct(tsi_peer* self) {
 tsi_result tsi_construct_allocated_string_peer_property(
     const char* name, size_t value_length, tsi_peer_property* property) {
   *property = tsi_init_peer_property();
-  if (name != NULL) property->name = gpr_strdup(name);
+  if (name != nullptr) property->name = gpr_strdup(name);
   if (value_length > 0) {
     property->value.data = (char*)gpr_zalloc(value_length);
     property->value.length = value_length;

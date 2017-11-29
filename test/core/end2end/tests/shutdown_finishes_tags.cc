@@ -53,14 +53,14 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
-  f->client = NULL;
+  f->client = nullptr;
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
@@ -76,7 +76,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 static void test_early_server_shutdown_finishes_tags(
     grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = begin_test(
-      config, "test_early_server_shutdown_finishes_tags", NULL, NULL);
+      config, "test_early_server_shutdown_finishes_tags", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_call* s = (grpc_call*)(uintptr_t)1;
   grpc_call_details call_details;
@@ -94,7 +94,7 @@ static void test_early_server_shutdown_finishes_tags(
   CQ_EXPECT_COMPLETION(cqv, tag(101), 0);
   CQ_EXPECT_COMPLETION(cqv, tag(1000), 1);
   cq_verify(cqv);
-  GPR_ASSERT(s == NULL);
+  GPR_ASSERT(s == nullptr);
 
   grpc_server_destroy(f.server);
 

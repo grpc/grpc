@@ -24,7 +24,7 @@
 #include <grpc/support/string_util.h>
 #include "test/core/util/test_config.h"
 
-static char* g_last_log_error_message = NULL;
+static char* g_last_log_error_message = nullptr;
 static const char* g_file_name = "channel.cc";
 
 static int ends_with(const char* src, const char* suffix) {
@@ -44,13 +44,13 @@ static void log_error_sink(gpr_log_func_args* args) {
 }
 
 static void verify_last_error(const char* message) {
-  if (message == NULL) {
-    GPR_ASSERT(g_last_log_error_message == NULL);
+  if (message == nullptr) {
+    GPR_ASSERT(g_last_log_error_message == nullptr);
     return;
   }
   GPR_ASSERT(strcmp(message, g_last_log_error_message) == 0);
   gpr_free(g_last_log_error_message);
-  g_last_log_error_message = NULL;
+  g_last_log_error_message = nullptr;
 }
 
 static char* compose_error_string(const char* key, const char* message) {
@@ -61,13 +61,13 @@ static char* compose_error_string(const char* key, const char* message) {
 
 static void one_test(grpc_channel_args* args, char* expected_error_message) {
   grpc_channel* chan =
-      grpc_insecure_channel_create("nonexistant:54321", args, NULL);
+      grpc_insecure_channel_create("nonexistant:54321", args, nullptr);
   verify_last_error(expected_error_message);
   gpr_free(expected_error_message);
   grpc_channel_destroy(chan);
 }
 
-static void test_no_error_message(void) { one_test(NULL, NULL); }
+static void test_no_error_message(void) { one_test(nullptr, nullptr); }
 
 static void test_default_authority_type(void) {
   grpc_arg client_arg;

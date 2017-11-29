@@ -85,7 +85,7 @@ static callback_state* get_state_for_batch(
   if (batch->recv_initial_metadata) return &calld->on_complete[3];
   if (batch->recv_message) return &calld->on_complete[4];
   if (batch->recv_trailing_metadata) return &calld->on_complete[5];
-  GPR_UNREACHABLE_CODE(return NULL);
+  GPR_UNREACHABLE_CODE(return nullptr);
 }
 
 /* We perform a small hack to locate transport data alongside the connected
@@ -181,7 +181,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                                      grpc_channel_element_args* args) {
   channel_data* cd = (channel_data*)elem->channel_data;
   GPR_ASSERT(args->is_last);
-  cd->transport = NULL;
+  cd->transport = nullptr;
   return GRPC_ERROR_NONE;
 }
 
@@ -217,7 +217,7 @@ static void bind_transport(grpc_channel_stack* channel_stack,
                            grpc_channel_element* elem, void* t) {
   channel_data* cd = (channel_data*)elem->channel_data;
   GPR_ASSERT(elem->filter == &grpc_connected_filter);
-  GPR_ASSERT(cd->transport == NULL);
+  GPR_ASSERT(cd->transport == nullptr);
   cd->transport = (grpc_transport*)t;
 
   /* HACK(ctiller): increase call stack size for the channel to make space
@@ -233,9 +233,9 @@ static void bind_transport(grpc_channel_stack* channel_stack,
 bool grpc_add_connected_filter(grpc_exec_ctx* exec_ctx,
                                grpc_channel_stack_builder* builder,
                                void* arg_must_be_null) {
-  GPR_ASSERT(arg_must_be_null == NULL);
+  GPR_ASSERT(arg_must_be_null == nullptr);
   grpc_transport* t = grpc_channel_stack_builder_get_transport(builder);
-  GPR_ASSERT(t != NULL);
+  GPR_ASSERT(t != nullptr);
   return grpc_channel_stack_builder_append_filter(
       builder, &grpc_connected_filter, bind_transport, t);
 }
