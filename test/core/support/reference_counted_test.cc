@@ -46,12 +46,12 @@ TEST(ReferenceCounted, ExtraRef) {
 
 TraceFlag foo_tracer(true, "foo");
 
-class FooWithTracing : public ReferenceCounted {
+class FooWithTracing : public ReferenceCountedWithTracing {
  public:
-  FooWithTracing() : ReferenceCounted(&foo_tracer) {}
+  FooWithTracing() : ReferenceCountedWithTracing(&foo_tracer) {}
 };
 
-TEST(ReferenceCounted, WithTracing) {
+TEST(ReferenceCountedWithTracing, Basic) {
   FooWithTracing* foo = New<FooWithTracing>();
   foo->Ref(DEBUG_LOCATION, "extra_ref");
   foo->Unref(DEBUG_LOCATION, "extra_ref");

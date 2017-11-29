@@ -19,8 +19,8 @@
 #ifndef GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_H
 #define GRPC_CORE_LIB_SUPPORT_REFERENCE_COUNTED_H
 
-#include <grpc/support/sync.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/support/debug_location.h"
@@ -32,6 +32,39 @@ namespace grpc_core {
 // New objects should be created via New() and start with a refcount of 1.
 // When the refcount reaches 0, the object will be deleted via Delete().
 class ReferenceCounted {
+ public:
+  void Ref() { gpr_ref(&refs_); }
+
+  void Unref() {
+    if (gpr_unref(&refs_)) {
+      Delete(this);
+    }
+  }
+
+  // Not copyable nor movable.
+  ReferenceCounted(const ReferenceCounted&) = delete;
+  ReferenceCounted& operator=(const ReferenceCounted&) = delete;
+
+ protected:
+  // Allow Delete() to access destructor.
+  template <typename T>
+  friend void Delete(T*);
+
+  ReferenceCounted() { gpr_ref_init(&refs_, 1); }
+
+  virtual ~ReferenceCounted() {}
+
+ private:
+  gpr_refcount refs_;
+};
+
+// An alternative version of the ReferenceCounted base class that
+// supports tracing.  This is intended to be used in cases where the
+// object will be handled both by idiomatic C++ code using smart
+// pointers and legacy code that is manually calling Ref() and Unref().
+// Once all of our code is converted to idiomatic C++, we may be able to
+// eliminate this class.
+class ReferenceCountedWithTracing {
  public:
   void Ref() { gpr_ref(&refs_); }
 
@@ -62,21 +95,23 @@ class ReferenceCounted {
   }
 
   // Not copyable nor movable.
-  ReferenceCounted(const ReferenceCounted&) = delete;
-  ReferenceCounted& operator=(const ReferenceCounted&) = delete;
+  ReferenceCountedWithTracing(const ReferenceCountedWithTracing&) = delete;
+  ReferenceCountedWithTracing& operator=(const ReferenceCountedWithTracing&) =
+      delete;
 
  protected:
   // Allow Delete() to access destructor.
   template <typename T>
   friend void Delete(T*);
 
-  ReferenceCounted() : ReferenceCounted(nullptr) {}
+  ReferenceCountedWithTracing() : ReferenceCountedWithTracing(nullptr) {}
 
-  explicit ReferenceCounted(TraceFlag* trace_flag) : trace_flag_(trace_flag) {
+  explicit ReferenceCountedWithTracing(TraceFlag* trace_flag)
+      : trace_flag_(trace_flag) {
     gpr_ref_init(&refs_, 1);
   }
 
-  virtual ~ReferenceCounted() {}
+  virtual ~ReferenceCountedWithTracing() {}
 
  private:
   TraceFlag* trace_flag_ = nullptr;

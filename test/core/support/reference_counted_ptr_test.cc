@@ -28,12 +28,13 @@
 
 namespace grpc_core {
 namespace testing {
+namespace {
 
 class Foo : public ReferenceCounted {
  public:
-  Foo() : ReferenceCounted(nullptr), value_(0) {}
+  Foo() : value_(0) {}
 
-  explicit Foo(int value) : ReferenceCounted(nullptr), value_(value) {}
+  explicit Foo(int value) : value_(value) {}
 
   int value() const { return value_; }
 
@@ -149,6 +150,20 @@ TEST(MakeReferenceCounted, Args) {
   EXPECT_EQ(3, foo->value());
 }
 
+TraceFlag foo_tracer(true, "foo");
+
+class FooWithTracing : public ReferenceCountedWithTracing {
+ public:
+  FooWithTracing() : ReferenceCountedWithTracing(&foo_tracer) {}
+};
+
+TEST(ReferenceCountedPtr, ReferenceCountedWithTracing) {
+  ReferenceCountedPtr<FooWithTracing> foo(New<FooWithTracing>());
+  foo->Ref(DEBUG_LOCATION, "foo");
+  foo->Unref(DEBUG_LOCATION, "foo");
+}
+
+}  // namespace
 }  // namespace testing
 }  // namespace grpc_core
 
