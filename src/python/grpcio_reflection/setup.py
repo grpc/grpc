@@ -57,27 +57,25 @@ PACKAGE_DIRECTORIES = {
     '': '.',
 }
 
-INSTALL_REQUIRES = ('protobuf>=3.3.0',
+INSTALL_REQUIRES = ('protobuf>=3.5.0.post1',
                     'grpcio>={version}'.format(version=grpc_version.VERSION),)
 
 try:
-    # ensure we can load the _pb2_grpc module:
-    from grpc_reflection.v1alpha import reflection_pb2_grpc as _pb2_grpc
-    # if we can find the _pb2_grpc module, the package has already been built.
-    SETUP_REQUIRES = ()
-    COMMAND_CLASS = {
-        # wire up commands to no-op not to break the external dependencies
-        'preprocess': _NoOpCommand,
-        'build_package_protos': _NoOpCommand,
-    }
-except ImportError:  # we are in the build environment
     import reflection_commands as _reflection_commands
+    # we are in the build environment, otherwise the above import fails
     SETUP_REQUIRES = (
         'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
         'preprocess': _reflection_commands.CopyProtoModules,
         'build_package_protos': _reflection_commands.BuildPackageProtos,
+    }
+except ImportError:
+    SETUP_REQUIRES = ()
+    COMMAND_CLASS = {
+        # wire up commands to no-op not to break the external dependencies
+        'preprocess': _NoOpCommand,
+        'build_package_protos': _NoOpCommand,
     }
 
 setuptools.setup(

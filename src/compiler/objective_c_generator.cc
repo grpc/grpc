@@ -66,7 +66,7 @@ static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
     printer->Print(" * ");
     size_t start_pos = it->find_first_not_of(' ');
     if (start_pos != grpc::string::npos) {
-      printer->Print(it->c_str() + start_pos);
+      printer->PrintRaw(it->c_str() + start_pos);
     }
     printer->Print("\n");
   }

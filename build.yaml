@@ -12,9 +12,9 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 5.0.0
-  g_stands_for: gambit
-  version: 1.7.2
+  core_version: 5.0.0-dev
+  g_stands_for: glossy
+  version: 1.9.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -50,7 +50,6 @@ filegroups:
   - src/core/lib/support/log_windows.cc
   - src/core/lib/support/mpscq.cc
   - src/core/lib/support/murmur_hash.cc
-  - src/core/lib/support/stack_lockfree.cc
   - src/core/lib/support/string.cc
   - src/core/lib/support/string_posix.cc
   - src/core/lib/support/string_util_windows.cc
@@ -105,6 +104,7 @@ filegroups:
   - include/grpc/support/useful.h
   headers:
   - src/core/lib/profiling/timers.h
+  - src/core/lib/support/abstract.h
   - src/core/lib/support/arena.h
   - src/core/lib/support/atomic.h
   - src/core/lib/support/atomic_with_atm.h
@@ -116,7 +116,6 @@ filegroups:
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/spinlock.h
-  - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
   - src/core/lib/support/thd_internal.h
@@ -399,7 +398,6 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/support/vector.h
   - src/core/lib/surface/alarm_internal.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
@@ -2222,6 +2220,16 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: gpr_manual_constructor_test
+  cpu_cost: 3
+  build: test
+  language: c
+  src:
+  - test/core/support/manual_constructor_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: gpr_mpscq_test
   cpu_cost: 30
   build: test
@@ -2238,16 +2246,6 @@ targets:
   language: c
   src:
   - test/core/support/spinlock_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: gpr_stack_lockfree_test
-  cpu_cost: 7
-  build: test
-  language: c
-  src:
-  - test/core/support/stack_lockfree_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -4778,20 +4776,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: vector_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/core/support/vector_test.cc
-  deps:
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses:
-  - grpc++_test
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5
@@ -4911,8 +4895,8 @@ configs:
   msan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins
-      -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
-      -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0
+      -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang++
@@ -4920,6 +4904,8 @@ configs:
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
     compile_the_world: true
+    test_environ:
+      MSAN_OPTIONS: poison_in_dtor=1
   mutrace:
     CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
@@ -4972,8 +4958,8 @@ defaults:
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
   global:
+    COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
-      -Ithird_party/abseil-cpp
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

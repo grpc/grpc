@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.7.2'
+  version = '1.9.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -191,6 +191,7 @@ Pod::Spec.new do |s|
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
+                      'src/core/lib/support/abstract.h',
                       'src/core/lib/support/arena.h',
                       'src/core/lib/support/atomic.h',
                       'src/core/lib/support/atomic_with_atm.h',
@@ -202,7 +203,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
                       'src/core/lib/support/spinlock.h',
-                      'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
                       'src/core/lib/support/thd_internal.h',
@@ -232,7 +232,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/log_windows.cc',
                       'src/core/lib/support/mpscq.cc',
                       'src/core/lib/support/murmur_hash.cc',
-                      'src/core/lib/support/stack_lockfree.cc',
                       'src/core/lib/support/string.cc',
                       'src/core/lib/support/string_posix.cc',
                       'src/core/lib/support/string_util_windows.cc',
@@ -419,7 +418,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_hash_table.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
-                      'src/core/lib/support/vector.h',
                       'src/core/lib/surface/alarm_internal.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
@@ -715,6 +713,7 @@ Pod::Spec.new do |s|
                       'src/core/plugin_registry/grpc_plugin_registry.cc'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
+                              'src/core/lib/support/abstract.h',
                               'src/core/lib/support/arena.h',
                               'src/core/lib/support/atomic.h',
                               'src/core/lib/support/atomic_with_atm.h',
@@ -726,7 +725,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
                               'src/core/lib/support/spinlock.h',
-                              'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
                               'src/core/lib/support/thd_internal.h',
@@ -897,7 +895,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_hash_table.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
-                              'src/core/lib/support/vector.h',
                               'src/core/lib/surface/alarm_internal.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',

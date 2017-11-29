@@ -13,8 +13,8 @@
  <date>2017-08-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.7.2</release>
-  <api>1.7.2</api>
+  <release>1.9.0dev</release>
+  <api>1.9.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -97,6 +97,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/abstract.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_atm.h" role="src" />
@@ -108,7 +109,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/thd_internal.h" role="src" />
@@ -138,7 +138,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_util_windows.cc" role="src" />
@@ -361,7 +360,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/alarm_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />

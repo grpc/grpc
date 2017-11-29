@@ -30,10 +30,15 @@ namespace grpc_core {
 class LockfreeEvent {
  public:
   LockfreeEvent();
-  ~LockfreeEvent();
 
   LockfreeEvent(const LockfreeEvent&) = delete;
   LockfreeEvent& operator=(const LockfreeEvent&) = delete;
+
+  // These methods are used to initialize and destroy the internal state. These
+  // cannot be done in constructor and destructor because SetReady may be called
+  // when the event is destroyed and put in a freelist.
+  void InitEvent();
+  void DestroyEvent();
 
   bool IsShutdown() const {
     return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
