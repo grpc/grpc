@@ -3207,6 +3207,25 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "function_test", 
+    "src": [
+      "test/core/support/function_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -7800,6 +7819,7 @@
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
       "src/core/lib/support/env.h", 
+      "src/core/lib/support/function.h", 
       "src/core/lib/support/manual_constructor.h", 
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
@@ -7848,6 +7868,7 @@
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
       "src/core/lib/support/env.h", 
+      "src/core/lib/support/function.h", 
       "src/core/lib/support/manual_constructor.h", 
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
