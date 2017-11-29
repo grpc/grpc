@@ -49,19 +49,19 @@ namespace Grpc.Core.Internal
 
         public async Task<bool> MoveNext(CancellationToken token)
         {
-            if (token != CancellationToken.None)
+            var cancellationTokenRegistration = token.CanBeCanceled ? token.Register(() => call.Cancel()) : (IDisposable) null;
+            using (cancellationTokenRegistration)
             {
-                throw new InvalidOperationException("Cancellation of individual reads is not supported.");
-            }
-            var result = await call.ReadMessageAsync().ConfigureAwait(false);
-            this.current = result;
+                var result = await call.ReadMessageAsync().ConfigureAwait(false);
+                this.current = result;
 
-            if (result == null)
-            {
-                await call.StreamingResponseCallFinishedTask.ConfigureAwait(false);
-                return false;
+                if (result == null)
+                {
+                    await call.StreamingResponseCallFinishedTask.ConfigureAwait(false);
+                    return false;
+                }
+                return true;
             }
-            return true;
         }
 
         public void Dispose()
