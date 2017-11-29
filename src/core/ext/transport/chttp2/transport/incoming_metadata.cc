@@ -51,7 +51,7 @@ grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
 grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(
     grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
     grpc_mdelem elem) {
-  for (grpc_linked_mdelem* l = buffer->batch.list.head; l != NULL;
+  for (grpc_linked_mdelem* l = buffer->batch.list.head; l != nullptr;
        l = l->next) {
     if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDKEY(elem))) {
       GRPC_MDELEM_UNREF(exec_ctx, l->md);

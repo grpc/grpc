@@ -20,18 +20,41 @@ using Grpc.Core;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void UnaryResponseClientHandler(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders);
+    internal interface IUnaryResponseClientCallback
+    {
+        void OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders);
+    }
 
     // Received status for streaming response calls.
-    internal delegate void ReceivedStatusOnClientHandler(bool success, ClientSideStatus receivedStatus);
+    internal interface IReceivedStatusOnClientCallback
+    {
+        void OnReceivedStatusOnClient(bool success, ClientSideStatus receivedStatus);
+    }
 
-    internal delegate void ReceivedMessageHandler(bool success, byte[] receivedMessage);
+    internal interface IReceivedMessageCallback
+    {
+        void OnReceivedMessage(bool success, byte[] receivedMessage);
+    }
 
-    internal delegate void ReceivedResponseHeadersHandler(bool success, Metadata responseHeaders);
+    internal interface IReceivedResponseHeadersCallback
+    {
+        void OnReceivedResponseHeaders(bool success, Metadata responseHeaders);
+    }
 
-    internal delegate void SendCompletionHandler(bool success);
+    internal interface ISendCompletionCallback
+    {
+        void OnSendCompletion(bool success);
+    }
 
-    internal delegate void ReceivedCloseOnServerHandler(bool success, bool cancelled);
+    internal interface ISendStatusFromServerCompletionCallback
+    {
+        void OnSendStatusFromServerCompletion(bool success);
+    }
+
+    internal interface IReceivedCloseOnServerCallback
+    {
+        void OnReceivedCloseOnServer(bool success, bool cancelled);
+    }
 
     /// <summary>
     /// Abstraction of a native call object.
@@ -44,28 +67,28 @@ namespace Grpc.Core.Internal
 
         string GetPeer();
 
-        void StartUnary(UnaryResponseClientHandler callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
+        void StartUnary(IUnaryResponseClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
         void StartUnary(BatchContextSafeHandle ctx, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
-        void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
+        void StartClientStreaming(IUnaryResponseClientCallback callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
-        void StartServerStreaming(ReceivedStatusOnClientHandler callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
+        void StartServerStreaming(IReceivedStatusOnClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
-        void StartDuplexStreaming(ReceivedStatusOnClientHandler callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
+        void StartDuplexStreaming(IReceivedStatusOnClientCallback callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags);
 
-        void StartReceiveMessage(ReceivedMessageHandler callback);
+        void StartReceiveMessage(IReceivedMessageCallback callback);
 
-        void StartReceiveInitialMetadata(ReceivedResponseHeadersHandler callback);
+        void StartReceiveInitialMetadata(IReceivedResponseHeadersCallback callback);
 
-        void StartSendInitialMetadata(SendCompletionHandler callback, MetadataArraySafeHandle metadataArray);
+        void StartSendInitialMetadata(ISendCompletionCallback callback, MetadataArraySafeHandle metadataArray);
 
-        void StartSendMessage(SendCompletionHandler callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata);
+        void StartSendMessage(ISendCompletionCallback callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata);
 
-        void StartSendCloseFromClient(SendCompletionHandler callback);
+        void StartSendCloseFromClient(ISendCompletionCallback callback);
 
-        void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata, byte[] optionalPayload, WriteFlags writeFlags);
+        void StartSendStatusFromServer(ISendStatusFromServerCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata, byte[] optionalPayload, WriteFlags writeFlags);
 
-        void StartServerSide(ReceivedCloseOnServerHandler callback);
+        void StartServerSide(IReceivedCloseOnServerCallback callback);
     }
 }

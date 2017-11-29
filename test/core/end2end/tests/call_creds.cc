@@ -45,19 +45,19 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             int fail_server_auth_check) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  f = config.create_fixture(NULL, NULL);
-  config.init_client(&f, NULL);
+  f = config.create_fixture(nullptr, nullptr);
+  config.init_client(&f, nullptr);
   if (fail_server_auth_check) {
     grpc_arg fail_auth_arg = {
         GRPC_ARG_STRING,
         const_cast<char*>(FAIL_AUTH_CHECK_SERVER_ARG_NAME),
-        {NULL}};
+        {nullptr}};
     grpc_channel_args args;
     args.num_args = 1;
     args.args = &fail_auth_arg;
     config.init_server(&f, &args);
   } else {
-    config.init_server(&f, NULL);
+    config.init_server(&f, nullptr);
   }
   return f;
 }
@@ -73,7 +73,7 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -82,16 +82,16 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
                                          grpc_timeout_seconds_to_deadline(5),
-                                         NULL)
+                                         nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
-  f->server = NULL;
+  f->server = nullptr;
 }
 
 static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
-  f->client = NULL;
+  f->client = nullptr;
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
@@ -111,12 +111,12 @@ static void print_auth_context(int is_client, const grpc_auth_context* ctx) {
   gpr_log(GPR_INFO, "\tauthenticated: %s",
           grpc_auth_context_peer_is_authenticated(ctx) ? "YES" : "NO");
   it = grpc_auth_context_peer_identity(ctx);
-  while ((p = grpc_auth_property_iterator_next(&it)) != NULL) {
+  while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
     gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
   }
   gpr_log(GPR_INFO, "\tall properties:");
   it = grpc_auth_context_property_iterator(ctx);
-  while ((p = grpc_auth_property_iterator_next(&it)) != NULL) {
+  while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
     gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
   }
 }
@@ -141,42 +141,42 @@ static void request_response_with_payload_and_call_creds(
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = NULL;
-  grpc_byte_buffer* response_payload_recv = NULL;
+  grpc_byte_buffer* request_payload_recv = nullptr;
+  grpc_byte_buffer* response_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  grpc_call_credentials* creds = NULL;
-  grpc_auth_context* s_auth_context = NULL;
-  grpc_auth_context* c_auth_context = NULL;
+  grpc_call_credentials* creds = nullptr;
+  grpc_auth_context* s_auth_context = nullptr;
+  grpc_auth_context* c_auth_context = nullptr;
 
   f = begin_test(config, test_name, 0);
   cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
       get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      NULL);
+      nullptr);
   GPR_ASSERT(c);
-  creds = grpc_google_iam_credentials_create(iam_token, iam_selector, NULL);
-  GPR_ASSERT(creds != NULL);
+  creds = grpc_google_iam_credentials_create(iam_token, iam_selector, nullptr);
+  GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   switch (mode) {
     case NONE:
       break;
     case OVERRIDE:
       grpc_call_credentials_release(creds);
-      creds = grpc_google_iam_credentials_create(overridden_iam_token,
-                                                 overridden_iam_selector, NULL);
-      GPR_ASSERT(creds != NULL);
+      creds = grpc_google_iam_credentials_create(
+          overridden_iam_token, overridden_iam_selector, nullptr);
+      GPR_ASSERT(creds != nullptr);
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
       break;
     case DESTROY:
-      GPR_ASSERT(grpc_call_set_credentials(c, NULL) == GRPC_CALL_OK);
+      GPR_ASSERT(grpc_call_set_credentials(c, nullptr) == GRPC_CALL_OK);
       break;
   }
   grpc_call_credentials_release(creds);
@@ -191,35 +191,35 @@ static void request_response_with_payload_and_call_creds(
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -229,31 +229,31 @@ static void request_response_with_payload_and_call_creds(
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
   s_auth_context = grpc_call_auth_context(s);
-  GPR_ASSERT(s_auth_context != NULL);
+  GPR_ASSERT(s_auth_context != nullptr);
   print_auth_context(0, s_auth_context);
   grpc_auth_context_release(s_auth_context);
 
   c_auth_context = grpc_call_auth_context(c);
-  GPR_ASSERT(c_auth_context != NULL);
+  GPR_ASSERT(c_auth_context != nullptr);
   print_auth_context(1, c_auth_context);
   grpc_auth_context_release(c_auth_context);
 
   /* Cannot set creds on the server call object. */
-  GPR_ASSERT(grpc_call_set_credentials(s, NULL) != GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_set_credentials(s, nullptr) != GRPC_CALL_OK);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -264,12 +264,12 @@ static void request_response_with_payload_and_call_creds(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
@@ -277,9 +277,9 @@ static void request_response_with_payload_and_call_creds(
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
@@ -383,7 +383,7 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  grpc_byte_buffer* response_payload_recv = NULL;
+  grpc_byte_buffer* response_payload_recv = nullptr;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer* request_payload =
@@ -394,14 +394,14 @@ static void test_request_with_server_rejecting_client_creds(
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(
-      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
       get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      NULL);
+      nullptr);
   GPR_ASSERT(c);
 
-  creds = grpc_google_iam_credentials_create(iam_token, iam_selector, NULL);
-  GPR_ASSERT(creds != NULL);
+  creds = grpc_google_iam_credentials_create(iam_token, iam_selector, nullptr);
+  GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   grpc_call_credentials_release(creds);
 
@@ -417,33 +417,33 @@ static void test_request_with_server_rejecting_client_creds(
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = request_payload;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
   GPR_ASSERT(error == GRPC_CALL_OK);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);

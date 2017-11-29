@@ -58,7 +58,7 @@ int main(int argc, const char** argv) {
   gpr_join_host_port(&args[2], "127.0.0.1", port);
   args[3] = const_cast<char*>("--scenario=ping-pong-request");
   args[4] = const_cast<char*>("--no-secure");
-  args[5] = 0;
+  args[5] = nullptr;
   cli = gpr_subprocess_create(6, (const char**)args);
   gpr_free(args[0]);
   gpr_free(args[2]);

@@ -136,8 +136,8 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
   return returnValue;
 }
 
-- (void)handleLossWithHandler:(nullable void (^)())lossHandler
-      wifiStatusChangeHandler:(nullable void (^)())wifiStatusChangeHandler {
+- (void)handleLossWithHandler:(nullable void (^)(void))lossHandler
+      wifiStatusChangeHandler:(nullable void (^)(void))wifiStatusChangeHandler {
   __weak typeof(self) weakSelf = self;
   [self startListeningWithHandler:^(GRPCReachabilityFlags *flags) {
     typeof(self) strongSelf = weakSelf;

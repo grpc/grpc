@@ -61,7 +61,7 @@ void gpr_event_set(gpr_event* ev, void* value) {
   gpr_atm_rel_store(&ev->state, (gpr_atm)value);
   gpr_cv_broadcast(&s->cv);
   gpr_mu_unlock(&s->mu);
-  GPR_ASSERT(value != NULL);
+  GPR_ASSERT(value != nullptr);
 }
 
 void* gpr_event_get(gpr_event* ev) {
@@ -70,12 +70,12 @@ void* gpr_event_get(gpr_event* ev) {
 
 void* gpr_event_wait(gpr_event* ev, gpr_timespec abs_deadline) {
   void* result = (void*)gpr_atm_acq_load(&ev->state);
-  if (result == NULL) {
+  if (result == nullptr) {
     struct sync_array_s* s = hash(ev);
     gpr_mu_lock(&s->mu);
     do {
       result = (void*)gpr_atm_acq_load(&ev->state);
-    } while (result == NULL && !gpr_cv_wait(&s->cv, &s->mu, abs_deadline));
+    } while (result == nullptr && !gpr_cv_wait(&s->cv, &s->mu, abs_deadline));
     gpr_mu_unlock(&s->mu);
   }
   return result;

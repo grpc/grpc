@@ -57,6 +57,7 @@ grpc_cc_library(
         "reconnect_server.cc",
         "slice_splitter.cc",
         "test_tcp_server.cc",
+        "tracer_util.cc",
         "trickle_endpoint.cc",
     ],
     hdrs = [
@@ -69,6 +70,7 @@ grpc_cc_library(
         "reconnect_server.h",
         "slice_splitter.h",
         "test_tcp_server.h",
+        "tracer_util.h",
         "trickle_endpoint.h",
     ],
     language = "C++",
@@ -103,6 +105,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "fuzzer_corpus_test",
+    testonly = 1,
     srcs = ["fuzzer_corpus_test.cc"],
     deps = [
         ":gpr_test_util",

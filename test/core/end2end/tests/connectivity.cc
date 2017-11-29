@@ -39,14 +39,14 @@ static void child_thread(void* arg) {
   gpr_event_set(&ce->started, (void*)1);
   gpr_log(GPR_DEBUG, "verifying");
   ev = grpc_completion_queue_next(ce->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC),
-                                  NULL);
+                                  nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == tag(1));
   GPR_ASSERT(ev.success == 0);
 }
 
 static void test_connectivity(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
+  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   grpc_connectivity_state state;
   cq_verifier* cqv = cq_verifier_create(f.cq);
   child_events ce;
@@ -115,7 +115,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   gpr_log(GPR_DEBUG, "*** STARTING SERVER ***");
 
   /* now let's bring up a server to connect to */
-  config.init_server(&f, NULL);
+  config.init_server(&f, nullptr);
 
   gpr_log(GPR_DEBUG, "*** STARTED SERVER ***");
 

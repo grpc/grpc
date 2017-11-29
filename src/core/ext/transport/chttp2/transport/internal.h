@@ -306,9 +306,10 @@ struct grpc_chttp2_transport {
    */
   uint32_t write_buffer_size;
 
-  /** have we seen a goaway */
-  bool seen_goaway;
-  /** have we sent a goaway */
+  /** Set to a grpc_error object if a goaway frame is received. By default, set
+   * to GRPC_ERROR_NONE */
+  grpc_error* goaway_error;
+
   grpc_chttp2_sent_goaway_state sent_goaway_state;
 
   /** are the local settings dirty and need to be sent? */
@@ -375,11 +376,6 @@ struct grpc_chttp2_transport {
   grpc_error* (*parser)(grpc_exec_ctx* exec_ctx, void* parser_user_data,
                         grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                         grpc_slice slice, int is_last);
-
-  /* goaway data */
-  grpc_status_code goaway_error;
-  uint32_t goaway_last_stream_index;
-  grpc_slice goaway_text;
 
   grpc_chttp2_write_cb* write_cb_pool;
 
@@ -678,13 +674,13 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx* exec_ctx,
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-extern grpc_tracer_flag grpc_http_trace;
-extern grpc_tracer_flag grpc_flowctl_trace;
+// extern grpc_core::TraceFlag grpc_http_trace;
+// extern grpc_core::TraceFlag grpc_flowctl_trace;
 
-#define GRPC_CHTTP2_IF_TRACING(stmt)      \
-  if (!(GRPC_TRACER_ON(grpc_http_trace))) \
-    ;                                     \
-  else                                    \
+#define GRPC_CHTTP2_IF_TRACING(stmt) \
+  if (!(grpc_http_trace.enabled()))  \
+    ;                                \
+  else                               \
     stmt
 
 void grpc_chttp2_fake_status(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,

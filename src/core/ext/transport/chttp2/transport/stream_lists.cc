@@ -39,14 +39,13 @@ static const char* stream_list_id_string(grpc_chttp2_stream_list_id id) {
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-grpc_tracer_flag grpc_trace_http2_stream_state =
-    GRPC_TRACER_INITIALIZER(false, "http2_stream_state");
+grpc_core::TraceFlag grpc_trace_http2_stream_state(false, "http2_stream_state");
 
 /* core list management */
 
 static bool stream_list_empty(grpc_chttp2_transport* t,
                               grpc_chttp2_stream_list_id id) {
-  return t->lists[id].head == NULL;
+  return t->lists[id].head == nullptr;
 }
 
 static bool stream_list_pop(grpc_chttp2_transport* t,
@@ -58,19 +57,19 @@ static bool stream_list_pop(grpc_chttp2_transport* t,
     GPR_ASSERT(s->included[id]);
     if (new_head) {
       t->lists[id].head = new_head;
-      new_head->links[id].prev = NULL;
+      new_head->links[id].prev = nullptr;
     } else {
-      t->lists[id].head = NULL;
-      t->lists[id].tail = NULL;
+      t->lists[id].head = nullptr;
+      t->lists[id].tail = nullptr;
     }
     s->included[id] = 0;
   }
   *stream = s;
-  if (s && GRPC_TRACER_ON(grpc_trace_http2_stream_state)) {
+  if (s && grpc_trace_http2_stream_state.enabled()) {
     gpr_log(GPR_DEBUG, "%p[%d][%s]: pop from %s", t, s->id,
             t->is_client ? "cli" : "svr", stream_list_id_string(id));
   }
-  return s != 0;
+  return s != nullptr;
 }
 
 static void stream_list_remove(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
@@ -88,7 +87,7 @@ static void stream_list_remove(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   } else {
     t->lists[id].tail = s->links[id].prev;
   }
-  if (GRPC_TRACER_ON(grpc_trace_http2_stream_state)) {
+  if (grpc_trace_http2_stream_state.enabled()) {
     gpr_log(GPR_DEBUG, "%p[%d][%s]: remove from %s", t, s->id,
             t->is_client ? "cli" : "svr", stream_list_id_string(id));
   }
@@ -111,7 +110,7 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
   grpc_chttp2_stream* old_tail;
   GPR_ASSERT(!s->included[id]);
   old_tail = t->lists[id].tail;
-  s->links[id].next = NULL;
+  s->links[id].next = nullptr;
   s->links[id].prev = old_tail;
   if (old_tail) {
     old_tail->links[id].next = s;
@@ -120,7 +119,7 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
   }
   t->lists[id].tail = s;
   s->included[id] = 1;
-  if (GRPC_TRACER_ON(grpc_trace_http2_stream_state)) {
+  if (grpc_trace_http2_stream_state.enabled()) {
     gpr_log(GPR_DEBUG, "%p[%d][%s]: add to %s", t, s->id,
             t->is_client ? "cli" : "svr", stream_list_id_string(id));
   }

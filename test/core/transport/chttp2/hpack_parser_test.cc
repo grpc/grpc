@@ -73,7 +73,7 @@ static void test_vector(grpc_chttp2_hpack_parser* parser,
   }
   gpr_free(slices);
 
-  GPR_ASSERT(NULL == va_arg(chk.args, char*));
+  GPR_ASSERT(nullptr == va_arg(chk.args, char*));
 
   va_end(chk.args);
 }

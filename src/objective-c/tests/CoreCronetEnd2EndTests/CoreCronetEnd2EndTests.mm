@@ -58,7 +58,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data *ffd =
-      gpr_malloc(sizeof(fullstack_secure_fixture_data));
+      (fullstack_secure_fixture_data*)gpr_malloc(sizeof(fullstack_secure_fixture_data));
   memset(&f, 0, sizeof(f));
 
   gpr_join_host_port(&ffd->localaddr, "127.0.0.1", port);
@@ -81,7 +81,7 @@ static void process_auth_failure(void *state, grpc_auth_context *ctx,
 static void cronet_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
                                                 grpc_channel_args *client_args,
                                                 stream_engine *cronetEngine) {
-  fullstack_secure_fixture_data *ffd = f->fixture_data;
+  fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
   f->client = grpc_cronet_secure_channel_create(cronetEngine, ffd->localaddr,
                                                 client_args, NULL);
   GPR_ASSERT(f->client != NULL);
@@ -90,7 +90,7 @@ static void cronet_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
 static void chttp2_init_server_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
     grpc_server_credentials *server_creds) {
-  fullstack_secure_fixture_data *ffd = f->fixture_data;
+  fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -103,7 +103,7 @@ static void chttp2_init_server_secure_fullstack(
 }
 
 static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
-  fullstack_secure_fixture_data *ffd = f->fixture_data;
+  fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
 }
@@ -171,7 +171,7 @@ static char *roots_filename;
   FILE *roots_file;
   size_t roots_size = strlen(test_root_cert);
 
-  char *argv[] = {"CoreCronetEnd2EndTests"};
+  char *argv[] = {(char *)"CoreCronetEnd2EndTests"};
   grpc_test_init(1, argv);
   grpc_end2end_tests_pre_init();
 
@@ -207,7 +207,7 @@ static char *roots_filename;
 }
 
 - (void)testIndividualCase:(char *)test_case {
-  char *argv[] = {"h2_ssl", test_case};
+  char *argv[] = {(char *)"h2_ssl", test_case};
 
   for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     grpc_end2end_tests(sizeof(argv) / sizeof(argv[0]), argv, configs[i]);
@@ -217,182 +217,182 @@ static char *roots_filename;
 // TODO(mxyan): Use NSStringFromSelector(_cmd) to acquire test name from the
 // test case method name, so that bodies of test cases can stay identical
 - (void)testAuthorityNotSupported {
-  [self testIndividualCase:"authority_not_supported"];
+  [self testIndividualCase:(char *)"authority_not_supported"];
 }
 
 - (void)testBadHostname {
-  [self testIndividualCase:"bad_hostname"];
+  [self testIndividualCase:(char *)"bad_hostname"];
 }
 
 - (void)testBinaryMetadata {
   // NOT SUPPORTED
-  //[self testIndividualCase:"binary_metadata"];
+  //[self testIndividualCase:(char *)"binary_metadata"];
 }
 
 - (void)testCallCreds {
   // NOT SUPPORTED
-  // [self testIndividualCase:"call_creds"];
+  // [self testIndividualCase:(char *)"call_creds"];
 }
 
 - (void)testCancelAfterAccept {
-  [self testIndividualCase:"cancel_after_accept"];
+  [self testIndividualCase:(char *)"cancel_after_accept"];
 }
 
 - (void)testCancelAfterClientDone {
-  [self testIndividualCase:"cancel_after_client_done"];
+  [self testIndividualCase:(char *)"cancel_after_client_done"];
 }
 
 - (void)testCancelAfterInvoke {
-  [self testIndividualCase:"cancel_after_invoke"];
+  [self testIndividualCase:(char *)"cancel_after_invoke"];
 }
 
 - (void)testCancelAfterRoundTrip {
-  [self testIndividualCase:"cancel_after_round_trip"];
+  [self testIndividualCase:(char *)"cancel_after_round_trip"];
 }
 
 - (void)testCancelBeforeInvoke {
-  [self testIndividualCase:"cancel_before_invoke"];
+  [self testIndividualCase:(char *)"cancel_before_invoke"];
 }
 
 - (void)testCancelInAVacuum {
-  [self testIndividualCase:"cancel_in_a_vacuum"];
+  [self testIndividualCase:(char *)"cancel_in_a_vacuum"];
 }
 
 - (void)testCancelWithStatus {
-  [self testIndividualCase:"cancel_with_status"];
+  [self testIndividualCase:(char *)"cancel_with_status"];
 }
 
 - (void)testCompressedPayload {
-  [self testIndividualCase:"compressed_payload"];
+  [self testIndividualCase:(char *)"compressed_payload"];
 }
 
 - (void)testConnectivity {
   // NOT SUPPORTED
-  // [self testIndividualCase:"connectivity"];
+  // [self testIndividualCase:(char *)"connectivity"];
 }
 
 - (void)testDefaultHost {
-  [self testIndividualCase:"default_host"];
+  [self testIndividualCase:(char *)"default_host"];
 }
 
 - (void)testDisappearingServer {
-  [self testIndividualCase:"disappearing_server"];
+  [self testIndividualCase:(char *)"disappearing_server"];
 }
 
 - (void)testEmptyBatch {
-  [self testIndividualCase:"empty_batch"];
+  [self testIndividualCase:(char *)"empty_batch"];
 }
 
 - (void)testFilterCausesClose {
   // NOT SUPPORTED
-  // [self testIndividualCase:"filter_causes_close"];
+  // [self testIndividualCase:(char *)"filter_causes_close"];
 }
 
 - (void)testGracefulServerShutdown {
-  [self testIndividualCase:"graceful_server_shutdown"];
+  [self testIndividualCase:(char *)"graceful_server_shutdown"];
 }
 
 - (void)testHighInitialSeqno {
-  [self testIndividualCase:"high_initial_seqno"];
+  [self testIndividualCase:(char *)"high_initial_seqno"];
 }
 
 - (void)testHpackSize {
   // NOT SUPPORTED
-  // [self testIndividualCase:"hpack_size"];
+  // [self testIndividualCase:(char *)"hpack_size"];
 }
 
 - (void)testIdempotentRequest {
   // NOT SUPPORTED
-  // [self testIndividualCase:"idempotent_request"];
+  // [self testIndividualCase:(char *)"idempotent_request"];
 }
 
 - (void)testInvokeLargeRequest {
   // NOT SUPPORTED (frame size)
-  // [self testIndividualCase:"invoke_large_request"];
+  // [self testIndividualCase:(char *)"invoke_large_request"];
 }
 
 - (void)testLargeMetadata {
   // NOT SUPPORTED
-  // [self testIndividualCase:"large_metadata"];
+  // [self testIndividualCase:(char *)"large_metadata"];
 }
 
 - (void)testMaxConcurrentStreams {
-  [self testIndividualCase:"max_concurrent_streams"];
+  [self testIndividualCase:(char *)"max_concurrent_streams"];
 }
 
 - (void)testMaxMessageLength {
   // NOT SUPPORTED (close_error)
-  // [self testIndividualCase:"max_message_length"];
+  // [self testIndividualCase:(char *)"max_message_length"];
 }
 
 - (void)testNegativeDeadline {
-  [self testIndividualCase:"negative_deadline"];
+  [self testIndividualCase:(char *)"negative_deadline"];
 }
 
 - (void)testNetworkStatusChange {
-  [self testIndividualCase:"network_status_change"];
+  [self testIndividualCase:(char *)"network_status_change"];
 }
 
 - (void)testNoOp {
-  [self testIndividualCase:"no_op"];
+  [self testIndividualCase:(char *)"no_op"];
 }
 
 - (void)testPayload {
-  [self testIndividualCase:"payload"];
+  [self testIndividualCase:(char *)"payload"];
 }
 
 - (void)testPing {
   // NOT SUPPORTED
-  // [self testIndividualCase:"ping"];
+  // [self testIndividualCase:(char *)"ping"];
 }
 
 - (void)testPingPongStreaming {
-  [self testIndividualCase:"ping_pong_streaming"];
+  [self testIndividualCase:(char *)"ping_pong_streaming"];
 }
 
 - (void)testRegisteredCall {
-  [self testIndividualCase:"registered_call"];
+  [self testIndividualCase:(char *)"registered_call"];
 }
 
 - (void)testRequestWithFlags {
   // NOT SUPPORTED
-  // [self testIndividualCase:"request_with_flags"];
+  // [self testIndividualCase:(char *)"request_with_flags"];
 }
 
 - (void)testRequestWithPayload {
-  [self testIndividualCase:"request_with_payload"];
+  [self testIndividualCase:(char *)"request_with_payload"];
 }
 
 - (void)testServerFinishesRequest {
-  [self testIndividualCase:"server_finishes_request"];
+  [self testIndividualCase:(char *)"server_finishes_request"];
 }
 
 - (void)testShutdownFinishesCalls {
-  [self testIndividualCase:"shutdown_finishes_calls"];
+  [self testIndividualCase:(char *)"shutdown_finishes_calls"];
 }
 
 - (void)testShutdownFinishesTags {
-  [self testIndividualCase:"shutdown_finishes_tags"];
+  [self testIndividualCase:(char *)"shutdown_finishes_tags"];
 }
 
 - (void)testSimpleDelayedRequest {
-  [self testIndividualCase:"simple_delayed_request"];
+  [self testIndividualCase:(char *)"simple_delayed_request"];
 }
 
 - (void)testSimpleMetadata {
-  [self testIndividualCase:"simple_metadata"];
+  [self testIndividualCase:(char *)"simple_metadata"];
 }
 
 - (void)testSimpleRequest {
-  [self testIndividualCase:"simple_request"];
+  [self testIndividualCase:(char *)"simple_request"];
 }
 
 - (void)testStreamingErrorResponse {
-  [self testIndividualCase:"streaming_error_response"];
+  [self testIndividualCase:(char *)"streaming_error_response"];
 }
 
 - (void)testTrailingMetadata {
-  [self testIndividualCase:"trailing_metadata"];
+  [self testIndividualCase:(char *)"trailing_metadata"];
 }
 
 @end

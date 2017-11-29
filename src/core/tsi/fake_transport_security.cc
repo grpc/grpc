@@ -122,7 +122,7 @@ static void store32_little_endian(uint32_t value, unsigned char* buf) {
 }
 
 static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
-  GPR_ASSERT(sb != NULL && sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
+  GPR_ASSERT(sb != nullptr && sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
   uint8_t frame_size_buffer[TSI_FAKE_FRAME_HEADER_SIZE];
   uint8_t* buf = frame_size_buffer;
   /* Copies the first 4 bytes to a temporary buffer.  */
@@ -152,7 +152,7 @@ static void tsi_fake_frame_reset(tsi_fake_frame* frame, int needs_draining) {
 /* Checks if the frame's allocated size is at least frame->size, and reallocs
  * more memory if necessary. */
 static void tsi_fake_frame_ensure_size(tsi_fake_frame* frame) {
-  if (frame->data == NULL) {
+  if (frame->data == nullptr) {
     frame->allocated_size = frame->size;
     frame->data = (unsigned char*)gpr_malloc(frame->allocated_size);
   } else if (frame->size > frame->allocated_size) {
@@ -174,7 +174,7 @@ static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
   const unsigned char* bytes_cursor = incoming_bytes;
 
   if (frame->needs_draining) return TSI_INTERNAL_ERROR;
-  if (frame->data == NULL) {
+  if (frame->data == nullptr) {
     frame->allocated_size = TSI_FAKE_FRAME_INITIAL_ALLOCATED_SIZE;
     frame->data = (unsigned char*)gpr_malloc(frame->allocated_size);
   }
@@ -246,7 +246,7 @@ static tsi_result tsi_fake_frame_set_data(unsigned char* data, size_t data_size,
 
 /* Destroys the contents of a fake frame. */
 static void tsi_fake_frame_destruct(tsi_fake_frame* frame) {
-  if (frame->data != NULL) gpr_free(frame->data);
+  if (frame->data != nullptr) gpr_free(frame->data);
 }
 
 /* --- tsi_frame_protector methods implementation. ---*/
@@ -402,7 +402,8 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
     grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self,
     grpc_slice_buffer* unprotected_slices,
     grpc_slice_buffer* protected_slices) {
-  if (self == NULL || unprotected_slices == NULL || protected_slices == NULL) {
+  if (self == nullptr || unprotected_slices == nullptr ||
+      protected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   tsi_fake_zero_copy_grpc_protector* impl =
@@ -426,7 +427,8 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
     grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self,
     grpc_slice_buffer* protected_slices,
     grpc_slice_buffer* unprotected_slices) {
-  if (self == NULL || unprotected_slices == NULL || protected_slices == NULL) {
+  if (self == nullptr || unprotected_slices == nullptr ||
+      protected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   tsi_fake_zero_copy_grpc_protector* impl =
@@ -459,7 +461,7 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
 
 static void fake_zero_copy_grpc_protector_destroy(
     grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self) {
-  if (self == NULL) return;
+  if (self == nullptr) return;
   tsi_fake_zero_copy_grpc_protector* impl =
       (tsi_fake_zero_copy_grpc_protector*)self;
   grpc_slice_buffer_destroy_internal(exec_ctx, &impl->header_sb);
@@ -536,8 +538,8 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
 static tsi_result fake_handshaker_result_create(
     const unsigned char* unused_bytes, size_t unused_bytes_size,
     tsi_handshaker_result** handshaker_result) {
-  if ((unused_bytes_size > 0 && unused_bytes == NULL) ||
-      handshaker_result == NULL) {
+  if ((unused_bytes_size > 0 && unused_bytes == nullptr) ||
+      handshaker_result == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   fake_handshaker_result* result =
@@ -573,7 +575,7 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
     if (next_message_to_send > TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;
     }
-    if (GRPC_TRACER_ON(tsi_tracing_enabled)) {
+    if (tsi_tracing_enabled.enabled()) {
       gpr_log(GPR_INFO, "%s prepared %s.",
               impl->is_client ? "Client" : "Server",
               tsi_fake_handshake_message_to_string(impl->next_message_to_send));
@@ -585,7 +587,7 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
   if (!impl->is_client &&
       impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     /* We're done. */
-    if (GRPC_TRACER_ON(tsi_tracing_enabled)) {
+    if (tsi_tracing_enabled.enabled()) {
       gpr_log(GPR_INFO, "Server is done.");
     }
     impl->result = TSI_OK;
@@ -623,7 +625,7 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
             tsi_fake_handshake_message_to_string(received_msg),
             tsi_fake_handshake_message_to_string(expected_msg));
   }
-  if (GRPC_TRACER_ON(tsi_tracing_enabled)) {
+  if (tsi_tracing_enabled.enabled()) {
     gpr_log(GPR_INFO, "%s received %s.", impl->is_client ? "Client" : "Server",
             tsi_fake_handshake_message_to_string(received_msg));
   }
@@ -631,7 +633,7 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
   impl->needs_incoming_message = 0;
   if (impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     /* We're done. */
-    if (GRPC_TRACER_ON(tsi_tracing_enabled)) {
+    if (tsi_tracing_enabled.enabled()) {
       gpr_log(GPR_INFO, "%s is done.", impl->is_client ? "Client" : "Server");
     }
     impl->result = TSI_OK;
@@ -658,9 +660,9 @@ static tsi_result fake_handshaker_next(
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void* user_data) {
   /* Sanity check the arguments. */
-  if ((received_bytes_size > 0 && received_bytes == NULL) ||
-      bytes_to_send == NULL || bytes_to_send_size == NULL ||
-      handshaker_result == NULL) {
+  if ((received_bytes_size > 0 && received_bytes == nullptr) ||
+      bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
+      handshaker_result == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   tsi_fake_handshaker* handshaker = (tsi_fake_handshaker*)self;
@@ -695,10 +697,10 @@ static tsi_result fake_handshaker_next(
 
   /* Check if the handshake was completed. */
   if (fake_handshaker_get_result(self) == TSI_HANDSHAKE_IN_PROGRESS) {
-    *handshaker_result = NULL;
+    *handshaker_result = nullptr;
   } else {
     /* Calculate the unused bytes. */
-    const unsigned char* unused_bytes = NULL;
+    const unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = received_bytes_size - consumed_bytes_size;
     if (unused_bytes_size > 0) {
       unused_bytes = received_bytes + consumed_bytes_size;
@@ -717,11 +719,11 @@ static tsi_result fake_handshaker_next(
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
-    NULL, /* get_bytes_to_send_to_peer -- deprecated */
-    NULL, /* process_bytes_from_peer   -- deprecated */
-    NULL, /* get_result                -- deprecated */
-    NULL, /* extract_peer              -- deprecated */
-    NULL, /* create_frame_protector    -- deprecated */
+    nullptr, /* get_bytes_to_send_to_peer -- deprecated */
+    nullptr, /* process_bytes_from_peer   -- deprecated */
+    nullptr, /* get_result                -- deprecated */
+    nullptr, /* extract_peer              -- deprecated */
+    nullptr, /* create_frame_protector    -- deprecated */
     fake_handshaker_destroy,
     fake_handshaker_next,
 };
@@ -749,7 +751,7 @@ tsi_frame_protector* tsi_create_fake_frame_protector(
     size_t* max_protected_frame_size) {
   tsi_fake_frame_protector* impl =
       (tsi_fake_frame_protector*)gpr_zalloc(sizeof(*impl));
-  impl->max_frame_size = (max_protected_frame_size == NULL)
+  impl->max_frame_size = (max_protected_frame_size == nullptr)
                              ? TSI_FAKE_DEFAULT_FRAME_SIZE
                              : *max_protected_frame_size;
   impl->base.vtable = &frame_protector_vtable;
@@ -762,7 +764,7 @@ tsi_zero_copy_grpc_protector* tsi_create_fake_zero_copy_grpc_protector(
       (tsi_fake_zero_copy_grpc_protector*)gpr_zalloc(sizeof(*impl));
   grpc_slice_buffer_init(&impl->header_sb);
   grpc_slice_buffer_init(&impl->protected_sb);
-  impl->max_frame_size = (max_protected_frame_size == NULL)
+  impl->max_frame_size = (max_protected_frame_size == nullptr)
                              ? TSI_FAKE_DEFAULT_FRAME_SIZE
                              : *max_protected_frame_size;
   impl->parsed_frame_size = 0;

@@ -39,7 +39,7 @@
 grpc_chttp2_hpack_compressor g_compressor;
 int g_failure = 0;
 
-void** to_delete = NULL;
+void** to_delete = nullptr;
 size_t num_to_delete = 0;
 size_t cap_to_delete = 0;
 
@@ -80,8 +80,8 @@ static void verify(grpc_exec_ctx* exec_ctx, const verify_params params,
         exec_ctx, grpc_slice_intern(grpc_slice_from_static_string(key)),
         value_slice);
   }
-  e[0].prev = NULL;
-  e[nheaders - 1].next = NULL;
+  e[0].prev = nullptr;
+  e[nheaders - 1].next = nullptr;
   va_end(l);
 
   b.list.head = &e[0];
@@ -106,7 +106,7 @@ static void verify(grpc_exec_ctx* exec_ctx, const verify_params params,
       16384,                           /* max_frame_size */
       &stats                           /* stats */
   };
-  grpc_chttp2_encode_header(exec_ctx, &g_compressor, NULL, 0, &b, &hopt,
+  grpc_chttp2_encode_header(exec_ctx, &g_compressor, nullptr, 0, &b, &hopt,
                             &output);
   merged = grpc_slice_merge(output.slices, output.count);
   grpc_slice_buffer_destroy_internal(exec_ctx, &output);
@@ -220,8 +220,8 @@ static void verify_table_size_change_match_elem_size(grpc_exec_ctx* exec_ctx,
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
   e[0].md = elem;
-  e[0].prev = NULL;
-  e[0].next = NULL;
+  e[0].prev = nullptr;
+  e[0].next = nullptr;
   b.list.head = &e[0];
   b.list.tail = &e[0];
   b.list.count = 1;
@@ -235,7 +235,7 @@ static void verify_table_size_change_match_elem_size(grpc_exec_ctx* exec_ctx,
       use_true_binary, /* use_true_binary_metadata */
       16384,           /* max_frame_size */
       &stats /* stats */};
-  grpc_chttp2_encode_header(exec_ctx, &g_compressor, NULL, 0, &b, &hopt,
+  grpc_chttp2_encode_header(exec_ctx, &g_compressor, nullptr, 0, &b, &hopt,
                             &output);
   grpc_slice_buffer_destroy_internal(exec_ctx, &output);
   grpc_metadata_batch_destroy(exec_ctx, &b);

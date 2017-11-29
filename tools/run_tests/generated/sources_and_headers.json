@@ -756,6 +756,21 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "gpr_manual_constructor_test", 
+    "src": [
+      "test/core/support/manual_constructor_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "gpr_mpscq_test", 
     "src": [
       "test/core/support/mpscq_test.cc"
@@ -774,21 +789,6 @@
     "name": "gpr_spinlock_test", 
     "src": [
       "test/core/support/spinlock_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_stack_lockfree_test", 
-    "src": [
-      "test/core/support/stack_lockfree_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1207,12 +1207,37 @@
       "grpc", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/core/handshake/server_ssl_common.h"
+    ], 
     "is_filegroup": false, 
     "language": "c", 
     "name": "handshake_server", 
     "src": [
-      "test/core/handshake/server_ssl.cc"
+      "test/core/handshake/server_ssl.cc", 
+      "test/core/handshake/server_ssl_common.cc", 
+      "test/core/handshake/server_ssl_common.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/handshake/server_ssl_common.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "handshake_server_with_readahead_handshaker", 
+    "src": [
+      "test/core/handshake/readahead_handshaker_server_ssl.cc", 
+      "test/core/handshake/server_ssl_common.cc", 
+      "test/core/handshake/server_ssl_common.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2895,6 +2920,29 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
+    "headers": [
+      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_channel_stress_test", 
+    "src": [
+      "test/cpp/client/client_channel_stress_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -4194,25 +4242,6 @@
     "name": "transport_pid_controller_test", 
     "src": [
       "test/core/transport/pid_controller_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "vector_test", 
-    "src": [
-      "test/core/support/vector_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7707,7 +7736,6 @@
       "src/core/lib/support/log_windows.cc", 
       "src/core/lib/support/mpscq.cc", 
       "src/core/lib/support/murmur_hash.cc", 
-      "src/core/lib/support/stack_lockfree.cc", 
       "src/core/lib/support/string.cc", 
       "src/core/lib/support/string_posix.cc", 
       "src/core/lib/support/string_util_windows.cc", 
@@ -7766,6 +7794,7 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/profiling/timers.h", 
+      "src/core/lib/support/abstract.h", 
       "src/core/lib/support/arena.h", 
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
@@ -7776,7 +7805,6 @@
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/spinlock.h", 
-      "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
       "src/core/lib/support/time_precise.h", 
@@ -7814,6 +7842,7 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/profiling/timers.h", 
+      "src/core/lib/support/abstract.h", 
       "src/core/lib/support/arena.h", 
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
@@ -7824,7 +7853,6 @@
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/spinlock.h", 
-      "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
       "src/core/lib/support/time_precise.h", 
@@ -7930,7 +7958,6 @@
       "src/core/lib/http/httpcli.cc", 
       "src/core/lib/http/parser.cc", 
       "src/core/lib/iomgr/call_combiner.cc", 
-      "src/core/lib/iomgr/closure.cc", 
       "src/core/lib/iomgr/combiner.cc", 
       "src/core/lib/iomgr/endpoint.cc", 
       "src/core/lib/iomgr/endpoint_pair_posix.cc", 
@@ -8156,7 +8183,6 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
-      "src/core/lib/support/vector.h", 
       "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -8292,7 +8318,6 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
-      "src/core/lib/support/vector.h", 
       "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -8855,6 +8880,7 @@
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.h"
     ], 
     "is_filegroup": true, 
@@ -8889,6 +8915,8 @@
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.cc", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/tracer_util.cc", 
+      "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.cc", 
       "test/core/util/trickle_endpoint.h"
     ], 
