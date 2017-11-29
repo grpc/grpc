@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/support/arena.h"
+#include "src/core/gpr/arena.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -27,7 +27,7 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/gpr/string.h"
 #include "test/core/util/test_config.h"
 
 static void test_noop(void) { gpr_arena_destroy(gpr_arena_create(1)); }

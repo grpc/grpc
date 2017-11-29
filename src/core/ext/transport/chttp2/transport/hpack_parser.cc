@@ -30,11 +30,11 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/gpr/string.h"
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 typedef enum {

@@ -26,8 +26,8 @@
 
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 

@@ -20,7 +20,7 @@
 #include <grpc/support/time.h>
 #include <stdio.h>
 
-#include "src/core/lib/support/time_precise.h"
+#include "src/core/gpr/time_precise.h"
 
 #ifdef GRPC_TIMERS_RDTSC
 #if defined(__i386__)

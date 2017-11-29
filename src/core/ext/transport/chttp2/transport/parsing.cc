@@ -24,7 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/profiling/timers.h"
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/static_metadata.h"

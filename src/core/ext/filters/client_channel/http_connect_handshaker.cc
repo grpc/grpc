@@ -28,13 +28,13 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/gpr/env.h"
+#include "src/core/gpr/string.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 
 typedef struct http_connect_handshaker {
   // Base class.  Must be first.

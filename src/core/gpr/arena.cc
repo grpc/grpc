@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/support/arena.h"
+#include "src/core/gpr/arena.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>

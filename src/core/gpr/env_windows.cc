@@ -18,16 +18,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_ENV
+#ifdef GPR_WINDOWS_ENV
 
-#include "src/core/lib/support/env.h"
+#include <windows.h>
 
-#include <stdlib.h>
+#include "src/core/gpr/env.h"
+#include "src/core/gpr/string.h"
+#include "src/core/gpr/string_windows.h"
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
 #include <grpc/support/string_util.h>
-#include "src/core/lib/support/string.h"
 
 const char* gpr_getenv_silent(const char* name, char** dst) {
   *dst = gpr_getenv(name);
@@ -35,13 +36,37 @@ const char* gpr_getenv_silent(const char* name, char** dst) {
 }
 
 char* gpr_getenv(const char* name) {
-  char* result = getenv(name);
-  return result == NULL ? result : gpr_strdup(result);
+  char* result = NULL;
+  DWORD size;
+  LPTSTR tresult = NULL;
+  LPTSTR tname = gpr_char_to_tchar(name);
+  DWORD ret;
+
+  ret = GetEnvironmentVariable(tname, NULL, 0);
+  if (ret == 0) {
+    gpr_free(tname);
+    return NULL;
+  }
+  size = ret * (DWORD)sizeof(TCHAR);
+  tresult = (LPTSTR)gpr_malloc(size);
+  ret = GetEnvironmentVariable(tname, tresult, size);
+  gpr_free(tname);
+  if (ret == 0) {
+    gpr_free(tresult);
+    return NULL;
+  }
+  result = gpr_tchar_to_char(tresult);
+  gpr_free(tresult);
+  return result;
 }
 
 void gpr_setenv(const char* name, const char* value) {
-  int res = setenv(name, value, 1);
-  GPR_ASSERT(res == 0);
+  LPTSTR tname = gpr_char_to_tchar(name);
+  LPTSTR tvalue = gpr_char_to_tchar(value);
+  BOOL res = SetEnvironmentVariable(tname, tvalue);
+  gpr_free(tname);
+  gpr_free(tvalue);
+  GPR_ASSERT(res);
 }
 
-#endif /* GPR_POSIX_ENV */
+#endif /* GPR_WINDOWS_ENV */

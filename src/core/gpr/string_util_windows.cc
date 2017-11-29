@@ -36,8 +36,8 @@
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/string.h"
-#include "src/core/lib/support/string_windows.h"
+#include "src/core/gpr/string.h"
+#include "src/core/gpr/string_windows.h"
 
 #if defined UNICODE || defined _UNICODE
 LPTSTR

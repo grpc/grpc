@@ -17,7 +17,7 @@
  */
 
 #include <grpc/support/port_platform.h>
-#include "src/core/lib/support/time_precise.h"
+#include "src/core/gpr/time_precise.h"
 
 #ifdef GPR_POSIX_TIME
 

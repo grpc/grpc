@@ -31,7 +31,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/profiling/timers.h"
+#include "src/core/gpr/timers.h"
 
 extern "C" {
 struct grpc_byte_buffer;

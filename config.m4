@@ -39,50 +39,50 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
-    src/core/lib/profiling/basic_timers.cc \
-    src/core/lib/profiling/stap_timers.cc \
-    src/core/lib/support/alloc.cc \
-    src/core/lib/support/arena.cc \
-    src/core/lib/support/atm.cc \
-    src/core/lib/support/avl.cc \
-    src/core/lib/support/cmdline.cc \
-    src/core/lib/support/cpu_iphone.cc \
-    src/core/lib/support/cpu_linux.cc \
-    src/core/lib/support/cpu_posix.cc \
-    src/core/lib/support/cpu_windows.cc \
-    src/core/lib/support/env_linux.cc \
-    src/core/lib/support/env_posix.cc \
-    src/core/lib/support/env_windows.cc \
-    src/core/lib/support/histogram.cc \
-    src/core/lib/support/host_port.cc \
-    src/core/lib/support/log.cc \
-    src/core/lib/support/log_android.cc \
-    src/core/lib/support/log_linux.cc \
-    src/core/lib/support/log_posix.cc \
-    src/core/lib/support/log_windows.cc \
-    src/core/lib/support/mpscq.cc \
-    src/core/lib/support/murmur_hash.cc \
-    src/core/lib/support/string.cc \
-    src/core/lib/support/string_posix.cc \
-    src/core/lib/support/string_util_windows.cc \
-    src/core/lib/support/string_windows.cc \
-    src/core/lib/support/subprocess_posix.cc \
-    src/core/lib/support/subprocess_windows.cc \
-    src/core/lib/support/sync.cc \
-    src/core/lib/support/sync_posix.cc \
-    src/core/lib/support/sync_windows.cc \
-    src/core/lib/support/thd.cc \
-    src/core/lib/support/thd_posix.cc \
-    src/core/lib/support/thd_windows.cc \
-    src/core/lib/support/time.cc \
-    src/core/lib/support/time_posix.cc \
-    src/core/lib/support/time_precise.cc \
-    src/core/lib/support/time_windows.cc \
-    src/core/lib/support/tls_pthread.cc \
-    src/core/lib/support/tmpfile_msys.cc \
-    src/core/lib/support/tmpfile_posix.cc \
-    src/core/lib/support/tmpfile_windows.cc \
-    src/core/lib/support/wrap_memcpy.cc \
+    src/core/gpr/alloc.cc \
+    src/core/gpr/arena.cc \
+    src/core/gpr/atm.cc \
+    src/core/gpr/avl.cc \
+    src/core/gpr/basic_timers.cc \
+    src/core/gpr/cmdline.cc \
+    src/core/gpr/cpu_iphone.cc \
+    src/core/gpr/cpu_linux.cc \
+    src/core/gpr/cpu_posix.cc \
+    src/core/gpr/cpu_windows.cc \
+    src/core/gpr/env_linux.cc \
+    src/core/gpr/env_posix.cc \
+    src/core/gpr/env_windows.cc \
+    src/core/gpr/histogram.cc \
+    src/core/gpr/host_port.cc \
+    src/core/gpr/log.cc \
+    src/core/gpr/log_android.cc \
+    src/core/gpr/log_linux.cc \
+    src/core/gpr/log_posix.cc \
+    src/core/gpr/log_windows.cc \
+    src/core/gpr/mpscq.cc \
+    src/core/gpr/murmur_hash.cc \
+    src/core/gpr/stap_timers.cc \
+    src/core/gpr/string.cc \
+    src/core/gpr/string_posix.cc \
+    src/core/gpr/string_util_windows.cc \
+    src/core/gpr/string_windows.cc \
+    src/core/gpr/subprocess_posix.cc \
+    src/core/gpr/subprocess_windows.cc \
+    src/core/gpr/sync.cc \
+    src/core/gpr/sync_posix.cc \
+    src/core/gpr/sync_windows.cc \
+    src/core/gpr/thd.cc \
+    src/core/gpr/thd_posix.cc \
+    src/core/gpr/thd_windows.cc \
+    src/core/gpr/time.cc \
+    src/core/gpr/time_posix.cc \
+    src/core/gpr/time_precise.cc \
+    src/core/gpr/time_windows.cc \
+    src/core/gpr/tls_pthread.cc \
+    src/core/gpr/tmpfile_msys.cc \
+    src/core/gpr/tmpfile_posix.cc \
+    src/core/gpr/tmpfile_windows.cc \
+    src/core/gpr/wrap_memcpy.cc \
     src/core/lib/surface/init.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -672,6 +672,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
@@ -679,7 +680,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/composite)
@@ -693,7 +693,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)

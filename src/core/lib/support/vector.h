@@ -20,7 +20,7 @@
 #define GRPC_CORE_LIB_SUPPORT_VECTOR_H
 
 #include "absl/container/inlined_vector.h"
-#include "src/core/lib/support/memory.h"
+#include "src/core/gpr/memory.h"
 
 namespace grpc_core {
 

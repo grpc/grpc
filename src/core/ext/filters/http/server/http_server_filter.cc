@@ -21,7 +21,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <string.h>
-#include "src/core/lib/profiling/timers.h"
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"

@@ -32,9 +32,9 @@
 #include <grpc/support/log_windows.h>
 #endif
 
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error_internal.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,

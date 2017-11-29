@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "src/core/lib/support/env.h"
+#include "src/core/gpr/env.h"
 #include "test/core/util/test_config.h"
 
 static bool log_func_reached = false;

@@ -30,12 +30,12 @@
 #include <grpc/support/time.h>
 #include <grpc/support/tls.h>
 
+#include "src/core/gpr/spinlock.h"
+#include "src/core/gpr/string.h"
+#include "src/core/gpr/timers.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/spinlock.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/event_string.h"

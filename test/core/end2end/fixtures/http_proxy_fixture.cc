@@ -33,6 +33,7 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/gpr/string.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -49,7 +50,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
