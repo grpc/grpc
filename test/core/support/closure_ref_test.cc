@@ -67,8 +67,9 @@ TEST(ClosureRef, SimpleTests) {
 
 TEST(ClosureRef, Lambda) {
   counter = 0;
-  ClosureRef<> cb = NonLockingScheduler::MakeClosureWithArgs<>::FromFunctor(
-      []() { counter++; });
+  ClosureRef<> cb =
+      NonLockingScheduler::MakeClosureWithArgs<>::AllocFromFunctor(
+          []() { counter++; });
   EXPECT_EQ(0, counter);
   cb.UnsafeRun();
   EXPECT_EQ(1, counter);

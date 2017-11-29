@@ -70,15 +70,15 @@
 //
 // $SCHED$::MakeClosureWithArgs<TL> defines the first level of the hierarchy
 //   with TL giving a list of types for the callback arguments for this closure
-//   .. for instance, $SCHEDULER$::MakeClosureWithArgs<int, Error*> declares a
+//   .. for instance, $SCHED$::MakeClosureWithArgs<int, Error*> declares a
 //   closure that takes arguments (int, Error*); these arguments are expected to
 //   be suppled to either UnsafeRun or Schedule on the ClosureRef when it comes
 //   time to execute it.
 //
 // Within MakeClosureWithArgs<TL> we declare constructor functions. In some
 // cases these functions take pointers as template arguments. This allows us to
-// keep the ClosureRef type to exactly two points in size, whilst also allowing
-// us to use NO memory to store data regarding an uninvoked closure.
+// keep the ClosureRef type to exactly two pointers in size, whilst also
+// allowing us to use NO memory to store data regarding an uninvoked closure.
 //
 // Constructors available:
 //   FromFreeFunction<F>()  - constructs a ClosureRef around a free function F
@@ -112,10 +112,26 @@
 //                            ClosureRef
 //   FromRefCountedMemberFunctionWithBarrier
 //                          - experimental for now barrier closure system
-//   FromFunctor            - creates a ClosureRef from an arbitrary functor
+//   AllocFromFunctor       - creates a ClosureRef from an arbitrary functor
 //                            this variant performs a memory allocation to store
 //                            the functor object (and destroys said object after
 //                            the callback has completed)
+//
+// Design note: A common request during the design of this library was for a
+// template <class C> FromMemberFunction(void (C::*)(Args...)) method, that
+// would construct a ClosureRef from a member function pointer. Such a choice
+// would have avoided needing to double specify the class type in the template
+// argument list. Unfortunately, since it would have forced us to store a vtable
+// pointer (for type erasure), a class instance pointer, AND a member pointer,
+// this would have increased the size of ClosureRef by 50% for all instances, a
+// cost we were not willing to pay (gRPC's memory footprint is very sensitive to
+// sizeof(ClosureRef)).
+//
+// Design note part 2: C++17 has auto template parameters, and once we
+// transition to it, it would be reasonable to change FromXxxMemberFunction to
+// take advantage of the new language feature and remove the need for double
+// typing.
+// TODO(ctiller): do so in 2022 when C++17 compilers become available to us.
 
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
@@ -401,7 +417,7 @@ class MakesClosuresForScheduler {
     }
 
     template <class F>
-    static ClosureRef<Args...> FromFunctor(F&& f) {
+    static ClosureRef<Args...> AllocFromFunctor(F&& f) {
       typedef
           typename ClosureImpl<Scheduler, Args...>::template FunctorClosure<F>
               Impl;
