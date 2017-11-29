@@ -26,8 +26,8 @@
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
-                                                   grpc_channel_args *args) {
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
+                                                   grpc_channel_args* args) {
   grpc_endpoint_pair endpoint_pair;
   // TODO(mlumish): implement this properly under libuv
   GPR_ASSERT(false &&

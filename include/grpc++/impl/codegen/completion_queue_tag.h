@@ -21,6 +21,7 @@
 
 namespace grpc {
 
+namespace internal {
 /// An interface allowing implementors to process and filter event tags.
 class CompletionQueueTag {
  public:
@@ -31,6 +32,7 @@ class CompletionQueueTag {
   /// queue
   virtual bool FinalizeResult(void** tag, bool* status) = 0;
 };
+}  // namespace internal
 
 }  // namespace grpc
 

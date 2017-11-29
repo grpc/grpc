@@ -44,26 +44,25 @@ typedef struct {
   gpr_thd_id id;
 } thread_state;
 
-static thread_state *g_thread_state;
+static thread_state* g_thread_state;
 static size_t g_max_threads;
 static gpr_atm g_cur_threads;
 static gpr_spinlock g_adding_thread_lock = GPR_SPINLOCK_STATIC_INITIALIZER;
 
 GPR_TLS_DECL(g_this_thread_state);
 
-static grpc_tracer_flag executor_trace =
-    GRPC_TRACER_INITIALIZER(false, "executor");
+grpc_core::TraceFlag executor_trace(false, "executor");
 
-static void executor_thread(void *arg);
+static void executor_thread(void* arg);
 
-static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
+static size_t run_closures(grpc_exec_ctx* exec_ctx, grpc_closure_list list) {
   size_t n = 0;
 
-  grpc_closure *c = list.head;
-  while (c != NULL) {
-    grpc_closure *next = c->next_data.next;
-    grpc_error *error = c->error_data.error;
-    if (GRPC_TRACER_ON(executor_trace)) {
+  grpc_closure* c = list.head;
+  while (c != nullptr) {
+    grpc_closure* next = c->next_data.next;
+    grpc_error* error = c->error_data.error;
+    if (executor_trace.enabled()) {
 #ifndef NDEBUG
       gpr_log(GPR_DEBUG, "EXECUTOR: run %p [created by %s:%d]", c,
               c->file_created, c->line_created);
@@ -88,7 +87,7 @@ bool grpc_executor_is_threaded() {
   return gpr_atm_no_barrier_load(&g_cur_threads) > 0;
 }
 
-void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
+void grpc_executor_set_threading(grpc_exec_ctx* exec_ctx, bool threading) {
   gpr_atm cur_threads = gpr_atm_no_barrier_load(&g_cur_threads);
   if (threading) {
     if (cur_threads > 0) return;
@@ -96,7 +95,7 @@ void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
     gpr_atm_no_barrier_store(&g_cur_threads, 1);
     gpr_tls_init(&g_this_thread_state);
     g_thread_state =
-        (thread_state *)gpr_zalloc(sizeof(thread_state) * g_max_threads);
+        (thread_state*)gpr_zalloc(sizeof(thread_state) * g_max_threads);
     for (size_t i = 0; i < g_max_threads; i++) {
       gpr_mu_init(&g_thread_state[i].mu);
       gpr_cv_init(&g_thread_state[i].cv);
@@ -133,26 +132,25 @@ void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
   }
 }
 
-void grpc_executor_init(grpc_exec_ctx *exec_ctx) {
-  grpc_register_tracer(&executor_trace);
+void grpc_executor_init(grpc_exec_ctx* exec_ctx) {
   gpr_atm_no_barrier_store(&g_cur_threads, 0);
   grpc_executor_set_threading(exec_ctx, true);
 }
 
-void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
+void grpc_executor_shutdown(grpc_exec_ctx* exec_ctx) {
   grpc_executor_set_threading(exec_ctx, false);
 }
 
-static void executor_thread(void *arg) {
-  thread_state *ts = (thread_state *)arg;
+static void executor_thread(void* arg) {
+  thread_state* ts = (thread_state*)arg;
   gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
 
   grpc_exec_ctx exec_ctx =
-      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
+      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, nullptr);
 
   size_t subtract_depth = 0;
   for (;;) {
-    if (GRPC_TRACER_ON(executor_trace)) {
+    if (executor_trace.enabled()) {
       gpr_log(GPR_DEBUG, "EXECUTOR[%d]: step (sub_depth=%" PRIdPTR ")",
               (int)(ts - g_thread_state), subtract_depth);
     }
@@ -163,7 +161,7 @@ static void executor_thread(void *arg) {
       gpr_cv_wait(&ts->cv, &ts->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
     }
     if (ts->shutdown) {
-      if (GRPC_TRACER_ON(executor_trace)) {
+      if (executor_trace.enabled()) {
         gpr_log(GPR_DEBUG, "EXECUTOR[%d]: shutdown",
                 (int)(ts - g_thread_state));
       }
@@ -174,7 +172,7 @@ static void executor_thread(void *arg) {
     grpc_closure_list exec = ts->elems;
     ts->elems = GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
-    if (GRPC_TRACER_ON(executor_trace)) {
+    if (executor_trace.enabled()) {
       gpr_log(GPR_DEBUG, "EXECUTOR[%d]: execute", (int)(ts - g_thread_state));
     }
 
@@ -184,8 +182,8 @@ static void executor_thread(void *arg) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                          grpc_error *error, bool is_short) {
+static void executor_push(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
+                          grpc_error* error, bool is_short) {
   bool retry_push;
   if (is_short) {
     GRPC_STATS_INC_EXECUTOR_SCHEDULED_SHORT_ITEMS(exec_ctx);
@@ -196,7 +194,7 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
     retry_push = false;
     size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
     if (cur_thread_count == 0) {
-      if (GRPC_TRACER_ON(executor_trace)) {
+      if (executor_trace.enabled()) {
 #ifndef NDEBUG
         gpr_log(GPR_DEBUG, "EXECUTOR: schedule %p (created %s:%d) inline",
                 closure, closure->file_created, closure->line_created);
@@ -207,17 +205,17 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
       grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
       return;
     }
-    thread_state *ts = (thread_state *)gpr_tls_get(&g_this_thread_state);
-    if (ts == NULL) {
+    thread_state* ts = (thread_state*)gpr_tls_get(&g_this_thread_state);
+    if (ts == nullptr) {
       ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
     } else {
       GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF(exec_ctx);
     }
-    thread_state *orig_ts = ts;
+    thread_state* orig_ts = ts;
 
     bool try_new_thread;
     for (;;) {
-      if (GRPC_TRACER_ON(executor_trace)) {
+      if (executor_trace.enabled()) {
 #ifndef NDEBUG
         gpr_log(
             GPR_DEBUG,
@@ -276,13 +274,13 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   } while (retry_push);
 }
 
-static void executor_push_short(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                                grpc_error *error) {
+static void executor_push_short(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
+                                grpc_error* error) {
   executor_push(exec_ctx, closure, error, true);
 }
 
-static void executor_push_long(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                               grpc_error *error) {
+static void executor_push_long(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
+                               grpc_error* error) {
   executor_push(exec_ctx, closure, error, false);
 }
 
@@ -295,7 +293,7 @@ static const grpc_closure_scheduler_vtable executor_vtable_long = {
     executor_push_long, executor_push_long, "executor"};
 static grpc_closure_scheduler executor_scheduler_long = {&executor_vtable_long};
 
-grpc_closure_scheduler *grpc_executor_scheduler(
+grpc_closure_scheduler* grpc_executor_scheduler(
     grpc_executor_job_length length) {
   return length == GRPC_EXECUTOR_SHORT ? &executor_scheduler_short
                                        : &executor_scheduler_long;

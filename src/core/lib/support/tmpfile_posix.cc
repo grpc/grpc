@@ -33,15 +33,15 @@
 
 #include "src/core/lib/support/string.h"
 
-FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
-  FILE *result = NULL;
-  char *filename_template;
+FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
+  FILE* result = nullptr;
+  char* filename_template;
   int fd;
 
-  if (tmp_filename != NULL) *tmp_filename = NULL;
+  if (tmp_filename != nullptr) *tmp_filename = nullptr;
 
   gpr_asprintf(&filename_template, "/tmp/%s_XXXXXX", prefix);
-  GPR_ASSERT(filename_template != NULL);
+  GPR_ASSERT(filename_template != nullptr);
 
   fd = mkstemp(filename_template);
   if (fd == -1) {
@@ -50,7 +50,7 @@ FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
     goto end;
   }
   result = fdopen(fd, "w+");
-  if (result == NULL) {
+  if (result == nullptr) {
     gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
             filename_template, fd, strerror(errno));
     unlink(filename_template);
@@ -59,7 +59,7 @@ FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
   }
 
 end:
-  if (result != NULL && tmp_filename != NULL) {
+  if (result != nullptr && tmp_filename != nullptr) {
     *tmp_filename = filename_template;
   } else {
     gpr_free(filename_template);

@@ -21,7 +21,7 @@
 namespace grpc {
 namespace {
 bool g_grpc_default_health_check_service_enabled = false;
-}  // namesapce
+}  // namespace
 
 bool DefaultHealthCheckServiceEnabled() {
   return g_grpc_default_health_check_service_enabled;

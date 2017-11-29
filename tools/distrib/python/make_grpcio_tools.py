@@ -28,7 +28,7 @@ import traceback
 import uuid
 
 DEPS_FILE_CONTENT="""
-# Copyright 2016 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,7 +48,12 @@ PROTO_FILES={proto_files}
 
 CC_INCLUDE={cc_include}
 PROTO_INCLUDE={proto_include}
+
+{commit_hash}
 """
+
+COMMIT_HASH_PREFIX = 'PROTOBUF_SUBMODULE_VERSION="'
+COMMIT_HASH_SUFFIX = '"'
 
 # Bazel query result prefix for expected source files in protobuf.
 PROTOBUF_CC_PREFIX = '//:src/'
@@ -63,6 +68,7 @@ GRPC_PYTHON_ROOT = os.path.join(GRPC_ROOT, 'tools', 'distrib',
 
 GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT = os.path.join('third_party', 'protobuf', 'src')
 GRPC_PROTOBUF = os.path.join(GRPC_ROOT, GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT)
+GRPC_PROTOBUF_SUBMODULE_ROOT = os.path.join(GRPC_ROOT, 'third_party', 'protobuf')
 GRPC_PROTOC_PLUGINS = os.path.join(GRPC_ROOT, 'src', 'compiler')
 GRPC_PYTHON_PROTOBUF = os.path.join(GRPC_PYTHON_ROOT, 'third_party', 'protobuf',
                                     'src')
@@ -78,6 +84,14 @@ BAZEL_DEPS = os.path.join(GRPC_ROOT, 'tools', 'distrib', 'python', 'bazel_deps.s
 BAZEL_DEPS_PROTOC_LIB_QUERY = '//:protoc_lib'
 BAZEL_DEPS_COMMON_PROTOS_QUERY = '//:well_known_protos'
 
+def protobuf_submodule_commit_hash():
+  """Gets the commit hash for the HEAD of the protobuf submodule currently
+     checked out."""
+  cwd = os.getcwd()
+  os.chdir(GRPC_PROTOBUF_SUBMODULE_ROOT)
+  output = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+  os.chdir(cwd)
+  return output.splitlines()[0].strip()
 
 def bazel_query(query):
   output = subprocess.check_output([BAZEL_DEPS, query])
@@ -94,11 +108,13 @@ def get_deps():
   proto_files = [
       name[len(PROTOBUF_PROTO_PREFIX):] for name in proto_files_output
       if name.endswith('.proto') and name.startswith(PROTOBUF_PROTO_PREFIX)]
+  commit_hash = protobuf_submodule_commit_hash()
   deps_file_content = DEPS_FILE_CONTENT.format(
       cc_files=cc_files,
       proto_files=proto_files,
       cc_include=repr(GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT),
-      proto_include=repr(GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT))
+      proto_include=repr(GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT),
+      commit_hash=COMMIT_HASH_PREFIX + commit_hash + COMMIT_HASH_SUFFIX)
   return deps_file_content
 
 def long_path(path):

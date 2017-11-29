@@ -65,9 +65,9 @@ LPSTR gpr_tchar_to_char(LPCTSTR input) { return (LPSTR)gpr_strdup(input); }
 LPTSTR gpr_char_to_tchar(LPCTSTR input) { return (LPTSTR)gpr_strdup(input); }
 #endif
 
-char *gpr_format_message(int messageid) {
+char* gpr_format_message(int messageid) {
   LPTSTR tmessage;
-  char *message;
+  char* message;
   DWORD status = FormatMessage(
       FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
           FORMAT_MESSAGE_IGNORE_INSERTS,

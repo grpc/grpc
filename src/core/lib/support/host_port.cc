@@ -25,8 +25,8 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/support/string.h"
 
-int gpr_join_host_port(char **out, const char *host, int port) {
-  if (host[0] != '[' && strchr(host, ':') != NULL) {
+int gpr_join_host_port(char** out, const char* host, int port) {
+  if (host[0] != '[' && strchr(host, ':') != nullptr) {
     /* IPv6 literals must be enclosed in brackets. */
     return gpr_asprintf(out, "[%s]:%d", host, port);
   } else {
@@ -35,24 +35,24 @@ int gpr_join_host_port(char **out, const char *host, int port) {
   }
 }
 
-int gpr_split_host_port(const char *name, char **host, char **port) {
-  const char *host_start;
+int gpr_split_host_port(const char* name, char** host, char** port) {
+  const char* host_start;
   size_t host_len;
-  const char *port_start;
+  const char* port_start;
 
-  *host = NULL;
-  *port = NULL;
+  *host = nullptr;
+  *port = nullptr;
 
   if (name[0] == '[') {
     /* Parse a bracketed host, typically an IPv6 literal. */
-    const char *rbracket = strchr(name, ']');
-    if (rbracket == NULL) {
+    const char* rbracket = strchr(name, ']');
+    if (rbracket == nullptr) {
       /* Unmatched [ */
       return 0;
     }
     if (rbracket[1] == '\0') {
       /* ]<end> */
-      port_start = NULL;
+      port_start = nullptr;
     } else if (rbracket[1] == ':') {
       /* ]:<port?> */
       port_start = rbracket + 2;
@@ -62,14 +62,14 @@ int gpr_split_host_port(const char *name, char **host, char **port) {
     }
     host_start = name + 1;
     host_len = (size_t)(rbracket - host_start);
-    if (memchr(host_start, ':', host_len) == NULL) {
+    if (memchr(host_start, ':', host_len) == nullptr) {
       /* Require all bracketed hosts to contain a colon, because a hostname or
          IPv4 address should never use brackets. */
       return 0;
     }
   } else {
-    const char *colon = strchr(name, ':');
-    if (colon != NULL && strchr(colon + 1, ':') == NULL) {
+    const char* colon = strchr(name, ':');
+    if (colon != nullptr && strchr(colon + 1, ':') == nullptr) {
       /* Exactly 1 colon.  Split into host:port. */
       host_start = name;
       host_len = (size_t)(colon - name);
@@ -78,16 +78,16 @@ int gpr_split_host_port(const char *name, char **host, char **port) {
       /* 0 or 2+ colons.  Bare hostname or IPv6 litearal. */
       host_start = name;
       host_len = strlen(name);
-      port_start = NULL;
+      port_start = nullptr;
     }
   }
 
   /* Allocate return values. */
-  *host = (char *)gpr_malloc(host_len + 1);
+  *host = (char*)gpr_malloc(host_len + 1);
   memcpy(*host, host_start, host_len);
   (*host)[host_len] = '\0';
 
-  if (port_start != NULL) {
+  if (port_start != nullptr) {
     *port = gpr_strdup(port_start);
   }
 

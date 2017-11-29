@@ -22,10 +22,10 @@
 #include "src/compiler/generator_helpers.h"
 #include "src/compiler/php_generator_helpers.h"
 
-using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::ServiceDescriptor;
-using grpc::protobuf::MethodDescriptor;
 using grpc::protobuf::Descriptor;
+using grpc::protobuf::FileDescriptor;
+using grpc::protobuf::MethodDescriptor;
+using grpc::protobuf::ServiceDescriptor;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
 using std::map;
@@ -33,7 +33,7 @@ using std::map;
 namespace grpc_php_generator {
 namespace {
 
-grpc::string ConvertToPhpNamespace(const grpc::string &name) {
+grpc::string ConvertToPhpNamespace(const grpc::string& name) {
   std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   for (unsigned int i = 0; i < tokens.size(); i++) {
@@ -43,7 +43,7 @@ grpc::string ConvertToPhpNamespace(const grpc::string &name) {
   return oss.str();
 }
 
-grpc::string PackageName(const FileDescriptor *file) {
+grpc::string PackageName(const FileDescriptor* file) {
   if (file->options().has_php_namespace()) {
     return file->options().php_namespace();
   } else {
@@ -51,8 +51,8 @@ grpc::string PackageName(const FileDescriptor *file) {
   }
 }
 
-grpc::string MessageIdentifierName(const grpc::string &name,
-                                   const FileDescriptor *file) {
+grpc::string MessageIdentifierName(const grpc::string& name,
+                                   const FileDescriptor* file) {
   std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   oss << PackageName(file) << "\\"
@@ -60,9 +60,9 @@ grpc::string MessageIdentifierName(const grpc::string &name,
   return oss.str();
 }
 
-void PrintMethod(const MethodDescriptor *method, Printer *out) {
-  const Descriptor *input_type = method->input_type();
-  const Descriptor *output_type = method->output_type();
+void PrintMethod(const MethodDescriptor* method, Printer* out) {
+  const Descriptor* input_type = method->input_type();
+  const Descriptor* output_type = method->output_type();
   map<grpc::string, grpc::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
@@ -116,8 +116,8 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
 }
 
 // Prints out the service descriptor object
-void PrintService(const ServiceDescriptor *service,
-                  const grpc::string &class_suffix, Printer *out) {
+void PrintService(const ServiceDescriptor* service,
+                  const grpc::string& class_suffix, Printer* out) {
   map<grpc::string, grpc::string> vars;
   out->Print("/**\n");
   out->Print(GetPHPComments(service, " *").c_str());
@@ -148,11 +148,11 @@ void PrintService(const ServiceDescriptor *service,
   out->Outdent();
   out->Print("}\n");
 }
-}
+}  // namespace
 
-grpc::string GenerateFile(const FileDescriptor *file,
-                          const ServiceDescriptor *service,
-                          const grpc::string &class_suffix) {
+grpc::string GenerateFile(const FileDescriptor* file,
+                          const ServiceDescriptor* service,
+                          const grpc::string& class_suffix) {
   grpc::string output;
   {
     StringOutputStream output_stream(&output);
@@ -164,7 +164,7 @@ grpc::string GenerateFile(const FileDescriptor *file,
     grpc::string leading_comments = GetPHPComments(file, "//");
     if (!leading_comments.empty()) {
       out.Print("// Original file comments:\n");
-      out.Print(leading_comments.c_str());
+      out.PrintRaw(leading_comments.c_str());
     }
 
     map<grpc::string, grpc::string> vars;

@@ -41,33 +41,33 @@ struct gpr_subprocess {
   bool joined;
 };
 
-const char *gpr_subprocess_binary_extension() { return ""; }
+const char* gpr_subprocess_binary_extension() { return ""; }
 
-gpr_subprocess *gpr_subprocess_create(int argc, const char **argv) {
-  gpr_subprocess *r;
+gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
+  gpr_subprocess* r;
   int pid;
-  char **exec_args;
+  char** exec_args;
 
   pid = fork();
   if (pid == -1) {
-    return NULL;
+    return nullptr;
   } else if (pid == 0) {
-    exec_args = (char **)gpr_malloc(((size_t)argc + 1) * sizeof(char *));
-    memcpy(exec_args, argv, (size_t)argc * sizeof(char *));
-    exec_args[argc] = NULL;
+    exec_args = (char**)gpr_malloc(((size_t)argc + 1) * sizeof(char*));
+    memcpy(exec_args, argv, (size_t)argc * sizeof(char*));
+    exec_args[argc] = nullptr;
     execv(exec_args[0], exec_args);
     /* if we reach here, an error has occurred */
     gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0], strerror(errno));
     _exit(1);
-    return NULL;
+    return nullptr;
   } else {
-    r = (gpr_subprocess *)gpr_zalloc(sizeof(gpr_subprocess));
+    r = (gpr_subprocess*)gpr_zalloc(sizeof(gpr_subprocess));
     r->pid = pid;
     return r;
   }
 }
 
-void gpr_subprocess_destroy(gpr_subprocess *p) {
+void gpr_subprocess_destroy(gpr_subprocess* p) {
   if (!p->joined) {
     kill(p->pid, SIGKILL);
     gpr_subprocess_join(p);
@@ -75,7 +75,7 @@ void gpr_subprocess_destroy(gpr_subprocess *p) {
   gpr_free(p);
 }
 
-int gpr_subprocess_join(gpr_subprocess *p) {
+int gpr_subprocess_join(gpr_subprocess* p) {
   int status;
 retry:
   if (waitpid(p->pid, &status, 0) == -1) {
@@ -90,7 +90,7 @@ retry:
   return status;
 }
 
-void gpr_subprocess_interrupt(gpr_subprocess *p) {
+void gpr_subprocess_interrupt(gpr_subprocess* p) {
   if (!p->joined) {
     kill(p->pid, SIGINT);
   }

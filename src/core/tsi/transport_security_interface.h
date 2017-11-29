@@ -56,11 +56,11 @@ typedef enum {
   TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
 } tsi_client_certificate_request_type;
 
-const char *tsi_result_to_string(tsi_result result);
+const char* tsi_result_to_string(tsi_result result);
 
 /* --- tsi tracing --- */
 
-extern grpc_tracer_flag tsi_tracing_enabled;
+extern grpc_core::TraceFlag tsi_tracing_enabled;
 
 /* -- tsi_zero_copy_grpc_protector object --
 
@@ -131,11 +131,11 @@ typedef struct tsi_frame_protector tsi_frame_protector;
 
    if (result != TSI_OK) HandleError(result);
    ------------------------------------------------------------------------  */
-tsi_result tsi_frame_protector_protect(tsi_frame_protector *self,
-                                       const unsigned char *unprotected_bytes,
-                                       size_t *unprotected_bytes_size,
-                                       unsigned char *protected_output_frames,
-                                       size_t *protected_output_frames_size);
+tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
+                                       const unsigned char* unprotected_bytes,
+                                       size_t* unprotected_bytes_size,
+                                       unsigned char* protected_output_frames,
+                                       size_t* protected_output_frames_size);
 
 /* Indicates that we need to flush the bytes buffered in the protector and get
    the resulting frame.
@@ -146,8 +146,8 @@ tsi_result tsi_frame_protector_protect(tsi_frame_protector *self,
    - still_pending_bytes is an output parameter indicating the number of bytes
      that still need to be flushed from the protector.*/
 tsi_result tsi_frame_protector_protect_flush(
-    tsi_frame_protector *self, unsigned char *protected_output_frames,
-    size_t *protected_output_frames_size, size_t *still_pending_size);
+    tsi_frame_protector* self, unsigned char* protected_output_frames,
+    size_t* protected_output_frames_size, size_t* still_pending_size);
 
 /* Outputs unprotected bytes.
    - protected_frames_bytes is an input only parameter and points to the
@@ -172,12 +172,12 @@ tsi_result tsi_frame_protector_protect_flush(
      needs to be read before new protected data can be processed in which case
      protected_frames_size will be set to 0.  */
 tsi_result tsi_frame_protector_unprotect(
-    tsi_frame_protector *self, const unsigned char *protected_frames_bytes,
-    size_t *protected_frames_bytes_size, unsigned char *unprotected_bytes,
-    size_t *unprotected_bytes_size);
+    tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
+    size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
+    size_t* unprotected_bytes_size);
 
 /* Destroys the tsi_frame_protector object.  */
-void tsi_frame_protector_destroy(tsi_frame_protector *self);
+void tsi_frame_protector_destroy(tsi_frame_protector* self);
 
 /* --- tsi_peer objects ---
 
@@ -189,20 +189,20 @@ void tsi_frame_protector_destroy(tsi_frame_protector *self);
 /* Property values may contain NULL characters just like C++ strings.
    The length field gives the length of the string. */
 typedef struct tsi_peer_property {
-  char *name;
+  char* name;
   struct {
-    char *data;
+    char* data;
     size_t length;
   } value;
 } tsi_peer_property;
 
 typedef struct {
-  tsi_peer_property *properties;
+  tsi_peer_property* properties;
   size_t property_count;
 } tsi_peer;
 
 /* Destructs the tsi_peer object. */
-void tsi_peer_destruct(tsi_peer *self);
+void tsi_peer_destruct(tsi_peer* self);
 
 /*  --- tsi_handshaker_result object ---
 
@@ -215,27 +215,27 @@ typedef struct tsi_handshaker_result tsi_handshaker_result;
 /* This method extracts tsi peer. It returns TSI_OK assuming there is no fatal
    error.
    The caller is responsible for destructing the peer.  */
-tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result *self,
-                                              tsi_peer *peer);
+tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
+                                              tsi_peer* peer);
 
 /* This method creates a tsi_frame_protector object. It returns TSI_OK assuming
    there is no fatal error.
    The caller is responsible for destroying the protector.  */
 tsi_result tsi_handshaker_result_create_frame_protector(
-    const tsi_handshaker_result *self, size_t *max_output_protected_frame_size,
-    tsi_frame_protector **protector);
+    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
+    tsi_frame_protector** protector);
 
 /* This method returns the unused bytes from the handshake. It returns TSI_OK
    assuming there is no fatal error.
    Ownership of the bytes is retained by the handshaker result. As a
    consequence, the caller must not free the bytes.  */
 tsi_result tsi_handshaker_result_get_unused_bytes(
-    const tsi_handshaker_result *self, const unsigned char **bytes,
-    size_t *byte_size);
+    const tsi_handshaker_result* self, const unsigned char** bytes,
+    size_t* byte_size);
 
 /* This method releases the tsi_handshaker_handshaker object. After this method
    is called, no other method can be called on the object.  */
-void tsi_handshaker_result_destroy(tsi_handshaker_result *self);
+void tsi_handshaker_result_destroy(tsi_handshaker_result* self);
 
 /* --- tsi_handshaker objects ----
 
@@ -346,9 +346,9 @@ typedef struct tsi_handshaker tsi_handshaker;
    needs to be called again to get all the bytes to send to the peer (there
    was more data to write than the specified bytes_size). In case of a fatal
    error in the handshake, another specific error code is returned.  */
-tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker *self,
-                                                    unsigned char *bytes,
-                                                    size_t *bytes_size);
+tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
+                                                    unsigned char* bytes,
+                                                    size_t* bytes_size);
 
 /* TO BE DEPRECATED SOON. Use tsi_handshaker_next instead.
    Processes bytes received from the peer.
@@ -360,9 +360,9 @@ tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker *self,
    needs to be called again to complete the data needed for processing. In
    case of a fatal error in the handshake, another specific error code is
    returned.  */
-tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker *self,
-                                                  const unsigned char *bytes,
-                                                  size_t *bytes_size);
+tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
+                                                  const unsigned char* bytes,
+                                                  size_t* bytes_size);
 
 /* TO BE DEPRECATED SOON.
    Gets the result of the handshaker.
@@ -370,7 +370,7 @@ tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker *self,
    errors. Returns TSI_HANDSHAKE_IN_PROGRESS if the handshaker is not done yet
    but no error has been encountered so far. Otherwise the handshaker failed
    with the returned error.  */
-tsi_result tsi_handshaker_get_result(tsi_handshaker *self);
+tsi_result tsi_handshaker_get_result(tsi_handshaker* self);
 
 /* TO BE DEPRECATED SOON.
    Returns 1 if the handshake is in progress, 0 otherwise.  */
@@ -382,7 +382,7 @@ tsi_result tsi_handshaker_get_result(tsi_handshaker *self);
    tsi_handshaker_is_in_progress returns 1, it returns TSI_OK otherwise
    assuming the handshaker is not in a fatal error state.
    The caller is responsible for destructing the peer.  */
-tsi_result tsi_handshaker_extract_peer(tsi_handshaker *self, tsi_peer *peer);
+tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer);
 
 /* TO BE DEPRECATED SOON. Use tsi_handshaker_result_create_frame_protector
    instead.
@@ -403,8 +403,8 @@ tsi_result tsi_handshaker_extract_peer(tsi_handshaker *self, tsi_peer *peer);
    the handshaker is not in a fatal error state.
    The caller is responsible for destroying the protector.  */
 tsi_result tsi_handshaker_create_frame_protector(
-    tsi_handshaker *self, size_t *max_output_protected_frame_size,
-    tsi_frame_protector **protector);
+    tsi_handshaker* self, size_t* max_output_protected_frame_size,
+    tsi_frame_protector** protector);
 
 /* Callback function definition for tsi_handshaker_next.
    - status indicates the status of the next operation.
@@ -414,8 +414,8 @@ tsi_result tsi_handshaker_create_frame_protector(
    - handshaker_result is the result of handshake when the handshake completes,
      is NULL otherwise.  */
 typedef void (*tsi_handshaker_on_next_done_cb)(
-    tsi_result status, void *user_data, const unsigned char *bytes_to_send,
-    size_t bytes_to_send_size, tsi_handshaker_result *handshaker_result);
+    tsi_result status, void* user_data, const unsigned char* bytes_to_send,
+    size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result);
 
 /* Conduct a next step of the handshake.
    - received_bytes is the buffer containing the data received from the peer.
@@ -437,14 +437,14 @@ typedef void (*tsi_handshaker_on_next_done_cb)(
    the caller should not free bytes_to_send, as the buffer is owned by the
    tsi_handshaker object.  */
 tsi_result tsi_handshaker_next(
-    tsi_handshaker *self, const unsigned char *received_bytes,
-    size_t received_bytes_size, const unsigned char **bytes_to_send,
-    size_t *bytes_to_send_size, tsi_handshaker_result **handshaker_result,
-    tsi_handshaker_on_next_done_cb cb, void *user_data);
+    tsi_handshaker* self, const unsigned char* received_bytes,
+    size_t received_bytes_size, const unsigned char** bytes_to_send,
+    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
+    tsi_handshaker_on_next_done_cb cb, void* user_data);
 
 /* This method releases the tsi_handshaker object. After this method is called,
    no other method can be called on the object.  */
-void tsi_handshaker_destroy(tsi_handshaker *self);
+void tsi_handshaker_destroy(tsi_handshaker* self);
 
 /* This method initializes the necessary shared objects used for tsi
    implementation.  */

@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /* Returns a string describing an event. Must be later freed with gpr_free() */
-char *grpc_event_string(grpc_event *ev);
+char* grpc_event_string(grpc_event* ev);
 
 #ifdef __cplusplus
 }

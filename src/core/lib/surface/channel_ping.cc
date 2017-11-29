@@ -28,32 +28,32 @@
 
 typedef struct {
   grpc_closure closure;
-  void *tag;
-  grpc_completion_queue *cq;
+  void* tag;
+  grpc_completion_queue* cq;
   grpc_cq_completion completion_storage;
 } ping_result;
 
-static void ping_destroy(grpc_exec_ctx *exec_ctx, void *arg,
-                         grpc_cq_completion *storage) {
+static void ping_destroy(grpc_exec_ctx* exec_ctx, void* arg,
+                         grpc_cq_completion* storage) {
   gpr_free(arg);
 }
 
-static void ping_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  ping_result *pr = (ping_result *)arg;
+static void ping_done(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+  ping_result* pr = (ping_result*)arg;
   grpc_cq_end_op(exec_ctx, pr->cq, pr->tag, GRPC_ERROR_REF(error), ping_destroy,
                  pr, &pr->completion_storage);
 }
 
-void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
-                       void *tag, void *reserved) {
+void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
+                       void* tag, void* reserved) {
   GRPC_API_TRACE("grpc_channel_ping(channel=%p, cq=%p, tag=%p, reserved=%p)", 4,
                  (channel, cq, tag, reserved));
-  grpc_transport_op *op = grpc_make_transport_op(NULL);
-  ping_result *pr = (ping_result *)gpr_malloc(sizeof(*pr));
-  grpc_channel_element *top_elem =
+  grpc_transport_op* op = grpc_make_transport_op(nullptr);
+  ping_result* pr = (ping_result*)gpr_malloc(sizeof(*pr));
+  grpc_channel_element* top_elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
   pr->tag = tag;
   pr->cq = cq;
   GRPC_CLOSURE_INIT(&pr->closure, ping_done, pr, grpc_schedule_on_exec_ctx);
