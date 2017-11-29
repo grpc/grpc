@@ -99,7 +99,7 @@ class Traits<R(Args...), F, true> {
 template <typename R, typename... Args, typename F>
 const VTable<R, Args...> Traits<R(Args...), F, true>::vtable_ = {
     CopyConstruct, MoveConstruct, Destruct, Invoke};
-}
+}  // namespace function_impl
 
 template <typename T,
           size_t kInplaceStorage = function_impl::kDefaultInplaceStorage>
