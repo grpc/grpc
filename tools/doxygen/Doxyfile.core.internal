@@ -1287,6 +1287,7 @@ src/core/lib/support/cpu_iphone.cc \
 src/core/lib/support/cpu_linux.cc \
 src/core/lib/support/cpu_posix.cc \
 src/core/lib/support/cpu_windows.cc \
+src/core/lib/support/debug_location.h \
 src/core/lib/support/env.h \
 src/core/lib/support/env_linux.cc \
 src/core/lib/support/env_posix.cc \
@@ -1306,6 +1307,8 @@ src/core/lib/support/mpscq.cc \
 src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.cc \
 src/core/lib/support/murmur_hash.h \
+src/core/lib/support/ref_counted.h \
+src/core/lib/support/ref_counted_ptr.h \
 src/core/lib/support/spinlock.h \
 src/core/lib/support/string.cc \
 src/core/lib/support/string.h \

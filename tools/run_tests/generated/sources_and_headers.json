@@ -3908,6 +3908,44 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "ref_counted_ptr_test", 
+    "src": [
+      "test/core/support/ref_counted_ptr_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "ref_counted_test", 
+    "src": [
+      "test/core/support/ref_counted_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -8193,6 +8231,9 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/support/debug_location.h", 
+      "src/core/lib/support/ref_counted.h", 
+      "src/core/lib/support/ref_counted_ptr.h", 
       "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -8329,6 +8370,9 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/support/debug_location.h", 
+      "src/core/lib/support/ref_counted.h", 
+      "src/core/lib/support/ref_counted_ptr.h", 
       "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
