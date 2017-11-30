@@ -200,9 +200,9 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
     CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(f.client, 0);
-    GPR_ASSERT(state == GRPC_CHANNEL_READY ||
-               state == GRPC_CHANNEL_CONNECTING ||
-               state == GRPC_CHANNEL_TRANSIENT_FAILURE);
+    GPR_ASSERT(
+        state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_CONNECTING ||
+        state == GRPC_CHANNEL_TRANSIENT_FAILURE || state == GRPC_CHANNEL_IDLE);
   }
 
   /* Use a simple request to cancel and reset the max idle timer */

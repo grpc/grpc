@@ -552,6 +552,14 @@ static void rr_ping_one_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
 static void rr_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
                              const grpc_lb_policy_args* args) {
   round_robin_lb_policy* p = (round_robin_lb_policy*)policy;
+  grpc_error* error;
+  if (grpc_connectivity_state_get(&p->state_tracker, &error) ==
+      GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
+                                GRPC_ERROR_NONE,
+                                "rr_update_after_transient_failure");
+    p->started_picking = false;
+  }
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
