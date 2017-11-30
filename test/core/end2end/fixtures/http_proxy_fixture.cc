@@ -90,7 +90,7 @@ typedef struct proxy_connection {
   //   bit-1 Server endpoint write failure
   //   bit-2 Client endpoint read failure
   //   bit-3 Client endpoint write failure
-  gpr_atm ep_state;
+  int ep_state;
 
   grpc_pollset_set* pollset_set;
 
@@ -153,22 +153,10 @@ static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
   const char* msg = grpc_error_string(error);
   gpr_log(GPR_INFO, "%s: %s", prefix, msg);
 
-  gpr_atm ep_state;
-  gpr_atm new_ep_state;
-  while (true) {
-    ep_state = gpr_atm_no_barrier_load(&conn->ep_state);
-    new_ep_state = ep_state | failure_type;
-
-    if (ep_state == new_ep_state) {
-      break;
-    }
-
-    if (!gpr_atm_no_barrier_cas(&conn->ep_state, ep_state, new_ep_state)) {
-      continue;
-    }
-
-    // failure_type is successfully set and new_ep_state != ep_state at this
-    // point
+  int ep_state = conn->ep_state;
+  int new_ep_state = ep_state | failure_type;
+  if (ep_state != new_ep_state) {
+    conn->ep_state = new_ep_state;
 
     // Shutdown the endpoint (client and/or server) if both read and write
     // failures are observed after setting the failure_type.
@@ -188,8 +176,6 @@ static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
       grpc_endpoint_shutdown(exec_ctx, conn->client_endpoint,
                              GRPC_ERROR_REF(error));
     }
-
-    break;
   }
 
   proxy_connection_unref(exec_ctx, conn, "conn_failed");
@@ -490,7 +476,7 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   conn->client_endpoint = endpoint;
   conn->proxy = proxy;
   gpr_ref_init(&conn->refcount, 1);
-  gpr_atm_no_barrier_store(&conn->ep_state, 0);
+  conn->ep_state = 0;
   conn->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(exec_ctx, conn->pollset_set, proxy->pollset);
   grpc_endpoint_add_to_pollset_set(exec_ctx, endpoint, conn->pollset_set);
