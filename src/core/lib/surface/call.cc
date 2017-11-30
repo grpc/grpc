@@ -675,10 +675,10 @@ static void cancel_with_status(grpc_exec_ctx* exec_ctx, grpc_call* c,
 
 static void set_final_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
                              grpc_call* call) {
-  //if (grpc_call_error_trace.enabled()) {
+  if (grpc_call_error_trace.enabled()) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
-  //}
+  }
 
   grpc_status_code code;
   grpc_slice slice = grpc_empty_slice();
@@ -1048,9 +1048,6 @@ static void recv_trailing_filter(grpc_exec_ctx* exec_ctx, void* args,
                                      "Error received from peer"),
                                  GRPC_ERROR_INT_GRPC_STATUS,
                                  (intptr_t)status_code);
-    if (error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    }
     if (b->idx.named.grpc_message != nullptr) {
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_GRPC_MESSAGE,
@@ -1360,7 +1357,6 @@ static void receiving_stream_ready(grpc_exec_ctx* exec_ctx, void* bctlp,
     }
     bctl->rsr_error = GRPC_ERROR_REF(error);
     cancel_with_error(exec_ctx, call, GRPC_ERROR_REF(error));
-    gpr_log(GPR_ERROR, "RSR READY CALLED");
   }
   /* If recv_state is RECV_NONE, we will save the batch_control
    * object with rel_cas, and will not use it after the cas. Its corresponding
@@ -1533,7 +1529,6 @@ static void finish_batch(grpc_exec_ctx* exec_ctx, void* bctlp,
   GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "on_complete");
   bctl->batch_error = GRPC_ERROR_REF(error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "BATCH CANCELLATION FAILED %s", grpc_error_string(error));
     cancel_with_error(exec_ctx, call, GRPC_ERROR_REF(error));
   }
   finish_batch_step(exec_ctx, bctl);
