@@ -186,6 +186,7 @@ struct grpc_call {
   grpc_closure receiving_initial_metadata_ready;
   uint32_t test_only_last_message_flags;
   bool cancelled;
+  bool server_status_not_ok;
 
   grpc_closure release_call;
 
@@ -674,10 +675,10 @@ static void cancel_with_status(grpc_exec_ctx* exec_ctx, grpc_call* c,
 
 static void set_final_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
                              grpc_call* call) {
-  if (grpc_call_error_trace.enabled()) {
-    gpr_log(GPR_ERROR, "set_final_status %s", call->is_client ? "CLI" : "SVR");
-    gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  }
+  //if (grpc_call_error_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
+    gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
+  //}
 
   grpc_status_code code;
   grpc_slice slice = grpc_empty_slice();
@@ -687,7 +688,7 @@ static void set_final_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
     *call->final_op.client.status = code;
     *call->final_op.client.status_details = grpc_slice_ref_internal(slice);
   } else {
-    *call->final_op.server.cancelled = (code != GRPC_STATUS_OK);
+    *call->final_op.server.cancelled = (code != GRPC_STATUS_OK) || call->server_status_not_ok;
   }
 }
 
@@ -1036,7 +1037,9 @@ static void recv_trailing_filter(grpc_exec_ctx* exec_ctx, void* args,
                                  grpc_metadata_batch* b,
                                  grpc_error* batch_error) {
   grpc_call* call = (grpc_call*)args;
-  if (b->idx.named.grpc_status != nullptr) {
+  if (batch_error != GRPC_ERROR_NONE) {
+    set_final_status(exec_ctx, batch_error, call);
+  } else if (b->idx.named.grpc_status != nullptr) {
     uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
     grpc_error* error =
         status_code == GRPC_STATUS_OK
@@ -1045,6 +1048,9 @@ static void recv_trailing_filter(grpc_exec_ctx* exec_ctx, void* args,
                                      "Error received from peer"),
                                  GRPC_ERROR_INT_GRPC_STATUS,
                                  (intptr_t)status_code);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    }
     if (b->idx.named.grpc_message != nullptr) {
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_GRPC_MESSAGE,
@@ -1058,7 +1064,9 @@ static void recv_trailing_filter(grpc_exec_ctx* exec_ctx, void* args,
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_status);
     GRPC_ERROR_UNREF(error);
   } else {
-    set_final_status(exec_ctx, batch_error, call);
+     //TODO(kpayson) batch completed successfully w/no error + no status, should
+     // we assert instead?
+    set_final_status(exec_ctx, GRPC_ERROR_NONE, call);
   }
   publish_app_metadata(call, b, true);
   GRPC_ERROR_UNREF(batch_error);
@@ -1352,6 +1360,7 @@ static void receiving_stream_ready(grpc_exec_ctx* exec_ctx, void* bctlp,
     }
     bctl->rsr_error = GRPC_ERROR_REF(error);
     cancel_with_error(exec_ctx, call, GRPC_ERROR_REF(error));
+    gpr_log(GPR_ERROR, "RSR READY CALLED");
   }
   /* If recv_state is RECV_NONE, we will save the batch_control
    * object with rel_cas, and will not use it after the cas. Its corresponding
@@ -1524,6 +1533,7 @@ static void finish_batch(grpc_exec_ctx* exec_ctx, void* bctlp,
   GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "on_complete");
   bctl->batch_error = GRPC_ERROR_REF(error);
   if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "BATCH CANCELLATION FAILED %s", grpc_error_string(error));
     cancel_with_error(exec_ctx, call, GRPC_ERROR_REF(error));
   }
   finish_batch_step(exec_ctx, bctl);
@@ -1752,7 +1762,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
         call->send_extra_metadata_count = 1;
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             exec_ctx, call->channel, op->data.send_status_from_server.status);
-        {
+          if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
+            call->server_status_not_ok = true;
+          }
           if (op->data.send_status_from_server.status_details != nullptr) {
             call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
                 exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
@@ -1763,7 +1775,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
                 GRPC_MDVALUE(call->send_extra_metadata[1].md));
             gpr_free(msg);
           }
-        }
         if (!prepare_application_metadata(
                 exec_ctx, call,
                 (int)op->data.send_status_from_server.trailing_metadata_count,
