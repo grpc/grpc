@@ -111,7 +111,6 @@ struct grpc_lb_policy_args {
   grpc_client_channel_factory* client_channel_factory;
   grpc_channel_args* args;
   grpc_combiner* combiner;
-  bool reresolution_update;
 };
 
 struct grpc_lb_policy_factory_vtable {
