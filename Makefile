@@ -3628,7 +3628,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/parse_hexstring.cc \
     test/core/util/passthru_endpoint.cc \
     test/core/util/port.cc \
-    test/core/util/port_hermetic.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
     test/core/util/port_server_client.cc \
     test/core/util/slice_splitter.cc \
     test/core/util/tracer_util.cc \
@@ -3888,7 +3888,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/parse_hexstring.cc \
     test/core/util/passthru_endpoint.cc \
     test/core/util/port.cc \
-    test/core/util/port_hermetic.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
     test/core/util/port_server_client.cc \
     test/core/util/slice_splitter.cc \
     test/core/util/tracer_util.cc \

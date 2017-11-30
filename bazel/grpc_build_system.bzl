@@ -35,7 +35,7 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     srcs = srcs,
     defines = select({"//:grpc_no_ares": ["GRPC_ARES=0"],
                       "//conditions:default": [],}) +
-              select({"//:remote_execution":  ["GRPC_HERMETIC_TESTS=1"],
+              select({"//:remote_execution":  ["GRPC_PORT_ISOLATED_RUNTIME=1"],
                       "//conditions:default": [],}),
     hdrs = hdrs + public_hdrs,
     deps = deps + ["//external:" + dep for dep in external_deps],

@@ -40,7 +40,7 @@ config_setting(
 
 config_setting(
     name = "remote_execution",
-    values = {"define": "GRPC_HERMETIC_TESTS=1"},
+    values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
 )
 
 # This should be updated along with build.yaml

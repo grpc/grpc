@@ -16,13 +16,12 @@
  *
  */
 
-/* When running tests hermeticly, i.e. running on remote machines, 
- * the framework takes a round-robin pick of a port within certain range. 
- * There is no need to recycle ports.
+/* When running tests on remote machines, the framework takes a round-robin pick
+ * of a port within certain range. There is no need to recycle ports.
  */
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
-#if defined(GRPC_HERMETIC_TESTS)
+#if defined(GRPC_PORT_ISOLATED_RUNTIME)
 
 #include "test/core/util/port.h"
 
@@ -38,8 +37,6 @@ int grpc_pick_unused_port_or_die(void) {
   return allocated_port;
 }
 
-void grpc_recycle_unused_port(int port) {
-  (void) port;
-}
+void grpc_recycle_unused_port(int port) { (void)port; }
 
-#endif /* GRPC_HERMETIC_TESTS */
+#endif /* GRPC_PORT_ISOLATED_RUNTIME */

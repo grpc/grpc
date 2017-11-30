@@ -15,6 +15,9 @@
 
 set -ex
 
+# A temporary solution to give Kokoro credentials. 
+# The file name 4321_grpc-testing-service needs to match auth_credential in 
+# the build config.
 mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
@@ -48,5 +51,5 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --experimental_strict_action_env=true \
   --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-fl@sha256:aa20628a902f06a11a015caa94b0432eb60690de2d2525bd046b9eea046f5d8a" }' \
   --crosstool_top=@bazel_toolchains//configs/debian8_clang/0.2.0/bazel_0.7.0:toolchain \
-  --define GRPC_HERMETIC_TESTS=1 \
+  --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   -- //test/...

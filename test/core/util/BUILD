@@ -53,7 +53,7 @@ grpc_cc_library(
         "parse_hexstring.cc",
         "passthru_endpoint.cc",
         "port.cc",
-        "port_hermetic.cc",
+        "port_isolated_runtime_environment.cc",
         "port_server_client.cc",
         "reconnect_server.cc",
         "slice_splitter.cc",
