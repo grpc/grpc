@@ -54,10 +54,10 @@ class Library {
 };
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
-extern "C" gpr_atm gpr_mu_locks;
-extern "C" gpr_atm gpr_counter_atm_cas;
-extern "C" gpr_atm gpr_counter_atm_add;
-extern "C" gpr_atm gpr_now_call_count;
+extern gpr_atm gpr_mu_locks;
+extern gpr_atm gpr_counter_atm_cas;
+extern gpr_atm gpr_counter_atm_add;
+extern gpr_atm gpr_now_call_count;
 #endif
 
 class TrackCounters {

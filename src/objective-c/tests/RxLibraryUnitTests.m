@@ -58,6 +58,10 @@
 
 @implementation RxLibraryUnitTests
 
++ (void)setUp {
+  NSLog(@"GRPCClientTests Started");
+}
+
 #pragma mark Writeable
 
 - (void)testWriteableSingleHandlerIsCalledForValue {

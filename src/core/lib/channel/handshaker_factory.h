@@ -24,10 +24,6 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // A handshaker factory is used to create handshakers.
 
 typedef struct grpc_handshaker_factory grpc_handshaker_factory;
@@ -51,9 +47,5 @@ void grpc_handshaker_factory_add_handshakers(
 
 void grpc_handshaker_factory_destroy(
     grpc_exec_ctx* exec_ctx, grpc_handshaker_factory* handshaker_factory);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H */

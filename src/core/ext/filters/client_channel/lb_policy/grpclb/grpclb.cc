@@ -2001,7 +2001,7 @@ static bool maybe_add_client_load_reporting_filter(
   return true;
 }
 
-extern "C" void grpc_lb_policy_grpclb_init() {
+void grpc_lb_policy_grpclb_init() {
   grpc_register_lb_policy(grpc_glb_lb_factory_create());
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
@@ -2009,4 +2009,4 @@ extern "C" void grpc_lb_policy_grpclb_init() {
                                    (void*)&grpc_client_load_reporting_filter);
 }
 
-extern "C" void grpc_lb_policy_grpclb_shutdown() {}
+void grpc_lb_policy_grpclb_shutdown() {}

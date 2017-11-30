@@ -226,13 +226,11 @@ failure:
 }
 
 // overridden by api_fuzzer.c
-extern "C" {
 void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr,
     grpc_millis deadline) = tcp_client_connect_impl;
-}
 
 void grpc_tcp_client_connect(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
                              grpc_endpoint** ep,

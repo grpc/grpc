@@ -22,10 +22,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
   grpc_call_credentials base;
 
@@ -48,9 +44,5 @@ grpc_call_credentials*
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_exec_ctx* exec_ctx, grpc_auth_json_key key,
     gpr_timespec token_lifetime);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H */

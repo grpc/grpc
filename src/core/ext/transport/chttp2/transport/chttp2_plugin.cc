@@ -20,6 +20,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/metadata.h"
 
-extern "C" void grpc_chttp2_plugin_init(void) {}
+void grpc_chttp2_plugin_init(void) {}
 
-extern "C" void grpc_chttp2_plugin_shutdown(void) {}
+void grpc_chttp2_plugin_shutdown(void) {}

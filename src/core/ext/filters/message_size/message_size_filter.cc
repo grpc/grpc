@@ -310,7 +310,7 @@ static bool maybe_add_message_size_filter(grpc_exec_ctx* exec_ctx,
   }
 }
 
-extern "C" void grpc_message_size_filter_init(void) {
+void grpc_message_size_filter_init(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_message_size_filter, nullptr);
@@ -322,4 +322,4 @@ extern "C" void grpc_message_size_filter_init(void) {
                                    maybe_add_message_size_filter, nullptr);
 }
 
-extern "C" void grpc_message_size_filter_shutdown(void) {}
+void grpc_message_size_filter_shutdown(void) {}

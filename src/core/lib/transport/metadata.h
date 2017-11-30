@@ -27,10 +27,6 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.
 
@@ -284,10 +280,6 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch* comd);
 #define grpc_metadata_batch_assert_ok(comd) \
   do {                                      \
   } while (0)
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */
