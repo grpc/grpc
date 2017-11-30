@@ -45,7 +45,7 @@ static void cb(void* arg, grpc_error* error) {
 static void add_test(void) {
   int i;
   grpc_timer timers[20];
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_INFO, "add_test");
 
@@ -109,7 +109,7 @@ static void add_test(void) {
 /* Cleaning up a list with pending timers. */
 void destruction_test(void) {
   grpc_timer timers[5];
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_INFO, "destruction_test");
 

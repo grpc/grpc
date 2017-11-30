@@ -42,7 +42,7 @@ static void stop_uv_timer(uv_timer_t* handle) {
 
 void run_expired_timer(uv_timer_t* handle) {
   grpc_timer* timer = (grpc_timer*)handle->data;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_UV_ASSERT_SAME_THREAD();
   GPR_ASSERT(timer->pending);
   timer->pending = 0;

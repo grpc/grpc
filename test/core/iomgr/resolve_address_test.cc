@@ -74,7 +74,7 @@ static grpc_millis n_sec_deadline(int seconds) {
 }
 
 static void poll_pollset_until_request_done(args_struct* args) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_millis deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
@@ -115,7 +115,7 @@ static void must_fail(void* argsp, grpc_error* err) {
 }
 
 static void test_localhost(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
   grpc_resolve_address(
@@ -128,7 +128,7 @@ static void test_localhost(void) {
 }
 
 static void test_default_port(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
   grpc_resolve_address(
@@ -141,7 +141,7 @@ static void test_default_port(void) {
 }
 
 static void test_non_numeric_default_port(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
   grpc_resolve_address(
@@ -154,7 +154,7 @@ static void test_non_numeric_default_port(void) {
 }
 
 static void test_missing_default_port(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
   grpc_resolve_address(
@@ -167,7 +167,7 @@ static void test_missing_default_port(void) {
 }
 
 static void test_ipv6_with_port(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
   grpc_resolve_address(
@@ -187,7 +187,7 @@ static void test_ipv6_without_port(void) {
   };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     args_struct args;
     args_init(&args);
     grpc_resolve_address(
@@ -207,7 +207,7 @@ static void test_invalid_ip_addresses(void) {
   };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     args_struct args;
     args_init(&args);
     grpc_resolve_address(
@@ -226,7 +226,7 @@ static void test_unparseable_hostports(void) {
   };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     args_struct args;
     args_init(&args);
     grpc_resolve_address(
@@ -243,7 +243,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     test_localhost();
     test_default_port();
     test_non_numeric_default_port();

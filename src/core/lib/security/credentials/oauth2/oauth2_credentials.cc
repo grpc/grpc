@@ -515,7 +515,7 @@ grpc_call_credentials* grpc_access_token_credentials_create(
   gpr_ref_init(&c->base.refcount, 1);
   char* token_md_value;
   gpr_asprintf(&token_md_value, "Bearer %s", access_token);
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   c->access_token_md = grpc_mdelem_from_slices(
       grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
       grpc_slice_from_copied_string(token_md_value));

@@ -748,7 +748,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_executor_set_threading(false);
   }
   grpc_resolve_address = my_resolve_address;
@@ -842,7 +842,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           g_channel = grpc_insecure_channel_create(target_uri, args, nullptr);
           GPR_ASSERT(g_channel != nullptr);
           {
-            grpc_core::ExecCtx _local_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
             grpc_channel_args_destroy(args);
           }
           gpr_free(target_uri);
@@ -869,7 +869,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           g_server = grpc_server_create(args, nullptr);
           GPR_ASSERT(g_server != nullptr);
           {
-            grpc_core::ExecCtx _local_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
             grpc_channel_args_destroy(args);
           }
           grpc_server_register_completion_queue(g_server, cq, nullptr);
@@ -1199,7 +1199,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
               grpc_secure_channel_create(creds, target_uri, args, nullptr);
           GPR_ASSERT(g_channel != nullptr);
           {
-            grpc_core::ExecCtx _local_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
             grpc_channel_args_destroy(args);
           }
           gpr_free(target_uri);

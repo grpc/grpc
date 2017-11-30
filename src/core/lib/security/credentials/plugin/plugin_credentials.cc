@@ -115,8 +115,8 @@ static void plugin_md_request_metadata_ready(void* request,
                                              grpc_status_code status,
                                              const char* error_details) {
   /* called from application code */
-  grpc_core::ExecCtx _local_exec_ctx(GRPC_EXEC_CTX_FLAG_IS_FINISHED |
-                                     GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
+  grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_FINISHED |
+                              GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
   grpc_plugin_credentials_pending_request* r =
       (grpc_plugin_credentials_pending_request*)request;
   if (grpc_plugin_credentials_trace.enabled()) {

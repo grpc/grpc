@@ -72,7 +72,7 @@ void on_resolution_cb(void* arg, grpc_error* error) {
 }
 
 static void test_fake_resolver() {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_combiner* combiner = grpc_combiner_create();
   // Create resolver.
   grpc_fake_resolver_response_generator* response_generator =

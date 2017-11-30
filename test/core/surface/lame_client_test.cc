@@ -44,7 +44,7 @@ void test_transport_op(grpc_channel* channel) {
   grpc_transport_op* op;
   grpc_channel_element* elem;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   GRPC_CLOSURE_INIT(&transport_op_cb, verify_connectivity, &state,
                     grpc_schedule_on_exec_ctx);

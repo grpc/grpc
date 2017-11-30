@@ -50,7 +50,7 @@ static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
 
 static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_chttp2_hpack_compressor c;
   while (state.KeepRunning()) {
     grpc_chttp2_hpack_compressor_init(&c);
@@ -64,7 +64,7 @@ BENCHMARK(BM_HpackEncoderInitDestroy);
 
 static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
   grpc_metadata_batch b;
@@ -108,7 +108,7 @@ BENCHMARK(BM_HpackEncoderEncodeDeadline);
 template <class Fixture>
 static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
   grpc_metadata_batch b;
@@ -425,7 +425,7 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_chttp2_hpack_parser p;
   while (state.KeepRunning()) {
     grpc_chttp2_hpack_parser_init(&p);
@@ -444,7 +444,7 @@ static void UnrefHeader(void* user_data, grpc_mdelem md) {
 template <class Fixture, void (*OnHeader)(void*, grpc_mdelem)>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_chttp2_hpack_parser p;

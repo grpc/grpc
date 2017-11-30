@@ -521,7 +521,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     label << " #has_dummy_filter";
   }
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
       filters.size() == 0 ? nullptr : &filters[0], filters.size());
   grpc_channel_stack* channel_stack =
@@ -692,7 +692,7 @@ class IsolatedCallFixture : public TrackCounters {
         builder, &isolated_call_filter::isolated_call_filter, nullptr,
         nullptr));
     {
-      grpc_core::ExecCtx _local_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL);
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);

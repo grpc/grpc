@@ -190,7 +190,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
                                          const char* target,
                                          const grpc_channel_args* args,
                                          void* reserved) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(
       "grpc_secure_channel_create(creds=%p, target=%s, args=%p, "
       "reserved=%p)",

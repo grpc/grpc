@@ -163,14 +163,14 @@ static void on_connect(void* arg, grpc_endpoint* tcp, grpc_pollset* pollset,
 }
 
 static void test_no_op(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
   grpc_tcp_server_unref(s);
 }
 
 static void test_no_op_with_start(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
   LOG_TEST("test_no_op_with_start");
@@ -179,7 +179,7 @@ static void test_no_op_with_start(void) {
 }
 
 static void test_no_op_with_port(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
@@ -198,7 +198,7 @@ static void test_no_op_with_port(void) {
 }
 
 static void test_no_op_with_port_and_start(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_tcp_server* s;
@@ -282,7 +282,7 @@ static grpc_error* tcp_connect(const test_addr* remote,
 static void test_connect(size_t num_connects,
                          const grpc_channel_args* channel_args,
                          test_addrs* dst_addrs, bool test_dst_addrs) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   grpc_resolved_address resolved_addr1;
   struct sockaddr_storage* const addr =
@@ -436,7 +436,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(g_pollset, &g_mu);
 

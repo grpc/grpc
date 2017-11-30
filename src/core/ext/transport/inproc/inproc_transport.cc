@@ -1096,7 +1096,7 @@ static grpc_endpoint* get_endpoint(grpc_transport* t) { return nullptr; }
 static void do_nothing(void* arg, grpc_error* error) {}
 
 void grpc_inproc_transport_init(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_CLOSURE_INIT(&do_nothing_closure, do_nothing, nullptr,
                     grpc_schedule_on_exec_ctx);
   g_empty_slice = grpc_slice_from_static_buffer(nullptr, 0);
@@ -1160,7 +1160,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   GRPC_API_TRACE("grpc_inproc_channel_create(server=%p, args=%p)", 2,
                  (server, args));
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   const grpc_channel_args* server_args = grpc_server_get_channel_args(server);
 
@@ -1191,7 +1191,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
 }
 
 void grpc_inproc_transport_shutdown(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_slice_unref_internal(g_empty_slice);
   grpc_slice_unref_internal(g_fake_path_key);
   grpc_slice_unref_internal(g_fake_path_value);

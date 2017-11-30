@@ -80,7 +80,7 @@ static void test_too_many_plucks(void) {
   gpr_thd_id thread_ids[GPR_ARRAY_SIZE(tags)];
   struct thread_state thread_states[GPR_ARRAY_SIZE(tags)];
   gpr_thd_options thread_options = gpr_thd_options_default();
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   unsigned i, j;
 
   LOG_TEST("test_too_many_plucks");
@@ -158,7 +158,7 @@ static void producer_thread(void* arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_cq_end_op(opt->cc, (void*)(intptr_t)1, GRPC_ERROR_NONE,
                    free_completion, nullptr,
                    static_cast<grpc_cq_completion*>(

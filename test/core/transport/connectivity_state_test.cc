@@ -58,7 +58,7 @@ static void test_connectivity_state_name(void) {
 
 static void test_check(void) {
   grpc_connectivity_state_tracker tracker;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_error* error;
   gpr_log(GPR_DEBUG, "test_check");
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
@@ -74,7 +74,7 @@ static void test_subscribe_then_unsubscribe(void) {
   grpc_closure* closure =
       GRPC_CLOSURE_CREATE(must_fail, THE_ARG, grpc_schedule_on_exec_ctx);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   gpr_log(GPR_DEBUG, "test_subscribe_then_unsubscribe");
   g_counter = 0;
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
@@ -96,7 +96,7 @@ static void test_subscribe_then_destroy(void) {
   grpc_closure* closure =
       GRPC_CLOSURE_CREATE(must_succeed, THE_ARG, grpc_schedule_on_exec_ctx);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   gpr_log(GPR_DEBUG, "test_subscribe_then_destroy");
   g_counter = 0;
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
@@ -117,7 +117,7 @@ static void test_subscribe_with_failure_then_destroy(void) {
   grpc_closure* closure =
       GRPC_CLOSURE_CREATE(must_fail, THE_ARG, grpc_schedule_on_exec_ctx);
   grpc_connectivity_state state = GRPC_CHANNEL_SHUTDOWN;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   gpr_log(GPR_DEBUG, "test_subscribe_with_failure_then_destroy");
   g_counter = 0;
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_SHUTDOWN, "xxx");

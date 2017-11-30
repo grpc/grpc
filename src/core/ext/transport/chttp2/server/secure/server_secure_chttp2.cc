@@ -36,7 +36,7 @@
 
 int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
                                       grpc_server_credentials* creds) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_error* err = GRPC_ERROR_NONE;
   grpc_server_security_connector* sc = nullptr;
   int port_num = 0;

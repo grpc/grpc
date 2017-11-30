@@ -105,7 +105,7 @@ static bool wait_loop(int deadline_seconds, gpr_event* ev) {
     if (gpr_event_wait(ev, grpc_timeout_seconds_to_deadline(1))) return true;
     deadline_seconds--;
 
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_timer_check(nullptr);
   }
   return false;
@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
   grpc_channel_args* result = (grpc_channel_args*)1;
 
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_resolver* resolver = create_resolver("dns:test");
     gpr_event ev1;
     gpr_event_init(&ev1);

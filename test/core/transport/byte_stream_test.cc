@@ -37,7 +37,7 @@ static void not_called_closure(void* arg, grpc_error* error) {
 
 static void test_slice_buffer_stream_basic(void) {
   gpr_log(GPR_DEBUG, "test_slice_buffer_stream_basic");
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -71,7 +71,7 @@ static void test_slice_buffer_stream_basic(void) {
 
 static void test_slice_buffer_stream_shutdown(void) {
   gpr_log(GPR_DEBUG, "test_slice_buffer_stream_shutdown");
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -117,7 +117,7 @@ static void test_slice_buffer_stream_shutdown(void) {
 
 static void test_caching_byte_stream_basic(void) {
   gpr_log(GPR_DEBUG, "test_caching_byte_stream_basic");
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -156,7 +156,7 @@ static void test_caching_byte_stream_basic(void) {
 
 static void test_caching_byte_stream_reset(void) {
   gpr_log(GPR_DEBUG, "test_caching_byte_stream_reset");
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -202,7 +202,7 @@ static void test_caching_byte_stream_reset(void) {
 
 static void test_caching_byte_stream_shared_cache(void) {
   gpr_log(GPR_DEBUG, "test_caching_byte_stream_shared_cache");
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);

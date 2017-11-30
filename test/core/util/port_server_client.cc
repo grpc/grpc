@@ -62,7 +62,7 @@ void grpc_free_port_using_server(int port) {
   grpc_httpcli_response rsp;
   freereq pr;
   char* path;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure* shutdown_closure;
 
   grpc_init();
@@ -198,7 +198,7 @@ int grpc_pick_port_using_server(void) {
 
   grpc_init();
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     memset(&pr, 0, sizeof(pr));
     memset(&req, 0, sizeof(req));
     grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());

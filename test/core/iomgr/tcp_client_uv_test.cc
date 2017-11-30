@@ -87,7 +87,7 @@ void test_succeeds(void) {
   uv_tcp_t* svr_handle = static_cast<uv_tcp_t*>(gpr_malloc(sizeof(uv_tcp_t)));
   int connections_complete_before;
   grpc_closure done;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
@@ -136,7 +136,7 @@ void test_fails(void) {
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   int connections_complete_before;
   grpc_closure done;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_DEBUG, "test_fails");
 
@@ -186,7 +186,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset = static_cast<grpc_pollset*>(gpr_malloc(grpc_pollset_size()));

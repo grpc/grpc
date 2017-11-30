@@ -127,13 +127,13 @@ static test_socket_factory* test_socket_factory_create(void) {
 }
 
 static void test_no_op(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   grpc_udp_server_destroy(s, nullptr);
 }
 
 static void test_no_op_with_start(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_start");
   grpc_udp_server_start(s, nullptr, 0, nullptr);
@@ -142,7 +142,7 @@ static void test_no_op_with_start(void) {
 
 static void test_no_op_with_port(void) {
   g_number_of_orphan_calls = 0;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
@@ -162,7 +162,7 @@ static void test_no_op_with_port(void) {
 
 static void test_no_op_with_port_and_socket_factory(void) {
   g_number_of_orphan_calls = 0;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
 
@@ -194,7 +194,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
 
 static void test_no_op_with_port_and_start(void) {
   g_number_of_orphan_calls = 0;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
@@ -216,7 +216,7 @@ static void test_no_op_with_port_and_start(void) {
 }
 
 static void test_receive(int number_of_clients) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
   int clifd, svrfd;
@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(g_pollset, &g_mu);
 

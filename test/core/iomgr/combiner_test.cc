@@ -28,7 +28,7 @@
 
 static void test_no_op(void) {
   gpr_log(GPR_DEBUG, "test_no_op");
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
 }
 
@@ -42,7 +42,7 @@ static void test_execute_one(void) {
   grpc_combiner* lock = grpc_combiner_create();
   gpr_event done;
   gpr_event_init(&done);
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(set_event_to_true, &done,
                                          grpc_combiner_scheduler(lock)),
                      GRPC_ERROR_NONE);
@@ -72,7 +72,7 @@ static void check_one(void* a, grpc_error* error) {
 
 static void execute_many_loop(void* a) {
   thd_args* args = static_cast<thd_args*>(a);
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   size_t n = 1;
   for (size_t i = 0; i < 10; i++) {
     for (size_t j = 0; j < 10000; j++) {
@@ -112,7 +112,7 @@ static void test_execute_many(void) {
                               gpr_inf_future(GPR_CLOCK_REALTIME)) != nullptr);
     gpr_thd_join(thds[i]);
   }
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_COMBINER_UNREF(lock, "test_execute_many");
 }
 
@@ -133,7 +133,7 @@ static void test_execute_finally(void) {
   gpr_log(GPR_DEBUG, "test_execute_finally");
 
   grpc_combiner* lock = grpc_combiner_create();
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   gpr_event_init(&got_in_finally);
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_CREATE(add_finally, lock, grpc_combiner_scheduler(lock)),

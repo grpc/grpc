@@ -196,7 +196,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
     grpc_pollset_worker* worker = nullptr;
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
                       grpc_pollset_work(args->pollset, &worker,
@@ -275,7 +275,7 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
   args.expected_addrs = ParseExpectedAddrs(FLAGS_expected_addrs);

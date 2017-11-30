@@ -113,7 +113,7 @@ void grpc_iocp_kick(void) {
 }
 
 void grpc_iocp_flush(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_iocp_work_status work_status;
 
   do {
@@ -123,7 +123,7 @@ void grpc_iocp_flush(void) {
 }
 
 void grpc_iocp_shutdown(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   while (gpr_atm_acq_load(&g_custom_events)) {
     grpc_iocp_work(GRPC_MILLIS_INF_FUTURE);
     grpc_core::ExecCtx::Get()->Flush();

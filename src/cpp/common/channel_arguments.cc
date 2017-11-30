@@ -67,7 +67,7 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
 }
 
 ChannelArguments::~ChannelArguments() {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   for (auto it = args_.begin(); it != args_.end(); ++it) {
     if (it->type == GRPC_ARG_POINTER) {
       it->value.pointer.vtable->destroy(it->value.pointer.p);
@@ -95,7 +95,7 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   }
   grpc_arg mutator_arg = grpc_socket_mutator_to_arg(mutator);
   bool replaced = false;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   for (auto it = args_.begin(); it != args_.end(); ++it) {
     if (it->type == mutator_arg.type &&
         grpc::string(it->key) == grpc::string(mutator_arg.key)) {

@@ -163,7 +163,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   size_t written_bytes;
   grpc_millis deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_INFO, "Read test of size %" PRIuPTR ", slice size %" PRIuPTR,
           num_bytes, slice_size);
@@ -213,7 +213,7 @@ static void large_read_test(size_t slice_size) {
   ssize_t written_bytes;
   grpc_millis deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_INFO, "Start large read test, slice size %" PRIuPTR, slice_size);
 
@@ -301,7 +301,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
   int flags;
   int current = 0;
   int i;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) == 0);
@@ -348,7 +348,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   grpc_closure write_done_closure;
   grpc_millis deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_INFO,
           "Start write test with %" PRIuPTR " bytes, slice size %" PRIuPTR,
@@ -411,7 +411,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   int fd;
   grpc_millis deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure fd_released_cb;
   int fd_released_done = 0;
   GRPC_CLOSURE_INIT(&fd_released_cb, &on_fd_released, &fd_released_done,
@@ -507,7 +507,7 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
     size_t slice_size) {
   int sv[2];
   grpc_endpoint_test_fixture f;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   create_sockets(sv);
   grpc_resource_quota* resource_quota =
@@ -541,7 +541,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     g_pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
     grpc_pollset_init(g_pollset, &g_mu);
     grpc_endpoint_tests(configs[0], g_pollset, g_mu);

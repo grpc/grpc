@@ -130,7 +130,7 @@ static void test_pollset_cleanup(test_pollset* pollsets, int num_pollsets) {
 #define NUM_POLLSETS 4
 
 static void test_add_fd_to_pollset() {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   test_fd tfds[NUM_FDS];
   int fds[NUM_FDS];
   test_pollset pollsets[NUM_POLLSETS];
@@ -231,7 +231,7 @@ static __thread int thread_wakeups = 0;
 static void test_threading_loop(void* arg) {
   threading_shared* shared = static_cast<threading_shared*>(arg);
   while (thread_wakeups < 1000000) {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_pollset_worker* worker;
     gpr_mu_lock(shared->mu);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -271,7 +271,7 @@ static void test_threading(void) {
   shared.wakeup_desc = grpc_fd_create(fd.read_fd, "wakeup");
   shared.wakeups = 0;
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_pollset_add_fd(shared.pollset, shared.wakeup_desc);
     grpc_fd_notify_on_read(
         shared.wakeup_desc,
@@ -286,7 +286,7 @@ static void test_threading(void) {
   fd.read_fd = 0;
   grpc_wakeup_fd_destroy(&fd);
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_fd_shutdown(shared.wakeup_desc, GRPC_ERROR_CANCELLED);
     grpc_fd_orphan(shared.wakeup_desc, nullptr, nullptr,
                    false /* already_closed */, "done");
@@ -302,7 +302,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
 
     poll_strategy = grpc_get_poll_strategy_name();
     if (poll_strategy != nullptr && strcmp(poll_strategy, "epollsig") == 0) {

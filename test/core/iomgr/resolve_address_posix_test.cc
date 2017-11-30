@@ -81,7 +81,7 @@ static void actually_poll(void* argsp) {
   args_struct* args = static_cast<args_struct*>(argsp);
   grpc_millis deadline = n_sec_deadline(10);
   while (true) {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
       break;
@@ -120,7 +120,7 @@ static void must_fail(void* argsp, grpc_error* err) {
 }
 
 static void test_unix_socket(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
   poll_pollset_until_request_done(&args);
@@ -132,7 +132,7 @@ static void test_unix_socket(void) {
 }
 
 static void test_unix_socket_path_name_too_long(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
   const char prefix[] = "unix:/path/name";
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
   grpc_init();
 
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     test_unix_socket();
     test_unix_socket_path_name_too_long();
   }

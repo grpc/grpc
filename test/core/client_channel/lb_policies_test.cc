@@ -651,7 +651,7 @@ static void test_get_channel_info() {
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   channel = grpc_insecure_channel_create("ipv4:127.0.0.1:1234", args, nullptr);
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(args);
   }
   // Ensures that resolver returns.
@@ -958,7 +958,7 @@ static void verify_rebirth_round_robin(const servers_fixture* f,
 }
 
 int main(int argc, char** argv) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   test_spec* spec;
   size_t i;
   const size_t NUM_ITERS = 10;

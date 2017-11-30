@@ -36,7 +36,7 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount(
 
 grpc_call_error grpc_call_set_credentials(grpc_call* call,
                                           grpc_call_credentials* creds) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_client_security_context* ctx = nullptr;
   GRPC_API_TRACE("grpc_call_set_credentials(call=%p, creds=%p)", 2,
                  (call, creds));
@@ -85,7 +85,7 @@ grpc_client_security_context* grpc_client_security_context_create(void) {
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_client_security_context* c = (grpc_client_security_context*)ctx;
   grpc_call_credentials_unref(c->creds);
   GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "client_security_context");

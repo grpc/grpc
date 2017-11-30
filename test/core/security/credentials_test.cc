@@ -148,7 +148,7 @@ static grpc_httpcli_response http_response(int status, const char* body) {
 /* -- Tests. -- */
 
 static void test_empty_md_array(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_credentials_mdelem_array md_array;
   memset(&md_array, 0, sizeof(md_array));
   GPR_ASSERT(md_array.md == nullptr);
@@ -157,7 +157,7 @@ static void test_empty_md_array(void) {
 }
 
 static void test_add_to_empty_md_array(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_credentials_mdelem_array md_array;
   memset(&md_array, 0, sizeof(md_array));
   const char* key = "hello";
@@ -172,7 +172,7 @@ static void test_add_to_empty_md_array(void) {
 }
 
 static void test_add_abunch_to_md_array(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_credentials_mdelem_array md_array;
   memset(&md_array, 0, sizeof(md_array));
   const char* key = "hello";
@@ -191,7 +191,7 @@ static void test_add_abunch_to_md_array(void) {
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
   grpc_millis token_lifetime;
   grpc_httpcli_response response =
@@ -208,7 +208,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
   grpc_millis token_lifetime;
   grpc_httpcli_response response =
@@ -220,7 +220,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
   grpc_millis token_lifetime;
   grpc_httpcli_response response = http_response(200, "");
@@ -231,7 +231,7 @@ static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
   grpc_millis token_lifetime;
   grpc_httpcli_response response =
@@ -246,7 +246,7 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
   grpc_millis token_lifetime;
   grpc_httpcli_response response = http_response(200,
@@ -260,7 +260,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
   grpc_millis token_lifetime;
   grpc_httpcli_response response =
@@ -276,7 +276,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
     void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
   grpc_millis token_lifetime;
   grpc_httpcli_response response =
@@ -378,7 +378,7 @@ static void run_request_metadata_test(grpc_call_credentials* creds,
 }
 
 static void test_google_iam_creds(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   expected_md emd[] = {{GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
                         test_google_iam_authorization_token},
                        {GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
@@ -395,7 +395,7 @@ static void test_google_iam_creds(void) {
 }
 
 static void test_access_token_creds(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   expected_md emd[] = {{GRPC_AUTHORIZATION_METADATA_KEY, "Bearer blah"}};
   request_metadata_state* state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
@@ -419,7 +419,7 @@ static grpc_security_status check_channel_oauth2_create_security_connector(
 }
 
 static void test_channel_oauth2_composite_creds(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_channel_args* new_args;
   grpc_channel_credentials_vtable vtable = {
       nullptr, check_channel_oauth2_create_security_connector, nullptr};
@@ -439,7 +439,7 @@ static void test_channel_oauth2_composite_creds(void) {
 }
 
 static void test_oauth2_google_iam_composite_creds(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   expected_md emd[] = {
       {GRPC_AUTHORIZATION_METADATA_KEY, test_oauth2_bearer_token},
       {GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
@@ -492,7 +492,7 @@ check_channel_oauth2_google_iam_create_security_connector(
 }
 
 static void test_channel_oauth2_google_iam_composite_creds(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_channel_args* new_args;
   grpc_channel_credentials_vtable vtable = {
       nullptr, check_channel_oauth2_google_iam_create_security_connector,
@@ -570,7 +570,7 @@ static int httpcli_get_should_not_be_called(const grpc_httpcli_request* request,
 }
 
 static void test_compute_engine_creds_success(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   expected_md emd[] = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   grpc_call_credentials* creds =
@@ -599,7 +599,7 @@ static void test_compute_engine_creds_success(void) {
 }
 
 static void test_compute_engine_creds_failure(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   request_metadata_state* state = make_request_metadata_state(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occured when fetching oauth2 token."),
@@ -659,7 +659,7 @@ static int refresh_token_httpcli_post_failure(
 }
 
 static void test_refresh_token_creds_success(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   expected_md emd[] = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -688,7 +688,7 @@ static void test_refresh_token_creds_success(void) {
 }
 
 static void test_refresh_token_creds_failure(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   request_metadata_state* state = make_request_metadata_state(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error occured when fetching oauth2 token."),
@@ -791,7 +791,7 @@ static void test_jwt_creds_lifetime(void) {
 
 static void test_jwt_creds_success(void) {
   char* json_key_string = test_json_key_str();
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   char* expected_md_value;
@@ -833,7 +833,7 @@ static void test_jwt_creds_success(void) {
 
 static void test_jwt_creds_signing_failure(void) {
   char* json_key_string = test_json_key_str();
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   request_metadata_state* state = make_request_metadata_state(
@@ -865,7 +865,7 @@ static void set_google_default_creds_env_var_with_file_contents(
 }
 
 static void test_google_default_creds_auth_key(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_service_account_jwt_access_credentials* jwt;
   grpc_composite_channel_credentials* creds;
   char* json_key = test_json_key_str();
@@ -886,7 +886,7 @@ static void test_google_default_creds_auth_key(void) {
 }
 
 static void test_google_default_creds_refresh_token(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_google_refresh_token_credentials* refresh;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -921,7 +921,7 @@ static int default_creds_gce_detection_httpcli_get_success_override(
 static char* null_well_known_creds_path_getter(void) { return nullptr; }
 
 static void test_google_default_creds_gce(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   expected_md emd[] = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   request_metadata_state* state =
@@ -1056,7 +1056,7 @@ static void plugin_destroy(void* state) {
 static void test_metadata_plugin_success(void) {
   plugin_state state = PLUGIN_INITIAL_STATE;
   grpc_metadata_credentials_plugin plugin;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   request_metadata_state* md_state = make_request_metadata_state(
@@ -1079,7 +1079,7 @@ static void test_metadata_plugin_success(void) {
 static void test_metadata_plugin_failure(void) {
   plugin_state state = PLUGIN_INITIAL_STATE;
   grpc_metadata_credentials_plugin plugin;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   char* expected_error;
@@ -1121,7 +1121,7 @@ static void test_get_well_known_google_credentials_file_path(void) {
 }
 
 static void test_channel_creds_duplicate_without_call_creds(void) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   grpc_channel_credentials* channel_creds =
       grpc_fake_transport_security_credentials_create();

@@ -111,14 +111,14 @@ static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
 static void uv_close_callback(uv_handle_t* handle) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_tcp* tcp = (grpc_tcp*)handle->data;
   TCP_UNREF(tcp, "destroy");
 }
 
 static void alloc_uv_buf(uv_handle_t* handle, size_t suggested_size,
                          uv_buf_t* buf) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_tcp* tcp = (grpc_tcp*)handle->data;
   (void)suggested_size;
   /* Before calling uv_read_start, we allocate a buffer with exactly one slice
@@ -151,7 +151,7 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
 static void read_callback(uv_stream_t* stream, ssize_t nread,
                           const uv_buf_t* buf) {
   grpc_error* error;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_tcp* tcp = (grpc_tcp*)stream->data;
   grpc_slice_buffer garbage;
   if (nread == 0) {
@@ -228,7 +228,7 @@ static void uv_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
 static void write_callback(uv_write_t* req, int status) {
   grpc_tcp* tcp = (grpc_tcp*)req->data;
   grpc_error* error;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure* cb = tcp->write_cb;
   tcp->write_cb = NULL;
   TCP_UNREF(tcp, "write");
@@ -372,7 +372,7 @@ grpc_endpoint* grpc_tcp_create(uv_tcp_t* handle,
                                grpc_resource_quota* resource_quota,
                                char* peer_string) {
   grpc_tcp* tcp = (grpc_tcp*)gpr_malloc(sizeof(grpc_tcp));
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Creating TCP endpoint %p", tcp);

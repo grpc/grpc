@@ -76,7 +76,7 @@ static void uv_tc_on_alarm(void* acp, grpc_error* error) {
 
 static void uv_tc_on_connect(uv_connect_t* req, int status) {
   grpc_uv_tcp_connect* connect = (grpc_uv_tcp_connect*)req->data;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_error* error = GRPC_ERROR_NONE;
   int done;
   grpc_closure* closure = connect->closure;

@@ -51,7 +51,7 @@ void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
   ping_result* pr = (ping_result*)gpr_malloc(sizeof(*pr));
   grpc_channel_element* top_elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(reserved == nullptr);
   pr->tag = tag;
   pr->cq = cq;

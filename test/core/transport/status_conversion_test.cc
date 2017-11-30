@@ -24,7 +24,7 @@
   GPR_ASSERT(grpc_status_to_http2_error(a) == (b))
 #define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b)                   \
   do {                                                               \
-    grpc_core::ExecCtx _local_exec_ctx;                              \
+    grpc_core::ExecCtx exec_ctx;                                     \
     GPR_ASSERT(grpc_http2_error_to_grpc_status(a, deadline) == (b)); \
                                                                      \
   } while (0)

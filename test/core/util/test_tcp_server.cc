@@ -55,7 +55,7 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   int port_added;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   addr->sin_family = AF_INET;
   addr->sin_port = htons((uint16_t)port);
@@ -76,7 +76,7 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
 
 void test_tcp_server_poll(test_tcp_server* server, int seconds) {
   grpc_pollset_worker* worker = nullptr;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_millis deadline = grpc_timespec_to_millis_round_up(
       grpc_timeout_seconds_to_deadline(seconds));
   gpr_mu_lock(server->mu);
@@ -91,7 +91,7 @@ static void finish_pollset(void* arg, grpc_error* error) {
 }
 
 void test_tcp_server_destroy(test_tcp_server* server) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   gpr_timespec shutdown_deadline;
   grpc_closure do_nothing_cb;
   grpc_tcp_server_unref(server->tcp_server);

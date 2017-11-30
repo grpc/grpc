@@ -46,7 +46,7 @@ static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 
 void grpc_iomgr_init() {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);

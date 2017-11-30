@@ -70,7 +70,7 @@ static void assert_passthrough(grpc_slice value,
   grpc_split_slices_to_buffer(uncompressed_split_mode, &value, 1, &input);
 
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     was_compressed = grpc_msg_compress(algorithm, &input, &compressed_raw);
   }
   GPR_ASSERT(input.count > 0);
@@ -90,7 +90,7 @@ static void assert_passthrough(grpc_slice value,
   grpc_split_slice_buffer(compressed_split_mode, &compressed_raw, &compressed);
 
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_msg_decompress(
         was_compressed ? algorithm : GRPC_COMPRESS_NONE, &compressed, &output));
   }
@@ -152,7 +152,7 @@ static void test_tiny_data_compress(void) {
 
   for (int i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (i == GRPC_COMPRESS_NONE) continue;
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(0 ==
                grpc_msg_compress(static_cast<grpc_compression_algorithm>(i),
                                  &input, &output));
@@ -176,7 +176,7 @@ static void test_bad_decompression_data_crc(void) {
   grpc_slice_buffer_init(&output);
   grpc_slice_buffer_add(&input, create_test_value(ONE_MB_A));
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   /* compress it */
   grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &corrupted);
   /* corrupt the output by smashing the CRC */
@@ -205,7 +205,7 @@ static void test_bad_decompression_data_trailing_garbage(void) {
                   "\x78\xda\x63\x60\x60\x60\x00\x00\x00\x04\x00\x01\x99", 13));
 
   /* try (and fail) to decompress the invalid compresed buffer */
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
 
   grpc_slice_buffer_destroy(&input);
@@ -222,7 +222,7 @@ static void test_bad_decompression_data_stream(void) {
                         grpc_slice_from_copied_buffer("\x78\xda\xff\xff", 4));
 
   /* try (and fail) to decompress the invalid compresed buffer */
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
 
   grpc_slice_buffer_destroy(&input);
@@ -239,7 +239,7 @@ static void test_bad_compression_algorithm(void) {
   grpc_slice_buffer_add(
       &input, grpc_slice_from_copied_string("Never gonna give you up"));
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   was_compressed =
       grpc_msg_compress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
   GPR_ASSERT(0 == was_compressed);
@@ -263,7 +263,7 @@ static void test_bad_decompression_algorithm(void) {
   grpc_slice_buffer_add(&input,
                         grpc_slice_from_copied_string(
                             "I'm not really compressed but it doesn't matter"));
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   was_decompressed =
       grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
   GPR_ASSERT(0 == was_decompressed);

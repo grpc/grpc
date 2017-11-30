@@ -173,7 +173,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   struct read_and_write_test_state state;
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_millis deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   gpr_log(GPR_DEBUG,
@@ -277,7 +277,7 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_slice_buffer slice_buffer;
   grpc_slice_buffer_init(&slice_buffer);
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,

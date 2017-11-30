@@ -33,7 +33,7 @@ static void test_constant_backoff(void) {
   const grpc_millis max_backoff = 1000;
   grpc_backoff_init(&backoff, initial_backoff, multiplier, jitter,
                     min_connect_timeout, max_backoff);
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_backoff_result next_deadlines = grpc_backoff_begin(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline -
                  grpc_core::ExecCtx::Get()->Now() ==
@@ -62,7 +62,7 @@ static void test_min_connect(void) {
   const grpc_millis max_backoff = 1000;
   grpc_backoff_init(&backoff, initial_backoff, multiplier, jitter,
                     min_connect_timeout, max_backoff);
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_backoff_result next = grpc_backoff_begin(&backoff);
   // Because the min_connect_timeout > initial_backoff, current_deadline is used
   // as the deadline for the current attempt.
@@ -85,7 +85,7 @@ static void test_no_jitter_backoff(void) {
                     min_connect_timeout, max_backoff);
   // x_1 = 2
   // x_n = 2**i + x_{i-1} ( = 2**(n+1) - 2 )
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::ExecCtx::Get()->TestOnlySetNow(0);
   grpc_backoff_result next_deadlines = grpc_backoff_begin(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline ==
@@ -141,7 +141,7 @@ static void test_jitter_backoff(void) {
 
   backoff.rng_state = 0;  // force consistent PRNG
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_backoff_result next_deadlines = grpc_backoff_begin(&backoff);
   GPR_ASSERT(next_deadlines.current_deadline -
                  grpc_core::ExecCtx::Get()->Now() ==

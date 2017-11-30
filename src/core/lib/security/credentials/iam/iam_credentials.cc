@@ -54,7 +54,7 @@ static grpc_call_credentials_vtable iam_vtable = {
 
 grpc_call_credentials* grpc_google_iam_credentials_create(
     const char* token, const char* authority_selector, void* reserved) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(
       "grpc_iam_credentials_create(token=%s, authority_selector=%s, "
       "reserved=%p)",

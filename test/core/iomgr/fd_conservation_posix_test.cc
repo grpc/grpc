@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
 
     /* set max # of file descriptors to a low value, and
        verify we can create and destroy many more than this number

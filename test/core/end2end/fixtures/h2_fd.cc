@@ -68,7 +68,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
 
 static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
                                           grpc_channel_args* client_args) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
 
   GPR_ASSERT(!f->client);
@@ -79,7 +79,7 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
 
 static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
                                           grpc_channel_args* server_args) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
   GPR_ASSERT(!f->server);
   f->server = grpc_server_create(server_args, nullptr);

@@ -621,7 +621,7 @@ void grpc_resource_quota_unref_internal(grpc_resource_quota* resource_quota) {
 
 /* Public API */
 void grpc_resource_quota_unref(grpc_resource_quota* resource_quota) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_resource_quota_unref_internal(resource_quota);
 }
 
@@ -646,7 +646,7 @@ double grpc_resource_quota_get_memory_pressure(
 /* Public API */
 void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
                                 size_t size) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   rq_resize_args* a = (rq_resize_args*)gpr_malloc(sizeof(*a));
   a->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
   a->size = (int64_t)size;

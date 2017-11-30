@@ -457,7 +457,7 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
 
 static void thread_main(void* arg) {
   grpc_end2end_http_proxy* proxy = (grpc_end2end_http_proxy*)arg;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   do {
     gpr_ref(&proxy->users);
     grpc_pollset_worker* worker = nullptr;
@@ -473,7 +473,7 @@ static void thread_main(void* arg) {
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
     grpc_channel_args* args) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_end2end_http_proxy* proxy =
       (grpc_end2end_http_proxy*)gpr_malloc(sizeof(*proxy));
   memset(proxy, 0, sizeof(*proxy));
@@ -518,7 +518,7 @@ static void destroy_pollset(void* arg, grpc_error* error) {
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   gpr_unref(&proxy->users);  // Signal proxy thread to shutdown.
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   gpr_thd_join(proxy->thd);
   grpc_tcp_server_shutdown_listeners(proxy->server);
   grpc_tcp_server_unref(proxy->server);

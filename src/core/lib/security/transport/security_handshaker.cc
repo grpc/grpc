@@ -271,7 +271,7 @@ static void on_handshake_next_done_grpc_wrapper(
   security_handshaker* h = (security_handshaker*)user_data;
   // This callback will be invoked by TSI in a non-grpc thread, so it's
   // safe to create our own exec_ctx here.
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   gpr_mu_lock(&h->mu);
   grpc_error* error = on_handshake_next_done_locked(
       h, result, bytes_to_send, bytes_to_send_size, handshaker_result);

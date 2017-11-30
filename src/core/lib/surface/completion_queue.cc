@@ -353,7 +353,7 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
   if (storage != nullptr &&
       (grpc_completion_queue*)gpr_tls_get(&g_cached_cq) == cq) {
     *tag = storage->tag;
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     *ok = (storage->next & (uintptr_t)(1)) == 1;
     storage->done(storage->done_arg, storage);
     ret = 1;
@@ -389,7 +389,7 @@ static bool cq_event_queue_push(grpc_cq_event_queue* q, grpc_cq_completion* c) {
 
 static grpc_cq_completion* cq_event_queue_pop(grpc_cq_event_queue* q) {
   grpc_cq_completion* c = nullptr;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   if (gpr_spinlock_trylock(&q->queue_lock)) {
     GRPC_STATS_INC_CQ_EV_QUEUE_TRYLOCK_SUCCESSES();
@@ -434,7 +434,7 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
   const cq_poller_vtable* poller_vtable =
       &g_poller_vtable_by_poller_type[polling_type];
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_STATS_INC_CQS_CREATED();
 
   cq = (grpc_completion_queue*)gpr_zalloc(sizeof(grpc_completion_queue) +
@@ -868,7 +868,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       nullptr,
       nullptr,
       true};
-  ExecCtxNext _local_exec_ctx(&is_finished_arg);
+  ExecCtxNext exec_ctx(&is_finished_arg);
   for (;;) {
     grpc_millis iteration_deadline = deadline_millis;
 
@@ -1111,7 +1111,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       nullptr,
       tag,
       true};
-  ExecCtxPluck _local_exec_ctx(&is_finished_arg);
+  ExecCtxPluck exec_ctx(&is_finished_arg);
   for (;;) {
     if (is_finished_arg.stolen_completion != nullptr) {
       gpr_mu_unlock(cq->mu);
@@ -1240,7 +1240,7 @@ static void cq_shutdown_pluck(grpc_completion_queue* cq) {
 /* Shutdown simply drops a ref that we reserved at creation time; if we drop
    to zero here, then enter shutdown mode and wake up any waiters */
 void grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GPR_TIMER_BEGIN("grpc_completion_queue_shutdown", 0);
   GRPC_API_TRACE("grpc_completion_queue_shutdown(cq=%p)", 1, (cq));
   cq->vtable->shutdown(cq);
@@ -1253,7 +1253,7 @@ void grpc_completion_queue_destroy(grpc_completion_queue* cq) {
   GPR_TIMER_BEGIN("grpc_completion_queue_destroy", 0);
   grpc_completion_queue_shutdown(cq);
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_CQ_INTERNAL_UNREF(cq, "destroy");
 
   GPR_TIMER_END("grpc_completion_queue_destroy", 0);

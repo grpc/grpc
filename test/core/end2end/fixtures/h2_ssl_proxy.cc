@@ -66,7 +66,7 @@ static grpc_channel* create_proxy_client(const char* target,
       grpc_secure_channel_create(ssl_creds, target, new_client_args, nullptr);
   grpc_channel_credentials_release(ssl_creds);
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(new_client_args);
   }
   return channel;
@@ -147,7 +147,7 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(new_client_args);
   }
 }

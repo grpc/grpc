@@ -71,7 +71,7 @@ grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) {
 
 void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
   if (!bb) return;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   switch (bb->type) {
     case GRPC_BB_RAW:
       grpc_slice_buffer_destroy_internal(&bb->data.raw.slice_buffer);

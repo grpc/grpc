@@ -82,7 +82,7 @@ class EndpointPairFixture {
     ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
 
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
 
     /* add server endpoint to server_ */
     {

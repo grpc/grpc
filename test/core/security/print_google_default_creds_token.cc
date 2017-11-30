@@ -62,7 +62,7 @@ static void on_metadata_response(void* arg, grpc_error* error) {
 
 int main(int argc, char** argv) {
   int result = 0;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   synchronizer sync;
   grpc_channel_credentials* creds = nullptr;
   const char* service_url = "https://test.foo.google.com/Foo";

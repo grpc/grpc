@@ -45,7 +45,7 @@ static void alarm_ref(grpc_alarm* alarm) { gpr_ref(&alarm->refs); }
 
 static void alarm_unref(grpc_alarm* alarm) {
   if (gpr_unref(&alarm->refs)) {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     if (alarm->cq != nullptr) {
       GRPC_CQ_INTERNAL_UNREF(alarm->cq, "alarm");
     }
@@ -115,7 +115,7 @@ grpc_alarm* grpc_alarm_create(void* reserved) {
 
 void grpc_alarm_set(grpc_alarm* alarm, grpc_completion_queue* cq,
                     gpr_timespec deadline, void* tag, void* reserved) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   GRPC_CQ_INTERNAL_REF(cq, "alarm");
   alarm->cq = cq;
@@ -127,7 +127,7 @@ void grpc_alarm_set(grpc_alarm* alarm, grpc_completion_queue* cq,
 }
 
 void grpc_alarm_cancel(grpc_alarm* alarm, void* reserved) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_timer_cancel(&alarm->alarm);
 }
 

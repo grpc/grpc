@@ -246,7 +246,7 @@ static int server_start(server* sv) {
 static void server_wait_and_shutdown(server* sv) {
   gpr_mu_lock(g_mu);
   while (!sv->done) {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
@@ -362,7 +362,7 @@ static void client_wait_and_shutdown(client* cl) {
   gpr_mu_lock(g_mu);
   while (!cl->done) {
     grpc_pollset_worker* worker = nullptr;
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
@@ -380,7 +380,7 @@ static void test_grpc_fd(void) {
   server sv;
   client cl;
   int port;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   server_init(&sv);
   port = server_start(&sv);
@@ -436,7 +436,7 @@ static void test_grpc_fd_change(void) {
   ssize_t result;
   grpc_closure first_closure;
   grpc_closure second_closure;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   GRPC_CLOSURE_INIT(&first_closure, first_read_callback, &a,
                     grpc_schedule_on_exec_ctx);
@@ -516,7 +516,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(g_pollset, &g_mu);
     test_grpc_fd();

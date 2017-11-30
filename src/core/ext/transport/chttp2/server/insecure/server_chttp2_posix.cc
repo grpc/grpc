@@ -38,7 +38,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
                                               void* reserved, int fd) {
   GPR_ASSERT(reserved == nullptr);
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   char* name;
   gpr_asprintf(&name, "fd:%d", fd);
 

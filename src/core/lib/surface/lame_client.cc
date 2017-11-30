@@ -154,7 +154,7 @@ extern "C" const grpc_channel_filter grpc_lame_filter = {
 grpc_channel* grpc_lame_client_channel_create(const char* target,
                                               grpc_status_code error_code,
                                               const char* error_message) {
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_channel_element* elem;
   grpc_channel* channel =
       grpc_channel_create(target, nullptr, GRPC_CLIENT_LAME_CHANNEL, nullptr);

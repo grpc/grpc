@@ -199,7 +199,7 @@ static void pollset_set_test_basic() {
    *                    |
    *                    +---> FD9 (Added after PS2 is added to PSS0)
    */
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_pollset_worker* worker;
   grpc_millis deadline;
 
@@ -301,7 +301,7 @@ void pollset_set_test_dup_fds() {
    *                    |           +--> FD2
    *                    +---> FD1
    */
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_pollset_worker* worker;
   grpc_millis deadline;
 
@@ -371,7 +371,7 @@ void pollset_set_test_empty_pollset() {
    *                   |
    *                   +---> FD2
    */
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_pollset_worker* worker;
   grpc_millis deadline;
 
@@ -424,7 +424,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     const char* poll_strategy = grpc_get_poll_strategy_name();
 
     if (poll_strategy != nullptr &&

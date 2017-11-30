@@ -45,7 +45,7 @@ static void test_simple_encode_decode_b64(int url_safe, int multiline) {
   const char* hello = "hello";
   char* hello_b64 =
       grpc_base64_encode(hello, strlen(hello), url_safe, multiline);
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_slice hello_slice = grpc_base64_decode(hello_b64, url_safe);
   GPR_ASSERT(GRPC_SLICE_LENGTH(hello_slice) == strlen(hello));
   GPR_ASSERT(strncmp((const char*)GRPC_SLICE_START_PTR(hello_slice), hello,
@@ -65,7 +65,7 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
 
   /* Try all the different paddings. */
   for (i = 0; i < 3; i++) {
-    grpc_core::ExecCtx _local_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     b64 = grpc_base64_encode(orig, sizeof(orig) - i, url_safe, multiline);
     orig_decoded = grpc_base64_decode(b64, url_safe);
     GPR_ASSERT(GRPC_SLICE_LENGTH(orig_decoded) == (sizeof(orig) - i));
@@ -116,7 +116,7 @@ static void test_url_safe_unsafe_mismatch_failure(void) {
   int url_safe = 1;
   for (i = 0; i < sizeof(orig); i++) orig[i] = (uint8_t)i;
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   b64 = grpc_base64_encode(orig, sizeof(orig), url_safe, 0);
   orig_decoded = grpc_base64_decode(b64, !url_safe);
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(orig_decoded));
@@ -165,7 +165,7 @@ static void test_rfc4648_test_vectors(void) {
 static void test_unpadded_decode(void) {
   grpc_slice decoded;
 
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   decoded = grpc_base64_decode("Zm9vYmFy", 0);
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(decoded));
   GPR_ASSERT(grpc_slice_str_cmp(decoded, "foobar") == 0);

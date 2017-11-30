@@ -157,7 +157,7 @@ void grpc_shutdown(void) {
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     {
-      grpc_core::ExecCtx _local_exec_ctx(0);
+      grpc_core::ExecCtx exec_ctx(0);
       {
         grpc_executor_shutdown();
         grpc_timer_manager_set_threading(

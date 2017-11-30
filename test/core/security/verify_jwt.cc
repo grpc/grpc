@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
   gpr_cmdline* cl;
   const char* jwt = nullptr;
   const char* aud = nullptr;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   grpc_init();
   cl = gpr_cmdline_create("JWT verifier tool");

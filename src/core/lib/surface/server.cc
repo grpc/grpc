@@ -1015,7 +1015,7 @@ static void start_listeners(void* s, grpc_error* error) {
 
 void grpc_server_start(grpc_server* server) {
   size_t i;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_server_start(server=%p)", 1, (server));
 
@@ -1161,7 +1161,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   listener* l;
   shutdown_tag* sdt;
   channel_broadcaster broadcaster;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_server_shutdown_and_notify(server=%p, cq=%p, tag=%p)", 3,
                  (server, cq, tag));
@@ -1220,7 +1220,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
   channel_broadcaster broadcaster;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_server_cancel_all_calls(server=%p)", 1, (server));
 
@@ -1235,7 +1235,7 @@ void grpc_server_cancel_all_calls(grpc_server* server) {
 
 void grpc_server_destroy(grpc_server* server) {
   listener* l;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_server_destroy(server=%p)", 1, (server));
 
@@ -1317,7 +1317,7 @@ grpc_call_error grpc_server_request_call(
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag) {
   grpc_call_error error;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   requested_call* rc = (requested_call*)gpr_malloc(sizeof(*rc));
   GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
   GRPC_API_TRACE(
@@ -1364,7 +1364,7 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag) {
   grpc_call_error error;
-  grpc_core::ExecCtx _local_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   requested_call* rc = (requested_call*)gpr_malloc(sizeof(*rc));
   registered_method* rm = (registered_method*)rmp;
   GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
