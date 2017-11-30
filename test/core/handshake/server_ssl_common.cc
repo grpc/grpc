@@ -137,7 +137,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_id thdid;
   gpr_thd_options_set_joinable(&thdopt);
-  GPR_ASSERT(gpr_thd_new(&thdid, "gpr_ssl_test", server_thread, &port,
+  GPR_ASSERT(gpr_thd_new(&thdid, "grpc_ssl_test", server_thread, &port,
                          &thdopt));
 
   SSL_load_error_strings();

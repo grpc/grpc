@@ -74,7 +74,7 @@ static void test(void) {
   t.n = NUM_THREADS;
   t.is_done = 0;
   for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(gpr_thd_new(&thd, "gpr_thread_test", &thd_body, &t, nullptr));
+    GPR_ASSERT(gpr_thd_new(&thd, "grpc_thread_test", &thd_body, &t, nullptr));
   }
   gpr_mu_lock(&t.mu);
   while (!t.is_done) {
@@ -84,7 +84,7 @@ static void test(void) {
   GPR_ASSERT(t.n == 0);
   gpr_thd_options_set_joinable(&options);
   for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(gpr_thd_new(&thds[i], "gpr_thread_test_joinable",
+    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_joinable_thread_test",
                            &thd_body_joinable, nullptr, &options));
   }
   for (i = 0; i < NUM_THREADS; i++) {

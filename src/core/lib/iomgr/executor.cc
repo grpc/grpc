@@ -104,7 +104,7 @@ void grpc_executor_set_threading(grpc_exec_ctx* exec_ctx, bool threading) {
 
     gpr_thd_options opt = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&opt);
-    gpr_thd_new(&g_thread_state[0].id, "gpr_executor", executor_thread,
+    gpr_thd_new(&g_thread_state[0].id, "grpc_executor", executor_thread,
                 &g_thread_state[0], &opt);
   } else {
     if (cur_threads == 0) return;

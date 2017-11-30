@@ -189,7 +189,7 @@ static void test_create_threads(struct test* m, void (*body)(void* arg)) {
   gpr_thd_id id;
   int i;
   for (i = 0; i != m->threads; i++) {
-    GPR_ASSERT(gpr_thd_new(&id, "gpr_create_threads", body, m, nullptr));
+    GPR_ASSERT(gpr_thd_new(&id, "grpc_create_threads", body, m, nullptr));
   }
 }
 

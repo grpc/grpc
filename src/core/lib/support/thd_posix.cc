@@ -33,22 +33,23 @@
 struct thd_arg {
   void (*body)(void* arg); /* body of a thread */
   void* arg;               /* argument to a thread */
-  const char* name;        /* name of thread */
+  const char* name;        /* name of thread. Can be nullptr. */
 };
 
 /* Body of every thread started via gpr_thd_new. */
 static void* thread_body(void* v) {
   struct thd_arg a = *(struct thd_arg*)v;
   free(v);
-  if (a.name != NULL) {
+  if (a.name != nullptr) {
 #if GPR_APPLE_PTHREAD_NAME
     /* Apple supports 64 characters, and will truncate if it's longer. */
     pthread_setname_np(a.name);
 #elif GPR_LINUX_PTHREAD_NAME
     /* Linux supports 16 characters max, and will error if it's longer. */
     char buf[16];
-    strncpy(buf, a.name, sizeof(buf) - 1);
-    buf[sizeof(buf) - 1] = '\0';
+    size_t buf_len = GPR_ARRAY_SIZE(buf) - 1;
+    strncpy(buf, a.name, buf_len);
+    buf[buf_len] = '\0';
     pthread_setname_np(pthread_self(), buf);
 #endif // GPR_APPLE_PTHREAD_NAME
   }
@@ -69,7 +70,7 @@ int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
   a->body = thd_body;
   a->arg = arg;
   a->name = thd_name;
-  
+
   GPR_ASSERT(pthread_attr_init(&attr) == 0);
   if (gpr_thd_options_is_detached(options)) {
     GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
