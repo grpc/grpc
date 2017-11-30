@@ -77,6 +77,9 @@ struct grpc_end2end_http_proxy {
 #define CLIENT_EP_FAIL (CLIENT_EP_READ_FAIL | CLIENT_EP_WRITE_FAIL)
 #define EP_FAIL (SERVER_EP_FAIL | CLIENT_EP_FAIL)
 
+// proxy_connection structure is only accessed in the closures which are all
+// scheduled under the same combiner lock. So there is is no need for a mutex to
+// protect this structure.
 typedef struct proxy_connection {
   grpc_end2end_http_proxy* proxy;
 
@@ -94,6 +97,8 @@ typedef struct proxy_connection {
 
   grpc_pollset_set* pollset_set;
 
+  // NOTE: All the closures execute under proxy->combiner lock. Which means
+  // there will not be any data-races between the closures
   grpc_closure on_read_request_done;
   grpc_closure on_server_connect_done;
   grpc_closure on_write_response_done;
@@ -241,8 +246,13 @@ static void on_client_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 grpc_error* error) {
   proxy_connection* conn = (proxy_connection*)arg;
   if (error != GRPC_ERROR_NONE) {
-    proxy_connection_failed(exec_ctx, conn, CLIENT_EP_READ_FAIL,
-                            "HTTP proxy client read", error);
+    // Report a read failure on the client endpoint. If there is no pending
+    // server write, then shutdown the server endpoint as well.
+    proxy_connection_failed(
+        exec_ctx, conn,
+        (conn->server_is_writing ? CLIENT_EP_READ_FAIL
+                                 : (CLIENT_EP_READ_FAIL | SERVER_EP_FAIL)),
+        "HTTP proxy client read", error);
     return;
   }
   // If there is already a pending write (i.e., server_write_buffer is
@@ -274,8 +284,13 @@ static void on_server_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 grpc_error* error) {
   proxy_connection* conn = (proxy_connection*)arg;
   if (error != GRPC_ERROR_NONE) {
-    proxy_connection_failed(exec_ctx, conn, SERVER_EP_READ_FAIL,
-                            "HTTP proxy server read", error);
+    // Report a read failure on the server end point. If there is no pending
+    // write to the client, then shutdown the client endpoint as well.
+    proxy_connection_failed(
+        exec_ctx, conn,
+        (conn->client_is_writing ? SERVER_EP_READ_FAIL
+                                 : (SERVER_EP_READ_FAIL | CLIENT_EP_FAIL)),
+        "HTTP proxy server read", error);
     return;
   }
   // If there is already a pending write (i.e., client_write_buffer is
