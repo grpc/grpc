@@ -427,7 +427,6 @@ add_dependencies(buildtests_c gpr_avl_test)
 add_dependencies(buildtests_c gpr_cmdline_test)
 add_dependencies(buildtests_c gpr_cpu_test)
 add_dependencies(buildtests_c gpr_env_test)
-add_dependencies(buildtests_c gpr_histogram_test)
 add_dependencies(buildtests_c gpr_host_port_test)
 add_dependencies(buildtests_c gpr_log_test)
 add_dependencies(buildtests_c gpr_manual_constructor_test)
@@ -465,6 +464,7 @@ endif()
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_server_with_readahead_handshaker)
 endif()
+add_dependencies(buildtests_c histogram_test)
 add_dependencies(buildtests_c hpack_parser_test)
 add_dependencies(buildtests_c hpack_table_test)
 add_dependencies(buildtests_c http_parser_test)
@@ -799,7 +799,6 @@ add_library(gpr
   src/core/lib/support/env_posix.cc
   src/core/lib/support/env_windows.cc
   src/core/lib/support/fork.cc
-  src/core/lib/support/histogram.cc
   src/core/lib/support/host_port.cc
   src/core/lib/support/log.cc
   src/core/lib/support/log_android.cc
@@ -869,7 +868,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/histogram.h
   include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
@@ -1617,6 +1615,7 @@ add_library(grpc_test_util
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
   test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
@@ -1885,6 +1884,7 @@ add_library(grpc_test_util_unsecure
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
   test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
@@ -2671,7 +2671,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/histogram.h
   include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
@@ -3158,7 +3157,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/histogram.h
   include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
@@ -3905,7 +3903,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/histogram.h
   include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
@@ -6259,33 +6256,6 @@ target_link_libraries(gpr_env_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(gpr_histogram_test
-  test/core/support/histogram_test.cc
-)
-
-
-target_include_directories(gpr_histogram_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(gpr_histogram_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(gpr_host_port_test
   test/core/support/host_port_test.cc
 )
@@ -7218,6 +7188,33 @@ target_link_libraries(handshake_server_with_readahead_handshaker
 )
 
 endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(histogram_test
+  test/core/util/histogram_test.cc
+)
+
+
+target_include_directories(histogram_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(histogram_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  gpr
+)
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
