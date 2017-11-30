@@ -21,10 +21,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gflags/gflags.h>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
@@ -32,6 +33,17 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/test_config.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_string(target, "localhost:443", "Target host:port");
+DEFINE_int64(warmup, 100, "Warmup iterations");
+DEFINE_int64(benchmark, 1000, "Benchmark iterations");
 
 static grpc_channel* channel;
 static grpc_completion_queue* cq;
@@ -184,8 +196,6 @@ int main(int argc, char** argv) {
   grpc_slice slice = grpc_slice_from_copied_string("x");
   char* fake_argv[1];
 
-  const char* target = "localhost:443";
-  gpr_cmdline* cl;
   grpc_event event;
 
   grpc_init();
@@ -194,16 +204,7 @@ int main(int argc, char** argv) {
   fake_argv[0] = argv[0];
   grpc_test_init(1, fake_argv);
 
-  int warmup_iterations = 100;
-  int benchmark_iterations = 1000;
-
-  cl = gpr_cmdline_create("memory profiling client");
-  gpr_cmdline_add_string(cl, "target", "Target host:port", &target);
-  gpr_cmdline_add_int(cl, "warmup", "Warmup iterations", &warmup_iterations);
-  gpr_cmdline_add_int(cl, "benchmark", "Benchmark iterations",
-                      &benchmark_iterations);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   for (size_t k = 0; k < GPR_ARRAY_SIZE(calls); k++) {
     calls[k].details = grpc_empty_slice();
@@ -213,7 +214,8 @@ int main(int argc, char** argv) {
 
   struct grpc_memory_counters client_channel_start =
       grpc_memory_counters_snapshot();
-  channel = grpc_insecure_channel_create(target, nullptr, nullptr);
+  channel =
+      grpc_insecure_channel_create(FLAGS_target.c_str(), nullptr, nullptr);
 
   int call_idx = 0;
 
@@ -223,12 +225,12 @@ int main(int argc, char** argv) {
       0, grpc_slice_from_static_string("Reflector/GetAfterSvrCreation"));
 
   // warmup period
-  for (int i = 0; i < warmup_iterations; i++) {
+  for (int i = 0; i < FLAGS_warmup; i++) {
     send_snapshot_request(
         0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
   }
 
-  for (call_idx = 0; call_idx < warmup_iterations; ++call_idx) {
+  for (call_idx = 0; call_idx < FLAGS_warmup; ++call_idx) {
     init_ping_pong_request(call_idx + 1);
   }
 
@@ -240,7 +242,7 @@ int main(int argc, char** argv) {
       grpc_memory_counters_snapshot();
 
   // benchmark period
-  for (; call_idx < warmup_iterations + benchmark_iterations; ++call_idx) {
+  for (; call_idx < FLAGS_warmup + FLAGS_benchmark; ++call_idx) {
     init_ping_pong_request(call_idx + 1);
   }
 
@@ -259,8 +261,7 @@ int main(int argc, char** argv) {
   } while (event.type != GRPC_QUEUE_TIMEOUT);
 
   // second step - recv status and destroy call
-  for (call_idx = 0; call_idx < warmup_iterations + benchmark_iterations;
-       ++call_idx) {
+  for (call_idx = 0; call_idx < FLAGS_warmup + FLAGS_benchmark; ++call_idx) {
     finish_ping_pong_request(call_idx + 1);
   }
 
@@ -286,7 +287,7 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "client call memory usage: %f bytes per call",
           (double)(client_calls_inflight.total_size_relative -
                    client_benchmark_calls_start.total_size_relative) /
-              benchmark_iterations);
+              FLAGS_benchmark);
   gpr_log(GPR_INFO, "client channel memory usage %zi bytes",
           client_channel_end.total_size_relative -
               client_channel_start.total_size_relative);
@@ -298,7 +299,7 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "server call memory usage: %f bytes per call",
           (double)(server_calls_inflight.total_size_relative -
                    server_benchmark_calls_start.total_size_relative) /
-              benchmark_iterations);
+              FLAGS_benchmark);
   gpr_log(GPR_INFO, "server channel memory usage %zi bytes",
           server_calls_end.total_size_relative -
               after_server_create.total_size_relative);
@@ -311,14 +312,14 @@ int main(int argc, char** argv) {
     fprintf(csv, "%f,%zi,%zi,%f,%zi,%s,%s\n",
             (double)(client_calls_inflight.total_size_relative -
                      client_benchmark_calls_start.total_size_relative) /
-                benchmark_iterations,
+                FLAGS_benchmark,
             client_channel_end.total_size_relative -
                 client_channel_start.total_size_relative,
             after_server_create.total_size_relative -
                 before_server_create.total_size_relative,
             (double)(server_calls_inflight.total_size_relative -
                      server_benchmark_calls_start.total_size_relative) /
-                benchmark_iterations,
+                FLAGS_benchmark,
             server_calls_end.total_size_relative -
                 after_server_create.total_size_relative,
             env_build == nullptr ? "" : env_build,

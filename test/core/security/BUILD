@@ -111,6 +111,9 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
     ],
+    external_deps = [
+        "gflags",
+    ],
 )
 
 grpc_cc_binary(
@@ -122,6 +125,9 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
     ],
+    external_deps = [
+        "gflags",
+    ],
 )
 
 grpc_cc_binary(
@@ -131,5 +137,21 @@ grpc_cc_binary(
     deps = [
         "//:gpr",
         "//:grpc",
+    ],
+    external_deps = [
+        "gflags",
+    ],
+)
+
+grpc_cc_binary(
+    name = "print_google_default_creds_token",
+    srcs = ["print_google_default_creds_token.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+    ],
+    external_deps = [
+        "gflags",
     ],
 )

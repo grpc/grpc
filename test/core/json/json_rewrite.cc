@@ -19,12 +19,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <gflags/gflags.h>
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_int32(indent, 2, "indent");
 
 typedef struct json_writer_userdata {
   FILE* out;
@@ -229,13 +239,7 @@ int rewrite(FILE* in, FILE* out, int indent) {
 }
 
 int main(int argc, char** argv) {
-  int indent = 2;
-  gpr_cmdline* cl;
+  ParseCommandLineFlags(&argc, &argv, true);
 
-  cl = gpr_cmdline_create(nullptr);
-  gpr_cmdline_add_int(cl, "indent", nullptr, &indent);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
-
-  return rewrite(stdin, stdout, indent) ? 0 : 1;
+  return rewrite(stdin, stdout, FLAGS_indent) ? 0 : 1;
 }

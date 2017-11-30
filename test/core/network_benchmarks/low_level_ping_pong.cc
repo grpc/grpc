@@ -34,8 +34,9 @@
 #endif
 #include <sys/socket.h>
 
+#include <gflags/gflags.h>
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
@@ -43,6 +44,37 @@
 #include <grpc/support/useful.h>
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+static const char* read_strategy_usage =
+    "Strategy for doing reads, which is one of:\n"
+    "  blocking: blocking read calls\n"
+    "  same_thread_poll: poll() call on same thread \n"
+#ifdef __linux__
+    "  same_thread_epoll: epoll_wait() on same thread \n"
+#endif
+    "  spin_read: spinning non-blocking read() calls \n"
+    "  spin_poll: spinning 0 timeout poll() calls \n"
+#ifdef __linux__
+    "  spin_epoll: spinning 0 timeout epoll_wait() calls \n"
+#endif
+    "";
+
+static const char* socket_type_usage =
+    "Type of socket used, one of:\n"
+    "  tcp: fds are endpoints of a TCP connection\n"
+    "  socketpair: fds come from socketpair()\n"
+    "  pipe: fds come from pipe()\n";
+
+DEFINE_uint64(msg_size, 50, "Size of sent messages");
+DEFINE_string(read_strategy, "", read_strategy_usage);
+DEFINE_string(socket_type, "tcp", socket_type_usage);
 
 typedef struct fd_pair {
   int read_fd;
@@ -497,26 +529,6 @@ static int create_sockets_pipe(fd_pair* client_fds, fd_pair* server_fds) {
   return 0;
 }
 
-static const char* read_strategy_usage =
-    "Strategy for doing reads, which is one of:\n"
-    "  blocking: blocking read calls\n"
-    "  same_thread_poll: poll() call on same thread \n"
-#ifdef __linux__
-    "  same_thread_epoll: epoll_wait() on same thread \n"
-#endif
-    "  spin_read: spinning non-blocking read() calls \n"
-    "  spin_poll: spinning 0 timeout poll() calls \n"
-#ifdef __linux__
-    "  spin_epoll: spinning 0 timeout epoll_wait() calls \n"
-#endif
-    "";
-
-static const char* socket_type_usage =
-    "Type of socket used, one of:\n"
-    "  tcp: fds are endpoints of a TCP connection\n"
-    "  socketpair: fds come from socketpair()\n"
-    "  pipe: fds come from pipe()\n";
-
 void print_usage(char* argv0) {
   fprintf(stderr, "%s usage:\n\n", argv0);
   fprintf(stderr, "%s read_strategy socket_type msg_size\n\n", argv0);
@@ -625,65 +637,39 @@ int main(int argc, char** argv) {
       static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
   thread_args* server_args =
       static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
-  int msg_size = -1;
-  const char* read_strategy = nullptr;
-  const char* socket_type = nullptr;
   size_t i;
   const test_strategy* strategy = nullptr;
   int error = 0;
 
-  gpr_cmdline* cmdline =
-      gpr_cmdline_create("low_level_ping_pong network benchmarking tool");
+  ParseCommandLineFlags(&argc, &argv, true);
 
-  gpr_cmdline_add_int(cmdline, "msg_size", "Size of sent messages", &msg_size);
-  gpr_cmdline_add_string(cmdline, "read_strategy", read_strategy_usage,
-                         &read_strategy);
-  gpr_cmdline_add_string(cmdline, "socket_type", socket_type_usage,
-                         &socket_type);
-
-  gpr_cmdline_parse(cmdline, argc, argv);
-
-  if (msg_size == -1) {
-    msg_size = 50;
-  }
-
-  if (read_strategy == nullptr) {
+  if (FLAGS_read_strategy.empty()) {
     gpr_log(GPR_INFO, "No strategy specified, running all benchmarks");
-    return run_all_benchmarks((size_t)msg_size);
-  }
-
-  if (socket_type == nullptr) {
-    socket_type = "tcp";
-  }
-  if (msg_size <= 0) {
-    fprintf(stderr, "msg_size must be > 0\n");
-    print_usage(argv[0]);
-    return -1;
+    return run_all_benchmarks((size_t)FLAGS_msg_size);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(test_strategies); ++i) {
-    if (strcmp(test_strategies[i].name, read_strategy) == 0) {
+    if (strcmp(test_strategies[i].name, FLAGS_read_strategy.c_str()) == 0) {
       strategy = &test_strategies[i];
     }
   }
   if (strategy == nullptr) {
-    fprintf(stderr, "Invalid read strategy %s\n", read_strategy);
+    fprintf(stderr, "Invalid read strategy %s\n", FLAGS_read_strategy.c_str());
     return -1;
   }
 
   client_args->read_bytes = strategy->read_strategy;
   client_args->write_bytes = blocking_write_bytes;
   client_args->setup = strategy->setup;
-  client_args->msg_size = (size_t)msg_size;
-  client_args->strategy_name = read_strategy;
+  client_args->msg_size = (size_t)FLAGS_msg_size;
+  client_args->strategy_name = FLAGS_read_strategy.c_str();
   server_args->read_bytes = strategy->read_strategy;
   server_args->write_bytes = blocking_write_bytes;
   server_args->setup = strategy->setup;
-  server_args->msg_size = (size_t)msg_size;
-  server_args->strategy_name = read_strategy;
+  server_args->msg_size = (size_t)FLAGS_msg_size;
+  server_args->strategy_name = FLAGS_read_strategy.c_str();
 
-  error = run_benchmark(socket_type, client_args, server_args);
+  error = run_benchmark(FLAGS_socket_type.c_str(), client_args, server_args);
 
-  gpr_cmdline_destroy(cmdline);
   return error;
 }

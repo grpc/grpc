@@ -46,7 +46,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/avl.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
@@ -253,15 +252,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_avl_get);
   printf("%lx", (unsigned long) gpr_avl_maybe_get);
   printf("%lx", (unsigned long) gpr_avl_is_empty);
-  printf("%lx", (unsigned long) gpr_cmdline_create);
-  printf("%lx", (unsigned long) gpr_cmdline_add_int);
-  printf("%lx", (unsigned long) gpr_cmdline_add_flag);
-  printf("%lx", (unsigned long) gpr_cmdline_add_string);
-  printf("%lx", (unsigned long) gpr_cmdline_on_extra_arg);
-  printf("%lx", (unsigned long) gpr_cmdline_set_survive_failure);
-  printf("%lx", (unsigned long) gpr_cmdline_parse);
-  printf("%lx", (unsigned long) gpr_cmdline_destroy);
-  printf("%lx", (unsigned long) gpr_cmdline_usage_string);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
   printf("%lx", (unsigned long) gpr_histogram_create);

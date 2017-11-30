@@ -37,7 +37,7 @@ def main():
           {
               'name': 'bad_ssl_test_server',
               'build': 'private',
-              'language': 'c',
+              'language': 'c++',
               'src': ['test/core/bad_ssl/server_common.cc'],
               'headers': ['test/core/bad_ssl/server_common.h'],
               'vs_proj_dir': 'test',
@@ -54,7 +54,7 @@ def main():
           {
               'name': 'bad_ssl_%s_server' % t,
               'build': 'test',
-              'language': 'c',
+              'language': 'c++',
               'run': False,
               'src': ['test/core/bad_ssl/servers/%s.cc' % t],
               'vs_proj_dir': 'test/bad_ssl',

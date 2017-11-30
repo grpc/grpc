@@ -19,11 +19,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gflags/gflags.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
@@ -31,6 +32,16 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_string(service_url, "https://test.foo.google.com/Foo",
+              "Service URL for the token request.");
 
 typedef struct {
   gpr_mu* mu;
@@ -67,16 +78,12 @@ int main(int argc, char** argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   synchronizer sync;
   grpc_channel_credentials* creds = nullptr;
-  const char* service_url = "https://test.foo.google.com/Foo";
   grpc_auth_metadata_context context;
-  gpr_cmdline* cl = gpr_cmdline_create("print_google_default_creds_token");
   grpc_pollset* pollset = nullptr;
   grpc_error* error = nullptr;
-  gpr_cmdline_add_string(cl, "service_url",
-                         "Service URL for the token request.", &service_url);
-  gpr_cmdline_parse(cl, argc, argv);
+  ParseCommandLineFlags(&argc, &argv, true);
   memset(&context, 0, sizeof(context));
-  context.service_url = service_url;
+  context.service_url = FLAGS_service_url.c_str();
 
   grpc_init();
 
@@ -126,7 +133,6 @@ int main(int argc, char** argv) {
   gpr_free(grpc_polling_entity_pollset(&sync.pops));
 
 end:
-  gpr_cmdline_destroy(cl);
   grpc_shutdown();
   return result;
 }

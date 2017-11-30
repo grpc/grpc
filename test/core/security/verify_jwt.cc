@@ -19,15 +19,26 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gflags/gflags.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_string(jwt, "", "JSON web token to verify");
+DEFINE_string(aud, "", "Audience for the JWT");
 
 typedef struct {
   grpc_pollset* pollset;
@@ -36,12 +47,11 @@ typedef struct {
   int success;
 } synchronizer;
 
-static void print_usage_and_exit(gpr_cmdline* cl, const char* argv0) {
-  char* usage = gpr_cmdline_usage_string(cl, argv0);
-  fprintf(stderr, "%s", usage);
-  gpr_free(usage);
-  gpr_cmdline_destroy(cl);
-  exit(1);
+static bool validate_flags() {
+  if (FLAGS_jwt.empty() || FLAGS_aud.empty()) {
+    return false;
+  }
+  return true;
 }
 
 static void on_jwt_verification_done(grpc_exec_ctx* exec_ctx, void* user_data,
@@ -74,18 +84,15 @@ static void on_jwt_verification_done(grpc_exec_ctx* exec_ctx, void* user_data,
 int main(int argc, char** argv) {
   synchronizer sync;
   grpc_jwt_verifier* verifier;
-  gpr_cmdline* cl;
-  const char* jwt = nullptr;
-  const char* aud = nullptr;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   grpc_init();
-  cl = gpr_cmdline_create("JWT verifier tool");
-  gpr_cmdline_add_string(cl, "jwt", "JSON web token to verify", &jwt);
-  gpr_cmdline_add_string(cl, "aud", "Audience for the JWT", &aud);
-  gpr_cmdline_parse(cl, argc, argv);
-  if (jwt == nullptr || aud == nullptr) {
-    print_usage_and_exit(cl, argv[0]);
+  ParseCommandLineFlags(&argc, &argv, true);
+
+  if (!validate_flags()) {
+    fprintf(stderr,
+            "Missing or invalid arguments. Print help for more information\n");
+    return 1;
   }
 
   verifier = grpc_jwt_verifier_create(nullptr, 0);
@@ -96,8 +103,8 @@ int main(int argc, char** argv) {
   grpc_pollset_init(sync.pollset, &sync.mu);
   sync.is_done = 0;
 
-  grpc_jwt_verifier_verify(&exec_ctx, verifier, sync.pollset, jwt, aud,
-                           on_jwt_verification_done, &sync);
+  grpc_jwt_verifier_verify(&exec_ctx, verifier, sync.pollset, FLAGS_jwt.c_str(),
+                           FLAGS_aud.c_str(), on_jwt_verification_done, &sync);
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
@@ -116,7 +123,6 @@ int main(int argc, char** argv) {
 
   grpc_jwt_verifier_destroy(&exec_ctx, verifier);
   grpc_exec_ctx_finish(&exec_ctx);
-  gpr_cmdline_destroy(cl);
   grpc_shutdown();
   return !sync.success;
 }

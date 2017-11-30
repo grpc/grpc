@@ -32,7 +32,6 @@ filegroups:
   - src/core/lib/support/arena.cc
   - src/core/lib/support/atm.cc
   - src/core/lib/support/avl.cc
-  - src/core/lib/support/cmdline.cc
   - src/core/lib/support/cpu_iphone.cc
   - src/core/lib/support/cpu_linux.cc
   - src/core/lib/support/cpu_posix.cc
@@ -80,7 +79,6 @@ filegroups:
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
   - include/grpc/support/avl.h
-  - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
   - include/grpc/support/histogram.h
   - include/grpc/support/host_port.h
@@ -2058,28 +2056,6 @@ targets:
   - mac
   - linux
   - posix
-- name: fling_client
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/fling/client.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: fling_server
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/fling/server.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: fling_stream_test
   cpu_cost: 1.5
   build: test
@@ -2154,15 +2130,6 @@ targets:
   language: c
   src:
   - test/core/support/avl_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: gpr_cmdline_test
-  build: test
-  language: c
-  src:
-  - test/core/support/cmdline_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2386,32 +2353,11 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
-- name: grpc_create_jwt
-  build: tool
-  language: c
-  src:
-  - test/core/security/create_jwt.cc
-  deps:
-  - grpc
-  - gpr
-  secure: true
-  uses_polling: false
 - name: grpc_credentials_test
   build: test
   language: c
   src:
   - test/core/security/credentials_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_fetch_oauth2
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/security/fetch_oauth2.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2454,15 +2400,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: grpc_print_google_default_creds_token
-  build: tool
-  language: c
-  src:
-  - test/core/security/print_google_default_creds_token.cc
-  deps:
-  - grpc
-  - gpr
-  uses_polling: false
 - name: grpc_security_connector_test
   build: test
   language: c
@@ -2483,15 +2420,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: grpc_verify_jwt
-  build: tool
-  language: c
-  src:
-  - test/core/security/verify_jwt.cc
-  deps:
-  - grpc
-  - gpr
-  uses_polling: false
 - name: handshake_client
   build: test
   language: c
@@ -2689,16 +2617,6 @@ targets:
   corpus_dirs:
   - test/core/json/corpus
   maxlen: 512
-- name: json_rewrite
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/json/json_rewrite.cc
-  deps:
-  - grpc
-  - gpr
-  uses_polling: false
 - name: json_rewrite_test
   build: test
   language: c
@@ -2766,43 +2684,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: low_level_ping_pong_benchmark
-  build: benchmark
-  language: c
-  src:
-  - test/core/network_benchmarks/low_level_ping_pong.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: memory_profile_client
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/memory_usage/client.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: memory_profile_server
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/memory_usage/server.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: memory_profile_test
   cpu_cost: 1.5
   build: test
@@ -4019,6 +3900,28 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: fling_client
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/core/fling/client.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: fling_server
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/core/fling/server.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -4069,6 +3972,17 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{7E51A25F-AC59-488F-906C-C60FAAE706AA}'
+- name: grpc_create_jwt
+  build: test
+  language: c++
+  src:
+  - test/core/security/create_jwt.cc
+  deps:
+  - grpc
+  - grpc_test_util
+  - gpr
+  secure: true
+  uses_polling: false
 - name: grpc_csharp_plugin
   build: protoc
   language: c++
@@ -4079,6 +3993,17 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
+- name: grpc_fetch_oauth2
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/core/security/fetch_oauth2.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_node_plugin
   build: protoc
   language: c++
@@ -4107,6 +4032,16 @@ targets:
   - grpc_plugin_support
   secure: false
   vs_config_type: Application
+- name: grpc_print_google_default_creds_token
+  build: test
+  language: c++
+  src:
+  - test/core/security/print_google_default_creds_token.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  uses_polling: false
 - name: grpc_python_plugin
   build: protoc
   language: c++
@@ -4147,6 +4082,17 @@ targets:
   - gpr
   filegroups:
   - grpc++_codegen_proto
+- name: grpc_verify_jwt
+  build: test
+  language: c++
+  src:
+  - test/core/security/verify_jwt.cc
+  deps:
+  - grpc
+  - grpc_test_util
+  - gpr
+  - gpr_test_util
+  uses_polling: false
 - name: grpclb_api_test
   gtest: true
   build: test
@@ -4319,6 +4265,17 @@ targets:
   - mac
   - linux
   - posix
+- name: json_rewrite
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/core/json/json_rewrite.cc
+  deps:
+  - grpc
+  - grpc_test_util
+  - gpr
+  uses_polling: false
 - name: json_run_localhost
   build: test
   run: false
@@ -4337,6 +4294,43 @@ targets:
   - mac
   - linux
   - posix
+- name: low_level_ping_pong_benchmark
+  build: benchmark
+  language: c++
+  src:
+  - test/core/network_benchmarks/low_level_ping_pong.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: memory_profile_client
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/core/memory_usage/client.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
+- name: memory_profile_server
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/core/memory_usage/server.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: memory_test
   gtest: true
   build: test

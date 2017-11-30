@@ -32,6 +32,9 @@ grpc_cc_binary(
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
+    external_deps = [
+        "gflags",
+    ],
 )
 
 grpc_cc_binary(
@@ -45,6 +48,9 @@ grpc_cc_binary(
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+        "gflags",
     ],
 )
 

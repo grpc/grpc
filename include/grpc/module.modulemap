@@ -5,7 +5,6 @@ framework module grpc {
   header "support/alloc.h"
   header "support/atm.h"
   header "support/avl.h"
-  header "support/cmdline.h"
   header "support/cpu.h"
   header "support/histogram.h"
   header "support/host_port.h"

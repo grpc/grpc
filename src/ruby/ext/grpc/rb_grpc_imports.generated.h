@@ -34,7 +34,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
@@ -616,33 +615,6 @@ extern gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
 typedef int(*gpr_avl_is_empty_type)(gpr_avl avl);
 extern gpr_avl_is_empty_type gpr_avl_is_empty_import;
 #define gpr_avl_is_empty gpr_avl_is_empty_import
-typedef gpr_cmdline*(*gpr_cmdline_create_type)(const char* description);
-extern gpr_cmdline_create_type gpr_cmdline_create_import;
-#define gpr_cmdline_create gpr_cmdline_create_import
-typedef void(*gpr_cmdline_add_int_type)(gpr_cmdline* cl, const char* name, const char* help, int* value);
-extern gpr_cmdline_add_int_type gpr_cmdline_add_int_import;
-#define gpr_cmdline_add_int gpr_cmdline_add_int_import
-typedef void(*gpr_cmdline_add_flag_type)(gpr_cmdline* cl, const char* name, const char* help, int* value);
-extern gpr_cmdline_add_flag_type gpr_cmdline_add_flag_import;
-#define gpr_cmdline_add_flag gpr_cmdline_add_flag_import
-typedef void(*gpr_cmdline_add_string_type)(gpr_cmdline* cl, const char* name, const char* help, const char** value);
-extern gpr_cmdline_add_string_type gpr_cmdline_add_string_import;
-#define gpr_cmdline_add_string gpr_cmdline_add_string_import
-typedef void(*gpr_cmdline_on_extra_arg_type)(gpr_cmdline* cl, const char* name, const char* help, void (*on_extra_arg)(void* user_data, const char* arg), void* user_data);
-extern gpr_cmdline_on_extra_arg_type gpr_cmdline_on_extra_arg_import;
-#define gpr_cmdline_on_extra_arg gpr_cmdline_on_extra_arg_import
-typedef void(*gpr_cmdline_set_survive_failure_type)(gpr_cmdline* cl);
-extern gpr_cmdline_set_survive_failure_type gpr_cmdline_set_survive_failure_import;
-#define gpr_cmdline_set_survive_failure gpr_cmdline_set_survive_failure_import
-typedef int(*gpr_cmdline_parse_type)(gpr_cmdline* cl, int argc, char** argv);
-extern gpr_cmdline_parse_type gpr_cmdline_parse_import;
-#define gpr_cmdline_parse gpr_cmdline_parse_import
-typedef void(*gpr_cmdline_destroy_type)(gpr_cmdline* cl);
-extern gpr_cmdline_destroy_type gpr_cmdline_destroy_import;
-#define gpr_cmdline_destroy gpr_cmdline_destroy_import
-typedef char*(*gpr_cmdline_usage_string_type)(gpr_cmdline* cl, const char* argv0);
-extern gpr_cmdline_usage_string_type gpr_cmdline_usage_string_import;
-#define gpr_cmdline_usage_string gpr_cmdline_usage_string_import
 typedef unsigned(*gpr_cpu_num_cores_type)(void);
 extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 #define gpr_cpu_num_cores gpr_cpu_num_cores_import

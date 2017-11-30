@@ -19,17 +19,29 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gflags/gflags.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/security/oauth2_utils.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_string(json_refresh_token, "", "File path of the json refresh token.");
+DEFINE_bool(gce, false,
+            "Get a token from the GCE metadata server (only works in GCE).");
 
 static grpc_call_credentials* create_refresh_token_creds(
     const char* json_refresh_token_file_path) {
@@ -44,30 +56,19 @@ static grpc_call_credentials* create_refresh_token_creds(
 int main(int argc, char** argv) {
   grpc_call_credentials* creds = nullptr;
   char* json_key_file_path = nullptr;
-  const char* json_refresh_token_file_path = nullptr;
   char* token = nullptr;
-  int use_gce = 0;
   char* scope = nullptr;
-  gpr_cmdline* cl = gpr_cmdline_create("fetch_oauth2");
-  gpr_cmdline_add_string(cl, "json_refresh_token",
-                         "File path of the json refresh token.",
-                         &json_refresh_token_file_path);
-  gpr_cmdline_add_flag(
-      cl, "gce",
-      "Get a token from the GCE metadata server (only works in GCE).",
-      &use_gce);
-  gpr_cmdline_parse(cl, argc, argv);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   grpc_init();
 
-  if (json_key_file_path != nullptr &&
-      json_refresh_token_file_path != nullptr) {
+  if (json_key_file_path != nullptr && !FLAGS_json_refresh_token.empty()) {
     gpr_log(GPR_ERROR,
             "--json_key and --json_refresh_token are mutually exclusive.");
     exit(1);
   }
 
-  if (use_gce) {
+  if (FLAGS_gce) {
     if (json_key_file_path != nullptr || scope != nullptr) {
       gpr_log(GPR_INFO,
               "Ignoring json key and scope to get a token from the GCE "
@@ -78,13 +79,13 @@ int main(int argc, char** argv) {
       gpr_log(GPR_ERROR, "Could not create gce credentials.");
       exit(1);
     }
-  } else if (json_refresh_token_file_path != nullptr) {
-    creds = create_refresh_token_creds(json_refresh_token_file_path);
+  } else if (!FLAGS_json_refresh_token.empty()) {
+    creds = create_refresh_token_creds(FLAGS_json_refresh_token.c_str());
     if (creds == nullptr) {
       gpr_log(GPR_ERROR,
               "Could not create refresh token creds. %s does probably not "
               "contain a valid json refresh token.",
-              json_refresh_token_file_path);
+              FLAGS_json_refresh_token.c_str());
       exit(1);
     }
   } else {
@@ -99,7 +100,6 @@ int main(int argc, char** argv) {
     gpr_free(token);
   }
   grpc_call_credentials_release(creds);
-  gpr_cmdline_destroy(cl);
   grpc_shutdown();
   return 0;
 }

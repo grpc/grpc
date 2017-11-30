@@ -46,7 +46,7 @@ int main(int argc, const char** argv) {
                gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--bind");
   gpr_join_host_port(&args[2], "::", port);
-  args[3] = const_cast<char*>("--no-secure");
+  args[3] = const_cast<char*>("--nosecure");
   svr = gpr_subprocess_create(4, (const char**)args);
   gpr_free(args[0]);
   gpr_free(args[2]);
@@ -57,7 +57,7 @@ int main(int argc, const char** argv) {
   args[1] = const_cast<char*>("--target");
   gpr_join_host_port(&args[2], "127.0.0.1", port);
   args[3] = const_cast<char*>("--scenario=ping-pong-request");
-  args[4] = const_cast<char*>("--no-secure");
+  args[4] = const_cast<char*>("--nosecure");
   args[5] = nullptr;
   cli = gpr_subprocess_create(6, (const char**)args);
   gpr_free(args[0]);

@@ -39,16 +39,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "cmdline_test",
-    srcs = ["cmdline_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//test/core/util:gpr_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "cpu_test",
     srcs = ["cpu_test.cc"],
     language = "C++",

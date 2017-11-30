@@ -21,7 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/cmdline.h>
+#include <gflags/gflags.h>
+
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -29,6 +30,20 @@
 #include "src/core/lib/profiling/timers.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/test_config.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_uint64(payload_size, 1, "Size of the payload to send");
+DEFINE_string(target, "localhost:443", "Target host:port");
+DEFINE_bool(secure, false, "Run with security?");
+DEFINE_string(scenario, "ping-pong-request", "Scenario");
+DEFINE_uint64(warmup, 1, "Warmup seconds");
+DEFINE_uint64(benchmark, 5, "Benchmark seconds");
 
 static gpr_histogram* histogram;
 static grpc_byte_buffer* the_buffer;
@@ -149,12 +164,7 @@ int main(int argc, char** argv) {
 
   char* fake_argv[1];
 
-  int payload_size = 1;
-  int secure = 0;
-  const char* target = "localhost:443";
-  gpr_cmdline* cl;
   grpc_event event;
-  const char* scenario_name = "ping-pong-request";
   scenario sc = {nullptr, nullptr, nullptr};
 
   gpr_timers_set_log_filename("latency_trace.fling_client.txt");
@@ -165,43 +175,33 @@ int main(int argc, char** argv) {
   fake_argv[0] = argv[0];
   grpc_test_init(1, fake_argv);
 
-  int warmup_seconds = 1;
-  int benchmark_seconds = 5;
-
-  cl = gpr_cmdline_create("fling client");
-  gpr_cmdline_add_int(cl, "payload_size", "Size of the payload to send",
-                      &payload_size);
-  gpr_cmdline_add_string(cl, "target", "Target host:port", &target);
-  gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
-  gpr_cmdline_add_string(cl, "scenario", "Scenario", &scenario_name);
-  gpr_cmdline_add_int(cl, "warmup", "Warmup seconds", &warmup_seconds);
-  gpr_cmdline_add_int(cl, "benchmark", "Benchmark seconds", &benchmark_seconds);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   for (i = 0; i < GPR_ARRAY_SIZE(scenarios); i++) {
-    if (0 == strcmp(scenarios[i].name, scenario_name)) {
+    if (0 == strcmp(scenarios[i].name, FLAGS_scenario.c_str())) {
       sc = scenarios[i];
     }
   }
   if (!sc.name) {
-    fprintf(stderr, "unsupported scenario '%s'. Valid are:", scenario_name);
+    fprintf(stderr,
+            "unsupported scenario '%s'. Valid are:", FLAGS_scenario.c_str());
     for (i = 0; i < GPR_ARRAY_SIZE(scenarios); i++) {
       fprintf(stderr, " %s", scenarios[i].name);
     }
     return 1;
   }
 
-  channel = grpc_insecure_channel_create(target, nullptr, nullptr);
+  channel =
+      grpc_insecure_channel_create(FLAGS_target.c_str(), nullptr, nullptr);
   cq = grpc_completion_queue_create_for_next(nullptr);
-  the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
+  the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)FLAGS_payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);
 
   sc.init();
 
-  gpr_timespec end_warmup = grpc_timeout_seconds_to_deadline(warmup_seconds);
+  gpr_timespec end_warmup = grpc_timeout_seconds_to_deadline(FLAGS_warmup);
   gpr_timespec end_profiling =
-      grpc_timeout_seconds_to_deadline(warmup_seconds + benchmark_seconds);
+      grpc_timeout_seconds_to_deadline(FLAGS_warmup + FLAGS_benchmark);
 
   while (gpr_time_cmp(gpr_now(end_warmup.clock_type), end_warmup) < 0) {
     sc.do_one_step();

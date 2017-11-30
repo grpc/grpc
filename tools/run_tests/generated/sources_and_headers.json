@@ -529,40 +529,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "fling_client", 
-    "src": [
-      "test/core/fling/client.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "fling_server", 
-    "src": [
-      "test/core/fling/server.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "fling_stream_test", 
     "src": [
       "test/core/fling/fling_stream_test.cc"
@@ -654,21 +620,6 @@
     "name": "gpr_avl_test", 
     "src": [
       "test/core/support/avl_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_cmdline_test", 
-    "src": [
-      "test/core/support/cmdline_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1022,21 +973,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_create_jwt", 
-    "src": [
-      "test/core/security/create_jwt.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
@@ -1047,23 +983,6 @@
     "name": "grpc_credentials_test", 
     "src": [
       "test/core/security/credentials_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_fetch_oauth2", 
-    "src": [
-      "test/core/security/fetch_oauth2.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1122,21 +1041,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_print_google_default_creds_token", 
-    "src": [
-      "test/core/security/print_google_default_creds_token.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
@@ -1164,21 +1068,6 @@
     "name": "grpc_ssl_credentials_test", 
     "src": [
       "test/core/security/ssl_credentials_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_verify_jwt", 
-    "src": [
-      "test/core/security/verify_jwt.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1449,21 +1338,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "json_rewrite", 
-    "src": [
-      "test/core/json/json_rewrite.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
@@ -1559,57 +1433,6 @@
     "name": "load_file_test", 
     "src": [
       "test/core/iomgr/load_file_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "low_level_ping_pong_benchmark", 
-    "src": [
-      "test/core/network_benchmarks/low_level_ping_pong.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "memory_profile_client", 
-    "src": [
-      "test/core/memory_usage/client.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "memory_profile_server", 
-    "src": [
-      "test/core/memory_usage/server.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3206,6 +3029,40 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "fling_client", 
+    "src": [
+      "test/core/fling/client.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "fling_server", 
+    "src": [
+      "test/core/fling/server.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -3275,6 +3132,22 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_create_jwt", 
+    "src": [
+      "test/core/security/create_jwt.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "grpc_plugin_support"
     ], 
     "headers": [], 
@@ -3283,6 +3156,23 @@
     "name": "grpc_csharp_plugin", 
     "src": [
       "src/compiler/csharp_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_fetch_oauth2", 
+    "src": [
+      "test/core/security/fetch_oauth2.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3325,6 +3215,22 @@
     "name": "grpc_php_plugin", 
     "src": [
       "src/compiler/php_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_print_google_default_creds_token", 
+    "src": [
+      "test/core/security/print_google_default_creds_token.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3383,6 +3289,23 @@
     "name": "grpc_tool_test", 
     "src": [
       "test/cpp/util/grpc_tool_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_verify_jwt", 
+    "src": [
+      "test/core/security/verify_jwt.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3615,6 +3538,22 @@
   {
     "deps": [
       "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "json_rewrite", 
+    "src": [
+      "test/core/json/json_rewrite.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
@@ -3628,6 +3567,57 @@
     "name": "json_run_localhost", 
     "src": [
       "test/cpp/qps/json_run_localhost.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "low_level_ping_pong_benchmark", 
+    "src": [
+      "test/core/network_benchmarks/low_level_ping_pong.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "memory_profile_client", 
+    "src": [
+      "test/core/memory_usage/client.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "memory_profile_server", 
+    "src": [
+      "test/core/memory_usage/server.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4984,7 +4974,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "bad_ssl_cert_server", 
     "src": [
       "test/core/bad_ssl/servers/cert.cc"
@@ -7513,7 +7503,7 @@
       "test/core/bad_ssl/server_common.h"
     ], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "bad_ssl_test_server", 
     "src": [
       "test/core/bad_ssl/server_common.cc", 
@@ -7719,7 +7709,6 @@
       "src/core/lib/support/arena.cc", 
       "src/core/lib/support/atm.cc", 
       "src/core/lib/support/avl.cc", 
-      "src/core/lib/support/cmdline.cc", 
       "src/core/lib/support/cpu_iphone.cc", 
       "src/core/lib/support/cpu_linux.cc", 
       "src/core/lib/support/cpu_posix.cc", 
@@ -7772,7 +7761,6 @@
       "include/grpc/support/atm_gcc_sync.h", 
       "include/grpc/support/atm_windows.h", 
       "include/grpc/support/avl.h", 
-      "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
       "include/grpc/support/histogram.h", 
       "include/grpc/support/host_port.h", 
@@ -7820,7 +7808,6 @@
       "include/grpc/support/atm_gcc_sync.h", 
       "include/grpc/support/atm_windows.h", 
       "include/grpc/support/avl.h", 
-      "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
       "include/grpc/support/histogram.h", 
       "include/grpc/support/host_port.h", 

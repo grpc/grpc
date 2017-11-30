@@ -22,10 +22,25 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 
+#include <gflags/gflags.h>
+
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_string(json_key, "", "File path of the json key.");
+DEFINE_string(scope, "",
+              "OPTIONAL Space delimited permissions. Mutually "
+              "exclusive with service_url");
+DEFINE_string(service_url, "",
+              "OPTIONAL service URL. Mutually exclusive with scope.");
 
 void create_jwt(const char* json_key_file_path, const char* service_url,
                 const char* scope) {
@@ -54,40 +69,27 @@ void create_jwt(const char* json_key_file_path, const char* service_url,
 }
 
 int main(int argc, char** argv) {
-  const char* scope = nullptr;
-  const char* json_key_file_path = nullptr;
-  const char* service_url = nullptr;
   grpc_init();
-  gpr_cmdline* cl = gpr_cmdline_create("create_jwt");
-  gpr_cmdline_add_string(cl, "json_key", "File path of the json key.",
-                         &json_key_file_path);
-  gpr_cmdline_add_string(cl, "scope",
-                         "OPTIONAL Space delimited permissions. Mutually "
-                         "exclusive with service_url",
-                         &scope);
-  gpr_cmdline_add_string(cl, "service_url",
-                         "OPTIONAL service URL. Mutually exclusive with scope.",
-                         &service_url);
-  gpr_cmdline_parse(cl, argc, argv);
+  ParseCommandLineFlags(&argc, &argv, true);
 
-  if (json_key_file_path == nullptr) {
+  if (FLAGS_json_key.empty()) {
     fprintf(stderr, "Missing --json_key option.\n");
     exit(1);
   }
-  if (scope != nullptr) {
-    if (service_url != nullptr) {
+  if (!FLAGS_scope.empty()) {
+    if (!FLAGS_service_url.empty()) {
       fprintf(stderr,
               "Options --scope and --service_url are mutually exclusive.\n");
       exit(1);
     }
-  } else if (service_url == nullptr) {
+  } else if (FLAGS_service_url.empty()) {
     fprintf(stderr, "Need one of --service_url or --scope options.\n");
     exit(1);
   }
 
-  create_jwt(json_key_file_path, service_url, scope);
+  create_jwt(FLAGS_json_key.c_str(), FLAGS_service_url.c_str(),
+             FLAGS_scope.c_str());
 
-  gpr_cmdline_destroy(cl);
   grpc_shutdown();
   return 0;
 }

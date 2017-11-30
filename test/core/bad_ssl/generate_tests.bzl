@@ -26,12 +26,12 @@ def grpc_bad_ssl_tests():
       name = 'bad_ssl_test_server',
       srcs = ['server_common.cc'],
       hdrs = ['server_common.h'],
-      deps = ['//test/core/util:grpc_test_util', '//:grpc', '//test/core/end2end:ssl_test_data']
+      deps = ['//test/core/util:grpc_test_util', '//:grpc', '//test/core/end2end:ssl_test_data', '//external:gflags'],
   )
   for t in BAD_SSL_TESTS:
     native.cc_test(
         name = 'bad_ssl_%s_server' % t,
         srcs = ['servers/%s.cc' % t],
-        deps = [':bad_ssl_test_server'],
+        deps = [':bad_ssl_test_server', '//external:gflags'],
     )
 

@@ -16,9 +16,10 @@
  *
  */
 
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <signal.h>
+
+#include <gflags/gflags.h>
 
 #include "test/core/bad_ssl/server_common.h"
 #include "test/core/util/test_config.h"
@@ -28,19 +29,23 @@
  * configured to cause some failure case in the SSL connection path.
  */
 
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_string(bind, "", "Bind host:port");
+
 static int got_sigint = 0;
 
 static void sigint_handler(int x) { got_sigint = 1; }
 
 const char* bad_ssl_addr(int argc, char** argv) {
-  gpr_cmdline* cl;
-  const char* addr = nullptr;
-  cl = gpr_cmdline_create("test server");
-  gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
-  GPR_ASSERT(addr);
-  return addr;
+  ParseCommandLineFlags(&argc, &argv, true);
+  GPR_ASSERT(!FLAGS_bind.empty());
+  return FLAGS_bind.c_str();
 }
 
 void bad_ssl_run(grpc_server* server) {

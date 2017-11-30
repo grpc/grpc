@@ -164,7 +164,6 @@
         'src/core/lib/support/arena.cc',
         'src/core/lib/support/atm.cc',
         'src/core/lib/support/avl.cc',
-        'src/core/lib/support/cmdline.cc',
         'src/core/lib/support/cpu_iphone.cc',
         'src/core/lib/support/cpu_linux.cc',
         'src/core/lib/support/cpu_posix.cc',

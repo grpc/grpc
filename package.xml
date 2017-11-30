@@ -62,7 +62,6 @@
     <file baseinstalldir="/" name="include/grpc/support/atm_gcc_sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/avl.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/cmdline.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cpu.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/histogram.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/host_port.h" role="src" />
@@ -117,7 +116,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/avl.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/cmdline.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cpu_iphone.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cpu_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cpu_posix.cc" role="src" />

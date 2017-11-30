@@ -29,8 +29,9 @@
 #include <unistd.h>
 #endif
 
+#include <gflags/gflags.h>
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -38,6 +39,16 @@
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_string(bind, "", "Bind host:port");
+DEFINE_bool(secure, false, "Run with security?");
 
 static grpc_completion_queue* cq;
 static grpc_server* server;
@@ -147,12 +158,10 @@ int main(int argc, char** argv) {
   grpc_memory_counters_init();
   grpc_event ev;
   char* addr_buf = nullptr;
-  gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
   int shutdown_finished = 0;
 
-  int secure = 0;
   const char* addr = nullptr;
 
   char* fake_argv[1];
@@ -164,15 +173,13 @@ int main(int argc, char** argv) {
   grpc_init();
   srand((unsigned)clock());
 
-  cl = gpr_cmdline_create("fling server");
-  gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
-  gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
+  ParseCommandLineFlags(&argc, &argv, true);
 
-  if (addr == nullptr) {
+  if (FLAGS_bind.empty()) {
     gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
     addr = addr_buf;
+  } else {
+    addr = FLAGS_bind.c_str();
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
@@ -180,7 +187,7 @@ int main(int argc, char** argv) {
 
   struct grpc_memory_counters before_server_create =
       grpc_memory_counters_snapshot();
-  if (secure) {
+  if (FLAGS_secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
