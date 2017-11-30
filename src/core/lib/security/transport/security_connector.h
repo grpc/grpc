@@ -29,10 +29,6 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 
 /* --- status enum. --- */
@@ -258,9 +254,5 @@ grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer);
 tsi_peer tsi_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
 void tsi_shallow_peer_destruct(tsi_peer* peer);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_CONNECTOR_H */

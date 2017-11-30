@@ -28,10 +28,6 @@ extern grpc_core::TraceFlag grpc_client_channel_trace;
 // Channel arg key for server URI string.
 #define GRPC_ARG_SERVER_URI "grpc.server_uri"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* A client channel is a channel that begins disconnected, and can connect
    to some endpoint on demand. If that endpoint disconnects, it will be
    connected to again later.
@@ -55,9 +51,5 @@ void grpc_client_channel_watch_connectivity_state(
 /* Debug helper: pull the subchannel call from a call stack element */
 grpc_subchannel_call* grpc_client_channel_get_subchannel_call(
     grpc_call_element* elem);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H */

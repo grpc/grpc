@@ -688,8 +688,8 @@ static grpc_lb_policy_factory* round_robin_lb_factory_create() {
 
 /* Plugin registration */
 
-extern "C" void grpc_lb_policy_round_robin_init() {
+void grpc_lb_policy_round_robin_init() {
   grpc_register_lb_policy(round_robin_lb_factory_create());
 }
 
-extern "C" void grpc_lb_policy_round_robin_shutdown() {}
+void grpc_lb_policy_round_robin_shutdown() {}

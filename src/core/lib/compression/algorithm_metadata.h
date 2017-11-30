@@ -22,10 +22,6 @@
 #include <grpc/compression.h>
 #include "src/core/lib/transport/metadata.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Return compression algorithm based metadata value */
 grpc_slice grpc_compression_algorithm_slice(
     grpc_compression_algorithm algorithm);
@@ -52,9 +48,5 @@ grpc_compression_algorithm grpc_compression_algorithm_from_slice(
  * GRPC_STREAM_COMPRESS_ALGORITHM_COUNT on failure */
 grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
     grpc_slice str);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_COMPRESSION_ALGORITHM_METADATA_H */
