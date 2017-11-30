@@ -183,7 +183,7 @@ void grpc_lb_policy_try_reresolve(grpc_exec_ctx* exec_ctx,
     }
   } else {
     if (grpc_lb_trace->enabled() && error == GRPC_ERROR_NONE) {
-      gpr_log(GPR_DEBUG, "%s %p: reresolution already in progress.",
+      gpr_log(GPR_DEBUG, "%s %p: re-resolution already in progress.",
               grpc_lb_trace->name(), policy);
     }
   }
