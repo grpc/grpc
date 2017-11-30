@@ -64,10 +64,9 @@ namespace Grpc.Core.Internal
         {
             using (completionQueue.NewScope())
             {
-                var ctx = BatchContextSafeHandle.Create();
                 // TODO(jtattermusch): delegate allocation by caller can be avoided by utilizing the "state" object,
                 // but server shutdown isn't worth optimizing right now.
-                completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback, null);
+                var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(callback, null);
                 Native.grpcsharp_server_shutdown_and_notify_callback(this, completionQueue, ctx);
             }
         }
