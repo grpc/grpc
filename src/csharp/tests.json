@@ -10,6 +10,7 @@
     "Grpc.Core.Tests.AppDomainUnloadTest",
     "Grpc.Core.Tests.AuthContextTest",
     "Grpc.Core.Tests.AuthPropertyTest",
+    "Grpc.Core.Tests.CallCancellationTest",
     "Grpc.Core.Tests.CallCredentialsTest",
     "Grpc.Core.Tests.CallOptionsTest",
     "Grpc.Core.Tests.ChannelCredentialsTest",
