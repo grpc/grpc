@@ -165,7 +165,7 @@ void grpc_mdctx_global_init(void);
 void grpc_mdctx_global_shutdown(grpc_exec_ctx* exec_ctx);
 
 #define GRPC__CAN_INCLUDE_STATIC_METADATA_H
-#include "static_metadata.h"
+#include "src/core/lib/transport/static_metadata.h"
 #undef GRPC__CAN_INCLUDE_STATIC_METADATA_H
 
 typedef struct grpc_linked_mdelem {
