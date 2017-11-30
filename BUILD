@@ -422,14 +422,13 @@ grpc_cc_library(
         "src/core/ext/census/grpc_context.cc",
     ],
     external_deps = [
-        "libssl",
+        "nanopb",
     ],
     language = "c++",
     public_hdrs = [
         "include/grpc/census.h",
     ],
     deps = [
-        "//third_party/nanopb",
         "grpc_base",
     ],
 )
@@ -1036,9 +1035,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
+    external_deps = [
+        "nanopb",
+    ],
     language = "c++",
     deps = [
-        "//third_party/nanopb",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
@@ -1063,9 +1064,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
+    external_deps = [
+        "nanopb",
+    ],
     language = "c++",
     deps = [
-        "//third_party/nanopb",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
@@ -1414,7 +1417,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/transport/cronet/transport/cronet_transport.h",
-        "//third_party:objective_c/Cronet/bidirectional_stream_c.h",
+        "third_party/objective_c/Cronet/bidirectional_stream_c.h",
     ],
     language = "c++",
     public_hdrs = [
