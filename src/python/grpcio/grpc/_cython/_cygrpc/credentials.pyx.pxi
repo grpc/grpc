@@ -40,7 +40,11 @@ cdef int _get_metadata(
     else:
       cb(user_data, NULL, 0, status, error_details)
   args = context.service_url, context.method_name, callback,
-  threading.Thread(target=<object>state, args=args).start()
+  threading.Thread(
+      target=<object>state,
+      args=args,
+      name='Thread-gRPC-PluginGetMetadata',
+  ).start()
   return 0  # Asynchronous return
 
 

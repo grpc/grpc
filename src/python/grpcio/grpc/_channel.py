@@ -229,7 +229,10 @@ def _consume_request_iterator(request_iterator, state, call,
                 state.condition.notify_all()
 
     consumption_thread = _common.CleanupThread(
-        stop_consumption_thread, target=consume_request_iterator)
+        stop_consumption_thread,
+        target=consume_request_iterator,
+        name='Thread-gRPC-ConsumeRequestIterator',
+    )
     consumption_thread.start()
 
 
@@ -708,7 +711,10 @@ def _run_channel_spin_thread(state):
                     call.cancel()
 
     channel_spin_thread = _common.CleanupThread(
-        stop_channel_spin, target=channel_spin)
+        stop_channel_spin,
+        target=channel_spin,
+        name='Thread-gRPC-StopChannelSpin',
+    )
     channel_spin_thread.start()
 
 
@@ -789,7 +795,10 @@ def _deliver(state, initial_connectivity, initial_callbacks):
 
 def _spawn_delivery(state, callbacks):
     delivering_thread = threading.Thread(
-        target=_deliver, args=(state, state.connectivity, callbacks,))
+        target=_deliver,
+        args=(state, state.connectivity, callbacks,),
+        name='Thread-gRPC-SpawnDelivery',
+    )
     delivering_thread.start()
     state.delivering = True
 
@@ -848,7 +857,9 @@ def _subscribe(state, callback, try_to_connect):
             polling_thread = _common.CleanupThread(
                 lambda timeout: _moot(state),
                 target=_poll_connectivity,
-                args=(state, state.channel, bool(try_to_connect)))
+                args=(state, state.channel, bool(try_to_connect)),
+                name='Thread-gRPC-SubscribeMoot',
+            )
             polling_thread.start()
             state.polling = True
             state.callbacks_and_connectivities.append([callback, None])
