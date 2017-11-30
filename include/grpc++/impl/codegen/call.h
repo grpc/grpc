@@ -313,11 +313,6 @@ class CallOpSendMessage {
   WriteOptions write_options_;
 };
 
-namespace internal {
-template <class T>
-T Example();
-}  // namespace internal
-
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
