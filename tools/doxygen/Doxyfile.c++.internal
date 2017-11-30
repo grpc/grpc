@@ -1068,7 +1068,6 @@ src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.h \
 src/core/lib/transport/http2_errors.h \
 src/core/lib/transport/metadata.h \
-src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/pid_controller.h \
 src/core/lib/transport/service_config.h \
 src/core/lib/transport/static_metadata.h \

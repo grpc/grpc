@@ -42,7 +42,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 typedef struct listener {
   void* arg;
