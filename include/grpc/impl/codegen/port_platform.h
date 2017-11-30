@@ -166,6 +166,7 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_LINUX_PTHREAD_NAME 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -195,6 +196,7 @@
 #else /* __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7 */
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_TLS 1
+#define GPR_APPLE_PTHREAD_NAME 1
 #endif
 #else /* __MAC_OS_X_VERSION_MIN_REQUIRED */
 #define GPR_CPU_POSIX 1
@@ -236,6 +238,7 @@
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#define GPR_BSD_PTHREAD_NAME 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
