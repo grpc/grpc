@@ -265,7 +265,7 @@ static void test_receive(int number_of_clients) {
     GPR_ASSERT(connect(clifd, (struct sockaddr*)addr,
                        (socklen_t)resolved_addr.len) == 0);
     GPR_ASSERT(5 == write(clifd, "hello", 5));
-    while (g_number_of_reads == number_of_reads_before &&
+    while (g_number_of_bytes_read < (number_of_bytes_read_before + 5) &&
            deadline > grpc_exec_ctx_now(&exec_ctx)) {
       grpc_pollset_worker* worker = nullptr;
       GPR_ASSERT(GRPC_LOG_IF_ERROR(

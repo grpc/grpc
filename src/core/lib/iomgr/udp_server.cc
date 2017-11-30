@@ -438,7 +438,7 @@ static void on_write(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
     return;
   }
 
-  // Schedule actual write in another thread.
+  /* Schedule actual write in another thread. */
   GRPC_CLOSURE_INIT(&sp->do_write_closure, do_write, arg,
                     grpc_executor_scheduler(GRPC_EXECUTOR_LONG));
 
