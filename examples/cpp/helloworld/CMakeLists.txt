@@ -13,19 +13,20 @@ endif()
 # Protobuf
 # NOTE: we cannot use "CONFIG" mode here because protobuf-config.cmake
 # is broken when used with CMAKE_INSTALL_PREFIX
-find_package(protobuf REQUIRED)
+find_package(Protobuf REQUIRED)
 message(STATUS "Using protobuf ${protobuf_VERSION}")
 
 if(Protobuf_FOUND)
   # Protobuf_FOUND is set for package type "CONFIG"
   set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
   set(_PROTOBUF_PROTOC protobuf::protoc)
-endif()
-if(PROTOBUF_FOUND)
+elseif(PROTOBUF_FOUND)
   # PROTOBUF_FOUND is set for package type "MODULE"
   set(_PROTOBUF_LIBPROTOBUF ${PROTOBUF_LIBRARIES})
   set(_PROTOBUF_PROTOC ${PROTOBUF_PROTOC_EXECUTABLE})
   include_directories(${PROTOBUF_INCLUDE_DIRS})
+else()
+  message(WARNING "Failed to locate libprotobuf and protoc!")
 endif()
 
 # gRPC
