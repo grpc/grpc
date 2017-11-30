@@ -31,7 +31,7 @@ tools/run_tests/run_performance_tests.py \
     || EXIT_CODE=1
 
 # prevent pushing leftover build files to remote hosts in the next step.
-git clean -fdxq --exclude=\!sponge_log.xml
+git clean -fdxq -e reports
 
 # scalability with 32cores (and upload to a different BQ table)
 tools/run_tests/run_performance_tests.py \
@@ -45,7 +45,7 @@ tools/run_tests/run_performance_tests.py \
     || EXIT_CODE=1
 
 # prevent pushing leftover build files to remote hosts in the next step.
-git clean -fdxq --exclude=\!sponge_log.xml
+git clean -fdxq -e reports
 
 # selected scenarios on Windows
 tools/run_tests/run_performance_tests.py \
