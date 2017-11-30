@@ -106,10 +106,10 @@ Builds gRPC C and C++ with boringssl.
 Before building, you need to clone the gRPC github repository and download submodules containing source code 
 for gRPC's dependencies (that's done by the `submodule` command).
 ```
-> @rem You can also do just "git clone -b THE_BRANCH_YOU_WANT https://github.com/grpc/grpc"
-> powershell git clone -b ((New-Object System.Net.WebClient).DownloadString(\"https://grpc.io/release\").Trim()) https://github.com/grpc/grpc
+> @rem You can also do just "git clone --recursive -b THE_BRANCH_YOU_WANT https://github.com/grpc/grpc"
+> powershell git clone --recursive -b ((New-Object System.Net.WebClient).DownloadString(\"https://grpc.io/release\").Trim()) https://github.com/grpc/grpc
 > cd grpc
-> git submodule update --init
+> @rem To update submodules at later time, run "git submodule update --init"
 ```
 
 #### cmake: Using Visual Studio 2015 or 2017 (can only build with OPENSSL_NO_ASM).
@@ -119,7 +119,7 @@ every target defined in `CMakeLists.txt` (+ few extra convenience projects
 added automatically by cmake). After opening the solution with Visual Studio 
 you will be able to browse and build the code as usual.
 ```
-> @rem Run from grpc directory after cloning the repo and submodules.
+> @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
 > cd .build
 > cmake .. -G "Visual Studio 14 2015" -DCMAKE_BUILD_TYPE=Release
@@ -130,7 +130,7 @@ you will be able to browse and build the code as usual.
 Please note that when using Ninja, you'll still need Visual C++ (part of Visual Studio)
 installed to be able to compile the C/C++ sources.
 ```
-> @rem Run from grpc directory after cloning the repo and submodules.
+> @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
 > cd .build
 > call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
