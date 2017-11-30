@@ -75,7 +75,8 @@ GPRAPI void gpr_cmdline_set_survive_failure(gpr_cmdline* cl);
 /** Parse the command line; returns 1 on success, on failure either dies
    (by default) or returns 0 if gpr_cmdline_set_survive_failure() has been
    called */
-GPRAPI int gpr_cmdline_parse(gpr_cmdline* cl, int argc, char** argv);
+GPRAPI int gpr_cmdline_parse(gpr_cmdline* cl, int argc,
+                             const char* const* argv);
 /** Destroy the parser */
 GPRAPI void gpr_cmdline_destroy(gpr_cmdline* cl);
 /** Get a string describing usage */

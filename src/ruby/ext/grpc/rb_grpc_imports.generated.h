@@ -634,7 +634,7 @@ extern gpr_cmdline_on_extra_arg_type gpr_cmdline_on_extra_arg_import;
 typedef void(*gpr_cmdline_set_survive_failure_type)(gpr_cmdline* cl);
 extern gpr_cmdline_set_survive_failure_type gpr_cmdline_set_survive_failure_import;
 #define gpr_cmdline_set_survive_failure gpr_cmdline_set_survive_failure_import
-typedef int(*gpr_cmdline_parse_type)(gpr_cmdline* cl, int argc, char** argv);
+typedef int(*gpr_cmdline_parse_type)(gpr_cmdline* cl, int argc, const char* const* argv);
 extern gpr_cmdline_parse_type gpr_cmdline_parse_import;
 #define gpr_cmdline_parse gpr_cmdline_parse_import
 typedef void(*gpr_cmdline_destroy_type)(gpr_cmdline* cl);
