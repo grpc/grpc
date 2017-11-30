@@ -23,10 +23,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_connector grpc_connector;
 typedef struct grpc_connector_vtable grpc_connector_vtable;
 
@@ -73,9 +69,5 @@ void grpc_connector_connect(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
 /** Cancel any pending connection */
 void grpc_connector_shutdown(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
                              grpc_error* why);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H */
