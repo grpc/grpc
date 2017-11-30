@@ -36,12 +36,12 @@
   // Most operation subclasses don't set any flags in the grpc_op, and rely on the flag member being
   // initialized to zero.
   grpc_op _op;
-  void(^_handler)();
+  void(^_handler)(void);
 }
 
 - (void)finish {
   if (_handler) {
-    void(^handler)() = _handler;
+    void(^handler)(void) = _handler;
     _handler = nil;
     handler();
   }
@@ -55,13 +55,13 @@
 }
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata
-                         handler:(void (^)())handler {
+                         handler:(void (^)(void))handler {
   return [self initWithMetadata:metadata flags:0 handler:handler];
 }
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata
                            flags:(uint32_t)flags
-                         handler:(void (^)())handler {
+                         handler:(void (^)(void))handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_SEND_INITIAL_METADATA;
     _op.data.send_initial_metadata.count = metadata.count;
@@ -92,7 +92,7 @@
   return [self initWithMessage:nil handler:nil];
 }
 
-- (instancetype)initWithMessage:(NSData *)message handler:(void (^)())handler {
+- (instancetype)initWithMessage:(NSData *)message handler:(void (^)(void))handler {
   if (!message) {
     [NSException raise:NSInvalidArgumentException format:@"message cannot be nil"];
   }
@@ -116,7 +116,7 @@
   return [self initWithHandler:nil];
 }
 
-- (instancetype)initWithHandler:(void (^)())handler {
+- (instancetype)initWithHandler:(void (^)(void))handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
     _handler = handler;
@@ -271,7 +271,7 @@
   [self startBatchWithOperations:operations errorHandler:nil];
 }
 
-- (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)())errorHandler {
+- (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)(void))errorHandler {
   // Keep logs of op batches when we are running tests. Disabled when in production for improved
   // performance.
 #ifdef GRPC_TEST_OBJC
