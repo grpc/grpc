@@ -173,7 +173,7 @@ if "win32" in sys.platform:
     # on msvc, but only for 32 bits
     DEFINE_MACROS += (('NTDDI_VERSION', 0x06000000),)
 else:
-  DEFINE_MACROS += (('HAVE_CONFIG_H', 1),)
+  DEFINE_MACROS += (('HAVE_CONFIG_H', 1), ('GRPC_ENABLE_FORK_SUPPORT', 1),)
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
@@ -237,7 +237,7 @@ INSTALL_REQUIRES = (
     'six>=1.5.2',
     # TODO(atash): eventually split the grpcio package into a metapackage
     # depending on protobuf and the runtime component (independent of protobuf)
-    'protobuf>=3.3.0',
+    'protobuf>=3.5.0.post1',
 )
 
 if not PY3:

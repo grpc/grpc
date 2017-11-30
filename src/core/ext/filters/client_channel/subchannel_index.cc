@@ -157,7 +157,7 @@ grpc_subchannel* grpc_subchannel_index_find(grpc_subchannel_key* key) {
 grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
                                                 grpc_subchannel* constructed) {
   grpc_subchannel* c = nullptr;
-  bool need_to_unref_constructed;
+  bool need_to_unref_constructed = false;
 
   while (c == nullptr) {
     need_to_unref_constructed = false;
