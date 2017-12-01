@@ -355,21 +355,18 @@ static void do_read(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   GPR_ASSERT(sp->read_cb && error == GRPC_ERROR_NONE);
   /* TODO: the reason we hold server->mu here is merely to prevent fd
    * shutdown while we are reading. However, it blocks do_write(). Switch to
-   * read lock if available.
-   * */
+   * read lock if available. */
   gpr_mu_lock(&sp->server->mu);
   /* Tell the registered callback that data is available to read. */
   if (!sp->already_shutdown &&
       sp->read_cb(exec_ctx, sp->emfd, sp->server->user_data)) {
     /* There maybe more packets to read. Schedule read_more_cb_ closure to run
-     * after finishing this event loop.
-     * */
+     * after finishing this event loop. */
     GRPC_CLOSURE_SCHED(exec_ctx, &sp->do_read_closure, GRPC_ERROR_NONE);
   } else {
     /* Finish reading all the packets, re-arm the notification event so we can
      * get another chance to read. Or fd already shutdown, re-arm to get a
-     * notification with shutdown error.
-     * */
+     * notification with shutdown error. */
     grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
   }
   gpr_mu_unlock(&sp->server->mu);
@@ -379,8 +376,8 @@ static void do_read(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 static void on_read(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   grpc_udp_listener* sp = (grpc_udp_listener*)arg;
 
+  gpr_mu_lock(&sp->server->mu);
   if (error != GRPC_ERROR_NONE) {
-    gpr_mu_lock(&sp->server->mu);
     if (0 == --sp->server->active_ports && sp->server->shutdown) {
       gpr_mu_unlock(&sp->server->mu);
       deactivated_all_ports(exec_ctx, sp->server);
@@ -390,23 +387,21 @@ static void on_read(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
     return;
   }
   /* Read once. If there is more data to read, off load the work to another
-   * thread to finish.
-   * */
+   * thread to finish. */
   GPR_ASSERT(sp->read_cb);
   if (sp->read_cb(exec_ctx, sp->emfd, sp->server->user_data)) {
     /* There maybe more packets to read. Schedule read_more_cb_ closure to run
-     * after finishing this event loop.
-     * */
+     * after finishing this event loop. */
     GRPC_CLOSURE_INIT(&sp->do_read_closure, do_read, arg,
                       grpc_executor_scheduler(GRPC_EXECUTOR_LONG));
     GRPC_CLOSURE_SCHED(exec_ctx, &sp->do_read_closure, GRPC_ERROR_NONE);
   } else {
     /* Finish reading all the packets, re-arm the notification event so we can
      * get another chance to read. Or fd already shutdown, re-arm to get a
-     * notification with shutdown error.
-     * */
+     * notification with shutdown error. */
     grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
   }
+  gpr_mu_unlock(&sp->server->mu);
 }
 
 // Wrapper of grpc_fd_notify_on_write() with a grpc_closure callback interface.
