@@ -314,8 +314,8 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
     out->Print(
         "static readonly grpc::Marshaller<$type$> $fieldname$ = "
         "grpc::Marshallers.Create((arg) => "
-        "global::Google.Protobuf.MessageExtensions.ToByteArray(arg), "
-        "$type$.Parser.ParseFrom);\n",
+        "global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => "
+        "$type$.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));\n",
         "fieldname", GetMarshallerFieldName(message), "type",
         GetClassName(message));
   }
