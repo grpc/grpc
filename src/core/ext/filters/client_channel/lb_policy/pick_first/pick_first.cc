@@ -511,8 +511,6 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
         grpc_connectivity_state_set(
             exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
             GRPC_ERROR_REF(error), "connecting_transient_failure");
-        grpc_lb_policy_try_reresolve(
-            exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
       }
       // Reuses the connectivity refs from the previous watch.
       grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
