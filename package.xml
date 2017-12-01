@@ -64,7 +64,6 @@
     <file baseinstalldir="/" name="include/grpc/support/avl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cmdline.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cpu.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/histogram.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/host_port.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log_windows.h" role="src" />
@@ -129,7 +128,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/env_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/fork.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/histogram.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_android.cc" role="src" />
