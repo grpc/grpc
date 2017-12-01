@@ -157,12 +157,10 @@ static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
                                     const char* prefix, grpc_error* error) {
   const char* msg = grpc_error_string(error);
   gpr_log(GPR_INFO, "%s: %s", prefix, msg);
-
   int ep_state = conn->ep_state;
   int new_ep_state = ep_state | failure_type;
   if (ep_state != new_ep_state) {
     conn->ep_state = new_ep_state;
-
     // Shutdown the endpoint (client and/or server) if both read and write
     // failures are observed after setting the failure_type.
     // To prevent calling endpoint shutdown multiple times, It is important to
@@ -175,14 +173,12 @@ static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
                                GRPC_ERROR_REF(error));
       }
     }
-
     if (((ep_state & CLIENT_EP_FAIL) != CLIENT_EP_FAIL) &&
         ((new_ep_state & CLIENT_EP_FAIL) == CLIENT_EP_FAIL)) {
       grpc_endpoint_shutdown(exec_ctx, conn->client_endpoint,
                              GRPC_ERROR_REF(error));
     }
   }
-
   proxy_connection_unref(exec_ctx, conn, "conn_failed");
 }
 
@@ -491,7 +487,6 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg,
   conn->client_endpoint = endpoint;
   conn->proxy = proxy;
   gpr_ref_init(&conn->refcount, 1);
-  conn->ep_state = 0;
   conn->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(exec_ctx, conn->pollset_set, proxy->pollset);
   grpc_endpoint_add_to_pollset_set(exec_ctx, endpoint, conn->pollset_set);
