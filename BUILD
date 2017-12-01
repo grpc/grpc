@@ -34,6 +34,11 @@ load(
 )
 
 config_setting(
+    name = "windows",
+    values = {"cpu": "x64_windows_msvc"},
+)
+
+config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},
 )
