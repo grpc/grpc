@@ -196,7 +196,7 @@ def archive_repo(languages):
 
 def prepare_remote_hosts(hosts, prepare_local=False):
   """Prepares remote hosts (and maybe prepare localhost as well)."""
-  prepare_timeout = 5*60
+  prepare_timeout = 10*60
   prepare_jobs = []
   for host in hosts:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, host)
@@ -229,6 +229,8 @@ def prepare_remote_hosts(hosts, prepare_local=False):
 def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), build_local=False):
   """Builds performance worker on remote hosts (and maybe also locally)."""
   build_timeout = 15*60
+  # Kokoro VMs (which are local only) do not have caching, so they need more time to build
+  local_build_timeout = 30*60
   build_jobs = []
   for host in hosts:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, host)
@@ -245,7 +247,7 @@ def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), bui
             cmdline=['tools/run_tests/performance/build_performance.sh'] + languages,
             shortname='local_build',
             environ = {'CONFIG': 'opt'},
-            timeout_seconds=build_timeout))
+            timeout_seconds=local_build_timeout))
   jobset.message('START', 'Building.', do_newline=True)
   num_failures, _ = jobset.run(
       build_jobs, newline_on_success=True, maxjobs=10)
@@ -483,8 +485,14 @@ def main():
                           'generating flamegraphs (e.g., "--perf_args=stat ...")'))
   argp.add_argument('-f', '--flame_graph_reports', default='perf_reports', type=str,
                     help='Name of directory to output flame graph profiles to, if any are created.')
+  argp.add_argument('-u', '--remote_host_username', default='', type=str,
+                    help='Use a username that isn\'t "Jenkins" to SSH into remote workers.')
 
   args = argp.parse_args()
+
+  global _REMOTE_HOST_USERNAME
+  if args.remote_host_username:
+    _REMOTE_HOST_USERNAME = args.remote_host_username
 
   languages = set(scenario_config.LANGUAGES[l]
                   for l in itertools.chain.from_iterable(
