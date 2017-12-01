@@ -688,7 +688,8 @@ static void set_final_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
     *call->final_op.client.status = code;
     *call->final_op.client.status_details = grpc_slice_ref_internal(slice);
   } else {
-    *call->final_op.server.cancelled = (code != GRPC_STATUS_OK) || call->server_status_not_ok;
+    *call->final_op.server.cancelled =
+        (code != GRPC_STATUS_OK) || call->server_status_not_ok;
   }
 }
 
@@ -976,6 +977,7 @@ static grpc_stream_compression_algorithm decode_stream_compression(
 static void publish_app_metadata(grpc_call* call, grpc_metadata_batch* b,
                                  int is_trailing) {
   if (b->list.count == 0) return;
+  if (!call->is_client && is_trailing) return;
   GPR_TIMER_BEGIN("publish_app_metadata", 0);
   grpc_metadata_array* dest;
   grpc_metadata* mdusr;
@@ -1061,8 +1063,8 @@ static void recv_trailing_filter(grpc_exec_ctx* exec_ctx, void* args,
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_status);
     GRPC_ERROR_UNREF(error);
   } else {
-     //TODO(kpayson) batch completed successfully w/no error + no status, should
-     // we assert instead?
+    // TODO(kpayson) batch completed successfully w/no error + no status, should
+    // we assert instead?
     set_final_status(exec_ctx, GRPC_ERROR_NONE, call);
   }
   publish_app_metadata(call, b, true);
@@ -1757,19 +1759,19 @@ static grpc_call_error call_start_batch(grpc_exec_ctx* exec_ctx,
         call->send_extra_metadata_count = 1;
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             exec_ctx, call->channel, op->data.send_status_from_server.status);
-          if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
-            call->server_status_not_ok = true;
-          }
-          if (op->data.send_status_from_server.status_details != nullptr) {
-            call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
-                exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
-                grpc_slice_ref_internal(
-                    *op->data.send_status_from_server.status_details));
-            call->send_extra_metadata_count++;
-            char* msg = grpc_slice_to_c_string(
-                GRPC_MDVALUE(call->send_extra_metadata[1].md));
-            gpr_free(msg);
-          }
+        if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
+          call->server_status_not_ok = true;
+        }
+        if (op->data.send_status_from_server.status_details != nullptr) {
+          call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
+              exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
+              grpc_slice_ref_internal(
+                  *op->data.send_status_from_server.status_details));
+          call->send_extra_metadata_count++;
+          char* msg = grpc_slice_to_c_string(
+              GRPC_MDVALUE(call->send_extra_metadata[1].md));
+          gpr_free(msg);
+        }
         if (!prepare_application_metadata(
                 exec_ctx, call,
                 (int)op->data.send_status_from_server.trailing_metadata_count,
