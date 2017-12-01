@@ -38,6 +38,11 @@ config_setting(
     values = {"define": "grpc_no_ares=true"},
 )
 
+config_setting(
+    name = "remote_execution",
+    values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "generous"
 
