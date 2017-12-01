@@ -26,10 +26,6 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef gpr_atm grpc_millis;
 
 #define GRPC_MILLIS_INF_FUTURE GPR_ATM_MAX
@@ -199,9 +195,5 @@ on outside context */
   ExecCtx* last_exec_ctx_ = Get();
 };
 }  // namespace grpc_core
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

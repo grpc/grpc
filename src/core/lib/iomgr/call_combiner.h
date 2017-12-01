@@ -27,10 +27,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/mpscq.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // A simple, lock-free mechanism for serializing activity related to a
 // single call.  This is similar to a combiner but is more lightweight.
 //
@@ -111,9 +107,5 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
 /// Indicates that the call has been cancelled.
 void grpc_call_combiner_cancel(grpc_call_combiner* call_combiner,
                                grpc_error* error);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H */

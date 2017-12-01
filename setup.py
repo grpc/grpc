@@ -181,6 +181,7 @@ if "linux" in sys.platform or "darwin" in sys.platform:
   pymodinit_type = 'PyObject*' if PY3 else 'void'
   pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
+  DEFINE_MACROS += (('GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK', 1),)
 
 # By default, Python3 distutils enforces compatibility of
 # c plugins (.so files) with the OSX version Python3 was built with.

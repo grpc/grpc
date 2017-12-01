@@ -61,10 +61,10 @@ grpc_arg grpc_load_reporting_enable_arg() {
 
 /* Plugin registration */
 
-extern "C" void grpc_server_load_reporting_plugin_init(void) {
+void grpc_server_load_reporting_plugin_init(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
                                    maybe_add_server_load_reporting_filter,
                                    (void*)&grpc_server_load_reporting_filter);
 }
 
-extern "C" void grpc_server_load_reporting_plugin_shutdown() {}
+void grpc_server_load_reporting_plugin_shutdown() {}

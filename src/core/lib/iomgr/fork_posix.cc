@@ -80,7 +80,9 @@ void grpc_postfork_child() {
 
 void grpc_fork_handlers_auto_register() {
   if (grpc_fork_support_enabled()) {
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     pthread_atfork(grpc_prefork, grpc_postfork_parent, grpc_postfork_child);
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   }
 }
 

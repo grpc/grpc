@@ -62,7 +62,7 @@ static bool maybe_add_required_filter(grpc_channel_stack_builder* builder,
              : true;
 }
 
-extern "C" void grpc_http_filters_init(void) {
+void grpc_http_filters_init(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_optional_filter, &compress_filter);
@@ -83,4 +83,4 @@ extern "C" void grpc_http_filters_init(void) {
       maybe_add_required_filter, (void*)&grpc_http_server_filter);
 }
 
-extern "C" void grpc_http_filters_shutdown(void) {}
+void grpc_http_filters_shutdown(void) {}

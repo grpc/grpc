@@ -23,10 +23,6 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Forward decl of struct grpc_server */
 /* This is not typedef'ed to avoid a typedef-redefinition error */
 struct grpc_server;
@@ -71,9 +67,5 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
                              grpc_udp_server_orphan_cb orphan_cb);
 
 void grpc_udp_server_destroy(grpc_udp_server* server, grpc_closure* on_done);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_UDP_SERVER_H */

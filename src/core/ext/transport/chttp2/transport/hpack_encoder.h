@@ -36,10 +36,6 @@
 
 extern grpc_core::TraceFlag grpc_http_trace;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
   uint32_t filter_elems_sum;
   uint32_t max_table_size;
@@ -94,9 +90,5 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
                                grpc_metadata_batch* metadata,
                                const grpc_encode_header_options* options,
                                grpc_slice_buffer* outbuf);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H */

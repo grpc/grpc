@@ -56,7 +56,7 @@ static void drain_cq(grpc_completion_queue *cq) {
 + (void)setUp {
   [super setUp];
 
-  char *argv[] = {"CoreCronetEnd2EndTests"};
+  char *argv[] = {(char *)"CoreCronetEnd2EndTests"};
   grpc_test_init(1, argv);
 
   grpc_init();
@@ -100,7 +100,7 @@ void init_ctx(SSL_CTX *ctx) {
   // Install server certificate
   BIO *pem = BIO_new_mem_buf((void *)test_server1_cert,
                              (int)strlen(test_server1_cert));
-  X509 *cert = PEM_read_bio_X509_AUX(pem, NULL, NULL, "");
+  X509 *cert = PEM_read_bio_X509_AUX(pem, NULL, NULL, (char *)"");
   SSL_CTX_use_certificate(ctx, cert);
   X509_free(cert);
   BIO_free(pem);
@@ -108,7 +108,7 @@ void init_ctx(SSL_CTX *ctx) {
   // Install server private key
   pem =
       BIO_new_mem_buf((void *)test_server1_key, (int)strlen(test_server1_key));
-  EVP_PKEY *key = PEM_read_bio_PrivateKey(pem, NULL, NULL, "");
+  EVP_PKEY *key = PEM_read_bio_PrivateKey(pem, NULL, NULL, (char *)"");
   SSL_CTX_use_PrivateKey(ctx, key);
   EVP_PKEY_free(key);
   BIO_free(pem);
@@ -258,7 +258,7 @@ unsigned int parse_h2_length(const char *field) {
 
 - (void)packetCoalescing:(BOOL)useCoalescing {
   grpc_arg arg;
-  arg.key = GRPC_ARG_USE_CRONET_PACKET_COALESCING;
+  arg.key = (char *)GRPC_ARG_USE_CRONET_PACKET_COALESCING;
   arg.type = GRPC_ARG_INTEGER;
   arg.value.integer = useCoalescing ? 1 : 0;
   grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);

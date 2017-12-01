@@ -23,10 +23,6 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/iomgr/socket_mutator.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // Channel args are intentionally immutable, to avoid the need for locking.
 
 /** Copy the arguments in \a src into a new instance */
@@ -151,9 +147,5 @@ grpc_arg grpc_channel_arg_string_create(char* name, char* value);
 grpc_arg grpc_channel_arg_integer_create(char* name, int value);
 grpc_arg grpc_channel_arg_pointer_create(char* name, void* value,
                                          const grpc_arg_pointer_vtable* vtable);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H */

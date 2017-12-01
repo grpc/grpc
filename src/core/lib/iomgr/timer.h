@@ -32,10 +32,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_timer grpc_timer;
 
 /* Initialize *timer. When expired or canceled, closure will be called with
@@ -104,9 +100,5 @@ void grpc_timer_consume_kick(void);
 /* the following must be implemented by each iomgr implementation */
 
 void grpc_kick_poller(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_H */

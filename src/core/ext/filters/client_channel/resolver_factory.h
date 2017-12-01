@@ -24,10 +24,6 @@
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_resolver_factory grpc_resolver_factory;
 typedef struct grpc_resolver_factory_vtable grpc_resolver_factory_vtable;
 
@@ -68,9 +64,5 @@ grpc_resolver* grpc_resolver_factory_create_resolver(
     the default authority to use for this scheme. */
 char* grpc_resolver_factory_get_default_authority(
     grpc_resolver_factory* factory, grpc_uri* uri);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H */

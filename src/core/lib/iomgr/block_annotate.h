@@ -19,18 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H
 #define GRPC_CORE_LIB_IOMGR_BLOCK_ANNOTATE_H
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void gpr_thd_start_blocking_region();
 void gpr_thd_end_blocking_region();
-
-#ifdef __cplusplus
-}
-#endif
 
 /* These annotations identify the beginning and end of regions where
    the code may block for reasons other than synchronization functions.

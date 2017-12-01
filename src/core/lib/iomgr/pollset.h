@@ -25,10 +25,6 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount;
 
 /* A grpc_pollset is a set of file descriptors that a higher level item is
@@ -80,9 +76,5 @@ grpc_error* grpc_pollset_work(grpc_pollset* pollset,
 grpc_error* grpc_pollset_kick(grpc_pollset* pollset,
                               grpc_pollset_worker* specific_worker)
     GRPC_MUST_USE_RESULT;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_H */

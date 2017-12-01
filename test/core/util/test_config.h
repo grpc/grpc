@@ -21,10 +21,6 @@
 
 #include <grpc/support/time.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern int64_t g_fixture_slowdown_factor;
 extern int64_t g_poller_slowdown_factor;
 
@@ -42,9 +38,5 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 #endif
 
 void grpc_test_init(int argc, char** argv);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */

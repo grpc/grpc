@@ -20,10 +20,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/timer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum grpc_deadline_timer_state {
   GRPC_DEADLINE_STATE_INITIAL,
   GRPC_DEADLINE_STATE_PENDING,
@@ -91,9 +87,5 @@ bool grpc_deadline_checking_enabled(const grpc_channel_args* args);
 // client_channel filter.
 extern const grpc_channel_filter grpc_client_deadline_filter;
 extern const grpc_channel_filter grpc_server_deadline_filter;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H */

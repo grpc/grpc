@@ -29,10 +29,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/transport/security_connector.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct grpc_http_response;
 
 /* --- Constants. --- */
@@ -244,9 +240,5 @@ grpc_credentials_metadata_request* grpc_credentials_metadata_request_create(
 
 void grpc_credentials_metadata_request_destroy(
     grpc_credentials_metadata_request* r);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H */

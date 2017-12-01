@@ -27,10 +27,6 @@ extern grpc_core::TraceFlag grpc_http_trace;
 extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 grpc_transport* grpc_create_chttp2_transport(
     const grpc_channel_args* channel_args, grpc_endpoint* ep, int is_client);
 
@@ -38,9 +34,5 @@ grpc_transport* grpc_create_chttp2_transport(
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
 void grpc_chttp2_transport_start_reading(grpc_transport* transport,
                                          grpc_slice_buffer* read_buffer);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */

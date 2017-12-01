@@ -24,10 +24,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /// grpc_channel_stack_builder offers a programmatic interface to selected
 /// and order channel filters
 typedef struct grpc_channel_stack_builder grpc_channel_stack_builder;
@@ -158,9 +154,5 @@ grpc_error* grpc_channel_stack_builder_finish(
 void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder);
 
 extern grpc_core::TraceFlag grpc_trace_channel_stack_builder;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H */

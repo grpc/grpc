@@ -32,10 +32,6 @@
 #define GRPC_GOOGLE_SERVICE_ACCOUNTS_KEY_URL_PREFIX \
   "www.googleapis.com/robot/v1/metadata/x509"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* --- grpc_jwt_verifier_status. --- */
 
 typedef enum {
@@ -121,9 +117,5 @@ grpc_jwt_claims* grpc_jwt_claims_from_json(grpc_json* json, grpc_slice buffer);
 grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
                                                const char* audience);
 const char* grpc_jwt_issuer_email_domain(const char* issuer);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H */

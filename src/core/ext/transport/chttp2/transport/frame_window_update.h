@@ -24,10 +24,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
   uint8_t byte;
   uint8_t is_connection_update;
@@ -44,9 +40,5 @@ grpc_error* grpc_chttp2_window_update_parser_parse(void* parser,
                                                    grpc_chttp2_stream* s,
                                                    grpc_slice slice,
                                                    int is_last);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_WINDOW_UPDATE_H */

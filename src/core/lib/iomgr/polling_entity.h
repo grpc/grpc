@@ -22,10 +22,6 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum grpc_pollset_tag {
   GRPC_POLLS_NONE,
   GRPC_POLLS_POLLSET,
@@ -66,8 +62,5 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
  * pollset_set \a * pss_dst */
 void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst);
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H */

@@ -411,7 +411,7 @@ static grpc_resolver_factory* dns_ares_resolver_factory_create() {
   return &dns_resolver_factory;
 }
 
-extern "C" void grpc_resolver_dns_ares_init(void) {
+void grpc_resolver_dns_ares_init(void) {
   char* resolver = gpr_getenv("GRPC_DNS_RESOLVER");
   /* TODO(zyc): Turn on c-ares based resolver by default after the address
      sorter and the CNAME support are added. */
@@ -427,7 +427,7 @@ extern "C" void grpc_resolver_dns_ares_init(void) {
   gpr_free(resolver);
 }
 
-extern "C" void grpc_resolver_dns_ares_shutdown(void) {
+void grpc_resolver_dns_ares_shutdown(void) {
   char* resolver = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver != nullptr && gpr_stricmp(resolver, "ares") == 0) {
     grpc_ares_cleanup();
@@ -437,8 +437,8 @@ extern "C" void grpc_resolver_dns_ares_shutdown(void) {
 
 #else /* GRPC_ARES == 1 && !defined(GRPC_UV) */
 
-extern "C" void grpc_resolver_dns_ares_init(void) {}
+void grpc_resolver_dns_ares_init(void) {}
 
-extern "C" void grpc_resolver_dns_ares_shutdown(void) {}
+void grpc_resolver_dns_ares_shutdown(void) {}
 
 #endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */

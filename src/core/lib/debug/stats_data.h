@@ -24,10 +24,6 @@
 #include <inttypes.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum {
   GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED,
   GRPC_STATS_COUNTER_SERVER_CALLS_CREATED,
@@ -433,9 +429,5 @@ extern const int grpc_stats_histo_buckets[13];
 extern const int grpc_stats_histo_start[13];
 extern const int* const grpc_stats_histo_bucket_boundaries[13];
 extern void (*const grpc_stats_inc_histogram[13])(int x);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

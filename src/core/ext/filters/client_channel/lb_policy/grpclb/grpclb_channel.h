@@ -23,10 +23,6 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/slice/slice_hash_table.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Create the channel used for communicating with an LB service.
  * Note that an LB *service* may be comprised of several LB *servers*.
  *
@@ -43,10 +39,6 @@ grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
     grpc_slice_hash_table* targets_info,
     grpc_fake_resolver_response_generator* response_generator,
     const grpc_channel_args* args);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CHANNEL_H \
         */

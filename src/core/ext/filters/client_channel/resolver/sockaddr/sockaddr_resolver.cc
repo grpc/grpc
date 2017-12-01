@@ -202,7 +202,7 @@ DECL_FACTORY(unix);
 DECL_FACTORY(ipv4);
 DECL_FACTORY(ipv6);
 
-extern "C" void grpc_resolver_sockaddr_init(void) {
+void grpc_resolver_sockaddr_init(void) {
   grpc_register_resolver_type(&ipv4_resolver_factory);
   grpc_register_resolver_type(&ipv6_resolver_factory);
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -210,4 +210,4 @@ extern "C" void grpc_resolver_sockaddr_init(void) {
 #endif
 }
 
-extern "C" void grpc_resolver_sockaddr_shutdown(void) {}
+void grpc_resolver_sockaddr_shutdown(void) {}

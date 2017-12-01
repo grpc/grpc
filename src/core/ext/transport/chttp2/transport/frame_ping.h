@@ -23,10 +23,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
   uint8_t byte;
   uint8_t is_ack;
@@ -44,9 +40,5 @@ grpc_error* grpc_chttp2_ping_parser_parse(void* parser,
 
 /* Test-only function for disabling ping ack */
 void grpc_set_disable_ping_ack(bool disable_ping_ack);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H */

@@ -21,10 +21,6 @@
 
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_transport_vtable {
   /* Memory required for a single stream element - this is allocated by upper
      layers and initialized by the transport */
@@ -69,9 +65,5 @@ struct grpc_transport {
   /* pointer to a vtable defining operations on this transport */
   const grpc_transport_vtable* vtable;
 };
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H */

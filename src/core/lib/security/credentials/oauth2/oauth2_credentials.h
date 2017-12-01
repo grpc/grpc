@@ -22,10 +22,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // auth_refresh_token parsing.
 typedef struct {
   const char* type;
@@ -104,9 +100,5 @@ grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_http_response* response, grpc_mdelem* token_md,
     grpc_millis* token_lifetime);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

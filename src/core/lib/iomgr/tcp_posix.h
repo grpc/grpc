@@ -33,10 +33,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
 /* Create a tcp endpoint given a file desciptor and a read slice size.
@@ -55,9 +51,5 @@ int grpc_tcp_fd(grpc_endpoint* ep);
  * Requires: ep must be a tcp endpoint and fd must not be NULL. */
 void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
                                      grpc_closure* done);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_POSIX_H */
