@@ -81,8 +81,11 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
     /* not enough elapsed time between successive pings */
     if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
       gpr_log(GPR_DEBUG,
-              "%s: Ping delayed [%p]: not enough time elapsed since last ping",
-              t->is_client ? "CLIENT" : "SERVER", t->peer_string);
+              "%s: Ping delayed [%p]: not enough time elapsed since last ping. "
+              " Last ping %f: Next ping %f: Now %f",
+              t->is_client ? "CLIENT" : "SERVER", t->peer_string,
+              (double)t->ping_state.last_ping_sent_time,
+              (double)next_allowed_ping, (double)now);
     }
     if (!t->ping_state.is_delayed_ping_timer_set) {
       t->ping_state.is_delayed_ping_timer_set = true;
@@ -91,6 +94,7 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
     }
     return;
   }
+
   pq->inflight_id = t->ping_ctr;
   t->ping_ctr++;
   GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
