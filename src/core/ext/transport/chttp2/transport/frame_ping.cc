@@ -68,7 +68,7 @@ grpc_error* grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser* parser,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_ping_parser_parse(grpc_exec_ctx* exec_ctx, void* parser,
+grpc_error* grpc_chttp2_ping_parser_parse(void* parser,
                                           grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s,
                                           grpc_slice slice, int is_last) {
@@ -86,10 +86,10 @@ grpc_error* grpc_chttp2_ping_parser_parse(grpc_exec_ctx* exec_ctx, void* parser,
   if (p->byte == 8) {
     GPR_ASSERT(is_last);
     if (p->is_ack) {
-      grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
+      grpc_chttp2_ack_ping(t, p->opaque_8bytes);
     } else {
       if (!t->is_client) {
-        grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+        grpc_millis now = grpc_core::ExecCtx::Get()->Now();
         grpc_millis next_allowed_ping =
             t->ping_recv_state.last_ping_recv_time +
             t->ping_policy.min_recv_ping_interval_without_data;
@@ -104,7 +104,7 @@ grpc_error* grpc_chttp2_ping_parser_parse(grpc_exec_ctx* exec_ctx, void* parser,
         }
 
         if (next_allowed_ping > now) {
-          grpc_chttp2_add_ping_strike(exec_ctx, t);
+          grpc_chttp2_add_ping_strike(t);
         }
 
         t->ping_recv_state.last_ping_recv_time = now;
@@ -116,8 +116,7 @@ grpc_error* grpc_chttp2_ping_parser_parse(grpc_exec_ctx* exec_ctx, void* parser,
               t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks));
         }
         t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
-        grpc_chttp2_initiate_write(exec_ctx, t,
-                                   GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE);
+        grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE);
       }
     }
   }

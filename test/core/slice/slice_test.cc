@@ -292,6 +292,7 @@ static void test_static_slice_copy_interning(void) {
 int main(int argc, char** argv) {
   unsigned length;
   grpc_test_init(argc, argv);
+  grpc_init();
   test_slice_malloc_returns_something_sensible();
   test_slice_new_returns_something_sensible();
   test_slice_new_with_user_data();
@@ -305,5 +306,6 @@ int main(int argc, char** argv) {
   test_slice_interning();
   test_static_slice_interning();
   test_static_slice_copy_interning();
+  grpc_shutdown();
   return 0;
 }

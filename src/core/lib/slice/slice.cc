@@ -54,9 +54,9 @@ grpc_slice grpc_slice_ref_internal(grpc_slice slice) {
   return slice;
 }
 
-void grpc_slice_unref_internal(grpc_exec_ctx* exec_ctx, grpc_slice slice) {
+void grpc_slice_unref_internal(grpc_slice slice) {
   if (slice.refcount) {
-    slice.refcount->vtable->unref(exec_ctx, slice.refcount);
+    slice.refcount->vtable->unref(slice.refcount);
   }
 }
 
@@ -67,15 +67,14 @@ grpc_slice grpc_slice_ref(grpc_slice slice) {
 
 /* Public API */
 void grpc_slice_unref(grpc_slice slice) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_unref_internal(&exec_ctx, slice);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_unref_internal(slice);
 }
 
 /* grpc_slice_from_static_string support structure - a refcount that does
    nothing */
 static void noop_ref(void* unused) {}
-static void noop_unref(grpc_exec_ctx* exec_ctx, void* unused) {}
+static void noop_unref(void* unused) {}
 
 static const grpc_slice_refcount_vtable noop_refcount_vtable = {
     noop_ref, noop_unref, grpc_slice_default_eq_impl,
@@ -109,7 +108,7 @@ static void new_slice_ref(void* p) {
   gpr_ref(&r->refs);
 }
 
-static void new_slice_unref(grpc_exec_ctx* exec_ctx, void* p) {
+static void new_slice_unref(void* p) {
   new_slice_refcount* r = (new_slice_refcount*)p;
   if (gpr_unref(&r->refs)) {
     r->user_destroy(r->user_data);
@@ -159,7 +158,7 @@ static void new_with_len_ref(void* p) {
   gpr_ref(&r->refs);
 }
 
-static void new_with_len_unref(grpc_exec_ctx* exec_ctx, void* p) {
+static void new_with_len_unref(void* p) {
   new_with_len_slice_refcount* r = (new_with_len_slice_refcount*)p;
   if (gpr_unref(&r->refs)) {
     r->user_destroy(r->user_data, r->user_length);
@@ -210,7 +209,7 @@ static void malloc_ref(void* p) {
   gpr_ref(&r->refs);
 }
 
-static void malloc_unref(grpc_exec_ctx* exec_ctx, void* p) {
+static void malloc_unref(void* p) {
   malloc_refcount* r = (malloc_refcount*)p;
   if (gpr_unref(&r->refs)) {
     gpr_free(r);

@@ -32,6 +32,12 @@
      GPR_TLS_DECL(foo);
    Thread locals always have static scope.
 
+   Declaring a thread local class variable 'foo':
+     GPR_TLS_CLASS_DECL(foo);
+
+   Defining the thread local class variable:
+     GPR_TLS_CLASS_DEF(foo);
+
    Initializing a thread local (must be done at library initialization
    time):
      gpr_tls_init(&foo);
