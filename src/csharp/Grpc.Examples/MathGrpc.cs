@@ -28,10 +28,10 @@ namespace Math {
   {
     static readonly string __ServiceName = "math.Math";
 
-    static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_DivArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_DivReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivReply.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_FibArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.FibArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.Num> __Marshaller_Num = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.Num.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_DivArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Math.DivArgs.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_DivReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Math.DivReply.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_FibArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Math.FibArgs.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Math.Num> __Marshaller_Num = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Math.Num.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
 
     static readonly grpc::Method<global::Math.DivArgs, global::Math.DivReply> __Method_Div = new grpc::Method<global::Math.DivArgs, global::Math.DivReply>(
         grpc::MethodType.Unary,

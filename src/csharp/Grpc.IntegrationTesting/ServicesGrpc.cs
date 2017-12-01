@@ -30,8 +30,8 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.BenchmarkService";
 
-    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleRequest> __Marshaller_SimpleRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.SimpleRequest.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleResponse> __Marshaller_SimpleResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.SimpleResponse.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleRequest> __Marshaller_SimpleRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.SimpleRequest.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleResponse> __Marshaller_SimpleResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.SimpleResponse.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
 
     static readonly grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_UnaryCall = new grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
         grpc::MethodType.Unary,
@@ -330,13 +330,13 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.WorkerService";
 
-    static readonly grpc::Marshaller<global::Grpc.Testing.ServerArgs> __Marshaller_ServerArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ServerArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.ServerStatus> __Marshaller_ServerStatus = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ServerStatus.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.ClientArgs> __Marshaller_ClientArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ClientArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.ClientStatus> __Marshaller_ClientStatus = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ClientStatus.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.CoreRequest> __Marshaller_CoreRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.CoreRequest.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.CoreResponse> __Marshaller_CoreResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.CoreResponse.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_Void = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Void.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.ServerArgs> __Marshaller_ServerArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.ServerArgs.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Grpc.Testing.ServerStatus> __Marshaller_ServerStatus = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.ServerStatus.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Grpc.Testing.ClientArgs> __Marshaller_ClientArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.ClientArgs.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Grpc.Testing.ClientStatus> __Marshaller_ClientStatus = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.ClientStatus.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Grpc.Testing.CoreRequest> __Marshaller_CoreRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.CoreRequest.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Grpc.Testing.CoreResponse> __Marshaller_CoreResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.CoreResponse.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_Void = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.Void.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
 
     static readonly grpc::Method<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> __Method_RunServer = new grpc::Method<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus>(
         grpc::MethodType.DuplexStreaming,
@@ -627,8 +627,8 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.ReportQpsScenarioService";
 
-    static readonly grpc::Marshaller<global::Grpc.Testing.ScenarioResult> __Marshaller_ScenarioResult = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ScenarioResult.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_Void = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Void.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.ScenarioResult> __Marshaller_ScenarioResult = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.ScenarioResult.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
+    static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_Void = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), (arg) => global::Grpc.Testing.Void.Parser.ParseFrom(arg.Array, arg.Offset, arg.Count));
 
     static readonly grpc::Method<global::Grpc.Testing.ScenarioResult, global::Grpc.Testing.Void> __Method_ReportScenario = new grpc::Method<global::Grpc.Testing.ScenarioResult, global::Grpc.Testing.Void>(
         grpc::MethodType.Unary,
