@@ -1769,14 +1769,6 @@ static void fallback_update_locked(grpc_exec_ctx* exec_ctx,
 static void glb_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
                               const grpc_lb_policy_args* args) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)policy;
-  grpc_error* error;
-  if (grpc_connectivity_state_get(&glb_policy->state_tracker, &error) ==
-      GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    grpc_connectivity_state_set(exec_ctx, &glb_policy->state_tracker,
-                                GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                "glb_update_after_transient_failure");
-    glb_policy->started_picking = false;
-  }
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
