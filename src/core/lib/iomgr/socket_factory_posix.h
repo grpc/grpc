@@ -23,10 +23,6 @@
 #include <grpc/support/sync.h>
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** The virtual table of grpc_socket_factory */
 typedef struct {
   /** Replacement for socket(2) */
@@ -67,9 +63,5 @@ int grpc_socket_factory_compare(grpc_socket_factory* a, grpc_socket_factory* b);
 
 grpc_socket_factory* grpc_socket_factory_ref(grpc_socket_factory* factory);
 void grpc_socket_factory_unref(grpc_socket_factory* factory);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H */

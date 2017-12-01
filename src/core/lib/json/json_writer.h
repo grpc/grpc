@@ -35,10 +35,6 @@
 
 #include "src/core/lib/json/json_common.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_json_writer_vtable {
   /* Adds a character to the output stream. */
   void (*output_char)(void* userdata, char);
@@ -82,9 +78,5 @@ void grpc_json_writer_value_raw_with_len(grpc_json_writer* writer,
 /* Sets a string value. It'll be escaped, and utf-8 validated. */
 void grpc_json_writer_value_string(grpc_json_writer* writer,
                                    const char* string);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_JSON_JSON_WRITER_H */

@@ -23,10 +23,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct gts_shared_resource {
   gpr_thd_id thread_id;
   grpc_channel* channel;
@@ -37,9 +33,5 @@ typedef struct gts_shared_resource {
 /* This method returns the address of gts_shared_resource object shared by all
  *    TSI handshakes. */
 gts_shared_resource* gts_get_shared_resource(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H */

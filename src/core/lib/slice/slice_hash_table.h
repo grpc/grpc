@@ -19,10 +19,6 @@
 
 #include "src/core/lib/transport/metadata.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Hash table implementation.
  *
  * This implementation uses open addressing
@@ -70,9 +66,5 @@ void* grpc_slice_hash_table_get(const grpc_slice_hash_table* table,
  *  - else, if value_cmp(a_value, b_value) < 1 (resp. > 1). */
 int grpc_slice_hash_table_cmp(const grpc_slice_hash_table* a,
                               const grpc_slice_hash_table* b);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H */
