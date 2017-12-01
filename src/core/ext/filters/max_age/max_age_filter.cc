@@ -98,20 +98,23 @@ struct channel_data {
    calls, the max_idle_timer should be cancelled. */
 static void increase_call_count(channel_data* chand) {
   if (gpr_atm_full_fetch_add(&chand->call_count, 1) == 0) {
-    gpr_atm idle_state = gpr_atm_acq_load(&chand->idle_state);
-    switch (idle_state) {
-      case MAX_IDLE_STATE_TIMER_SET:
-        /* max_idle_timer_cb may have already set idle_state to
-           MAX_IDLE_STATE_INIT, in this case, we don't need to set it to
-           MAX_IDLE_STATE_SEEN_EXIT_IDLE */
-        gpr_atm_rel_cas(&chand->idle_state, MAX_IDLE_STATE_TIMER_SET,
-                        MAX_IDLE_STATE_SEEN_EXIT_IDLE);
-        break;
-      case MAX_IDLE_STATE_SEEN_ENTER_IDLE:
-        gpr_atm_rel_store(&chand->idle_state, MAX_IDLE_STATE_SEEN_EXIT_IDLE);
-        break;
-      default:
-        abort();
+    while (true) {
+      gpr_atm idle_state = gpr_atm_acq_load(&chand->idle_state);
+      switch (idle_state) {
+        case MAX_IDLE_STATE_TIMER_SET:
+          /* max_idle_timer_cb may have already set idle_state to
+             MAX_IDLE_STATE_INIT, in this case, we don't need to set it to
+             MAX_IDLE_STATE_SEEN_EXIT_IDLE */
+          gpr_atm_rel_cas(&chand->idle_state, MAX_IDLE_STATE_TIMER_SET,
+                          MAX_IDLE_STATE_SEEN_EXIT_IDLE);
+          return;
+        case MAX_IDLE_STATE_SEEN_ENTER_IDLE:
+          gpr_atm_rel_store(&chand->idle_state, MAX_IDLE_STATE_SEEN_EXIT_IDLE);
+          return;
+        default:
+          /* try again */
+          break;
+      }
     }
   }
 }
@@ -140,7 +143,8 @@ static void decrease_call_count(channel_data* chand) {
           }
           break;
         default:
-          abort();
+          /* try again */
+          break;
       }
     }
   }
@@ -219,7 +223,7 @@ static void close_max_idle_channel(void* arg, grpc_error* error) {
                         MAX_IDLE_STATE_TIMER_SET);
         break;
       } else {
-        abort();
+        /* try again */
       }
     }
   } else if (error != GRPC_ERROR_CANCELLED) {
