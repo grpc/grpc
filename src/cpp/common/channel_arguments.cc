@@ -23,11 +23,10 @@
 #include <grpc++/resource_quota.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
-extern "C" {
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
-}
+
 namespace grpc {
 
 ChannelArguments::ChannelArguments() {

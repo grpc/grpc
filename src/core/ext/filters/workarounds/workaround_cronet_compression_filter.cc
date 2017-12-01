@@ -139,7 +139,7 @@ static bool parse_user_agent(grpc_mdelem md) {
   bool grpc_objc_specifier_seen = false;
   bool cronet_specifier_seen = false;
   char *major_version_str = user_agent_str, *minor_version_str;
-  long major_version, minor_version;
+  long major_version = 0, minor_version = 0;
 
   char* head = strtok(user_agent_str, " ");
   while (head != nullptr) {
@@ -196,7 +196,7 @@ static bool register_workaround_cronet_compression(
       builder, &grpc_workaround_cronet_compression_filter, nullptr, nullptr);
 }
 
-extern "C" void grpc_workaround_cronet_compression_filter_init(void) {
+void grpc_workaround_cronet_compression_filter_init(void) {
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, GRPC_WORKAROUND_PRIORITY_HIGH,
       register_workaround_cronet_compression, nullptr);
@@ -204,4 +204,4 @@ extern "C" void grpc_workaround_cronet_compression_filter_init(void) {
                            parse_user_agent);
 }
 
-extern "C" void grpc_workaround_cronet_compression_filter_shutdown(void) {}
+void grpc_workaround_cronet_compression_filter_shutdown(void) {}

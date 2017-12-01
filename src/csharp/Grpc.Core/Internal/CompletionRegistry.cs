@@ -36,13 +36,15 @@ namespace Grpc.Core.Internal
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<CompletionRegistry>();
 
         readonly GrpcEnvironment environment;
+        readonly Func<BatchContextSafeHandle> batchContextFactory;
         readonly Dictionary<IntPtr, IOpCompletionCallback> dict = new Dictionary<IntPtr, IOpCompletionCallback>(new IntPtrComparer());
         SpinLock spinLock = new SpinLock(Debugger.IsAttached);
         IntPtr lastRegisteredKey;  // only for testing
 
-        public CompletionRegistry(GrpcEnvironment environment)
+        public CompletionRegistry(GrpcEnvironment environment, Func<BatchContextSafeHandle> batchContextFactory)
         {
-            this.environment = environment;
+            this.environment = GrpcPreconditions.CheckNotNull(environment);
+            this.batchContextFactory = GrpcPreconditions.CheckNotNull(batchContextFactory);
         }
 
         public void Register(IntPtr key, IOpCompletionCallback callback)
@@ -63,10 +65,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback, object state)
+        public BatchContextSafeHandle RegisterBatchCompletion(BatchCompletionDelegate callback, object state)
         {
+            var ctx = batchContextFactory();
             ctx.SetCompletionCallback(callback, state);
             Register(ctx.Handle, ctx);
+            return ctx;
         }
 
         public void RegisterRequestCallCompletion(RequestCallContextSafeHandle ctx, RequestCallCompletionDelegate callback)

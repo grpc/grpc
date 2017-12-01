@@ -144,7 +144,7 @@ static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
 
 }  // namespace grpc_core
 
-extern "C" const grpc_channel_filter grpc_lame_filter = {
+const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_start_transport_stream_op_batch,
     grpc_core::lame_start_transport_op,
     sizeof(grpc_core::CallData),

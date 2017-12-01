@@ -52,7 +52,7 @@
   return [self writerWithEnumerator:enumerator error:nil];
 }
 
-+ (GRXWriter *)writerWithValueSupplier:(id (^)())block {
++ (GRXWriter *)writerWithValueSupplier:(id (^)(void))block {
   return [self writerWithEnumerator:[NSEnumerator grx_enumeratorWithValueSupplier:block]];
 }
 

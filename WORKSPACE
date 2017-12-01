@@ -73,8 +73,8 @@ new_http_archive(
 
 http_archive(
     name = "com_google_protobuf",
-    strip_prefix = "protobuf-80a37e0782d2d702d52234b62dd4b9ec74fd2c95",
-    url = "https://github.com/google/protobuf/archive/80a37e0782d2d702d52234b62dd4b9ec74fd2c95.tar.gz",
+    strip_prefix = "protobuf-2761122b810fe8861004ae785cc3ab39f384d342",
+    url = "https://github.com/google/protobuf/archive/2761122b810fe8861004ae785cc3ab39f384d342.tar.gz",
 )
 
 new_http_archive(

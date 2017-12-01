@@ -53,6 +53,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/env_linux.cc \
     src/core/lib/support/env_posix.cc \
     src/core/lib/support/env_windows.cc \
+    src/core/lib/support/fork.cc \
     src/core/lib/support/histogram.cc \
     src/core/lib/support/host_port.cc \
     src/core/lib/support/log.cc \
@@ -62,7 +63,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/log_windows.cc \
     src/core/lib/support/mpscq.cc \
     src/core/lib/support/murmur_hash.cc \
-    src/core/lib/support/stack_lockfree.cc \
     src/core/lib/support/string.cc \
     src/core/lib/support/string_posix.cc \
     src/core/lib/support/string_util_windows.cc \
@@ -118,6 +118,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
