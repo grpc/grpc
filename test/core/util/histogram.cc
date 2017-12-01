@@ -16,8 +16,6 @@
  *
  */
 
-#include <grpc/support/histogram.h>
-
 #include <math.h>
 #include <stddef.h>
 #include <string.h>
@@ -27,12 +25,14 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
 
+#include "test/core/util/histogram.h"
+
 /* Histograms are stored with exponentially increasing bucket sizes.
    The first bucket is [0, m) where m = 1 + resolution
    Bucket n (n>=1) contains [m**n, m**(n+1))
    There are sufficient buckets to reach max_bucket_start */
 
-struct gpr_histogram {
+struct grpc_histogram {
   /* Sum of all values seen so far */
   double sum;
   /* Sum of squares of all values seen so far */
@@ -55,25 +55,25 @@ struct gpr_histogram {
 };
 
 /* determine a bucket index given a value - does no bounds checking */
-static size_t bucket_for_unchecked(gpr_histogram* h, double x) {
+static size_t bucket_for_unchecked(grpc_histogram* h, double x) {
   return (size_t)(log(x) * h->one_on_log_multiplier);
 }
 
 /* bounds checked version of the above */
-static size_t bucket_for(gpr_histogram* h, double x) {
+static size_t bucket_for(grpc_histogram* h, double x) {
   size_t bucket = bucket_for_unchecked(h, GPR_CLAMP(x, 1.0, h->max_possible));
   GPR_ASSERT(bucket < h->num_buckets);
   return bucket;
 }
 
 /* at what value does a bucket start? */
-static double bucket_start(gpr_histogram* h, double x) {
+static double bucket_start(grpc_histogram* h, double x) {
   return pow(h->multiplier, x);
 }
 
-gpr_histogram* gpr_histogram_create(double resolution,
-                                    double max_bucket_start) {
-  gpr_histogram* h = (gpr_histogram*)gpr_malloc(sizeof(gpr_histogram));
+grpc_histogram* grpc_histogram_create(double resolution,
+                                      double max_bucket_start) {
+  grpc_histogram* h = (grpc_histogram*)gpr_malloc(sizeof(grpc_histogram));
   GPR_ASSERT(resolution > 0.0);
   GPR_ASSERT(max_bucket_start > resolution);
   h->sum = 0.0;
@@ -91,12 +91,12 @@ gpr_histogram* gpr_histogram_create(double resolution,
   return h;
 }
 
-void gpr_histogram_destroy(gpr_histogram* h) {
+void grpc_histogram_destroy(grpc_histogram* h) {
   gpr_free(h->buckets);
   gpr_free(h);
 }
 
-void gpr_histogram_add(gpr_histogram* h, double x) {
+void grpc_histogram_add(grpc_histogram* h, double x) {
   h->sum += x;
   h->sum_of_squares += x * x;
   h->count++;
@@ -109,22 +109,22 @@ void gpr_histogram_add(gpr_histogram* h, double x) {
   h->buckets[bucket_for(h, x)]++;
 }
 
-int gpr_histogram_merge(gpr_histogram* dst, const gpr_histogram* src) {
+int grpc_histogram_merge(grpc_histogram* dst, const grpc_histogram* src) {
   if ((dst->num_buckets != src->num_buckets) ||
       (dst->multiplier != src->multiplier)) {
     /* Fail because these histograms don't match */
     return 0;
   }
-  gpr_histogram_merge_contents(dst, src->buckets, src->num_buckets,
-                               src->min_seen, src->max_seen, src->sum,
-                               src->sum_of_squares, src->count);
+  grpc_histogram_merge_contents(dst, src->buckets, src->num_buckets,
+                                src->min_seen, src->max_seen, src->sum,
+                                src->sum_of_squares, src->count);
   return 1;
 }
 
-void gpr_histogram_merge_contents(gpr_histogram* dst, const uint32_t* data,
-                                  size_t data_count, double min_seen,
-                                  double max_seen, double sum,
-                                  double sum_of_squares, double count) {
+void grpc_histogram_merge_contents(grpc_histogram* dst, const uint32_t* data,
+                                   size_t data_count, double min_seen,
+                                   double max_seen, double sum,
+                                   double sum_of_squares, double count) {
   size_t i;
   GPR_ASSERT(dst->num_buckets == data_count);
   dst->sum += sum;
@@ -141,7 +141,7 @@ void gpr_histogram_merge_contents(gpr_histogram* dst, const uint32_t* data,
   }
 }
 
-static double threshold_for_count_below(gpr_histogram* h, double count_below) {
+static double threshold_for_count_below(grpc_histogram* h, double count_below) {
   double count_so_far;
   double lower_bound;
   double upper_bound;
@@ -190,38 +190,38 @@ static double threshold_for_count_below(gpr_histogram* h, double count_below) {
   }
 }
 
-double gpr_histogram_percentile(gpr_histogram* h, double percentile) {
+double grpc_histogram_percentile(grpc_histogram* h, double percentile) {
   return threshold_for_count_below(h, h->count * percentile / 100.0);
 }
 
-double gpr_histogram_mean(gpr_histogram* h) {
+double grpc_histogram_mean(grpc_histogram* h) {
   GPR_ASSERT(h->count != 0);
   return h->sum / h->count;
 }
 
-double gpr_histogram_stddev(gpr_histogram* h) {
-  return sqrt(gpr_histogram_variance(h));
+double grpc_histogram_stddev(grpc_histogram* h) {
+  return sqrt(grpc_histogram_variance(h));
 }
 
-double gpr_histogram_variance(gpr_histogram* h) {
+double grpc_histogram_variance(grpc_histogram* h) {
   if (h->count == 0) return 0.0;
   return (h->sum_of_squares * h->count - h->sum * h->sum) /
          (h->count * h->count);
 }
 
-double gpr_histogram_maximum(gpr_histogram* h) { return h->max_seen; }
+double grpc_histogram_maximum(grpc_histogram* h) { return h->max_seen; }
 
-double gpr_histogram_minimum(gpr_histogram* h) { return h->min_seen; }
+double grpc_histogram_minimum(grpc_histogram* h) { return h->min_seen; }
 
-double gpr_histogram_count(gpr_histogram* h) { return h->count; }
+double grpc_histogram_count(grpc_histogram* h) { return h->count; }
 
-double gpr_histogram_sum(gpr_histogram* h) { return h->sum; }
+double grpc_histogram_sum(grpc_histogram* h) { return h->sum; }
 
-double gpr_histogram_sum_of_squares(gpr_histogram* h) {
+double grpc_histogram_sum_of_squares(grpc_histogram* h) {
   return h->sum_of_squares;
 }
 
-const uint32_t* gpr_histogram_get_contents(gpr_histogram* h, size_t* size) {
+const uint32_t* grpc_histogram_get_contents(grpc_histogram* h, size_t* size) {
   *size = h->num_buckets;
   return h->buckets;
 }

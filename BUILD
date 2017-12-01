@@ -54,7 +54,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/avl.h",
     "include/grpc/support/cmdline.h",
     "include/grpc/support/cpu.h",
-    "include/grpc/support/histogram.h",
     "include/grpc/support/host_port.h",
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
@@ -79,10 +78,11 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
-    "include/grpc/load_reporting.h",
+    "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security_constants.h",
+    "include/grpc/load_reporting.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
     "include/grpc/status.h",
@@ -445,7 +445,7 @@ grpc_cc_library(
         "src/core/lib/support/env_linux.cc",
         "src/core/lib/support/env_posix.cc",
         "src/core/lib/support/env_windows.cc",
-        "src/core/lib/support/histogram.cc",
+        "src/core/lib/support/fork.cc",
         "src/core/lib/support/host_port.cc",
         "src/core/lib/support/log.cc",
         "src/core/lib/support/log_android.cc",
@@ -484,6 +484,7 @@ grpc_cc_library(
         "src/core/lib/support/atomic_with_atm.h",
         "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/support/env.h",
+        "src/core/lib/support/fork.h",
         "src/core/lib/support/manual_constructor.h",
         "src/core/lib/support/memory.h",
         "src/core/lib/support/mpscq.h",
@@ -491,6 +492,7 @@ grpc_cc_library(
         "src/core/lib/support/spinlock.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
+        "src/core/lib/support/thd_internal.h",
         "src/core/lib/support/time_precise.h",
         "src/core/lib/support/tmpfile.h",
         "src/core/lib/support/vector.h",
@@ -511,6 +513,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/atm_gcc_atomic.h",
         "include/grpc/impl/codegen/atm_gcc_sync.h",
         "include/grpc/impl/codegen/atm_windows.h",
+        "include/grpc/impl/codegen/fork.h",
         "include/grpc/impl/codegen/gpr_slice.h",
         "include/grpc/impl/codegen/gpr_types.h",
         "include/grpc/impl/codegen/port_platform.h",
@@ -532,6 +535,28 @@ grpc_cc_library(
         "grpc_codegen",
         ":gpr",
     ],
+)
+
+grpc_cc_library(
+    name = "debug_location",
+    public_hdrs = ["src/core/lib/support/debug_location.h"],
+    language = "c++",
+)
+
+grpc_cc_library(
+    name = "ref_counted",
+    public_hdrs = ["src/core/lib/support/ref_counted.h"],
+    language = "c++",
+    deps = [
+        "grpc_trace",
+        "debug_location",
+    ],
+)
+
+grpc_cc_library(
+    name = "ref_counted_ptr",
+    public_hdrs = ["src/core/lib/support/ref_counted_ptr.h"],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -570,6 +595,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_windows.cc",
         "src/core/lib/iomgr/exec_ctx.cc",
         "src/core/lib/iomgr/executor.cc",
+        "src/core/lib/iomgr/fork_posix.cc",
+        "src/core/lib/iomgr/fork_windows.cc",
         "src/core/lib/iomgr/gethostname_fallback.cc",
         "src/core/lib/iomgr/gethostname_host_name_max.cc",
         "src/core/lib/iomgr/gethostname_sysconf.cc",

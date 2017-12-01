@@ -801,6 +801,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
@@ -818,6 +819,8 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/exec_ctx_fwd.h \
+include/grpc/impl/codegen/fork.h \
+include/grpc/impl/codegen/fork.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
@@ -850,7 +853,6 @@ include/grpc/support/atm_windows.h \
 include/grpc/support/avl.h \
 include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
-include/grpc/support/histogram.h \
 include/grpc/support/host_port.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
@@ -1101,6 +1103,8 @@ src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/fork_posix.cc \
+src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \
 src/core/lib/iomgr/gethostname_fallback.cc \
 src/core/lib/iomgr/gethostname_host_name_max.cc \
@@ -1282,11 +1286,13 @@ src/core/lib/support/cpu_iphone.cc \
 src/core/lib/support/cpu_linux.cc \
 src/core/lib/support/cpu_posix.cc \
 src/core/lib/support/cpu_windows.cc \
+src/core/lib/support/debug_location.h \
 src/core/lib/support/env.h \
 src/core/lib/support/env_linux.cc \
 src/core/lib/support/env_posix.cc \
 src/core/lib/support/env_windows.cc \
-src/core/lib/support/histogram.cc \
+src/core/lib/support/fork.cc \
+src/core/lib/support/fork.h \
 src/core/lib/support/host_port.cc \
 src/core/lib/support/log.cc \
 src/core/lib/support/log_android.cc \
@@ -1299,6 +1305,8 @@ src/core/lib/support/mpscq.cc \
 src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.cc \
 src/core/lib/support/murmur_hash.h \
+src/core/lib/support/ref_counted.h \
+src/core/lib/support/ref_counted_ptr.h \
 src/core/lib/support/spinlock.h \
 src/core/lib/support/string.cc \
 src/core/lib/support/string.h \
@@ -1312,6 +1320,7 @@ src/core/lib/support/sync.cc \
 src/core/lib/support/sync_posix.cc \
 src/core/lib/support/sync_windows.cc \
 src/core/lib/support/thd.cc \
+src/core/lib/support/thd_internal.h \
 src/core/lib/support/thd_posix.cc \
 src/core/lib/support/thd_windows.cc \
 src/core/lib/support/time.cc \

@@ -29,8 +29,8 @@
 #include "test/core/util/test_config.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
-extern "C" bool squelch;
-extern "C" bool leak_check;
+extern bool squelch;
+extern bool leak_check;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.

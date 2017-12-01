@@ -22,16 +22,8 @@
 #include <grpc/slice.h>
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 bool grpc_slice_is_legal_header(grpc_slice s);
 bool grpc_slice_is_legal_nonbin_header(grpc_slice s);
 bool grpc_slice_is_bin_suffixed(grpc_slice s);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_TRAITS_H */

@@ -563,7 +563,7 @@ typedef struct grpc_op {
       grpc_slice* status_details;
       /** If this is not nullptr, it will be populated with the full fidelity
        * error string for debugging purposes. The application is responsible
-       * for freeing the data. */
+       * for freeing the data by using gpr_free(). */
       const char** error_string;
     } recv_status_on_client;
     struct grpc_op_recv_close_on_server {
