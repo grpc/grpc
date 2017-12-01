@@ -1196,7 +1196,7 @@ def access_token_call_credentials(access_token):
     """
     from grpc import _auth  # pylint: disable=cyclic-import
     return _metadata_call_credentials(
-        _auth.AccessTokenCallCredentials(access_token), None)
+        _auth.AccessTokenAuthMetadataPlugin(access_token), None)
 
 
 def composite_call_credentials(*call_credentials):
