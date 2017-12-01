@@ -249,8 +249,6 @@ static void on_client_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 grpc_error* error) {
   proxy_connection* conn = (proxy_connection*)arg;
   if (error != GRPC_ERROR_NONE) {
-    // Report a read failure on the client endpoint. If there is no pending
-    // server write, then shutdown the server endpoint as well.
     proxy_connection_failed(exec_ctx, conn, CLIENT_READ_FAILED,
                             "HTTP proxy client read", GRPC_ERROR_REF(error));
     return;
@@ -284,8 +282,6 @@ static void on_server_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                                 grpc_error* error) {
   proxy_connection* conn = (proxy_connection*)arg;
   if (error != GRPC_ERROR_NONE) {
-    // Report a read failure on the server end point. If there is no pending
-    // write to the client, then shutdown the client endpoint as well.
     proxy_connection_failed(exec_ctx, conn, SERVER_READ_FAILED,
                             "HTTP proxy server read", GRPC_ERROR_REF(error));
     return;
