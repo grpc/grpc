@@ -169,8 +169,6 @@ typedef struct client_channel_channel_data {
   grpc_resolver* resolver;
   /** have we started resolving this channel */
   bool started_resolving;
-  /** are we waiting for a pending reresolution result? */
-  bool reresolution_pending;
   /** is deadline checking enabled? */
   bool deadline_checking_enabled;
   /** client channel factory */
@@ -386,7 +384,6 @@ static void request_reresolution_locked(grpc_exec_ctx* exec_ctx, void* arg,
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p: started name re-resolving", chand);
   }
-  chand->reresolution_pending = true;
   grpc_resolver_channel_saw_error_locked(exec_ctx, chand->resolver);
   // Give back the closure to the LB policy.
   grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, chand->lb_policy,
@@ -450,7 +447,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
       lb_policy_args.args = chand->resolver_result;
       lb_policy_args.client_channel_factory = chand->client_channel_factory;
       lb_policy_args.combiner = chand->combiner;
-      lb_policy_args.reresolution_update = chand->reresolution_pending;
       // Check to see if we're already using the right LB policy.
       // Note: It's safe to use chand->info_lb_policy_name here without
       // taking a lock on chand->info_mu, because this function is the
@@ -630,7 +626,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
                               &chand->on_resolver_result_changed);
     GRPC_ERROR_UNREF(state_error);
   }
-  chand->reresolution_pending = false;
 }
 
 static void start_transport_op_locked(grpc_exec_ctx* exec_ctx, void* arg,

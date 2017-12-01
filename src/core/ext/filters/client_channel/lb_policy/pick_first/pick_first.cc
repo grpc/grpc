@@ -238,11 +238,6 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
 static void pf_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
                              const grpc_lb_policy_args* args) {
   pick_first_lb_policy* p = (pick_first_lb_policy*)policy;
-  if (args->reresolution_update) {
-    grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
-                                GRPC_ERROR_NONE, "pf_reresolution_update");
-    p->started_picking = false;
-  }
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
