@@ -86,6 +86,7 @@
 }
 
 + (void)setUp {
+  NSLog(@"InteropTest Started, class: %@", [[self class] description]);
 #ifdef GRPC_COMPILE_WITH_CRONET
   // Cronet setup
   [Cronet setHttp2Enabled:YES];

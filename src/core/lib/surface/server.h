@@ -24,10 +24,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern const grpc_channel_filter grpc_server_top_filter;
 
 /** Lightweight tracing of server channel state */
@@ -57,9 +53,5 @@ int grpc_server_has_open_connections(grpc_server* server);
  * number of pollsets via 'pollsets' and 'pollset_count'. */
 void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
                               size_t* pollset_count);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

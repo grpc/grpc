@@ -23,10 +23,6 @@
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_stats_data {
   gpr_atm counters[GRPC_STATS_COUNTER_COUNT];
   gpr_atm histograms[GRPC_STATS_HISTOGRAM_BUCKETS];
@@ -62,8 +58,4 @@ double grpc_stats_histo_percentile(const grpc_stats_data* data,
 size_t grpc_stats_histo_count(const grpc_stats_data* data,
                               grpc_stats_histograms histogram);
 
-#ifdef __cplusplus
-}
 #endif
-
-#endif /* GRPC_CORE_LIB_DEBUG_STATS_H */

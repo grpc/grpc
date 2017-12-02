@@ -22,15 +22,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLLEX_LINUX_H */

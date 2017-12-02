@@ -28,6 +28,7 @@
 
 using ::google::protobuf::compiler::objectivec::ClassName;
 using ::grpc::protobuf::FileDescriptor;
+using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::MethodDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::protobuf::io::Printer;

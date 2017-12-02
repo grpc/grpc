@@ -295,7 +295,7 @@ static grpc_resolver_factory* dns_resolver_factory_create() {
   return &dns_resolver_factory;
 }
 
-extern "C" void grpc_resolver_dns_native_init(void) {
+void grpc_resolver_dns_native_init(void) {
   char* resolver = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver != nullptr && gpr_stricmp(resolver, "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
@@ -313,4 +313,4 @@ extern "C" void grpc_resolver_dns_native_init(void) {
   gpr_free(resolver);
 }
 
-extern "C" void grpc_resolver_dns_native_shutdown(void) {}
+void grpc_resolver_dns_native_shutdown(void) {}

@@ -25,10 +25,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;
 
@@ -101,9 +97,5 @@ void grpc_tcp_server_unref(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s);
 /* Shutdown the fds of listeners. */
 void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx* exec_ctx,
                                         grpc_tcp_server* s);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_SERVER_H */
