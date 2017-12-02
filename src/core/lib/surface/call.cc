@@ -680,10 +680,15 @@ static void set_final_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
 
+  const char** error_string = nullptr;
+  if (call->is_client) {
+    error_string = call->final_op.client.error_string;
+  }
+
   grpc_status_code code;
   grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(exec_ctx, error, call->send_deadline, &code, &slice,
-                        nullptr, nullptr);
+                        nullptr, error_string);
   if (call->is_client) {
     *call->final_op.client.status = code;
     *call->final_op.client.status_details = grpc_slice_ref_internal(slice);
