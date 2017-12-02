@@ -91,6 +91,10 @@ struct channel_data {
   grpc_connectivity_state connectivity_state;
   /* Number of active calls */
   gpr_atm call_count;
+  /* Current state of channel idleness and max_idle_timer */
+  gpr_atm idle_state;
+  /* Time when the channel finished its last outstanding call, in grpc_millis */
+  gpr_atm last_enter_idle_time_millis;
 };
 }  // namespace
 
@@ -123,7 +127,8 @@ static void increase_call_count(channel_data* chand) {
    calls, the max_idle_timer should be started. */
 static void decrease_call_count(channel_data* chand) {
   if (gpr_atm_full_fetch_add(&chand->call_count, -1) == 1) {
-    chand->last_enter_idle_time = grpc_exec_ctx_now(exec_ctx);
+    gpr_atm_no_barrier_store(&chand->last_enter_idle_time_millis,
+                             (gpr_atm)grpc_exec_ctx_now(exec_ctx));
     while (true) {
       gpr_atm idle_state = gpr_atm_acq_load(&chand->idle_state);
       switch (idle_state) {
@@ -212,10 +217,11 @@ static void close_max_idle_channel(void* arg, grpc_error* error) {
         }
       } else if (idle_state == MAX_IDLE_STATE_SEEN_ENTER_IDLE) {
         GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_idle_timer");
-        grpc_timer_init(
-            exec_ctx, &chand->max_idle_timer,
-            chand->last_enter_idle_time + chand->max_connection_idle,
-            &chand->max_idle_timer_cb);
+        grpc_timer_init(exec_ctx, &chand->max_idle_timer,
+                        (grpc_millis)gpr_atm_no_barrier_load(
+                            &chand->last_enter_idle_time_millis) +
+                            chand->max_connection_idle,
+                        &chand->max_idle_timer_cb);
         /* idle_state may have already been set to MAX_IDLE_STATE_SEEN_EXIT_IDLE
            by increase_call_count(), in this case, we don't need to set it to
            MAX_IDLE_STATE_TIMER_SET */
@@ -226,8 +232,6 @@ static void close_max_idle_channel(void* arg, grpc_error* error) {
         /* try again */
       }
     }
-  } else if (error != GRPC_ERROR_CANCELLED) {
-    GRPC_LOG_IF_ERROR("close_max_idle_channel", error);
   }
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack, "max_age max_idle_timer");
 }
@@ -350,6 +354,9 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   chand->max_connection_idle = DEFAULT_MAX_CONNECTION_IDLE_MS == INT_MAX
                                    ? GRPC_MILLIS_INF_FUTURE
                                    : DEFAULT_MAX_CONNECTION_IDLE_MS;
+  chand->idle_state = MAX_IDLE_STATE_INIT;
+  gpr_atm_no_barrier_store(&chand->last_enter_idle_time_millis,
+                           GRPC_MILLIS_INF_PAST);
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (0 == strcmp(args->channel_args->args[i].key,
                     GRPC_ARG_MAX_CONNECTION_AGE_MS)) {
