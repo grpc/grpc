@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 
-extern "C" void gpr_default_log(gpr_log_func_args* args);
+void gpr_default_log(gpr_log_func_args* args);
 static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
 static gpr_atm g_min_severity_to_print = GPR_LOG_VERBOSITY_UNSET;
 

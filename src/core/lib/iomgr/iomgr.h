@@ -22,10 +22,6 @@
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Initializes the iomgr. */
 void grpc_iomgr_init(grpc_exec_ctx* exec_ctx);
 
@@ -35,9 +31,5 @@ void grpc_iomgr_start(grpc_exec_ctx* exec_ctx);
 /** Signals the intention to shutdown the iomgr. Expects to be able to flush
  * exec_ctx. */
 void grpc_iomgr_shutdown(grpc_exec_ctx* exec_ctx);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_H */

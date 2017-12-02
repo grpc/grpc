@@ -111,6 +111,15 @@ def grpc_deps():
         url = "https://github.com/abseil/abseil-cpp/archive/cc4bed2d74f7c8717e31f9579214ab52a9c9c610.tar.gz",
     )
 
+    _maybe(native.http_archive,
+        name = "bazel_toolchains",
+        urls = [
+            "http://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/af4681c3d19f063f090222ec3d04108c4e0ca255.tar.gz",
+            "https://github.com/bazelbuild/bazel-toolchains/archive/af4681c3d19f063f090222ec3d04108c4e0ca255.tar.gz",
+        ],
+        strip_prefix = "bazel-toolchains-af4681c3d19f063f090222ec3d04108c4e0ca255",
+        sha256 = "d58bb2d6c8603f600d522b6104d6192a65339aa26cbba9f11ff5c4b36dedb928",
+    )
 def _maybe(repo_rule, name, **kwargs):
     if name not in native.existing_rules():
         repo_rule(name=name, **kwargs)
