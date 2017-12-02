@@ -933,7 +933,7 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx* exec_ctx,
                       grpc_chttp2_initiate_write_reason_string(reason));
       t->is_first_write_in_batch = true;
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
-      GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_RUN(
           exec_ctx,
           GRPC_CLOSURE_INIT(&t->write_action_begin_locked,
                             write_action_begin_locked, t,
@@ -1029,7 +1029,7 @@ static void write_action_begin_locked(grpc_exec_ctx* exec_ctx, void* gt,
         r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
                   : GRPC_CHTTP2_WRITE_STATE_WRITING,
         begin_writing_desc(r.partial, scheduler == grpc_schedule_on_exec_ctx));
-    GRPC_CLOSURE_SCHED(
+    GRPC_CLOSURE_RUN(
         exec_ctx,
         GRPC_CLOSURE_INIT(&t->write_action, write_action, t, scheduler),
         GRPC_ERROR_NONE);
@@ -1690,7 +1690,7 @@ static void perform_stream_op(grpc_exec_ctx* exec_ctx, grpc_transport* gt,
 
   op->handler_private.extra_arg = gs;
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
-  GRPC_CLOSURE_SCHED(
+  GRPC_CLOSURE_RUN(
       exec_ctx,
       GRPC_CLOSURE_INIT(&op->handler_private.closure, perform_stream_op_locked,
                         op, grpc_combiner_scheduler(t->combiner)),

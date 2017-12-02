@@ -56,12 +56,10 @@ void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner) {
 #define DEBUG_FMT_ARGS
 #endif
 
-void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
-                              grpc_call_combiner* call_combiner,
-                              grpc_closure* closure,
-                              grpc_error* error DEBUG_ARGS,
-                              const char* reason) {
+static bool cc_start(grpc_exec_ctx* exec_ctx, grpc_call_combiner* call_combiner,
+                     grpc_closure* closure, grpc_error* error) {
   GPR_TIMER_BEGIN("call_combiner_start", 0);
+  bool run_now = false;
   if (grpc_call_combiner_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "==> grpc_call_combiner_start() [%p] closure=%p [" DEBUG_FMT_STR
@@ -83,7 +81,7 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
       gpr_log(GPR_DEBUG, "  EXECUTING IMMEDIATELY");
     }
     // Queue was empty, so execute this closure immediately.
-    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
+    run_now = true;
   } else {
     if (grpc_call_combiner_trace.enabled()) {
       gpr_log(GPR_INFO, "  QUEUING");
@@ -93,6 +91,40 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
     gpr_mpscq_push(&call_combiner->queue, (gpr_mpscq_node*)closure);
   }
   GPR_TIMER_END("call_combiner_start", 0);
+  return run_now;
+}
+
+void grpc_call_combiner_sched(grpc_exec_ctx* exec_ctx,
+                              grpc_call_combiner* call_combiner,
+                              grpc_closure* closure,
+                              grpc_error* error DEBUG_ARGS,
+                              const char* reason) {
+  if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
+    gpr_log(GPR_DEBUG,
+            "==> grpc_call_combiner_sched() [%p] closure=%p [" DEBUG_FMT_STR
+            "%s] error=%s",
+            call_combiner, closure DEBUG_FMT_ARGS, reason,
+            grpc_error_string(error));
+  }
+  if (cc_start(exec_ctx, call_combiner, closure, error)) {
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
+  }
+}
+
+void grpc_call_combiner_run(grpc_exec_ctx* exec_ctx,
+                            grpc_call_combiner* call_combiner,
+                            grpc_closure* closure, grpc_error* error DEBUG_ARGS,
+                            const char* reason) {
+  if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
+    gpr_log(GPR_DEBUG,
+            "==> grpc_call_combiner_run() [%p] closure=%p [" DEBUG_FMT_STR
+            "%s] error=%s",
+            call_combiner, closure DEBUG_FMT_ARGS, reason,
+            grpc_error_string(error));
+  }
+  if (cc_start(exec_ctx, call_combiner, closure, error)) {
+    GRPC_CLOSURE_RUN(exec_ctx, closure, error);
+  }
 }
 
 void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,

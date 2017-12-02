@@ -54,9 +54,9 @@ typedef struct connected_channel_call_data {
 static void run_in_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
                                  grpc_error* error) {
   callback_state* state = (callback_state*)arg;
-  GRPC_CALL_COMBINER_START(exec_ctx, state->call_combiner,
-                           state->original_closure, GRPC_ERROR_REF(error),
-                           state->reason);
+  GRPC_CALL_COMBINER_RUN(exec_ctx, state->call_combiner,
+                         state->original_closure, GRPC_ERROR_REF(error),
+                         state->reason);
 }
 
 static void run_cancel_in_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,

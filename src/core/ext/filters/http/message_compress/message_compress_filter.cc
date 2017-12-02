@@ -384,7 +384,7 @@ static void compress_start_transport_stream_op_batch(
         GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (calld->send_message_batch != nullptr) {
       if (calld->send_initial_metadata_state == INITIAL_METADATA_UNSEEN) {
-        GRPC_CALL_COMBINER_START(
+        GRPC_CALL_COMBINER_RUN(
             exec_ctx, calld->call_combiner,
             GRPC_CLOSURE_CREATE(fail_send_message_batch_in_call_combiner, calld,
                                 grpc_schedule_on_exec_ctx),
@@ -424,7 +424,7 @@ static void compress_start_transport_stream_op_batch(
     // call combiner, since the connected_channel filter (at the bottom of
     // the call stack) will release the call combiner for each batch it sees.
     if (calld->send_message_batch != nullptr) {
-      GRPC_CALL_COMBINER_START(
+      GRPC_CALL_COMBINER_RUN(
           exec_ctx, calld->call_combiner,
           &calld->start_send_message_batch_in_call_combiner, GRPC_ERROR_NONE,
           "starting send_message after send_initial_metadata");

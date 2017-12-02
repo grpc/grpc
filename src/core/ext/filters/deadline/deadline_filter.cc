@@ -72,9 +72,9 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
     GRPC_CLOSURE_INIT(&deadline_state->timer_callback,
                       send_cancel_op_in_call_combiner, elem,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_START(exec_ctx, deadline_state->call_combiner,
-                             &deadline_state->timer_callback, error,
-                             "deadline exceeded -- sending cancel_stream op");
+    GRPC_CALL_COMBINER_RUN(exec_ctx, deadline_state->call_combiner,
+                           &deadline_state->timer_callback, error,
+                           "deadline exceeded -- sending cancel_stream op");
   } else {
     GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack,
                           "deadline_timer");
@@ -166,9 +166,9 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
     // We are initially called without holding the call combiner, so we
     // need to bounce ourselves into it.
     state->in_call_combiner = true;
-    GRPC_CALL_COMBINER_START(exec_ctx, deadline_state->call_combiner,
-                             &state->closure, GRPC_ERROR_REF(error),
-                             "scheduling deadline timer");
+    GRPC_CALL_COMBINER_RUN(exec_ctx, deadline_state->call_combiner,
+                           &state->closure, GRPC_ERROR_REF(error),
+                           "scheduling deadline timer");
     return;
   }
   start_timer_if_needed(exec_ctx, state->elem, state->deadline);
