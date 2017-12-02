@@ -24,8 +24,9 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/arena.h"
+#include "src/core/lib/support/memory.h"
 
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.
@@ -56,6 +57,119 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
    and are available to code anywhere between grpc_init() and grpc_shutdown().
    They are not refcounted, but can be passed to _ref and _unref functions
    declared here - in which case those functions are effectively no-ops. */
+
+namespace grpc_core {
+
+extern DebugOnlyTraceFlag grpc_trace_metadata;
+
+namespace metadata {
+
+class Collection;
+
+class Key {
+ public:
+  virtual void ParseInto(grpc_slice slice, Collection* collection) = 0;
+};
+
+enum class HttpMethod : uint8_t {
+  UNSET,
+  UNKNOWN,
+  GET,
+  PUT,
+  POST,
+};
+
+enum class HttpScheme : uint8_t {
+  UNSET,
+  UNKNOWN,
+  HTTP,
+  HTTPS,
+  GRPC,
+};
+
+enum class HttpTe : uint8_t {
+  UNSET,
+  UNKNOWN,
+  TRAILERS,
+};
+
+enum class NamedKeys : int {
+  PATH = 0,  // must be first
+  AUTHORITY,
+  GRPC_MESSAGE,
+  GRPC_PAYLOAD_BIN,
+  GRPC_SERVER_STATS_BIN,
+  GRPC_TAGS_BIN,
+  USER_AGENT,
+  HOST,
+  COUNT  // must be last
+};
+
+enum class ContentType : uint8_t {
+  UNSET,
+  UNKNOWN,
+  APPLICATION_SLASH_GRPC,
+};
+
+class Collection {
+ public:
+  explicit Collection(gpr_arena* arena) : arena_(arena) {}
+
+  void SetNamedKey(NamedKeys key, grpc_slice slice) {
+    int idx = static_cast<int>(key);
+    if (named_keys_[idx] != nullptr) {
+      grpc_slice_unref_internal(*named_keys_[idx]);
+    }
+  }
+
+ private:
+  gpr_arena* const arena_;
+  grpc_slice* named_keys_[static_cast<int>(NamedKeys::COUNT)] = {nullptr};
+  uint16_t status_ = 0;
+  static constexpr int16_t kGrpcStatusUnset = -1;
+  int16_t grpc_status_ = kGrpcStatusUnset;
+  HttpMethod method_ = HttpMethod::UNSET;
+  HttpScheme scheme_ = HttpScheme::UNSET;
+  HttpTe te_ = HttpTe::UNSET;
+  ContentType content_type_ = ContentType::UNSET;
+};
+
+namespace impl {
+
+void RegisterKeyType(const char* key_name, Key* key);
+
+}  // namespace impl
+
+template <class KeyType>
+const Key* RegisterKeyType(const char* key_name) {
+  Key* k = New<KeyType>();
+  impl::RegisterKeyType(key_name, k);
+  return k;
+}
+
+// given a key name, return a Key implementation
+const Key* LookupKey(grpc_slice key_name);
+
+namespace impl {
+
+template <NamedKeys key>
+class NamedKey : public Key {
+ public:
+  void ParseInto(grpc_slice slice, Collection* collection) {
+    collection->SetNamedKey(key, slice);
+  }
+};
+
+}  // namespace impl
+
+extern const Key* const path;
+extern const Key* const authority;
+extern const Key* const grpc_message;
+extern const Key* const grpc_payload_bin;
+
+}  // namespace metadata
+
+}  // namespace grpc_core
 
 /* Forward declarations */
 typedef struct grpc_mdelem grpc_mdelem;

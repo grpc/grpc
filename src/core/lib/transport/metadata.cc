@@ -50,6 +50,20 @@
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_metadata(false, "metadata");
 
+namespace grpc_core {
+namespace metadata {
+const Key* const path =
+    RegisterKeyType<impl::NamedKey<NamedKeys::PATH>>(":path");
+const Key* const authority =
+    RegisterKeyType<impl::NamedKey<NamedKeys::AUTHORITY>>(":authority");
+const Key* const grpc_message =
+    RegisterKeyType<impl::NamedKey<NamedKeys::GRPC_MESSAGE>>("grpc-message");
+const Key* const grpc_payload_bin =
+    RegisterKeyType<impl::NamedKey<NamedKeys::GRPC_PAYLOAD_BIN>>(
+        "grpc-payload-bin");
+}  // namespace metadata
+}  // namespace grpc_core
+
 #ifndef NDEBUG
 #define DEBUG_ARGS , const char *file, int line
 #define FWD_DEBUG_ARGS , file, line
