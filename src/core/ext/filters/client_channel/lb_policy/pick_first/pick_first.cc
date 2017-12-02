@@ -413,17 +413,25 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
           exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_REF(error), "selected_not_ready+switch_to_update");
     } else {
-      grpc_connectivity_state publish_state =
-          sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN
-              ? GRPC_CHANNEL_TRANSIENT_FAILURE
-              : sd->curr_connectivity_state;
-      if (publish_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        // if the selected channel goes bad, request a re-resolution.
+      // TODO(juanlishen): we re-resolve when the selected subchannel goes to
+      // TRANSIENT_FAILURE because we used to shut down in this case before
+      // re-resolution is introduced. But we need to investigate whether we
+      // really want to take any action instead of waiting for the selected
+      // subchannel reconnecting.
+      if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN ||
+          sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // If the selected channel goes bad, request a re-resolution.
+        grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                                    GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+                                    "selected_changed+reresolve");
+        p->started_picking = false;
         grpc_lb_policy_try_reresolve(
             exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+      } else {
+        grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                                    sd->curr_connectivity_state,
+                                    GRPC_ERROR_REF(error), "selected_changed");
       }
-      grpc_connectivity_state_set(exec_ctx, &p->state_tracker, publish_state,
-                                  GRPC_ERROR_REF(error), "selected_changed");
       if (sd->curr_connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
         // Renew notification.
         grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
@@ -539,14 +547,18 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
       if (sd == original_sd) {
         grpc_lb_subchannel_list_unref_for_connectivity_watch(
             exec_ctx, sd->subchannel_list, "pf_candidate_shutdown");
+        grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                                    GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+                                    "exhausted_subchannels+reresolve");
+        p->started_picking = false;
         grpc_lb_policy_try_reresolve(
             exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
-        if (sd->subchannel_list == p->subchannel_list) {
-          grpc_connectivity_state_set(
-              exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-              GRPC_ERROR_REF(error), "exhausted_subchannels");
-        }
         break;
+      }
+      if (sd->subchannel_list == p->subchannel_list) {
+        grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    GRPC_ERROR_REF(error), "subchannel_failed");
       }
       // Reuses the connectivity refs from the previous watch.
       grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
