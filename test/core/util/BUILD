@@ -137,3 +137,8 @@ sh_library(
     name = "fuzzer_one_entry_runner",
     srcs = ["fuzzer_one_entry_runner.sh"],
 )
+
+sh_library(
+    name = "run_with_poller_sh",
+    srcs = ["run_with_poller.sh"],
+)
