@@ -21,10 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef GPR_WINDOWS
 
 /* These allocate new strings using gpr_malloc to convert from and to utf-8. */
@@ -32,9 +28,5 @@ LPTSTR gpr_char_to_tchar(LPCSTR input);
 LPSTR gpr_tchar_to_char(LPCTSTR input);
 
 #endif /* GPR_WINDOWS */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SUPPORT_STRING_WINDOWS_H */

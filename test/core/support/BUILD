@@ -69,16 +69,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "histogram_test",
-    srcs = ["histogram_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//test/core/util:gpr_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
     language = "C++",
@@ -221,5 +211,32 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ref_counted_test",
+    srcs = ["ref_counted_test.cc"],
+    language = "C++",
+    deps = [
+        "//:ref_counted",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "ref_counted_ptr_test",
+    srcs = ["ref_counted_ptr_test.cc"],
+    language = "C++",
+    deps = [
+        "//:ref_counted",
+        "//:ref_counted_ptr",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )

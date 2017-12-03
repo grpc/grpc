@@ -27,10 +27,6 @@
 
 #include "src/core/lib/iomgr/socket_windows.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum {
   GRPC_IOCP_WORK_WORK,
   GRPC_IOCP_WORK_TIMEOUT,
@@ -44,10 +40,6 @@ void grpc_iocp_kick(void);
 void grpc_iocp_flush(void);
 void grpc_iocp_shutdown(void);
 void grpc_iocp_add_socket(grpc_winsocket*);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 

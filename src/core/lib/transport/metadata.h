@@ -27,10 +27,6 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.
 
@@ -167,9 +163,5 @@ void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem md);
 
 void grpc_mdctx_global_init(void);
 void grpc_mdctx_global_shutdown(grpc_exec_ctx* exec_ctx);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */

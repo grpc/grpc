@@ -36,10 +36,6 @@
 // round_robin that could be refactored and moved here.  In a future PR,
 // need to clean this up.
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_lb_subchannel_list grpc_lb_subchannel_list;
 
 typedef struct {
@@ -145,9 +141,5 @@ void grpc_lb_subchannel_list_unref_for_connectivity_watch(
 void grpc_lb_subchannel_list_shutdown_and_unref(
     grpc_exec_ctx* exec_ctx, grpc_lb_subchannel_list* subchannel_list,
     const char* reason);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H */

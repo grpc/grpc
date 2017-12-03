@@ -40,7 +40,7 @@ namespace Grpc.Core.Internal.Tests
         public void CreateAsyncAndShutdown()
         {
             var env = GrpcEnvironment.AddRef();
-            var cq = CompletionQueueSafeHandle.CreateAsync(new CompletionRegistry(env));
+            var cq = CompletionQueueSafeHandle.CreateAsync(new CompletionRegistry(env, () => BatchContextSafeHandle.Create()));
             cq.Shutdown();
             var ev = cq.Next();
             cq.Dispose();

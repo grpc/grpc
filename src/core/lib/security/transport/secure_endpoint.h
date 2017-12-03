@@ -22,10 +22,6 @@
 #include <grpc/slice.h>
 #include "src/core/lib/iomgr/endpoint.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct tsi_frame_protector;
 struct tsi_zero_copy_grpc_protector;
 
@@ -39,9 +35,5 @@ grpc_endpoint* grpc_secure_endpoint_create(
     struct tsi_zero_copy_grpc_protector* zero_copy_protector,
     grpc_endpoint* to_wrap, grpc_slice* leftover_slices,
     size_t leftover_nslices);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H */

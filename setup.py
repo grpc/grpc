@@ -173,7 +173,7 @@ if "win32" in sys.platform:
     # on msvc, but only for 32 bits
     DEFINE_MACROS += (('NTDDI_VERSION', 0x06000000),)
 else:
-  DEFINE_MACROS += (('HAVE_CONFIG_H', 1),)
+  DEFINE_MACROS += (('HAVE_CONFIG_H', 1), ('GRPC_ENABLE_FORK_SUPPORT', 1),)
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
@@ -181,6 +181,7 @@ if "linux" in sys.platform or "darwin" in sys.platform:
   pymodinit_type = 'PyObject*' if PY3 else 'void'
   pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
+  DEFINE_MACROS += (('GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK', 1),)
 
 # By default, Python3 distutils enforces compatibility of
 # c plugins (.so files) with the OSX version Python3 was built with.

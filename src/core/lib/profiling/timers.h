@@ -19,10 +19,6 @@
 #ifndef GRPC_CORE_LIB_PROFILING_TIMERS_H
 #define GRPC_CORE_LIB_PROFILING_TIMERS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void gpr_timers_global_init(void);
 void gpr_timers_global_destroy(void);
 
@@ -84,9 +80,6 @@ void gpr_timer_set_enabled(int enabled);
 
 #endif /* at least one profiler requested. */
 
-#ifdef __cplusplus
-}
-
 #if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER) + \
      defined(GRPC_CUSTOM_PROFILER))
 namespace grpc {
@@ -110,7 +103,6 @@ class ProfileScope {
 #define GPR_TIMER_SCOPE(tag, important) \
   do {                                  \
   } while (false)
-#endif
 #endif
 
 #endif /* GRPC_CORE_LIB_PROFILING_TIMERS_H */
