@@ -1148,12 +1148,9 @@ def ssl_channel_credentials(root_certificates=None,
     Returns:
       A ChannelCredentials for use with an SSL-enabled Channel.
     """
-    if private_key is not None or certificate_chain is not None:
-        pair = _cygrpc.SslPemKeyCertPair(private_key, certificate_chain)
-    else:
-        pair = None
     return ChannelCredentials(
-        _cygrpc.channel_credentials_ssl(root_certificates, pair))
+        _cygrpc.SSLChannelCredentials(root_certificates, private_key,
+                                      certificate_chain))
 
 
 def metadata_call_credentials(metadata_plugin, name=None):
@@ -1167,9 +1164,8 @@ def metadata_call_credentials(metadata_plugin, name=None):
       A CallCredentials.
     """
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
-    return CallCredentials(
-        _plugin_wrapping.metadata_plugin_call_credentials(metadata_plugin,
-                                                          name))
+    return _plugin_wrapping.metadata_plugin_call_credentials(metadata_plugin,
+                                                             name)
 
 
 def access_token_call_credentials(access_token):
@@ -1185,9 +1181,8 @@ def access_token_call_credentials(access_token):
     """
     from grpc import _auth  # pylint: disable=cyclic-import
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
-    return CallCredentials(
-        _plugin_wrapping.metadata_plugin_call_credentials(
-            _auth.AccessTokenAuthMetadataPlugin(access_token), None))
+    return _plugin_wrapping.metadata_plugin_call_credentials(
+        _auth.AccessTokenAuthMetadataPlugin(access_token), None)
 
 
 def composite_call_credentials(*call_credentials):
@@ -1199,12 +1194,10 @@ def composite_call_credentials(*call_credentials):
     Returns:
       A CallCredentials object composed of the given CallCredentials objects.
     """
-    from grpc import _credential_composition  # pylint: disable=cyclic-import
-    cygrpc_call_credentials = tuple(
-        single_call_credentials._credentials
-        for single_call_credentials in call_credentials)
     return CallCredentials(
-        _credential_composition.call(cygrpc_call_credentials))
+        _cygrpc.CompositeCallCredentials(
+            tuple(single_call_credentials._credentials
+                  for single_call_credentials in call_credentials)))
 
 
 def composite_channel_credentials(channel_credentials, *call_credentials):
@@ -1218,13 +1211,11 @@ def composite_channel_credentials(channel_credentials, *call_credentials):
       A ChannelCredentials composed of the given ChannelCredentials and
         CallCredentials objects.
     """
-    from grpc import _credential_composition  # pylint: disable=cyclic-import
-    cygrpc_call_credentials = tuple(
-        single_call_credentials._credentials
-        for single_call_credentials in call_credentials)
     return ChannelCredentials(
-        _credential_composition.channel(channel_credentials._credentials,
-                                        cygrpc_call_credentials))
+        _cygrpc.CompositeChannelCredentials(
+            tuple(single_call_credentials._credentials
+                  for single_call_credentials in call_credentials),
+            channel_credentials._credentials))
 
 
 def ssl_server_credentials(private_key_certificate_chain_pairs,
