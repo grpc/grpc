@@ -104,6 +104,7 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
       GPR_ASSERT(transfered_bytes == 0);
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
+        closesocket(socket->socket);
       } else {
         *ep =
             grpc_tcp_create(exec_ctx, socket, ac->channel_args, ac->addr_name);
