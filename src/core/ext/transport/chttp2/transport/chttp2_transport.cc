@@ -651,6 +651,11 @@ static void close_transport_locked(grpc_exec_ctx* exec_ctx,
     GPR_ASSERT(t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE);
     grpc_endpoint_shutdown(exec_ctx, t->ep, GRPC_ERROR_REF(error));
   }
+  if (t->notify_on_receive_settings != nullptr) {
+    GRPC_CLOSURE_SCHED(exec_ctx, t->notify_on_receive_settings,
+                       GRPC_ERROR_CANCELLED);
+    t->notify_on_receive_settings = nullptr;
+  }
   GRPC_ERROR_UNREF(error);
 }
 
@@ -1823,11 +1828,6 @@ static void perform_transport_op_locked(grpc_exec_ctx* exec_ctx,
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     close_transport_locked(exec_ctx, t, op->disconnect_with_error);
-    if (t->notify_on_receive_settings != nullptr) {
-      GRPC_CLOSURE_SCHED(exec_ctx, t->notify_on_receive_settings,
-                         GRPC_ERROR_CANCELLED);
-      t->notify_on_receive_settings = nullptr;
-    }
   }
 
   GRPC_CLOSURE_RUN(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
