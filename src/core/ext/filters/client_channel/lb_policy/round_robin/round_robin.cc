@@ -252,10 +252,13 @@ static void start_picking_locked(grpc_exec_ctx* exec_ctx,
                                  round_robin_lb_policy* p) {
   p->started_picking = true;
   for (size_t i = 0; i < p->subchannel_list->num_subchannels; i++) {
-    grpc_lb_subchannel_list_ref_for_connectivity_watch(p->subchannel_list,
-                                                       "connectivity_watch");
-    grpc_lb_subchannel_data_start_connectivity_watch(
-        exec_ctx, &p->subchannel_list->subchannels[i]);
+    if (p->subchannel_list->subchannels[i].curr_connectivity_state !=
+        GRPC_CHANNEL_SHUTDOWN) {
+      grpc_lb_subchannel_list_ref_for_connectivity_watch(p->subchannel_list,
+                                                         "connectivity_watch");
+      grpc_lb_subchannel_data_start_connectivity_watch(
+          exec_ctx, &p->subchannel_list->subchannels[i]);
+    }
   }
 }
 
@@ -388,8 +391,8 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx* exec_ctx,
   } else if (subchannel_list->num_shutdown ==
              subchannel_list->num_subchannels) {
     /* 3) IDLE and re-resolve */
-    grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+    grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
+                                GRPC_ERROR_NONE,
                                 "rr_exhausted_subchannels+reresolve");
     p->started_picking = false;
     grpc_lb_policy_try_reresolve(exec_ctx, &p->base, &grpc_lb_round_robin_trace,
