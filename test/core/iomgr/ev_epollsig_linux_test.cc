@@ -269,7 +269,7 @@ static void test_threading(void) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_options opt = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&opt);
-    gpr_thd_new(&thds[i], test_threading_loop, &shared, &opt);
+    gpr_thd_new(&thds[i], "test_thread", test_threading_loop, &shared, &opt);
   }
   grpc_wakeup_fd fd;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&fd)));
