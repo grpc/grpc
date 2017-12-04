@@ -50,7 +50,7 @@ static int g_number_of_writes = 0;
 static int g_number_of_bytes_read = 0;
 static int g_number_of_orphan_calls = 0;
 
-static void on_read(grpc_exec_ctx* exec_ctx, grpc_fd* emfd, void* user_data) {
+static bool on_read(grpc_exec_ctx* exec_ctx, grpc_fd* emfd, void* user_data) {
   char read_buffer[512];
   ssize_t byte_count;
 
@@ -64,9 +64,11 @@ static void on_read(grpc_exec_ctx* exec_ctx, grpc_fd* emfd, void* user_data) {
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "pollset_kick", grpc_pollset_kick(exec_ctx, g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
+  return false;
 }
 
-static void on_write(grpc_exec_ctx* exec_ctx, grpc_fd* emfd, void* user_data) {
+static void on_write(grpc_exec_ctx* exec_ctx, grpc_fd* emfd, void* user_data,
+                     grpc_closure* notify_on_write_closure) {
   gpr_mu_lock(g_mu);
   g_number_of_writes++;
 
@@ -79,6 +81,7 @@ static void on_fd_orphaned(grpc_exec_ctx* exec_ctx, grpc_fd* emfd,
                            grpc_closure* closure, void* user_data) {
   gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
           grpc_fd_wrapped_fd(emfd));
+  GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
   g_number_of_orphan_calls++;
 }
 
@@ -226,7 +229,6 @@ static void test_receive(int number_of_clients) {
   int clifd, svrfd;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   int i;
-  int number_of_reads_before;
   grpc_millis deadline;
   grpc_pollset* pollsets[1];
   LOG_TEST("test_receive");
@@ -256,14 +258,14 @@ static void test_receive(int number_of_clients) {
     deadline =
         grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
 
-    number_of_reads_before = g_number_of_reads;
+    int number_of_bytes_read_before = g_number_of_bytes_read;
     /* Create a socket, send a packet to the UDP server. */
     clifd = socket(addr->ss_family, SOCK_DGRAM, 0);
     GPR_ASSERT(clifd >= 0);
     GPR_ASSERT(connect(clifd, (struct sockaddr*)addr,
                        (socklen_t)resolved_addr.len) == 0);
     GPR_ASSERT(5 == write(clifd, "hello", 5));
-    while (g_number_of_reads == number_of_reads_before &&
+    while (g_number_of_bytes_read < (number_of_bytes_read_before + 5) &&
            deadline > grpc_exec_ctx_now(&exec_ctx)) {
       grpc_pollset_worker* worker = nullptr;
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -273,7 +275,6 @@ static void test_receive(int number_of_clients) {
       grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(g_mu);
     }
-    GPR_ASSERT(g_number_of_reads == number_of_reads_before + 1);
     close(clifd);
   }
   GPR_ASSERT(g_number_of_bytes_read == 5 * number_of_clients);
@@ -286,9 +287,6 @@ static void test_receive(int number_of_clients) {
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
-
-  /* The write callback should have fired a few times. */
-  GPR_ASSERT(g_number_of_writes > 0);
 }
 
 static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* p,
