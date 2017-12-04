@@ -546,23 +546,24 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
       } while (sd->subchannel == nullptr && sd != original_sd);
       if (sd == original_sd) {
         grpc_lb_subchannel_list_unref_for_connectivity_watch(
-            exec_ctx, sd->subchannel_list, "pf_candidate_shutdown");
-        grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                    GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                    "exhausted_subchannels+reresolve");
-        p->started_picking = false;
-        grpc_lb_policy_try_reresolve(
-            exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
-        break;
+            exec_ctx, sd->subchannel_list, "pf_exhausted_subchannels");
+        if (sd->subchannel_list == p->subchannel_list) {
+          grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                                      GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+                                      "exhausted_subchannels+reresolve");
+          p->started_picking = false;
+          grpc_lb_policy_try_reresolve(
+              exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+        }
+      } else {
+        if (sd->subchannel_list == p->subchannel_list) {
+          grpc_connectivity_state_set(
+              exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+              GRPC_ERROR_REF(error), "subchannel_failed");
+        }
+        // Reuses the connectivity refs from the previous watch.
+        grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
       }
-      if (sd->subchannel_list == p->subchannel_list) {
-        grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                    GRPC_ERROR_REF(error), "subchannel_failed");
-      }
-      // Reuses the connectivity refs from the previous watch.
-      grpc_lb_subchannel_data_start_connectivity_watch(exec_ctx, sd);
-      break;
     }
   }
 }
