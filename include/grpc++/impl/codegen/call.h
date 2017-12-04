@@ -558,7 +558,8 @@ class CallOpRecvInitialMetadata {
 
 class CallOpClientRecvStatus {
  public:
-  CallOpClientRecvStatus() : recv_status_(nullptr), error_string_(nullptr) {}
+  CallOpClientRecvStatus()
+      : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
   void ClientRecvStatus(ClientContext* context, Status* status) {
     client_context_ = context;
@@ -575,7 +576,7 @@ class CallOpClientRecvStatus {
     op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &error_message_;
-    op->data.recv_status_on_client.error_string = &error_string_;
+    op->data.recv_status_on_client.error_string = &debug_error_string_;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -594,10 +595,11 @@ class CallOpClientRecvStatus {
                                         GRPC_SLICE_END_PTR(error_message_)),
                            binary_error_details);
     client_context_->set_debug_error_string(
-        error_string_ != nullptr ? grpc::string(error_string_) : "");
+        debug_error_string_ != nullptr ? grpc::string(debug_error_string_)
+                                       : "");
     g_core_codegen_interface->grpc_slice_unref(error_message_);
-    if (error_string_ != nullptr) {
-      g_core_codegen_interface->gpr_free((void*)error_string_);
+    if (debug_error_string_ != nullptr) {
+      g_core_codegen_interface->gpr_free((void*)debug_error_string_);
     }
     recv_status_ = nullptr;
   }
@@ -606,7 +608,7 @@ class CallOpClientRecvStatus {
   ClientContext* client_context_;
   MetadataMap* metadata_map_;
   Status* recv_status_;
-  const char* error_string_;
+  const char* debug_error_string_;
   grpc_status_code status_code_;
   grpc_slice error_message_;
 };
