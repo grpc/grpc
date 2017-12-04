@@ -1156,20 +1156,6 @@ def ssl_channel_credentials(root_certificates=None,
         _cygrpc.channel_credentials_ssl(root_certificates, pair))
 
 
-def _metadata_call_credentials(metadata_plugin, name):
-    from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
-    if name is None:
-        try:
-            effective_name = metadata_plugin.__name__
-        except AttributeError:
-            effective_name = metadata_plugin.__class__.__name__
-    else:
-        effective_name = name
-    return CallCredentials(
-        _plugin_wrapping.call_credentials_metadata_plugin(metadata_plugin,
-                                                          effective_name))
-
-
 def metadata_call_credentials(metadata_plugin, name=None):
     """Construct CallCredentials from an AuthMetadataPlugin.
 
@@ -1180,7 +1166,10 @@ def metadata_call_credentials(metadata_plugin, name=None):
     Returns:
       A CallCredentials.
     """
-    return _metadata_call_credentials(metadata_plugin, name)
+    from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
+    return CallCredentials(
+        _plugin_wrapping.metadata_plugin_call_credentials(metadata_plugin,
+                                                          name))
 
 
 def access_token_call_credentials(access_token):
@@ -1195,8 +1184,10 @@ def access_token_call_credentials(access_token):
       A CallCredentials.
     """
     from grpc import _auth  # pylint: disable=cyclic-import
-    return _metadata_call_credentials(
-        _auth.AccessTokenAuthMetadataPlugin(access_token), None)
+    from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
+    return CallCredentials(
+        _plugin_wrapping.metadata_plugin_call_credentials(
+            _auth.AccessTokenAuthMetadataPlugin(access_token), None))
 
 
 def composite_call_credentials(*call_credentials):
