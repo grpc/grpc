@@ -38,6 +38,11 @@ config_setting(
     values = {"define": "grpc_no_ares=true"},
 )
 
+config_setting(
+    name = "remote_execution",
+    values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "generous"
 
@@ -54,7 +59,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/avl.h",
     "include/grpc/support/cmdline.h",
     "include/grpc/support/cpu.h",
-    "include/grpc/support/histogram.h",
     "include/grpc/support/host_port.h",
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
@@ -79,10 +83,11 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
-    "include/grpc/load_reporting.h",
+    "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security_constants.h",
+    "include/grpc/load_reporting.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
     "include/grpc/status.h",
@@ -446,7 +451,6 @@ grpc_cc_library(
         "src/core/lib/support/env_posix.cc",
         "src/core/lib/support/env_windows.cc",
         "src/core/lib/support/fork.cc",
-        "src/core/lib/support/histogram.cc",
         "src/core/lib/support/host_port.cc",
         "src/core/lib/support/log.cc",
         "src/core/lib/support/log_android.cc",
