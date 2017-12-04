@@ -66,11 +66,8 @@ LANG_RELEASE_MATRIX = {
         {'v1.4.2': None},
         {'v1.5.2': None},
         {'v1.6.0': None},
-        {'v1.7.0': None},
-        {'v1.7.1': None},
-        {'v1.7.2': None},
-        {'v1.7.3': None},
-        {'v1.8.0': None},
+        {'v1.7.4': None},
+        {'v1.8.1': None},
     ],
     'java': [
         {'v1.0.3': None},
