@@ -358,12 +358,12 @@ add_custom_target(plugins
 add_custom_target(tools_c
   DEPENDS
   check_epollexclusive
-  gen_hpack_tables
-  gen_legal_metadata_characters
-  gen_percent_encoding_tables
   grpc_create_jwt
   grpc_print_google_default_creds_token
   grpc_verify_jwt
+  gen_hpack_tables
+  gen_legal_metadata_characters
+  gen_percent_encoding_tables
 )
 
 add_custom_target(tools_cxx
@@ -6021,104 +6021,6 @@ target_link_libraries(fling_test
 
 endif()
 endif (gRPC_BUILD_TESTS)
-
-add_executable(gen_hpack_tables
-  tools/codegen/core/gen_hpack_tables.c
-)
-
-
-target_include_directories(gen_hpack_tables
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(gen_hpack_tables
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
-  grpc
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS gen_hpack_tables EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-
-add_executable(gen_legal_metadata_characters
-  tools/codegen/core/gen_legal_metadata_characters.c
-)
-
-
-target_include_directories(gen_legal_metadata_characters
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(gen_legal_metadata_characters
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-
-add_executable(gen_percent_encoding_tables
-  tools/codegen/core/gen_percent_encoding_tables.c
-)
-
-
-target_include_directories(gen_percent_encoding_tables
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(gen_percent_encoding_tables
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-
-
-if (gRPC_INSTALL)
-  install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
@@ -12908,6 +12810,104 @@ target_link_libraries(public_headers_must_be_c89
 )
 
 endif (gRPC_BUILD_TESTS)
+
+add_executable(gen_hpack_tables
+  tools/codegen/core/gen_hpack_tables.cc
+)
+
+
+target_include_directories(gen_hpack_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(gen_hpack_tables
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+  grpc
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS gen_hpack_tables EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_executable(gen_legal_metadata_characters
+  tools/codegen/core/gen_legal_metadata_characters.cc
+)
+
+
+target_include_directories(gen_legal_metadata_characters
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(gen_legal_metadata_characters
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_executable(gen_percent_encoding_tables
+  tools/codegen/core/gen_percent_encoding_tables.cc
+)
+
+
+target_include_directories(gen_percent_encoding_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(gen_percent_encoding_tables
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
 if (gRPC_BUILD_TESTS)
 
 add_executable(badreq_bad_client_test
