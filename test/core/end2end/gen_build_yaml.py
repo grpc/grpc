@@ -147,38 +147,47 @@ END2END_TESTS = {
     'request_with_flags': default_test_options._replace(
         proxyable=False, cpu_cost=LOWCPU),
     'request_with_payload': default_test_options._replace(cpu_cost=LOWCPU),
+    # TODO(roth): Remove proxyable=False for all retry tests once we
+    # have a way for the proxy to propagate the fact that trailing
+    # metadata is available when initial metadata is returned.
     'retry': default_test_options._replace(cpu_cost=LOWCPU,
-                                           needs_client_channel=True),
+                                           needs_client_channel=True,
+                                           proxyable=False),
     'retry_cancellation': default_test_options._replace(
-        cpu_cost=LOWCPU, needs_client_channel=True),
+        cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_disabled': default_test_options._replace(cpu_cost=LOWCPU,
-                                                    needs_client_channel=True),
+                                                    needs_client_channel=True,
+                                                    proxyable=False),
     'retry_exceeds_buffer_size_in_initial_batch': default_test_options._replace(
-        cpu_cost=LOWCPU, needs_client_channel=True),
+        cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_exceeds_buffer_size_in_subsequent_batch':
         default_test_options._replace(cpu_cost=LOWCPU,
-                                      needs_client_channel=True),
+                                      needs_client_channel=True,
+                                      proxyable=False),
     'retry_non_retriable_status': default_test_options._replace(
-        cpu_cost=LOWCPU, needs_client_channel=True),
+        cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_recv_initial_metadata': default_test_options._replace(
-        cpu_cost=LOWCPU, needs_client_channel=True),
+        cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_recv_message': default_test_options._replace(
-        cpu_cost=LOWCPU, needs_client_channel=True),
+        cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_server_pushback_delay': default_test_options._replace(
-        cpu_cost=LOWCPU, needs_client_channel=True),
+        cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_server_pushback_disabled': default_test_options._replace(
-        cpu_cost=LOWCPU, needs_client_channel=True),
+        cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_streaming': default_test_options._replace(cpu_cost=LOWCPU,
-                                                     needs_client_channel=True),
+                                                     needs_client_channel=True,
+                                                     proxyable=False),
     'retry_streaming_after_commit': default_test_options._replace(
-        cpu_cost=LOWCPU, needs_client_channel=True),
+        cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_streaming_succeeds_before_replay_finished':
         default_test_options._replace(cpu_cost=LOWCPU,
-                                      needs_client_channel=True),
+                                      needs_client_channel=True,
+                                      proxyable=False),
     'retry_throttled': default_test_options._replace(cpu_cost=LOWCPU,
-                                                     needs_client_channel=True),
+                                                     needs_client_channel=True,
+                                                     proxyable=False),
     'retry_too_many_attempts': default_test_options._replace(
-        cpu_cost=LOWCPU, needs_client_channel=True),
+        cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'server_finishes_request': default_test_options._replace(cpu_cost=LOWCPU),
     'shutdown_finishes_calls': default_test_options._replace(cpu_cost=LOWCPU),
     'shutdown_finishes_tags': default_test_options._replace(cpu_cost=LOWCPU),
