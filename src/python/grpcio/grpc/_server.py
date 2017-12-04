@@ -591,7 +591,13 @@ def _handle_call(rpc_event, generic_handlers, thread_pool,
     if not rpc_event.success:
         return None, None
     if rpc_event.request_call_details.method is not None:
-        method_handler = _find_method_handler(rpc_event, generic_handlers)
+        try:
+            method_handler = _find_method_handler(rpc_event, generic_handlers)
+        except Exception as e:  # pylint: disable=broad-except
+            details = 'Exception servicing handler: {}'.format(e)
+            logging.exception(details)
+            return _reject_rpc(rpc_event, cygrpc.StatusCode.unknown,
+                               b'Error in service handler!'), None
         if method_handler is None:
             return _reject_rpc(rpc_event, cygrpc.StatusCode.unimplemented,
                                b'Method not found!'), None
