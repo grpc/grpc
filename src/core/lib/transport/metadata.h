@@ -26,6 +26,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/arena.h"
+#include "src/core/lib/support/function.h"
 #include "src/core/lib/support/memory.h"
 
 /* This file provides a mechanism for tracking metadata through the grpc stack.
@@ -103,7 +104,6 @@ enum class HttpTe : uint8_t {
 };
 
 enum class NamedKeys : int {
-  PATH = 0,  // must be first
   AUTHORITY,
   GRPC_MESSAGE,
   GRPC_PAYLOAD_BIN,
@@ -125,24 +125,69 @@ class Collection {
   explicit Collection(gpr_arena* arena) : arena_(arena) {}
 
   bool SetNamedKey(NamedKeys key, grpc_slice slice, bool reset = true) {
-    bool r = true;
     int idx = static_cast<int>(key);
     if (named_keys_[idx] != nullptr) {
       if (!reset) return false;
       grpc_slice_unref_internal(*named_keys_[idx]);
-      r = false;
     } else {
       named_keys_[idx] =
           static_cast<grpc_slice*>(gpr_arena_alloc(arena_, sizeof(slice)));
     }
     *named_keys_[idx] = grpc_slice_ref(slice);
-    return r;
+    return true;
+  }
+
+  bool SetPath(int path, bool reset = true) {
+    return SetFn(&path_, path, reset, kPathUnset);
+  }
+
+  bool SetStatus(uint16_t status, bool reset = true) {
+    return SetFn(&status_, status, reset, kStatusUnset);
+  }
+
+  bool SetGrpcStatus(grpc_status_code grpc_status, bool reset = true) {
+    return SetFn(&grpc_status_, static_cast<int16_t>(grpc_status), reset,
+                 kGrpcStatusUnset);
+  }
+
+  bool SetMethod(HttpMethod method, bool reset = true) {
+    return SetWithPublicUnset(&method_, method, reset);
+  }
+
+  bool SetScheme(HttpScheme scheme, bool reset = true) {
+    return SetWithPublicUnset(&scheme_, scheme, reset);
+  }
+
+  bool SetTe(HttpTe te, bool reset = true) {
+    return SetWithPublicUnset(&te_, te, reset);
+  }
+
+  bool SetContentType(ContentType content_type, bool reset = true) {
+    return SetWithPublicUnset(&content_type_, content_type, reset);
   }
 
  private:
+  template <class T>
+  bool SetFn(T* store, T newval, bool reset, T unset) {
+    if (!reset && *store != unset) return false;
+    *store = newval;
+    return true;
+  }
+
+  template <class T>
+  bool SetWithPublicUnset(T* store, T newval, bool reset) {
+    GPR_ASSERT(newval != T::UNSET);
+    if (!reset && *store != T::UNSET) return false;
+    *store = newval;
+    return true;
+  }
+
   gpr_arena* const arena_;
   grpc_slice* named_keys_[static_cast<int>(NamedKeys::COUNT)] = {nullptr};
-  uint16_t status_ = 0;
+  static constexpr int kPathUnset = -1;
+  int path_ = kPathUnset;
+  static constexpr uint16_t kStatusUnset = 0;
+  uint16_t status_ = kStatusUnset;
   static constexpr int16_t kGrpcStatusUnset = -1;
   int16_t grpc_status_ = kGrpcStatusUnset;
   HttpMethod method_ = HttpMethod::UNSET;
@@ -158,8 +203,8 @@ void RegisterKeyType(const char* key_name, Key* key);
 }  // namespace impl
 
 template <class KeyType>
-const Key* RegisterKeyType(const char* key_name) {
-  Key* k = New<KeyType>();
+const KeyType* RegisterKeyType(const char* key_name) {
+  KeyType* k = New<KeyType>();
   impl::RegisterKeyType(key_name, k);
   return k;
 }
@@ -177,7 +222,7 @@ class NamedKey : public Key {
   }
 };
 
-template <typename T, bool (Collection::*SetFn)(T),
+template <typename T, bool (Collection::*SetFn)(T, bool),
           bool (*Parse)(grpc_slice slice, T* value)>
 class SpecialKey : public Key {
  public:
@@ -186,13 +231,12 @@ class SpecialKey : public Key {
     if (!Parse(slice, &val)) {
       return false;
     }
-    return (collection->*SetFn)(val);
+    return (collection->*SetFn)(val, false);
   }
 };
 
 }  // namespace impl
 
-extern const Key* const path;
 extern const Key* const authority;
 extern const Key* const grpc_message;
 extern const Key* const grpc_payload_bin;
