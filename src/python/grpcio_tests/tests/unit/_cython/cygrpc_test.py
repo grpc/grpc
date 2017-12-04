@@ -28,7 +28,7 @@ _CALL_CREDENTIALS_METADATA_VALUE = 'call-creds-value'
 _EMPTY_FLAGS = 0
 
 
-def _metadata_plugin_callback(context, callback):
+def _metadata_plugin(context, callback):
     callback(
         cygrpc.Metadata([
             cygrpc.Metadatum(_CALL_CREDENTIALS_METADATA_KEY,
@@ -105,17 +105,9 @@ class TypeSmokeTest(unittest.TestCase):
         channel = cygrpc.Channel(b'[::]:0', cygrpc.ChannelArgs([]))
         del channel
 
-    def testCredentialsMetadataPluginUpDown(self):
-        plugin = cygrpc.CredentialsMetadataPlugin(
-            lambda ignored_a, ignored_b: None, b'')
-        del plugin
-
-    def testCallCredentialsFromPluginUpDown(self):
-        plugin = cygrpc.CredentialsMetadataPlugin(_metadata_plugin_callback,
-                                                  b'')
-        call_credentials = cygrpc.call_credentials_metadata_plugin(plugin)
-        del plugin
-        del call_credentials
+    def test_metadata_plugin_call_credentials_up_down(self):
+        cygrpc.MetadataPluginCallCredentials(_metadata_plugin,
+                                             b'test plugin name!')
 
     def testServerStartNoExplicitShutdown(self):
         server = cygrpc.Server(cygrpc.ChannelArgs([]))
@@ -205,7 +197,7 @@ class ServerClientMixin(object):
 
         return test_utilities.SimpleFuture(performer)
 
-    def testEcho(self):
+    def test_echo(self):
         DEADLINE = time.time() + 5
         DEADLINE_TOLERANCE = 0.25
         CLIENT_METADATA_ASCII_KEY = b'key'
@@ -439,8 +431,8 @@ class SecureServerSecureClient(unittest.TestCase, ServerClientMixin):
             cygrpc.SslPemKeyCertPair(resources.private_key(),
                                      resources.certificate_chain())
         ], False)
-        client_credentials = cygrpc.channel_credentials_ssl(
-            resources.test_root_certificates(), None)
+        client_credentials = cygrpc.SSLChannelCredentials(
+            resources.test_root_certificates(), None, None)
         self.setUpMixin(server_credentials, client_credentials,
                         _SSL_HOST_OVERRIDE)
 

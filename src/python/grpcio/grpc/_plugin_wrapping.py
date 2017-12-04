@@ -55,9 +55,10 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
                         self._state.exception))
         if error is None:
             self._callback(
-                _common.to_cygrpc_metadata(metadata), cygrpc.StatusCode.ok, b'')
+                _common.to_cygrpc_metadata(metadata), cygrpc.StatusCode.ok,
+                None)
         else:
-            self._callback(_common.EMPTY_METADATA, cygrpc.StatusCode.internal,
+            self._callback(None, cygrpc.StatusCode.internal,
                            _common.encode(str(error)))
 
 
@@ -66,15 +67,13 @@ class _Plugin(object):
     def __init__(self, metadata_plugin):
         self._metadata_plugin = metadata_plugin
 
-    def __call__(self, context, callback):
-        wrapped_context = _AuthMetadataContext(
-            _common.decode(context.service_url),
-            _common.decode(context.method_name))
+    def __call__(self, service_url, method_name, callback):
+        context = _AuthMetadataContext(
+            _common.decode(service_url), _common.decode(method_name))
         callback_state = _CallbackState()
         try:
             self._metadata_plugin(
-                wrapped_context,
-                _AuthMetadataPluginCallback(callback_state, callback))
+                context, _AuthMetadataPluginCallback(callback_state, callback))
         except Exception as exception:  # pylint: disable=broad-except
             logging.exception(
                 'AuthMetadataPluginCallback "%s" raised exception!',
@@ -83,7 +82,7 @@ class _Plugin(object):
                 callback_state.exception = exception
                 if callback_state.called:
                     return
-            callback(_common.EMPTY_METADATA, cygrpc.StatusCode.internal,
+            callback(None, cygrpc.StatusCode.internal,
                      _common.encode(str(exception)))
 
 
@@ -95,6 +94,6 @@ def metadata_plugin_call_credentials(metadata_plugin, name):
             effective_name = metadata_plugin.__class__.__name__
     else:
         effective_name = name
-    return cygrpc.call_credentials_metadata_plugin(
-        cygrpc.CredentialsMetadataPlugin(
+    return grpc.CallCredentials(
+        cygrpc.MetadataPluginCallCredentials(
             _Plugin(metadata_plugin), _common.encode(effective_name)))

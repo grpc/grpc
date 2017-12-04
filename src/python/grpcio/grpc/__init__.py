@@ -348,11 +348,11 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
 class ChannelCredentials(object):
     """An encapsulation of the data required to create a secure Channel.
 
-  This class has no supported interface - it exists to define the type of its
-  instances and its instances exist to be passed to other functions. For
-  example, ssl_channel_credentials returns an instance, and secure_channel
-  consumes an instance of this class.
-  """
+    This class has no supported interface - it exists to define the type of its
+    instances and its instances exist to be passed to other functions. For
+    example, ssl_channel_credentials returns an instance of this class and
+    secure_channel requires an instance of this class.
+    """
 
     def __init__(self, credentials):
         self._credentials = credentials
@@ -375,23 +375,22 @@ class CallCredentials(object):
 class AuthMetadataContext(six.with_metaclass(abc.ABCMeta)):
     """Provides information to call credentials metadata plugins.
 
-  Attributes:
-    service_url: A string URL of the service being called into.
-    method_name: A string of the fully qualified method name being called.
-  """
+    Attributes:
+      service_url: A string URL of the service being called into.
+      method_name: A string of the fully qualified method name being called.
+    """
 
 
 class AuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
     """Callback object received by a metadata plugin."""
 
     def __call__(self, metadata, error):
-        """Inform the gRPC runtime of the metadata to construct a
-           CallCredentials.
+        """Passes to the gRPC runtime authentication metadata for an RPC.
 
-    Args:
-      metadata: The :term:`metadata` used to construct the CallCredentials.
-      error: An Exception to indicate error or None to indicate success.
-    """
+        Args:
+          metadata: The :term:`metadata` used to construct the CallCredentials.
+          error: An Exception to indicate error or None to indicate success.
+        """
         raise NotImplementedError()
 
 
@@ -401,14 +400,14 @@ class AuthMetadataPlugin(six.with_metaclass(abc.ABCMeta)):
     def __call__(self, context, callback):
         """Implements authentication by passing metadata to a callback.
 
-    Implementations of this method must not block.
+        Implementations of this method must not block.
 
-    Args:
-      context: An AuthMetadataContext providing information on the RPC that the
-        plugin is being called to authenticate.
-      callback: An AuthMetadataPluginCallback to be invoked either synchronously
-        or asynchronously.
-    """
+        Args:
+          context: An AuthMetadataContext providing information on the RPC that
+            the plugin is being called to authenticate.
+          callback: An AuthMetadataPluginCallback to be invoked either
+            synchronously or asynchronously.
+        """
         raise NotImplementedError()
 
 
@@ -1137,23 +1136,21 @@ def ssl_channel_credentials(root_certificates=None,
                             certificate_chain=None):
     """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
-  Args:
-    root_certificates: The PEM-encoded root certificates as a byte string,
-    or None to retrieve them from a default location chosen by gRPC runtime.
-    private_key: The PEM-encoded private key as a byte string, or None if no
-    private key should be used.
-    certificate_chain: The PEM-encoded certificate chain as a byte string
-    to use or or None if no certificate chain should be used.
+    Args:
+      root_certificates: The PEM-encoded root certificates as a byte string,
+        or None to retrieve them from a default location chosen by gRPC
+        runtime.
+      private_key: The PEM-encoded private key as a byte string, or None if no
+        private key should be used.
+      certificate_chain: The PEM-encoded certificate chain as a byte string
+        to use or or None if no certificate chain should be used.
 
-  Returns:
-    A ChannelCredentials for use with an SSL-enabled Channel.
-  """
-    if private_key is not None or certificate_chain is not None:
-        pair = _cygrpc.SslPemKeyCertPair(private_key, certificate_chain)
-    else:
-        pair = None
+    Returns:
+      A ChannelCredentials for use with an SSL-enabled Channel.
+    """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_ssl(root_certificates, pair))
+        _cygrpc.SSLChannelCredentials(root_certificates, private_key,
+                                      certificate_chain))
 
 
 def metadata_call_credentials(metadata_plugin, name=None):
@@ -1167,9 +1164,8 @@ def metadata_call_credentials(metadata_plugin, name=None):
       A CallCredentials.
     """
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
-    return CallCredentials(
-        _plugin_wrapping.metadata_plugin_call_credentials(metadata_plugin,
-                                                          name))
+    return _plugin_wrapping.metadata_plugin_call_credentials(metadata_plugin,
+                                                             name)
 
 
 def access_token_call_credentials(access_token):
@@ -1185,46 +1181,41 @@ def access_token_call_credentials(access_token):
     """
     from grpc import _auth  # pylint: disable=cyclic-import
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
-    return CallCredentials(
-        _plugin_wrapping.metadata_plugin_call_credentials(
-            _auth.AccessTokenAuthMetadataPlugin(access_token), None))
+    return _plugin_wrapping.metadata_plugin_call_credentials(
+        _auth.AccessTokenAuthMetadataPlugin(access_token), None)
 
 
 def composite_call_credentials(*call_credentials):
     """Compose multiple CallCredentials to make a new CallCredentials.
 
-  Args:
-    *call_credentials: At least two CallCredentials objects.
+    Args:
+      *call_credentials: At least two CallCredentials objects.
 
-  Returns:
-    A CallCredentials object composed of the given CallCredentials objects.
-  """
-    from grpc import _credential_composition  # pylint: disable=cyclic-import
-    cygrpc_call_credentials = tuple(
-        single_call_credentials._credentials
-        for single_call_credentials in call_credentials)
+    Returns:
+      A CallCredentials object composed of the given CallCredentials objects.
+    """
     return CallCredentials(
-        _credential_composition.call(cygrpc_call_credentials))
+        _cygrpc.CompositeCallCredentials(
+            tuple(single_call_credentials._credentials
+                  for single_call_credentials in call_credentials)))
 
 
 def composite_channel_credentials(channel_credentials, *call_credentials):
     """Compose a ChannelCredentials and one or more CallCredentials objects.
 
-  Args:
-    channel_credentials: A ChannelCredentials object.
-    *call_credentials: One or more CallCredentials objects.
+    Args:
+      channel_credentials: A ChannelCredentials object.
+      *call_credentials: One or more CallCredentials objects.
 
-  Returns:
-    A ChannelCredentials composed of the given ChannelCredentials and
-    CallCredentials objects.
-  """
-    from grpc import _credential_composition  # pylint: disable=cyclic-import
-    cygrpc_call_credentials = tuple(
-        single_call_credentials._credentials
-        for single_call_credentials in call_credentials)
+    Returns:
+      A ChannelCredentials composed of the given ChannelCredentials and
+        CallCredentials objects.
+    """
     return ChannelCredentials(
-        _credential_composition.channel(channel_credentials._credentials,
-                                        cygrpc_call_credentials))
+        _cygrpc.CompositeChannelCredentials(
+            tuple(single_call_credentials._credentials
+                  for single_call_credentials in call_credentials),
+            channel_credentials._credentials))
 
 
 def ssl_server_credentials(private_key_certificate_chain_pairs,
