@@ -46,16 +46,6 @@ class Status {
         error_message_(error_message),
         binary_error_details_(error_details) {}
 
-  /// Construct an instance with \a code,  \a error_message and
-  /// \a error_details. It is an error to construct an OK status with non-empty
-  /// \a error_message and/or \a error_details.
-  Status(StatusCode code, const grpc::string& error_message,
-         const grpc::string& error_details, const grpc::string& error_string)
-      : code_(code),
-        error_message_(error_message),
-        binary_error_details_(error_details),
-        error_string_(error_string) {}
-
   // Pre-defined special status objects.
   /// An OK pre-defined instance.
   static const Status& OK;
@@ -69,8 +59,6 @@ class Status {
   /// Return the (binary) error details.
   // Usually it contains a serialized google.rpc.Status proto.
   grpc::string error_details() const { return binary_error_details_; }
-  /// Return the full fidelity error string, which includes all child errors.
-  grpc::string error_string() const { return error_string_; }
 
   /// Is the status OK?
   bool ok() const { return code_ == StatusCode::OK; }
@@ -84,7 +72,6 @@ class Status {
   StatusCode code_;
   grpc::string error_message_;
   grpc::string binary_error_details_;
-  grpc::string error_string_;
 };
 
 }  // namespace grpc
