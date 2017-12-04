@@ -988,7 +988,6 @@ gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
 gpr_cmdline_test: $(BINDIR)/$(CONFIG)/gpr_cmdline_test
 gpr_cpu_test: $(BINDIR)/$(CONFIG)/gpr_cpu_test
 gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
-gpr_histogram_test: $(BINDIR)/$(CONFIG)/gpr_histogram_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
 gpr_manual_constructor_test: $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test
@@ -1021,6 +1020,7 @@ grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 handshake_client: $(BINDIR)/$(CONFIG)/handshake_client
 handshake_server: $(BINDIR)/$(CONFIG)/handshake_server
 handshake_server_with_readahead_handshaker: $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker
+histogram_test: $(BINDIR)/$(CONFIG)/histogram_test
 hpack_parser_fuzzer_test: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test
 hpack_parser_test: $(BINDIR)/$(CONFIG)/hpack_parser_test
 hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
@@ -1383,7 +1383,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_cmdline_test \
   $(BINDIR)/$(CONFIG)/gpr_cpu_test \
   $(BINDIR)/$(CONFIG)/gpr_env_test \
-  $(BINDIR)/$(CONFIG)/gpr_histogram_test \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
   $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test \
@@ -1413,6 +1412,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/handshake_client \
   $(BINDIR)/$(CONFIG)/handshake_server \
   $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker \
+  $(BINDIR)/$(CONFIG)/histogram_test \
   $(BINDIR)/$(CONFIG)/hpack_parser_test \
   $(BINDIR)/$(CONFIG)/hpack_table_test \
   $(BINDIR)/$(CONFIG)/http_parser_test \
@@ -1829,8 +1829,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_cpu_test || ( echo test gpr_cpu_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_env_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_env_test || ( echo test gpr_env_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_histogram_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_histogram_test || ( echo test gpr_histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_host_port_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_log_test"
@@ -1887,6 +1885,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_server || ( echo test handshake_server failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_server_with_readahead_handshaker"
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker || ( echo test handshake_server_with_readahead_handshaker failed ; exit 1 )
+	$(E) "[RUN]     Testing histogram_test"
+	$(Q) $(BINDIR)/$(CONFIG)/histogram_test || ( echo test histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/hpack_parser_test || ( echo test hpack_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_table_test"
@@ -2829,7 +2829,6 @@ LIBGPR_SRC = \
     src/core/lib/support/env_posix.cc \
     src/core/lib/support/env_windows.cc \
     src/core/lib/support/fork.cc \
-    src/core/lib/support/histogram.cc \
     src/core/lib/support/host_port.cc \
     src/core/lib/support/log.cc \
     src/core/lib/support/log_android.cc \
@@ -2869,7 +2868,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -3623,11 +3621,13 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/iomgr/endpoint_tests.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.cc \
+    test/core/util/histogram.cc \
     test/core/util/memory_counters.cc \
     test/core/util/mock_endpoint.cc \
     test/core/util/parse_hexstring.cc \
     test/core/util/passthru_endpoint.cc \
     test/core/util/port.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
     test/core/util/port_server_client.cc \
     test/core/util/slice_splitter.cc \
     test/core/util/tracer_util.cc \
@@ -3882,11 +3882,13 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/iomgr/endpoint_tests.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.cc \
+    test/core/util/histogram.cc \
     test/core/util/memory_counters.cc \
     test/core/util/mock_endpoint.cc \
     test/core/util/parse_hexstring.cc \
     test/core/util/passthru_endpoint.cc \
     test/core/util/port.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
     test/core/util/port_server_client.cc \
     test/core/util/slice_splitter.cc \
     test/core/util/tracer_util.cc \
@@ -4591,7 +4593,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -5079,7 +5080,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -5801,7 +5801,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -10095,38 +10094,6 @@ endif
 endif
 
 
-GPR_HISTOGRAM_TEST_SRC = \
-    test/core/support/histogram_test.cc \
-
-GPR_HISTOGRAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_histogram_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_histogram_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/histogram_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_HISTOGRAM_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GPR_HOST_PORT_TEST_SRC = \
     test/core/support/host_port_test.cc \
 
@@ -11153,6 +11120,38 @@ deps_handshake_server_with_readahead_handshaker: $(HANDSHAKE_SERVER_WITH_READAHE
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS:.o=.dep)
+endif
+endif
+
+
+HISTOGRAM_TEST_SRC = \
+    test/core/util/histogram_test.cc \
+
+HISTOGRAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HISTOGRAM_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/histogram_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/histogram_test: $(HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/histogram_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/util/histogram_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_histogram_test: $(HISTOGRAM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HISTOGRAM_TEST_OBJS:.o=.dep)
 endif
 endif
 

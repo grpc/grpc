@@ -426,7 +426,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     // once at any given time.
     lb_policy_name_changed =
         chand->info_lb_policy_name == nullptr ||
-        strcmp(chand->info_lb_policy_name, lb_policy_name) != 0;
+        gpr_stricmp(chand->info_lb_policy_name, lb_policy_name) != 0;
     if (chand->lb_policy != nullptr && !lb_policy_name_changed) {
       // Continue using the same LB policy.  Update with new addresses.
       lb_policy_updated = true;
