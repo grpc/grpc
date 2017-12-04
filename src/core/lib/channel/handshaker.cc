@@ -241,6 +241,7 @@ void grpc_handshake_manager_do_handshake(
   // handshakers and eventually be freed by the on_handshake_done callback.
   mgr->args.endpoint = endpoint;
   mgr->args.args = grpc_channel_args_copy(channel_args);
+  mgr->args.deadline = deadline;
   mgr->args.user_data = user_data;
   mgr->args.read_buffer =
       (grpc_slice_buffer*)gpr_malloc(sizeof(*mgr->args.read_buffer));
