@@ -2251,17 +2251,25 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
             " retriable batches on subchannel_call=%p",
             chand, calld, num_batches, calld->subchannel_call);
   }
-  GPR_ASSERT(num_batches > 0);
-  for (size_t i = 1; i < num_batches; ++i) {
-    batches[i]->handler_private.extra_arg = calld->subchannel_call;
-    GRPC_CLOSURE_INIT(&batches[i]->handler_private.closure,
-                      start_batch_in_call_combiner, batches[i],
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
-                             &batches[i]->handler_private.closure,
-                             GRPC_ERROR_NONE, "start_subchannel_batch");
+  if (num_batches == 0) {
+    // This should be fairly rare, but it can happen when (e.g.) an
+    // attempt completes before it has finished replaying all
+    // previously sent messages.
+    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
+                            "no retriable subchannel batches to start");
+  } else {
+    for (size_t i = 1; i < num_batches; ++i) {
+      batches[i]->handler_private.extra_arg = calld->subchannel_call;
+      GRPC_CLOSURE_INIT(&batches[i]->handler_private.closure,
+                        start_batch_in_call_combiner, batches[i],
+                        grpc_schedule_on_exec_ctx);
+      GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                               &batches[i]->handler_private.closure,
+                               GRPC_ERROR_NONE, "start_subchannel_batch");
+    }
+    grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
+                                    batches[0]);
   }
-  grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, batches[0]);
 }
 
 // Applies service config to the call.  Must be invoked once we know
