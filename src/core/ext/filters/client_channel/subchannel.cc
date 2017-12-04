@@ -199,7 +199,7 @@ static gpr_atm ref_mutate(grpc_subchannel* c, gpr_atm delta,
   gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+  if (grpc_trace_stream_refcount.enabled()) {
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SUBCHANNEL: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
             purpose, old_val, old_val + delta, reason);

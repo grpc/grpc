@@ -80,8 +80,7 @@ using grpc_core::internal::retry_policy_params;
 // any even moderately compelling reason to do so.
 #define RETRY_BACKOFF_JITTER 0.2
 
-grpc_tracer_flag grpc_client_channel_trace =
-    GRPC_TRACER_INITIALIZER(false, "client_channel");
+grpc_core::TraceFlag grpc_client_channel_trace(false, "client_channel");
 
 struct external_connectivity_watcher;
 
@@ -170,7 +169,7 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx* exec_ctx,
                                          GRPC_ERROR_REF(error));
     }
   }
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p: setting connectivity state to %s", chand,
             grpc_connectivity_state_name(state));
   }
@@ -184,7 +183,7 @@ static void on_lb_policy_state_changed_locked(grpc_exec_ctx* exec_ctx,
   grpc_connectivity_state publish_state = w->state;
   /* check if the notification is for the latest policy */
   if (w->lb_policy == w->chand->lb_policy) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p: lb_policy=%p state changed to %s", w->chand,
               w->lb_policy, grpc_connectivity_state_name(w->state));
     }
@@ -222,7 +221,7 @@ static void watch_lb_policy_locked(grpc_exec_ctx* exec_ctx, channel_data* chand,
 
 static void start_resolving_locked(grpc_exec_ctx* exec_ctx,
                                    channel_data* chand) {
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p: starting name resolution", chand);
   }
   GPR_ASSERT(!chand->started_resolving);
@@ -304,7 +303,7 @@ static void method_parameters_unref_wrapper(grpc_exec_ctx* exec_ctx,
 static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
                                               void* arg, grpc_error* error) {
   channel_data* chand = (channel_data*)arg;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p: got resolver result: error=%s", chand,
             grpc_error_string(error));
   }
@@ -364,7 +363,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
     // once at any given time.
     lb_policy_name_changed =
         chand->info_lb_policy_name == nullptr ||
-        strcmp(chand->info_lb_policy_name, lb_policy_name) != 0;
+        gpr_stricmp(chand->info_lb_policy_name, lb_policy_name) != 0;
     if (chand->lb_policy != nullptr && !lb_policy_name_changed) {
       // Continue using the same LB policy.  Update with new addresses.
       lb_policy_updated = true;
@@ -417,7 +416,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
     grpc_channel_args_destroy(exec_ctx, chand->resolver_result);
     chand->resolver_result = nullptr;
   }
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "chand=%p: resolver result: lb_policy_name=\"%s\"%s, "
             "service_config=\"%s\"",
@@ -458,7 +457,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
   if (new_lb_policy != nullptr || error != GRPC_ERROR_NONE ||
       chand->resolver == nullptr) {
     if (chand->lb_policy != nullptr) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p: unreffing lb_policy=%p", chand,
                 chand->lb_policy);
       }
@@ -472,11 +471,11 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
   // Now that we've swapped out the relevant fields of chand, check for
   // error or shutdown.
   if (error != GRPC_ERROR_NONE || chand->resolver == nullptr) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p: shutting down", chand);
     }
     if (chand->resolver != nullptr) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p: shutting down resolver", chand);
       }
       grpc_resolver_shutdown_locked(exec_ctx, chand->resolver);
@@ -499,7 +498,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
     grpc_error* state_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("No load balancing policy");
     if (new_lb_policy != nullptr) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p: initializing new LB policy", chand);
       }
       GRPC_ERROR_UNREF(state_error);
@@ -969,7 +968,7 @@ static void retry_commit(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   channel_data* chand = (channel_data*)elem->channel_data;
   if (calld->retry_committed) return;
   calld->retry_committed = true;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: committing retries", chand, calld);
   }
   if (retry_state == nullptr) return;
@@ -991,7 +990,7 @@ static void pending_batches_add(grpc_exec_ctx* exec_ctx,
   call_data* calld = (call_data*)elem->call_data;
   channel_data* chand = (channel_data*)elem->channel_data;
   const size_t idx = get_batch_index(batch);
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: adding pending batch at index %" PRIuPTR, chand,
             calld, idx);
@@ -1019,7 +1018,7 @@ static void pending_batches_add(grpc_exec_ctx* exec_ctx,
       calld->pending_send_trailing_metadata = true;
     }
     if (calld->bytes_buffered_for_retry > chand->per_rpc_retry_buffer_size) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG,
                 "chand=%p calld=%p: exceeded retry buffer size, committing",
                 chand, calld);
@@ -1034,7 +1033,7 @@ static void pending_batches_add(grpc_exec_ctx* exec_ctx,
       // If we are not going to retry and have not yet started, pretend
       // retries are disabled so that we don't bother with retry overhead.
       if (calld->num_attempts_completed == 0) {
-        if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+        if (grpc_client_channel_trace.enabled()) {
           gpr_log(GPR_DEBUG,
                   "chand=%p calld=%p: disabling retries before first attempt",
                   chand, calld);
@@ -1077,7 +1076,7 @@ static void pending_batches_fail(grpc_exec_ctx* exec_ctx,
                                  bool yield_call_combiner) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   call_data* calld = (call_data*)elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
       if (calld->pending_batches[i].batch != nullptr) ++num_batches;
@@ -1139,7 +1138,7 @@ static void pending_batches_resume(grpc_exec_ctx* exec_ctx,
     return;
   }
   // Retries not enabled; send down batches as-is.
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
       if (calld->pending_batches[i].batch != nullptr) ++num_batches;
@@ -1229,7 +1228,7 @@ static void maybe_clear_pending_batch(grpc_call_element* elem,
            nullptr) &&
       (!batch->recv_message ||
        batch->payload->recv_message.recv_message_ready == nullptr)) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: clearing pending batch", chand,
               calld);
     }
@@ -1326,7 +1325,7 @@ static void do_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     next_attempt_time = grpc_backoff_step(exec_ctx, &calld->retry_backoff)
                             .next_attempt_start_time;
   }
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: retrying failed call in %" PRIuPTR " ms", chand,
             calld, next_attempt_time - grpc_exec_ctx_now(exec_ctx));
@@ -1360,7 +1359,7 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
         grpc_connected_subchannel_call_get_parent_data(
             batch_data->subchannel_call);
     if (retry_state->retry_dispatched) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p calld=%p: retry already dispatched", chand,
                 calld);
       }
@@ -1370,14 +1369,14 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   // Check status.
   if (status == GRPC_STATUS_OK) {
     grpc_server_retry_throttle_data_record_success(calld->retry_throttle_data);
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: call succeeded", chand, calld);
     }
     return false;
   }
   // Status is not OK.  Check whether the status is retryable.
   if (!retry_policy->retryable_status_codes.Contains(status)) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: status %s not configured as retryable", chand,
               calld, grpc_status_code_to_string(status));
@@ -1393,14 +1392,14 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   // checks, so that we don't fail to record failures due to other factors.
   if (!grpc_server_retry_throttle_data_record_failure(
           calld->retry_throttle_data)) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: retries throttled", chand, calld);
     }
     return false;
   }
   // Check whether the call is committed.
   if (calld->retry_committed) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: retries committed", chand, calld);
     }
     return false;
@@ -1408,7 +1407,7 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   // Check whether we have retries remaining.
   ++calld->num_attempts_completed;
   if (calld->num_attempts_completed >= retry_policy->max_attempts) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: exceeded %d retry attempts", chand,
               calld, retry_policy->max_attempts);
     }
@@ -1416,7 +1415,7 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   }
   // If the call was cancelled from the surface, don't retry.
   if (calld->error != GRPC_ERROR_NONE) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: call cancelled from surface, not retrying",
               chand, calld);
@@ -1429,14 +1428,14 @@ static bool maybe_retry(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     // If the value is "-1" or any other unparseable string, we do not retry.
     uint32_t ms;
     if (!grpc_parse_slice_to_uint32(GRPC_MDVALUE(*server_pushback_md), &ms)) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG,
                 "chand=%p calld=%p: not retrying due to server push-back",
                 chand, calld);
       }
       return false;
     } else {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG,
                 "chand=%p calld=%p: server push-back: retry in %u ms", chand,
                 calld, ms);
@@ -1464,7 +1463,7 @@ static void invoke_recv_initial_metadata_callback(grpc_exec_ctx* exec_ctx,
     if (batch != nullptr && batch->recv_initial_metadata &&
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready !=
             nullptr) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG,
                 "chand=%p calld=%p: invoking recv_initial_metadata_ready for "
                 "pending batch at index %" PRIuPTR,
@@ -1502,7 +1501,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_call_element* elem = batch_data->elem;
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: got recv_initial_metadata_ready, error=%s",
             chand, calld, grpc_error_string(error));
@@ -1516,7 +1515,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
   // to retry when recv_trailing_metadata comes back.
   if ((batch_data->trailing_metadata_available || error != GRPC_ERROR_NONE) &&
       !retry_state->completed_recv_trailing_metadata) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: deferring recv_initial_metadata_ready "
               "(Trailers-Only)",
@@ -1553,7 +1552,7 @@ static void invoke_recv_message_callback(grpc_exec_ctx* exec_ctx, void* arg,
     grpc_transport_stream_op_batch* batch = calld->pending_batches[i].batch;
     if (batch != nullptr && batch->recv_message &&
         batch->payload->recv_message.recv_message_ready != nullptr) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG,
                 "chand=%p calld=%p: invoking recv_message_ready for "
                 "pending batch at index %" PRIuPTR,
@@ -1587,7 +1586,7 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_call_element* elem = batch_data->elem;
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: got recv_message_ready, error=%s",
             chand, calld, grpc_error_string(error));
   }
@@ -1600,7 +1599,7 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* arg,
   // to retry when recv_trailing_metadata comes back.
   if ((batch_data->recv_message == nullptr || error != GRPC_ERROR_NONE) &&
       !retry_state->completed_recv_trailing_metadata) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: deferring recv_message_ready (nullptr "
               "message and recv_trailing_metadata pending)",
@@ -1753,7 +1752,7 @@ static void add_closures_for_replay_or_pending_send_ops(
     }
   }
   if (have_pending_send_message_ops || have_pending_send_trailing_metadata_op) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: starting next batch for pending send op(s)",
               chand, calld);
@@ -1776,7 +1775,7 @@ static void add_closures_for_completed_pending_batches(
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
     pending_batch* pending = &calld->pending_batches[i];
     if (pending_batch_is_completed(pending, calld, retry_state)) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG,
                 "chand=%p calld=%p: pending batch completed at index %" PRIuPTR,
                 chand, calld, i);
@@ -1805,7 +1804,7 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   grpc_call_element* elem = batch_data->elem;
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     char* op_str = grpc_transport_stream_op_batch_string(&batch_data->batch);
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: got on_complete, error=%s, batch=%s",
             chand, calld, grpc_error_string(error), op_str);
@@ -1838,7 +1837,7 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
       server_pushback_md = &md_batch->idx.named.grpc_retry_pushback_ms->md;
     }
   }
-  if (call_finished && GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (call_finished && grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: call finished, status=%s", chand,
             calld, grpc_status_code_to_string(status));
   }
@@ -2044,7 +2043,7 @@ static void start_internal_recv_trailing_metadata(grpc_exec_ctx* exec_ctx,
                                                   grpc_call_element* elem) {
   call_data* calld = (call_data*)elem->call_data;
   channel_data* chand = (channel_data*)elem->channel_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: call failed but recv_trailing_metadata not "
             "started; starting it internally",
@@ -2069,7 +2068,7 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
   if (calld->seen_send_initial_metadata &&
       !retry_state->started_send_initial_metadata &&
       !calld->pending_send_initial_metadata) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: replaying previously completed "
               "send_initial_metadata op",
@@ -2085,7 +2084,7 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
       retry_state->started_send_message_count ==
           retry_state->completed_send_message_count &&
       !calld->pending_send_message) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: replaying previously completed "
               "send_message op",
@@ -2105,7 +2104,7 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
       retry_state->started_send_message_count == calld->send_messages.size() &&
       !retry_state->started_send_trailing_metadata &&
       !calld->pending_send_trailing_metadata) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: replaying previously completed "
               "send_trailing_metadata op",
@@ -2222,7 +2221,7 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
   grpc_call_element* elem = (grpc_call_element*)arg;
   call_data* calld = (call_data*)elem->call_data;
   channel_data* chand = (channel_data*)elem->channel_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: constructing retriable batches",
             chand, calld);
   }
@@ -2246,7 +2245,7 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx* exec_ctx,
   // send down.  We're already running in the call combiner, so one of
   // the batches can be started directly, but the others will have to
   // re-enter the call combiner.
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: starting %" PRIuPTR
             " retriable batches on subchannel_call=%p",
@@ -2271,7 +2270,7 @@ static void apply_service_config_to_call_locked(grpc_exec_ctx* exec_ctx,
                                                 grpc_call_element* elem) {
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: applying service config to call",
             chand, calld);
   }
@@ -2325,7 +2324,7 @@ static void create_subchannel_call(grpc_exec_ctx* exec_ctx,
   grpc_error* new_error = grpc_connected_subchannel_create_call(
       exec_ctx, calld->connected_subchannel, &call_args,
       &calld->subchannel_call);
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
             chand, calld, calld->subchannel_call, grpc_error_string(new_error));
   }
@@ -2366,7 +2365,7 @@ static void pick_done(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
                     "Call dropped by load balancing policy")
               : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                     "Failed to create subchannel", &error, 1);
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG,
                 "chand=%p calld=%p: failed to create subchannel: error=%s",
                 chand, calld, grpc_error_string(new_error));
@@ -2411,7 +2410,7 @@ static void pick_callback_cancel_locked(grpc_exec_ctx* exec_ctx, void* arg,
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
   if (calld->lb_policy != nullptr) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: cancelling pick from LB policy %p",
               chand, calld, calld->lb_policy);
     }
@@ -2429,7 +2428,7 @@ static void pick_callback_done_locked(grpc_exec_ctx* exec_ctx, void* arg,
   grpc_call_element* elem = (grpc_call_element*)arg;
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed asynchronously",
             chand, calld);
   }
@@ -2446,7 +2445,7 @@ static bool pick_callback_start_locked(grpc_exec_ctx* exec_ctx,
                                        grpc_call_element* elem) {
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: starting pick on lb_policy=%p",
             chand, calld, chand->lb_policy);
   }
@@ -2497,7 +2496,7 @@ static bool pick_callback_start_locked(grpc_exec_ctx* exec_ctx,
       calld->subchannel_call_context, nullptr, &calld->pick_closure);
   if (pick_done) {
     /* synchronous grpc_lb_policy_pick call. Unref the LB policy. */
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed synchronously",
               chand, calld);
     }
@@ -2542,7 +2541,7 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx* exec_ctx,
   grpc_call_element* elem = args->elem;
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: cancelling pick waiting for resolver result",
             chand, calld);
@@ -2566,7 +2565,7 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx* exec_ctx,
   pick_after_resolver_result_args* args = (pick_after_resolver_result_args*)arg;
   if (args->finished) {
     /* cancelled, do nothing */
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "call cancelled before resolver result");
     }
     gpr_free(args);
@@ -2577,13 +2576,13 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx* exec_ctx,
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
   if (error != GRPC_ERROR_NONE) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver failed to return data",
               chand, calld);
     }
     async_pick_done_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
   } else if (chand->lb_policy != nullptr) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver returned, doing pick",
               chand, calld);
     }
@@ -2605,7 +2604,7 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx* exec_ctx,
   // right way to deal with it.
   else if (chand->resolver != nullptr) {
     // No LB policy, so try again.
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: resolver returned but no LB policy, "
               "trying again",
@@ -2613,7 +2612,7 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx* exec_ctx,
     }
     pick_after_resolver_result_start_locked(exec_ctx, elem);
   } else {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver disconnected", chand,
               calld);
     }
@@ -2626,7 +2625,7 @@ static void pick_after_resolver_result_start_locked(grpc_exec_ctx* exec_ctx,
                                                     grpc_call_element* elem) {
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+  if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: deferring pick pending resolver result", chand,
             calld);
@@ -2692,7 +2691,7 @@ static void cc_start_transport_stream_op_batch(
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
   // If we've previously been cancelled, immediately fail any new batches.
   if (calld->error != GRPC_ERROR_NONE) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: failing batch with error: %s",
               chand, calld, grpc_error_string(calld->error));
     }
@@ -2709,7 +2708,7 @@ static void cc_start_transport_stream_op_batch(
     // error to the caller when the first batch does get passed down.
     GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: recording cancel_error=%s", chand,
               calld, grpc_error_string(calld->error));
     }
@@ -2733,7 +2732,7 @@ static void cc_start_transport_stream_op_batch(
   // the channel combiner, which is more efficient (especially for
   // streaming calls).
   if (calld->subchannel_call != nullptr) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: starting batch on subchannel_call=%p", chand,
               calld, calld->subchannel_call);
@@ -2745,7 +2744,7 @@ static void cc_start_transport_stream_op_batch(
   // For batches containing a send_initial_metadata op, enter the channel
   // combiner to start a pick.
   if (batch->send_initial_metadata) {
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: entering client_channel combiner",
               chand, calld);
     }
@@ -2756,7 +2755,7 @@ static void cc_start_transport_stream_op_batch(
         GRPC_ERROR_NONE);
   } else {
     // For all other batches, release the call combiner.
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: saved batch, yeilding call combiner", chand,
               calld);

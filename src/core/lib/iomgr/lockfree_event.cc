@@ -22,7 +22,7 @@
 
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_tracer_flag grpc_polling_trace;
+extern grpc_core::TraceFlag grpc_polling_trace;
 
 /* 'state' holds the to call when the fd is readable or writable respectively.
    It can contain one of the following values:
@@ -57,7 +57,9 @@ extern grpc_tracer_flag grpc_polling_trace;
 
 namespace grpc_core {
 
-LockfreeEvent::LockfreeEvent() {
+LockfreeEvent::LockfreeEvent() { InitEvent(); }
+
+void LockfreeEvent::InitEvent() {
   /* Perform an atomic store to start the state machine.
 
      Note carefully that LockfreeEvent *MAY* be used whilst in a destroyed
@@ -67,7 +69,7 @@ LockfreeEvent::LockfreeEvent() {
   gpr_atm_no_barrier_store(&state_, kClosureNotReady);
 }
 
-LockfreeEvent::~LockfreeEvent() {
+void LockfreeEvent::DestroyEvent() {
   gpr_atm curr;
   do {
     curr = gpr_atm_no_barrier_load(&state_);
@@ -86,7 +88,7 @@ LockfreeEvent::~LockfreeEvent() {
 void LockfreeEvent::NotifyOn(grpc_exec_ctx* exec_ctx, grpc_closure* closure) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
-    if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    if (grpc_polling_trace.enabled()) {
       gpr_log(GPR_ERROR, "LockfreeEvent::NotifyOn: %p curr=%p closure=%p", this,
               (void*)curr, closure);
     }
@@ -153,7 +155,7 @@ bool LockfreeEvent::SetShutdown(grpc_exec_ctx* exec_ctx,
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
-    if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    if (grpc_polling_trace.enabled()) {
       gpr_log(GPR_ERROR, "LockfreeEvent::SetShutdown: %p curr=%p err=%s",
               &state_, (void*)curr, grpc_error_string(shutdown_err));
     }
@@ -202,7 +204,7 @@ void LockfreeEvent::SetReady(grpc_exec_ctx* exec_ctx) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
 
-    if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    if (grpc_polling_trace.enabled()) {
       gpr_log(GPR_ERROR, "LockfreeEvent::SetReady: %p curr=%p", &state_,
               (void*)curr);
     }

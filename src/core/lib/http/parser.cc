@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-grpc_tracer_flag grpc_http1_trace = GRPC_TRACER_INITIALIZER(false, "http1");
+grpc_core::TraceFlag grpc_http1_trace(false, "http1");
 
 static char* buf2str(void* buffer, size_t length) {
   char* out = (char*)gpr_malloc(length + 1);
@@ -294,7 +294,7 @@ static grpc_error* addbyte(grpc_http_parser* parser, uint8_t byte,
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
       if (parser->cur_line_length >= GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) {
-        if (GRPC_TRACER_ON(grpc_http1_trace))
+        if (grpc_http1_trace.enabled())
           gpr_log(GPR_ERROR, "HTTP header max line length (%d) exceeded",
                   GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(

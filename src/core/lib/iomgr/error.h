@@ -29,19 +29,13 @@
 
 #include "src/core/lib/debug/trace.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /// Opaque representation of an error.
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
 /// full write up of this object.
 
 typedef struct grpc_error grpc_error;
 
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_error_refcount;
-#endif
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount;
 
 typedef enum {
   /// 'errno' from the operating system
@@ -204,9 +198,5 @@ bool grpc_log_if_error(const char* what, grpc_error* error, const char* file,
                        int line);
 #define GRPC_LOG_IF_ERROR(what, error) \
   grpc_log_if_error((what), (error), __FILE__, __LINE__)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

@@ -36,10 +36,6 @@
 // round_robin that could be refactored and moved here.  In a future PR,
 // need to clean this up.
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_lb_subchannel_list grpc_lb_subchannel_list;
 
 typedef struct {
@@ -88,7 +84,7 @@ struct grpc_lb_subchannel_list {
   /** backpointer to owning policy */
   grpc_lb_policy* policy;
 
-  grpc_tracer_flag* tracer;
+  grpc_core::TraceFlag* tracer;
 
   /** all our subchannels */
   size_t num_subchannels;
@@ -121,7 +117,7 @@ struct grpc_lb_subchannel_list {
 };
 
 grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
-    grpc_exec_ctx* exec_ctx, grpc_lb_policy* p, grpc_tracer_flag* tracer,
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* p, grpc_core::TraceFlag* tracer,
     const grpc_lb_addresses* addresses, const grpc_lb_policy_args* args,
     grpc_iomgr_cb_func connectivity_changed_cb);
 
@@ -145,9 +141,5 @@ void grpc_lb_subchannel_list_unref_for_connectivity_watch(
 void grpc_lb_subchannel_list_shutdown_and_unref(
     grpc_exec_ctx* exec_ctx, grpc_lb_subchannel_list* subchannel_list,
     const char* reason);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H */

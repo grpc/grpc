@@ -24,10 +24,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** \file Tracks resource usage against a pool.
 
     The current implementation tracks only memory usage, but in the future
@@ -65,7 +61,7 @@ extern "C" {
     maintain lists of users (which users arrange to leave before they are
     destroyed) */
 
-extern grpc_tracer_flag grpc_resource_quota_trace;
+extern grpc_core::TraceFlag grpc_resource_quota_trace;
 
 grpc_resource_quota* grpc_resource_quota_ref_internal(
     grpc_resource_quota* resource_quota);
@@ -153,9 +149,5 @@ void grpc_resource_user_alloc_slices(
 grpc_slice grpc_resource_user_slice_malloc(grpc_exec_ctx* exec_ctx,
                                            grpc_resource_user* resource_user,
                                            size_t size);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

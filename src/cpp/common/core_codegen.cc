@@ -33,9 +33,7 @@
 
 #include "src/core/lib/profiling/timers.h"
 
-extern "C" {
 struct grpc_byte_buffer;
-}
 
 namespace grpc {
 

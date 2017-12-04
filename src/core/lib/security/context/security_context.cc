@@ -29,10 +29,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_auth_context_refcount =
-    GRPC_TRACER_INITIALIZER(false, "auth_context_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount(
+    false, "auth_context_refcount");
 
 /* --- grpc_call --- */
 
@@ -135,7 +133,7 @@ grpc_auth_context* grpc_auth_context_ref(grpc_auth_context* ctx,
                                          const char* file, int line,
                                          const char* reason) {
   if (ctx == nullptr) return nullptr;
-  if (GRPC_TRACER_ON(grpc_trace_auth_context_refcount)) {
+  if (grpc_trace_auth_context_refcount.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "AUTH_CONTEXT:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", ctx, val,
@@ -153,7 +151,7 @@ grpc_auth_context* grpc_auth_context_ref(grpc_auth_context* ctx) {
 void grpc_auth_context_unref(grpc_auth_context* ctx, const char* file, int line,
                              const char* reason) {
   if (ctx == nullptr) return;
-  if (GRPC_TRACER_ON(grpc_trace_auth_context_refcount)) {
+  if (grpc_trace_auth_context_refcount.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "AUTH_CONTEXT:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", ctx, val,
