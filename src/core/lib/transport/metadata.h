@@ -66,9 +66,18 @@ namespace metadata {
 
 class Collection;
 
+typedef Function<bool(Collection*)> CollectionSetFunc;
+
 class Key {
  public:
-  virtual void ParseInto(grpc_slice slice, Collection* collection) = 0;
+  virtual bool Parse(grpc_slice slice, CollectionSetFunc* set_fn) = 0;
+};
+
+template <typename T>
+class TypedKey : public Key {
+ public:
+  virtual void SetInCollection(const T& value, Collection* collection) = 0;
+  virtual const T* GetFromCollection(const Collection* collection) = 0;
 };
 
 enum class HttpMethod : uint8_t {
@@ -115,11 +124,19 @@ class Collection {
  public:
   explicit Collection(gpr_arena* arena) : arena_(arena) {}
 
-  void SetNamedKey(NamedKeys key, grpc_slice slice) {
+  bool SetNamedKey(NamedKeys key, grpc_slice slice, bool reset = true) {
+    bool r = true;
     int idx = static_cast<int>(key);
     if (named_keys_[idx] != nullptr) {
+      if (!reset) return false;
       grpc_slice_unref_internal(*named_keys_[idx]);
+      r = false;
+    } else {
+      named_keys_[idx] =
+          static_cast<grpc_slice*>(gpr_arena_alloc(arena_, sizeof(slice)));
     }
+    *named_keys_[idx] = grpc_slice_ref(slice);
+    return r;
   }
 
  private:
@@ -155,8 +172,21 @@ namespace impl {
 template <NamedKeys key>
 class NamedKey : public Key {
  public:
-  void ParseInto(grpc_slice slice, Collection* collection) {
-    collection->SetNamedKey(key, slice);
+  bool ParseInto(grpc_slice slice, Collection* collection) {
+    return collection->SetNamedKey(key, slice, false);
+  }
+};
+
+template <typename T, bool (Collection::*SetFn)(T),
+          bool (*Parse)(grpc_slice slice, T* value)>
+class SpecialKey : public Key {
+ public:
+  bool ParseInto(grpc_slice slice, Collection* collection) {
+    T val;
+    if (!Parse(slice, &val)) {
+      return false;
+    }
+    return (collection->*SetFn)(val);
   }
 };
 
