@@ -1824,7 +1824,7 @@ static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {  // Case (a).
     call_finished = true;
     grpc_error_get_status(exec_ctx, error, calld->deadline, &status, nullptr,
-                          nullptr);
+                          nullptr, nullptr);
   } else if (batch_data->batch.recv_trailing_metadata) {  // Case (b).
     call_finished = true;
     grpc_metadata_batch* md_batch =
@@ -2355,7 +2355,7 @@ static void pick_done(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
     // we return an error; otherwise, we may retry.
     grpc_status_code status = GRPC_STATUS_OK;
     grpc_error_get_status(exec_ctx, error, calld->deadline, &status, nullptr,
-                          nullptr);
+                          nullptr, nullptr);
     if (error == GRPC_ERROR_NONE || !calld->enable_retries ||
         !maybe_retry(exec_ctx, elem, nullptr /* batch_data */, status,
                      nullptr /* server_pushback_md */)) {
