@@ -3824,6 +3824,18 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: chttp2_settings_timeout_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/chttp2/settings_timeout_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: true
 - name: cli_call_test
   gtest: true
   build: test
