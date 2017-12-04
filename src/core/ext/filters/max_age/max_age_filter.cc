@@ -91,7 +91,35 @@ struct channel_data {
   grpc_connectivity_state connectivity_state;
   /* Number of active calls */
   gpr_atm call_count;
-  /* Current state of channel idleness and max_idle_timer */
+  /* 'idle_state' holds the states of max_idle_timer and channel idleness.
+      It can contain one of the following values:
+     +--------------------------------+----------------+---------+
+     |           idle_state           | max_idle_timer | channel |
+     +--------------------------------+----------------+---------+
+     | MAX_IDLE_STATE_INIT            | unset          | busy    |
+     | MAX_IDLE_STATE_TIMER_SET       | set, valid     | idle    |
+     | MAX_IDLE_STATE_SEEN_EXIT_IDLE  | set, invalid   | busy    |
+     | MAX_IDLE_STATE_SEEN_ENTER_IDLE | set, invalid   | idle    |
+     +--------------------------------+----------------+---------+
+
+     max_idle_timer will not be cancelled (unless the channel is shutting down).
+     If the timer callback is called when the max_idle_timer is valid (i.e.
+     idle_state is MAX_IDLE_STATE_TIMER_SET), the channel will be closed due to
+     idleness, otherwise the channel won't be changed.
+
+     State transitions:
+
+         MAX_IDLE_STATE_INIT <-------3------ MAX_IDLE_STATE_SEEN_EXIT_IDLE
+              ^    |                              ^     ^    |
+              |    |                              |     |    |
+              1    2     +-----------4------------+     6    7
+              |    |     |                              |    |
+              |    v     |                              |    v
+       MAX_IDLE_STATE_TIMER_SET <----5------ MAX_IDLE_STATE_SEEN_ENTER_IDLE
+
+     For 1, 3, 5 :  See max_idle_timer_cb() function
+     For 2, 7    :  See decrease_call_count() function
+     For 4, 6    :  See increase_call_count() function */
   gpr_atm idle_state;
   /* Time when the channel finished its last outstanding call, in grpc_millis */
   gpr_atm last_enter_idle_time_millis;
@@ -101,6 +129,7 @@ struct channel_data {
 /* Increase the nubmer of active calls. Before the increasement, if there are no
    calls, the max_idle_timer should be cancelled. */
 static void increase_call_count(channel_data* chand) {
+  /* Exit idle */
   if (gpr_atm_full_fetch_add(&chand->call_count, 1) == 0) {
     while (true) {
       gpr_atm idle_state = gpr_atm_acq_load(&chand->idle_state);
@@ -126,6 +155,7 @@ static void increase_call_count(channel_data* chand) {
 /* Decrease the nubmer of active calls. After the decrement, if there are no
    calls, the max_idle_timer should be started. */
 static void decrease_call_count(channel_data* chand) {
+  /* Enter idle */
   if (gpr_atm_full_fetch_add(&chand->call_count, -1) == 1) {
     gpr_atm_no_barrier_store(&chand->last_enter_idle_time_millis,
                              (gpr_atm)grpc_exec_ctx_now(exec_ctx));
