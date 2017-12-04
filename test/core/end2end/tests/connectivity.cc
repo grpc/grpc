@@ -68,8 +68,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
   ce.cq = f.cq;
   gpr_event_init(&ce.started);
   gpr_thd_options_set_joinable(&thdopt);
-  GPR_ASSERT(gpr_thd_new(&thdid, "grpc_connectivity", child_thread, &ce,
-                         &thdopt));
+  GPR_ASSERT(
+      gpr_thd_new(&thdid, "grpc_connectivity", child_thread, &ce, &thdopt));
 
   gpr_event_wait(&ce.started, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 

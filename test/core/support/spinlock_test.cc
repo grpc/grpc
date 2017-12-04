@@ -67,8 +67,8 @@ static void test_create_threads(struct test* m, void (*body)(void* arg)) {
   for (i = 0; i != m->thread_count; i++) {
     gpr_thd_options opt = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&opt);
-    GPR_ASSERT(gpr_thd_new(&m->threads[i], "grpc_create_threads", body, m,
-                           &opt));
+    GPR_ASSERT(
+        gpr_thd_new(&m->threads[i], "grpc_create_threads", body, m, &opt));
   }
 }
 

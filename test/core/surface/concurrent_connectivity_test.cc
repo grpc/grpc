@@ -220,7 +220,8 @@ int run_concurrent_connectivity_test() {
   args.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args.pollset, &args.mu);
   gpr_event_init(&args.ready);
-  gpr_thd_new(&server, "grpc_wave_3_server", bad_server_thread, &args, &options);
+  gpr_thd_new(&server, "grpc_wave_3_server", bad_server_thread, &args,
+              &options);
   gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
   for (size_t i = 0; i < NUM_THREADS; ++i) {
@@ -283,8 +284,8 @@ int run_concurrent_watches_with_short_timeouts_test() {
   gpr_thd_options_set_joinable(&options);
 
   for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], "grpc_short_watches",
-                watches_with_short_timeouts, localhost, &options);
+    gpr_thd_new(&threads[i], "grpc_short_watches", watches_with_short_timeouts,
+                localhost, &options);
   }
   for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);

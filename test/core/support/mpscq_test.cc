@@ -85,8 +85,8 @@ static void test_mt(void) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_mt_test", test_thread, &ta[i],
-                           &options));
+    GPR_ASSERT(
+        gpr_thd_new(&thds[i], "grpc_mt_test", test_thread, &ta[i], &options));
   }
   size_t num_done = 0;
   size_t spins = 0;
