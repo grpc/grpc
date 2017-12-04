@@ -348,6 +348,11 @@ class ClientContext {
   /// Applications never need to call this method.
   grpc_call* c_call() { return call_; }
 
+  /// EXPERIMENTAL debugging API
+  ///
+  /// if status is not ok() for an RPC, this will return a detailed string
+  /// of the gRPC Core error that led to the failure. It should not be relied
+  /// upon for anything other than gaining more debug data in failure cases.
   grpc::string debug_error_string() const { return debug_error_string_; }
 
  private:
