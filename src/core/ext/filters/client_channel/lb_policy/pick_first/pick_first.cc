@@ -177,6 +177,14 @@ static int pf_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
                           grpc_call_context_element* context, void** user_data,
                           grpc_closure* on_complete) {
   pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  // TODO(roth): We should be able to remove this check once we change
+  // LB policies to request re-resolution without shutting themselves down.
+  if (p->shutdown) {
+    GRPC_CLOSURE_SCHED(exec_ctx, on_complete,
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                           "LB policy was shut down"));
+    return 0;
+  }
   // If we have a selected subchannel already, return synchronously.
   if (p->selected != nullptr) {
     *target = GRPC_CONNECTED_SUBCHANNEL_REF(p->selected->connected_subchannel,

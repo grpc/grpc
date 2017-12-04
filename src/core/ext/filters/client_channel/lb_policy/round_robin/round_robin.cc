@@ -275,6 +275,14 @@ static int rr_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
                           grpc_call_context_element* context, void** user_data,
                           grpc_closure* on_complete) {
   round_robin_lb_policy* p = (round_robin_lb_policy*)pol;
+  // TODO(roth): We should be able to remove this check once we change
+  // LB policies to request re-resolution without shutting themselves down.
+  if (p->shutdown) {
+    GRPC_CLOSURE_SCHED(exec_ctx, on_complete,
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                           "LB policy was shut down"));
+    return 0;
+  }
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] Trying to pick (shutdown: %d)", (void*)pol,
             p->shutdown);
