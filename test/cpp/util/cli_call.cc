@@ -126,7 +126,7 @@ void CliCall::WriteAndWait(const grpc::string& request) {
   call_->Write(send_buffer, tag(2));
   write_done_ = false;
   while (!write_done_) {
-    gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(&write_mu_);
 }
@@ -136,7 +136,7 @@ void CliCall::WritesDoneAndWait() {
   call_->WritesDone(tag(4));
   write_done_ = false;
   while (!write_done_) {
-    gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(&write_mu_);
 }

@@ -1213,7 +1213,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   gpr_mu_lock(&server->mu_global);
   while (server->starting) {
     gpr_cv_wait(&server->starting_cv, &server->mu_global,
-                gpr_inf_future(GPR_CLOCK_REALTIME));
+                gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
 
   /* stay locked, and gather up some stuff to do */

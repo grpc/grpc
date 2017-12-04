@@ -117,8 +117,9 @@ void grpc_iomgr_shutdown(grpc_exec_ctx* exec_ctx) {
         dump_objects("LEAKED");
         abort();
       }
-      gpr_timespec short_deadline = gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
+      gpr_timespec short_deadline =
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                       gpr_time_from_millis(100, GPR_TIMESPAN));
       if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline)) {
         if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) > 0) {
           if (g_root_object.next != &g_root_object) {
