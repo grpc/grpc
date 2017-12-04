@@ -179,7 +179,8 @@ static void proxy_connection_failed(grpc_exec_ctx* exec_ctx,
                            GRPC_ERROR_REF(error));
     conn->client_shutdown = true;
   }
-  if (shutdown_server && !conn->server_shutdown) {
+  if (shutdown_server && !conn->server_shutdown &&
+      (conn->server_endpoint != nullptr)) {
     grpc_endpoint_shutdown(exec_ctx, conn->server_endpoint,
                            GRPC_ERROR_REF(error));
     conn->server_shutdown = true;
