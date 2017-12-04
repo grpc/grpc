@@ -34,10 +34,8 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
-extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-}
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

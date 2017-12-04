@@ -21,6 +21,7 @@
 #include <limits.h>
 #include <memory.h>
 
+#include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -39,6 +40,8 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/fork.h"
+#include "src/core/lib/support/thd_internal.h"
 #include "src/core/lib/surface/alarm_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -62,10 +65,12 @@ static int g_initializations;
 
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
+  grpc_fork_support_init();
   gpr_mu_init(&g_init_mu);
   grpc_register_built_in_plugins();
   grpc_cq_global_init();
   g_initializations = 0;
+  grpc_fork_handlers_auto_register();
 }
 
 static bool append_filter(grpc_exec_ctx* exec_ctx,
@@ -122,6 +127,7 @@ void grpc_init(void) {
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
+    gpr_thd_init();
     grpc_stats_init();
     grpc_slice_intern_init();
     grpc_mdctx_global_init();

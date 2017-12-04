@@ -27,10 +27,6 @@
 /* Maximum length of a header string of the form 'Key: Value\r\n' */
 #define GRPC_HTTP_PARSER_MAX_HEADER_LENGTH 4096
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* A single header to be passed in a request */
 typedef struct grpc_http_header {
   char* key;
@@ -112,9 +108,5 @@ void grpc_http_request_destroy(grpc_http_request* request);
 void grpc_http_response_destroy(grpc_http_response* response);
 
 extern grpc_core::TraceFlag grpc_http1_trace;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_HTTP_PARSER_H */

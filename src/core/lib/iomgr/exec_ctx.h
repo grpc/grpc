@@ -24,10 +24,6 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef gpr_atm grpc_millis;
 
 #define GRPC_MILLIS_INF_FUTURE GPR_ATM_MAX
@@ -123,9 +119,5 @@ void grpc_exec_ctx_invalidate_now(grpc_exec_ctx* exec_ctx);
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

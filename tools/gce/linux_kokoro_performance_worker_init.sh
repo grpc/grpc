@@ -114,6 +114,19 @@ sudo apt-get update
 sudo apt-get install -y dotnet-dev-1.0.0-preview2.1-003155
 sudo apt-get install -y dotnet-dev-1.0.1
 
+# C# 1.0.4 SDK
+curl -O https://download.microsoft.com/download/2/4/A/24A06858-E8AC-469B-8AE6-D0CEC9BA982A/dotnet-ubuntu.16.04-x64.1.0.5.tar.gz
+sudo mkdir -p /opt/dotnet
+sudo tar zxf dotnet-ubuntu.16.04-x64.1.0.5.tar.gz -C /opt/dotnet
+sudo ln -s /opt/dotnet/dotnet /usr/local/bin
+
+# C# .NET dependencies
+wget http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu52_52.1-8ubuntu0.2_amd64.deb
+sudo dpkg -i libicu52_52.1-8ubuntu0.2_amd64.deb
+wget http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu55_55.1-7ubuntu0.3_amd64.deb
+sudo dpkg -i libicu55_55.1-7ubuntu0.3_amd64.deb
+sudo apt-get update && sudo apt-get install -y libicu55
+
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 curl -sSL https://get.rvm.io | bash -s stable --ruby

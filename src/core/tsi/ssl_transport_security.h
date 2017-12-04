@@ -21,10 +21,6 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
 #define TSI_X509_CERTIFICATE_TYPE "X509"
 
@@ -192,9 +188,5 @@ typedef struct {
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
     tsi_ssl_handshaker_factory* factory,
     tsi_ssl_handshaker_factory_vtable* new_vtable);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */
