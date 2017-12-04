@@ -39,7 +39,7 @@ namespace Grpc.Core.Internal
 
         static PlatformApis()
         {
-#if NETSTANDARD1_5
+#if (NETSTANDARD1_5 || NETSTANDARD2_0)
             isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             isMacOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
             isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

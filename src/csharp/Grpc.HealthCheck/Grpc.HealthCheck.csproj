@@ -8,7 +8,7 @@
     <AssemblyTitle>gRPC C# Healthchecking</AssemblyTitle>
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
     <AssemblyName>Grpc.HealthCheck</AssemblyName>
     <PackageId>Grpc.HealthCheck</PackageId>
     <PackageTags>gRPC health check</PackageTags>
