@@ -54,7 +54,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/env_posix.cc \
     src/core/lib/support/env_windows.cc \
     src/core/lib/support/fork.cc \
-    src/core/lib/support/histogram.cc \
     src/core/lib/support/host_port.cc \
     src/core/lib/support/log.cc \
     src/core/lib/support/log_android.cc \

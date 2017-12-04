@@ -38,6 +38,11 @@ config_setting(
     values = {"define": "grpc_no_ares=true"},
 )
 
+config_setting(
+    name = "remote_execution",
+    values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "generous"
 
@@ -54,7 +59,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/avl.h",
     "include/grpc/support/cmdline.h",
     "include/grpc/support/cpu.h",
-    "include/grpc/support/histogram.h",
     "include/grpc/support/host_port.h",
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
@@ -447,7 +451,6 @@ grpc_cc_library(
         "src/core/lib/support/env_posix.cc",
         "src/core/lib/support/env_windows.cc",
         "src/core/lib/support/fork.cc",
-        "src/core/lib/support/histogram.cc",
         "src/core/lib/support/host_port.cc",
         "src/core/lib/support/log.cc",
         "src/core/lib/support/log_android.cc",
@@ -486,6 +489,7 @@ grpc_cc_library(
         "src/core/lib/support/atomic_with_atm.h",
         "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/support/env.h",
+        "src/core/lib/support/function.h",
         "src/core/lib/support/fork.h",
         "src/core/lib/support/manual_constructor.h",
         "src/core/lib/support/memory.h",

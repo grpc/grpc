@@ -69,16 +69,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "histogram_test",
-    srcs = ["histogram_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//test/core/util:gpr_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
     language = "C++",
@@ -208,6 +198,19 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "function_test",
+    srcs = ["function_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )
 

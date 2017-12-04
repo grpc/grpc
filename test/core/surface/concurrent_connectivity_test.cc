@@ -49,10 +49,11 @@
 #define NUM_OUTER_LOOPS_SHORT_TIMEOUTS 10
 #define NUM_INNER_LOOPS_SHORT_TIMEOUTS 100
 #define DELAY_MILLIS_SHORT_TIMEOUTS 1
-// in a successful test run, POLL_MILLIS should never be reached beause all runs
-// should
-// end after the shorter delay_millis
+// in a successful test run, POLL_MILLIS should never be reached because all
+// runs should end after the shorter delay_millis
 #define POLL_MILLIS_SHORT_TIMEOUTS 30000
+// it should never take longer that this to shutdown the server
+#define SERVER_SHUTDOWN_TIMEOUT 30000
 
 static void* tag(int n) { return (void*)(uintptr_t)n; }
 static int detag(void* p) { return (int)(uintptr_t)p; }
@@ -95,7 +96,8 @@ struct server_thread_args {
 void server_thread(void* vargs) {
   struct server_thread_args* args = (struct server_thread_args*)vargs;
   grpc_event ev;
-  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  gpr_timespec deadline =
+      grpc_timeout_milliseconds_to_deadline(SERVER_SHUTDOWN_TIMEOUT);
   ev = grpc_completion_queue_next(args->cq, deadline, nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(detag(ev.tag) == 0xd1e);

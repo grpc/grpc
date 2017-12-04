@@ -41,7 +41,6 @@ filegroups:
   - src/core/lib/support/env_posix.cc
   - src/core/lib/support/env_windows.cc
   - src/core/lib/support/fork.cc
-  - src/core/lib/support/histogram.cc
   - src/core/lib/support/host_port.cc
   - src/core/lib/support/log.cc
   - src/core/lib/support/log_android.cc
@@ -83,7 +82,6 @@ filegroups:
   - include/grpc/support/avl.h
   - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
-  - include/grpc/support/histogram.h
   - include/grpc/support/host_port.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
@@ -111,6 +109,7 @@ filegroups:
   - src/core/lib/support/atomic_with_std.h
   - src/core/lib/support/env.h
   - src/core/lib/support/fork.h
+  - src/core/lib/support/function.h
   - src/core/lib/support/manual_constructor.h
   - src/core/lib/support/memory.h
   - src/core/lib/support/mpscq.h
@@ -712,6 +711,7 @@ filegroups:
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/debugger_macros.h
   - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
   - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
@@ -729,11 +729,13 @@ filegroups:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
   - test/core/util/memory_counters.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
   - test/core/util/passthru_endpoint.cc
   - test/core/util/port.cc
+  - test/core/util/port_isolated_runtime_environment.cc
   - test/core/util/port_server_client.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -2194,15 +2196,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: gpr_histogram_test
-  build: test
-  language: c
-  src:
-  - test/core/support/histogram_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: gpr_host_port_test
   build: test
   language: c
@@ -2551,6 +2544,15 @@ targets:
   platforms:
   - linux
   secure: true
+- name: histogram_test
+  build: test
+  language: c
+  src:
+  - test/core/util/histogram_test.cc
+  deps:
+  - grpc_test_util
+  - gpr
+  uses_polling: false
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c
@@ -4027,6 +4029,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: function_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/function_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
+  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test

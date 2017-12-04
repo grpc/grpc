@@ -235,6 +235,7 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
 elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
   find_package(OpenSSL REQUIRED)
   set(_gRPC_SSL_LIBRARIES ${OPENSSL_LIBRARIES})
+  include_directories(${OPENSSL_INCLUDE_DIR})
   set(_gRPC_FIND_SSL "if(NOT OPENSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
 endif()
 
@@ -427,7 +428,6 @@ add_dependencies(buildtests_c gpr_avl_test)
 add_dependencies(buildtests_c gpr_cmdline_test)
 add_dependencies(buildtests_c gpr_cpu_test)
 add_dependencies(buildtests_c gpr_env_test)
-add_dependencies(buildtests_c gpr_histogram_test)
 add_dependencies(buildtests_c gpr_host_port_test)
 add_dependencies(buildtests_c gpr_log_test)
 add_dependencies(buildtests_c gpr_manual_constructor_test)
@@ -465,6 +465,7 @@ endif()
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_server_with_readahead_handshaker)
 endif()
+add_dependencies(buildtests_c histogram_test)
 add_dependencies(buildtests_c hpack_parser_test)
 add_dependencies(buildtests_c hpack_table_test)
 add_dependencies(buildtests_c http_parser_test)
@@ -694,6 +695,7 @@ add_dependencies(buildtests_cxx cxx_time_test)
 add_dependencies(buildtests_cxx end2end_test)
 add_dependencies(buildtests_cxx error_details_test)
 add_dependencies(buildtests_cxx filter_end2end_test)
+add_dependencies(buildtests_cxx function_test)
 add_dependencies(buildtests_cxx generic_end2end_test)
 add_dependencies(buildtests_cxx golden_file_test)
 add_dependencies(buildtests_cxx grpc_cli)
@@ -799,7 +801,6 @@ add_library(gpr
   src/core/lib/support/env_posix.cc
   src/core/lib/support/env_windows.cc
   src/core/lib/support/fork.cc
-  src/core/lib/support/histogram.cc
   src/core/lib/support/host_port.cc
   src/core/lib/support/log.cc
   src/core/lib/support/log_android.cc
@@ -869,7 +870,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/histogram.h
   include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
@@ -1615,11 +1615,13 @@ add_library(grpc_test_util
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
   test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
   test/core/util/port.cc
+  test/core/util/port_isolated_runtime_environment.cc
   test/core/util/port_server_client.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -1882,11 +1884,13 @@ add_library(grpc_test_util_unsecure
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
   test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
   test/core/util/port.cc
+  test/core/util/port_isolated_runtime_environment.cc
   test/core/util/port_server_client.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -2666,7 +2670,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/histogram.h
   include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
@@ -3152,7 +3155,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/histogram.h
   include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
@@ -3899,7 +3901,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/histogram.h
   include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
@@ -6253,33 +6254,6 @@ target_link_libraries(gpr_env_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(gpr_histogram_test
-  test/core/support/histogram_test.cc
-)
-
-
-target_include_directories(gpr_histogram_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(gpr_histogram_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(gpr_host_port_test
   test/core/support/host_port_test.cc
 )
@@ -7212,6 +7186,33 @@ target_link_libraries(handshake_server_with_readahead_handshaker
 )
 
 endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(histogram_test
+  test/core/util/histogram_test.cc
+)
+
+
+target_include_directories(histogram_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(histogram_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  gpr
+)
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -10515,6 +10516,45 @@ target_link_libraries(filter_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(function_test
+  test/core/support/function_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(function_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(function_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++
   grpc

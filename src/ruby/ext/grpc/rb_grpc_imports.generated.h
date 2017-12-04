@@ -36,7 +36,6 @@
 #include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -649,51 +648,6 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef gpr_histogram*(*gpr_histogram_create_type)(double resolution, double max_bucket_start);
-extern gpr_histogram_create_type gpr_histogram_create_import;
-#define gpr_histogram_create gpr_histogram_create_import
-typedef void(*gpr_histogram_destroy_type)(gpr_histogram* h);
-extern gpr_histogram_destroy_type gpr_histogram_destroy_import;
-#define gpr_histogram_destroy gpr_histogram_destroy_import
-typedef void(*gpr_histogram_add_type)(gpr_histogram* h, double x);
-extern gpr_histogram_add_type gpr_histogram_add_import;
-#define gpr_histogram_add gpr_histogram_add_import
-typedef int(*gpr_histogram_merge_type)(gpr_histogram* dst, const gpr_histogram* src);
-extern gpr_histogram_merge_type gpr_histogram_merge_import;
-#define gpr_histogram_merge gpr_histogram_merge_import
-typedef double(*gpr_histogram_percentile_type)(gpr_histogram* histogram, double percentile);
-extern gpr_histogram_percentile_type gpr_histogram_percentile_import;
-#define gpr_histogram_percentile gpr_histogram_percentile_import
-typedef double(*gpr_histogram_mean_type)(gpr_histogram* histogram);
-extern gpr_histogram_mean_type gpr_histogram_mean_import;
-#define gpr_histogram_mean gpr_histogram_mean_import
-typedef double(*gpr_histogram_stddev_type)(gpr_histogram* histogram);
-extern gpr_histogram_stddev_type gpr_histogram_stddev_import;
-#define gpr_histogram_stddev gpr_histogram_stddev_import
-typedef double(*gpr_histogram_variance_type)(gpr_histogram* histogram);
-extern gpr_histogram_variance_type gpr_histogram_variance_import;
-#define gpr_histogram_variance gpr_histogram_variance_import
-typedef double(*gpr_histogram_maximum_type)(gpr_histogram* histogram);
-extern gpr_histogram_maximum_type gpr_histogram_maximum_import;
-#define gpr_histogram_maximum gpr_histogram_maximum_import
-typedef double(*gpr_histogram_minimum_type)(gpr_histogram* histogram);
-extern gpr_histogram_minimum_type gpr_histogram_minimum_import;
-#define gpr_histogram_minimum gpr_histogram_minimum_import
-typedef double(*gpr_histogram_count_type)(gpr_histogram* histogram);
-extern gpr_histogram_count_type gpr_histogram_count_import;
-#define gpr_histogram_count gpr_histogram_count_import
-typedef double(*gpr_histogram_sum_type)(gpr_histogram* histogram);
-extern gpr_histogram_sum_type gpr_histogram_sum_import;
-#define gpr_histogram_sum gpr_histogram_sum_import
-typedef double(*gpr_histogram_sum_of_squares_type)(gpr_histogram* histogram);
-extern gpr_histogram_sum_of_squares_type gpr_histogram_sum_of_squares_import;
-#define gpr_histogram_sum_of_squares gpr_histogram_sum_of_squares_import
-typedef const uint32_t*(*gpr_histogram_get_contents_type)(gpr_histogram* histogram, size_t* count);
-extern gpr_histogram_get_contents_type gpr_histogram_get_contents_import;
-#define gpr_histogram_get_contents gpr_histogram_get_contents_import
-typedef void(*gpr_histogram_merge_contents_type)(gpr_histogram* histogram, const uint32_t* data, size_t data_count, double min_seen, double max_seen, double sum, double sum_of_squares, double count);
-extern gpr_histogram_merge_contents_type gpr_histogram_merge_contents_import;
-#define gpr_histogram_merge_contents gpr_histogram_merge_contents_import
 typedef int(*gpr_join_host_port_type)(char** out, const char* host, int port);
 extern gpr_join_host_port_type gpr_join_host_port_import;
 #define gpr_join_host_port gpr_join_host_port_import

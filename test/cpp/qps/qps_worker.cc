@@ -32,12 +32,12 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
 #include "src/proto/grpc/testing/services.pb.h"
 #include "test/core/util/grpc_profiler.h"
+#include "test/core/util/histogram.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"

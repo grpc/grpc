@@ -914,7 +914,6 @@ include/grpc/support/atm_windows.h \
 include/grpc/support/avl.h \
 include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
-include/grpc/support/histogram.h \
 include/grpc/support/host_port.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
@@ -1036,6 +1035,7 @@ src/core/lib/support/atomic_with_std.h \
 src/core/lib/support/debug_location.h \
 src/core/lib/support/env.h \
 src/core/lib/support/fork.h \
+src/core/lib/support/function.h \
 src/core/lib/support/manual_constructor.h \
 src/core/lib/support/memory.h \
 src/core/lib/support/mpscq.h \
