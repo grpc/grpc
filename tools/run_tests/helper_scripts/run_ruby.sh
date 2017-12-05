@@ -18,4 +18,7 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+# build grpc_ruby_plugin
+make grpc_ruby_plugin -j8
+
 rake

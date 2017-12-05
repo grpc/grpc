@@ -73,7 +73,7 @@ void PrintService(const ServiceDescriptor* service, const grpc::string& package,
   // Begin the service module
   std::map<grpc::string, grpc::string> module_vars = ListToDict({
       "module.name",
-      CapitalizeFirst(service->name()),
+      Modularize(service->name()),
   });
   out->Print(module_vars, "module $module.name$\n");
   out->Indent();
