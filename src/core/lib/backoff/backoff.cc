@@ -29,8 +29,9 @@ namespace {
 /* Generate a random number between 0 and 1. We roll our own RNG because seeding
  * rand() modifies a global variable we have no control over. */
 double generate_uniform_random_number(uint32_t* rng_state) {
-  *rng_state = (1103515245 * *rng_state + 12345) % ((uint32_t)1 << 31);
-  return *rng_state / (double)((uint32_t)1 << 31);
+  constexpr uint32_t two_raise_31 = uint32_t(1) << 31;
+  *rng_state = (1103515245 * *rng_state + 12345) % two_raise_31;
+  return *rng_state / static_cast<double>(two_raise_31);
 }
 
 double generate_uniform_random_number_between(uint32_t* rng_state, double a,
@@ -42,35 +43,29 @@ double generate_uniform_random_number_between(uint32_t* rng_state, double a,
 }
 }  // namespace
 
-Backoff::Backoff(const Options& options) : options_(options) {
-  rng_state_ = (unsigned int)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
+BackOff::BackOff(const Options& options) : options_(options) {
+  rng_state_ = static_cast<uint32_t>(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
 }
 
-Backoff::Result Backoff::Begin(grpc_exec_ctx* exec_ctx) {
+grpc_millis BackOff::Begin(grpc_exec_ctx* exec_ctx) {
   current_backoff_ = options_.initial_backoff();
-  const grpc_millis initial_timeout =
-      std::max(options_.initial_backoff(), options_.min_connect_timeout());
-  const grpc_millis now = grpc_exec_ctx_now(exec_ctx);
-  return Backoff::Result{now + initial_timeout, now + current_backoff_};
+  return current_backoff_ + grpc_exec_ctx_now(exec_ctx);
 }
 
-Backoff::Result Backoff::Step(grpc_exec_ctx* exec_ctx) {
+grpc_millis BackOff::Step(grpc_exec_ctx* exec_ctx) {
   current_backoff_ =
       (grpc_millis)(std::min(current_backoff_ * options_.multiplier(),
                              (double)options_.max_backoff()));
   const double jitter = generate_uniform_random_number_between(
       &rng_state_, -options_.jitter() * current_backoff_,
       options_.jitter() * current_backoff_);
-  const grpc_millis current_timeout = std::max(
-      (grpc_millis)(current_backoff_ + jitter), options_.min_connect_timeout());
   const grpc_millis next_timeout = std::min(
       (grpc_millis)(current_backoff_ + jitter), options_.max_backoff());
-  const grpc_millis now = grpc_exec_ctx_now(exec_ctx);
-  return Backoff::Result{now + current_timeout, now + next_timeout};
+  return next_timeout + grpc_exec_ctx_now(exec_ctx);
 }
 
-void Backoff::Reset() { current_backoff_ = options_.initial_backoff(); }
+void BackOff::Reset() { current_backoff_ = options_.initial_backoff(); }
 
-void Backoff::SetRandomSeed(uint32_t seed) { rng_state_ = seed; }
+void BackOff::SetRandomSeed(uint32_t seed) { rng_state_ = seed; }
 
 }  // namespace grpc_core

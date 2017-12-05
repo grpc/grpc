@@ -20,7 +20,9 @@
 
 #include <inttypes.h>
 #include <limits.h>
-#include <string.h>
+
+#include <algorithm>
+#include <cstring>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
@@ -49,7 +51,7 @@
 
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER 1.6
-#define GRPC_SUBCHANNEL_RECONNECT_MIN_BACKOFF_SECONDS 20
+#define GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS 20
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
@@ -119,8 +121,8 @@ struct grpc_subchannel {
   external_state_watcher root_external_state_watcher;
 
   /** backoff state */
-  grpc_core::ManualConstructor<grpc_core::Backoff> backoff;
-  grpc_core::Backoff::Result backoff_result;
+  grpc_core::ManualConstructor<grpc_core::BackOff> backoff;
+  grpc_millis next_attempt_deadline;
 
   /** do we have an active alarm? */
   bool have_alarm;
@@ -284,12 +286,12 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx* exec_ctx,
   }
 }
 
-static grpc_core::Backoff::Options extract_backoff_options(
+static grpc_core::BackOff::Options extract_backoff_options(
     const grpc_channel_args* args) {
   int initial_backoff_ms =
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
   int min_connect_timeout_ms =
-      GRPC_SUBCHANNEL_RECONNECT_MIN_BACKOFF_SECONDS * 1000;
+      GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS * 1000;
   int max_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
   bool fixed_reconnect_backoff = false;
   if (args != nullptr) {
@@ -318,7 +320,7 @@ static grpc_core::Backoff::Options extract_backoff_options(
       }
     }
   }
-  grpc_core::Backoff::Options backoff_options;
+  grpc_core::BackOff::Options backoff_options;
   backoff_options.set_initial_backoff(initial_backoff_ms)
       .set_multiplier(fixed_reconnect_backoff
                           ? 1.0
@@ -392,7 +394,7 @@ static void continue_connect_locked(grpc_exec_ctx* exec_ctx,
   grpc_connect_in_args args;
 
   args.interested_parties = c->pollset_set;
-  args.deadline = c->backoff_result.current_deadline;
+  args.deadline = c->next_attempt_deadline;
   args.channel_args = c->args;
 
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
@@ -440,7 +442,11 @@ static void on_alarm(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   }
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
-    c->backoff_result = c->backoff->Step(exec_ctx);
+    const grpc_millis min_deadline =
+        (GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS * 1000) +
+        grpc_exec_ctx_now(exec_ctx);
+    c->next_attempt_deadline =
+        std::max(c->backoff->Step(exec_ctx), min_deadline);
     continue_connect_locked(exec_ctx, c);
     gpr_mu_unlock(&c->mu);
   } else {
@@ -477,21 +483,21 @@ static void maybe_start_connecting_locked(grpc_exec_ctx* exec_ctx,
 
   if (!c->backoff_begun) {
     c->backoff_begun = true;
-    c->backoff_result = c->backoff->Begin(exec_ctx);
+    c->next_attempt_deadline = c->backoff->Begin(exec_ctx);
     continue_connect_locked(exec_ctx, c);
   } else {
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = true;
     const grpc_millis time_til_next =
-        c->backoff_result.next_attempt_start_time - grpc_exec_ctx_now(exec_ctx);
+        c->next_attempt_deadline - grpc_exec_ctx_now(exec_ctx);
     if (time_til_next <= 0) {
       gpr_log(GPR_INFO, "Retry immediately");
     } else {
       gpr_log(GPR_INFO, "Retry in %" PRIdPTR " milliseconds", time_til_next);
     }
     GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(exec_ctx, &c->alarm,
-                    c->backoff_result.next_attempt_start_time, &c->on_alarm);
+    grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt_deadline,
+                    &c->on_alarm);
   }
 }
 

@@ -25,20 +25,19 @@ namespace grpc_core {
 
 /// Implementation of the backoff mechanism described in
 /// doc/connection-backoff.md
-class Backoff {
+class BackOff {
  public:
   class Options;
-  struct Result;
 
   /// Initialize backoff machinery - does not need to be destroyed
-  explicit Backoff(const Options& options);
+  explicit BackOff(const Options& options);
 
-  /// Begin retry loop: returns the deadlines to be used for the current attempt
-  /// and the subsequent retry, if any.
-  Result Begin(grpc_exec_ctx* exec_ctx);
-  /// Step a retry loop: returns the deadlines to be used for the current
-  /// attempt and the subsequent retry, if any.
-  Result Step(grpc_exec_ctx* exec_ctx);
+  /// Begin retry loop: returns the deadline to be used for the next attempt,
+  /// following the backoff / strategy.
+  grpc_millis Begin(grpc_exec_ctx* exec_ctx);
+  /// Step a retry loop: returns returns the deadline to be used for the next
+  /// attempt, / following the backoff / strategy.
+  grpc_millis Step(grpc_exec_ctx* exec_ctx);
   /// Reset the backoff, so the next grpc_backoff_step will be a
   /// grpc_backoff_begin.
   void Reset();
@@ -85,14 +84,6 @@ class Backoff {
     grpc_millis min_connect_timeout_;
     grpc_millis max_backoff_;
   };  // class Options
-
-  struct Result {
-    /// Deadline to be used for the current attempt.
-    grpc_millis current_deadline;
-    /// Deadline to be used for the next attempt, following the backoff
-    /// strategy.
-    grpc_millis next_attempt_start_time;
-  };
 
  private:
   const Options options_;

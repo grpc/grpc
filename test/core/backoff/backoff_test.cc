@@ -18,6 +18,8 @@
 
 #include "src/core/lib/backoff/backoff.h"
 
+#include <algorithm>
+
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
@@ -28,7 +30,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using grpc_core::Backoff;
+using grpc_core::BackOff;
 
 TEST(BackOffTest, ConstantBackOff) {
   const grpc_millis initial_backoff = 200;
@@ -36,29 +38,23 @@ TEST(BackOffTest, ConstantBackOff) {
   const double jitter = 0.0;
   const grpc_millis min_connect_timeout = 100;
   const grpc_millis max_backoff = 1000;
-  Backoff::Options options;
+  BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
       .set_jitter(jitter)
       .set_min_connect_timeout(min_connect_timeout)
       .set_max_backoff(max_backoff);
-  Backoff backoff(options);
+  BackOff backoff(options);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  Backoff::Result next_deadlines = backoff.Begin(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
-             initial_backoff);
-  GPR_ASSERT(next_deadlines.next_attempt_start_time -
-                 grpc_exec_ctx_now(&exec_ctx) ==
-             initial_backoff);
+  grpc_millis next_attempt_start_time = backoff.Begin(&exec_ctx);
+  EXPECT_EQ(next_attempt_start_time - grpc_exec_ctx_now(&exec_ctx),
+            initial_backoff);
   for (int i = 0; i < 10000; i++) {
-    next_deadlines = backoff.Step(&exec_ctx);
-    GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
-               initial_backoff);
-    GPR_ASSERT(next_deadlines.next_attempt_start_time -
-                   grpc_exec_ctx_now(&exec_ctx) ==
-               initial_backoff);
-    exec_ctx.now = next_deadlines.current_deadline;
+    next_attempt_start_time = backoff.Step(&exec_ctx);
+    EXPECT_EQ(next_attempt_start_time - grpc_exec_ctx_now(&exec_ctx),
+              initial_backoff);
+    exec_ctx.now = next_attempt_start_time;
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -69,23 +65,16 @@ TEST(BackOffTest, MinConnect) {
   const double jitter = 0.0;
   const grpc_millis min_connect_timeout = 200;
   const grpc_millis max_backoff = 1000;
-  Backoff::Options options;
+  BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
       .set_jitter(jitter)
       .set_min_connect_timeout(min_connect_timeout)
       .set_max_backoff(max_backoff);
-  Backoff backoff(options);
+  BackOff backoff(options);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  Backoff::Result next = backoff.Begin(&exec_ctx);
-  // Because the min_connect_timeout > initial_backoff, current_deadline is used
-  // as the deadline for the current attempt.
-  GPR_ASSERT(next.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
-             min_connect_timeout);
-  // ... while, if the current attempt fails, the next one will happen after
-  // initial_backoff.
-  GPR_ASSERT(next.next_attempt_start_time - grpc_exec_ctx_now(&exec_ctx) ==
-             initial_backoff);
+  grpc_millis next = backoff.Begin(&exec_ctx);
+  EXPECT_EQ(next - grpc_exec_ctx_now(&exec_ctx), initial_backoff);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -95,57 +84,55 @@ TEST(BackOffTest, NoJitterBackOff) {
   const double jitter = 0.0;
   const grpc_millis min_connect_timeout = 1;
   const grpc_millis max_backoff = 513;
-  Backoff::Options options;
+  BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
       .set_jitter(jitter)
       .set_min_connect_timeout(min_connect_timeout)
       .set_max_backoff(max_backoff);
-  Backoff backoff(options);
+  BackOff backoff(options);
   // x_1 = 2
   // x_n = 2**i + x_{i-1} ( = 2**(n+1) - 2 )
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   exec_ctx.now = 0;
   exec_ctx.now_is_valid = true;
-  Backoff::Result next_deadlines = backoff.Begin(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline ==
-             next_deadlines.next_attempt_start_time);
-  GPR_ASSERT(next_deadlines.current_deadline == 2);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 6);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 14);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 30);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 62);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 126);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 254);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 510);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 1022);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
+  grpc_millis next = backoff.Begin(&exec_ctx);
+  EXPECT_EQ(next, 2);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 6);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 14);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 30);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 62);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 126);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 254);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 510);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 1022);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
   // Hit the maximum timeout. From this point onwards, retries will increase
   // only by max timeout.
-  GPR_ASSERT(next_deadlines.current_deadline == 1535);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 2048);
-  exec_ctx.now = next_deadlines.current_deadline;
-  next_deadlines = backoff.Step(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline == 2561);
+  EXPECT_EQ(next, 1535);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 2048);
+  exec_ctx.now = next;
+  next = backoff.Step(&exec_ctx);
+  EXPECT_EQ(next, 2561);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -156,23 +143,19 @@ TEST(BackOffTest, JitterBackOff) {
   const grpc_millis min_connect_timeout = 100;
   const double multiplier = 1.0;
   const double jitter = 0.1;
-  Backoff::Options options;
+  BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
       .set_jitter(jitter)
       .set_min_connect_timeout(min_connect_timeout)
       .set_max_backoff(max_backoff);
-  Backoff backoff(options);
+  BackOff backoff(options);
 
   backoff.SetRandomSeed(0);  // force consistent PRNG
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  Backoff::Result next_deadlines = backoff.Begin(&exec_ctx);
-  GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
-             initial_backoff);
-  GPR_ASSERT(next_deadlines.next_attempt_start_time -
-                 grpc_exec_ctx_now(&exec_ctx) ==
-             initial_backoff);
+  grpc_millis next = backoff.Begin(&exec_ctx);
+  EXPECT_EQ(next - grpc_exec_ctx_now(&exec_ctx), initial_backoff);
 
   grpc_millis expected_next_lower_bound =
       (grpc_millis)((double)current_backoff * (1 - jitter));
@@ -180,20 +163,19 @@ TEST(BackOffTest, JitterBackOff) {
       (grpc_millis)((double)current_backoff * (1 + jitter));
 
   for (int i = 0; i < 10000; i++) {
-    next_deadlines = backoff.Step(&exec_ctx);
+    next = backoff.Step(&exec_ctx);
     // next-now must be within (jitter*100)% of the current backoff (which
     // increases by * multiplier up to max_backoff).
-    const grpc_millis timeout_millis =
-        next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx);
-    GPR_ASSERT(timeout_millis >= expected_next_lower_bound);
-    GPR_ASSERT(timeout_millis <= expected_next_upper_bound);
-    current_backoff = GPR_MIN(
+    const grpc_millis timeout_millis = next - grpc_exec_ctx_now(&exec_ctx);
+    EXPECT_GE(timeout_millis, expected_next_lower_bound);
+    EXPECT_LE(timeout_millis, expected_next_upper_bound);
+    current_backoff = std::min(
         (grpc_millis)((double)current_backoff * multiplier), max_backoff);
     expected_next_lower_bound =
         (grpc_millis)((double)current_backoff * (1 - jitter));
     expected_next_upper_bound =
         (grpc_millis)((double)current_backoff * (1 + jitter));
-    exec_ctx.now = next_deadlines.current_deadline;
+    exec_ctx.now = next;
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }

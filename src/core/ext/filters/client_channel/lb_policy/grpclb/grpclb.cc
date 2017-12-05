@@ -398,7 +398,7 @@ typedef struct glb_lb_policy {
   grpc_slice lb_call_status_details;
 
   /** LB call retry backoff state */
-  grpc_core::ManualConstructor<grpc_core::Backoff> lb_call_backoff;
+  grpc_core::ManualConstructor<grpc_core::BackOff> lb_call_backoff;
 
   /** LB call retry timer */
   grpc_timer lb_call_retry_timer;
@@ -1291,8 +1291,7 @@ static void maybe_restart_lb_call(grpc_exec_ctx* exec_ctx,
     glb_policy->updating_lb_call = false;
   } else if (!glb_policy->shutting_down) {
     /* if we aren't shutting down, restart the LB client call after some time */
-    grpc_millis next_try =
-        glb_policy->lb_call_backoff->Step(exec_ctx).next_attempt_start_time;
+    grpc_millis next_try = glb_policy->lb_call_backoff->Step(exec_ctx);
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
               glb_policy);
@@ -1461,7 +1460,7 @@ static void lb_call_init_locked(grpc_exec_ctx* exec_ctx,
                     lb_on_response_received_locked, glb_policy,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
 
-  grpc_core::Backoff::Options backoff_options;
+  grpc_core::BackOff::Options backoff_options;
   backoff_options
       .set_initial_backoff(GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS * 1000)
       .set_multiplier(GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER)

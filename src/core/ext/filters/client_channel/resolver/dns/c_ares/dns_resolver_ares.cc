@@ -90,7 +90,7 @@ typedef struct {
   bool have_retry_timer;
   grpc_timer retry_timer;
   /** retry backoff state */
-  grpc_core::ManualConstructor<grpc_core::Backoff> backoff;
+  grpc_core::ManualConstructor<grpc_core::BackOff> backoff;
 
   /** currently resolving addresses */
   grpc_lb_addresses* lb_addresses;
@@ -273,7 +273,7 @@ static void dns_ares_on_resolved_locked(grpc_exec_ctx* exec_ctx, void* arg,
   } else {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
-    grpc_millis next_try = r->backoff->Step(exec_ctx).next_attempt_start_time;
+    grpc_millis next_try = r->backoff->Step(exec_ctx);
     grpc_millis timeout = next_try - grpc_exec_ctx_now(exec_ctx);
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
@@ -381,14 +381,14 @@ static grpc_resolver* dns_ares_create(grpc_exec_ctx* exec_ctx,
     grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,
                                      args->pollset_set);
   }
-  grpc_core::Backoff::Options backoff_options;
+  grpc_core::BackOff::Options backoff_options;
   backoff_options
       .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000)
       .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
       .set_jitter(GRPC_DNS_RECONNECT_JITTER)
       .set_min_connect_timeout(GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000)
       .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
-  r->backoff.Init(grpc_core::Backoff(backoff_options));
+  r->backoff.Init(grpc_core::BackOff(backoff_options));
   GRPC_CLOSURE_INIT(&r->dns_ares_on_retry_timer_locked,
                     dns_ares_on_retry_timer_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
