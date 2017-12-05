@@ -62,7 +62,7 @@ static void* thread_body(void* v) {
     strncpy(buf, a.name, buf_len);
     buf[buf_len] = '\0';
     pthread_setname_np(pthread_self(), buf);
-#endif // GPR_APPLE_PTHREAD_NAME
+#endif  // GPR_APPLE_PTHREAD_NAME
   }
   (*a.body)(a.arg);
   dec_thd_count();

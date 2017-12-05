@@ -529,8 +529,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   // Start proxy thread.
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
-  GPR_ASSERT(gpr_thd_new(&proxy->thd, "grpc_http_proxy", thread_main, proxy,
-                         &opt));
+  GPR_ASSERT(
+      gpr_thd_new(&proxy->thd, "grpc_http_proxy", thread_main, proxy, &opt));
   return proxy;
 }
 

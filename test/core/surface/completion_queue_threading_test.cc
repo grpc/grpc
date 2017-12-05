@@ -234,7 +234,7 @@ static void test_threading(size_t producers, size_t consumers) {
     options[i].events_triggered = 0;
     options[i].cc = cc;
     options[i].id = optid++;
-    GPR_ASSERT(gpr_thd_new(&id, 
+    GPR_ASSERT(gpr_thd_new(&id,
                            i < producers ? "grpc_producer" : "grpc_consumer",
                            i < producers ? producer_thread : consumer_thread,
                            options + i, nullptr));
