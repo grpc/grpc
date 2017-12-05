@@ -161,3 +161,30 @@ void grpc_lb_policy_update_locked(grpc_exec_ctx* exec_ctx,
                                   const grpc_lb_policy_args* lb_policy_args) {
   policy->vtable->update_locked(exec_ctx, policy, lb_policy_args);
 }
+
+void grpc_lb_policy_set_reresolve_closure_locked(
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
+    grpc_closure* request_reresolution) {
+  policy->vtable->set_reresolve_closure_locked(exec_ctx, policy,
+                                               request_reresolution);
+}
+
+void grpc_lb_policy_try_reresolve(grpc_exec_ctx* exec_ctx,
+                                  grpc_lb_policy* policy,
+                                  grpc_core::TraceFlag* grpc_lb_trace,
+                                  grpc_error* error) {
+  if (policy->request_reresolution != nullptr) {
+    GRPC_CLOSURE_SCHED(exec_ctx, policy->request_reresolution, error);
+    policy->request_reresolution = nullptr;
+    if (grpc_lb_trace->enabled()) {
+      gpr_log(GPR_DEBUG,
+              "%s %p: scheduling re-resolution closure with error=%s.",
+              grpc_lb_trace->name(), policy, grpc_error_string(error));
+    }
+  } else {
+    if (grpc_lb_trace->enabled() && error == GRPC_ERROR_NONE) {
+      gpr_log(GPR_DEBUG, "%s %p: re-resolution already in progress.",
+              grpc_lb_trace->name(), policy);
+    }
+  }
+}
