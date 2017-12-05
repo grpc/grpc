@@ -148,6 +148,7 @@ class TransportFlowControlBase {
   int64_t remote_window() const { return remote_window_; }
   virtual int64_t target_window() const { return target_initial_window_size_; }
   int64_t announced_window() const { return announced_window_; }
+  virtual void TestOnlyForceHugeWindow() {}
 
   GRPC_ABSTRACT_BASE_CLASS
 
@@ -166,17 +167,17 @@ class TransportFlowControlDisabled final : public TransportFlowControlBase {
     target_initial_window_size_ = kMaxWindow;
     announced_window_ = kMaxWindow;
   }
-  virtual uint32_t MaybeSendUpdate(bool writing_anyway) { return 0; }
-  virtual FlowControlAction MakeAction() { return FlowControlAction(); }
-  virtual FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx) {
+  uint32_t MaybeSendUpdate(bool writing_anyway) override { return 0; }
+  FlowControlAction MakeAction() override { return FlowControlAction(); }
+  FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx) override {
     return FlowControlAction();
   }
-  virtual void StreamSentData(int64_t size) {}
-  virtual grpc_error* RecvData(int64_t incoming_frame_size) {
+  void StreamSentData(int64_t size) override {}
+  grpc_error* RecvData(int64_t incoming_frame_size) override {
     return GRPC_ERROR_NONE;
   }
-  virtual void RecvUpdate(uint32_t size) {}
-  virtual int64_t target_window() const { return kMaxWindow; }
+  void RecvUpdate(uint32_t size) override {}
+  int64_t target_window() const override { return kMaxWindow; }
 };
 
 class TransportFlowControl final : public TransportFlowControlBase {
@@ -251,7 +252,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
 
   BdpEstimator* bdp_estimator() override { return &bdp_estimator_; }
 
-  void TestOnlyForceHugeWindow() {
+  void TestOnlyForceHugeWindow() override {
     announced_window_ = 1024 * 1024 * 1024;
     remote_window_ = 1024 * 1024 * 1024;
   }
@@ -309,6 +310,7 @@ class StreamFlowControlBase {
                                         size_t have_already) {
     abort();
   }
+  virtual void TestOnlyForceHugeWindow() {}
   int64_t remote_window_delta() { return remote_window_delta_; }
   int64_t local_window_delta() { return local_window_delta_; }
   int64_t announced_window_delta() { return announced_window_delta_; }
@@ -323,18 +325,18 @@ class StreamFlowControlBase {
 
 class StreamFlowControlDisabled : public StreamFlowControlBase {
  public:
-  virtual FlowControlAction UpdateAction(FlowControlAction action) {
+  FlowControlAction UpdateAction(FlowControlAction action) override {
     return action;
   }
-  virtual FlowControlAction MakeAction() { return FlowControlAction(); }
-  virtual void SentData(int64_t outgoing_frame_size) {}
-  virtual grpc_error* RecvData(int64_t incoming_frame_size) {
+  FlowControlAction MakeAction() override { return FlowControlAction(); }
+  void SentData(int64_t outgoing_frame_size) override {}
+  grpc_error* RecvData(int64_t incoming_frame_size) override {
     return GRPC_ERROR_NONE;
   }
-  virtual uint32_t MaybeSendUpdate() { return 0; }
-  virtual void RecvUpdate(uint32_t size) {}
-  virtual void IncomingByteStreamUpdate(size_t max_size_hint,
-                                        size_t have_already) {}
+  uint32_t MaybeSendUpdate() override { return 0; }
+  void RecvUpdate(uint32_t size) override {}
+  void IncomingByteStreamUpdate(size_t max_size_hint,
+                                size_t have_already) override {}
 };
 
 class StreamFlowControl final : public StreamFlowControlBase {
@@ -344,32 +346,35 @@ class StreamFlowControl final : public StreamFlowControlBase {
     tfc_->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
   }
 
-  FlowControlAction UpdateAction(FlowControlAction action);
-  FlowControlAction MakeAction() { return UpdateAction(tfc_->MakeAction()); }
+  FlowControlAction UpdateAction(FlowControlAction action) override;
+  FlowControlAction MakeAction() override {
+    return UpdateAction(tfc_->MakeAction());
+  }
 
   // we have sent data on the wire, we must track this in our bookkeeping for
   // the remote peer's flow control.
-  void SentData(int64_t outgoing_frame_size) {
+  void SentData(int64_t outgoing_frame_size) override {
     FlowControlTrace tracer("  data sent", tfc_, this);
     tfc_->StreamSentData(outgoing_frame_size);
     remote_window_delta_ -= outgoing_frame_size;
   }
 
   // we have received data from the wire
-  grpc_error* RecvData(int64_t incoming_frame_size);
+  grpc_error* RecvData(int64_t incoming_frame_size) override;
 
   // returns an announce if we should send a stream update to our peer, else
   // returns zero
-  uint32_t MaybeSendUpdate();
+  uint32_t MaybeSendUpdate() override;
 
   // we have received a WINDOW_UPDATE frame for a stream
-  void RecvUpdate(uint32_t size) {
+  void RecvUpdate(uint32_t size) override {
     FlowControlTrace trace("s updt recv", tfc_, this);
     remote_window_delta_ += size;
   }
 
   // the application is asking for a certain amount of bytes
-  void IncomingByteStreamUpdate(size_t max_size_hint, size_t have_already);
+  void IncomingByteStreamUpdate(size_t max_size_hint,
+                                size_t have_already) override;
 
   int64_t remote_window_delta() const { return remote_window_delta_; }
   int64_t local_window_delta() const { return local_window_delta_; }
@@ -377,7 +382,7 @@ class StreamFlowControl final : public StreamFlowControlBase {
 
   const grpc_chttp2_stream* stream() const { return s_; }
 
-  void TestOnlyForceHugeWindow() {
+  void TestOnlyForceHugeWindow() override {
     announced_window_delta_ = 1024 * 1024 * 1024;
     local_window_delta_ = 1024 * 1024 * 1024;
     remote_window_delta_ = 1024 * 1024 * 1024;
