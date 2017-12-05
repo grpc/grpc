@@ -226,13 +226,16 @@ static void pf_notify_on_state_change_locked(grpc_exec_ctx* exec_ctx,
 }
 
 static void pf_ping_one_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
-                               grpc_closure* closure) {
+                               grpc_closure* on_initiate,
+                               grpc_closure* on_ack) {
   pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
   if (p->selected) {
     grpc_connected_subchannel_ping(exec_ctx, p->selected->connected_subchannel,
-                                   closure);
+                                   on_initiate, on_ack);
   } else {
-    GRPC_CLOSURE_SCHED(exec_ctx, closure,
+    GRPC_CLOSURE_SCHED(exec_ctx, on_initiate,
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Not connected"));
+    GRPC_CLOSURE_SCHED(exec_ctx, on_ack,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Not connected"));
   }
 }

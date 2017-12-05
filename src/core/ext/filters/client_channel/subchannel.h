@@ -135,7 +135,8 @@ void grpc_connected_subchannel_notify_on_state_change(
     grpc_closure* notify);
 void grpc_connected_subchannel_ping(grpc_exec_ctx* exec_ctx,
                                     grpc_connected_subchannel* channel,
-                                    grpc_closure* notify);
+                                    grpc_closure* on_initiate,
+                                    grpc_closure* on_ack);
 
 /** retrieve the grpc_connected_subchannel - or NULL if called before
     the subchannel becomes connected */

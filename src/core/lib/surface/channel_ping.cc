@@ -57,7 +57,7 @@ void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
   pr->tag = tag;
   pr->cq = cq;
   GRPC_CLOSURE_INIT(&pr->closure, ping_done, pr, grpc_schedule_on_exec_ctx);
-  op->send_ping = &pr->closure;
+  op->send_ping.on_ack = &pr->closure;
   op->bind_pollset = grpc_cq_pollset(cq);
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
   top_elem->filter->start_transport_op(&exec_ctx, top_elem, op);

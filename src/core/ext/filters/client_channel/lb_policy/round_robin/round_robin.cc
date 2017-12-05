@@ -548,7 +548,8 @@ static void rr_notify_on_state_change_locked(grpc_exec_ctx* exec_ctx,
 }
 
 static void rr_ping_one_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
-                               grpc_closure* closure) {
+                               grpc_closure* on_initiate,
+                               grpc_closure* on_ack) {
   round_robin_lb_policy* p = (round_robin_lb_policy*)pol;
   const size_t next_ready_index = get_next_ready_subchannel_index_locked(p);
   if (next_ready_index < p->subchannel_list->num_subchannels) {
@@ -556,11 +557,14 @@ static void rr_ping_one_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
         &p->subchannel_list->subchannels[next_ready_index];
     grpc_connected_subchannel* target = GRPC_CONNECTED_SUBCHANNEL_REF(
         selected->connected_subchannel, "rr_ping");
-    grpc_connected_subchannel_ping(exec_ctx, target, closure);
+    grpc_connected_subchannel_ping(exec_ctx, target, on_initiate, on_ack);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "rr_ping");
   } else {
     GRPC_CLOSURE_SCHED(
-        exec_ctx, closure,
+        exec_ctx, on_initiate,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Round Robin not connected"));
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, on_ack,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Round Robin not connected"));
   }
 }
