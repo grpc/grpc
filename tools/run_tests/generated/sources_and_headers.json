@@ -2896,6 +2896,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "chttp2_settings_timeout_test", 
+    "src": [
+      "test/core/transport/chttp2/settings_timeout_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc++", 
       "grpc++_test_util", 
       "grpc_cli_libs", 

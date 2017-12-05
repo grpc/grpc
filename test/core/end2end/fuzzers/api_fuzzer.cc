@@ -468,10 +468,10 @@ static void do_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
     *fc->ep = client;
 
     grpc_transport* transport =
-        grpc_create_chttp2_transport(exec_ctx, nullptr, server, 0);
+        grpc_create_chttp2_transport(exec_ctx, nullptr, server, false);
     grpc_server_setup_transport(exec_ctx, g_server, transport, nullptr,
                                 nullptr);
-    grpc_chttp2_transport_start_reading(exec_ctx, transport, nullptr);
+    grpc_chttp2_transport_start_reading(exec_ctx, transport, nullptr, nullptr);
 
     GRPC_CLOSURE_SCHED(exec_ctx, fc->closure, GRPC_ERROR_NONE);
   } else {
