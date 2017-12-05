@@ -1075,6 +1075,8 @@ static void pick_done_locked(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                              "Call dropped by load balancing policy")
                        : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to create subchannel", &error, 1);
+    calld->error = grpc_error_set_int(calld->error, GRPC_ERROR_INT_GRPC_STATUS,
+                                      GRPC_STATUS_UNAVAILABLE);
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: failed to create subchannel: error=%s", chand,
