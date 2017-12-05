@@ -290,8 +290,6 @@ static grpc_core::BackOff::Options extract_backoff_options(
     const grpc_channel_args* args) {
   int initial_backoff_ms =
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
-  int min_connect_timeout_ms =
-      GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS * 1000;
   int max_backoff_ms = GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
   bool fixed_reconnect_backoff = false;
   if (args != nullptr) {
@@ -299,14 +297,9 @@ static grpc_core::BackOff::Options extract_backoff_options(
       if (0 == strcmp(args->args[i].key,
                       "grpc.testing.fixed_reconnect_backoff_ms")) {
         fixed_reconnect_backoff = true;
-        initial_backoff_ms = min_connect_timeout_ms = max_backoff_ms =
-            grpc_channel_arg_get_integer(&args->args[i],
-                                         {initial_backoff_ms, 100, INT_MAX});
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
-        min_connect_timeout_ms = grpc_channel_arg_get_integer(
-            &args->args[i], {min_connect_timeout_ms, 100, INT_MAX});
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
@@ -327,7 +320,6 @@ static grpc_core::BackOff::Options extract_backoff_options(
                           : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER)
       .set_jitter(fixed_reconnect_backoff ? 0.0
                                           : GRPC_SUBCHANNEL_RECONNECT_JITTER)
-      .set_min_connect_timeout(min_connect_timeout_ms)
       .set_max_backoff(max_backoff_ms);
   return backoff_options;
 }

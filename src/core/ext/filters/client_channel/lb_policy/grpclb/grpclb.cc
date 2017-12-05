@@ -120,7 +120,6 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-#define GRPC_GRPCLB_MIN_CONNECT_TIMEOUT_SECONDS 20
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6
 #define GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS 120
@@ -1465,7 +1464,6 @@ static void lb_call_init_locked(grpc_exec_ctx* exec_ctx,
       .set_initial_backoff(GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS * 1000)
       .set_multiplier(GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER)
       .set_jitter(GRPC_GRPCLB_RECONNECT_JITTER)
-      .set_min_connect_timeout(GRPC_GRPCLB_MIN_CONNECT_TIMEOUT_SECONDS * 1000)
       .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
 
   glb_policy->lb_call_backoff.Init(backoff_options);

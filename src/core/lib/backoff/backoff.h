@@ -33,10 +33,10 @@ class BackOff {
   explicit BackOff(const Options& options);
 
   /// Begin retry loop: returns the deadline to be used for the next attempt,
-  /// following the backoff / strategy.
+  /// following the backoff strategy.
   grpc_millis Begin(grpc_exec_ctx* exec_ctx);
-  /// Step a retry loop: returns returns the deadline to be used for the next
-  /// attempt, / following the backoff / strategy.
+  /// Step a retry loop: returns the deadline to be used for the next attempt,
+  /// following the backoff strategy.
   grpc_millis Step(grpc_exec_ctx* exec_ctx);
   /// Reset the backoff, so the next grpc_backoff_step will be a
   /// grpc_backoff_begin.
@@ -58,10 +58,6 @@ class BackOff {
       jitter_ = jitter;
       return *this;
     }
-    Options& set_min_connect_timeout(grpc_millis min_connect_timeout) {
-      min_connect_timeout_ = min_connect_timeout;
-      return *this;
-    }
     Options& set_max_backoff(grpc_millis max_backoff) {
       max_backoff_ = max_backoff;
       return *this;
@@ -72,8 +68,6 @@ class BackOff {
     double multiplier() const { return multiplier_; }
     /// amount to randomize backoffs
     double jitter() const { return jitter_; }
-    /// minimum time between retries
-    grpc_millis min_connect_timeout() const { return min_connect_timeout_; }
     /// maximum time between retries
     grpc_millis max_backoff() const { return max_backoff_; }
 
@@ -81,7 +75,6 @@ class BackOff {
     grpc_millis initial_backoff_;
     double multiplier_;
     double jitter_;
-    grpc_millis min_connect_timeout_;
     grpc_millis max_backoff_;
   };  // class Options
 

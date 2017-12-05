@@ -36,7 +36,6 @@
 #include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/support/string.h"
 
-#define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
 #define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
@@ -262,7 +261,6 @@ static grpc_resolver* dns_create(grpc_exec_ctx* exec_ctx,
       .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000)
       .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
       .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-      .set_min_connect_timeout(GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000)
       .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   r->backoff.Init(grpc_core::BackOff(backoff_options));
   return &r->base;

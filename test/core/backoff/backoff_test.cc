@@ -36,13 +36,11 @@ TEST(BackOffTest, ConstantBackOff) {
   const grpc_millis initial_backoff = 200;
   const double multiplier = 1.0;
   const double jitter = 0.0;
-  const grpc_millis min_connect_timeout = 100;
   const grpc_millis max_backoff = 1000;
   BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
       .set_jitter(jitter)
-      .set_min_connect_timeout(min_connect_timeout)
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
 
@@ -54,7 +52,6 @@ TEST(BackOffTest, ConstantBackOff) {
     next_attempt_start_time = backoff.Step(&exec_ctx);
     EXPECT_EQ(next_attempt_start_time - grpc_exec_ctx_now(&exec_ctx),
               initial_backoff);
-    exec_ctx.now = next_attempt_start_time;
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -63,13 +60,11 @@ TEST(BackOffTest, MinConnect) {
   const grpc_millis initial_backoff = 100;
   const double multiplier = 1.0;
   const double jitter = 0.0;
-  const grpc_millis min_connect_timeout = 200;
   const grpc_millis max_backoff = 1000;
   BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
       .set_jitter(jitter)
-      .set_min_connect_timeout(min_connect_timeout)
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -82,13 +77,11 @@ TEST(BackOffTest, NoJitterBackOff) {
   const grpc_millis initial_backoff = 2;
   const double multiplier = 2.0;
   const double jitter = 0.0;
-  const grpc_millis min_connect_timeout = 1;
   const grpc_millis max_backoff = 513;
   BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
       .set_jitter(jitter)
-      .set_min_connect_timeout(min_connect_timeout)
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
   // x_1 = 2
@@ -140,14 +133,12 @@ TEST(BackOffTest, JitterBackOff) {
   const grpc_millis initial_backoff = 500;
   grpc_millis current_backoff = initial_backoff;
   const grpc_millis max_backoff = 1000;
-  const grpc_millis min_connect_timeout = 100;
   const double multiplier = 1.0;
   const double jitter = 0.1;
   BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
       .set_jitter(jitter)
-      .set_min_connect_timeout(min_connect_timeout)
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
 
@@ -175,7 +166,6 @@ TEST(BackOffTest, JitterBackOff) {
         (grpc_millis)((double)current_backoff * (1 - jitter));
     expected_next_upper_bound =
         (grpc_millis)((double)current_backoff * (1 + jitter));
-    exec_ctx.now = next;
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }
