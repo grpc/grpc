@@ -333,9 +333,6 @@ void grpc_transport_ping(grpc_transport *transport, grpc_closure *cb);
 void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,
                            grpc_slice debug_data);
 
-/* Close a transport. Aborts all open streams. */
-void grpc_transport_close(grpc_transport *transport);
-
 /* Destroy the transport */
 void grpc_transport_destroy(grpc_exec_ctx *exec_ctx, grpc_transport *transport);
 

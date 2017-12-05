@@ -287,6 +287,8 @@ struct grpc_chttp2_transport {
 
   grpc_combiner *combiner;
 
+  grpc_closure *notify_on_receive_settings;
+
   /** write execution state of the transport */
   grpc_chttp2_write_state write_state;
   /** is this the first write in a series of writes?

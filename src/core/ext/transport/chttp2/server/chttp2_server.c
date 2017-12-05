@@ -20,6 +20,7 @@
 
 #include <grpc/grpc.h>
 
+#include <limits.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -30,6 +31,7 @@
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
@@ -52,11 +54,51 @@ typedef struct {
 } server_state;
 
 typedef struct {
+  gpr_refcount refs;
   server_state *svr_state;
   grpc_pollset *accepting_pollset;
   grpc_tcp_server_acceptor *acceptor;
   grpc_handshake_manager *handshake_mgr;
+  // State for enforcing handshake timeout on receiving HTTP/2 settings.
+  grpc_chttp2_transport *transport;
+  gpr_timespec deadline;
+  grpc_timer timer;
+  grpc_closure on_timeout;
+  grpc_closure on_receive_settings;
 } server_connection_state;
+
+static void server_connection_state_unref(
+    grpc_exec_ctx *exec_ctx, server_connection_state *connection_state) {
+  if (gpr_unref(&connection_state->refs)) {
+    if (connection_state->transport != NULL) {
+      GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, connection_state->transport,
+                                  "receive settings timeout");
+    }
+    gpr_free(connection_state);
+  }
+}
+
+static void on_timeout(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  server_connection_state *connection_state = (server_connection_state *)arg;
+  // Note that we may be called with GRPC_ERROR_NONE when the timer fires
+  // or with an error indicating that the timer system is being shut down.
+  if (error != GRPC_ERROR_CANCELLED) {
+    grpc_transport_op *op = grpc_make_transport_op(NULL);
+    op->disconnect_with_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Did not receive HTTP/2 settings before handshake timeout");
+    grpc_transport_perform_op(exec_ctx, &connection_state->transport->base, op);
+  }
+  server_connection_state_unref(exec_ctx, connection_state);
+}
+
+static void on_receive_settings(grpc_exec_ctx *exec_ctx, void *arg,
+                                grpc_error *error) {
+  server_connection_state *connection_state = (server_connection_state *)arg;
+  if (error == GRPC_ERROR_NONE) {
+    grpc_timer_cancel(exec_ctx, &connection_state->timer);
+  }
+  server_connection_state_unref(exec_ctx, connection_state);
+}
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
@@ -67,7 +109,6 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   if (error != GRPC_ERROR_NONE || connection_state->svr_state->shutdown) {
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
-
     if (error == GRPC_ERROR_NONE && args->endpoint != NULL) {
       // We were shut down after handshaking completed successfully, so
       // destroy the endpoint here.
@@ -86,14 +127,30 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     // handshaker may have handed off the connection to some external
     // code, so we can just clean up here without creating a transport.
     if (args->endpoint != NULL) {
-      grpc_transport *transport =
-          grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
+      grpc_transport *transport = grpc_create_chttp2_transport(
+          exec_ctx, args->args, args->endpoint, false);
       grpc_server_setup_transport(
           exec_ctx, connection_state->svr_state->server, transport,
           connection_state->accepting_pollset, args->args);
-      grpc_chttp2_transport_start_reading(exec_ctx, transport,
-                                          args->read_buffer);
+      // Use notify_on_receive_settings callback to enforce the
+      // handshake deadline.
+      connection_state->transport = (grpc_chttp2_transport *)transport;
+      gpr_ref(&connection_state->refs);
+      GRPC_CLOSURE_INIT(&connection_state->on_receive_settings,
+                        on_receive_settings, connection_state,
+                        grpc_schedule_on_exec_ctx);
+      grpc_chttp2_transport_start_reading(
+          exec_ctx, transport, args->read_buffer,
+          &connection_state->on_receive_settings);
       grpc_channel_args_destroy(exec_ctx, args->args);
+      gpr_ref(&connection_state->refs);
+      GRPC_CHTTP2_REF_TRANSPORT((grpc_chttp2_transport *)transport,
+                                "receive settings timeout");
+      GRPC_CLOSURE_INIT(&connection_state->on_timeout, on_timeout,
+                        connection_state, grpc_schedule_on_exec_ctx);
+      grpc_timer_init(exec_ctx, &connection_state->timer,
+                      connection_state->deadline, &connection_state->on_timeout,
+                      gpr_now(GPR_CLOCK_MONOTONIC));
     }
   }
   grpc_handshake_manager_pending_list_remove(
@@ -101,9 +158,9 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       connection_state->handshake_mgr);
   gpr_mu_unlock(&connection_state->svr_state->mu);
   grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
-  grpc_tcp_server_unref(exec_ctx, connection_state->svr_state->tcp_server);
   gpr_free(connection_state->acceptor);
-  gpr_free(connection_state);
+  grpc_tcp_server_unref(exec_ctx, connection_state->svr_state->tcp_server);
+  server_connection_state_unref(exec_ctx, connection_state);
 }
 
 static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
@@ -124,19 +181,26 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   gpr_mu_unlock(&state->mu);
   grpc_tcp_server_ref(state->tcp_server);
   server_connection_state *connection_state =
-      (server_connection_state *)gpr_malloc(sizeof(*connection_state));
+      (server_connection_state *)gpr_zalloc(sizeof(*connection_state));
+  gpr_ref_init(&connection_state->refs, 1);
   connection_state->svr_state = state;
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
   connection_state->handshake_mgr = handshake_mgr;
   grpc_handshakers_add(exec_ctx, HANDSHAKER_SERVER, state->args,
                        connection_state->handshake_mgr);
-  // TODO(roth): We should really get this timeout value from channel
-  // args instead of hard-coding it.
-  const gpr_timespec deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(120, GPR_TIMESPAN));
+  const grpc_arg *timeout_arg =
+      grpc_channel_args_find(state->args, GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS);
+  connection_state->deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC),
+      gpr_time_from_millis(
+          grpc_channel_arg_get_integer(
+              timeout_arg,
+              (grpc_integer_options){120 * GPR_MS_PER_SEC, 1, INT_MAX}),
+          GPR_TIMESPAN));
   grpc_handshake_manager_do_handshake(exec_ctx, connection_state->handshake_mgr,
-                                      tcp, state->args, deadline, acceptor,
+                                      tcp, state->args,
+                                      connection_state->deadline, acceptor,
                                       on_handshake_done, connection_state);
 }
 
