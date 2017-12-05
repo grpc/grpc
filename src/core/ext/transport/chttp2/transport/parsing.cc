@@ -197,9 +197,10 @@ grpc_error* grpc_chttp2_perform_read(grpc_exec_ctx* exec_ctx,
           return GRPC_ERROR_NONE;
         }
         goto dts_fh_0; /* loop */
-      } else if (t->incoming_frame_size >
-                 t->settings[GRPC_ACKED_SETTINGS]
-                            [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
+      } else if (!true /*disable flow control*/ &&
+                 t->incoming_frame_size >
+                     t->settings[GRPC_ACKED_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
         char* msg;
         gpr_asprintf(&msg, "Frame size %d is larger than max frame size %d",
                      t->incoming_frame_size,
