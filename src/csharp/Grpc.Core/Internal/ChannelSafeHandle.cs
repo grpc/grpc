@@ -66,8 +66,7 @@ namespace Grpc.Core.Internal
 
         public void WatchConnectivityState(ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq, BatchCompletionDelegate callback, object callbackState)
         {
-            var ctx = BatchContextSafeHandle.Create();
-            cq.CompletionRegistry.RegisterBatchCompletion(ctx, callback, callbackState);
+            var ctx = cq.CompletionRegistry.RegisterBatchCompletion(callback, callbackState);
             Native.grpcsharp_channel_watch_connectivity_state(this, lastObservedState, deadline, cq, ctx);
         }
 

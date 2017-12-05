@@ -774,6 +774,7 @@ doc/connectivity-semantics-and-api.md \
 doc/core/grpc-error.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
+doc/core/transport_explainer.md \
 doc/cpp-style-guide.md \
 doc/environment_variables.md \
 doc/epoll-polling-engine.md \
@@ -800,6 +801,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
@@ -817,6 +819,8 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/exec_ctx_fwd.h \
+include/grpc/impl/codegen/fork.h \
+include/grpc/impl/codegen/fork.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
@@ -849,7 +853,6 @@ include/grpc/support/atm_windows.h \
 include/grpc/support/avl.h \
 include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
-include/grpc/support/histogram.h \
 include/grpc/support/host_port.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \

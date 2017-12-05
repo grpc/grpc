@@ -31,10 +31,6 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;
 
@@ -331,9 +327,6 @@ void grpc_transport_ping(grpc_transport* transport, grpc_closure* cb);
 void grpc_transport_goaway(grpc_transport* transport, grpc_status_code status,
                            grpc_slice debug_data);
 
-/* Close a transport. Aborts all open streams. */
-void grpc_transport_close(grpc_transport* transport);
-
 /* Destroy the transport */
 void grpc_transport_destroy(grpc_exec_ctx* exec_ctx, grpc_transport* transport);
 
@@ -349,9 +342,5 @@ grpc_transport_op* grpc_make_transport_op(grpc_closure* on_consumed);
    to \a on_consumed and then delete the returned transport op */
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
     grpc_closure* on_consumed);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */

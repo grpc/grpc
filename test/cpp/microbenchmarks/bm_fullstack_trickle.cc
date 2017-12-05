@@ -445,7 +445,7 @@ BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
 }  // namespace testing
 }  // namespace grpc
 
-extern "C" gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);

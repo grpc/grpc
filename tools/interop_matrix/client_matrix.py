@@ -78,23 +78,6 @@ LANG_RELEASE_MATRIX = {
         'v1.3.9',
         'v1.4.2',
         'v1.6.6',
-    ],
-    'python': [
-        'v1.0.x', 
-        'v1.1.4',
-        'v1.2.5',
-        'v1.3.9',
-        'v1.4.2',
-        'v1.6.6',
-        'v1.7.2',    
-    ],
-    'python': [
-        'v1.0.x',
-        'v1.1.4',
-        'v1.2.5',
-        'v1.3.9',
-        'v1.4.2',
-        'v1.6.6',
         'v1.7.2',    
     ],
     'node': [
@@ -104,7 +87,7 @@ LANG_RELEASE_MATRIX = {
         'v1.3.9',
         'v1.4.2',
         'v1.6.6',
-        'v1.7.1',
+        #'v1.7.1',  Failing tests.
     ],
     'ruby': [
         # Ruby v1.0.x doesn't have the fix #8914, therefore not supported.

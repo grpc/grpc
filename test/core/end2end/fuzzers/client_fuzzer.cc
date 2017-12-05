@@ -54,8 +54,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_transport* transport =
-      grpc_create_chttp2_transport(&exec_ctx, nullptr, mock_endpoint, 1);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr);
+      grpc_create_chttp2_transport(&exec_ctx, nullptr, mock_endpoint, true);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr, nullptr);
 
   grpc_channel* channel = grpc_channel_create(
       &exec_ctx, "test-target", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, transport);

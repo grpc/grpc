@@ -73,8 +73,8 @@ new_http_archive(
 
 http_archive(
     name = "com_google_protobuf",
-    strip_prefix = "protobuf-80a37e0782d2d702d52234b62dd4b9ec74fd2c95",
-    url = "https://github.com/google/protobuf/archive/80a37e0782d2d702d52234b62dd4b9ec74fd2c95.tar.gz",
+    strip_prefix = "protobuf-2761122b810fe8861004ae785cc3ab39f384d342",
+    url = "https://github.com/google/protobuf/archive/2761122b810fe8861004ae785cc3ab39f384d342.tar.gz",
 )
 
 new_http_archive(
@@ -114,4 +114,14 @@ http_archive(
     name = "com_google_absl",
     strip_prefix = "abseil-cpp-cc4bed2d74f7c8717e31f9579214ab52a9c9c610",
     url = "https://github.com/abseil/abseil-cpp/archive/cc4bed2d74f7c8717e31f9579214ab52a9c9c610.tar.gz",
+)
+
+http_archive(
+    name = "bazel_toolchains",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/af4681c3d19f063f090222ec3d04108c4e0ca255.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/archive/af4681c3d19f063f090222ec3d04108c4e0ca255.tar.gz",
+    ],
+    strip_prefix = "bazel-toolchains-af4681c3d19f063f090222ec3d04108c4e0ca255",
+    sha256 = "d58bb2d6c8603f600d522b6104d6192a65339aa26cbba9f11ff5c4b36dedb928",
 )
