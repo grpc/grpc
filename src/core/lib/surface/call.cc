@@ -87,11 +87,9 @@ typedef struct batch_control {
   grpc_closure start_batch;
   grpc_closure finish_batch;
   gpr_refcount steps_to_complete;
-
   grpc_error* batch_error;
   grpc_error* rsr_error;
   grpc_error* rimr_error;
-
   grpc_transport_stream_op_batch op;
 } batch_control;
 
@@ -679,12 +677,10 @@ static void set_final_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
-
   const char** error_string = nullptr;
   if (call->is_client) {
     error_string = call->final_op.client.error_string;
   }
-
   grpc_status_code code;
   grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(exec_ctx, error, call->send_deadline, &code, &slice,
@@ -1165,7 +1161,6 @@ static grpc_error* aggregate_batch_errors(batch_control* bctl) {
     errors[count] = bctl->rimr_error;
     count++;
   }
-
   if (count == 0) {
     return GRPC_ERROR_NONE;
   } else if (count == 1) {

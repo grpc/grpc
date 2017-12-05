@@ -95,10 +95,8 @@ typedef struct call_data {
   // call our next_recv_message_ready member after handling it.
   grpc_closure recv_message_ready;
   grpc_closure recv_trailing_metadata;
-
   // The error caused by a message that is too large, or GRPC_ERROR_NONE
   grpc_error* error;
-
   // Used by recv_message_ready.
   grpc_byte_stream** recv_message;
   // Original recv_message_ready callback, invoked after our own.
@@ -128,6 +126,7 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
     grpc_error* new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+    GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(new_error);
     if (error == GRPC_ERROR_NONE) {
       error = new_error;
@@ -156,7 +155,6 @@ static void recv_trailing_metadata(grpc_exec_ctx* exec_ctx, void* user_data,
   } else if (calld->error != error) {
     error = grpc_error_add_child(GRPC_ERROR_REF(error), calld->error);
   }
-
   // Invoke the next callback.
   GRPC_CLOSURE_RUN(exec_ctx, calld->next_recv_trailing_metadata, error);
 }
@@ -241,7 +239,10 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 // Destructor for call_data.
 static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {}
+                              grpc_closure* ignored) {
+  call_data* calld = (call_data*)elem->call_data;
+  GRPC_ERROR_UNREF(calld->error);
+}
 
 static int default_size(const grpc_channel_args* args,
                         int without_minimal_stack) {
