@@ -1853,7 +1853,7 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx* exec_ctx,
         grpc_call_cancel(glb_policy->lb_call, nullptr);
         // lb_on_server_status_received() will pick up the cancel and reinit
         // lb_call.
-      } else if (glb_policy->started_picking && !glb_policy->shutting_down) {
+      } else if (glb_policy->started_picking) {
         if (glb_policy->retry_timer_active) {
           grpc_timer_cancel(exec_ctx, &glb_policy->lb_call_retry_timer);
           glb_policy->retry_timer_active = false;
