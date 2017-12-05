@@ -153,6 +153,7 @@ class TransportFlowControlBase {
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
+  friend class ::grpc::testing::TrickledCHTTP2;
   int64_t remote_window_ = kDefaultWindow;
   int64_t target_initial_window_size_ = kDefaultWindow;
   int64_t announced_window_ = kDefaultWindow;
@@ -258,7 +259,6 @@ class TransportFlowControl final : public TransportFlowControlBase {
   }
 
  private:
-  friend class ::grpc::testing::TrickledCHTTP2;
   double TargetLogBdp();
   double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
   FlowControlAction::Urgency DeltaUrgency(int32_t value,
@@ -318,6 +318,7 @@ class StreamFlowControlBase {
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
+  friend class ::grpc::testing::TrickledCHTTP2;
   int64_t remote_window_delta_ = 0;
   int64_t local_window_delta_ = 0;
   int64_t announced_window_delta_ = 0;
@@ -389,7 +390,6 @@ class StreamFlowControl final : public StreamFlowControlBase {
   }
 
  private:
-  friend class ::grpc::testing::TrickledCHTTP2;
   TransportFlowControl* const tfc_;
   const grpc_chttp2_stream* const s_;
 
