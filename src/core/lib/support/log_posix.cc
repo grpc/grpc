@@ -27,17 +27,16 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
 static intptr_t gettid(void) { return (intptr_t)pthread_self(); }
 
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...) {
+void gpr_log(const char* file, int line, gpr_log_severity severity,
+             const char* format, ...) {
   char buf[64];
-  char *allocated = NULL;
-  char *message = NULL;
+  char* allocated = NULL;
+  char* message = NULL;
   int ret;
   va_list args;
   va_start(args, format);
@@ -48,7 +47,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   } else if ((size_t)ret <= sizeof(buf) - 1) {
     message = buf;
   } else {
-    message = allocated = (char *)gpr_malloc((size_t)ret + 1);
+    message = allocated = (char*)gpr_malloc((size_t)ret + 1);
     va_start(args, format);
     vsnprintf(message, (size_t)(ret + 1), format, args);
     va_end(args);
@@ -57,9 +56,9 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   gpr_free(allocated);
 }
 
-extern "C" void gpr_default_log(gpr_log_func_args *args) {
-  const char *final_slash;
-  const char *display_file;
+void gpr_default_log(gpr_log_func_args* args) {
+  const char* final_slash;
+  const char* display_file;
   char time_buffer[64];
   time_t timer;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
@@ -79,7 +78,7 @@ extern "C" void gpr_default_log(gpr_log_func_args *args) {
     strcpy(time_buffer, "error:strftime");
   }
 
-  char *prefix;
+  char* prefix;
   gpr_asprintf(&prefix, "%s%s.%09d %7tu %s:%d]",
                gpr_log_severity_string(args->severity), time_buffer,
                (int)(now.tv_nsec), gettid(), display_file, args->line);

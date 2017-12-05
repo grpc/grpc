@@ -58,7 +58,7 @@ TEST(GoldenMockFileTest, TestGeneratedMockFile) {
            kMockGoldenFilePath);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   ::google::ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_generated_file_path.empty()) {

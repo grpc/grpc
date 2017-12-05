@@ -36,40 +36,40 @@ struct gpr_arena {
   zone initial_zone;
 };
 
-gpr_arena *gpr_arena_create(size_t initial_size) {
+gpr_arena* gpr_arena_create(size_t initial_size) {
   initial_size = ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
-  gpr_arena *a = (gpr_arena *)gpr_zalloc(sizeof(gpr_arena) + initial_size);
+  gpr_arena* a = (gpr_arena*)gpr_zalloc(sizeof(gpr_arena) + initial_size);
   a->initial_zone.size_end = initial_size;
   return a;
 }
 
-size_t gpr_arena_destroy(gpr_arena *arena) {
+size_t gpr_arena_destroy(gpr_arena* arena) {
   gpr_atm size = gpr_atm_no_barrier_load(&arena->size_so_far);
-  zone *z = (zone *)gpr_atm_no_barrier_load(&arena->initial_zone.next_atm);
+  zone* z = (zone*)gpr_atm_no_barrier_load(&arena->initial_zone.next_atm);
   gpr_free(arena);
   while (z) {
-    zone *next_z = (zone *)gpr_atm_no_barrier_load(&z->next_atm);
+    zone* next_z = (zone*)gpr_atm_no_barrier_load(&z->next_atm);
     gpr_free(z);
     z = next_z;
   }
   return (size_t)size;
 }
 
-void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
+void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   size = ROUND_UP_TO_ALIGNMENT_SIZE(size);
   size_t start =
       (size_t)gpr_atm_no_barrier_fetch_add(&arena->size_so_far, size);
-  zone *z = &arena->initial_zone;
+  zone* z = &arena->initial_zone;
   while (start > z->size_end) {
-    zone *next_z = (zone *)gpr_atm_acq_load(&z->next_atm);
-    if (next_z == NULL) {
+    zone* next_z = (zone*)gpr_atm_acq_load(&z->next_atm);
+    if (next_z == nullptr) {
       size_t next_z_size = (size_t)gpr_atm_no_barrier_load(&arena->size_so_far);
-      next_z = (zone *)gpr_zalloc(sizeof(zone) + next_z_size);
+      next_z = (zone*)gpr_zalloc(sizeof(zone) + next_z_size);
       next_z->size_begin = z->size_end;
       next_z->size_end = z->size_end + next_z_size;
       if (!gpr_atm_rel_cas(&z->next_atm, (gpr_atm)NULL, (gpr_atm)next_z)) {
         gpr_free(next_z);
-        next_z = (zone *)gpr_atm_acq_load(&z->next_atm);
+        next_z = (zone*)gpr_atm_acq_load(&z->next_atm);
       }
     }
     z = next_z;
@@ -79,5 +79,5 @@ void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
   }
   GPR_ASSERT(start >= z->size_begin);
   GPR_ASSERT(start + size <= z->size_end);
-  return ((char *)(z + 1)) + start - z->size_begin;
+  return ((char*)(z + 1)) + start - z->size_begin;
 }

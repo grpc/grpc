@@ -27,7 +27,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 
 int grpc_compression_algorithm_parse(grpc_slice name,
-                                     grpc_compression_algorithm *algorithm) {
+                                     grpc_compression_algorithm* algorithm) {
   /* we use strncmp not only because it's safer (even though in this case it
    * doesn't matter, given that we are comparing against string literals, but
    * because this way we needn't have "name" nil-terminated (useful for slice
@@ -47,7 +47,7 @@ int grpc_compression_algorithm_parse(grpc_slice name,
 }
 
 int grpc_stream_compression_algorithm_parse(
-    grpc_slice name, grpc_stream_compression_algorithm *algorithm) {
+    grpc_slice name, grpc_stream_compression_algorithm* algorithm) {
   if (grpc_slice_eq(name, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_STREAM_COMPRESS_NONE;
     return 1;
@@ -60,7 +60,7 @@ int grpc_stream_compression_algorithm_parse(
 }
 
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
-                                    const char **name) {
+                                    const char** name) {
   GRPC_API_TRACE("grpc_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
   switch (algorithm) {
@@ -80,7 +80,7 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
 }
 
 int grpc_stream_compression_algorithm_name(
-    grpc_stream_compression_algorithm algorithm, const char **name) {
+    grpc_stream_compression_algorithm algorithm, const char** name) {
   GRPC_API_TRACE(
       "grpc_stream_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
       ((int)algorithm, name));
@@ -168,7 +168,7 @@ grpc_mdelem grpc_stream_compression_encoding_mdelem(
   return GRPC_MDNULL;
 }
 
-void grpc_compression_options_init(grpc_compression_options *opts) {
+void grpc_compression_options_init(grpc_compression_options* opts) {
   memset(opts, 0, sizeof(*opts));
   /* all enabled by default */
   opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
@@ -177,23 +177,23 @@ void grpc_compression_options_init(grpc_compression_options *opts) {
 }
 
 void grpc_compression_options_enable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
+    grpc_compression_options* opts, grpc_compression_algorithm algorithm) {
   GPR_BITSET(&opts->enabled_algorithms_bitset, algorithm);
 }
 
 void grpc_compression_options_disable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
+    grpc_compression_options* opts, grpc_compression_algorithm algorithm) {
   GPR_BITCLEAR(&opts->enabled_algorithms_bitset, algorithm);
 }
 
 int grpc_compression_options_is_algorithm_enabled(
-    const grpc_compression_options *opts,
+    const grpc_compression_options* opts,
     grpc_compression_algorithm algorithm) {
   return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
 }
 
 int grpc_compression_options_is_stream_compression_algorithm_enabled(
-    const grpc_compression_options *opts,
+    const grpc_compression_options* opts,
     grpc_stream_compression_algorithm algorithm) {
   return GPR_BITGET(opts->enabled_stream_compression_algorithms_bitset,
                     algorithm);

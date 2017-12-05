@@ -536,90 +536,6 @@ class RemoteNodeLanguage(object):
     return 'grpc-node'
 
 
-class NodeLanguage(object):
-
-  def __init__(self):
-    self.platform = platform_string()
-
-  def configure(self, config, args):
-    self.config = config
-    self.args = args
-    # Note: electron ABI only depends on major and minor version, so that's all
-    # we should specify in the compiler argument
-    _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5', 'node6',
-                                         'node7', 'node8',
-                                         'electron1.3', 'electron1.6'])
-    if self.args.compiler == 'default':
-      self.runtime = 'node'
-      self.node_version = '8'
-    else:
-      if self.args.compiler.startswith('electron'):
-        self.runtime = 'electron'
-        self.node_version = self.args.compiler[8:]
-      else:
-        self.runtime = 'node'
-        # Take off the word "node"
-        self.node_version = self.args.compiler[4:]
-
-  def test_specs(self):
-    if self.platform == 'windows':
-      return [self.config.job_spec(['tools\\run_tests\\helper_scripts\\run_node.bat'])]
-    else:
-      run_script = 'run_node'
-      if self.runtime == 'electron':
-        run_script += '_electron'
-      return [self.config.job_spec(['tools/run_tests/helper_scripts/{}.sh'.format(run_script),
-                                    self.node_version],
-                                   None,
-                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
-
-  def pre_build_steps(self):
-    if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
-    else:
-      build_script = 'pre_build_node'
-      if self.runtime == 'electron':
-        build_script += '_electron'
-      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
-               self.node_version]]
-
-  def make_targets(self):
-    return []
-
-  def make_options(self):
-    return []
-
-  def build_steps(self):
-    if self.platform == 'windows':
-      if self.config == 'dbg':
-        config_flag = '--debug'
-      else:
-        config_flag = '--release'
-      return [['tools\\run_tests\\helper_scripts\\build_node.bat',
-               config_flag]]
-    else:
-      build_script = 'build_node'
-      if self.runtime == 'electron':
-        build_script += '_electron'
-        # building for electron requires a patch version
-        self.node_version += '.0'
-      return [['tools/run_tests/helper_scripts/{}.sh'.format(build_script),
-               self.node_version]]
-
-  def post_tests_steps(self):
-    return []
-
-  def makefile_name(self):
-    return 'Makefile'
-
-  def dockerfile_dir(self):
-    return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(self.args.arch)
-
-  def __str__(self):
-    return 'node'
-
-
 class PhpLanguage(object):
 
   def configure(self, config, args):
@@ -1103,54 +1019,6 @@ class Sanity(object):
   def __str__(self):
     return 'sanity'
 
-class NodeExpressLanguage(object):
-  """Dummy Node express test target to enable running express performance
-  benchmarks"""
-
-  def __init__(self):
-    self.platform = platform_string()
-
-  def configure(self, config, args):
-    self.config = config
-    self.args = args
-    _check_compiler(self.args.compiler, ['default', 'node0.12',
-                                         'node4', 'node5', 'node6'])
-    if self.args.compiler == 'default':
-      self.node_version = '4'
-    else:
-      # Take off the word "node"
-      self.node_version = self.args.compiler[4:]
-
-  def test_specs(self):
-    return []
-
-  def pre_build_steps(self):
-    if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_node.bat']]
-    else:
-      return [['tools/run_tests/helper_scripts/pre_build_node.sh', self.node_version]]
-
-  def make_targets(self):
-    return []
-
-  def make_options(self):
-    return []
-
-  def build_steps(self):
-    return []
-
-  def post_tests_steps(self):
-    return []
-
-  def makefile_name(self):
-    return 'Makefile'
-
-  def dockerfile_dir(self):
-    return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(self.args.arch)
-
-  def __str__(self):
-    return 'node_express'
-
 # different configurations we can run under
 with open('tools/run_tests/generated/configs.json') as f:
   _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
@@ -1160,8 +1028,6 @@ _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
     'grpc-node': RemoteNodeLanguage(),
-    'node': NodeLanguage(),
-    'node_express': NodeExpressLanguage(),
     'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
@@ -1311,7 +1177,6 @@ argp.add_argument('--compiler',
                            'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc_musl',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
-                           'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
                            'cmake', 'cmake_vs2015', 'cmake_vs2017'],
@@ -1366,7 +1231,7 @@ if not args.disable_auto_set_flakes:
       if test.flaky: flaky_tests.add(test.name)
       if test.cpu > 0: shortname_to_cpu[test.name] = test.cpu
   except:
-    print("Unexpected error getting flaky tests:", sys.exc_info()[0])
+    print("Unexpected error getting flaky tests: %s" % traceback.format_exc())
 
 if args.force_default_poller:
   _POLLING_STRATEGIES = {}

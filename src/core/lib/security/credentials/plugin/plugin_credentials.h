@@ -21,24 +21,24 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-extern grpc_tracer_flag grpc_plugin_credentials_trace;
+extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 
 struct grpc_plugin_credentials;
 
 typedef struct grpc_plugin_credentials_pending_request {
   bool cancelled;
-  struct grpc_plugin_credentials *creds;
-  grpc_credentials_mdelem_array *md_array;
-  grpc_closure *on_request_metadata;
-  struct grpc_plugin_credentials_pending_request *prev;
-  struct grpc_plugin_credentials_pending_request *next;
+  struct grpc_plugin_credentials* creds;
+  grpc_credentials_mdelem_array* md_array;
+  grpc_closure* on_request_metadata;
+  struct grpc_plugin_credentials_pending_request* prev;
+  struct grpc_plugin_credentials_pending_request* next;
 } grpc_plugin_credentials_pending_request;
 
 typedef struct grpc_plugin_credentials {
   grpc_call_credentials base;
   grpc_metadata_credentials_plugin plugin;
   gpr_mu mu;
-  grpc_plugin_credentials_pending_request *pending_requests;
+  grpc_plugin_credentials_pending_request* pending_requests;
 } grpc_plugin_credentials;
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H */

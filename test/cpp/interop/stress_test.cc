@@ -36,9 +36,7 @@
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
-extern "C" {
 extern void gpr_default_log(gpr_log_func_args* args);
-}
 
 DEFINE_int32(metrics_port, 8081, "The metrics server port.");
 
@@ -106,13 +104,13 @@ DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
 DEFINE_string(server_host_override, "foo.test.google.fr",
               "Override the server host which is sent in HTTP header");
 
-using grpc::testing::kTestCaseList;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 using grpc::testing::StressTestInteropClient;
 using grpc::testing::TestCaseType;
 using grpc::testing::UNKNOWN_TEST;
 using grpc::testing::WeightedRandomTestSelector;
+using grpc::testing::kTestCaseList;
 
 static int log_level = GPR_LOG_SEVERITY_DEBUG;
 
@@ -230,7 +228,7 @@ int main(int argc, char** argv) {
   log_level = FLAGS_log_level;
   gpr_set_log_function(TestLogFunction);
 
-  srand(time(NULL));
+  srand(time(nullptr));
 
   // Parse the server addresses
   std::vector<grpc::string> server_addresses;

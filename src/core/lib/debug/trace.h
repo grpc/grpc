@@ -23,9 +23,8 @@
 #include <grpc/support/port_platform.h>
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+void grpc_tracer_init(const char* env_var_name);
+void grpc_tracer_shutdown(void);
 
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer)
@@ -33,31 +32,72 @@ extern "C" {
 #endif
 #endif
 
-typedef struct {
-#ifdef GRPC_THREADSAFE_TRACER
-  gpr_atm value;
-#else
-  bool value;
-#endif
-  const char *name;
-} grpc_tracer_flag;
+namespace grpc_core {
 
-#ifdef GRPC_THREADSAFE_TRACER
-#define GRPC_TRACER_ON(flag) (gpr_atm_no_barrier_load(&(flag).value) != 0)
-#define GRPC_TRACER_INITIALIZER(on, name) \
-  { (gpr_atm)(on), (name) }
-#else
-#define GRPC_TRACER_ON(flag) ((flag).value)
-#define GRPC_TRACER_INITIALIZER(on, name) \
-  { (on), (name) }
-#endif
+class TraceFlag;
+class TraceFlagList {
+ public:
+  static bool Set(const char* name, bool enabled);
+  static void Add(TraceFlag* flag);
 
-void grpc_register_tracer(grpc_tracer_flag *flag);
-void grpc_tracer_init(const char *env_var_name);
-void grpc_tracer_shutdown(void);
+ private:
+  static void LogAllTracers();
+  static TraceFlag* root_tracer_;
+};
 
-#ifdef __cplusplus
+namespace testing {
+void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
 }
+
+class TraceFlag {
+ public:
+  TraceFlag(bool default_enabled, const char* name);
+  ~TraceFlag() {}
+
+  const char* name() const { return name_; }
+
+  bool enabled() {
+#ifdef GRPC_THREADSAFE_TRACER
+    return gpr_atm_no_barrier_load(&value_) != 0;
+#else
+    return value_;
 #endif
+  }
+
+ private:
+  friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag* flag);
+  friend class TraceFlagList;
+
+  void set_enabled(bool enabled) {
+#ifdef GRPC_THREADSAFE_TRACER
+    gpr_atm_no_barrier_store(&value_, enabled);
+#else
+    value_ = enabled;
+#endif
+  }
+
+  TraceFlag* next_tracer_;
+  const char* const name_;
+#ifdef GRPC_THREADSAFE_TRACER
+  gpr_atm value_;
+#else
+  bool value_;
+#endif
+};
+
+#ifndef NDEBUG
+typedef TraceFlag DebugOnlyTraceFlag;
+#else
+class DebugOnlyTraceFlag {
+ public:
+  DebugOnlyTraceFlag(bool default_enabled, const char* name) {}
+  bool enabled() { return false; }
+
+ private:
+  void set_enabled(bool enabled) {}
+};
+#endif
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_DEBUG_TRACE_H */

@@ -25,7 +25,7 @@
 
 const uint16_t grpc_setting_id_to_wire_id[] = {1, 2, 3, 4, 5, 6, 65027};
 
-bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id *out) {
+bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id* out) {
   uint32_t i = wire_id - 1;
   uint32_t x = i % 256;
   uint32_t y = i / 256;

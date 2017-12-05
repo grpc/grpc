@@ -46,7 +46,7 @@ typedef struct backup_poller {
 
 static gpr_once g_once = GPR_ONCE_INIT;
 static gpr_mu g_poller_mu;
-static backup_poller* g_poller = NULL;  // guarded by g_poller_mu
+static backup_poller* g_poller = nullptr;  // guarded by g_poller_mu
 // g_poll_interval_ms is set only once at the first time
 // grpc_client_channel_start_backup_polling() is called, after that it is
 // treated as const.
@@ -55,7 +55,7 @@ static int g_poll_interval_ms = DEFAULT_POLL_INTERVAL_MS;
 static void init_globals() {
   gpr_mu_init(&g_poller_mu);
   char* env = gpr_getenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS");
-  if (env != NULL) {
+  if (env != nullptr) {
     int poll_interval_ms = gpr_parse_nonnegative_int(env);
     if (poll_interval_ms == -1) {
       gpr_log(GPR_ERROR,
@@ -86,7 +86,7 @@ static void g_poller_unref(grpc_exec_ctx* exec_ctx) {
   if (gpr_unref(&g_poller->refs)) {
     gpr_mu_lock(&g_poller_mu);
     backup_poller* p = g_poller;
-    g_poller = NULL;
+    g_poller = nullptr;
     gpr_mu_unlock(&g_poller_mu);
     gpr_mu_lock(p->pollset_mu);
     p->shutting_down = true;
@@ -113,7 +113,7 @@ static void run_poller(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
     backup_poller_shutdown_unref(exec_ctx, p);
     return;
   }
-  grpc_error* err = grpc_pollset_work(exec_ctx, p->pollset, NULL,
+  grpc_error* err = grpc_pollset_work(exec_ctx, p->pollset, nullptr,
                                       grpc_exec_ctx_now(exec_ctx));
   gpr_mu_unlock(p->pollset_mu);
   GRPC_LOG_IF_ERROR("Run client channel backup poller", err);
@@ -129,7 +129,7 @@ void grpc_client_channel_start_backup_polling(
     return;
   }
   gpr_mu_lock(&g_poller_mu);
-  if (g_poller == NULL) {
+  if (g_poller == nullptr) {
     g_poller = (backup_poller*)gpr_zalloc(sizeof(backup_poller));
     g_poller->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
     g_poller->shutting_down = false;
@@ -143,9 +143,16 @@ void grpc_client_channel_start_backup_polling(
                     grpc_exec_ctx_now(exec_ctx) + g_poll_interval_ms,
                     &g_poller->run_poller_closure);
   }
+
   gpr_ref(&g_poller->refs);
+  /* Get a reference to g_poller->pollset before releasing g_poller_mu to make
+   * TSAN happy. Otherwise, reading from g_poller (i.e g_poller->pollset) after
+   * releasing the lock and setting g_poller to NULL in g_poller_unref() is
+   * being flagged as a data-race by TSAN */
+  grpc_pollset* pollset = g_poller->pollset;
   gpr_mu_unlock(&g_poller_mu);
-  grpc_pollset_set_add_pollset(exec_ctx, interested_parties, g_poller->pollset);
+
+  grpc_pollset_set_add_pollset(exec_ctx, interested_parties, pollset);
 }
 
 void grpc_client_channel_stop_backup_polling(

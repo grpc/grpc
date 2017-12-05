@@ -42,8 +42,8 @@ typedef struct grpc_slice grpc_slice;
    constraints (is the callee allowed to modify the slice?) */
 
 typedef struct grpc_slice_refcount_vtable {
-  void (*ref)(void *);
-  void (*unref)(grpc_exec_ctx *exec_ctx, void *);
+  void (*ref)(void*);
+  void (*unref)(grpc_exec_ctx* exec_ctx, void*);
   int (*eq)(grpc_slice a, grpc_slice b);
   uint32_t (*hash)(grpc_slice slice);
 } grpc_slice_refcount_vtable;
@@ -54,20 +54,20 @@ typedef struct grpc_slice_refcount_vtable {
    Typically client code should not touch this, and use grpc_slice_malloc,
    grpc_slice_new, or grpc_slice_new_with_len instead. */
 typedef struct grpc_slice_refcount {
-  const grpc_slice_refcount_vtable *vtable;
+  const grpc_slice_refcount_vtable* vtable;
   /** If a subset of this slice is taken, use this pointer for the refcount.
      Typically points back to the refcount itself, however iterning
      implementations can use this to avoid a verification step on each hash
      or equality check */
-  struct grpc_slice_refcount *sub_refcount;
+  struct grpc_slice_refcount* sub_refcount;
 } grpc_slice_refcount;
 
 /* Inlined half of grpc_slice is allowed to expand the size of the overall type
    by this many bytes */
-#define GRPC_SLICE_INLINE_EXTRA_SIZE sizeof(void *)
+#define GRPC_SLICE_INLINE_EXTRA_SIZE sizeof(void*)
 
 #define GRPC_SLICE_INLINED_SIZE \
-  (sizeof(size_t) + sizeof(uint8_t *) - 1 + GRPC_SLICE_INLINE_EXTRA_SIZE)
+  (sizeof(size_t) + sizeof(uint8_t*) - 1 + GRPC_SLICE_INLINE_EXTRA_SIZE)
 
 /** A grpc_slice s, if initialized, represents the byte range
    s.bytes[0..s.length-1].
@@ -79,10 +79,10 @@ typedef struct grpc_slice_refcount {
    If the slice does not have a refcount, it represents an inlined small piece
    of data that is copied by value. */
 struct grpc_slice {
-  struct grpc_slice_refcount *refcount;
+  struct grpc_slice_refcount* refcount;
   union grpc_slice_data {
     struct grpc_slice_refcounted {
-      uint8_t *bytes;
+      uint8_t* bytes;
       size_t length;
     } refcounted;
     struct grpc_slice_inlined {
@@ -99,10 +99,10 @@ struct grpc_slice {
 typedef struct {
   /** This is for internal use only. External users (i.e any code outside grpc
    * core) MUST NOT use this field */
-  grpc_slice *base_slices;
+  grpc_slice* base_slices;
 
   /** slices in the array (Points to the first valid grpc_slice in the array) */
-  grpc_slice *slices;
+  grpc_slice* slices;
   /** the number of slices in the array */
   size_t count;
   /** the number of slices allocated in the array. External users (i.e any code

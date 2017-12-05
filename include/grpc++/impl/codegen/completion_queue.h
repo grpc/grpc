@@ -65,6 +65,7 @@ class CompletionQueue;
 class Server;
 class ServerBuilder;
 class ServerContext;
+class ServerInterface;
 
 namespace internal {
 class CompletionQueueTag;
@@ -164,8 +165,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///
   /// \return true if read a regular event, false if the queue is shutting down.
   bool Next(void** tag, bool* ok) {
-    return (AsyncNextInternal(tag, ok, g_core_codegen_interface->gpr_inf_future(
-                                           GPR_CLOCK_REALTIME)) != SHUTDOWN);
+    return (AsyncNextInternal(tag, ok,
+                              g_core_codegen_interface->gpr_inf_future(
+                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
   }
 
   /// Request the shutdown of the queue.
@@ -185,21 +187,6 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// \warning Remember that the returned instance is owned. No transfer of
   /// owership is performed.
   grpc_completion_queue* cq() { return cq_; }
-
-  /// Manage state of avalanching operations : completion queue tags that
-  /// trigger other completion queue operations. The underlying core completion
-  /// queue should not really shutdown until all avalanching operations have
-  /// been finalized. Note that we maintain the requirement that an avalanche
-  /// registration must take place before CQ shutdown (which must be maintained
-  /// elsehwere)
-  void InitialAvalanching() {
-    gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
-  }
-  void RegisterAvalanching() {
-    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                 static_cast<gpr_atm>(1));
-  }
-  void CompleteAvalanching();
 
  protected:
   /// Private constructor of CompletionQueue only visible to friend classes
@@ -237,6 +224,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   friend class ::grpc::internal::UnknownMethodHandler;
   friend class ::grpc::Server;
   friend class ::grpc::ServerContext;
+  friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
 
@@ -307,6 +295,21 @@ class CompletionQueue : private GrpcLibraryCodegen {
     void* ignored = tag;
     GPR_CODEGEN_ASSERT(!tag->FinalizeResult(&ignored, &ok));
   }
+
+  /// Manage state of avalanching operations : completion queue tags that
+  /// trigger other completion queue operations. The underlying core completion
+  /// queue should not really shutdown until all avalanching operations have
+  /// been finalized. Note that we maintain the requirement that an avalanche
+  /// registration must take place before CQ shutdown (which must be maintained
+  /// elsehwere)
+  void InitialAvalanching() {
+    gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
+  }
+  void RegisterAvalanching() {
+    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
+                                 static_cast<gpr_atm>(1));
+  }
+  void CompleteAvalanching();
 
   grpc_completion_queue* cq_;  // owned
 

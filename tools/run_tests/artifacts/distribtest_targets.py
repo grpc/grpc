@@ -49,7 +49,8 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
 
 def create_jobspec(name, cmdline, environ=None, shell=False,
                    flake_retries=0, timeout_retries=0,
-                   use_workspace=False):
+                   use_workspace=False,
+                   timeout_seconds=10*60):
   """Creates jobspec."""
   environ = environ.copy()
   if use_workspace:
@@ -60,7 +61,7 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
           cmdline=cmdline,
           environ=environ,
           shortname='distribtest.%s' % (name),
-          timeout_seconds=10*60,
+          timeout_seconds=timeout_seconds,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
           shell=shell)
@@ -120,50 +121,6 @@ class CSharpDistribTest(object):
 
   def __str__(self):
     return self.name
-
-class NodeDistribTest(object):
-  """Tests Node package"""
-
-  def __init__(self, platform, arch, docker_suffix, node_version):
-    self.name = 'node_npm_%s_%s_%s' % (platform, arch, node_version)
-    self.platform = platform
-    self.arch = arch
-    self.node_version = node_version
-    self.labels = ['distribtest', 'node', platform, arch,
-                   'node-%s' % node_version]
-    if docker_suffix is not None:
-      self.name += '_%s' % docker_suffix
-      self.docker_suffix = docker_suffix
-      self.labels.append(docker_suffix)
-
-  def pre_build_jobspecs(self):
-    return []
-
-  def build_jobspec(self):
-    if self.platform == 'linux':
-      linux32 = ''
-      if self.arch == 'x86':
-        linux32 = 'linux32'
-      return create_docker_jobspec(self.name,
-                                   'tools/dockerfile/distribtest/node_%s_%s' % (
-                                       self.docker_suffix,
-                                       self.arch),
-                                   '%s test/distrib/node/run_distrib_test.sh %s' % (
-                                       linux32,
-                                       self.node_version),
-                                   copy_rel_path='test/distrib')
-    elif self.platform == 'macos':
-      return create_jobspec(self.name,
-                            ['test/distrib/node/run_distrib_test.sh',
-                             str(self.node_version)],
-                            environ={'EXTERNAL_GIT_ROOT': '../../../..'},
-                            use_workspace=True)
-    else:
-      raise Exception("Not supported yet.")
-
-    def __str__(self):
-      return self.name
-
 
 class PythonDistribTest(object):
   """Tests Python package"""
@@ -258,7 +215,10 @@ class CppDistribTest(object):
   """Tests Cpp make intall by building examples."""
 
   def __init__(self, platform, arch, docker_suffix=None, testcase=None):
-    self.name = 'cpp_%s_%s_%s_%s' % (platform, arch, docker_suffix, testcase)
+    if platform == 'linux':
+      self.name = 'cpp_%s_%s_%s_%s' % (platform, arch, docker_suffix, testcase)
+    else:
+      self.name = 'cpp_%s_%s_%s' % (platform, arch, testcase)
     self.platform = platform
     self.arch = arch
     self.docker_suffix = docker_suffix
@@ -275,6 +235,12 @@ class CppDistribTest(object):
                                        self.docker_suffix,
                                        self.arch),
                                    'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase)
+    elif self.platform == 'windows':
+      return create_jobspec(self.name,
+                            ['test\\distrib\\cpp\\run_distrib_test_%s.bat' % self.testcase],
+                            environ={},
+                            timeout_seconds=30*60,
+                            use_workspace=True)
     else:
       raise Exception("Not supported yet.")
 
@@ -286,6 +252,7 @@ def targets():
   """Gets list of supported targets"""
   return [CppDistribTest('linux', 'x64', 'jessie', 'routeguide'),
           CppDistribTest('linux', 'x64', 'jessie', 'cmake'),
+          CppDistribTest('windows', 'x86', testcase='cmake'),
           CSharpDistribTest('linux', 'x64', 'wheezy'),
           CSharpDistribTest('linux', 'x64', 'jessie'),
           CSharpDistribTest('linux', 'x86', 'jessie'),
@@ -329,14 +296,6 @@ def targets():
           RubyDistribTest('linux', 'x64', 'ubuntu1504'),
           RubyDistribTest('linux', 'x64', 'ubuntu1510'),
           RubyDistribTest('linux', 'x64', 'ubuntu1604'),
-          NodeDistribTest('macos', 'x64', None, '4'),
-          NodeDistribTest('macos', 'x64', None, '5'),
-          NodeDistribTest('linux', 'x86', 'jessie', '4'),
           PHPDistribTest('linux', 'x64', 'jessie'),
           PHPDistribTest('macos', 'x64'),
-          ] + [
-            NodeDistribTest('linux', 'x64', os, version)
-            for os in ('wheezy', 'jessie', 'ubuntu1204', 'ubuntu1404',
-                       'ubuntu1504', 'ubuntu1510', 'ubuntu1604')
-            for version in ('4', '5')
           ]

@@ -38,7 +38,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
-grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false, "tcp");
+grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
 
 typedef struct {
   grpc_endpoint base;
@@ -47,26 +47,25 @@ typedef struct {
   uv_write_t write_req;
   uv_shutdown_t shutdown_req;
 
-  uv_tcp_t *handle;
+  uv_tcp_t* handle;
 
-  grpc_closure *read_cb;
-  grpc_closure *write_cb;
+  grpc_closure* read_cb;
+  grpc_closure* write_cb;
 
-  grpc_slice read_slice;
-  grpc_slice_buffer *read_slices;
-  grpc_slice_buffer *write_slices;
-  uv_buf_t *write_buffers;
+  grpc_slice_buffer* read_slices;
+  grpc_slice_buffer* write_slices;
+  uv_buf_t* write_buffers;
 
-  grpc_resource_user *resource_user;
+  grpc_resource_user* resource_user;
+  grpc_resource_user_slice_allocator slice_allocator;
 
   bool shutting_down;
 
-  char *peer_string;
-  grpc_pollset *pollset;
+  char* peer_string;
+  grpc_pollset* pollset;
 } grpc_tcp;
 
-static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
-  grpc_slice_unref_internal(exec_ctx, tcp->read_slice);
+static void tcp_free(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp) {
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
   gpr_free(tcp->handle);
   gpr_free(tcp->peer_string);
@@ -77,9 +76,9 @@ static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 #define TCP_UNREF(exec_ctx, tcp, reason) \
   tcp_unref((exec_ctx), (tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
-static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
-                      const char *reason, const char *file, int line) {
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+static void tcp_unref(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
+                      const char* reason, const char* file, int line) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
@@ -90,9 +89,9 @@ static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
   }
 }
 
-static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
+static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
                     int line) {
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
@@ -103,114 +102,140 @@ static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
 #else
 #define TCP_UNREF(exec_ctx, tcp, reason) tcp_unref((exec_ctx), (tcp))
 #define TCP_REF(tcp, reason) tcp_ref((tcp))
-static void tcp_unref(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+static void tcp_unref(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp) {
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(exec_ctx, tcp);
   }
 }
 
-static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
+static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
-static void uv_close_callback(uv_handle_t *handle) {
+static void uv_close_callback(uv_handle_t* handle) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_tcp *tcp = (grpc_tcp *)handle->data;
+  grpc_tcp* tcp = (grpc_tcp*)handle->data;
   TCP_UNREF(&exec_ctx, tcp, "destroy");
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static grpc_slice alloc_read_slice(grpc_exec_ctx *exec_ctx,
-                                   grpc_resource_user *resource_user) {
-  return grpc_resource_user_slice_malloc(exec_ctx, resource_user,
-                                         GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
-}
-
-static void alloc_uv_buf(uv_handle_t *handle, size_t suggested_size,
-                         uv_buf_t *buf) {
+static void alloc_uv_buf(uv_handle_t* handle, size_t suggested_size,
+                         uv_buf_t* buf) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_tcp *tcp = (grpc_tcp *)handle->data;
+  grpc_tcp* tcp = (grpc_tcp*)handle->data;
   (void)suggested_size;
-  buf->base = (char *)GRPC_SLICE_START_PTR(tcp->read_slice);
-  buf->len = GRPC_SLICE_LENGTH(tcp->read_slice);
+  /* Before calling uv_read_start, we allocate a buffer with exactly one slice
+   * to tcp->read_slices and wait for the callback indicating that the
+   * allocation was successful. So slices[0] should always exist here */
+  buf->base = (char*)GRPC_SLICE_START_PTR(tcp->read_slices->slices[0]);
+  buf->len = GRPC_SLICE_LENGTH(tcp->read_slices->slices[0]);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void read_callback(uv_stream_t *stream, ssize_t nread,
-                          const uv_buf_t *buf) {
-  grpc_slice sub;
-  grpc_error *error;
+static void call_read_cb(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp,
+                         grpc_error* error) {
+  grpc_closure* cb = tcp->read_cb;
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
+    size_t i;
+    const char* str = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "read: error=%s", str);
+
+    for (i = 0; i < tcp->read_slices->count; i++) {
+      char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
+                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", tcp, tcp->peer_string, dump);
+      gpr_free(dump);
+    }
+  }
+  tcp->read_slices = NULL;
+  tcp->read_cb = NULL;
+  GRPC_CLOSURE_RUN(exec_ctx, cb, error);
+}
+
+static void read_callback(uv_stream_t* stream, ssize_t nread,
+                          const uv_buf_t* buf) {
+  grpc_error* error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_tcp *tcp = (grpc_tcp *)stream->data;
-  grpc_closure *cb = tcp->read_cb;
+  grpc_tcp* tcp = (grpc_tcp*)stream->data;
+  grpc_slice_buffer garbage;
   if (nread == 0) {
     // Nothing happened. Wait for the next callback
     return;
   }
   TCP_UNREF(&exec_ctx, tcp, "read");
-  tcp->read_cb = NULL;
   // TODO(murgatroid99): figure out what the return value here means
   uv_read_stop(stream);
   if (nread == UV_EOF) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF");
+    grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, tcp->read_slices);
   } else if (nread > 0) {
     // Successful read
-    sub = grpc_slice_sub_no_ref(tcp->read_slice, 0, (size_t)nread);
-    grpc_slice_buffer_add(tcp->read_slices, sub);
-    tcp->read_slice = alloc_read_slice(&exec_ctx, tcp->resource_user);
     error = GRPC_ERROR_NONE;
-    if (GRPC_TRACER_ON(grpc_tcp_trace)) {
-      size_t i;
-      const char *str = grpc_error_string(error);
-      gpr_log(GPR_DEBUG, "read: error=%s", str);
-
-      for (i = 0; i < tcp->read_slices->count; i++) {
-        char *dump = grpc_dump_slice(tcp->read_slices->slices[i],
-                                     GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", tcp, tcp->peer_string,
-                dump);
-        gpr_free(dump);
-      }
+    if ((size_t)nread < tcp->read_slices->length) {
+      /* TODO(murgatroid99): Instead of discarding the unused part of the read
+       * buffer, reuse it as the next read buffer. */
+      grpc_slice_buffer_init(&garbage);
+      grpc_slice_buffer_trim_end(
+          tcp->read_slices, tcp->read_slices->length - (size_t)nread, &garbage);
+      grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, &garbage);
     }
   } else {
     // nread < 0: Error
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed");
+    grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, tcp->read_slices);
   }
-  GRPC_CLOSURE_SCHED(&exec_ctx, cb, error);
+  call_read_cb(&exec_ctx, tcp, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                             grpc_slice_buffer *read_slices, grpc_closure *cb) {
-  grpc_tcp *tcp = (grpc_tcp *)ep;
+static void tcp_read_allocation_done(grpc_exec_ctx* exec_ctx, void* tcpp,
+                                     grpc_error* error) {
   int status;
-  grpc_error *error = GRPC_ERROR_NONE;
+  grpc_tcp* tcp = (grpc_tcp*)tcpp;
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TCP:%p read_allocation_done: %s", tcp,
+            grpc_error_string(error));
+  }
+  if (error == GRPC_ERROR_NONE) {
+    status =
+        uv_read_start((uv_stream_t*)tcp->handle, alloc_uv_buf, read_callback);
+    if (status != 0) {
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed at start");
+      error = grpc_error_set_str(
+          error, GRPC_ERROR_STR_OS_ERROR,
+          grpc_slice_from_static_string(uv_strerror(status)));
+    }
+  }
+  if (error != GRPC_ERROR_NONE) {
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->read_slices);
+    call_read_cb(exec_ctx, tcp, GRPC_ERROR_REF(error));
+    TCP_UNREF(exec_ctx, tcp, "read");
+  }
+  if (grpc_tcp_trace.enabled()) {
+    const char* str = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "Initiating read on %p: error=%s", tcp, str);
+  }
+}
+
+static void uv_endpoint_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                             grpc_slice_buffer* read_slices, grpc_closure* cb) {
+  grpc_tcp* tcp = (grpc_tcp*)ep;
   GRPC_UV_ASSERT_SAME_THREAD();
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
   grpc_slice_buffer_reset_and_unref_internal(exec_ctx, read_slices);
   TCP_REF(tcp, "read");
-  // TODO(murgatroid99): figure out what the return value here means
-  status =
-      uv_read_start((uv_stream_t *)tcp->handle, alloc_uv_buf, read_callback);
-  if (status != 0) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed at start");
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                           grpc_slice_from_static_string(uv_strerror(status)));
-    GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
-  }
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
-    const char *str = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "Initiating read on %p: error=%s", tcp, str);
-  }
+  grpc_resource_user_alloc_slices(exec_ctx, &tcp->slice_allocator,
+                                  GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
+                                  tcp->read_slices);
 }
 
-static void write_callback(uv_write_t *req, int status) {
-  grpc_tcp *tcp = (grpc_tcp *)req->data;
-  grpc_error *error;
+static void write_callback(uv_write_t* req, int status) {
+  grpc_tcp* tcp = (grpc_tcp*)req->data;
+  grpc_error* error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_closure *cb = tcp->write_cb;
+  grpc_closure* cb = tcp->write_cb;
   tcp->write_cb = NULL;
   TCP_UNREF(&exec_ctx, tcp, "write");
   if (status == 0) {
@@ -218,33 +243,31 @@ static void write_callback(uv_write_t *req, int status) {
   } else {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Write failed");
   }
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
-    const char *str = grpc_error_string(error);
+  if (grpc_tcp_trace.enabled()) {
+    const char* str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "write complete on %p: error=%s", tcp, str);
   }
   gpr_free(tcp->write_buffers);
-  grpc_resource_user_free(&exec_ctx, tcp->resource_user,
-                          sizeof(uv_buf_t) * tcp->write_slices->count);
   GRPC_CLOSURE_SCHED(&exec_ctx, cb, error);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                              grpc_slice_buffer *write_slices,
-                              grpc_closure *cb) {
-  grpc_tcp *tcp = (grpc_tcp *)ep;
-  uv_buf_t *buffers;
+static void uv_endpoint_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                              grpc_slice_buffer* write_slices,
+                              grpc_closure* cb) {
+  grpc_tcp* tcp = (grpc_tcp*)ep;
+  uv_buf_t* buffers;
   unsigned int buffer_count;
   unsigned int i;
-  grpc_slice *slice;
-  uv_write_t *write_req;
+  grpc_slice* slice;
+  uv_write_t* write_req;
   GRPC_UV_ASSERT_SAME_THREAD();
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     size_t j;
 
     for (j = 0; j < write_slices->count; j++) {
-      char *data = grpc_dump_slice(write_slices->slices[j],
+      char* data = grpc_dump_slice(write_slices->slices[j],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string, data);
       gpr_free(data);
@@ -252,8 +275,9 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   }
 
   if (tcp->shutting_down) {
-    GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                         "TCP socket is shutting down"));
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, cb,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP socket is shutting down"));
     return;
   }
 
@@ -269,12 +293,10 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   tcp->write_cb = cb;
   buffer_count = (unsigned int)tcp->write_slices->count;
-  buffers = (uv_buf_t *)gpr_malloc(sizeof(uv_buf_t) * buffer_count);
-  grpc_resource_user_alloc(exec_ctx, tcp->resource_user,
-                           sizeof(uv_buf_t) * buffer_count, NULL);
+  buffers = (uv_buf_t*)gpr_malloc(sizeof(uv_buf_t) * buffer_count);
   for (i = 0; i < buffer_count; i++) {
     slice = &tcp->write_slices->slices[i];
-    buffers[i].base = (char *)GRPC_SLICE_START_PTR(*slice);
+    buffers[i].base = (char*)GRPC_SLICE_START_PTR(*slice);
     buffers[i].len = GRPC_SLICE_LENGTH(*slice);
   }
   tcp->write_buffers = buffers;
@@ -282,72 +304,72 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   write_req->data = tcp;
   TCP_REF(tcp, "write");
   // TODO(murgatroid99): figure out what the return value here means
-  uv_write(write_req, (uv_stream_t *)tcp->handle, buffers, buffer_count,
+  uv_write(write_req, (uv_stream_t*)tcp->handle, buffers, buffer_count,
            write_callback);
 }
 
-static void uv_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                              grpc_pollset *pollset) {
+static void uv_add_to_pollset(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                              grpc_pollset* pollset) {
   // No-op. We're ignoring pollsets currently
   (void)exec_ctx;
   (void)ep;
   (void)pollset;
-  grpc_tcp *tcp = (grpc_tcp *)ep;
+  grpc_tcp* tcp = (grpc_tcp*)ep;
   tcp->pollset = pollset;
 }
 
-static void uv_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                                  grpc_pollset_set *pollset) {
+static void uv_add_to_pollset_set(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                                  grpc_pollset_set* pollset) {
   // No-op. We're ignoring pollsets currently
   (void)exec_ctx;
   (void)ep;
   (void)pollset;
 }
 
-static void uv_delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
-                                       grpc_endpoint *ep,
-                                       grpc_pollset_set *pollset) {
+static void uv_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
+                                       grpc_endpoint* ep,
+                                       grpc_pollset_set* pollset) {
   // No-op. We're ignoring pollsets currently
   (void)exec_ctx;
   (void)ep;
   (void)pollset;
 }
 
-static void shutdown_callback(uv_shutdown_t *req, int status) {}
+static void shutdown_callback(uv_shutdown_t* req, int status) {}
 
-static void uv_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                                 grpc_error *why) {
-  grpc_tcp *tcp = (grpc_tcp *)ep;
+static void uv_endpoint_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                                 grpc_error* why) {
+  grpc_tcp* tcp = (grpc_tcp*)ep;
   if (!tcp->shutting_down) {
-    if (GRPC_TRACER_ON(grpc_tcp_trace)) {
-      const char *str = grpc_error_string(why);
+    if (grpc_tcp_trace.enabled()) {
+      const char* str = grpc_error_string(why);
       gpr_log(GPR_DEBUG, "TCP %p shutdown why=%s", tcp->handle, str);
     }
     tcp->shutting_down = true;
-    uv_shutdown_t *req = &tcp->shutdown_req;
-    uv_shutdown(req, (uv_stream_t *)tcp->handle, shutdown_callback);
+    uv_shutdown_t* req = &tcp->shutdown_req;
+    uv_shutdown(req, (uv_stream_t*)tcp->handle, shutdown_callback);
     grpc_resource_user_shutdown(exec_ctx, tcp->resource_user);
   }
   GRPC_ERROR_UNREF(why);
 }
 
-static void uv_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+static void uv_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
   grpc_network_status_unregister_endpoint(ep);
-  grpc_tcp *tcp = (grpc_tcp *)ep;
-  uv_close((uv_handle_t *)tcp->handle, uv_close_callback);
+  grpc_tcp* tcp = (grpc_tcp*)ep;
+  uv_close((uv_handle_t*)tcp->handle, uv_close_callback);
 }
 
-static char *uv_get_peer(grpc_endpoint *ep) {
-  grpc_tcp *tcp = (grpc_tcp *)ep;
+static char* uv_get_peer(grpc_endpoint* ep) {
+  grpc_tcp* tcp = (grpc_tcp*)ep;
   return gpr_strdup(tcp->peer_string);
 }
 
-static grpc_resource_user *uv_get_resource_user(grpc_endpoint *ep) {
-  grpc_tcp *tcp = (grpc_tcp *)ep;
+static grpc_resource_user* uv_get_resource_user(grpc_endpoint* ep) {
+  grpc_tcp* tcp = (grpc_tcp*)ep;
   return tcp->resource_user;
 }
 
-static int uv_get_fd(grpc_endpoint *ep) { return -1; }
+static int uv_get_fd(grpc_endpoint* ep) { return -1; }
 
 static grpc_endpoint_vtable vtable = {uv_endpoint_read,
                                       uv_endpoint_write,
@@ -360,13 +382,13 @@ static grpc_endpoint_vtable vtable = {uv_endpoint_read,
                                       uv_get_peer,
                                       uv_get_fd};
 
-grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle,
-                               grpc_resource_quota *resource_quota,
-                               char *peer_string) {
-  grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
+grpc_endpoint* grpc_tcp_create(uv_tcp_t* handle,
+                               grpc_resource_quota* resource_quota,
+                               char* peer_string) {
+  grpc_tcp* tcp = (grpc_tcp*)gpr_malloc(sizeof(grpc_tcp));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Creating TCP endpoint %p", tcp);
   }
 
@@ -380,13 +402,15 @@ grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle,
   gpr_ref_init(&tcp->refcount, 1);
   tcp->peer_string = gpr_strdup(peer_string);
   tcp->shutting_down = false;
+  tcp->read_slices = NULL;
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
-  tcp->read_slice = alloc_read_slice(&exec_ctx, tcp->resource_user);
+  grpc_resource_user_slice_allocator_init(
+      &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);
   /* Tell network status tracking code about the new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
 
 #ifndef GRPC_UV_TCP_HOLD_LOOP
-  uv_unref((uv_handle_t *)handle);
+  uv_unref((uv_handle_t*)handle);
 #endif
 
   grpc_exec_ctx_finish(&exec_ctx);

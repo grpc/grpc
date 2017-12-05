@@ -13,7 +13,7 @@
     "language": "c", 
     "name": "alarm_test", 
     "src": [
-      "test/core/surface/alarm_test.c"
+      "test/core/surface/alarm_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -30,7 +30,7 @@
     "language": "c", 
     "name": "algorithm_test", 
     "src": [
-      "test/core/compression/algorithm_test.c"
+      "test/core/compression/algorithm_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -45,7 +45,7 @@
     "language": "c", 
     "name": "alloc_test", 
     "src": [
-      "test/core/support/alloc_test.c"
+      "test/core/support/alloc_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -62,7 +62,7 @@
     "language": "c", 
     "name": "alpn_test", 
     "src": [
-      "test/core/transport/chttp2/alpn_test.c"
+      "test/core/transport/chttp2/alpn_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -79,7 +79,7 @@
     "language": "c", 
     "name": "api_fuzzer", 
     "src": [
-      "test/core/end2end/fuzzers/api_fuzzer.c"
+      "test/core/end2end/fuzzers/api_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -94,7 +94,7 @@
     "language": "c", 
     "name": "arena_test", 
     "src": [
-      "test/core/support/arena_test.c"
+      "test/core/support/arena_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -111,7 +111,7 @@
     "language": "c", 
     "name": "backoff_test", 
     "src": [
-      "test/core/backoff/backoff_test.c"
+      "test/core/backoff/backoff_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -129,7 +129,7 @@
     "language": "c", 
     "name": "bad_server_response_test", 
     "src": [
-      "test/core/end2end/bad_server_response_test.c"
+      "test/core/end2end/bad_server_response_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -144,7 +144,7 @@
     "language": "c", 
     "name": "bin_decoder_test", 
     "src": [
-      "test/core/transport/chttp2/bin_decoder_test.c"
+      "test/core/transport/chttp2/bin_decoder_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -159,7 +159,7 @@
     "language": "c", 
     "name": "bin_encoder_test", 
     "src": [
-      "test/core/transport/chttp2/bin_encoder_test.c"
+      "test/core/transport/chttp2/bin_encoder_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -176,7 +176,7 @@
     "language": "c", 
     "name": "byte_stream_test", 
     "src": [
-      "test/core/transport/byte_stream_test.c"
+      "test/core/transport/byte_stream_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -193,7 +193,7 @@
     "language": "c", 
     "name": "channel_create_test", 
     "src": [
-      "test/core/surface/channel_create_test.c"
+      "test/core/surface/channel_create_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -225,7 +225,7 @@
     "language": "c", 
     "name": "chttp2_hpack_encoder_test", 
     "src": [
-      "test/core/transport/chttp2/hpack_encoder_test.c"
+      "test/core/transport/chttp2/hpack_encoder_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -242,7 +242,7 @@
     "language": "c", 
     "name": "chttp2_stream_map_test", 
     "src": [
-      "test/core/transport/chttp2/stream_map_test.c"
+      "test/core/transport/chttp2/stream_map_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -259,7 +259,7 @@
     "language": "c", 
     "name": "chttp2_varint_test", 
     "src": [
-      "test/core/transport/chttp2/varint_test.c"
+      "test/core/transport/chttp2/varint_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -276,7 +276,7 @@
     "language": "c", 
     "name": "client_fuzzer", 
     "src": [
-      "test/core/end2end/fuzzers/client_fuzzer.c"
+      "test/core/end2end/fuzzers/client_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -293,7 +293,7 @@
     "language": "c", 
     "name": "combiner_test", 
     "src": [
-      "test/core/iomgr/combiner_test.c"
+      "test/core/iomgr/combiner_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -310,7 +310,7 @@
     "language": "c", 
     "name": "compression_test", 
     "src": [
-      "test/core/compression/compression_test.c"
+      "test/core/compression/compression_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -327,7 +327,7 @@
     "language": "c", 
     "name": "concurrent_connectivity_test", 
     "src": [
-      "test/core/surface/concurrent_connectivity_test.c"
+      "test/core/surface/concurrent_connectivity_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -344,7 +344,7 @@
     "language": "c", 
     "name": "connection_refused_test", 
     "src": [
-      "test/core/end2end/connection_refused_test.c"
+      "test/core/end2end/connection_refused_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -361,7 +361,7 @@
     "language": "c", 
     "name": "dns_resolver_connectivity_test", 
     "src": [
-      "test/core/client_channel/resolvers/dns_resolver_connectivity_test.c"
+      "test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -378,7 +378,7 @@
     "language": "c", 
     "name": "dns_resolver_test", 
     "src": [
-      "test/core/client_channel/resolvers/dns_resolver_test.c"
+      "test/core/client_channel/resolvers/dns_resolver_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -395,7 +395,7 @@
     "language": "c", 
     "name": "dualstack_socket_test", 
     "src": [
-      "test/core/end2end/dualstack_socket_test.c"
+      "test/core/end2end/dualstack_socket_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -412,7 +412,7 @@
     "language": "c", 
     "name": "endpoint_pair_test", 
     "src": [
-      "test/core/iomgr/endpoint_pair_test.c"
+      "test/core/iomgr/endpoint_pair_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -429,7 +429,7 @@
     "language": "c", 
     "name": "error_test", 
     "src": [
-      "test/core/iomgr/error_test.c"
+      "test/core/iomgr/error_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -446,7 +446,7 @@
     "language": "c", 
     "name": "ev_epollsig_linux_test", 
     "src": [
-      "test/core/iomgr/ev_epollsig_linux_test.c"
+      "test/core/iomgr/ev_epollsig_linux_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -463,7 +463,7 @@
     "language": "c", 
     "name": "fake_resolver_test", 
     "src": [
-      "test/core/client_channel/resolvers/fake_resolver_test.c"
+      "test/core/client_channel/resolvers/fake_resolver_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -480,7 +480,7 @@
     "language": "c", 
     "name": "fake_transport_security_test", 
     "src": [
-      "test/core/tsi/fake_transport_security_test.c"
+      "test/core/tsi/fake_transport_security_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -497,7 +497,7 @@
     "language": "c", 
     "name": "fd_conservation_posix_test", 
     "src": [
-      "test/core/iomgr/fd_conservation_posix_test.c"
+      "test/core/iomgr/fd_conservation_posix_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -514,7 +514,7 @@
     "language": "c", 
     "name": "fd_posix_test", 
     "src": [
-      "test/core/iomgr/fd_posix_test.c"
+      "test/core/iomgr/fd_posix_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -531,7 +531,7 @@
     "language": "c", 
     "name": "fling_client", 
     "src": [
-      "test/core/fling/client.c"
+      "test/core/fling/client.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -548,7 +548,7 @@
     "language": "c", 
     "name": "fling_server", 
     "src": [
-      "test/core/fling/server.c"
+      "test/core/fling/server.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -565,7 +565,7 @@
     "language": "c", 
     "name": "fling_stream_test", 
     "src": [
-      "test/core/fling/fling_stream_test.c"
+      "test/core/fling/fling_stream_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -582,7 +582,7 @@
     "language": "c", 
     "name": "fling_test", 
     "src": [
-      "test/core/fling/fling_test.c"
+      "test/core/fling/fling_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -638,7 +638,7 @@
     "language": "c", 
     "name": "goaway_server_test", 
     "src": [
-      "test/core/end2end/goaway_server_test.c"
+      "test/core/end2end/goaway_server_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -653,7 +653,7 @@
     "language": "c", 
     "name": "gpr_avl_test", 
     "src": [
-      "test/core/support/avl_test.c"
+      "test/core/support/avl_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -668,7 +668,7 @@
     "language": "c", 
     "name": "gpr_cmdline_test", 
     "src": [
-      "test/core/support/cmdline_test.c"
+      "test/core/support/cmdline_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -683,7 +683,7 @@
     "language": "c", 
     "name": "gpr_cpu_test", 
     "src": [
-      "test/core/support/cpu_test.c"
+      "test/core/support/cpu_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -698,22 +698,7 @@
     "language": "c", 
     "name": "gpr_env_test", 
     "src": [
-      "test/core/support/env_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_histogram_test", 
-    "src": [
-      "test/core/support/histogram_test.c"
+      "test/core/support/env_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -728,7 +713,7 @@
     "language": "c", 
     "name": "gpr_host_port_test", 
     "src": [
-      "test/core/support/host_port_test.c"
+      "test/core/support/host_port_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -743,7 +728,22 @@
     "language": "c", 
     "name": "gpr_log_test", 
     "src": [
-      "test/core/support/log_test.c"
+      "test/core/support/log_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "gpr_manual_constructor_test", 
+    "src": [
+      "test/core/support/manual_constructor_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -758,7 +758,7 @@
     "language": "c", 
     "name": "gpr_mpscq_test", 
     "src": [
-      "test/core/support/mpscq_test.c"
+      "test/core/support/mpscq_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -773,22 +773,7 @@
     "language": "c", 
     "name": "gpr_spinlock_test", 
     "src": [
-      "test/core/support/spinlock_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_stack_lockfree_test", 
-    "src": [
-      "test/core/support/stack_lockfree_test.c"
+      "test/core/support/spinlock_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -803,7 +788,7 @@
     "language": "c", 
     "name": "gpr_string_test", 
     "src": [
-      "test/core/support/string_test.c"
+      "test/core/support/string_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -818,7 +803,7 @@
     "language": "c", 
     "name": "gpr_sync_test", 
     "src": [
-      "test/core/support/sync_test.c"
+      "test/core/support/sync_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -833,7 +818,7 @@
     "language": "c", 
     "name": "gpr_thd_test", 
     "src": [
-      "test/core/support/thd_test.c"
+      "test/core/support/thd_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -848,7 +833,7 @@
     "language": "c", 
     "name": "gpr_time_test", 
     "src": [
-      "test/core/support/time_test.c"
+      "test/core/support/time_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -863,7 +848,7 @@
     "language": "c", 
     "name": "gpr_tls_test", 
     "src": [
-      "test/core/support/tls_test.c"
+      "test/core/support/tls_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -878,7 +863,7 @@
     "language": "c", 
     "name": "gpr_useful_test", 
     "src": [
-      "test/core/support/useful_test.c"
+      "test/core/support/useful_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -895,7 +880,7 @@
     "language": "c", 
     "name": "grpc_auth_context_test", 
     "src": [
-      "test/core/security/auth_context_test.c"
+      "test/core/security/auth_context_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -912,7 +897,7 @@
     "language": "c", 
     "name": "grpc_b64_test", 
     "src": [
-      "test/core/slice/b64_test.c"
+      "test/core/slice/b64_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -929,7 +914,7 @@
     "language": "c", 
     "name": "grpc_byte_buffer_reader_test", 
     "src": [
-      "test/core/surface/byte_buffer_reader_test.c"
+      "test/core/surface/byte_buffer_reader_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -946,7 +931,7 @@
     "language": "c", 
     "name": "grpc_channel_args_test", 
     "src": [
-      "test/core/channel/channel_args_test.c"
+      "test/core/channel/channel_args_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -963,7 +948,7 @@
     "language": "c", 
     "name": "grpc_channel_stack_builder_test", 
     "src": [
-      "test/core/channel/channel_stack_builder_test.c"
+      "test/core/channel/channel_stack_builder_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -980,7 +965,7 @@
     "language": "c", 
     "name": "grpc_channel_stack_test", 
     "src": [
-      "test/core/channel/channel_stack_test.c"
+      "test/core/channel/channel_stack_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -997,7 +982,7 @@
     "language": "c", 
     "name": "grpc_completion_queue_test", 
     "src": [
-      "test/core/surface/completion_queue_test.c"
+      "test/core/surface/completion_queue_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1014,7 +999,7 @@
     "language": "c", 
     "name": "grpc_completion_queue_threading_test", 
     "src": [
-      "test/core/surface/completion_queue_threading_test.c"
+      "test/core/surface/completion_queue_threading_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1029,7 +1014,7 @@
     "language": "c", 
     "name": "grpc_create_jwt", 
     "src": [
-      "test/core/security/create_jwt.c"
+      "test/core/security/create_jwt.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1046,7 +1031,7 @@
     "language": "c", 
     "name": "grpc_credentials_test", 
     "src": [
-      "test/core/security/credentials_test.c"
+      "test/core/security/credentials_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1063,7 +1048,7 @@
     "language": "c", 
     "name": "grpc_fetch_oauth2", 
     "src": [
-      "test/core/security/fetch_oauth2.c"
+      "test/core/security/fetch_oauth2.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1080,7 +1065,7 @@
     "language": "c", 
     "name": "grpc_invalid_channel_args_test", 
     "src": [
-      "test/core/surface/invalid_channel_args_test.c"
+      "test/core/surface/invalid_channel_args_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1097,7 +1082,7 @@
     "language": "c", 
     "name": "grpc_json_token_test", 
     "src": [
-      "test/core/security/json_token_test.c"
+      "test/core/security/json_token_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1114,7 +1099,7 @@
     "language": "c", 
     "name": "grpc_jwt_verifier_test", 
     "src": [
-      "test/core/security/jwt_verifier_test.c"
+      "test/core/security/jwt_verifier_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1129,7 +1114,7 @@
     "language": "c", 
     "name": "grpc_print_google_default_creds_token", 
     "src": [
-      "test/core/security/print_google_default_creds_token.c"
+      "test/core/security/print_google_default_creds_token.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1146,7 +1131,7 @@
     "language": "c", 
     "name": "grpc_security_connector_test", 
     "src": [
-      "test/core/security/security_connector_test.c"
+      "test/core/security/security_connector_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1163,7 +1148,7 @@
     "language": "c", 
     "name": "grpc_ssl_credentials_test", 
     "src": [
-      "test/core/security/ssl_credentials_test.c"
+      "test/core/security/ssl_credentials_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1178,7 +1163,7 @@
     "language": "c", 
     "name": "grpc_verify_jwt", 
     "src": [
-      "test/core/security/verify_jwt.c"
+      "test/core/security/verify_jwt.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1195,7 +1180,7 @@
     "language": "c", 
     "name": "handshake_client", 
     "src": [
-      "test/core/handshake/client_ssl.c"
+      "test/core/handshake/client_ssl.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1207,12 +1192,52 @@
       "grpc", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/core/handshake/server_ssl_common.h"
+    ], 
     "is_filegroup": false, 
     "language": "c", 
     "name": "handshake_server", 
     "src": [
-      "test/core/handshake/server_ssl.c"
+      "test/core/handshake/server_ssl.cc", 
+      "test/core/handshake/server_ssl_common.cc", 
+      "test/core/handshake/server_ssl_common.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/handshake/server_ssl_common.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "handshake_server_with_readahead_handshaker", 
+    "src": [
+      "test/core/handshake/readahead_handshaker_server_ssl.cc", 
+      "test/core/handshake/server_ssl_common.cc", 
+      "test/core/handshake/server_ssl_common.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "histogram_test", 
+    "src": [
+      "test/core/util/histogram_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1229,7 +1254,7 @@
     "language": "c", 
     "name": "hpack_parser_fuzzer_test", 
     "src": [
-      "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
+      "test/core/transport/chttp2/hpack_parser_fuzzer_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1246,7 +1271,7 @@
     "language": "c", 
     "name": "hpack_parser_test", 
     "src": [
-      "test/core/transport/chttp2/hpack_parser_test.c"
+      "test/core/transport/chttp2/hpack_parser_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1263,7 +1288,7 @@
     "language": "c", 
     "name": "hpack_table_test", 
     "src": [
-      "test/core/transport/chttp2/hpack_table_test.c"
+      "test/core/transport/chttp2/hpack_table_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1280,7 +1305,7 @@
     "language": "c", 
     "name": "http_parser_test", 
     "src": [
-      "test/core/http/parser_test.c"
+      "test/core/http/parser_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1297,7 +1322,7 @@
     "language": "c", 
     "name": "http_request_fuzzer_test", 
     "src": [
-      "test/core/http/request_fuzzer.c"
+      "test/core/http/request_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1314,7 +1339,7 @@
     "language": "c", 
     "name": "http_response_fuzzer_test", 
     "src": [
-      "test/core/http/response_fuzzer.c"
+      "test/core/http/response_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1331,7 +1356,7 @@
     "language": "c", 
     "name": "httpcli_format_request_test", 
     "src": [
-      "test/core/http/format_request_test.c"
+      "test/core/http/format_request_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1348,7 +1373,7 @@
     "language": "c", 
     "name": "httpcli_test", 
     "src": [
-      "test/core/http/httpcli_test.c"
+      "test/core/http/httpcli_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1365,7 +1390,7 @@
     "language": "c", 
     "name": "httpscli_test", 
     "src": [
-      "test/core/http/httpscli_test.c"
+      "test/core/http/httpscli_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1382,7 +1407,7 @@
     "language": "c", 
     "name": "init_test", 
     "src": [
-      "test/core/surface/init_test.c"
+      "test/core/surface/init_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1399,7 +1424,7 @@
     "language": "c", 
     "name": "invalid_call_argument_test", 
     "src": [
-      "test/core/end2end/invalid_call_argument_test.c"
+      "test/core/end2end/invalid_call_argument_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1416,7 +1441,7 @@
     "language": "c", 
     "name": "json_fuzzer_test", 
     "src": [
-      "test/core/json/fuzzer.c"
+      "test/core/json/fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1431,7 +1456,7 @@
     "language": "c", 
     "name": "json_rewrite", 
     "src": [
-      "test/core/json/json_rewrite.c"
+      "test/core/json/json_rewrite.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1448,7 +1473,7 @@
     "language": "c", 
     "name": "json_rewrite_test", 
     "src": [
-      "test/core/json/json_rewrite_test.c"
+      "test/core/json/json_rewrite_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1465,7 +1490,7 @@
     "language": "c", 
     "name": "json_stream_error_test", 
     "src": [
-      "test/core/json/json_stream_error_test.c"
+      "test/core/json/json_stream_error_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1482,7 +1507,7 @@
     "language": "c", 
     "name": "json_test", 
     "src": [
-      "test/core/json/json_test.c"
+      "test/core/json/json_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1499,7 +1524,7 @@
     "language": "c", 
     "name": "lame_client_test", 
     "src": [
-      "test/core/surface/lame_client_test.c"
+      "test/core/surface/lame_client_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1516,7 +1541,7 @@
     "language": "c", 
     "name": "lb_policies_test", 
     "src": [
-      "test/core/client_channel/lb_policies_test.c"
+      "test/core/client_channel/lb_policies_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1533,7 +1558,7 @@
     "language": "c", 
     "name": "load_file_test", 
     "src": [
-      "test/core/iomgr/load_file_test.c"
+      "test/core/iomgr/load_file_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1550,7 +1575,7 @@
     "language": "c", 
     "name": "low_level_ping_pong_benchmark", 
     "src": [
-      "test/core/network_benchmarks/low_level_ping_pong.c"
+      "test/core/network_benchmarks/low_level_ping_pong.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1567,7 +1592,7 @@
     "language": "c", 
     "name": "memory_profile_client", 
     "src": [
-      "test/core/memory_usage/client.c"
+      "test/core/memory_usage/client.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1584,7 +1609,7 @@
     "language": "c", 
     "name": "memory_profile_server", 
     "src": [
-      "test/core/memory_usage/server.c"
+      "test/core/memory_usage/server.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1601,7 +1626,7 @@
     "language": "c", 
     "name": "memory_profile_test", 
     "src": [
-      "test/core/memory_usage/memory_usage_test.c"
+      "test/core/memory_usage/memory_usage_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1618,7 +1643,7 @@
     "language": "c", 
     "name": "message_compress_test", 
     "src": [
-      "test/core/compression/message_compress_test.c"
+      "test/core/compression/message_compress_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1635,7 +1660,7 @@
     "language": "c", 
     "name": "minimal_stack_is_minimal_test", 
     "src": [
-      "test/core/channel/minimal_stack_is_minimal_test.c"
+      "test/core/channel/minimal_stack_is_minimal_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1652,7 +1677,7 @@
     "language": "c", 
     "name": "multiple_server_queues_test", 
     "src": [
-      "test/core/end2end/multiple_server_queues_test.c"
+      "test/core/end2end/multiple_server_queues_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1667,7 +1692,7 @@
     "language": "c", 
     "name": "murmur_hash_test", 
     "src": [
-      "test/core/support/murmur_hash_test.c"
+      "test/core/support/murmur_hash_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1684,7 +1709,7 @@
     "language": "c", 
     "name": "nanopb_fuzzer_response_test", 
     "src": [
-      "test/core/nanopb/fuzzer_response.c"
+      "test/core/nanopb/fuzzer_response.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1701,7 +1726,7 @@
     "language": "c", 
     "name": "nanopb_fuzzer_serverlist_test", 
     "src": [
-      "test/core/nanopb/fuzzer_serverlist.c"
+      "test/core/nanopb/fuzzer_serverlist.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1718,7 +1743,7 @@
     "language": "c", 
     "name": "no_server_test", 
     "src": [
-      "test/core/end2end/no_server_test.c"
+      "test/core/end2end/no_server_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1735,7 +1760,7 @@
     "language": "c", 
     "name": "num_external_connectivity_watchers_test", 
     "src": [
-      "test/core/surface/num_external_connectivity_watchers_test.c"
+      "test/core/surface/num_external_connectivity_watchers_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1752,7 +1777,7 @@
     "language": "c", 
     "name": "parse_address_test", 
     "src": [
-      "test/core/client_channel/parse_address_test.c"
+      "test/core/client_channel/parse_address_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1769,7 +1794,7 @@
     "language": "c", 
     "name": "percent_decode_fuzzer", 
     "src": [
-      "test/core/slice/percent_decode_fuzzer.c"
+      "test/core/slice/percent_decode_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1786,7 +1811,7 @@
     "language": "c", 
     "name": "percent_encode_fuzzer", 
     "src": [
-      "test/core/slice/percent_encode_fuzzer.c"
+      "test/core/slice/percent_encode_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1803,7 +1828,7 @@
     "language": "c", 
     "name": "percent_encoding_test", 
     "src": [
-      "test/core/slice/percent_encoding_test.c"
+      "test/core/slice/percent_encoding_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1820,7 +1845,7 @@
     "language": "c", 
     "name": "pollset_set_test", 
     "src": [
-      "test/core/iomgr/pollset_set_test.c"
+      "test/core/iomgr/pollset_set_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1837,7 +1862,7 @@
     "language": "c", 
     "name": "resolve_address_posix_test", 
     "src": [
-      "test/core/iomgr/resolve_address_posix_test.c"
+      "test/core/iomgr/resolve_address_posix_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1854,7 +1879,7 @@
     "language": "c", 
     "name": "resolve_address_test", 
     "src": [
-      "test/core/iomgr/resolve_address_test.c"
+      "test/core/iomgr/resolve_address_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1871,7 +1896,7 @@
     "language": "c", 
     "name": "resource_quota_test", 
     "src": [
-      "test/core/iomgr/resource_quota_test.c"
+      "test/core/iomgr/resource_quota_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1888,7 +1913,7 @@
     "language": "c", 
     "name": "secure_channel_create_test", 
     "src": [
-      "test/core/surface/secure_channel_create_test.c"
+      "test/core/surface/secure_channel_create_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1905,7 +1930,7 @@
     "language": "c", 
     "name": "secure_endpoint_test", 
     "src": [
-      "test/core/security/secure_endpoint_test.c"
+      "test/core/security/secure_endpoint_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1922,7 +1947,7 @@
     "language": "c", 
     "name": "sequential_connectivity_test", 
     "src": [
-      "test/core/surface/sequential_connectivity_test.c"
+      "test/core/surface/sequential_connectivity_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1939,7 +1964,7 @@
     "language": "c", 
     "name": "server_chttp2_test", 
     "src": [
-      "test/core/surface/server_chttp2_test.c"
+      "test/core/surface/server_chttp2_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1956,7 +1981,7 @@
     "language": "c", 
     "name": "server_fuzzer", 
     "src": [
-      "test/core/end2end/fuzzers/server_fuzzer.c"
+      "test/core/end2end/fuzzers/server_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1973,7 +1998,7 @@
     "language": "c", 
     "name": "server_test", 
     "src": [
-      "test/core/surface/server_test.c"
+      "test/core/surface/server_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1990,7 +2015,7 @@
     "language": "c", 
     "name": "slice_buffer_test", 
     "src": [
-      "test/core/slice/slice_buffer_test.c"
+      "test/core/slice/slice_buffer_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2007,7 +2032,7 @@
     "language": "c", 
     "name": "slice_hash_table_test", 
     "src": [
-      "test/core/slice/slice_hash_table_test.c"
+      "test/core/slice/slice_hash_table_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2024,7 +2049,7 @@
     "language": "c", 
     "name": "slice_string_helpers_test", 
     "src": [
-      "test/core/slice/slice_string_helpers_test.c"
+      "test/core/slice/slice_string_helpers_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2041,7 +2066,7 @@
     "language": "c", 
     "name": "slice_test", 
     "src": [
-      "test/core/slice/slice_test.c"
+      "test/core/slice/slice_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2058,7 +2083,7 @@
     "language": "c", 
     "name": "sockaddr_resolver_test", 
     "src": [
-      "test/core/client_channel/resolvers/sockaddr_resolver_test.c"
+      "test/core/client_channel/resolvers/sockaddr_resolver_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2075,7 +2100,7 @@
     "language": "c", 
     "name": "sockaddr_utils_test", 
     "src": [
-      "test/core/iomgr/sockaddr_utils_test.c"
+      "test/core/iomgr/sockaddr_utils_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2092,7 +2117,7 @@
     "language": "c", 
     "name": "socket_utils_test", 
     "src": [
-      "test/core/iomgr/socket_utils_test.c"
+      "test/core/iomgr/socket_utils_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2109,7 +2134,7 @@
     "language": "c", 
     "name": "ssl_server_fuzzer", 
     "src": [
-      "test/core/security/ssl_server_fuzzer.c"
+      "test/core/security/ssl_server_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2126,7 +2151,7 @@
     "language": "c", 
     "name": "ssl_transport_security_test", 
     "src": [
-      "test/core/tsi/ssl_transport_security_test.c"
+      "test/core/tsi/ssl_transport_security_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2143,7 +2168,7 @@
     "language": "c", 
     "name": "status_conversion_test", 
     "src": [
-      "test/core/transport/status_conversion_test.c"
+      "test/core/transport/status_conversion_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2160,7 +2185,7 @@
     "language": "c", 
     "name": "stream_compression_test", 
     "src": [
-      "test/core/compression/stream_compression_test.c"
+      "test/core/compression/stream_compression_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2177,7 +2202,7 @@
     "language": "c", 
     "name": "stream_owned_slice_test", 
     "src": [
-      "test/core/transport/stream_owned_slice_test.c"
+      "test/core/transport/stream_owned_slice_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2194,7 +2219,7 @@
     "language": "c", 
     "name": "tcp_client_posix_test", 
     "src": [
-      "test/core/iomgr/tcp_client_posix_test.c"
+      "test/core/iomgr/tcp_client_posix_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2211,7 +2236,7 @@
     "language": "c", 
     "name": "tcp_client_uv_test", 
     "src": [
-      "test/core/iomgr/tcp_client_uv_test.c"
+      "test/core/iomgr/tcp_client_uv_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2228,7 +2253,7 @@
     "language": "c", 
     "name": "tcp_posix_test", 
     "src": [
-      "test/core/iomgr/tcp_posix_test.c"
+      "test/core/iomgr/tcp_posix_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2245,7 +2270,7 @@
     "language": "c", 
     "name": "tcp_server_posix_test", 
     "src": [
-      "test/core/iomgr/tcp_server_posix_test.c"
+      "test/core/iomgr/tcp_server_posix_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2262,7 +2287,7 @@
     "language": "c", 
     "name": "tcp_server_uv_test", 
     "src": [
-      "test/core/iomgr/tcp_server_uv_test.c"
+      "test/core/iomgr/tcp_server_uv_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2279,7 +2304,7 @@
     "language": "c", 
     "name": "time_averaged_stats_test", 
     "src": [
-      "test/core/iomgr/time_averaged_stats_test.c"
+      "test/core/iomgr/time_averaged_stats_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2296,7 +2321,7 @@
     "language": "c", 
     "name": "timeout_encoding_test", 
     "src": [
-      "test/core/transport/timeout_encoding_test.c"
+      "test/core/transport/timeout_encoding_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2313,7 +2338,7 @@
     "language": "c", 
     "name": "timer_heap_test", 
     "src": [
-      "test/core/iomgr/timer_heap_test.c"
+      "test/core/iomgr/timer_heap_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2330,7 +2355,7 @@
     "language": "c", 
     "name": "timer_list_test", 
     "src": [
-      "test/core/iomgr/timer_list_test.c"
+      "test/core/iomgr/timer_list_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2347,7 +2372,7 @@
     "language": "c", 
     "name": "transport_connectivity_state_test", 
     "src": [
-      "test/core/transport/connectivity_state_test.c"
+      "test/core/transport/connectivity_state_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2364,7 +2389,7 @@
     "language": "c", 
     "name": "transport_metadata_test", 
     "src": [
-      "test/core/transport/metadata_test.c"
+      "test/core/transport/metadata_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2381,7 +2406,7 @@
     "language": "c", 
     "name": "transport_security_test", 
     "src": [
-      "test/core/tsi/transport_security_test.c"
+      "test/core/tsi/transport_security_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2398,7 +2423,7 @@
     "language": "c", 
     "name": "udp_server_test", 
     "src": [
-      "test/core/iomgr/udp_server_test.c"
+      "test/core/iomgr/udp_server_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2415,7 +2440,7 @@
     "language": "c", 
     "name": "uri_fuzzer_test", 
     "src": [
-      "test/core/client_channel/uri_fuzzer_test.c"
+      "test/core/client_channel/uri_fuzzer_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2432,7 +2457,7 @@
     "language": "c", 
     "name": "uri_parser_test", 
     "src": [
-      "test/core/client_channel/uri_parser_test.c"
+      "test/core/client_channel/uri_parser_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2449,7 +2474,7 @@
     "language": "c", 
     "name": "wakeup_fd_cv_test", 
     "src": [
-      "test/core/iomgr/wakeup_fd_cv_test.c"
+      "test/core/iomgr/wakeup_fd_cv_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2871,6 +2896,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "chttp2_settings_timeout_test", 
+    "src": [
+      "test/core/transport/chttp2/settings_timeout_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc++", 
       "grpc++_test_util", 
       "grpc_cli_libs", 
@@ -2882,6 +2924,29 @@
     "name": "cli_call_test", 
     "src": [
       "test/cpp/util/cli_call_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_channel_stress_test", 
+    "src": [
+      "test/cpp/client/client_channel_stress_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3860,6 +3925,44 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "ref_counted_ptr_test", 
+    "src": [
+      "test/core/support/ref_counted_ptr_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "ref_counted_test", 
+    "src": [
+      "test/core/support/ref_counted_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -4194,25 +4297,6 @@
     "name": "transport_pid_controller_test", 
     "src": [
       "test/core/transport/pid_controller_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "vector_test", 
-    "src": [
-      "test/core/support/vector_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4796,7 +4880,7 @@
     "language": "c", 
     "name": "badreq_bad_client_test", 
     "src": [
-      "test/core/bad_client/tests/badreq.c"
+      "test/core/bad_client/tests/badreq.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4814,7 +4898,7 @@
     "language": "c", 
     "name": "connection_prefix_bad_client_test", 
     "src": [
-      "test/core/bad_client/tests/connection_prefix.c"
+      "test/core/bad_client/tests/connection_prefix.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4832,7 +4916,7 @@
     "language": "c", 
     "name": "head_of_line_blocking_bad_client_test", 
     "src": [
-      "test/core/bad_client/tests/head_of_line_blocking.c"
+      "test/core/bad_client/tests/head_of_line_blocking.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4850,7 +4934,7 @@
     "language": "c", 
     "name": "headers_bad_client_test", 
     "src": [
-      "test/core/bad_client/tests/headers.c"
+      "test/core/bad_client/tests/headers.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4868,7 +4952,7 @@
     "language": "c", 
     "name": "initial_settings_frame_bad_client_test", 
     "src": [
-      "test/core/bad_client/tests/initial_settings_frame.c"
+      "test/core/bad_client/tests/initial_settings_frame.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4886,7 +4970,7 @@
     "language": "c", 
     "name": "server_registered_method_bad_client_test", 
     "src": [
-      "test/core/bad_client/tests/server_registered_method.c"
+      "test/core/bad_client/tests/server_registered_method.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4904,7 +4988,7 @@
     "language": "c", 
     "name": "simple_request_bad_client_test", 
     "src": [
-      "test/core/bad_client/tests/simple_request.c"
+      "test/core/bad_client/tests/simple_request.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4922,7 +5006,7 @@
     "language": "c", 
     "name": "unknown_frame_bad_client_test", 
     "src": [
-      "test/core/bad_client/tests/unknown_frame.c"
+      "test/core/bad_client/tests/unknown_frame.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4940,7 +5024,7 @@
     "language": "c", 
     "name": "window_overflow_bad_client_test", 
     "src": [
-      "test/core/bad_client/tests/window_overflow.c"
+      "test/core/bad_client/tests/window_overflow.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4958,7 +5042,7 @@
     "language": "c", 
     "name": "bad_ssl_cert_server", 
     "src": [
-      "test/core/bad_ssl/servers/cert.c"
+      "test/core/bad_ssl/servers/cert.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4975,7 +5059,7 @@
     "language": "c", 
     "name": "bad_ssl_cert_test", 
     "src": [
-      "test/core/bad_ssl/bad_ssl_test.c"
+      "test/core/bad_ssl/bad_ssl_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4993,7 +5077,7 @@
     "language": "c", 
     "name": "h2_census_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_census.c"
+      "test/core/end2end/fixtures/h2_census.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5011,7 +5095,7 @@
     "language": "c", 
     "name": "h2_compress_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_compress.c"
+      "test/core/end2end/fixtures/h2_compress.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5029,7 +5113,7 @@
     "language": "c", 
     "name": "h2_fakesec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_fakesec.c"
+      "test/core/end2end/fixtures/h2_fakesec.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5047,7 +5131,7 @@
     "language": "c", 
     "name": "h2_fd_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_fd.c"
+      "test/core/end2end/fixtures/h2_fd.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5065,7 +5149,7 @@
     "language": "c", 
     "name": "h2_full_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_full.c"
+      "test/core/end2end/fixtures/h2_full.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5083,7 +5167,7 @@
     "language": "c", 
     "name": "h2_full+pipe_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_full+pipe.c"
+      "test/core/end2end/fixtures/h2_full+pipe.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5101,7 +5185,7 @@
     "language": "c", 
     "name": "h2_full+trace_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_full+trace.c"
+      "test/core/end2end/fixtures/h2_full+trace.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5119,7 +5203,7 @@
     "language": "c", 
     "name": "h2_full+workarounds_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_full+workarounds.c"
+      "test/core/end2end/fixtures/h2_full+workarounds.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5137,7 +5221,7 @@
     "language": "c", 
     "name": "h2_http_proxy_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_http_proxy.c"
+      "test/core/end2end/fixtures/h2_http_proxy.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5155,7 +5239,7 @@
     "language": "c", 
     "name": "h2_load_reporting_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.c"
+      "test/core/end2end/fixtures/h2_load_reporting.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5173,7 +5257,7 @@
     "language": "c", 
     "name": "h2_oauth2_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_oauth2.c"
+      "test/core/end2end/fixtures/h2_oauth2.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5191,7 +5275,7 @@
     "language": "c", 
     "name": "h2_proxy_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_proxy.c"
+      "test/core/end2end/fixtures/h2_proxy.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5209,7 +5293,7 @@
     "language": "c", 
     "name": "h2_sockpair_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_sockpair.c"
+      "test/core/end2end/fixtures/h2_sockpair.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5227,7 +5311,7 @@
     "language": "c", 
     "name": "h2_sockpair+trace_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_sockpair+trace.c"
+      "test/core/end2end/fixtures/h2_sockpair+trace.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5245,7 +5329,7 @@
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
+      "test/core/end2end/fixtures/h2_sockpair_1byte.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5263,7 +5347,7 @@
     "language": "c", 
     "name": "h2_ssl_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_ssl.c"
+      "test/core/end2end/fixtures/h2_ssl.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5281,7 +5365,7 @@
     "language": "c", 
     "name": "h2_ssl_proxy_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_ssl_proxy.c"
+      "test/core/end2end/fixtures/h2_ssl_proxy.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5299,7 +5383,7 @@
     "language": "c", 
     "name": "h2_uds_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_uds.c"
+      "test/core/end2end/fixtures/h2_uds.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5317,7 +5401,7 @@
     "language": "c", 
     "name": "inproc_test", 
     "src": [
-      "test/core/end2end/fixtures/inproc.c"
+      "test/core/end2end/fixtures/inproc.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5335,7 +5419,7 @@
     "language": "c", 
     "name": "h2_census_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_census.c"
+      "test/core/end2end/fixtures/h2_census.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5353,7 +5437,7 @@
     "language": "c", 
     "name": "h2_compress_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_compress.c"
+      "test/core/end2end/fixtures/h2_compress.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5371,7 +5455,7 @@
     "language": "c", 
     "name": "h2_fd_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_fd.c"
+      "test/core/end2end/fixtures/h2_fd.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5389,7 +5473,7 @@
     "language": "c", 
     "name": "h2_full_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_full.c"
+      "test/core/end2end/fixtures/h2_full.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5407,7 +5491,7 @@
     "language": "c", 
     "name": "h2_full+pipe_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_full+pipe.c"
+      "test/core/end2end/fixtures/h2_full+pipe.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5425,7 +5509,7 @@
     "language": "c", 
     "name": "h2_full+trace_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_full+trace.c"
+      "test/core/end2end/fixtures/h2_full+trace.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5443,7 +5527,7 @@
     "language": "c", 
     "name": "h2_full+workarounds_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_full+workarounds.c"
+      "test/core/end2end/fixtures/h2_full+workarounds.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5461,7 +5545,7 @@
     "language": "c", 
     "name": "h2_http_proxy_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_http_proxy.c"
+      "test/core/end2end/fixtures/h2_http_proxy.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5479,7 +5563,7 @@
     "language": "c", 
     "name": "h2_load_reporting_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.c"
+      "test/core/end2end/fixtures/h2_load_reporting.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5497,7 +5581,7 @@
     "language": "c", 
     "name": "h2_proxy_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_proxy.c"
+      "test/core/end2end/fixtures/h2_proxy.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5515,7 +5599,7 @@
     "language": "c", 
     "name": "h2_sockpair_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_sockpair.c"
+      "test/core/end2end/fixtures/h2_sockpair.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5533,7 +5617,7 @@
     "language": "c", 
     "name": "h2_sockpair+trace_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_sockpair+trace.c"
+      "test/core/end2end/fixtures/h2_sockpair+trace.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5551,7 +5635,7 @@
     "language": "c", 
     "name": "h2_sockpair_1byte_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
+      "test/core/end2end/fixtures/h2_sockpair_1byte.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5569,7 +5653,7 @@
     "language": "c", 
     "name": "h2_uds_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_uds.c"
+      "test/core/end2end/fixtures/h2_uds.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5587,7 +5671,7 @@
     "language": "c", 
     "name": "inproc_nosec_test", 
     "src": [
-      "test/core/end2end/fixtures/inproc.c"
+      "test/core/end2end/fixtures/inproc.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5684,8 +5768,8 @@
     "language": "c", 
     "name": "api_fuzzer_one_entry", 
     "src": [
-      "test/core/end2end/fuzzers/api_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/end2end/fuzzers/api_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5702,8 +5786,8 @@
     "language": "c", 
     "name": "client_fuzzer_one_entry", 
     "src": [
-      "test/core/end2end/fuzzers/client_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/end2end/fuzzers/client_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5720,8 +5804,8 @@
     "language": "c", 
     "name": "hpack_parser_fuzzer_test_one_entry", 
     "src": [
-      "test/core/transport/chttp2/hpack_parser_fuzzer_test.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/transport/chttp2/hpack_parser_fuzzer_test.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5738,8 +5822,8 @@
     "language": "c", 
     "name": "http_request_fuzzer_test_one_entry", 
     "src": [
-      "test/core/http/request_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/http/request_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5756,8 +5840,8 @@
     "language": "c", 
     "name": "http_response_fuzzer_test_one_entry", 
     "src": [
-      "test/core/http/response_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/http/response_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5774,8 +5858,8 @@
     "language": "c", 
     "name": "json_fuzzer_test_one_entry", 
     "src": [
-      "test/core/json/fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/json/fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5792,8 +5876,8 @@
     "language": "c", 
     "name": "nanopb_fuzzer_response_test_one_entry", 
     "src": [
-      "test/core/nanopb/fuzzer_response.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/nanopb/fuzzer_response.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5810,8 +5894,8 @@
     "language": "c", 
     "name": "nanopb_fuzzer_serverlist_test_one_entry", 
     "src": [
-      "test/core/nanopb/fuzzer_serverlist.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/nanopb/fuzzer_serverlist.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5828,8 +5912,8 @@
     "language": "c", 
     "name": "percent_decode_fuzzer_one_entry", 
     "src": [
-      "test/core/slice/percent_decode_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/slice/percent_decode_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5846,8 +5930,8 @@
     "language": "c", 
     "name": "percent_encode_fuzzer_one_entry", 
     "src": [
-      "test/core/slice/percent_encode_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/slice/percent_encode_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5864,8 +5948,8 @@
     "language": "c", 
     "name": "server_fuzzer_one_entry", 
     "src": [
-      "test/core/end2end/fuzzers/server_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/end2end/fuzzers/server_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5882,8 +5966,8 @@
     "language": "c", 
     "name": "ssl_server_fuzzer_one_entry", 
     "src": [
-      "test/core/security/ssl_server_fuzzer.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/security/ssl_server_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5900,8 +5984,8 @@
     "language": "c", 
     "name": "uri_fuzzer_test_one_entry", 
     "src": [
-      "test/core/client_channel/uri_fuzzer_test.c", 
-      "test/core/util/one_corpus_entry_fuzzer.c"
+      "test/core/client_channel/uri_fuzzer_test.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5929,7 +6013,7 @@
     "language": "c", 
     "name": "gpr_test_util", 
     "src": [
-      "test/core/util/test_config.c", 
+      "test/core/util/test_config.cc", 
       "test/core/util/test_config.h"
     ], 
     "third_party": false, 
@@ -6016,12 +6100,12 @@
     "language": "c", 
     "name": "grpc_test_util", 
     "src": [
-      "test/core/end2end/data/client_certs.c", 
-      "test/core/end2end/data/server1_cert.c", 
-      "test/core/end2end/data/server1_key.c", 
+      "test/core/end2end/data/client_certs.cc", 
+      "test/core/end2end/data/server1_cert.cc", 
+      "test/core/end2end/data/server1_key.cc", 
       "test/core/end2end/data/ssl_test_data.h", 
-      "test/core/end2end/data/test_root_cert.c", 
-      "test/core/security/oauth2_utils.c", 
+      "test/core/end2end/data/test_root_cert.cc", 
+      "test/core/security/oauth2_utils.cc", 
       "test/core/security/oauth2_utils.h"
     ], 
     "third_party": false, 
@@ -6090,7 +6174,7 @@
     "language": "c", 
     "name": "reconnect_server", 
     "src": [
-      "test/core/util/reconnect_server.c", 
+      "test/core/util/reconnect_server.cc", 
       "test/core/util/reconnect_server.h"
     ], 
     "third_party": false, 
@@ -6110,7 +6194,7 @@
     "language": "c", 
     "name": "test_tcp_server", 
     "src": [
-      "test/core/util/test_tcp_server.c", 
+      "test/core/util/test_tcp_server.cc", 
       "test/core/util/test_tcp_server.h"
     ], 
     "third_party": false, 
@@ -7467,7 +7551,7 @@
     "language": "c", 
     "name": "bad_client_test", 
     "src": [
-      "test/core/bad_client/bad_client.c", 
+      "test/core/bad_client/bad_client.cc", 
       "test/core/bad_client/bad_client.h"
     ], 
     "third_party": false, 
@@ -7487,7 +7571,7 @@
     "language": "c", 
     "name": "bad_ssl_test_server", 
     "src": [
-      "test/core/bad_ssl/server_common.c", 
+      "test/core/bad_ssl/server_common.cc", 
       "test/core/bad_ssl/server_common.h"
     ], 
     "third_party": false, 
@@ -7508,69 +7592,69 @@
     "language": "c", 
     "name": "end2end_tests", 
     "src": [
-      "test/core/end2end/end2end_test_utils.c", 
-      "test/core/end2end/end2end_tests.c", 
+      "test/core/end2end/end2end_test_utils.cc", 
+      "test/core/end2end/end2end_tests.cc", 
       "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/tests/authority_not_supported.c", 
-      "test/core/end2end/tests/bad_hostname.c", 
-      "test/core/end2end/tests/bad_ping.c", 
-      "test/core/end2end/tests/binary_metadata.c", 
-      "test/core/end2end/tests/call_creds.c", 
-      "test/core/end2end/tests/cancel_after_accept.c", 
-      "test/core/end2end/tests/cancel_after_client_done.c", 
-      "test/core/end2end/tests/cancel_after_invoke.c", 
-      "test/core/end2end/tests/cancel_after_round_trip.c", 
-      "test/core/end2end/tests/cancel_before_invoke.c", 
-      "test/core/end2end/tests/cancel_in_a_vacuum.c", 
+      "test/core/end2end/tests/authority_not_supported.cc", 
+      "test/core/end2end/tests/bad_hostname.cc", 
+      "test/core/end2end/tests/bad_ping.cc", 
+      "test/core/end2end/tests/binary_metadata.cc", 
+      "test/core/end2end/tests/call_creds.cc", 
+      "test/core/end2end/tests/cancel_after_accept.cc", 
+      "test/core/end2end/tests/cancel_after_client_done.cc", 
+      "test/core/end2end/tests/cancel_after_invoke.cc", 
+      "test/core/end2end/tests/cancel_after_round_trip.cc", 
+      "test/core/end2end/tests/cancel_before_invoke.cc", 
+      "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
-      "test/core/end2end/tests/cancel_with_status.c", 
-      "test/core/end2end/tests/compressed_payload.c", 
-      "test/core/end2end/tests/connectivity.c", 
-      "test/core/end2end/tests/default_host.c", 
-      "test/core/end2end/tests/disappearing_server.c", 
-      "test/core/end2end/tests/empty_batch.c", 
-      "test/core/end2end/tests/filter_call_init_fails.c", 
-      "test/core/end2end/tests/filter_causes_close.c", 
-      "test/core/end2end/tests/filter_latency.c", 
-      "test/core/end2end/tests/graceful_server_shutdown.c", 
-      "test/core/end2end/tests/high_initial_seqno.c", 
-      "test/core/end2end/tests/hpack_size.c", 
-      "test/core/end2end/tests/idempotent_request.c", 
-      "test/core/end2end/tests/invoke_large_request.c", 
-      "test/core/end2end/tests/keepalive_timeout.c", 
-      "test/core/end2end/tests/large_metadata.c", 
-      "test/core/end2end/tests/load_reporting_hook.c", 
-      "test/core/end2end/tests/max_concurrent_streams.c", 
-      "test/core/end2end/tests/max_connection_age.c", 
-      "test/core/end2end/tests/max_connection_idle.c", 
-      "test/core/end2end/tests/max_message_length.c", 
-      "test/core/end2end/tests/negative_deadline.c", 
-      "test/core/end2end/tests/network_status_change.c", 
-      "test/core/end2end/tests/no_logging.c", 
-      "test/core/end2end/tests/no_op.c", 
-      "test/core/end2end/tests/payload.c", 
-      "test/core/end2end/tests/ping.c", 
-      "test/core/end2end/tests/ping_pong_streaming.c", 
-      "test/core/end2end/tests/proxy_auth.c", 
-      "test/core/end2end/tests/registered_call.c", 
-      "test/core/end2end/tests/request_with_flags.c", 
-      "test/core/end2end/tests/request_with_payload.c", 
-      "test/core/end2end/tests/resource_quota_server.c", 
-      "test/core/end2end/tests/server_finishes_request.c", 
-      "test/core/end2end/tests/shutdown_finishes_calls.c", 
-      "test/core/end2end/tests/shutdown_finishes_tags.c", 
-      "test/core/end2end/tests/simple_cacheable_request.c", 
-      "test/core/end2end/tests/simple_delayed_request.c", 
-      "test/core/end2end/tests/simple_metadata.c", 
-      "test/core/end2end/tests/simple_request.c", 
-      "test/core/end2end/tests/stream_compression_compressed_payload.c", 
-      "test/core/end2end/tests/stream_compression_payload.c", 
-      "test/core/end2end/tests/stream_compression_ping_pong_streaming.c", 
-      "test/core/end2end/tests/streaming_error_response.c", 
-      "test/core/end2end/tests/trailing_metadata.c", 
-      "test/core/end2end/tests/workaround_cronet_compression.c", 
-      "test/core/end2end/tests/write_buffering.c", 
-      "test/core/end2end/tests/write_buffering_at_end.c"
+      "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/compressed_payload.cc", 
+      "test/core/end2end/tests/connectivity.cc", 
+      "test/core/end2end/tests/default_host.cc", 
+      "test/core/end2end/tests/disappearing_server.cc", 
+      "test/core/end2end/tests/empty_batch.cc", 
+      "test/core/end2end/tests/filter_call_init_fails.cc", 
+      "test/core/end2end/tests/filter_causes_close.cc", 
+      "test/core/end2end/tests/filter_latency.cc", 
+      "test/core/end2end/tests/graceful_server_shutdown.cc", 
+      "test/core/end2end/tests/high_initial_seqno.cc", 
+      "test/core/end2end/tests/hpack_size.cc", 
+      "test/core/end2end/tests/idempotent_request.cc", 
+      "test/core/end2end/tests/invoke_large_request.cc", 
+      "test/core/end2end/tests/keepalive_timeout.cc", 
+      "test/core/end2end/tests/large_metadata.cc", 
+      "test/core/end2end/tests/load_reporting_hook.cc", 
+      "test/core/end2end/tests/max_concurrent_streams.cc", 
+      "test/core/end2end/tests/max_connection_age.cc", 
+      "test/core/end2end/tests/max_connection_idle.cc", 
+      "test/core/end2end/tests/max_message_length.cc", 
+      "test/core/end2end/tests/negative_deadline.cc", 
+      "test/core/end2end/tests/network_status_change.cc", 
+      "test/core/end2end/tests/no_logging.cc", 
+      "test/core/end2end/tests/no_op.cc", 
+      "test/core/end2end/tests/payload.cc", 
+      "test/core/end2end/tests/ping.cc", 
+      "test/core/end2end/tests/ping_pong_streaming.cc", 
+      "test/core/end2end/tests/proxy_auth.cc", 
+      "test/core/end2end/tests/registered_call.cc", 
+      "test/core/end2end/tests/request_with_flags.cc", 
+      "test/core/end2end/tests/request_with_payload.cc", 
+      "test/core/end2end/tests/resource_quota_server.cc", 
+      "test/core/end2end/tests/server_finishes_request.cc", 
+      "test/core/end2end/tests/shutdown_finishes_calls.cc", 
+      "test/core/end2end/tests/shutdown_finishes_tags.cc", 
+      "test/core/end2end/tests/simple_cacheable_request.cc", 
+      "test/core/end2end/tests/simple_delayed_request.cc", 
+      "test/core/end2end/tests/simple_metadata.cc", 
+      "test/core/end2end/tests/simple_request.cc", 
+      "test/core/end2end/tests/stream_compression_compressed_payload.cc", 
+      "test/core/end2end/tests/stream_compression_payload.cc", 
+      "test/core/end2end/tests/stream_compression_ping_pong_streaming.cc", 
+      "test/core/end2end/tests/streaming_error_response.cc", 
+      "test/core/end2end/tests/trailing_metadata.cc", 
+      "test/core/end2end/tests/workaround_cronet_compression.cc", 
+      "test/core/end2end/tests/write_buffering.cc", 
+      "test/core/end2end/tests/write_buffering_at_end.cc"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -7590,68 +7674,68 @@
     "language": "c", 
     "name": "end2end_nosec_tests", 
     "src": [
-      "test/core/end2end/end2end_nosec_tests.c", 
-      "test/core/end2end/end2end_test_utils.c", 
+      "test/core/end2end/end2end_nosec_tests.cc", 
+      "test/core/end2end/end2end_test_utils.cc", 
       "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/tests/authority_not_supported.c", 
-      "test/core/end2end/tests/bad_hostname.c", 
-      "test/core/end2end/tests/bad_ping.c", 
-      "test/core/end2end/tests/binary_metadata.c", 
-      "test/core/end2end/tests/cancel_after_accept.c", 
-      "test/core/end2end/tests/cancel_after_client_done.c", 
-      "test/core/end2end/tests/cancel_after_invoke.c", 
-      "test/core/end2end/tests/cancel_after_round_trip.c", 
-      "test/core/end2end/tests/cancel_before_invoke.c", 
-      "test/core/end2end/tests/cancel_in_a_vacuum.c", 
+      "test/core/end2end/tests/authority_not_supported.cc", 
+      "test/core/end2end/tests/bad_hostname.cc", 
+      "test/core/end2end/tests/bad_ping.cc", 
+      "test/core/end2end/tests/binary_metadata.cc", 
+      "test/core/end2end/tests/cancel_after_accept.cc", 
+      "test/core/end2end/tests/cancel_after_client_done.cc", 
+      "test/core/end2end/tests/cancel_after_invoke.cc", 
+      "test/core/end2end/tests/cancel_after_round_trip.cc", 
+      "test/core/end2end/tests/cancel_before_invoke.cc", 
+      "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
-      "test/core/end2end/tests/cancel_with_status.c", 
-      "test/core/end2end/tests/compressed_payload.c", 
-      "test/core/end2end/tests/connectivity.c", 
-      "test/core/end2end/tests/default_host.c", 
-      "test/core/end2end/tests/disappearing_server.c", 
-      "test/core/end2end/tests/empty_batch.c", 
-      "test/core/end2end/tests/filter_call_init_fails.c", 
-      "test/core/end2end/tests/filter_causes_close.c", 
-      "test/core/end2end/tests/filter_latency.c", 
-      "test/core/end2end/tests/graceful_server_shutdown.c", 
-      "test/core/end2end/tests/high_initial_seqno.c", 
-      "test/core/end2end/tests/hpack_size.c", 
-      "test/core/end2end/tests/idempotent_request.c", 
-      "test/core/end2end/tests/invoke_large_request.c", 
-      "test/core/end2end/tests/keepalive_timeout.c", 
-      "test/core/end2end/tests/large_metadata.c", 
-      "test/core/end2end/tests/load_reporting_hook.c", 
-      "test/core/end2end/tests/max_concurrent_streams.c", 
-      "test/core/end2end/tests/max_connection_age.c", 
-      "test/core/end2end/tests/max_connection_idle.c", 
-      "test/core/end2end/tests/max_message_length.c", 
-      "test/core/end2end/tests/negative_deadline.c", 
-      "test/core/end2end/tests/network_status_change.c", 
-      "test/core/end2end/tests/no_logging.c", 
-      "test/core/end2end/tests/no_op.c", 
-      "test/core/end2end/tests/payload.c", 
-      "test/core/end2end/tests/ping.c", 
-      "test/core/end2end/tests/ping_pong_streaming.c", 
-      "test/core/end2end/tests/proxy_auth.c", 
-      "test/core/end2end/tests/registered_call.c", 
-      "test/core/end2end/tests/request_with_flags.c", 
-      "test/core/end2end/tests/request_with_payload.c", 
-      "test/core/end2end/tests/resource_quota_server.c", 
-      "test/core/end2end/tests/server_finishes_request.c", 
-      "test/core/end2end/tests/shutdown_finishes_calls.c", 
-      "test/core/end2end/tests/shutdown_finishes_tags.c", 
-      "test/core/end2end/tests/simple_cacheable_request.c", 
-      "test/core/end2end/tests/simple_delayed_request.c", 
-      "test/core/end2end/tests/simple_metadata.c", 
-      "test/core/end2end/tests/simple_request.c", 
-      "test/core/end2end/tests/stream_compression_compressed_payload.c", 
-      "test/core/end2end/tests/stream_compression_payload.c", 
-      "test/core/end2end/tests/stream_compression_ping_pong_streaming.c", 
-      "test/core/end2end/tests/streaming_error_response.c", 
-      "test/core/end2end/tests/trailing_metadata.c", 
-      "test/core/end2end/tests/workaround_cronet_compression.c", 
-      "test/core/end2end/tests/write_buffering.c", 
-      "test/core/end2end/tests/write_buffering_at_end.c"
+      "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/compressed_payload.cc", 
+      "test/core/end2end/tests/connectivity.cc", 
+      "test/core/end2end/tests/default_host.cc", 
+      "test/core/end2end/tests/disappearing_server.cc", 
+      "test/core/end2end/tests/empty_batch.cc", 
+      "test/core/end2end/tests/filter_call_init_fails.cc", 
+      "test/core/end2end/tests/filter_causes_close.cc", 
+      "test/core/end2end/tests/filter_latency.cc", 
+      "test/core/end2end/tests/graceful_server_shutdown.cc", 
+      "test/core/end2end/tests/high_initial_seqno.cc", 
+      "test/core/end2end/tests/hpack_size.cc", 
+      "test/core/end2end/tests/idempotent_request.cc", 
+      "test/core/end2end/tests/invoke_large_request.cc", 
+      "test/core/end2end/tests/keepalive_timeout.cc", 
+      "test/core/end2end/tests/large_metadata.cc", 
+      "test/core/end2end/tests/load_reporting_hook.cc", 
+      "test/core/end2end/tests/max_concurrent_streams.cc", 
+      "test/core/end2end/tests/max_connection_age.cc", 
+      "test/core/end2end/tests/max_connection_idle.cc", 
+      "test/core/end2end/tests/max_message_length.cc", 
+      "test/core/end2end/tests/negative_deadline.cc", 
+      "test/core/end2end/tests/network_status_change.cc", 
+      "test/core/end2end/tests/no_logging.cc", 
+      "test/core/end2end/tests/no_op.cc", 
+      "test/core/end2end/tests/payload.cc", 
+      "test/core/end2end/tests/ping.cc", 
+      "test/core/end2end/tests/ping_pong_streaming.cc", 
+      "test/core/end2end/tests/proxy_auth.cc", 
+      "test/core/end2end/tests/registered_call.cc", 
+      "test/core/end2end/tests/request_with_flags.cc", 
+      "test/core/end2end/tests/request_with_payload.cc", 
+      "test/core/end2end/tests/resource_quota_server.cc", 
+      "test/core/end2end/tests/server_finishes_request.cc", 
+      "test/core/end2end/tests/shutdown_finishes_calls.cc", 
+      "test/core/end2end/tests/shutdown_finishes_tags.cc", 
+      "test/core/end2end/tests/simple_cacheable_request.cc", 
+      "test/core/end2end/tests/simple_delayed_request.cc", 
+      "test/core/end2end/tests/simple_metadata.cc", 
+      "test/core/end2end/tests/simple_request.cc", 
+      "test/core/end2end/tests/stream_compression_compressed_payload.cc", 
+      "test/core/end2end/tests/stream_compression_payload.cc", 
+      "test/core/end2end/tests/stream_compression_ping_pong_streaming.cc", 
+      "test/core/end2end/tests/streaming_error_response.cc", 
+      "test/core/end2end/tests/trailing_metadata.cc", 
+      "test/core/end2end/tests/workaround_cronet_compression.cc", 
+      "test/core/end2end/tests/write_buffering.cc", 
+      "test/core/end2end/tests/write_buffering_at_end.cc"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -7698,7 +7782,7 @@
       "src/core/lib/support/env_linux.cc", 
       "src/core/lib/support/env_posix.cc", 
       "src/core/lib/support/env_windows.cc", 
-      "src/core/lib/support/histogram.cc", 
+      "src/core/lib/support/fork.cc", 
       "src/core/lib/support/host_port.cc", 
       "src/core/lib/support/log.cc", 
       "src/core/lib/support/log_android.cc", 
@@ -7707,7 +7791,6 @@
       "src/core/lib/support/log_windows.cc", 
       "src/core/lib/support/mpscq.cc", 
       "src/core/lib/support/murmur_hash.cc", 
-      "src/core/lib/support/stack_lockfree.cc", 
       "src/core/lib/support/string.cc", 
       "src/core/lib/support/string_posix.cc", 
       "src/core/lib/support/string_util_windows.cc", 
@@ -7746,7 +7829,6 @@
       "include/grpc/support/avl.h", 
       "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
-      "include/grpc/support/histogram.h", 
       "include/grpc/support/host_port.h", 
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
@@ -7766,19 +7848,21 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/profiling/timers.h", 
+      "src/core/lib/support/abstract.h", 
       "src/core/lib/support/arena.h", 
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
       "src/core/lib/support/env.h", 
+      "src/core/lib/support/fork.h", 
       "src/core/lib/support/manual_constructor.h", 
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/spinlock.h", 
-      "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
+      "src/core/lib/support/thd_internal.h", 
       "src/core/lib/support/time_precise.h", 
       "src/core/lib/support/tmpfile.h"
     ], 
@@ -7794,7 +7878,6 @@
       "include/grpc/support/avl.h", 
       "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
-      "include/grpc/support/histogram.h", 
       "include/grpc/support/host_port.h", 
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
@@ -7814,19 +7897,21 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/profiling/timers.h", 
+      "src/core/lib/support/abstract.h", 
       "src/core/lib/support/arena.h", 
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
       "src/core/lib/support/env.h", 
+      "src/core/lib/support/fork.h", 
       "src/core/lib/support/manual_constructor.h", 
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/spinlock.h", 
-      "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
+      "src/core/lib/support/thd_internal.h", 
       "src/core/lib/support/time_precise.h", 
       "src/core/lib/support/tmpfile.h"
     ], 
@@ -7840,6 +7925,7 @@
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 
       "include/grpc/impl/codegen/atm_windows.h", 
+      "include/grpc/impl/codegen/fork.h", 
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
@@ -7857,6 +7943,7 @@
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 
       "include/grpc/impl/codegen/atm_windows.h", 
+      "include/grpc/impl/codegen/fork.h", 
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
@@ -7930,7 +8017,6 @@
       "src/core/lib/http/httpcli.cc", 
       "src/core/lib/http/parser.cc", 
       "src/core/lib/iomgr/call_combiner.cc", 
-      "src/core/lib/iomgr/closure.cc", 
       "src/core/lib/iomgr/combiner.cc", 
       "src/core/lib/iomgr/endpoint.cc", 
       "src/core/lib/iomgr/endpoint_pair_posix.cc", 
@@ -7945,6 +8031,8 @@
       "src/core/lib/iomgr/ev_windows.cc", 
       "src/core/lib/iomgr/exec_ctx.cc", 
       "src/core/lib/iomgr/executor.cc", 
+      "src/core/lib/iomgr/fork_posix.cc", 
+      "src/core/lib/iomgr/fork_windows.cc", 
       "src/core/lib/iomgr/gethostname_fallback.cc", 
       "src/core/lib/iomgr/gethostname_host_name_max.cc", 
       "src/core/lib/iomgr/gethostname_sysconf.cc", 
@@ -8057,6 +8145,7 @@
       "include/grpc/byte_buffer.h", 
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
+      "include/grpc/fork.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
@@ -8156,7 +8245,9 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
-      "src/core/lib/support/vector.h", 
+      "src/core/lib/support/debug_location.h", 
+      "src/core/lib/support/ref_counted.h", 
+      "src/core/lib/support/ref_counted_ptr.h", 
       "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -8193,6 +8284,7 @@
       "include/grpc/byte_buffer.h", 
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
+      "include/grpc/fork.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
@@ -8292,7 +8384,9 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
-      "src/core/lib/support/vector.h", 
+      "src/core/lib/support/debug_location.h", 
+      "src/core/lib/support/ref_counted.h", 
+      "src/core/lib/support/ref_counted_ptr.h", 
       "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -8848,6 +8942,7 @@
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.h", 
+      "test/core/util/histogram.h", 
       "test/core/util/memory_counters.h", 
       "test/core/util/mock_endpoint.h", 
       "test/core/util/parse_hexstring.h", 
@@ -8855,6 +8950,7 @@
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.h"
     ], 
     "is_filegroup": true, 
@@ -8863,33 +8959,38 @@
     "src": [
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc", 
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
-      "test/core/end2end/cq_verifier.c", 
+      "test/core/end2end/cq_verifier.cc", 
       "test/core/end2end/cq_verifier.h", 
-      "test/core/end2end/fixtures/http_proxy_fixture.c", 
+      "test/core/end2end/fixtures/http_proxy_fixture.cc", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
-      "test/core/end2end/fixtures/proxy.c", 
+      "test/core/end2end/fixtures/proxy.cc", 
       "test/core/end2end/fixtures/proxy.h", 
-      "test/core/iomgr/endpoint_tests.c", 
+      "test/core/iomgr/endpoint_tests.cc", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.cc", 
       "test/core/util/debugger_macros.h", 
-      "test/core/util/grpc_profiler.c", 
+      "test/core/util/grpc_profiler.cc", 
       "test/core/util/grpc_profiler.h", 
-      "test/core/util/memory_counters.c", 
+      "test/core/util/histogram.cc", 
+      "test/core/util/histogram.h", 
+      "test/core/util/memory_counters.cc", 
       "test/core/util/memory_counters.h", 
-      "test/core/util/mock_endpoint.c", 
+      "test/core/util/mock_endpoint.cc", 
       "test/core/util/mock_endpoint.h", 
-      "test/core/util/parse_hexstring.c", 
+      "test/core/util/parse_hexstring.cc", 
       "test/core/util/parse_hexstring.h", 
-      "test/core/util/passthru_endpoint.c", 
+      "test/core/util/passthru_endpoint.cc", 
       "test/core/util/passthru_endpoint.h", 
-      "test/core/util/port.c", 
+      "test/core/util/port.cc", 
       "test/core/util/port.h", 
-      "test/core/util/port_server_client.c", 
+      "test/core/util/port_isolated_runtime_environment.cc", 
+      "test/core/util/port_server_client.cc", 
       "test/core/util/port_server_client.h", 
-      "test/core/util/slice_splitter.c", 
+      "test/core/util/slice_splitter.cc", 
       "test/core/util/slice_splitter.h", 
-      "test/core/util/trickle_endpoint.c", 
+      "test/core/util/tracer_util.cc", 
+      "test/core/util/tracer_util.h", 
+      "test/core/util/trickle_endpoint.cc", 
       "test/core/util/trickle_endpoint.h"
     ], 
     "third_party": false, 
@@ -9255,7 +9356,7 @@
     "language": "c", 
     "name": "transport_security_test_lib", 
     "src": [
-      "test/core/tsi/transport_security_test_lib.c", 
+      "test/core/tsi/transport_security_test_lib.cc", 
       "test/core/tsi/transport_security_test_lib.h"
     ], 
     "third_party": false, 

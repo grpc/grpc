@@ -93,8 +93,8 @@ grpc_handshake_manager* grpc_handshake_manager_create() {
 
 void grpc_handshake_manager_pending_list_add(grpc_handshake_manager** head,
                                              grpc_handshake_manager* mgr) {
-  GPR_ASSERT(mgr->prev == NULL);
-  GPR_ASSERT(mgr->next == NULL);
+  GPR_ASSERT(mgr->prev == nullptr);
+  GPR_ASSERT(mgr->next == nullptr);
   mgr->next = *head;
   if (*head) {
     (*head)->prev = mgr;
@@ -104,10 +104,10 @@ void grpc_handshake_manager_pending_list_add(grpc_handshake_manager** head,
 
 void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
                                                 grpc_handshake_manager* mgr) {
-  if (mgr->next != NULL) {
+  if (mgr->next != nullptr) {
     mgr->next->prev = mgr->prev;
   }
-  if (mgr->prev != NULL) {
+  if (mgr->prev != nullptr) {
     mgr->prev->next = mgr->next;
   } else {
     GPR_ASSERT(*head == mgr);
@@ -117,7 +117,7 @@ void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
 
 void grpc_handshake_manager_pending_list_shutdown_all(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why) {
-  while (head != NULL) {
+  while (head != nullptr) {
     grpc_handshake_manager_shutdown(exec_ctx, head, GRPC_ERROR_REF(why));
     head = head->next;
   }
@@ -231,14 +231,16 @@ static void on_timeout(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
-    grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
-    grpc_millis deadline, grpc_tcp_server_acceptor* acceptor,
-    grpc_iomgr_cb_func on_handshake_done, void* user_data) {
+    grpc_pollset_set* interested_parties, grpc_endpoint* endpoint,
+    const grpc_channel_args* channel_args, grpc_millis deadline,
+    grpc_tcp_server_acceptor* acceptor, grpc_iomgr_cb_func on_handshake_done,
+    void* user_data) {
   gpr_mu_lock(&mgr->mu);
   GPR_ASSERT(mgr->index == 0);
   GPR_ASSERT(!mgr->shutdown);
   // Construct handshaker args.  These will be passed through all
   // handshakers and eventually be freed by the on_handshake_done callback.
+  mgr->args.interested_parties = interested_parties;
   mgr->args.endpoint = endpoint;
   mgr->args.args = grpc_channel_args_copy(channel_args);
   mgr->args.user_data = user_data;

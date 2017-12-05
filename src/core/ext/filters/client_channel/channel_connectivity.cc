@@ -29,9 +29,9 @@
 #include "src/core/lib/surface/completion_queue.h"
 
 grpc_connectivity_state grpc_channel_check_connectivity_state(
-    grpc_channel *channel, int try_to_connect) {
+    grpc_channel* channel, int try_to_connect) {
   /* forward through to the underlying client channel */
-  grpc_channel_element *client_channel_elem =
+  grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_connectivity_state state;
@@ -66,15 +66,15 @@ typedef struct {
   grpc_closure watcher_timer_init;
   grpc_timer alarm;
   grpc_connectivity_state state;
-  grpc_completion_queue *cq;
+  grpc_completion_queue* cq;
   grpc_cq_completion completion_storage;
-  grpc_channel *channel;
-  grpc_error *error;
-  void *tag;
+  grpc_channel* channel;
+  grpc_error* error;
+  void* tag;
 } state_watcher;
 
-static void delete_state_watcher(grpc_exec_ctx *exec_ctx, state_watcher *w) {
-  grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
+static void delete_state_watcher(grpc_exec_ctx* exec_ctx, state_watcher* w) {
+  grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
       grpc_channel_get_channel_stack(w->channel));
   if (client_channel_elem->filter == &grpc_client_channel_filter) {
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->channel,
@@ -86,10 +86,10 @@ static void delete_state_watcher(grpc_exec_ctx *exec_ctx, state_watcher *w) {
   gpr_free(w);
 }
 
-static void finished_completion(grpc_exec_ctx *exec_ctx, void *pw,
-                                grpc_cq_completion *ignored) {
+static void finished_completion(grpc_exec_ctx* exec_ctx, void* pw,
+                                grpc_cq_completion* ignored) {
   bool should_delete = false;
-  state_watcher *w = (state_watcher *)pw;
+  state_watcher* w = (state_watcher*)pw;
   gpr_mu_lock(&w->mu);
   switch (w->phase) {
     case WAITING:
@@ -106,23 +106,23 @@ static void finished_completion(grpc_exec_ctx *exec_ctx, void *pw,
   }
 }
 
-static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
-                        bool due_to_completion, grpc_error *error) {
+static void partly_done(grpc_exec_ctx* exec_ctx, state_watcher* w,
+                        bool due_to_completion, grpc_error* error) {
   if (due_to_completion) {
     grpc_timer_cancel(exec_ctx, &w->alarm);
   } else {
-    grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
+    grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
         grpc_channel_get_channel_stack(w->channel));
     grpc_client_channel_watch_connectivity_state(
         exec_ctx, client_channel_elem,
-        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(w->cq)), NULL,
-        &w->on_complete, NULL);
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(w->cq)),
+        nullptr, &w->on_complete, nullptr);
   }
 
   gpr_mu_lock(&w->mu);
 
   if (due_to_completion) {
-    if (GRPC_TRACER_ON(grpc_trace_operation_failures)) {
+    if (grpc_trace_operation_failures.enabled()) {
       GRPC_LOG_IF_ERROR("watch_completion_error", GRPC_ERROR_REF(error));
     }
     GRPC_ERROR_UNREF(error);
@@ -161,31 +161,31 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
   GRPC_ERROR_UNREF(error);
 }
 
-static void watch_complete(grpc_exec_ctx *exec_ctx, void *pw,
-                           grpc_error *error) {
-  partly_done(exec_ctx, (state_watcher *)pw, true, GRPC_ERROR_REF(error));
+static void watch_complete(grpc_exec_ctx* exec_ctx, void* pw,
+                           grpc_error* error) {
+  partly_done(exec_ctx, (state_watcher*)pw, true, GRPC_ERROR_REF(error));
 }
 
-static void timeout_complete(grpc_exec_ctx *exec_ctx, void *pw,
-                             grpc_error *error) {
-  partly_done(exec_ctx, (state_watcher *)pw, false, GRPC_ERROR_REF(error));
+static void timeout_complete(grpc_exec_ctx* exec_ctx, void* pw,
+                             grpc_error* error) {
+  partly_done(exec_ctx, (state_watcher*)pw, false, GRPC_ERROR_REF(error));
 }
 
-int grpc_channel_num_external_connectivity_watchers(grpc_channel *channel) {
-  grpc_channel_element *client_channel_elem =
+int grpc_channel_num_external_connectivity_watchers(grpc_channel* channel) {
+  grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   return grpc_client_channel_num_external_connectivity_watchers(
       client_channel_elem);
 }
 
 typedef struct watcher_timer_init_arg {
-  state_watcher *w;
+  state_watcher* w;
   gpr_timespec deadline;
 } watcher_timer_init_arg;
 
-static void watcher_timer_init(grpc_exec_ctx *exec_ctx, void *arg,
-                               grpc_error *error_ignored) {
-  watcher_timer_init_arg *wa = (watcher_timer_init_arg *)arg;
+static void watcher_timer_init(grpc_exec_ctx* exec_ctx, void* arg,
+                               grpc_error* error_ignored) {
+  watcher_timer_init_arg* wa = (watcher_timer_init_arg*)arg;
 
   grpc_timer_init(exec_ctx, &wa->w->alarm,
                   grpc_timespec_to_millis_round_up(wa->deadline),
@@ -193,19 +193,19 @@ static void watcher_timer_init(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(wa);
 }
 
-int grpc_channel_support_connectivity_watcher(grpc_channel *channel) {
-  grpc_channel_element *client_channel_elem =
+int grpc_channel_support_connectivity_watcher(grpc_channel* channel) {
+  grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   return client_channel_elem->filter != &grpc_client_channel_filter ? 0 : 1;
 }
 
 void grpc_channel_watch_connectivity_state(
-    grpc_channel *channel, grpc_connectivity_state last_observed_state,
-    gpr_timespec deadline, grpc_completion_queue *cq, void *tag) {
-  grpc_channel_element *client_channel_elem =
+    grpc_channel* channel, grpc_connectivity_state last_observed_state,
+    gpr_timespec deadline, grpc_completion_queue* cq, void* tag) {
+  grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  state_watcher *w = (state_watcher *)gpr_malloc(sizeof(*w));
+  state_watcher* w = (state_watcher*)gpr_malloc(sizeof(*w));
 
   GRPC_API_TRACE(
       "grpc_channel_watch_connectivity_state("
@@ -213,8 +213,9 @@ void grpc_channel_watch_connectivity_state(
       "deadline=gpr_timespec { tv_sec: %" PRId64
       ", tv_nsec: %d, clock_type: %d }, "
       "cq=%p, tag=%p)",
-      7, (channel, (int)last_observed_state, deadline.tv_sec, deadline.tv_nsec,
-          (int)deadline.clock_type, cq, tag));
+      7,
+      (channel, (int)last_observed_state, deadline.tv_sec, deadline.tv_nsec,
+       (int)deadline.clock_type, cq, tag));
 
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
 
@@ -228,10 +229,10 @@ void grpc_channel_watch_connectivity_state(
   w->cq = cq;
   w->tag = tag;
   w->channel = channel;
-  w->error = NULL;
+  w->error = nullptr;
 
-  watcher_timer_init_arg *wa =
-      (watcher_timer_init_arg *)gpr_malloc(sizeof(watcher_timer_init_arg));
+  watcher_timer_init_arg* wa =
+      (watcher_timer_init_arg*)gpr_malloc(sizeof(watcher_timer_init_arg));
   wa->w = w;
   wa->deadline = deadline;
   GRPC_CLOSURE_INIT(&w->watcher_timer_init, watcher_timer_init, wa,

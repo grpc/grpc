@@ -78,7 +78,8 @@ namespace Grpc.IntegrationTesting
                 throw new ArgumentException("Unsupported ServerType");
             }
 
-            var server = new Server
+            var channelOptions = new List<ChannelOption>(config.ChannelArgs.Select((arg) => arg.ToChannelOption()));
+            var server = new Server(channelOptions)
             {
                 Services = { service },
                 Ports = { new ServerPort("[::]", config.Port, credentials) }
@@ -116,7 +117,7 @@ namespace Grpc.IntegrationTesting
     public class ServerRunnerImpl : IServerRunner
     {
         readonly Server server;
-        readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
+        readonly TimeStats timeStats = new TimeStats();
 
         public ServerRunnerImpl(Server server)
         {
@@ -137,17 +138,16 @@ namespace Grpc.IntegrationTesting
         /// <returns>The stats.</returns>
         public ServerStats GetStats(bool reset)
         {
-            var secondsElapsed = wallClockStopwatch.GetElapsedSnapshot(reset).TotalSeconds;
+            var timeSnapshot = timeStats.GetSnapshot(reset);
 
             GrpcEnvironment.Logger.Info("[ServerRunner.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, (seconds since last reset {3})",
-                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), secondsElapsed);
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), timeSnapshot.WallClockTime.TotalSeconds);
 
-            // TODO: populate user time and system time
             return new ServerStats
             {
-                TimeElapsed = secondsElapsed,
-                TimeUser = 0,
-                TimeSystem = 0
+                TimeElapsed = timeSnapshot.WallClockTime.TotalSeconds,
+                TimeUser = timeSnapshot.UserProcessorTime.TotalSeconds,
+                TimeSystem = timeSnapshot.PrivilegedProcessorTime.TotalSeconds
             };
         }
 

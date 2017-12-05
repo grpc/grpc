@@ -32,35 +32,35 @@
 #include "src/core/lib/iomgr/tcp_uv.h"
 #include "src/core/lib/iomgr/timer.h"
 
-extern grpc_tracer_flag grpc_tcp_trace;
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 typedef struct grpc_uv_tcp_connect {
   uv_connect_t connect_req;
   grpc_timer alarm;
   grpc_closure on_alarm;
-  uv_tcp_t *tcp_handle;
-  grpc_closure *closure;
-  grpc_endpoint **endpoint;
+  uv_tcp_t* tcp_handle;
+  grpc_closure* closure;
+  grpc_endpoint** endpoint;
   int refs;
-  char *addr_name;
-  grpc_resource_quota *resource_quota;
+  char* addr_name;
+  grpc_resource_quota* resource_quota;
 } grpc_uv_tcp_connect;
 
-static void uv_tcp_connect_cleanup(grpc_exec_ctx *exec_ctx,
-                                   grpc_uv_tcp_connect *connect) {
+static void uv_tcp_connect_cleanup(grpc_exec_ctx* exec_ctx,
+                                   grpc_uv_tcp_connect* connect) {
   grpc_resource_quota_unref_internal(exec_ctx, connect->resource_quota);
   gpr_free(connect->addr_name);
   gpr_free(connect);
 }
 
-static void tcp_close_callback(uv_handle_t *handle) { gpr_free(handle); }
+static void tcp_close_callback(uv_handle_t* handle) { gpr_free(handle); }
 
-static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
-                           grpc_error *error) {
+static void uv_tc_on_alarm(grpc_exec_ctx* exec_ctx, void* acp,
+                           grpc_error* error) {
   int done;
-  grpc_uv_tcp_connect *connect = (grpc_uv_tcp_connect *)acp;
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
-    const char *str = grpc_error_string(error);
+  grpc_uv_tcp_connect* connect = (grpc_uv_tcp_connect*)acp;
+  if (grpc_tcp_trace.enabled()) {
+    const char* str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s",
             connect->addr_name, str);
   }
@@ -68,7 +68,7 @@ static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If
        it was cancelled, then the handler that cancelled it also should close
        the handle, if applicable */
-    uv_close((uv_handle_t *)connect->tcp_handle, tcp_close_callback);
+    uv_close((uv_handle_t*)connect->tcp_handle, tcp_close_callback);
   }
   done = (--connect->refs == 0);
   if (done) {
@@ -76,12 +76,12 @@ static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
   }
 }
 
-static void uv_tc_on_connect(uv_connect_t *req, int status) {
-  grpc_uv_tcp_connect *connect = (grpc_uv_tcp_connect *)req->data;
+static void uv_tc_on_connect(uv_connect_t* req, int status) {
+  grpc_uv_tcp_connect* connect = (grpc_uv_tcp_connect*)req->data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_error *error = GRPC_ERROR_NONE;
+  grpc_error* error = GRPC_ERROR_NONE;
   int done;
-  grpc_closure *closure = connect->closure;
+  grpc_closure* closure = connect->closure;
   grpc_timer_cancel(&exec_ctx, &connect->alarm);
   if (status == 0) {
     *connect->endpoint = grpc_tcp_create(
@@ -102,7 +102,7 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_OS_ERROR,
           grpc_slice_from_static_string(uv_strerror(status)));
-      uv_close((uv_handle_t *)connect->tcp_handle, tcp_close_callback);
+      uv_close((uv_handle_t*)connect->tcp_handle, tcp_close_callback);
     }
   }
   done = (--connect->refs == 0);
@@ -114,14 +114,14 @@ static void uv_tc_on_connect(uv_connect_t *req, int status) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
-                                    grpc_closure *closure, grpc_endpoint **ep,
-                                    grpc_pollset_set *interested_parties,
-                                    const grpc_channel_args *channel_args,
-                                    const grpc_resolved_address *resolved_addr,
+static void tcp_client_connect_impl(grpc_exec_ctx* exec_ctx,
+                                    grpc_closure* closure, grpc_endpoint** ep,
+                                    grpc_pollset_set* interested_parties,
+                                    const grpc_channel_args* channel_args,
+                                    const grpc_resolved_address* resolved_addr,
                                     grpc_millis deadline) {
-  grpc_uv_tcp_connect *connect;
-  grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
+  grpc_uv_tcp_connect* connect;
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);
   (void)channel_args;
   (void)interested_parties;
 
@@ -132,49 +132,46 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
         resource_quota = grpc_resource_quota_ref_internal(
-            (grpc_resource_quota *)channel_args->args[i].value.pointer.p);
+            (grpc_resource_quota*)channel_args->args[i].value.pointer.p);
       }
     }
   }
 
-  connect = (grpc_uv_tcp_connect *)gpr_zalloc(sizeof(grpc_uv_tcp_connect));
+  connect = (grpc_uv_tcp_connect*)gpr_zalloc(sizeof(grpc_uv_tcp_connect));
   connect->closure = closure;
   connect->endpoint = ep;
-  connect->tcp_handle = (uv_tcp_t *)gpr_malloc(sizeof(uv_tcp_t));
+  connect->tcp_handle = (uv_tcp_t*)gpr_malloc(sizeof(uv_tcp_t));
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
   connect->resource_quota = resource_quota;
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
   connect->connect_req.data = connect;
   connect->refs = 2;  // One for the connect operation, one for the timer.
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
             connect->addr_name);
   }
 
   // TODO(murgatroid99): figure out what the return value here means
   uv_tcp_connect(&connect->connect_req, connect->tcp_handle,
-                 (const struct sockaddr *)resolved_addr->addr,
-                 uv_tc_on_connect);
+                 (const struct sockaddr*)resolved_addr->addr, uv_tc_on_connect);
   GRPC_CLOSURE_INIT(&connect->on_alarm, uv_tc_on_alarm, connect,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &connect->alarm, deadline, &connect->on_alarm);
 }
 
 // overridden by api_fuzzer.c
-extern "C" {
 void (*grpc_tcp_client_connect_impl)(
-    grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
-    grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
-    const grpc_resolved_address *addr,
+    grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    const grpc_resolved_address* addr,
     grpc_millis deadline) = tcp_client_connect_impl;
-}
 
-void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                             grpc_endpoint **ep,
-                             grpc_pollset_set *interested_parties,
-                             const grpc_channel_args *channel_args,
-                             const grpc_resolved_address *addr,
+void grpc_tcp_client_connect(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
+                             grpc_endpoint** ep,
+                             grpc_pollset_set* interested_parties,
+                             const grpc_channel_args* channel_args,
+                             const grpc_resolved_address* addr,
                              grpc_millis deadline) {
   grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties,
                                channel_args, addr, deadline);

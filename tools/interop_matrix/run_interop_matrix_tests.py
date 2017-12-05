@@ -83,6 +83,8 @@ argp.add_argument('--bq_result_table',
 
 args = argp.parse_args()
 
+print(str(args))
+
 
 def find_all_images_for_lang(lang):
   """Find docker images for a language across releases and runtimes.
@@ -98,7 +100,7 @@ def find_all_images_for_lang(lang):
       jobset.message('SKIPPED',
                      '%s for %s is not defined' % (args.release, lang),
                      do_newline=True)
-      return []
+      return {}
     releases = [args.release]
 
   # Images tuples keyed by runtime.
@@ -122,13 +124,16 @@ def find_all_images_for_lang(lang):
   return images
 
 # caches test cases (list of JobSpec) loaded from file.  Keyed by lang and runtime.
-def find_test_cases(lang, release, suite_name):
+def find_test_cases(lang, runtime, release, suite_name):
   """Returns the list of test cases from testcase files per lang/release."""
   file_tmpl = os.path.join(os.path.dirname(__file__), 'testcases/%s__%s')
   testcase_release = release
-  if not os.path.exists(file_tmpl % (lang, release)):
+  filename_prefix = lang
+  if lang == 'csharp':
+    filename_prefix = runtime
+  if not os.path.exists(file_tmpl % (filename_prefix, release)):
     testcase_release = 'master'
-  testcases = file_tmpl % (lang, testcase_release)
+  testcases = file_tmpl % (filename_prefix, testcase_release)
 
   job_spec_list=[]
   try:
@@ -167,9 +172,13 @@ def run_tests_for_lang(lang, runtime, images):
     jobset.message('START', 'Testing %s' % image, do_newline=True)
     # Download the docker image before running each test case.
     subprocess.check_call(['gcloud', 'docker', '--', 'pull', image])
-    _docker_images_cleanup.append(image)
     suite_name = '%s__%s_%s' % (lang, runtime, release)
-    job_spec_list = find_test_cases(lang, release, suite_name)
+    job_spec_list = find_test_cases(lang, runtime, release, suite_name)
+    
+    if not job_spec_list:  
+      jobset.message('FAILED', 'No test cases were found.', do_newline=True)
+      return 1
+
     num_failures, resultset = jobset.run(job_spec_list,
                                          newline_on_success=True,
                                          add_env={'docker_image':image},
@@ -189,17 +198,17 @@ def run_tests_for_lang(lang, runtime, images):
         'grpc_interop_matrix',
         suite_name,
         str(uuid.uuid4()))
+
+    if not args.keep:
+      cleanup(image)
   
   return total_num_failures
 
 
-_docker_images_cleanup = []
-def cleanup():
-  if not args.keep:
-    for image in _docker_images_cleanup:
-      dockerjob.remove_image(image, skip_nonexistent=True)
+def cleanup(image):
+  jobset.message('START', 'Cleanup docker image %s' % image, do_newline=True)
+  dockerjob.remove_image(image, skip_nonexistent=True)
 
-atexit.register(cleanup)
 
 languages = args.language if args.language != ['all'] else _LANGUAGES
 total_num_failures = 0

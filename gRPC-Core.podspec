@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.8.0-dev'
+  version = '1.9.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -85,6 +85,7 @@ Pod::Spec.new do |s|
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
+    'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
@@ -112,7 +113,6 @@ Pod::Spec.new do |s|
                       'include/grpc/support/avl.h',
                       'include/grpc/support/cmdline.h',
                       'include/grpc/support/cpu.h',
-                      'include/grpc/support/histogram.h',
                       'include/grpc/support/host_port.h',
                       'include/grpc/support/log.h',
                       'include/grpc/support/log_windows.h',
@@ -135,6 +135,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/atm_gcc_atomic.h',
                       'include/grpc/impl/codegen/atm_gcc_sync.h',
                       'include/grpc/impl/codegen/atm_windows.h',
+                      'include/grpc/impl/codegen/fork.h',
                       'include/grpc/impl/codegen/gpr_slice.h',
                       'include/grpc/impl/codegen/gpr_types.h',
                       'include/grpc/impl/codegen/port_platform.h',
@@ -156,6 +157,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/atm_gcc_atomic.h',
                       'include/grpc/impl/codegen/atm_gcc_sync.h',
                       'include/grpc/impl/codegen/atm_windows.h',
+                      'include/grpc/impl/codegen/fork.h',
                       'include/grpc/impl/codegen/gpr_slice.h',
                       'include/grpc/impl/codegen/gpr_types.h',
                       'include/grpc/impl/codegen/port_platform.h',
@@ -168,6 +170,7 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer.h',
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/compression.h',
+                      'include/grpc/fork.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security_constants.h',
@@ -187,19 +190,21 @@ Pod::Spec.new do |s|
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
+                      'src/core/lib/support/abstract.h',
                       'src/core/lib/support/arena.h',
                       'src/core/lib/support/atomic.h',
                       'src/core/lib/support/atomic_with_atm.h',
                       'src/core/lib/support/atomic_with_std.h',
                       'src/core/lib/support/env.h',
+                      'src/core/lib/support/fork.h',
                       'src/core/lib/support/manual_constructor.h',
                       'src/core/lib/support/memory.h',
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
                       'src/core/lib/support/spinlock.h',
-                      'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
+                      'src/core/lib/support/thd_internal.h',
                       'src/core/lib/support/time_precise.h',
                       'src/core/lib/support/tmpfile.h',
                       'src/core/lib/profiling/basic_timers.cc',
@@ -216,7 +221,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/env_linux.cc',
                       'src/core/lib/support/env_posix.cc',
                       'src/core/lib/support/env_windows.cc',
-                      'src/core/lib/support/histogram.cc',
+                      'src/core/lib/support/fork.cc',
                       'src/core/lib/support/host_port.cc',
                       'src/core/lib/support/log.cc',
                       'src/core/lib/support/log_android.cc',
@@ -225,7 +230,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/log_windows.cc',
                       'src/core/lib/support/mpscq.cc',
                       'src/core/lib/support/murmur_hash.cc',
-                      'src/core/lib/support/stack_lockfree.cc',
                       'src/core/lib/support/string.cc',
                       'src/core/lib/support/string_posix.cc',
                       'src/core/lib/support/string_util_windows.cc',
@@ -412,7 +416,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_hash_table.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
-                      'src/core/lib/support/vector.h',
+                      'src/core/lib/support/debug_location.h',
+                      'src/core/lib/support/ref_counted.h',
+                      'src/core/lib/support/ref_counted_ptr.h',
                       'src/core/lib/surface/alarm_internal.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
@@ -478,7 +484,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/http/httpcli.cc',
                       'src/core/lib/http/parser.cc',
                       'src/core/lib/iomgr/call_combiner.cc',
-                      'src/core/lib/iomgr/closure.cc',
                       'src/core/lib/iomgr/combiner.cc',
                       'src/core/lib/iomgr/endpoint.cc',
                       'src/core/lib/iomgr/endpoint_pair_posix.cc',
@@ -493,6 +498,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_windows.cc',
                       'src/core/lib/iomgr/exec_ctx.cc',
                       'src/core/lib/iomgr/executor.cc',
+                      'src/core/lib/iomgr/fork_posix.cc',
+                      'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/gethostname_fallback.cc',
                       'src/core/lib/iomgr/gethostname_host_name_max.cc',
                       'src/core/lib/iomgr/gethostname_sysconf.cc',
@@ -707,19 +714,21 @@ Pod::Spec.new do |s|
                       'src/core/plugin_registry/grpc_plugin_registry.cc'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
+                              'src/core/lib/support/abstract.h',
                               'src/core/lib/support/arena.h',
                               'src/core/lib/support/atomic.h',
                               'src/core/lib/support/atomic_with_atm.h',
                               'src/core/lib/support/atomic_with_std.h',
                               'src/core/lib/support/env.h',
+                              'src/core/lib/support/fork.h',
                               'src/core/lib/support/manual_constructor.h',
                               'src/core/lib/support/memory.h',
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
                               'src/core/lib/support/spinlock.h',
-                              'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
+                              'src/core/lib/support/thd_internal.h',
                               'src/core/lib/support/time_precise.h',
                               'src/core/lib/support/tmpfile.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
@@ -887,7 +896,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_hash_table.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
-                              'src/core/lib/support/vector.h',
+                              'src/core/lib/support/debug_location.h',
+                              'src/core/lib/support/ref_counted.h',
+                              'src/core/lib/support/ref_counted_ptr.h',
                               'src/core/lib/surface/alarm_internal.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',
@@ -958,17 +969,17 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Implementation", version
 
-    ss.source_files = 'test/core/end2end/cq_verifier.{c,h}',
-                      'test/core/end2end/end2end_tests.{c,h}',
-                      'test/core/end2end/end2end_test_utils.c',
-                      'test/core/end2end/tests/*.{c,h}',
+    ss.source_files = 'test/core/end2end/cq_verifier.{cc,h}',
+                      'test/core/end2end/end2end_tests.{cc,h}',
+                      'test/core/end2end/end2end_test_utils.cc',
+                      'test/core/end2end/tests/*.{cc,h}',
                       'test/core/end2end/fixtures/*.h',
-                      'test/core/end2end/data/*.{c,h}',
+                      'test/core/end2end/data/*.{cc,h}',
                       'test/core/util/debugger_macros.{cc,h}',
-                      'test/core/util/test_config.{c,h}',
+                      'test/core/util/test_config.{cc,h}',
                       'test/core/util/port.h',
-                      'test/core/util/port.c',
-                      'test/core/util/port_server_client.{c,h}'
+                      'test/core/util/port.cc',
+                      'test/core/util/port_server_client.{cc,h}'
   end
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?

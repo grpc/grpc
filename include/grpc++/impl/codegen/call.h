@@ -313,11 +313,6 @@ class CallOpSendMessage {
   WriteOptions write_options_;
 };
 
-namespace internal {
-template <class T>
-T Example();
-}  // namespace internal
-
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
@@ -579,6 +574,7 @@ class CallOpClientRecvStatus {
     op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &error_message_;
+    op->data.recv_status_on_client.error_string = nullptr;
     op->flags = 0;
     op->reserved = NULL;
   }

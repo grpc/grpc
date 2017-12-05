@@ -458,15 +458,15 @@ TEST_P(AsyncEnd2endTest, SequentialRpcs) {
 }
 
 TEST_P(AsyncEnd2endTest, ReconnectChannel) {
+  // GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS is set to 100ms in main()
   if (GetParam().inproc) {
     return;
   }
-  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
   char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-  if (s != NULL && 0 == strcmp(s, "poll")) {
+  if (s != nullptr && 0 == strcmp(s, "poll")) {
     poller_slowdown_factor = 2;
   }
   gpr_free(s);
@@ -2013,6 +2013,9 @@ INSTANTIATE_TEST_CASE_P(AsyncEnd2endServerTryCancel,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  // Change the backup poll interval from 5s to 100ms to speed up the
+  // ReconnectChannel test
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "100");
   grpc_test_init(argc, argv);
   gpr_tls_init(&g_is_async_end2end_test);
   ::testing::InitGoogleTest(&argc, argv);

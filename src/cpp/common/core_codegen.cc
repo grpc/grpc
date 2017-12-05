@@ -33,9 +33,7 @@
 
 #include "src/core/lib/profiling/timers.h"
 
-extern "C" {
 struct grpc_byte_buffer;
-}
 
 namespace grpc {
 
@@ -75,6 +73,9 @@ grpc_event CoreCodegen::grpc_completion_queue_pluck(grpc_completion_queue* cq,
 void* CoreCodegen::gpr_malloc(size_t size) { return ::gpr_malloc(size); }
 
 void CoreCodegen::gpr_free(void* p) { return ::gpr_free(p); }
+
+void CoreCodegen::grpc_init() { ::grpc_init(); }
+void CoreCodegen::grpc_shutdown() { ::grpc_shutdown(); }
 
 void CoreCodegen::gpr_mu_init(gpr_mu* mu) { ::gpr_mu_init(mu); };
 void CoreCodegen::gpr_mu_destroy(gpr_mu* mu) { ::gpr_mu_destroy(mu); }
@@ -154,6 +155,10 @@ grpc_slice CoreCodegen::grpc_slice_split_tail(grpc_slice* s, size_t split) {
 
 grpc_slice CoreCodegen::grpc_slice_split_head(grpc_slice* s, size_t split) {
   return ::grpc_slice_split_head(s, split);
+}
+
+grpc_slice CoreCodegen::grpc_slice_sub(grpc_slice s, size_t begin, size_t end) {
+  return ::grpc_slice_sub(s, begin, end);
 }
 
 grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,

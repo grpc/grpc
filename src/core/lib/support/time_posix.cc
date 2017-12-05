@@ -81,7 +81,7 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   }
 }
 #else
-/* For some reason Apple's OSes haven't implemented clock_gettime. */
+  /* For some reason Apple's OSes haven't implemented clock_gettime. */
 
 #include <mach/mach.h>
 #include <mach/mach_time.h>
@@ -127,9 +127,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
 }
 #endif
 
-extern "C" {
 gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
-}
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
 gpr_atm gpr_now_call_count;
@@ -158,7 +156,7 @@ void gpr_sleep_until(gpr_timespec until) {
 
     delta = gpr_time_sub(until, now);
     delta_ts = timespec_from_gpr(delta);
-    ns_result = nanosleep(&delta_ts, NULL);
+    ns_result = nanosleep(&delta_ts, nullptr);
     if (ns_result == 0) {
       break;
     }

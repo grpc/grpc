@@ -31,6 +31,8 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/support/string.h"
 
+grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
+
 namespace grpc_core {
 namespace chttp2 {
 
@@ -224,9 +226,9 @@ grpc_error* StreamFlowControl::RecvData(int64_t incoming_frame_size) {
               incoming_frame_size, acked_stream_window, sent_stream_window);
     } else {
       char* msg;
-      gpr_asprintf(&msg, "frame of size %" PRId64
-                         " overflows local window of %" PRId64,
-                   incoming_frame_size, acked_stream_window);
+      gpr_asprintf(
+          &msg, "frame of size %" PRId64 " overflows local window of %" PRId64,
+          incoming_frame_size, acked_stream_window);
       grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
       return err;
@@ -312,7 +314,9 @@ double TransportFlowControl::SmoothLogBdp(grpc_exec_ctx* exec_ctx,
   double bdp_error = value - pid_controller_.last_control_value();
   const double dt = (double)(now - last_pid_update_) * 1e-3;
   last_pid_update_ = now;
-  return pid_controller_.Update(bdp_error, dt);
+  // Limit dt to 100ms
+  const double kMaxDt = 0.1;
+  return pid_controller_.Update(bdp_error, dt > kMaxDt ? kMaxDt : dt);
 }
 
 FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(

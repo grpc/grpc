@@ -23,10 +23,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Compression filter for outgoing data.
  *
  * See <grpc/compression.h> for the available compression settings.
@@ -51,9 +47,5 @@ extern "C" {
 
 extern const grpc_channel_filter grpc_message_compress_filter;
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H \
-          */
+        */

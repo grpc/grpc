@@ -280,6 +280,7 @@
   elseif("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "package")
     find_package(OpenSSL REQUIRED)
     set(_gRPC_SSL_LIBRARIES <%text>${OPENSSL_LIBRARIES}</%text>)
+    include_directories(<%text>${OPENSSL_INCLUDE_DIR}</%text>)
     set(_gRPC_FIND_SSL "if(NOT OPENSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
   endif()
 
@@ -522,7 +523,6 @@
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
-    PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/abseil-cpp
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
@@ -594,7 +594,6 @@
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
-    PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/abseil-cpp
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
