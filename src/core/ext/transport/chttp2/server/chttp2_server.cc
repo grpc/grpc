@@ -197,9 +197,10 @@ static void on_accept(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
       grpc_channel_arg_get_integer(timeout_arg,
                                    {120 * GPR_MS_PER_SEC, 1, INT_MAX});
   grpc_handshake_manager_do_handshake(exec_ctx, connection_state->handshake_mgr,
-                                      tcp, state->args,
-                                      connection_state->deadline, acceptor,
-                                      on_handshake_done, connection_state);
+                                      nullptr /* interested_parties */, tcp,
+                                      state->args, connection_state->deadline,
+                                      acceptor, on_handshake_done,
+                                      connection_state);
 }
 
 /* Server callback: start listening on our ports */
