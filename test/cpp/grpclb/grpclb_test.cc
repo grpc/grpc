@@ -703,14 +703,14 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
       tf.lb_backends[i].lb_token_prefix = "";
     }
     setup_server("127.0.0.1", &tf.lb_backends[i]);
-    gpr_thd_new(&tf.lb_backends[i].tid, fork_backend_server, &tf.lb_backends[i],
+    gpr_thd_new(&tf.lb_backends[i].tid, "grpclb_backend", fork_backend_server, &tf.lb_backends[i],
                 &options);
   }
 
   tf.lb_server.lb_token_prefix = LB_TOKEN_PREFIX;
   tf.lb_server.balancer_name = BALANCERS_NAME;
   setup_server("127.0.0.1", &tf.lb_server);
-  gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
+  gpr_thd_new(&tf.lb_server.tid, "grpclb_server", fork_lb_server, &tf.lb_server, &options);
   setup_client(&tf.lb_server, tf.lb_backends, &tf.client);
   return tf;
 }
