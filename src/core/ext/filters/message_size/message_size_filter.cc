@@ -154,8 +154,7 @@ static void recv_trailing_metadata(grpc_exec_ctx* exec_ctx, void* user_data,
   } else if (calld->error == GRPC_ERROR_NONE) {
     error = GRPC_ERROR_REF(error);
   } else if (calld->error != error) {
-    error = grpc_error_add_child(error, calld->error);
-    GRPC_ERROR_UNREF(calld->error);
+    error = grpc_error_add_child(GRPC_ERROR_REF(error), calld->error);
   }
 
   // Invoke the next callback.

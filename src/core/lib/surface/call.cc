@@ -696,6 +696,7 @@ static void set_final_status(grpc_exec_ctx* exec_ctx, grpc_error* error,
     *call->final_op.server.cancelled =
         (code != GRPC_STATUS_OK) || call->server_status_not_ok;
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 /*******************************************************************************
@@ -1045,7 +1046,7 @@ static void recv_trailing_filter(grpc_exec_ctx* exec_ctx, void* args,
                                  grpc_error* batch_error) {
   grpc_call* call = (grpc_call*)args;
   if (batch_error != GRPC_ERROR_NONE) {
-    set_final_status(exec_ctx, batch_error, call);
+    set_final_status(exec_ctx, GRPC_ERROR_REF(batch_error), call);
   } else if (b->idx.named.grpc_status != nullptr) {
     uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
     grpc_error* error =
@@ -1064,7 +1065,7 @@ static void recv_trailing_filter(grpc_exec_ctx* exec_ctx, void* args,
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
                                  grpc_empty_slice());
     }
-    set_final_status(exec_ctx, error, call);
+    set_final_status(exec_ctx, GRPC_ERROR_REF(error), call);
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_status);
     GRPC_ERROR_UNREF(error);
   } else {
