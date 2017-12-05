@@ -174,11 +174,11 @@ void grpc_shutdown(void) {
           }
         }
       }
+      grpc_iomgr_shutdown();
       gpr_timers_global_destroy();
       grpc_tracer_shutdown();
-      grpc_handshaker_factory_registry_shutdown();
-      grpc_iomgr_shutdown();
       grpc_mdctx_global_shutdown();
+      grpc_handshaker_factory_registry_shutdown();
       grpc_slice_intern_shutdown();
       grpc_stats_shutdown();
     }
