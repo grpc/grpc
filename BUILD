@@ -196,6 +196,12 @@ GRPCXX_PUBLIC_HDRS = [
 ]
 
 grpc_cc_library(
+    name = "support_any",
+    language = "c++",
+    hdrs = ["src/core/lib/support/any.h"]
+)
+
+grpc_cc_library(
     name = "gpr",
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
