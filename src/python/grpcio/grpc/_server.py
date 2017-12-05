@@ -374,10 +374,10 @@ def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
     context = _Context(rpc_event, state, request_deserializer)
     try:
         return behavior(argument, context), True
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as exception:  # pylint: disable=broad-except
         with state.condition:
-            if e not in state.rpc_errors:
-                details = 'Exception calling application: {}'.format(e)
+            if exception not in state.rpc_errors:
+                details = 'Exception calling application: {}'.format(exception)
                 logging.exception(details)
                 _abort(state, rpc_event.operation_call,
                        cygrpc.StatusCode.unknown, _common.encode(details))
@@ -389,10 +389,10 @@ def _take_response_from_response_iterator(rpc_event, state, response_iterator):
         return next(response_iterator), True
     except StopIteration:
         return None, True
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as exception:  # pylint: disable=broad-except
         with state.condition:
-            if e not in state.rpc_errors:
-                details = 'Exception iterating responses: {}'.format(e)
+            if exception not in state.rpc_errors:
+                details = 'Exception iterating responses: {}'.format(exception)
                 logging.exception(details)
                 _abort(state, rpc_event.operation_call,
                        cygrpc.StatusCode.unknown, _common.encode(details))
@@ -593,8 +593,8 @@ def _handle_call(rpc_event, generic_handlers, thread_pool,
     if rpc_event.request_call_details.method is not None:
         try:
             method_handler = _find_method_handler(rpc_event, generic_handlers)
-        except Exception as e:  # pylint: disable=broad-except
-            details = 'Exception servicing handler: {}'.format(e)
+        except Exception as exception:  # pylint: disable=broad-except
+            details = 'Exception servicing handler: {}'.format(exception)
             logging.exception(details)
             return _reject_rpc(rpc_event, cygrpc.StatusCode.unknown,
                                b'Error in service handler!'), None
