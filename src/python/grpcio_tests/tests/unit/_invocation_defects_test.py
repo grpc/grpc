@@ -32,6 +32,7 @@ _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
 _STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
+_DEFECTIVE_GENERIC_RPC_HANDLER = '/test/DefectiveGenericRpcHandler'
 
 
 class _Callback(object):
@@ -95,6 +96,9 @@ class _Handler(object):
             yield request
         self._control.control()
 
+    def defective_generic_rpc_handler(self):
+        raise test_control.Defect()
+
 
 class _MethodHandler(grpc.RpcMethodHandler):
 
@@ -132,6 +136,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
         elif handler_call_details.method == _STREAM_STREAM:
             return _MethodHandler(True, True, None, None, None, None, None,
                                   self._handler.handle_stream_stream)
+        elif handler_call_details.method == _DEFECTIVE_GENERIC_RPC_HANDLER:
+            return self._handler.defective_generic_rpc_handler()
         else:
             return None
 
@@ -174,6 +180,10 @@ def _stream_unary_multi_callable(channel):
 
 def _stream_stream_multi_callable(channel):
     return channel.stream_stream(_STREAM_STREAM)
+
+
+def _defective_handler_multi_callable(channel):
+    return channel.unary_unary(_DEFECTIVE_GENERIC_RPC_HANDLER)
 
 
 class InvocationDefectsTest(unittest.TestCase):
@@ -234,6 +244,18 @@ class InvocationDefectsTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             for _ in range(test_constants.STREAM_LENGTH // 2 + 1):
                 next(response_iterator)
+
+    def testDefectiveGenericRpcHandlerUnaryResponse(self):
+        request = b'\x07\x08'
+        multi_callable = _defective_handler_multi_callable(self._channel)
+
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            response = multi_callable(
+                request,
+                metadata=(('test', 'DefectiveGenericRpcHandlerUnary'),))
+
+        self.assertIs(grpc.StatusCode.UNKNOWN,
+                      exception_context.exception.code())
 
 
 if __name__ == '__main__':

@@ -165,8 +165,9 @@ static void start_handshake_locked(grpc_exec_ctx* exec_ctx,
   grpc_endpoint_add_to_pollset_set(exec_ctx, c->endpoint,
                                    c->args.interested_parties);
   grpc_handshake_manager_do_handshake(
-      exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
-      c->args.deadline, nullptr /* acceptor */, on_handshake_done, c);
+      exec_ctx, c->handshake_mgr, c->args.interested_parties, c->endpoint,
+      c->args.channel_args, c->args.deadline, nullptr /* acceptor */,
+      on_handshake_done, c);
   c->endpoint = nullptr;  // Endpoint handed off to handshake manager.
 }
 
