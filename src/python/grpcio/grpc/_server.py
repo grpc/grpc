@@ -75,6 +75,13 @@ def _details(state):
     return b'' if state.details is None else state.details
 
 
+class RpcTerminationToken(object):
+
+    def __init__(self, code, details):
+        self.code = code
+        self.details = details
+
+
 class _HandlerCallDetails(
         collections.namedtuple('_HandlerCallDetails', (
             'method', 'invocation_metadata',)), grpc.HandlerCallDetails):
@@ -373,7 +380,17 @@ def _unary_request(rpc_event, state, request_deserializer):
 def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
     context = _Context(rpc_event, state, request_deserializer)
     try:
-        return behavior(argument, context), True
+        rpc_response = behavior(argument, context)
+        if not isinstance(rpc_response, RpcTerminationToken):
+            return rpc_response, True
+        if rpc_response.code is not None:
+            with state.condition:
+                state.code = rpc_response.code
+        if rpc_response.details is not None:
+            with state.condition:
+                state.details = rpc_response.details
+        _status(rpc_event, state, None)
+        return None, False
     except Exception as exception:  # pylint: disable=broad-except
         with state.condition:
             if exception not in state.rpc_errors:
