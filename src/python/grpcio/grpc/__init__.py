@@ -1131,6 +1131,27 @@ def method_handlers_generic_handler(service, method_handlers):
     return _utilities.DictionaryGenericHandler(service, method_handlers)
 
 
+def rpc_termination_token(code=None, details=None):
+    """Returns an opaque value that when returned from a service handler or
+    service-side interceptor, communicates the termination of the RPC
+    with a non-OK status code.  This method does not have any side effects
+    and simply calling this method will not terminate the RPC: it merely
+    creates the object that can be returned in lieu of the response value
+    of the RPC.
+
+  Args:
+    code: A StatusCode object to be sent to the client upon RPC termination.
+    details: An arbitrary string to be sent to the client upon termination.
+
+  Returns:
+    An RPC termination token that when returned from an RPC method handler,
+    signals the termination of the RPC with the specified code to the gRPC
+    runtime. It can be returned in lieu of the response value of the RPC.
+  """
+    from grpc import _server  # pylint: disable=cyclic-import
+    return _server.RpcTerminationToken(code=code, details=details)
+
+
 def ssl_channel_credentials(root_certificates=None,
                             private_key=None,
                             certificate_chain=None):
