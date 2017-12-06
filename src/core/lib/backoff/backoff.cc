@@ -59,8 +59,7 @@ grpc_millis BackOff::Step(grpc_exec_ctx* exec_ctx) {
   const double jitter = generate_uniform_random_number_between(
       &rng_state_, -options_.jitter() * current_backoff_,
       options_.jitter() * current_backoff_);
-  const grpc_millis next_timeout = std::min(
-      (grpc_millis)(current_backoff_ + jitter), options_.max_backoff());
+  const grpc_millis next_timeout = (grpc_millis)(current_backoff_ + jitter);
   return next_timeout + grpc_exec_ctx_now(exec_ctx);
 }
 
