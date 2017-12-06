@@ -636,7 +636,7 @@ static void update_lb_connectivity_status_locked(
 
 /* Perform a pick over \a glb_policy->rr_policy. Given that a pick can return
  * immediately (ignoring its completion callback), we need to perform the
- * cleanups this callback would otherwise be resposible for.
+ * cleanups this callback would otherwise be responsible for.
  * If \a force_async is true, then we will manually schedule the
  * completion callback even if the pick is available immediately. */
 static bool pick_from_internal_rr_locked(
@@ -761,6 +761,9 @@ static void create_rr_locked(glb_lb_policy* glb_policy,
             glb_policy->rr_policy);
     return;
   }
+  grpc_lb_policy_set_reresolve_closure_locked(
+      new_rr_policy, glb_policy->base.request_reresolution);
+  glb_policy->base.request_reresolution = nullptr;
   glb_policy->rr_policy = new_rr_policy;
   grpc_error* rr_state_error = nullptr;
   const grpc_connectivity_state rr_state =
@@ -978,6 +981,7 @@ static void glb_destroy(grpc_lb_policy* pol) {
 
 static void glb_shutdown_locked(grpc_lb_policy* pol) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)pol;
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   glb_policy->shutting_down = true;
 
   /* We need a copy of the lb_call pointer because we can't cancell the call
@@ -1008,6 +1012,8 @@ static void glb_shutdown_locked(grpc_lb_policy* pol) {
   glb_policy->pending_pings = nullptr;
   if (glb_policy->rr_policy != nullptr) {
     GRPC_LB_POLICY_UNREF(glb_policy->rr_policy, "glb_shutdown");
+  } else {
+    grpc_lb_policy_try_reresolve(pol, &grpc_lb_glb_trace, GRPC_ERROR_CANCELLED);
   }
   // We destroy the LB channel here because
   // glb_lb_channel_on_connectivity_changed_cb needs a valid glb_policy
@@ -1017,28 +1023,26 @@ static void glb_shutdown_locked(grpc_lb_policy* pol) {
     grpc_channel_destroy(glb_policy->lb_channel);
     glb_policy->lb_channel = nullptr;
   }
-  grpc_connectivity_state_set(
-      &glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"), "glb_shutdown");
+  grpc_connectivity_state_set(&glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
+                              GRPC_ERROR_REF(error), "glb_shutdown");
 
   while (pp != nullptr) {
     pending_pick* next = pp->next;
     *pp->target = nullptr;
-    GRPC_CLOSURE_SCHED(
-        &pp->wrapped_on_complete_arg.wrapper_closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
+    GRPC_CLOSURE_SCHED(&pp->wrapped_on_complete_arg.wrapper_closure,
+                       GRPC_ERROR_REF(error));
     gpr_free(pp);
     pp = next;
   }
 
   while (pping != nullptr) {
     pending_ping* next = pping->next;
-    GRPC_CLOSURE_SCHED(
-        &pping->wrapped_notify_arg.wrapper_closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
+    GRPC_CLOSURE_SCHED(&pping->wrapped_notify_arg.wrapper_closure,
+                       GRPC_ERROR_REF(error));
     gpr_free(pping);
     pping = next;
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 // Cancel a specific pending pick.
@@ -1713,8 +1717,8 @@ static void fallback_update_locked(glb_lb_policy* glb_policy,
   grpc_lb_addresses_destroy(glb_policy->fallback_backend_addresses);
   glb_policy->fallback_backend_addresses =
       extract_backend_addresses_locked(addresses);
-  if (glb_policy->started_picking && glb_policy->lb_fallback_timeout_ms > 0 &&
-      !glb_policy->fallback_timer_active) {
+  if (glb_policy->lb_fallback_timeout_ms > 0 &&
+      glb_policy->rr_policy != nullptr) {
     rr_handover_locked(glb_policy);
   }
 }
@@ -1811,7 +1815,7 @@ static void glb_lb_channel_on_connectivity_changed_cb(void* arg,
         grpc_call_cancel(glb_policy->lb_call, nullptr);
         // lb_on_server_status_received() will pick up the cancel and reinit
         // lb_call.
-      } else if (glb_policy->started_picking && !glb_policy->shutting_down) {
+      } else if (glb_policy->started_picking) {
         if (glb_policy->retry_timer_active) {
           grpc_timer_cancel(&glb_policy->lb_call_retry_timer);
           glb_policy->retry_timer_active = false;
@@ -1828,6 +1832,19 @@ static void glb_lb_channel_on_connectivity_changed_cb(void* arg,
   }
 }
 
+static void glb_set_reresolve_closure_locked(
+    grpc_lb_policy* policy, grpc_closure* request_reresolution) {
+  glb_lb_policy* glb_policy = (glb_lb_policy*)policy;
+  GPR_ASSERT(!glb_policy->shutting_down);
+  GPR_ASSERT(glb_policy->base.request_reresolution == nullptr);
+  if (glb_policy->rr_policy != nullptr) {
+    grpc_lb_policy_set_reresolve_closure_locked(glb_policy->rr_policy,
+                                                request_reresolution);
+  } else {
+    glb_policy->base.request_reresolution = request_reresolution;
+  }
+}
+
 /* Code wiring the policy with the rest of the core */
 static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_destroy,
@@ -1839,7 +1856,8 @@ static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_exit_idle_locked,
     glb_check_connectivity_locked,
     glb_notify_on_state_change_locked,
-    glb_update_locked};
+    glb_update_locked,
+    glb_set_reresolve_closure_locked};
 
 static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
                                   grpc_lb_policy_args* args) {

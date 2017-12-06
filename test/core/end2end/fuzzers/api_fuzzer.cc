@@ -468,9 +468,9 @@ static void do_connect(void* arg, grpc_error* error) {
     *fc->ep = client;
 
     grpc_transport* transport =
-        grpc_create_chttp2_transport(nullptr, server, 0);
+        grpc_create_chttp2_transport(nullptr, server, false);
     grpc_server_setup_transport(g_server, transport, nullptr, nullptr);
-    grpc_chttp2_transport_start_reading(transport, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
     GRPC_CLOSURE_SCHED(fc->closure, GRPC_ERROR_NONE);
   } else {

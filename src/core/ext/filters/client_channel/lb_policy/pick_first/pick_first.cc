@@ -70,7 +70,9 @@ static void pf_destroy(grpc_lb_policy* pol) {
   }
 }
 
-static void shutdown_locked(pick_first_lb_policy* p, grpc_error* error) {
+static void pf_shutdown_locked(grpc_lb_policy* pol) {
+  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Pick First %p Shutting down", p);
   }
@@ -94,12 +96,9 @@ static void shutdown_locked(pick_first_lb_policy* p, grpc_error* error) {
         p->latest_pending_subchannel_list, "pf_shutdown");
     p->latest_pending_subchannel_list = nullptr;
   }
+  grpc_lb_policy_try_reresolve(&p->base, &grpc_lb_pick_first_trace,
+                               GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
-}
-
-static void pf_shutdown_locked(grpc_lb_policy* pol) {
-  shutdown_locked((pick_first_lb_policy*)pol,
-                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown"));
 }
 
 static void pf_cancel_pick_locked(grpc_lb_policy* pol,
@@ -154,10 +153,15 @@ static void start_picking_locked(pick_first_lb_policy* p) {
   if (p->subchannel_list != nullptr &&
       p->subchannel_list->num_subchannels > 0) {
     p->subchannel_list->checking_subchannel = 0;
-    grpc_lb_subchannel_list_ref_for_connectivity_watch(
-        p->subchannel_list, "connectivity_watch+start_picking");
-    grpc_lb_subchannel_data_start_connectivity_watch(
-        &p->subchannel_list->subchannels[0]);
+    for (size_t i = 0; i < p->subchannel_list->num_subchannels; ++i) {
+      if (p->subchannel_list->subchannels[i].subchannel != nullptr) {
+        grpc_lb_subchannel_list_ref_for_connectivity_watch(
+            p->subchannel_list, "connectivity_watch+start_picking");
+        grpc_lb_subchannel_data_start_connectivity_watch(
+            &p->subchannel_list->subchannels[i]);
+        break;
+      }
+    }
   }
 }
 
@@ -394,6 +398,9 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
     if (sd->curr_connectivity_state != GRPC_CHANNEL_READY &&
         p->latest_pending_subchannel_list != nullptr) {
       p->selected = nullptr;
+      grpc_lb_subchannel_data_stop_connectivity_watch(sd);
+      grpc_lb_subchannel_list_unref_for_connectivity_watch(
+          sd->subchannel_list, "selected_not_ready+switch_to_update");
       grpc_lb_subchannel_list_shutdown_and_unref(
           p->subchannel_list, "selected_not_ready+switch_to_update");
       p->subchannel_list = p->latest_pending_subchannel_list;
@@ -402,21 +409,34 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
           &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_REF(error), "selected_not_ready+switch_to_update");
     } else {
-      if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        /* if the selected channel goes bad, we're done */
-        sd->curr_connectivity_state = GRPC_CHANNEL_SHUTDOWN;
+      // TODO(juanlishen): we re-resolve when the selected subchannel goes to
+      // TRANSIENT_FAILURE because we used to shut down in this case before
+      // re-resolution is introduced. But we need to investigate whether we
+      // really want to take any action instead of waiting for the selected
+      // subchannel reconnecting.
+      if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN ||
+          sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // If the selected channel goes bad, request a re-resolution.
+        grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_IDLE,
+                                    GRPC_ERROR_NONE,
+                                    "selected_changed+reresolve");
+        p->started_picking = false;
+        grpc_lb_policy_try_reresolve(&p->base, &grpc_lb_pick_first_trace,
+                                     GRPC_ERROR_NONE);
+      } else {
+        grpc_connectivity_state_set(&p->state_tracker,
+                                    sd->curr_connectivity_state,
+                                    GRPC_ERROR_REF(error), "selected_changed");
       }
-      grpc_connectivity_state_set(&p->state_tracker,
-                                  sd->curr_connectivity_state,
-                                  GRPC_ERROR_REF(error), "selected_changed");
       if (sd->curr_connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
         // Renew notification.
         grpc_lb_subchannel_data_start_connectivity_watch(sd);
       } else {
+        p->selected = nullptr;
         grpc_lb_subchannel_data_stop_connectivity_watch(sd);
         grpc_lb_subchannel_list_unref_for_connectivity_watch(
             sd->subchannel_list, "pf_selected_shutdown");
-        shutdown_locked(p, GRPC_ERROR_REF(error));
+        grpc_lb_subchannel_data_unref_subchannel(sd, "pf_selected_shutdown");
       }
     }
     return;
@@ -519,21 +539,34 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
       } while (sd->subchannel == nullptr && sd != original_sd);
       if (sd == original_sd) {
         grpc_lb_subchannel_list_unref_for_connectivity_watch(
-            sd->subchannel_list, "pf_candidate_shutdown");
-        shutdown_locked(p, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                               "Pick first exhausted channels", &error, 1));
-        break;
+            sd->subchannel_list, "pf_exhausted_subchannels");
+        if (sd->subchannel_list == p->subchannel_list) {
+          grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_IDLE,
+                                      GRPC_ERROR_NONE,
+                                      "exhausted_subchannels+reresolve");
+          p->started_picking = false;
+          grpc_lb_policy_try_reresolve(&p->base, &grpc_lb_pick_first_trace,
+                                       GRPC_ERROR_NONE);
+        }
+      } else {
+        if (sd->subchannel_list == p->subchannel_list) {
+          grpc_connectivity_state_set(
+              &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+              GRPC_ERROR_REF(error), "subchannel_failed");
+        }
+        // Reuses the connectivity refs from the previous watch.
+        grpc_lb_subchannel_data_start_connectivity_watch(sd);
       }
-      if (sd->subchannel_list == p->subchannel_list) {
-        grpc_connectivity_state_set(&p->state_tracker,
-                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                    GRPC_ERROR_REF(error), "subchannel_failed");
-      }
-      // Reuses the connectivity refs from the previous watch.
-      grpc_lb_subchannel_data_start_connectivity_watch(sd);
-      break;
     }
   }
+}
+
+static void pf_set_reresolve_closure_locked(
+    grpc_lb_policy* policy, grpc_closure* request_reresolution) {
+  pick_first_lb_policy* p = (pick_first_lb_policy*)policy;
+  GPR_ASSERT(!p->shutdown);
+  GPR_ASSERT(policy->request_reresolution == nullptr);
+  policy->request_reresolution = request_reresolution;
 }
 
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
@@ -546,7 +579,8 @@ static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_exit_idle_locked,
     pf_check_connectivity_locked,
     pf_notify_on_state_change_locked,
-    pf_update_locked};
+    pf_update_locked,
+    pf_set_reresolve_closure_locked};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory* factory) {}
 
