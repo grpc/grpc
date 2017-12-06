@@ -36,6 +36,11 @@ config_setting(
 
 config_setting(
     name = "windows",
+    values = {"cpu": "x64_windows"},
+)
+
+config_setting(
+    name = "windows_msvc",
     values = {"cpu": "x64_windows_msvc"},
 )
 
@@ -152,6 +157,7 @@ cc_library(
         "-DNOMINMAX",
     ] + select({
         ":windows": [],
+        ":windows_msvc": [],
         "//conditions:default": ["-DHAVE_CONFIG_H"],
     }),
     data = [
