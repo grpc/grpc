@@ -365,19 +365,18 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx* exec_ctx,
    *    CHECK: subchannel_list->num_shutdown ==
    *           subchannel_list->num_subchannels.
    *
-   * 4) RULE: ALL subchannels are TRANSIENT_FAILURE => policy is
+   * 4) RULE: ALL subchannels are SHUTDOWN or TRANSIENT_FAILURE => policy is
    *          TRANSIENT_FAILURE.
-   *    CHECK: subchannel_list->num_transient_failures ==
-   *           subchannel_list->num_subchannels.
+   *    CHECK: subchannel_list->num_shutdown +
+                 subchannel_list->num_transient_failures ==
+               subchannel_list->num_subchannels.
    *
    * 5) RULE: ALL subchannels are IDLE => policy is IDLE.
    *    CHECK: subchannel_list->num_idle == subchannel_list->num_subchannels.
    *    (Note that all the subchannels will transition from IDLE to CONNECTING
    *    in batch when we start trying to connect.)
    */
-  // TODO(juanlishen): if the subchannel states are mixed by {SHUTDOWN,
-  // TRANSIENT_FAILURE}, we don't change the state. We may want to improve on
-  // this.
+  // TODO(juanlishen): For rule 4, we may want to re-resolve instead.
   grpc_lb_subchannel_list* subchannel_list = sd->subchannel_list;
   round_robin_lb_policy* p = (round_robin_lb_policy*)subchannel_list->policy;
   if (subchannel_list->num_ready > 0) {
@@ -398,7 +397,8 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx* exec_ctx,
     p->started_picking = false;
     grpc_lb_policy_try_reresolve(exec_ctx, &p->base, &grpc_lb_round_robin_trace,
                                  GRPC_ERROR_NONE);
-  } else if (subchannel_list->num_transient_failures ==
+  } else if (subchannel_list->num_shutdown +
+                 subchannel_list->num_transient_failures ==
              subchannel_list->num_subchannels) {
     /* 4) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
