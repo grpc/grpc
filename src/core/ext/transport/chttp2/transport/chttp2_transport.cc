@@ -343,8 +343,8 @@ static void init_transport(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
        window -- this should by rights be 0 */
     t->force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
     t->sent_local_settings = 0;
-    t->write_buffer_size = grpc_core::chttp2::kDefaultWindow;
   }
+  t->write_buffer_size = grpc_core::chttp2::kDefaultWindow;
 
   if (is_client) {
     grpc_slice_buffer_add(&t->outbuf, grpc_slice_from_copied_string(
