@@ -52,7 +52,8 @@ grpc_error* grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser* p,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
+grpc_error* grpc_chttp2_goaway_parser_parse(grpc_exec_ctx* exec_ctx,
+                                            void* parser,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
                                             grpc_slice slice, int is_last) {
@@ -134,7 +135,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {
         grpc_chttp2_add_incoming_goaway(
-            t, (uint32_t)p->error_code,
+            exec_ctx, t, (uint32_t)p->error_code,
             grpc_slice_new(p->debug_data, p->debug_length, gpr_free));
         p->debug_data = nullptr;
       }

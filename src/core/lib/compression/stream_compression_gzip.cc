@@ -40,7 +40,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
   /* Full flush is not allowed when inflating. */
   GPR_ASSERT(!(ctx->flate == inflate && (flush == Z_FINISH)));
 
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   int r;
   bool eoc = false;
   size_t original_max_output_size = max_output_size;
@@ -57,8 +57,8 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
       r = ctx->flate(&ctx->zs, Z_NO_FLUSH);
       if (r < 0 && r != Z_BUF_ERROR) {
         gpr_log(GPR_ERROR, "zlib error (%d)", r);
-        grpc_slice_unref_internal(slice_out);
-
+        grpc_slice_unref_internal(&exec_ctx, slice_out);
+        grpc_exec_ctx_finish(&exec_ctx);
         return false;
       } else if (r == Z_STREAM_END && ctx->flate == inflate) {
         eoc = true;
@@ -69,7 +69,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
             grpc_slice_sub(slice, GRPC_SLICE_LENGTH(slice) - ctx->zs.avail_in,
                            GRPC_SLICE_LENGTH(slice)));
       }
-      grpc_slice_unref_internal(slice);
+      grpc_slice_unref_internal(&exec_ctx, slice);
     }
     if (flush != 0 && ctx->zs.avail_out > 0 && !eoc) {
       GPR_ASSERT(in->length == 0);
@@ -88,8 +88,8 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
             break;
           default:
             gpr_log(GPR_ERROR, "zlib error (%d)", r);
-            grpc_slice_unref_internal(slice_out);
-
+            grpc_slice_unref_internal(&exec_ctx, slice_out);
+            grpc_exec_ctx_finish(&exec_ctx);
             return false;
         }
       } else if (flush == Z_FINISH) {
@@ -104,8 +104,8 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
             break;
           default:
             gpr_log(GPR_ERROR, "zlib error (%d)", r);
-            grpc_slice_unref_internal(slice_out);
-
+            grpc_slice_unref_internal(&exec_ctx, slice_out);
+            grpc_exec_ctx_finish(&exec_ctx);
             return false;
         }
       }
@@ -117,11 +117,11 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
       slice_out.data.refcounted.length -= ctx->zs.avail_out;
       grpc_slice_buffer_add(out, slice_out);
     } else {
-      grpc_slice_unref_internal(slice_out);
+      grpc_slice_unref_internal(&exec_ctx, slice_out);
     }
     max_output_size -= (slice_size - ctx->zs.avail_out);
   }
-
+  grpc_exec_ctx_finish(&exec_ctx);
   if (end_of_context) {
     *end_of_context = eoc;
   }

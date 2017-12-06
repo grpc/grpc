@@ -97,7 +97,7 @@ class Client {
       : server_address_(server_address) {}
 
   void Connect() {
-    grpc_core::ExecCtx exec_ctx;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resolved_addresses* server_addresses = nullptr;
     grpc_error* error =
         grpc_blocking_resolve_address(server_address_, "80", &server_addresses);
@@ -106,53 +106,56 @@ class Client {
     pollset_ = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
     grpc_pollset_init(pollset_, &mu_);
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
-    grpc_pollset_set_add_pollset(pollset_set, pollset_);
+    grpc_pollset_set_add_pollset(&exec_ctx, pollset_set, pollset_);
     EventState state;
-    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set,
+    grpc_tcp_client_connect(&exec_ctx, state.closure(), &endpoint_, pollset_set,
                             nullptr /* channel_args */, server_addresses->addrs,
                             1000);
     ASSERT_TRUE(PollUntilDone(
-        &state,
+        &exec_ctx, &state,
         grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
     ASSERT_EQ(GRPC_ERROR_NONE, state.error());
-    grpc_pollset_set_destroy(pollset_set);
-    grpc_endpoint_add_to_pollset(endpoint_, pollset_);
+    grpc_pollset_set_destroy(&exec_ctx, pollset_set);
+    grpc_endpoint_add_to_pollset(&exec_ctx, endpoint_, pollset_);
     grpc_resolved_addresses_destroy(server_addresses);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   // Reads until an error is returned.
   // Returns true if an error was encountered before the deadline.
   bool ReadUntilError() {
-    grpc_core::ExecCtx exec_ctx;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_slice_buffer read_buffer;
     grpc_slice_buffer_init(&read_buffer);
     bool retval = true;
     // Use a deadline of 3 seconds, which is a lot more than we should
     // need for a 1-second timeout, but this helps avoid flakes.
-    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 3000;
+    grpc_millis deadline = grpc_exec_ctx_now(&exec_ctx) + 3000;
     while (true) {
       EventState state;
-      grpc_endpoint_read(endpoint_, &read_buffer, state.closure());
-      if (!PollUntilDone(&state, deadline)) {
+      grpc_endpoint_read(&exec_ctx, endpoint_, &read_buffer, state.closure());
+      if (!PollUntilDone(&exec_ctx, &state, deadline)) {
         retval = false;
         break;
       }
       if (state.error() != GRPC_ERROR_NONE) break;
       gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
-      grpc_slice_buffer_reset_and_unref_internal(&read_buffer);
+      grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, &read_buffer);
     }
-    grpc_endpoint_shutdown(endpoint_,
+    grpc_endpoint_shutdown(&exec_ctx, endpoint_,
                            GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown"));
-    grpc_slice_buffer_destroy_internal(&read_buffer);
+    grpc_slice_buffer_destroy_internal(&exec_ctx, &read_buffer);
+    grpc_exec_ctx_finish(&exec_ctx);
     return retval;
   }
 
   void Shutdown() {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_endpoint_destroy(endpoint_);
-    grpc_pollset_shutdown(pollset_,
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_endpoint_destroy(&exec_ctx, endpoint_);
+    grpc_pollset_shutdown(&exec_ctx, pollset_,
                           GRPC_CLOSURE_CREATE(&Client::PollsetDestroy, pollset_,
                                               grpc_schedule_on_exec_ctx));
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
  private:
@@ -174,7 +177,8 @@ class Client {
     grpc_error* error() const { return error_; }
 
    private:
-    static void OnEventDone(void* arg, grpc_error* error) {
+    static void OnEventDone(grpc_exec_ctx* exec_ctx, void* arg,
+                            grpc_error* error) {
       gpr_log(GPR_INFO, "OnEventDone(): %s", grpc_error_string(error));
       EventState* state = (EventState*)arg;
       state->error_ = GRPC_ERROR_REF(error);
@@ -187,23 +191,24 @@ class Client {
   };
 
   // Returns true if done, or false if deadline exceeded.
-  bool PollUntilDone(EventState* state, grpc_millis deadline) {
+  bool PollUntilDone(grpc_exec_ctx* exec_ctx, EventState* state,
+                     grpc_millis deadline) {
     while (true) {
       grpc_pollset_worker* worker = nullptr;
       gpr_mu_lock(mu_);
-      GRPC_LOG_IF_ERROR(
-          "grpc_pollset_work",
-          grpc_pollset_work(pollset_, &worker,
-                            grpc_core::ExecCtx::Get()->Now() + 1000));
+      GRPC_LOG_IF_ERROR("grpc_pollset_work",
+                        grpc_pollset_work(exec_ctx, pollset_, &worker,
+                                          grpc_exec_ctx_now(exec_ctx) + 1000));
       gpr_mu_unlock(mu_);
       if (state != nullptr && state->done()) return true;
-      if (grpc_core::ExecCtx::Get()->Now() >= deadline) return false;
+      if (grpc_exec_ctx_now(exec_ctx) >= deadline) return false;
     }
   }
 
-  static void PollsetDestroy(void* arg, grpc_error* error) {
+  static void PollsetDestroy(grpc_exec_ctx* exec_ctx, void* arg,
+                             grpc_error* error) {
     grpc_pollset* pollset = (grpc_pollset*)arg;
-    grpc_pollset_destroy(pollset);
+    grpc_pollset_destroy(exec_ctx, pollset);
     gpr_free(pollset);
   }
 

@@ -58,7 +58,7 @@ namespace {
 void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   estimator->AddIncomingBytes(1234567);
   inc_time();
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   estimator->SchedulePing();
   estimator->StartPing();
   for (size_t i = 0; i < n; i++) {
@@ -66,8 +66,9 @@ void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
-  grpc_core::ExecCtx::Get()->InvalidateNow();
-  estimator->CompletePing();
+  grpc_exec_ctx_invalidate_now(&exec_ctx);
+  estimator->CompletePing(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void AddSample(BdpEstimator* estimator, int64_t sample) {

@@ -31,11 +31,13 @@
 typedef struct grpc_byte_stream grpc_byte_stream;
 
 typedef struct {
-  bool (*next)(grpc_byte_stream* byte_stream, size_t max_size_hint,
-               grpc_closure* on_complete);
-  grpc_error* (*pull)(grpc_byte_stream* byte_stream, grpc_slice* slice);
-  void (*shutdown)(grpc_byte_stream* byte_stream, grpc_error* error);
-  void (*destroy)(grpc_byte_stream* byte_stream);
+  bool (*next)(grpc_exec_ctx* exec_ctx, grpc_byte_stream* byte_stream,
+               size_t max_size_hint, grpc_closure* on_complete);
+  grpc_error* (*pull)(grpc_exec_ctx* exec_ctx, grpc_byte_stream* byte_stream,
+                      grpc_slice* slice);
+  void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_byte_stream* byte_stream,
+                   grpc_error* error);
+  void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_byte_stream* byte_stream);
 } grpc_byte_stream_vtable;
 
 struct grpc_byte_stream {
@@ -50,7 +52,8 @@ struct grpc_byte_stream {
 //
 // max_size_hint can be set as a hint as to the maximum number
 // of bytes that would be acceptable to read.
-bool grpc_byte_stream_next(grpc_byte_stream* byte_stream, size_t max_size_hint,
+bool grpc_byte_stream_next(grpc_exec_ctx* exec_ctx,
+                           grpc_byte_stream* byte_stream, size_t max_size_hint,
                            grpc_closure* on_complete);
 
 // Returns the next slice in the byte stream when it is ready (indicated by
@@ -58,7 +61,8 @@ bool grpc_byte_stream_next(grpc_byte_stream* byte_stream, size_t max_size_hint,
 // grpc_byte_stream_next is called).
 //
 // Once a slice is returned into *slice, it is owned by the caller.
-grpc_error* grpc_byte_stream_pull(grpc_byte_stream* byte_stream,
+grpc_error* grpc_byte_stream_pull(grpc_exec_ctx* exec_ctx,
+                                  grpc_byte_stream* byte_stream,
                                   grpc_slice* slice);
 
 // Shuts down the byte stream.
@@ -68,10 +72,12 @@ grpc_error* grpc_byte_stream_pull(grpc_byte_stream* byte_stream,
 //
 // The next call to grpc_byte_stream_pull() (if any) will return the error
 // passed to grpc_byte_stream_shutdown().
-void grpc_byte_stream_shutdown(grpc_byte_stream* byte_stream,
+void grpc_byte_stream_shutdown(grpc_exec_ctx* exec_ctx,
+                               grpc_byte_stream* byte_stream,
                                grpc_error* error);
 
-void grpc_byte_stream_destroy(grpc_byte_stream* byte_stream);
+void grpc_byte_stream_destroy(grpc_exec_ctx* exec_ctx,
+                              grpc_byte_stream* byte_stream);
 
 // grpc_slice_buffer_stream
 //
@@ -113,7 +119,8 @@ void grpc_byte_stream_cache_init(grpc_byte_stream_cache* cache,
                                  grpc_byte_stream* underlying_stream);
 
 // Must not be called while still in use by a grpc_caching_byte_stream.
-void grpc_byte_stream_cache_destroy(grpc_byte_stream_cache* cache);
+void grpc_byte_stream_cache_destroy(grpc_exec_ctx* exec_ctx,
+                                    grpc_byte_stream_cache* cache);
 
 typedef struct {
   grpc_byte_stream base;

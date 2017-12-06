@@ -49,22 +49,22 @@ struct passthru_endpoint {
   int halves;
   grpc_passthru_endpoint_stats* stats;
   grpc_passthru_endpoint_stats
-      dummy_stats;  // used if constructor stats == nullptr
+      dummy_stats;  // used if constructor stats == NULL
   bool shutdown;
   half client;
   half server;
 };
 
-static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb) {
+static void me_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                    grpc_slice_buffer* slices, grpc_closure* cb) {
   half* m = (half*)ep;
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
     GRPC_CLOSURE_SCHED(
-        cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+        exec_ctx, cb, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
   } else if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
-    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_NONE);
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -77,8 +77,8 @@ static half* other_half(half* h) {
   return &h->parent->client;
 }
 
-static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb) {
+static void me_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                     grpc_slice_buffer* slices, grpc_closure* cb) {
   half* m = other_half((half*)ep);
   gpr_mu_lock(&m->parent->mu);
   grpc_error* error = GRPC_ERROR_NONE;
@@ -89,7 +89,7 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     for (size_t i = 0; i < slices->count; i++) {
       grpc_slice_buffer_add(m->on_read_out, grpc_slice_copy(slices->slices[i]));
     }
-    GRPC_CLOSURE_SCHED(m->on_read, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, m->on_read, GRPC_ERROR_NONE);
     m->on_read = nullptr;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
@@ -98,49 +98,52 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     }
   }
   gpr_mu_unlock(&m->parent->mu);
-  GRPC_CLOSURE_SCHED(cb, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, cb, error);
 }
 
-static void me_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
+static void me_add_to_pollset(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                              grpc_pollset* pollset) {}
 
-static void me_add_to_pollset_set(grpc_endpoint* ep,
+static void me_add_to_pollset_set(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                                   grpc_pollset_set* pollset) {}
 
-static void me_delete_from_pollset_set(grpc_endpoint* ep,
+static void me_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
+                                       grpc_endpoint* ep,
                                        grpc_pollset_set* pollset) {}
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error* why) {
+static void me_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                        grpc_error* why) {
   half* m = (half*)ep;
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
     GRPC_CLOSURE_SCHED(
-        m->on_read,
+        exec_ctx, m->on_read,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   m = other_half(m);
   if (m->on_read) {
     GRPC_CLOSURE_SCHED(
-        m->on_read,
+        exec_ctx, m->on_read,
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->parent->mu);
-  grpc_resource_user_shutdown(m->resource_user);
+  grpc_resource_user_shutdown(exec_ctx, m->resource_user);
   GRPC_ERROR_UNREF(why);
 }
 
-static void me_destroy(grpc_endpoint* ep) {
+static void me_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
   passthru_endpoint* p = ((half*)ep)->parent;
   gpr_mu_lock(&p->mu);
   if (0 == --p->halves) {
     gpr_mu_unlock(&p->mu);
     gpr_mu_destroy(&p->mu);
-    grpc_slice_buffer_destroy_internal(&p->client.read_buffer);
-    grpc_slice_buffer_destroy_internal(&p->server.read_buffer);
-    grpc_resource_user_unref(p->client.resource_user);
-    grpc_resource_user_unref(p->server.resource_user);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &p->client.read_buffer);
+    grpc_slice_buffer_destroy_internal(exec_ctx, &p->server.read_buffer);
+    grpc_resource_user_unref(exec_ctx, p->client.resource_user);
+    grpc_resource_user_unref(exec_ctx, p->server.resource_user);
     gpr_free(p);
   } else {
     gpr_mu_unlock(&p->mu);

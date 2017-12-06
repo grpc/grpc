@@ -17,7 +17,6 @@
  */
 
 #include <grpc++/impl/codegen/config.h>
-#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
@@ -136,8 +135,5 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

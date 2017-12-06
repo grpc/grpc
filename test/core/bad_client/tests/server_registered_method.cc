@@ -77,7 +77,6 @@ static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
 
   /* body generated with
    * tools/codegen/core/gen_server_registered_method_bad_client_test_body.py */
@@ -124,6 +123,5 @@ int main(int argc, char** argv) {
       "\x00\x00\x07\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x02\x00\x00",
       0);
 
-  grpc_shutdown();
   return 0;
 }

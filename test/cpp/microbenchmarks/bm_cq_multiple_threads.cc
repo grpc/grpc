@@ -43,8 +43,9 @@ static grpc_completion_queue* g_cq;
 static grpc_event_engine_vtable g_vtable;
 static const grpc_event_engine_vtable* g_old_vtable;
 
-static void pollset_shutdown(grpc_pollset* ps, grpc_closure* closure) {
-  GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+static void pollset_shutdown(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
+                             grpc_closure* closure) {
+  GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
 }
 
 static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {
@@ -52,20 +53,25 @@ static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {
   *mu = &ps->mu;
 }
 
-static void pollset_destroy(grpc_pollset* ps) { gpr_mu_destroy(&ps->mu); }
+static void pollset_destroy(grpc_exec_ctx* exec_ctx, grpc_pollset* ps) {
+  gpr_mu_destroy(&ps->mu);
+}
 
-static grpc_error* pollset_kick(grpc_pollset* p, grpc_pollset_worker* worker) {
+static grpc_error* pollset_kick(grpc_exec_ctx* exec_ctx, grpc_pollset* p,
+                                grpc_pollset_worker* worker) {
   return GRPC_ERROR_NONE;
 }
 
 /* Callback when the tag is dequeued from the completion queue. Does nothing */
-static void cq_done_cb(void* done_arg, grpc_cq_completion* cq_completion) {
+static void cq_done_cb(grpc_exec_ctx* exec_ctx, void* done_arg,
+                       grpc_cq_completion* cq_completion) {
   gpr_free(cq_completion);
 }
 
 /* Queues a completion tag if deadline is > 0.
  * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
-static grpc_error* pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker,
+static grpc_error* pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
+                                grpc_pollset_worker** worker,
                                 grpc_millis deadline) {
   if (deadline == 0) {
     gpr_log(GPR_DEBUG, "no-op");
@@ -74,9 +80,9 @@ static grpc_error* pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker,
 
   gpr_mu_unlock(&ps->mu);
   GPR_ASSERT(grpc_cq_begin_op(g_cq, g_tag));
-  grpc_cq_end_op(g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
+  grpc_cq_end_op(exec_ctx, g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
                  (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
-  grpc_core::ExecCtx::Get()->Flush();
+  grpc_exec_ctx_flush(exec_ctx);
   gpr_mu_lock(&ps->mu);
   return GRPC_ERROR_NONE;
 }

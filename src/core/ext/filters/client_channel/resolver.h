@@ -35,40 +35,43 @@ struct grpc_resolver {
 };
 
 struct grpc_resolver_vtable {
-  void (*destroy)(grpc_resolver* resolver);
-  void (*shutdown_locked)(grpc_resolver* resolver);
-  void (*channel_saw_error_locked)(grpc_resolver* resolver);
-  void (*next_locked)(grpc_resolver* resolver, grpc_channel_args** result,
-                      grpc_closure* on_complete);
+  void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver);
+  void (*shutdown_locked)(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver);
+  void (*channel_saw_error_locked)(grpc_exec_ctx* exec_ctx,
+                                   grpc_resolver* resolver);
+  void (*next_locked)(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
+                      grpc_channel_args** result, grpc_closure* on_complete);
 };
 
 #ifndef NDEBUG
 #define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_RESOLVER_UNREF(p, r) \
-  grpc_resolver_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_RESOLVER_UNREF(e, p, r) \
+  grpc_resolver_unref((e), (p), __FILE__, __LINE__, (r))
 void grpc_resolver_ref(grpc_resolver* policy, const char* file, int line,
                        const char* reason);
-void grpc_resolver_unref(grpc_resolver* policy, const char* file, int line,
-                         const char* reason);
+void grpc_resolver_unref(grpc_exec_ctx* exec_ctx, grpc_resolver* policy,
+                         const char* file, int line, const char* reason);
 #else
 #define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p))
-#define GRPC_RESOLVER_UNREF(p, r) grpc_resolver_unref((p))
+#define GRPC_RESOLVER_UNREF(e, p, r) grpc_resolver_unref((e), (p))
 void grpc_resolver_ref(grpc_resolver* policy);
-void grpc_resolver_unref(grpc_resolver* policy);
+void grpc_resolver_unref(grpc_exec_ctx* exec_ctx, grpc_resolver* policy);
 #endif
 
 void grpc_resolver_init(grpc_resolver* resolver,
                         const grpc_resolver_vtable* vtable,
                         grpc_combiner* combiner);
 
-void grpc_resolver_shutdown_locked(grpc_resolver* resolver);
+void grpc_resolver_shutdown_locked(grpc_exec_ctx* exec_ctx,
+                                   grpc_resolver* resolver);
 
 /** Notification that the channel has seen an error on some address.
     Can be used as a hint that re-resolution is desirable soon.
 
     Must be called from the combiner passed as a resolver_arg at construction
     time.*/
-void grpc_resolver_channel_saw_error_locked(grpc_resolver* resolver);
+void grpc_resolver_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
+                                            grpc_resolver* resolver);
 
 /** Get the next result from the resolver.  Expected to set \a *result with
     new channel args and then schedule \a on_complete for execution.
@@ -78,7 +81,7 @@ void grpc_resolver_channel_saw_error_locked(grpc_resolver* resolver);
 
     Must be called from the combiner passed as a resolver_arg at construction
     time.*/
-void grpc_resolver_next_locked(grpc_resolver* resolver,
+void grpc_resolver_next_locked(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
                                grpc_channel_args** result,
                                grpc_closure* on_complete);
 

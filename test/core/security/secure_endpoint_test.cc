@@ -38,7 +38,7 @@ static grpc_pollset* g_pollset;
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, grpc_slice* leftover_slices, size_t leftover_nslices,
     bool use_zero_copy_protector) {
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   tsi_frame_protector* fake_read_protector =
       tsi_create_fake_frame_protector(nullptr);
   tsi_frame_protector* fake_write_protector =
@@ -60,8 +60,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   a[0].value.integer = (int)slice_size;
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   tcp = grpc_iomgr_create_endpoint_pair("fixture", &args);
-  grpc_endpoint_add_to_pollset(tcp.client, g_pollset);
-  grpc_endpoint_add_to_pollset(tcp.server, g_pollset);
+  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.client, g_pollset);
+  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, g_pollset);
 
   if (leftover_nslices == 0) {
     f.client_ep = grpc_secure_endpoint_create(fake_read_protector,
@@ -117,7 +117,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   f.server_ep = grpc_secure_endpoint_create(fake_write_protector,
                                             fake_write_zero_copy_protector,
                                             tcp.server, nullptr, 0);
-
+  grpc_exec_ctx_finish(&exec_ctx);
   return f;
 }
 
@@ -165,62 +165,65 @@ static grpc_endpoint_test_config configs[] = {
      clean_up},
 };
 
-static void inc_call_ctr(void* arg, grpc_error* error) { ++*(int*)arg; }
+static void inc_call_ctr(grpc_exec_ctx* exec_ctx, void* arg,
+                         grpc_error* error) {
+  ++*(int*)arg;
+}
 
 static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_endpoint_test_fixture f = config.create_fixture(slice_size);
   grpc_slice_buffer incoming;
   grpc_slice s =
       grpc_slice_from_copied_string("hello world 12345678900987654321");
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   int n = 0;
   grpc_closure done_closure;
   gpr_log(GPR_INFO, "Start test left over");
 
   grpc_slice_buffer_init(&incoming);
   GRPC_CLOSURE_INIT(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(f.client_ep, &incoming, &done_closure);
-
-  grpc_core::ExecCtx::Get()->Flush();
+  grpc_endpoint_read(&exec_ctx, f.client_ep, &incoming, &done_closure);
+  grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(n == 1);
   GPR_ASSERT(incoming.count == 1);
   GPR_ASSERT(grpc_slice_eq(s, incoming.slices[0]));
 
   grpc_endpoint_shutdown(
-      f.client_ep, GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
+      &exec_ctx, f.client_ep,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
   grpc_endpoint_shutdown(
-      f.server_ep, GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
-  grpc_endpoint_destroy(f.client_ep);
-  grpc_endpoint_destroy(f.server_ep);
-
-  grpc_slice_unref_internal(s);
-  grpc_slice_buffer_destroy_internal(&incoming);
+      &exec_ctx, f.server_ep,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
+  grpc_endpoint_destroy(&exec_ctx, f.client_ep);
+  grpc_endpoint_destroy(&exec_ctx, f.server_ep);
+  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_slice_unref_internal(&exec_ctx, s);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &incoming);
 
   clean_up();
 }
 
-static void destroy_pollset(void* p, grpc_error* error) {
-  grpc_pollset_destroy((grpc_pollset*)p);
+static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* p,
+                            grpc_error* error) {
+  grpc_pollset_destroy(exec_ctx, (grpc_pollset*)p);
 }
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
+
   grpc_init();
-
-  {
-    grpc_core::ExecCtx exec_ctx;
-    g_pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
-    grpc_pollset_init(g_pollset, &g_mu);
-    grpc_endpoint_tests(configs[0], g_pollset, g_mu);
-    grpc_endpoint_tests(configs[1], g_pollset, g_mu);
-    test_leftover(configs[2], 1);
-    test_leftover(configs[3], 1);
-    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                      grpc_schedule_on_exec_ctx);
-    grpc_pollset_shutdown(g_pollset, &destroyed);
-  }
-
+  g_pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  grpc_pollset_init(g_pollset, &g_mu);
+  grpc_endpoint_tests(configs[0], g_pollset, g_mu);
+  grpc_endpoint_tests(configs[1], g_pollset, g_mu);
+  test_leftover(configs[2], 1);
+  test_leftover(configs[3], 1);
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
+  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 
   gpr_free(g_pollset);

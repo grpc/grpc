@@ -31,26 +31,25 @@ void gpr_thd_end_blocking_region();
   do {                                        \
     gpr_thd_start_blocking_region();          \
   } while (0)
-#define GRPC_SCHEDULING_END_BLOCKING_REGION     \
-  do {                                          \
-    gpr_thd_end_blocking_region();              \
-    grpc_core::ExecCtx::Get()->InvalidateNow(); \
-  } while (0)
 #define GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX \
   do {                                                  \
     gpr_thd_end_blocking_region();                      \
   } while (0)
-
+#define GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(ec) \
+  do {                                                        \
+    gpr_thd_end_blocking_region();                            \
+    grpc_exec_ctx_invalidate_now((ec));                       \
+  } while (0)
 #else
 #define GRPC_SCHEDULING_START_BLOCKING_REGION \
   do {                                        \
   } while (0)
-#define GRPC_SCHEDULING_END_BLOCKING_REGION     \
-  do {                                          \
-    grpc_core::ExecCtx::Get()->InvalidateNow(); \
-  } while (0)
 #define GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX \
   do {                                                  \
+  } while (0)
+#define GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(ec) \
+  do {                                                        \
+    grpc_exec_ctx_invalidate_now((ec));                       \
   } while (0)
 #endif
 

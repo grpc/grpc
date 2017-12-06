@@ -18,7 +18,6 @@
 
 #include <grpc++/support/slice.h>
 
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <gtest/gtest.h>
 
@@ -128,8 +127,5 @@ TEST_F(SliceTest, Cslice) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

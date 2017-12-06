@@ -156,7 +156,11 @@ static void unref_errs(grpc_error* err) {
   }
 }
 
-static void unref_slice(grpc_slice slice) { grpc_slice_unref_internal(slice); }
+static void unref_slice(grpc_slice slice) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice_unref_internal(&exec_ctx, slice);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
 
 static void unref_strs(grpc_error* err) {
   for (size_t which = 0; which < GRPC_ERROR_STR_MAX; ++which) {

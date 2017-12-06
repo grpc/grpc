@@ -651,8 +651,9 @@ static void test_get_channel_info() {
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   channel = grpc_insecure_channel_create("ipv4:127.0.0.1:1234", args, nullptr);
   {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args_destroy(args);
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, args);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
   // Ensures that resolver returns.
   grpc_channel_check_connectivity_state(channel, true /* try_to_connect */);
@@ -958,7 +959,7 @@ static void verify_rebirth_round_robin(const servers_fixture* f,
 }
 
 int main(int argc, char** argv) {
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   test_spec* spec;
   size_t i;
   const size_t NUM_ITERS = 10;
@@ -968,9 +969,9 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_tracer_set_enabled("round_robin", 1);
 
-  GPR_ASSERT(grpc_lb_policy_create("this-lb-policy-does-not-exist", nullptr) ==
-             nullptr);
-  GPR_ASSERT(grpc_lb_policy_create(nullptr, nullptr) == nullptr);
+  GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, "this-lb-policy-does-not-exist",
+                                   nullptr) == nullptr);
+  GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, nullptr, nullptr) == nullptr);
 
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);
   /* everything is fine, all servers stay up the whole time and life's peachy
@@ -1024,6 +1025,7 @@ int main(int argc, char** argv) {
   test_ping();
   test_get_channel_info();
 
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
   return 0;
 }

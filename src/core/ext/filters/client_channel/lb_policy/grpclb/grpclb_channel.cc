@@ -26,17 +26,17 @@
 #include "src/core/lib/support/string.h"
 
 grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
-    const char* lb_service_target_addresses,
+    grpc_exec_ctx* exec_ctx, const char* lb_service_target_addresses,
     grpc_client_channel_factory* client_channel_factory,
     grpc_channel_args* args) {
   grpc_channel* lb_channel = grpc_client_channel_factory_create_channel(
-      client_channel_factory, lb_service_target_addresses,
+      exec_ctx, client_channel_factory, lb_service_target_addresses,
       GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, args);
   return lb_channel;
 }
 
 grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
-    grpc_slice_hash_table* targets_info,
+    grpc_exec_ctx* exec_ctx, grpc_slice_hash_table* targets_info,
     grpc_fake_resolver_response_generator* response_generator,
     const grpc_channel_args* args) {
   const grpc_arg to_add[] = {

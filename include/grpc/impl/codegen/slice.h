@@ -43,7 +43,7 @@ typedef struct grpc_slice grpc_slice;
 
 typedef struct grpc_slice_refcount_vtable {
   void (*ref)(void*);
-  void (*unref)(void*);
+  void (*unref)(grpc_exec_ctx* exec_ctx, void*);
   int (*eq)(grpc_slice a, grpc_slice b);
   uint32_t (*hash)(grpc_slice slice);
 } grpc_slice_refcount_vtable;

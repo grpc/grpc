@@ -31,12 +31,12 @@
  * \a client_channel_factory will be used for the creation of the LB channel,
  * alongside the channel args passed in \a args. */
 grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
-    const char* lb_service_target_addresses,
+    grpc_exec_ctx* exec_ctx, const char* lb_service_target_addresses,
     grpc_client_channel_factory* client_channel_factory,
     grpc_channel_args* args);
 
 grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
-    grpc_slice_hash_table* targets_info,
+    grpc_exec_ctx* exec_ctx, grpc_slice_hash_table* targets_info,
     grpc_fake_resolver_response_generator* response_generator,
     const grpc_channel_args* args);
 

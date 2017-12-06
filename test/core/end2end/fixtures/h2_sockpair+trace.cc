@@ -50,11 +50,12 @@
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
   grpc_end2end_test_fixture* f = static_cast<grpc_end2end_test_fixture*>(ts);
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_pair* sfd = static_cast<grpc_endpoint_pair*>(f->fixture_data);
-  grpc_endpoint_add_to_pollset(sfd->server, grpc_cq_pollset(f->cq));
-  grpc_server_setup_transport(f->server, transport, nullptr,
+  grpc_endpoint_add_to_pollset(&exec_ctx, sfd->server, grpc_cq_pollset(f->cq));
+  grpc_server_setup_transport(&exec_ctx, f->server, transport, nullptr,
                               grpc_server_get_channel_args(f->server));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 typedef struct {
@@ -62,11 +63,13 @@ typedef struct {
   grpc_channel_args* client_args;
 } sp_client_setup;
 
-static void client_setup_transport(void* ts, grpc_transport* transport) {
+static void client_setup_transport(grpc_exec_ctx* exec_ctx, void* ts,
+                                   grpc_transport* transport) {
   sp_client_setup* cs = static_cast<sp_client_setup*>(ts);
 
-  cs->f->client = grpc_channel_create("socketpair-target", cs->client_args,
-                                      GRPC_CLIENT_DIRECT_CHANNEL, transport);
+  cs->f->client =
+      grpc_channel_create(exec_ctx, "socketpair-target", cs->client_args,
+                          GRPC_CLIENT_DIRECT_CHANNEL, transport);
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
@@ -87,30 +90,34 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
 
 static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
                                           grpc_channel_args* client_args) {
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_pair* sfd = static_cast<grpc_endpoint_pair*>(f->fixture_data);
   grpc_transport* transport;
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
-  transport = grpc_create_chttp2_transport(client_args, sfd->client, true);
-  client_setup_transport(&cs, transport);
+  transport =
+      grpc_create_chttp2_transport(&exec_ctx, client_args, sfd->client, true);
+  client_setup_transport(&exec_ctx, &cs, transport);
   GPR_ASSERT(f->client);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr, nullptr);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
                                           grpc_channel_args* server_args) {
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_pair* sfd = static_cast<grpc_endpoint_pair*>(f->fixture_data);
   grpc_transport* transport;
   GPR_ASSERT(!f->server);
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-  transport = grpc_create_chttp2_transport(server_args, sfd->server, false);
+  transport =
+      grpc_create_chttp2_transport(&exec_ctx, server_args, sfd->server, false);
   server_setup_transport(f, transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr, nullptr);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
@@ -126,6 +133,7 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char** argv) {
   size_t i;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */
@@ -139,6 +147,7 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
+  grpc_exec_ctx_finish(&exec_ctx);
 
   GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));
   GPR_ASSERT(1 == grpc_tracer_set_enabled("http", 1));

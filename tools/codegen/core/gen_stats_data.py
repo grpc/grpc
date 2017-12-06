@@ -150,11 +150,11 @@ def gen_bucket_code(histogram):
   code = 'value = GPR_CLAMP(value, 0, %d);\n' % histogram.max
   map_table = gen_map_table(code_bounds[first_nontrivial:], shift_data)
   if first_nontrivial is None:
-    code += ('GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, value);\n'
+    code += ('GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, value);\n'
              % histogram.name.upper())
   else:
     code += 'if (value < %d) {\n' % first_nontrivial
-    code += ('GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, value);\n'
+    code += ('GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, value);\n'
              % histogram.name.upper())
     code += 'return;\n'
     code += '}'
@@ -168,11 +168,11 @@ def gen_bucket_code(histogram):
       code += 'grpc_stats_table_%d[((_val.uint - %dull) >> %d)] + %d;\n' % (map_table_idx, first_nontrivial_code, shift_data[0], first_nontrivial)
       code += '_bkt.dbl = grpc_stats_table_%d[bucket];\n' % bounds_idx
       code += 'bucket -= (_val.uint < _bkt.uint);\n'
-      code += 'GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, bucket);\n' % histogram.name.upper()
+      code += 'GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, bucket);\n' % histogram.name.upper()
       code += 'return;\n'
       code += '}\n'
-    code += 'GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, '% histogram.name.upper()
-    code += 'grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_%d, %d));\n' % (bounds_idx, histogram.buckets)
+    code += 'GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, '% histogram.name.upper()
+    code += 'grpc_stats_histo_find_bucket_slow((exec_ctx), value, grpc_stats_table_%d, %d));\n' % (bounds_idx, histogram.buckets)
   return (code, bounds_idx)
 
 # utility: print a big comment block into a set of files
@@ -240,13 +240,13 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
   print >>H, "} grpc_stats_histogram_constants;"
 
   for ctr in inst_map['Counter']:
-    print >>H, ("#define GRPC_STATS_INC_%s() " +
-                "GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_%s)") % (
+    print >>H, ("#define GRPC_STATS_INC_%s(exec_ctx) " +
+                "GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_%s)") % (
                 ctr.name.upper(), ctr.name.upper())
   for histogram in inst_map['Histogram']:
-    print >>H, "#define GRPC_STATS_INC_%s(value) grpc_stats_inc_%s( (int)(value))" % (
+    print >>H, "#define GRPC_STATS_INC_%s(exec_ctx, value) grpc_stats_inc_%s((exec_ctx), (int)(value))" % (
         histogram.name.upper(), histogram.name.lower())
-    print >>H, "void grpc_stats_inc_%s(int x);" % histogram.name.lower()
+    print >>H, "void grpc_stats_inc_%s(grpc_exec_ctx *exec_ctx, int x);" % histogram.name.lower()
 
   for i, tbl in enumerate(static_tables):
     print >>H, "extern const %s grpc_stats_table_%d[%d];" % (tbl[0], i, len(tbl[1]))
@@ -254,7 +254,7 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
   print >>H, "extern const int grpc_stats_histo_buckets[%d];" % len(inst_map['Histogram'])
   print >>H, "extern const int grpc_stats_histo_start[%d];" % len(inst_map['Histogram'])
   print >>H, "extern const int *const grpc_stats_histo_bucket_boundaries[%d];" % len(inst_map['Histogram'])
-  print >>H, "extern void (*const grpc_stats_inc_histogram[%d])(int x);" % len(inst_map['Histogram'])
+  print >>H, "extern void (*const grpc_stats_inc_histogram[%d])(grpc_exec_ctx *exec_ctx, int x);" % len(inst_map['Histogram'])
 
   print >>H
   print >>H, "#ifdef __cplusplus"
@@ -309,7 +309,7 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
         tbl[0], i, len(tbl[1]), ','.join('%s' % x for x in tbl[1]))
 
   for histogram, code in zip(inst_map['Histogram'], histo_code):
-    print >>C, ("void grpc_stats_inc_%s(int value) {%s}") % (
+    print >>C, ("void grpc_stats_inc_%s(grpc_exec_ctx *exec_ctx, int value) {%s}") % (
                 histogram.name.lower(),
                 code)
 
@@ -319,7 +319,7 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
       len(inst_map['Histogram']), ','.join('%s' % x for x in histo_start))
   print >>C, "const int *const grpc_stats_histo_bucket_boundaries[%d] = {%s};" % (
       len(inst_map['Histogram']), ','.join('grpc_stats_table_%d' % x for x in histo_bucket_boundaries))
-  print >>C, "void (*const grpc_stats_inc_histogram[%d])(int x) = {%s};" % (
+  print >>C, "void (*const grpc_stats_inc_histogram[%d])(grpc_exec_ctx *exec_ctx, int x) = {%s};" % (
       len(inst_map['Histogram']), ','.join('grpc_stats_inc_%s' % histogram.name.lower() for histogram in inst_map['Histogram']))
 
 # patch qps_test bigquery schema

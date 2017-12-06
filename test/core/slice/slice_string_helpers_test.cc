@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -131,9 +130,7 @@ static void test_strsplit(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
   test_dump_slice();
   test_strsplit();
-  grpc_shutdown();
   return 0;
 }

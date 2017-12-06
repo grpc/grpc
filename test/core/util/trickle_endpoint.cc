@@ -45,23 +45,24 @@ typedef struct {
   grpc_closure* write_cb;
 } trickle_endpoint;
 
-static void te_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb) {
+static void te_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                    grpc_slice_buffer* slices, grpc_closure* cb) {
   trickle_endpoint* te = (trickle_endpoint*)ep;
-  grpc_endpoint_read(te->wrapped, slices, cb);
+  grpc_endpoint_read(exec_ctx, te->wrapped, slices, cb);
 }
 
-static void maybe_call_write_cb_locked(trickle_endpoint* te) {
+static void maybe_call_write_cb_locked(grpc_exec_ctx* exec_ctx,
+                                       trickle_endpoint* te) {
   if (te->write_cb != nullptr &&
       (te->error != GRPC_ERROR_NONE ||
        te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
-    GRPC_CLOSURE_SCHED(te->write_cb, GRPC_ERROR_REF(te->error));
+    GRPC_CLOSURE_SCHED(exec_ctx, te->write_cb, GRPC_ERROR_REF(te->error));
     te->write_cb = nullptr;
   }
 }
 
-static void te_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb) {
+static void te_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                     grpc_slice_buffer* slices, grpc_closure* cb) {
   trickle_endpoint* te = (trickle_endpoint*)ep;
   gpr_mu_lock(&te->mu);
   GPR_ASSERT(te->write_cb == nullptr);
@@ -73,44 +74,47 @@ static void te_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
                           grpc_slice_copy(slices->slices[i]));
   }
   te->write_cb = cb;
-  maybe_call_write_cb_locked(te);
+  maybe_call_write_cb_locked(exec_ctx, te);
   gpr_mu_unlock(&te->mu);
 }
 
-static void te_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {
+static void te_add_to_pollset(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                              grpc_pollset* pollset) {
   trickle_endpoint* te = (trickle_endpoint*)ep;
-  grpc_endpoint_add_to_pollset(te->wrapped, pollset);
+  grpc_endpoint_add_to_pollset(exec_ctx, te->wrapped, pollset);
 }
 
-static void te_add_to_pollset_set(grpc_endpoint* ep,
+static void te_add_to_pollset_set(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                                   grpc_pollset_set* pollset_set) {
   trickle_endpoint* te = (trickle_endpoint*)ep;
-  grpc_endpoint_add_to_pollset_set(te->wrapped, pollset_set);
+  grpc_endpoint_add_to_pollset_set(exec_ctx, te->wrapped, pollset_set);
 }
 
-static void te_delete_from_pollset_set(grpc_endpoint* ep,
+static void te_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
+                                       grpc_endpoint* ep,
                                        grpc_pollset_set* pollset_set) {
   trickle_endpoint* te = (trickle_endpoint*)ep;
-  grpc_endpoint_delete_from_pollset_set(te->wrapped, pollset_set);
+  grpc_endpoint_delete_from_pollset_set(exec_ctx, te->wrapped, pollset_set);
 }
 
-static void te_shutdown(grpc_endpoint* ep, grpc_error* why) {
+static void te_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                        grpc_error* why) {
   trickle_endpoint* te = (trickle_endpoint*)ep;
   gpr_mu_lock(&te->mu);
   if (te->error == GRPC_ERROR_NONE) {
     te->error = GRPC_ERROR_REF(why);
   }
-  maybe_call_write_cb_locked(te);
+  maybe_call_write_cb_locked(exec_ctx, te);
   gpr_mu_unlock(&te->mu);
-  grpc_endpoint_shutdown(te->wrapped, why);
+  grpc_endpoint_shutdown(exec_ctx, te->wrapped, why);
 }
 
-static void te_destroy(grpc_endpoint* ep) {
+static void te_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
   trickle_endpoint* te = (trickle_endpoint*)ep;
-  grpc_endpoint_destroy(te->wrapped);
+  grpc_endpoint_destroy(exec_ctx, te->wrapped);
   gpr_mu_destroy(&te->mu);
-  grpc_slice_buffer_destroy_internal(&te->write_buffer);
-  grpc_slice_buffer_destroy_internal(&te->writing_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &te->write_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &te->writing_buffer);
   GRPC_ERROR_UNREF(te->error);
   gpr_free(te);
 }
@@ -130,7 +134,8 @@ static int te_get_fd(grpc_endpoint* ep) {
   return grpc_endpoint_get_fd(te->wrapped);
 }
 
-static void te_finish_write(void* arg, grpc_error* error) {
+static void te_finish_write(grpc_exec_ctx* exec_ctx, void* arg,
+                            grpc_error* error) {
   trickle_endpoint* te = (trickle_endpoint*)arg;
   gpr_mu_lock(&te->mu);
   te->writing = false;
@@ -168,7 +173,8 @@ static double ts2dbl(gpr_timespec s) {
   return (double)s.tv_sec + 1e-9 * (double)s.tv_nsec;
 }
 
-size_t grpc_trickle_endpoint_trickle(grpc_endpoint* ep) {
+size_t grpc_trickle_endpoint_trickle(grpc_exec_ctx* exec_ctx,
+                                     grpc_endpoint* ep) {
   trickle_endpoint* te = (trickle_endpoint*)ep;
   gpr_mu_lock(&te->mu);
   if (!te->writing && te->write_buffer.length > 0) {
@@ -183,9 +189,9 @@ size_t grpc_trickle_endpoint_trickle(grpc_endpoint* ep) {
       te->writing = true;
       te->last_write = now;
       grpc_endpoint_write(
-          te->wrapped, &te->writing_buffer,
+          exec_ctx, te->wrapped, &te->writing_buffer,
           GRPC_CLOSURE_CREATE(te_finish_write, te, grpc_schedule_on_exec_ctx));
-      maybe_call_write_cb_locked(te);
+      maybe_call_write_cb_locked(exec_ctx, te);
     }
   }
   size_t backlog = te->write_buffer.length;

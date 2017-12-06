@@ -197,11 +197,12 @@ typedef struct {
   uint8_t unused;
 } channel_data;
 
-static void recv_im_ready(void* arg, grpc_error* error) {
+static void recv_im_ready(grpc_exec_ctx* exec_ctx, void* arg,
+                          grpc_error* error) {
   grpc_call_element* elem = (grpc_call_element*)arg;
   call_data* calld = (call_data*)elem->call_data;
   GRPC_CLOSURE_RUN(
-      calld->recv_im_ready,
+      exec_ctx, calld->recv_im_ready,
       grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failure that's not preventable.", &error, 1),
                          GRPC_ERROR_INT_GRPC_STATUS,
@@ -209,7 +210,8 @@ static void recv_im_ready(void* arg, grpc_error* error) {
 }
 
 static void start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+    grpc_transport_stream_op_batch* op) {
   call_data* calld = (call_data*)elem->call_data;
   if (op->recv_initial_metadata) {
     calld->recv_im_ready =
@@ -217,24 +219,27 @@ static void start_transport_stream_op_batch(
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
         GRPC_CLOSURE_CREATE(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
   }
-  grpc_call_next_op(elem, op);
+  grpc_call_next_op(exec_ctx, elem, op);
 }
 
-static grpc_error* init_call_elem(grpc_call_element* elem,
+static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
+                                  grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_call_elem(grpc_call_element* elem,
+static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {}
 
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
+static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
+                                     grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
+                                 grpc_channel_element* elem) {}
 
 static const grpc_channel_filter test_filter = {
     start_transport_stream_op_batch,
@@ -253,7 +258,8 @@ static const grpc_channel_filter test_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
+static bool maybe_add_filter(grpc_exec_ctx* exec_ctx,
+                             grpc_channel_stack_builder* builder, void* arg) {
   if (g_enable_filter) {
     return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
                                                      nullptr, nullptr);

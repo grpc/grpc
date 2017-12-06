@@ -29,30 +29,34 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/util/test_config.h"
 
-static grpc_error* channel_init_func(grpc_channel_element* elem,
+static grpc_error* channel_init_func(grpc_exec_ctx* exec_ctx,
+                                     grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* call_init_func(grpc_call_element* elem,
+static grpc_error* call_init_func(grpc_exec_ctx* exec_ctx,
+                                  grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   return GRPC_ERROR_NONE;
 }
 
-static void channel_destroy_func(grpc_channel_element* elem) {}
+static void channel_destroy_func(grpc_exec_ctx* exec_ctx,
+                                 grpc_channel_element* elem) {}
 
-static void call_destroy_func(grpc_call_element* elem,
+static void call_destroy_func(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {}
 
-static void call_func(grpc_call_element* elem,
+static void call_func(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op) {}
 
-static void channel_func(grpc_channel_element* elem, grpc_transport_op* op) {
+static void channel_func(grpc_exec_ctx* exec_ctx, grpc_channel_element* elem,
+                         grpc_transport_op* op) {
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
-  GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
 }
 
 bool g_replacement_fn_called = false;
@@ -102,7 +106,8 @@ const grpc_channel_filter original_filter = {
     grpc_channel_next_get_info,
     "filter_name"};
 
-static bool add_replacement_filter(grpc_channel_stack_builder* builder,
+static bool add_replacement_filter(grpc_exec_ctx* exec_ctx,
+                                   grpc_channel_stack_builder* builder,
                                    void* arg) {
   const grpc_channel_filter* filter =
       static_cast<const grpc_channel_filter*>(arg);
@@ -113,7 +118,8 @@ static bool add_replacement_filter(grpc_channel_stack_builder* builder,
       builder, filter, set_arg_once_fn, &g_replacement_fn_called);
 }
 
-static bool add_original_filter(grpc_channel_stack_builder* builder,
+static bool add_original_filter(grpc_exec_ctx* exec_ctx,
+                                grpc_channel_stack_builder* builder,
                                 void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
       builder, (const grpc_channel_filter*)arg, set_arg_once_fn,

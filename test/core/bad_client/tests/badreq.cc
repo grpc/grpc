@@ -20,8 +20,6 @@
 
 #include <string.h>
 
-#include <grpc/grpc.h>
-
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
 
@@ -40,7 +38,6 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
 
   /* invalid content type */
   GRPC_RUN_BAD_CLIENT_TEST(
@@ -129,6 +126,5 @@ int main(int argc, char** argv) {
       "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
       GRPC_BAD_CLIENT_DISCONNECT);
 
-  grpc_shutdown();
   return 0;
 }

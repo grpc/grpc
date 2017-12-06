@@ -55,12 +55,14 @@ bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent);
 
 /** Add the pollset or pollset_set in \a pollent to the destination pollset_set
  * \a * pss_dst */
-void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
+void grpc_polling_entity_add_to_pollset_set(grpc_exec_ctx* exec_ctx,
+                                            grpc_polling_entity* pollent,
                                             grpc_pollset_set* pss_dst);
 
 /** Delete the pollset or pollset_set in \a pollent from the destination
  * pollset_set \a * pss_dst */
-void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
+void grpc_polling_entity_del_from_pollset_set(grpc_exec_ctx* exec_ctx,
+                                              grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst);
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H */

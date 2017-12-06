@@ -132,8 +132,10 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   memset(GRPC_SLICE_START_PTR(input_slice), 'a', input_size);
   grpc_slice_buffer_add(&sliceb_in, input_slice); /* takes ownership */
   {
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_msg_compress(algorithm, &sliceb_in, &sliceb_out));
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    GPR_ASSERT(
+        grpc_msg_compress(&exec_ctx, algorithm, &sliceb_in, &sliceb_out));
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   buffer = grpc_raw_compressed_byte_buffer_create(sliceb_out.slices,
@@ -265,7 +267,6 @@ static void test_byte_buffer_copy(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
   test_read_one_slice();
   test_read_one_slice_malloc();
   test_read_none_compressed_slice();
@@ -275,6 +276,5 @@ int main(int argc, char** argv) {
   test_byte_buffer_from_reader();
   test_byte_buffer_copy();
   test_readall();
-  grpc_shutdown();
   return 0;
 }

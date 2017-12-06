@@ -39,15 +39,16 @@ static void* tag(intptr_t i) { return (void*)i; }
 
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
-static void (*iomgr_resolve_address)(const char* addr, const char* default_port,
+static void (*iomgr_resolve_address)(grpc_exec_ctx* exec_ctx, const char* addr,
+                                     const char* default_port,
                                      grpc_pollset_set* interested_parties,
                                      grpc_closure* on_done,
                                      grpc_resolved_addresses** addresses);
 
 static grpc_ares_request* (*iomgr_dns_lookup_ares)(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addresses, bool check_grpclb,
+    grpc_exec_ctx* exec_ctx, const char* dns_server, const char* addr,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    grpc_closure* on_done, grpc_lb_addresses** addresses, bool check_grpclb,
     char** service_config_json);
 
 static void set_resolve_port(int port) {
@@ -56,13 +57,14 @@ static void set_resolve_port(int port) {
   gpr_mu_unlock(&g_mu);
 }
 
-static void my_resolve_address(const char* addr, const char* default_port,
+static void my_resolve_address(grpc_exec_ctx* exec_ctx, const char* addr,
+                               const char* default_port,
                                grpc_pollset_set* interested_parties,
                                grpc_closure* on_done,
                                grpc_resolved_addresses** addrs) {
   if (0 != strcmp(addr, "test")) {
-    iomgr_resolve_address(addr, default_port, interested_parties, on_done,
-                          addrs);
+    iomgr_resolve_address(exec_ctx, addr, default_port, interested_parties,
+                          on_done, addrs);
     return;
   }
 
@@ -84,16 +86,16 @@ static void my_resolve_address(const char* addr, const char* default_port,
     (*addrs)->addrs[0].len = sizeof(*sa);
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
 }
 
 static grpc_ares_request* my_dns_lookup_ares(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** lb_addrs, bool check_grpclb,
+    grpc_exec_ctx* exec_ctx, const char* dns_server, const char* addr,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    grpc_closure* on_done, grpc_lb_addresses** lb_addrs, bool check_grpclb,
     char** service_config_json) {
   if (0 != strcmp(addr, "test")) {
-    return iomgr_dns_lookup_ares(dns_server, addr, default_port,
+    return iomgr_dns_lookup_ares(exec_ctx, dns_server, addr, default_port,
                                  interested_parties, on_done, lb_addrs,
                                  check_grpclb, service_config_json);
   }
@@ -115,7 +117,7 @@ static grpc_ares_request* my_dns_lookup_ares(
     gpr_free(sa);
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
   return nullptr;
 }
 

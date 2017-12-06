@@ -60,11 +60,13 @@ void grpc_backoff_init(grpc_backoff* backoff, grpc_millis initial_backoff,
 
 /// Begin retry loop: returns the deadlines to be used for the current attempt
 /// and the subsequent retry, if any.
-grpc_backoff_result grpc_backoff_begin(grpc_backoff* backoff);
+grpc_backoff_result grpc_backoff_begin(grpc_exec_ctx* exec_ctx,
+                                       grpc_backoff* backoff);
 
 /// Step a retry loop: returns the deadlines to be used for the current attempt
 /// and the subsequent retry, if any.
-grpc_backoff_result grpc_backoff_step(grpc_backoff* backoff);
+grpc_backoff_result grpc_backoff_step(grpc_exec_ctx* exec_ctx,
+                                      grpc_backoff* backoff);
 
 /// Reset the backoff, so the next grpc_backoff_step will be a
 /// grpc_backoff_begin.
