@@ -166,7 +166,6 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
-#define GPR_LINUX_PTHREAD_NAME 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -174,6 +173,7 @@
 #endif /* _LP64 */
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
+#define GPR_LINUX_PTHREAD_NAME 1
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1
 #endif
