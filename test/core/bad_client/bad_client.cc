@@ -129,7 +129,7 @@ void grpc_run_bad_client_test(
   GPR_ASSERT(grpc_server_has_open_connections(a.server));
 
   /* Start validator */
-  gpr_thd_new(&id, thd_func, &a, nullptr);
+  gpr_thd_new(&id, "grpc_bad_client", thd_func, &a, nullptr);
 
   grpc_slice_buffer_init(&outgoing);
   grpc_slice_buffer_add(&outgoing, slice);

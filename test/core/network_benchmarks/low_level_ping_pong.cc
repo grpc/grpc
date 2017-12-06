@@ -583,7 +583,7 @@ static int run_benchmark(const char* socket_type, thread_args* client_args,
   gpr_log(GPR_INFO, "Starting test %s %s %zu", client_args->strategy_name,
           socket_type, client_args->msg_size);
 
-  gpr_thd_new(&tid, server_thread_wrap, server_args, nullptr);
+  gpr_thd_new(&tid, "server_thread", server_thread_wrap, server_args, nullptr);
   client_thread(client_args);
   return 0;
 }

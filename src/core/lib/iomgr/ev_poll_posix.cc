@@ -1382,7 +1382,7 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_ref(&g_cvfds.pollcount);
   gpr_thd_options_set_detached(&opt);
-  GPR_ASSERT(gpr_thd_new(&t_id, &run_poll, pargs, &opt));
+  GPR_ASSERT(gpr_thd_new(&t_id, "grpc_poller", &run_poll, pargs, &opt));
   return pargs;
 }
 

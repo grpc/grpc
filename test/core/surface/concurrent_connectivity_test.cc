@@ -182,7 +182,8 @@ int run_concurrent_connectivity_test() {
   /* First round, no server */
   gpr_log(GPR_DEBUG, "Wave 1");
   for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], create_loop_destroy, localhost, &options);
+    gpr_thd_new(&threads[i], "grpc_wave_1", create_loop_destroy, localhost,
+                &options);
   }
   for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);
@@ -198,10 +199,11 @@ int run_concurrent_connectivity_test() {
   args.cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(args.server, args.cq, nullptr);
   grpc_server_start(args.server);
-  gpr_thd_new(&server, server_thread, &args, &options);
+  gpr_thd_new(&server, "grpc_wave_2_server", server_thread, &args, &options);
 
   for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], create_loop_destroy, args.addr, &options);
+    gpr_thd_new(&threads[i], "grpc_wave_2", create_loop_destroy, args.addr,
+                &options);
   }
   for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);
@@ -218,11 +220,13 @@ int run_concurrent_connectivity_test() {
   args.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args.pollset, &args.mu);
   gpr_event_init(&args.ready);
-  gpr_thd_new(&server, bad_server_thread, &args, &options);
+  gpr_thd_new(&server, "grpc_wave_3_server", bad_server_thread, &args,
+              &options);
   gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
   for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], create_loop_destroy, args.addr, &options);
+    gpr_thd_new(&threads[i], "grpc_wave_3", create_loop_destroy, args.addr,
+                &options);
   }
   for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);
@@ -280,7 +284,8 @@ int run_concurrent_watches_with_short_timeouts_test() {
   gpr_thd_options_set_joinable(&options);
 
   for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], watches_with_short_timeouts, localhost, &options);
+    gpr_thd_new(&threads[i], "grpc_short_watches", watches_with_short_timeouts,
+                localhost, &options);
   }
   for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);

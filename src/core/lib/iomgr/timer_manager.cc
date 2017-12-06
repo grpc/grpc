@@ -93,7 +93,7 @@ static void start_timer_thread_and_unlock(void) {
   // to leak through g_completed_threads and be freed in gc_completed_threads()
   // before "&ct->t" is written to, causing a use-after-free.
   gpr_mu_lock(&g_mu);
-  gpr_thd_new(&ct->t, timer_thread, ct, &opt);
+  gpr_thd_new(&ct->t, "grpc_global_timer", timer_thread, ct, &opt);
   gpr_mu_unlock(&g_mu);
 }
 
