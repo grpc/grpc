@@ -103,29 +103,28 @@ void server_thread(void* vargs) {
   GPR_ASSERT(detag(ev.tag) == 0xd1e);
 }
 
-static void on_connect(grpc_exec_ctx* exec_ctx, void* vargs, grpc_endpoint* tcp,
+static void on_connect(void* vargs, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   struct server_thread_args* args = (struct server_thread_args*)vargs;
-  grpc_endpoint_shutdown(exec_ctx, tcp,
+  grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
-  grpc_endpoint_destroy(exec_ctx, tcp);
+  grpc_endpoint_destroy(tcp);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(exec_ctx, args->pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
   gpr_mu_unlock(args->mu);
 }
 
 void bad_server_thread(void* vargs) {
   struct server_thread_args* args = (struct server_thread_args*)vargs;
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
   int port;
   grpc_tcp_server* s;
-  grpc_error* error = grpc_tcp_server_create(&exec_ctx, nullptr, nullptr, &s);
+  grpc_error* error = grpc_tcp_server_create(nullptr, nullptr, &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->ss_family = AF_INET;
@@ -134,35 +133,32 @@ void bad_server_thread(void* vargs) {
   GPR_ASSERT(port > 0);
   gpr_asprintf(&args->addr, "localhost:%d", port);
 
-  grpc_tcp_server_start(&exec_ctx, s, &args->pollset, 1, on_connect, args);
+  grpc_tcp_server_start(s, &args->pollset, 1, on_connect, args);
   gpr_event_set(&args->ready, (void*)1);
 
   gpr_mu_lock(args->mu);
   while (gpr_atm_acq_load(&args->stop) == 0) {
-    grpc_millis deadline = grpc_exec_ctx_now(&exec_ctx) + 100;
+    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 100;
 
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(&exec_ctx, args->pollset, &worker, deadline))) {
+            grpc_pollset_work(args->pollset, &worker, deadline))) {
       gpr_atm_rel_store(&args->stop, 1);
     }
     gpr_mu_unlock(args->mu);
-    grpc_exec_ctx_finish(&exec_ctx);
+
     gpr_mu_lock(args->mu);
   }
   gpr_mu_unlock(args->mu);
 
-  grpc_tcp_server_unref(&exec_ctx, s);
-
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_tcp_server_unref(s);
 
   gpr_free(args->addr);
 }
 
-static void done_pollset_shutdown(grpc_exec_ctx* exec_ctx, void* pollset,
-                                  grpc_error* error) {
-  grpc_pollset_destroy(exec_ctx, static_cast<grpc_pollset*>(pollset));
+static void done_pollset_shutdown(void* pollset, grpc_error* error) {
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(pollset));
   gpr_free(pollset);
 }
 
@@ -234,11 +230,12 @@ int run_concurrent_connectivity_test() {
 
   gpr_atm_rel_store(&args.stop, 1);
   gpr_thd_join(server);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_pollset_shutdown(&exec_ctx, args.pollset,
-                        GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
-                                            grpc_schedule_on_exec_ctx));
-  grpc_exec_ctx_finish(&exec_ctx);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_pollset_shutdown(
+        args.pollset, GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
+                                          grpc_schedule_on_exec_ctx));
+  }
 
   grpc_shutdown();
   return 0;

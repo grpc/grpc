@@ -562,7 +562,7 @@ static void perform_request(client_fixture* cf) {
 #define BALANCERS_NAME "lb.name"
 static void setup_client(const server_fixture* lb_server,
                          const server_fixture* backends, client_fixture* cf) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   char* expected_target_names = nullptr;
   const char* backends_name = lb_server->servers_hostport;
@@ -574,7 +574,7 @@ static void setup_client(const server_fixture* lb_server,
   grpc_lb_addresses* addresses = grpc_lb_addresses_create(1, nullptr);
   char* lb_uri_str;
   gpr_asprintf(&lb_uri_str, "ipv4:%s", lb_server->servers_hostport);
-  grpc_uri* lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
+  grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
   GPR_ASSERT(lb_uri != nullptr);
   grpc_lb_addresses_set_address_from_uri(addresses, 0, lb_uri, true,
                                          lb_server->balancer_name, nullptr);
@@ -586,7 +586,7 @@ static void setup_client(const server_fixture* lb_server,
       grpc_lb_addresses_create_channel_arg(addresses);
   grpc_channel_args* fake_result =
       grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-  grpc_lb_addresses_destroy(&exec_ctx, addresses);
+  grpc_lb_addresses_destroy(addresses);
 
   const grpc_arg new_args[] = {
       grpc_fake_transport_expected_targets_arg(expected_target_names),
@@ -601,13 +601,12 @@ static void setup_client(const server_fixture* lb_server,
       grpc_fake_transport_security_credentials_create();
   cf->client =
       grpc_secure_channel_create(fake_creds, cf->server_uri, args, nullptr);
-  grpc_fake_resolver_response_generator_set_response(
-      &exec_ctx, response_generator, fake_result);
-  grpc_channel_args_destroy(&exec_ctx, fake_result);
-  grpc_channel_credentials_unref(&exec_ctx, fake_creds);
-  grpc_channel_args_destroy(&exec_ctx, args);
+  grpc_fake_resolver_response_generator_set_response(response_generator,
+                                                     fake_result);
+  grpc_channel_args_destroy(fake_result);
+  grpc_channel_credentials_unref(fake_creds);
+  grpc_channel_args_destroy(args);
   grpc_fake_resolver_response_generator_unref(response_generator);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void teardown_client(client_fixture* cf) {

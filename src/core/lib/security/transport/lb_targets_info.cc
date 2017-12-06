@@ -28,8 +28,8 @@
 static void* targets_info_copy(void* p) {
   return grpc_slice_hash_table_ref((grpc_slice_hash_table*)p);
 }
-static void targets_info_destroy(grpc_exec_ctx* exec_ctx, void* p) {
-  grpc_slice_hash_table_unref(exec_ctx, (grpc_slice_hash_table*)p);
+static void targets_info_destroy(void* p) {
+  grpc_slice_hash_table_unref((grpc_slice_hash_table*)p);
 }
 static int targets_info_cmp(void* a, void* b) {
   return grpc_slice_hash_table_cmp((const grpc_slice_hash_table*)a,
