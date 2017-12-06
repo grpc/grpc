@@ -399,8 +399,7 @@ static const tsi_frame_protector_vtable frame_protector_vtable = {
 /* --- tsi_zero_copy_grpc_protector methods implementation. ---*/
 
 static tsi_result fake_zero_copy_grpc_protector_protect(
-    grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self,
-    grpc_slice_buffer* unprotected_slices,
+    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* unprotected_slices,
     grpc_slice_buffer* protected_slices) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
@@ -424,8 +423,7 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
 }
 
 static tsi_result fake_zero_copy_grpc_protector_unprotect(
-    grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self,
-    grpc_slice_buffer* protected_slices,
+    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
     grpc_slice_buffer* unprotected_slices) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
@@ -454,18 +452,18 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
         impl->parsed_frame_size - TSI_FAKE_FRAME_HEADER_SIZE,
         unprotected_slices);
     impl->parsed_frame_size = 0;
-    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &impl->header_sb);
+    grpc_slice_buffer_reset_and_unref_internal(&impl->header_sb);
   }
   return TSI_OK;
 }
 
 static void fake_zero_copy_grpc_protector_destroy(
-    grpc_exec_ctx* exec_ctx, tsi_zero_copy_grpc_protector* self) {
+    tsi_zero_copy_grpc_protector* self) {
   if (self == nullptr) return;
   tsi_fake_zero_copy_grpc_protector* impl =
       (tsi_fake_zero_copy_grpc_protector*)self;
-  grpc_slice_buffer_destroy_internal(exec_ctx, &impl->header_sb);
-  grpc_slice_buffer_destroy_internal(exec_ctx, &impl->protected_sb);
+  grpc_slice_buffer_destroy_internal(&impl->header_sb);
+  grpc_slice_buffer_destroy_internal(&impl->protected_sb);
   gpr_free(impl);
 }
 
@@ -497,8 +495,7 @@ static tsi_result fake_handshaker_result_extract_peer(
 }
 
 static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
-    void* exec_ctx, const tsi_handshaker_result* self,
-    size_t* max_output_protected_frame_size,
+    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
   *protector =
       tsi_create_fake_zero_copy_grpc_protector(max_output_protected_frame_size);
