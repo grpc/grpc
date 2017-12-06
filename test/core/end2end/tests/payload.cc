@@ -125,7 +125,6 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   grpc_byte_buffer* response_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
-  const char* error_string = nullptr;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
@@ -173,7 +172,6 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.error_string = &error_string;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -232,7 +230,6 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  gpr_log(GPR_ERROR, "%s", error_string);
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
