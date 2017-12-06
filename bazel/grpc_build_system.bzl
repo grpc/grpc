@@ -26,6 +26,22 @@
 # The set of pollers to test against if a test exercises polling
 POLLERS = ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv']
 
+def _get_external_deps(external_deps):
+  ret = []
+  for dep in external_deps:
+    if dep == "nanopb":
+      ret.append("//third_party/nanopb")
+    else:
+      ret.append("//external:" + dep)
+  return ret
+
+def _maybe_update_cc_library_hdrs(hdrs):
+  ret = hdrs[:]
+  bidi_stream_cronet_hdr = "third_party/objective_c/Cronet/bidirectional_stream_c.h"
+  if bidi_stream_cronet_hdr in ret:
+    ret[hdrs.index(bidi_stream_cronet_hdr)] = "//third_party:objective_c/Cronet/bidirectional_stream_c.h"
+  return ret
+
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
@@ -40,8 +56,8 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                       "//conditions:default": [],}) +
               select({"//:remote_execution":  ["GRPC_PORT_ISOLATED_RUNTIME=1"],
                       "//conditions:default": [],}),
-    hdrs = hdrs + public_hdrs,
-    deps = deps + ["//external:" + dep for dep in external_deps],
+    hdrs = _maybe_update_cc_library_hdrs(hdrs + public_hdrs),
+    deps = deps + _get_external_deps(external_deps),
     copts = copts,
     visibility = visibility,
     testonly = testonly,
@@ -82,7 +98,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     'srcs': srcs,
     'args': args,
     'data': data,
-    'deps': deps + ["//external:" + dep for dep in external_deps],
+    'deps': deps + _get_external_deps(external_deps),
     'copts': copts,
     'linkopts': ["-pthread"],
   }
@@ -114,7 +130,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     data = data,
     testonly = testonly,
     linkshared = linkshared,
-    deps = deps + ["//external:" + dep for dep in external_deps],
+    deps = deps + _get_external_deps(external_deps),
     copts = copts,
     linkopts = ["-pthread"] + linkopts,
   )
