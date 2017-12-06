@@ -24,10 +24,9 @@
  * an explanation of what's going on.
  */
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
-#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
-
-#include "src/core/lib/transport/metadata.h"
+#ifndef GRPC__CAN_INCLUDE_STATIC_METADATA_H
+#error include via static_metadata.h
+#endif
 
 #define GRPC_STATIC_MDSTR_COUNT 100
 extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
@@ -584,5 +583,3 @@ extern const uint8_t grpc_static_accept_stream_encoding_metadata[4];
   (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table                                  \
                         [grpc_static_accept_stream_encoding_metadata[(algs)]], \
                     GRPC_MDELEM_STORAGE_STATIC))
-
-#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */

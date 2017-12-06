@@ -3094,7 +3094,6 @@ LIBGRPC_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -3437,7 +3436,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -3762,7 +3760,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -4023,7 +4020,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -4254,7 +4250,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -4987,7 +4982,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \

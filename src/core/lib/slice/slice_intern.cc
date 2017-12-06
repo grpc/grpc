@@ -28,7 +28,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/murmur_hash.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 #define LOG2_SHARD_COUNT 5
 #define SHARD_COUNT (1 << LOG2_SHARD_COUNT)

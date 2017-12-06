@@ -24,7 +24,6 @@
 #include <grpc/support/port_platform.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 #define GRPC_CHTTP2_HPACKC_NUM_FILTERS 256

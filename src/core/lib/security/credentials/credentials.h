@@ -22,7 +22,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/metadata.h"
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"

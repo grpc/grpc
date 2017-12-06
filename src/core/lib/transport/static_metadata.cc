@@ -24,9 +24,8 @@
  * an explanation of what's going on.
  */
 
-#include "src/core/lib/transport/static_metadata.h"
-
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/metadata.h"
 
 static uint8_t g_bytes[] = {
     58,  112, 97,  116, 104, 58,  109, 101, 116, 104, 111, 100, 58,  115, 116,

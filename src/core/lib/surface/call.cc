@@ -47,7 +47,6 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
 /** The maximum number of concurrent batches possible.

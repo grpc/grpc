@@ -29,7 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 typedef struct call_data {
   intptr_t id; /**< an id unique to the call */

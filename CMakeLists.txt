@@ -1084,7 +1084,6 @@ add_library(grpc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -1427,7 +1426,6 @@ add_library(grpc_cronet
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -1753,7 +1751,6 @@ add_library(grpc_test_util
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -2023,7 +2020,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -2276,7 +2272,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -3026,7 +3021,6 @@ add_library(grpc++_cronet
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
