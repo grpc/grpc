@@ -32,6 +32,7 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     copts = select({
         "//conditions:default": ["-std=c99"],
         "//:windows": [],
+        "//:windows_msvc": [],
     })
   native.cc_library(
     name = name,
@@ -48,6 +49,7 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     linkopts = select({
         "//conditions:default": ["-pthread"],
         "//:windows": [],
+        "//:windows_msvc": [],
     }),
     includes = [
         "include"
@@ -82,6 +84,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     copts = select({
         "//conditions:default": ["-std=c99"],
         "//:windows": [],
+        "//:windows_msvc": [],
     })
   native.cc_test(
     name = name,
@@ -93,6 +96,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     linkopts = select({
         "//conditions:default": ["-pthread"],
         "//:windows": [],
+        "//:windows_msvc": [],
     }),
   )
 
@@ -102,6 +106,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     copts = select({
         "//conditions:default": ["-std=c99"],
         "//:windows": [],
+        "//:windows_msvc": [],
     })
   native.cc_binary(
     name = name,
@@ -115,6 +120,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     linkopts = select({
         "//conditions:default": ["-pthread"],
         "//:windows": [],
+        "//:windows_msvc": [],
     }) + linkopts,
   )
 
