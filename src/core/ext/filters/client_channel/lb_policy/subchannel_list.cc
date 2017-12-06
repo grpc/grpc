@@ -28,7 +28,8 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
-void grpc_lb_subchannel_data_unref_subchannel(grpc_lb_subchannel_data* sd,
+void grpc_lb_subchannel_data_unref_subchannel(grpc_exec_ctx* exec_ctx,
+                                              grpc_lb_subchannel_data* sd,
                                               const char* reason) {
   if (sd->subchannel != nullptr) {
     if (sd->subchannel_list->tracer->enabled()) {
@@ -40,22 +41,23 @@ void grpc_lb_subchannel_data_unref_subchannel(grpc_lb_subchannel_data* sd,
               (size_t)(sd - sd->subchannel_list->subchannels),
               sd->subchannel_list->num_subchannels, sd->subchannel);
     }
-    GRPC_SUBCHANNEL_UNREF(sd->subchannel, reason);
+    GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, reason);
     sd->subchannel = nullptr;
     if (sd->connected_subchannel != nullptr) {
-      GRPC_CONNECTED_SUBCHANNEL_UNREF(sd->connected_subchannel, reason);
+      GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, sd->connected_subchannel,
+                                      reason);
       sd->connected_subchannel = nullptr;
     }
     if (sd->user_data != nullptr) {
       GPR_ASSERT(sd->user_data_vtable != nullptr);
-      sd->user_data_vtable->destroy(sd->user_data);
+      sd->user_data_vtable->destroy(exec_ctx, sd->user_data);
       sd->user_data = nullptr;
     }
   }
 }
 
 void grpc_lb_subchannel_data_start_connectivity_watch(
-    grpc_lb_subchannel_data* sd) {
+    grpc_exec_ctx* exec_ctx, grpc_lb_subchannel_data* sd) {
   if (sd->subchannel_list->tracer->enabled()) {
     gpr_log(GPR_DEBUG,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
@@ -67,13 +69,13 @@ void grpc_lb_subchannel_data_start_connectivity_watch(
   }
   sd->connectivity_notification_pending = true;
   grpc_subchannel_notify_on_state_change(
-      sd->subchannel, sd->subchannel_list->policy->interested_parties,
+      exec_ctx, sd->subchannel, sd->subchannel_list->policy->interested_parties,
       &sd->pending_connectivity_state_unsafe,
       &sd->connectivity_changed_closure);
 }
 
 void grpc_lb_subchannel_data_stop_connectivity_watch(
-    grpc_lb_subchannel_data* sd) {
+    grpc_exec_ctx* exec_ctx, grpc_lb_subchannel_data* sd) {
   if (sd->subchannel_list->tracer->enabled()) {
     gpr_log(GPR_DEBUG,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
@@ -88,7 +90,7 @@ void grpc_lb_subchannel_data_stop_connectivity_watch(
 }
 
 grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
-    grpc_lb_policy* p, grpc_core::TraceFlag* tracer,
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* p, grpc_core::TraceFlag* tracer,
     const grpc_lb_addresses* addresses, const grpc_lb_policy_args* args,
     grpc_iomgr_cb_func connectivity_changed_cb) {
   grpc_lb_subchannel_list* subchannel_list =
@@ -122,8 +124,8 @@ grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
     gpr_free(addr_arg.value.string);
     sc_args.args = new_args;
     grpc_subchannel* subchannel = grpc_client_channel_factory_create_subchannel(
-        args->client_channel_factory, &sc_args);
-    grpc_channel_args_destroy(new_args);
+        exec_ctx, args->client_channel_factory, &sc_args);
+    grpc_channel_args_destroy(exec_ctx, new_args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (tracer->enabled()) {
@@ -170,7 +172,8 @@ grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
   return subchannel_list;
 }
 
-static void subchannel_list_destroy(grpc_lb_subchannel_list* subchannel_list) {
+static void subchannel_list_destroy(grpc_exec_ctx* exec_ctx,
+                                    grpc_lb_subchannel_list* subchannel_list) {
   if (subchannel_list->tracer->enabled()) {
     gpr_log(GPR_DEBUG, "[%s %p] Destroying subchannel_list %p",
             subchannel_list->tracer->name(), subchannel_list->policy,
@@ -178,7 +181,8 @@ static void subchannel_list_destroy(grpc_lb_subchannel_list* subchannel_list) {
   }
   for (size_t i = 0; i < subchannel_list->num_subchannels; i++) {
     grpc_lb_subchannel_data* sd = &subchannel_list->subchannels[i];
-    grpc_lb_subchannel_data_unref_subchannel(sd, "subchannel_list_destroy");
+    grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd,
+                                             "subchannel_list_destroy");
   }
   gpr_free(subchannel_list->subchannels);
   gpr_free(subchannel_list);
@@ -196,7 +200,8 @@ void grpc_lb_subchannel_list_ref(grpc_lb_subchannel_list* subchannel_list,
   }
 }
 
-void grpc_lb_subchannel_list_unref(grpc_lb_subchannel_list* subchannel_list,
+void grpc_lb_subchannel_list_unref(grpc_exec_ctx* exec_ctx,
+                                   grpc_lb_subchannel_list* subchannel_list,
                                    const char* reason) {
   const bool done = gpr_unref(&subchannel_list->refcount);
   if (subchannel_list->tracer->enabled()) {
@@ -207,7 +212,7 @@ void grpc_lb_subchannel_list_unref(grpc_lb_subchannel_list* subchannel_list,
             reason);
   }
   if (done) {
-    subchannel_list_destroy(subchannel_list);
+    subchannel_list_destroy(exec_ctx, subchannel_list);
   }
 }
 
@@ -218,13 +223,14 @@ void grpc_lb_subchannel_list_ref_for_connectivity_watch(
 }
 
 void grpc_lb_subchannel_list_unref_for_connectivity_watch(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason) {
-  GRPC_LB_POLICY_WEAK_UNREF(subchannel_list->policy, reason);
-  grpc_lb_subchannel_list_unref(subchannel_list, reason);
+    grpc_exec_ctx* exec_ctx, grpc_lb_subchannel_list* subchannel_list,
+    const char* reason) {
+  GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, subchannel_list->policy, reason);
+  grpc_lb_subchannel_list_unref(exec_ctx, subchannel_list, reason);
 }
 
 static void subchannel_data_cancel_connectivity_watch(
-    grpc_lb_subchannel_data* sd, const char* reason) {
+    grpc_exec_ctx* exec_ctx, grpc_lb_subchannel_data* sd, const char* reason) {
   if (sd->subchannel_list->tracer->enabled()) {
     gpr_log(GPR_DEBUG,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
@@ -234,12 +240,14 @@ static void subchannel_data_cancel_connectivity_watch(
             (size_t)(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel, reason);
   }
-  grpc_subchannel_notify_on_state_change(sd->subchannel, nullptr, nullptr,
+  grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel, nullptr,
+                                         nullptr,
                                          &sd->connectivity_changed_closure);
 }
 
 void grpc_lb_subchannel_list_shutdown_and_unref(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason) {
+    grpc_exec_ctx* exec_ctx, grpc_lb_subchannel_list* subchannel_list,
+    const char* reason) {
   if (subchannel_list->tracer->enabled()) {
     gpr_log(GPR_DEBUG, "[%s %p] Shutting down subchannel_list %p (%s)",
             subchannel_list->tracer->name(), subchannel_list->policy,
@@ -253,10 +261,10 @@ void grpc_lb_subchannel_list_shutdown_and_unref(
     // the callback is responsible for unreffing the subchannel.
     // Otherwise, unref the subchannel directly.
     if (sd->connectivity_notification_pending) {
-      subchannel_data_cancel_connectivity_watch(sd, reason);
+      subchannel_data_cancel_connectivity_watch(exec_ctx, sd, reason);
     } else if (sd->subchannel != nullptr) {
-      grpc_lb_subchannel_data_unref_subchannel(sd, reason);
+      grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd, reason);
     }
   }
-  grpc_lb_subchannel_list_unref(subchannel_list, reason);
+  grpc_lb_subchannel_list_unref(exec_ctx, subchannel_list, reason);
 }

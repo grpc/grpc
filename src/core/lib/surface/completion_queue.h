@@ -40,7 +40,8 @@ typedef struct grpc_cq_completion {
   void* tag;
   /** done callback - called when this queue element is no longer
       needed by the completion queue */
-  void (*done)(void* done_arg, struct grpc_cq_completion* c);
+  void (*done)(grpc_exec_ctx* exec_ctx, void* done_arg,
+               struct grpc_cq_completion* c);
   void* done_arg;
   /** next pointer; low bit is used to indicate success or not */
   uintptr_t next;
@@ -49,17 +50,17 @@ typedef struct grpc_cq_completion {
 #ifndef NDEBUG
 void grpc_cq_internal_ref(grpc_completion_queue* cc, const char* reason,
                           const char* file, int line);
-void grpc_cq_internal_unref(grpc_completion_queue* cc, const char* reason,
-                            const char* file, int line);
+void grpc_cq_internal_unref(grpc_exec_ctx* exec_ctx, grpc_completion_queue* cc,
+                            const char* reason, const char* file, int line);
 #define GRPC_CQ_INTERNAL_REF(cc, reason) \
   grpc_cq_internal_ref(cc, reason, __FILE__, __LINE__)
-#define GRPC_CQ_INTERNAL_UNREF(cc, reason) \
-  grpc_cq_internal_unref(cc, reason, __FILE__, __LINE__)
+#define GRPC_CQ_INTERNAL_UNREF(ec, cc, reason) \
+  grpc_cq_internal_unref(ec, cc, reason, __FILE__, __LINE__)
 #else
 void grpc_cq_internal_ref(grpc_completion_queue* cc);
-void grpc_cq_internal_unref(grpc_completion_queue* cc);
+void grpc_cq_internal_unref(grpc_exec_ctx* exec_ctx, grpc_completion_queue* cc);
 #define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_cq_internal_ref(cc)
-#define GRPC_CQ_INTERNAL_UNREF(cc, reason) grpc_cq_internal_unref(cc)
+#define GRPC_CQ_INTERNAL_UNREF(ec, cc, reason) grpc_cq_internal_unref(ec, cc)
 #endif
 
 /* Initializes global variables used by completion queues */
@@ -73,8 +74,10 @@ bool grpc_cq_begin_op(grpc_completion_queue* cc, void* tag);
 
 /* Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
    grpc_cq_begin_op */
-void grpc_cq_end_op(grpc_completion_queue* cc, void* tag, grpc_error* error,
-                    void (*done)(void* done_arg, grpc_cq_completion* storage),
+void grpc_cq_end_op(grpc_exec_ctx* exec_ctx, grpc_completion_queue* cc,
+                    void* tag, grpc_error* error,
+                    void (*done)(grpc_exec_ctx* exec_ctx, void* done_arg,
+                                 grpc_cq_completion* storage),
                     void* done_arg, grpc_cq_completion* storage);
 
 grpc_pollset* grpc_cq_pollset(grpc_completion_queue* cc);

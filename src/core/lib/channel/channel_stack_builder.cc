@@ -150,9 +150,10 @@ void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder* builder,
 }
 
 void grpc_channel_stack_builder_set_channel_arguments(
-    grpc_channel_stack_builder* builder, const grpc_channel_args* args) {
+    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder,
+    const grpc_channel_args* args) {
   if (builder->args != nullptr) {
-    grpc_channel_args_destroy(builder->args);
+    grpc_channel_args_destroy(exec_ctx, builder->args);
   }
   builder->args = grpc_channel_args_copy(args);
 }
@@ -240,7 +241,8 @@ bool grpc_channel_stack_builder_add_filter_after(
   return true;
 }
 
-void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder) {
+void grpc_channel_stack_builder_destroy(grpc_exec_ctx* exec_ctx,
+                                        grpc_channel_stack_builder* builder) {
   filter_node* p = builder->begin.next;
   while (p != &builder->end) {
     filter_node* next = p->next;
@@ -248,15 +250,16 @@ void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder) {
     p = next;
   }
   if (builder->args != nullptr) {
-    grpc_channel_args_destroy(builder->args);
+    grpc_channel_args_destroy(exec_ctx, builder->args);
   }
   gpr_free(builder->target);
   gpr_free(builder);
 }
 
 grpc_error* grpc_channel_stack_builder_finish(
-    grpc_channel_stack_builder* builder, size_t prefix_bytes, int initial_refs,
-    grpc_iomgr_cb_func destroy, void* destroy_arg, void** result) {
+    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder,
+    size_t prefix_bytes, int initial_refs, grpc_iomgr_cb_func destroy,
+    void* destroy_arg, void** result) {
   // count the number of filters
   size_t num_filters = 0;
   for (filter_node* p = builder->begin.next; p != &builder->end; p = p->next) {
@@ -281,12 +284,12 @@ grpc_error* grpc_channel_stack_builder_finish(
       (grpc_channel_stack*)((char*)(*result) + prefix_bytes);
   // and initialize it
   grpc_error* error = grpc_channel_stack_init(
-      initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg,
-      filters, num_filters, builder->args, builder->transport, builder->name,
-      channel_stack);
+      exec_ctx, initial_refs, destroy,
+      destroy_arg == nullptr ? *result : destroy_arg, filters, num_filters,
+      builder->args, builder->transport, builder->name, channel_stack);
 
   if (error != GRPC_ERROR_NONE) {
-    grpc_channel_stack_destroy(channel_stack);
+    grpc_channel_stack_destroy(exec_ctx, channel_stack);
     gpr_free(*result);
     *result = nullptr;
   } else {
@@ -302,7 +305,7 @@ grpc_error* grpc_channel_stack_builder_finish(
     }
   }
 
-  grpc_channel_stack_builder_destroy(builder);
+  grpc_channel_stack_builder_destroy(exec_ctx, builder);
   gpr_free((grpc_channel_filter**)filters);
 
   return error;

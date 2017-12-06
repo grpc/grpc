@@ -142,14 +142,15 @@ static void request_with_payload_template(
       nullptr, default_server_channel_compression_algorithm);
 
   if (user_agent_override) {
-    grpc_core::ExecCtx exec_ctx;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_channel_args* client_args_old = client_args;
     grpc_arg arg;
     arg.key = const_cast<char*>(GRPC_ARG_PRIMARY_USER_AGENT_STRING);
     arg.type = GRPC_ARG_STRING;
     arg.value.string = user_agent_override;
     client_args = grpc_channel_args_copy_and_add(client_args_old, &arg, 1);
-    grpc_channel_args_destroy(client_args_old);
+    grpc_channel_args_destroy(&exec_ctx, client_args_old);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   f = begin_test(config, test_name, client_args, server_args);
@@ -350,9 +351,10 @@ static void request_with_payload_template(
   cq_verifier_destroy(cqv);
 
   {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args_destroy(client_args);
-    grpc_channel_args_destroy(server_args);
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, client_args);
+    grpc_channel_args_destroy(&exec_ctx, server_args);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   end_test(&f);

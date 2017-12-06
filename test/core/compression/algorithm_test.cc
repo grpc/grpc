@@ -39,7 +39,7 @@ static void test_algorithm_mesh(void) {
     grpc_compression_algorithm parsed;
     grpc_slice mdstr;
     grpc_mdelem mdelem;
-    grpc_core::ExecCtx exec_ctx;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(
         grpc_compression_algorithm_name((grpc_compression_algorithm)i, &name));
     GPR_ASSERT(grpc_compression_algorithm_parse(
@@ -51,8 +51,9 @@ static void test_algorithm_mesh(void) {
     mdelem = grpc_compression_encoding_mdelem(parsed);
     GPR_ASSERT(grpc_slice_eq(GRPC_MDVALUE(mdelem), mdstr));
     GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
-    grpc_slice_unref_internal(mdstr);
-    GRPC_MDELEM_UNREF(mdelem);
+    grpc_slice_unref_internal(&exec_ctx, mdstr);
+    GRPC_MDELEM_UNREF(&exec_ctx, mdelem);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   /* test failure */
@@ -61,7 +62,7 @@ static void test_algorithm_mesh(void) {
 }
 
 static void test_algorithm_failure(void) {
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_slice mdstr;
 
   gpr_log(GPR_DEBUG, "test_algorithm_failure");
@@ -82,7 +83,8 @@ static void test_algorithm_failure(void) {
       grpc_compression_algorithm_slice(static_cast<grpc_compression_algorithm>(
           static_cast<int>(GRPC_COMPRESS_ALGORITHMS_COUNT) + 1)),
       grpc_empty_slice()));
-  grpc_slice_unref_internal(mdstr);
+  grpc_slice_unref_internal(&exec_ctx, mdstr);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char** argv) {

@@ -103,19 +103,21 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {
 // Oauth2 Token Fetcher credentials.
 //
 
-static void oauth2_token_fetcher_destruct(grpc_call_credentials* creds) {
+static void oauth2_token_fetcher_destruct(grpc_exec_ctx* exec_ctx,
+                                          grpc_call_credentials* creds) {
   grpc_oauth2_token_fetcher_credentials* c =
       (grpc_oauth2_token_fetcher_credentials*)creds;
-  GRPC_MDELEM_UNREF(c->access_token_md);
+  GRPC_MDELEM_UNREF(exec_ctx, c->access_token_md);
   gpr_mu_destroy(&c->mu);
-  grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&c->pollent));
-  grpc_httpcli_context_destroy(&c->httpcli_context);
+  grpc_pollset_set_destroy(exec_ctx,
+                           grpc_polling_entity_pollset_set(&c->pollent));
+  grpc_httpcli_context_destroy(exec_ctx, &c->httpcli_context);
 }
 
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const grpc_http_response* response, grpc_mdelem* token_md,
-    grpc_millis* token_lifetime) {
+    grpc_exec_ctx* exec_ctx, const grpc_http_response* response,
+    grpc_mdelem* token_md, grpc_millis* token_lifetime) {
   char* null_terminated_body = nullptr;
   char* new_access_token = nullptr;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
@@ -182,8 +184,9 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     gpr_asprintf(&new_access_token, "%s %s", token_type->value,
                  access_token->value);
     *token_lifetime = strtol(expires_in->value, nullptr, 10) * GPR_MS_PER_SEC;
-    if (!GRPC_MDISNULL(*token_md)) GRPC_MDELEM_UNREF(*token_md);
+    if (!GRPC_MDISNULL(*token_md)) GRPC_MDELEM_UNREF(exec_ctx, *token_md);
     *token_md = grpc_mdelem_from_slices(
+        exec_ctx,
         grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
         grpc_slice_from_copied_string(new_access_token));
     status = GRPC_CREDENTIALS_OK;
@@ -191,7 +194,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
 
 end:
   if (status != GRPC_CREDENTIALS_OK && !GRPC_MDISNULL(*token_md)) {
-    GRPC_MDELEM_UNREF(*token_md);
+    GRPC_MDELEM_UNREF(exec_ctx, *token_md);
     *token_md = GRPC_MDNULL;
   }
   if (null_terminated_body != nullptr) gpr_free(null_terminated_body);
@@ -200,7 +203,8 @@ end:
   return status;
 }
 
-static void on_oauth2_token_fetcher_http_response(void* user_data,
+static void on_oauth2_token_fetcher_http_response(grpc_exec_ctx* exec_ctx,
+                                                  void* user_data,
                                                   grpc_error* error) {
   GRPC_LOG_IF_ERROR("oauth_fetch", GRPC_ERROR_REF(error));
   grpc_credentials_metadata_request* r =
@@ -211,13 +215,13 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
   grpc_millis token_lifetime;
   grpc_credentials_status status =
       grpc_oauth2_token_fetcher_credentials_parse_server_response(
-          &r->response, &access_token_md, &token_lifetime);
+          exec_ctx, &r->response, &access_token_md, &token_lifetime);
   // Update cache and grab list of pending requests.
   gpr_mu_lock(&c->mu);
   c->token_fetch_pending = false;
   c->access_token_md = GRPC_MDELEM_REF(access_token_md);
   c->token_expiration = status == GRPC_CREDENTIALS_OK
-                            ? grpc_core::ExecCtx::Get()->Now() + token_lifetime
+                            ? grpc_exec_ctx_now(exec_ctx) + token_lifetime
                             : 0;
   grpc_oauth2_pending_get_request_metadata* pending_request =
       c->pending_requests;
@@ -232,22 +236,24 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occured when fetching oauth2 token.", &error, 1);
     }
-    GRPC_CLOSURE_SCHED(pending_request->on_request_metadata, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, pending_request->on_request_metadata, error);
     grpc_polling_entity_del_from_pollset_set(
-        pending_request->pollent, grpc_polling_entity_pollset_set(&c->pollent));
+        exec_ctx, pending_request->pollent,
+        grpc_polling_entity_pollset_set(&c->pollent));
     grpc_oauth2_pending_get_request_metadata* prev = pending_request;
     pending_request = pending_request->next;
     gpr_free(prev);
   }
-  GRPC_MDELEM_UNREF(access_token_md);
-  grpc_call_credentials_unref(r->creds);
-  grpc_credentials_metadata_request_destroy(r);
+  GRPC_MDELEM_UNREF(exec_ctx, access_token_md);
+  grpc_call_credentials_unref(exec_ctx, r->creds);
+  grpc_credentials_metadata_request_destroy(exec_ctx, r);
 }
 
 static bool oauth2_token_fetcher_get_request_metadata(
-    grpc_call_credentials* creds, grpc_polling_entity* pollent,
-    grpc_auth_metadata_context context, grpc_credentials_mdelem_array* md_array,
-    grpc_closure* on_request_metadata, grpc_error** error) {
+    grpc_exec_ctx* exec_ctx, grpc_call_credentials* creds,
+    grpc_polling_entity* pollent, grpc_auth_metadata_context context,
+    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
+    grpc_error** error) {
   grpc_oauth2_token_fetcher_credentials* c =
       (grpc_oauth2_token_fetcher_credentials*)creds;
   // Check if we can use the cached token.
@@ -256,14 +262,13 @@ static bool oauth2_token_fetcher_get_request_metadata(
   grpc_mdelem cached_access_token_md = GRPC_MDNULL;
   gpr_mu_lock(&c->mu);
   if (!GRPC_MDISNULL(c->access_token_md) &&
-      (c->token_expiration - grpc_core::ExecCtx::Get()->Now() >
-       refresh_threshold)) {
+      (c->token_expiration - grpc_exec_ctx_now(exec_ctx) > refresh_threshold)) {
     cached_access_token_md = GRPC_MDELEM_REF(c->access_token_md);
   }
   if (!GRPC_MDISNULL(cached_access_token_md)) {
     gpr_mu_unlock(&c->mu);
     grpc_credentials_mdelem_array_add(md_array, cached_access_token_md);
-    GRPC_MDELEM_UNREF(cached_access_token_md);
+    GRPC_MDELEM_UNREF(exec_ctx, cached_access_token_md);
     return true;
   }
   // Couldn't get the token from the cache.
@@ -275,7 +280,7 @@ static bool oauth2_token_fetcher_get_request_metadata(
   pending_request->on_request_metadata = on_request_metadata;
   pending_request->pollent = pollent;
   grpc_polling_entity_add_to_pollset_set(
-      pollent, grpc_polling_entity_pollset_set(&c->pollent));
+      exec_ctx, pollent, grpc_polling_entity_pollset_set(&c->pollent));
   pending_request->next = c->pending_requests;
   c->pending_requests = pending_request;
   bool start_fetch = false;
@@ -286,17 +291,17 @@ static bool oauth2_token_fetcher_get_request_metadata(
   gpr_mu_unlock(&c->mu);
   if (start_fetch) {
     grpc_call_credentials_ref(creds);
-    c->fetch_func(grpc_credentials_metadata_request_create(creds),
+    c->fetch_func(exec_ctx, grpc_credentials_metadata_request_create(creds),
                   &c->httpcli_context, &c->pollent,
                   on_oauth2_token_fetcher_http_response,
-                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
+                  grpc_exec_ctx_now(exec_ctx) + refresh_threshold);
   }
   return false;
 }
 
 static void oauth2_token_fetcher_cancel_get_request_metadata(
-    grpc_call_credentials* creds, grpc_credentials_mdelem_array* md_array,
-    grpc_error* error) {
+    grpc_exec_ctx* exec_ctx, grpc_call_credentials* creds,
+    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
   grpc_oauth2_token_fetcher_credentials* c =
       (grpc_oauth2_token_fetcher_credentials*)creds;
   gpr_mu_lock(&c->mu);
@@ -312,7 +317,7 @@ static void oauth2_token_fetcher_cancel_get_request_metadata(
         c->pending_requests = pending_request->next;
       }
       // Invoke the callback immediately with an error.
-      GRPC_CLOSURE_SCHED(pending_request->on_request_metadata,
+      GRPC_CLOSURE_SCHED(exec_ctx, pending_request->on_request_metadata,
                          GRPC_ERROR_REF(error));
       gpr_free(pending_request);
       break;
@@ -346,7 +351,7 @@ static grpc_call_credentials_vtable compute_engine_vtable = {
     oauth2_token_fetcher_cancel_get_request_metadata};
 
 static void compute_engine_fetch_oauth2(
-    grpc_credentials_metadata_request* metadata_req,
+    grpc_exec_ctx* exec_ctx, grpc_credentials_metadata_request* metadata_req,
     grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
     grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
   grpc_http_header header = {(char*)"Metadata-Flavor", (char*)"Google"};
@@ -362,10 +367,10 @@ static void compute_engine_fetch_oauth2(
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("oauth2_credentials");
   grpc_httpcli_get(
-      httpcli_context, pollent, resource_quota, &request, deadline,
+      exec_ctx, httpcli_context, pollent, resource_quota, &request, deadline,
       GRPC_CLOSURE_CREATE(response_cb, metadata_req, grpc_schedule_on_exec_ctx),
       &metadata_req->response);
-  grpc_resource_quota_unref_internal(resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
 }
 
 grpc_call_credentials* grpc_google_compute_engine_credentials_create(
@@ -385,11 +390,12 @@ grpc_call_credentials* grpc_google_compute_engine_credentials_create(
 // Google Refresh Token credentials.
 //
 
-static void refresh_token_destruct(grpc_call_credentials* creds) {
+static void refresh_token_destruct(grpc_exec_ctx* exec_ctx,
+                                   grpc_call_credentials* creds) {
   grpc_google_refresh_token_credentials* c =
       (grpc_google_refresh_token_credentials*)creds;
   grpc_auth_refresh_token_destruct(&c->refresh_token);
-  oauth2_token_fetcher_destruct(&c->base.base);
+  oauth2_token_fetcher_destruct(exec_ctx, &c->base.base);
 }
 
 static grpc_call_credentials_vtable refresh_token_vtable = {
@@ -397,7 +403,7 @@ static grpc_call_credentials_vtable refresh_token_vtable = {
     oauth2_token_fetcher_cancel_get_request_metadata};
 
 static void refresh_token_fetch_oauth2(
-    grpc_credentials_metadata_request* metadata_req,
+    grpc_exec_ctx* exec_ctx, grpc_credentials_metadata_request* metadata_req,
     grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
     grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
   grpc_google_refresh_token_credentials* c =
@@ -421,11 +427,11 @@ static void refresh_token_fetch_oauth2(
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("oauth2_credentials_refresh");
   grpc_httpcli_post(
-      httpcli_context, pollent, resource_quota, &request, body, strlen(body),
-      deadline,
+      exec_ctx, httpcli_context, pollent, resource_quota, &request, body,
+      strlen(body), deadline,
       GRPC_CLOSURE_CREATE(response_cb, metadata_req, grpc_schedule_on_exec_ctx),
       &metadata_req->response);
-  grpc_resource_quota_unref_internal(resource_quota);
+  grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   gpr_free(body);
 }
 
@@ -477,23 +483,25 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
 // Oauth2 Access Token credentials.
 //
 
-static void access_token_destruct(grpc_call_credentials* creds) {
+static void access_token_destruct(grpc_exec_ctx* exec_ctx,
+                                  grpc_call_credentials* creds) {
   grpc_access_token_credentials* c = (grpc_access_token_credentials*)creds;
-  GRPC_MDELEM_UNREF(c->access_token_md);
+  GRPC_MDELEM_UNREF(exec_ctx, c->access_token_md);
 }
 
 static bool access_token_get_request_metadata(
-    grpc_call_credentials* creds, grpc_polling_entity* pollent,
-    grpc_auth_metadata_context context, grpc_credentials_mdelem_array* md_array,
-    grpc_closure* on_request_metadata, grpc_error** error) {
+    grpc_exec_ctx* exec_ctx, grpc_call_credentials* creds,
+    grpc_polling_entity* pollent, grpc_auth_metadata_context context,
+    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
+    grpc_error** error) {
   grpc_access_token_credentials* c = (grpc_access_token_credentials*)creds;
   grpc_credentials_mdelem_array_add(md_array, c->access_token_md);
   return true;
 }
 
 static void access_token_cancel_get_request_metadata(
-    grpc_call_credentials* c, grpc_credentials_mdelem_array* md_array,
-    grpc_error* error) {
+    grpc_exec_ctx* exec_ctx, grpc_call_credentials* c,
+    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -515,11 +523,11 @@ grpc_call_credentials* grpc_access_token_credentials_create(
   gpr_ref_init(&c->base.refcount, 1);
   char* token_md_value;
   gpr_asprintf(&token_md_value, "Bearer %s", access_token);
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   c->access_token_md = grpc_mdelem_from_slices(
-      grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
+      &exec_ctx, grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
       grpc_slice_from_copied_string(token_md_value));
-
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(token_md_value);
   return &c->base;
 }

@@ -30,7 +30,6 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
 
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "X", 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PX", 0);
@@ -58,7 +57,5 @@ int main(int argc, char** argv) {
                            0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PRI * HTTP/2.0\r\n\r\nSM\r\n\rX",
                            0);
-
-  grpc_shutdown();
   return 0;
 }

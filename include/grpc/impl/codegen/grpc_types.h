@@ -85,7 +85,7 @@ typedef enum {
 
 typedef struct grpc_arg_pointer_vtable {
   void* (*copy)(void* p);
-  void (*destroy)(void* p);
+  void (*destroy)(grpc_exec_ctx* exec_ctx, void* p);
   int (*cmp)(void* p, void* q);
 } grpc_arg_pointer_vtable;
 

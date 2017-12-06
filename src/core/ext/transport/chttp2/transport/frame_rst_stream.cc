@@ -69,7 +69,8 @@ grpc_error* grpc_chttp2_rst_stream_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_rst_stream_parser_parse(void* parser,
+grpc_error* grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx* exec_ctx,
+                                                void* parser,
                                                 grpc_chttp2_transport* t,
                                                 grpc_chttp2_stream* s,
                                                 grpc_slice slice, int is_last) {
@@ -102,7 +103,7 @@ grpc_error* grpc_chttp2_rst_stream_parser_parse(void* parser,
           GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
       gpr_free(message);
     }
-    grpc_chttp2_mark_stream_closed(t, s, true, true, error);
+    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, error);
   }
 
   return GRPC_ERROR_NONE;

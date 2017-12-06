@@ -32,11 +32,12 @@ void grpc_backoff_init(grpc_backoff* backoff, grpc_millis initial_backoff,
   backoff->rng_state = (uint32_t)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
 }
 
-grpc_backoff_result grpc_backoff_begin(grpc_backoff* backoff) {
+grpc_backoff_result grpc_backoff_begin(grpc_exec_ctx* exec_ctx,
+                                       grpc_backoff* backoff) {
   backoff->current_backoff = backoff->initial_backoff;
   const grpc_millis initial_timeout =
       GPR_MAX(backoff->initial_backoff, backoff->min_connect_timeout);
-  const grpc_millis now = grpc_core::ExecCtx::Get()->Now();
+  const grpc_millis now = grpc_exec_ctx_now(exec_ctx);
   const grpc_backoff_result result = {now + initial_timeout,
                                       now + backoff->current_backoff};
   return result;
@@ -56,7 +57,8 @@ static double generate_uniform_random_number_between(uint32_t* rng_state,
   return a + generate_uniform_random_number(rng_state) * range;
 }
 
-grpc_backoff_result grpc_backoff_step(grpc_backoff* backoff) {
+grpc_backoff_result grpc_backoff_step(grpc_exec_ctx* exec_ctx,
+                                      grpc_backoff* backoff) {
   backoff->current_backoff = (grpc_millis)(GPR_MIN(
       backoff->current_backoff * backoff->multiplier, backoff->max_backoff));
   const double jitter = generate_uniform_random_number_between(
@@ -67,7 +69,7 @@ grpc_backoff_result grpc_backoff_step(grpc_backoff* backoff) {
               backoff->min_connect_timeout);
   const grpc_millis next_timeout = GPR_MIN(
       (grpc_millis)(backoff->current_backoff + jitter), backoff->max_backoff);
-  const grpc_millis now = grpc_core::ExecCtx::Get()->Now();
+  const grpc_millis now = grpc_exec_ctx_now(exec_ctx);
   const grpc_backoff_result result = {now + current_timeout,
                                       now + next_timeout};
   return result;

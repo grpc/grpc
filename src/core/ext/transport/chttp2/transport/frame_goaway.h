@@ -50,7 +50,8 @@ void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser* p);
 void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser* p);
 grpc_error* grpc_chttp2_goaway_parser_begin_frame(
     grpc_chttp2_goaway_parser* parser, uint32_t length, uint8_t flags);
-grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
+grpc_error* grpc_chttp2_goaway_parser_parse(grpc_exec_ctx* exec_ctx,
+                                            void* parser,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
                                             grpc_slice slice, int is_last);

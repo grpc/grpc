@@ -133,8 +133,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   {
-    grpc_core::ExecCtx exec_ctx;
-    if (args != nullptr) grpc_channel_args_destroy(args);
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    if (args != nullptr) grpc_channel_args_destroy(&exec_ctx, args);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   grpc_shutdown();

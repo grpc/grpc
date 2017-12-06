@@ -20,7 +20,6 @@
 
 #include <string.h>
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/surface/server.h"
@@ -110,7 +109,6 @@ static void addbuf(const void* data, size_t len) {
 int main(int argc, char** argv) {
   int i;
   grpc_test_init(argc, argv);
-  grpc_init();
 
 #define NUM_FRAMES 10
 #define FRAME_SIZE 1000
@@ -133,7 +131,6 @@ int main(int argc, char** argv) {
   }
   grpc_run_bad_client_test(verifier, nullptr, g_buffer, g_count, 0);
   gpr_free(g_buffer);
-  grpc_shutdown();
 
   return 0;
 }

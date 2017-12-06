@@ -32,7 +32,8 @@ typedef struct grpc_ares_request grpc_ares_request;
    must be called at least once before this function. \a on_done may be
    called directly in this function without being scheduled with \a exec_ctx,
    so it must not try to acquire locks that are being held by the caller. */
-extern void (*grpc_resolve_address_ares)(const char* name,
+extern void (*grpc_resolve_address_ares)(grpc_exec_ctx* exec_ctx,
+                                         const char* name,
                                          const char* default_port,
                                          grpc_pollset_set* interested_parties,
                                          grpc_closure* on_done,
@@ -46,13 +47,14 @@ extern void (*grpc_resolve_address_ares)(const char* name,
   scheduled with \a exec_ctx, so it must not try to acquire locks that are
   being held by the caller. */
 extern grpc_ares_request* (*grpc_dns_lookup_ares)(
-    const char* dns_server, const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addresses, bool check_grpclb,
+    grpc_exec_ctx* exec_ctx, const char* dns_server, const char* name,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    grpc_closure* on_done, grpc_lb_addresses** addresses, bool check_grpclb,
     char** service_config_json);
 
 /* Cancel the pending grpc_ares_request \a request */
-void grpc_cancel_ares_request(grpc_ares_request* request);
+void grpc_cancel_ares_request(grpc_exec_ctx* exec_ctx,
+                              grpc_ares_request* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */

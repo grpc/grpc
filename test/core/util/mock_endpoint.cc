@@ -40,13 +40,13 @@ typedef struct grpc_mock_endpoint {
   grpc_resource_user* resource_user;
 } grpc_mock_endpoint;
 
-static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb) {
+static void me_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                    grpc_slice_buffer* slices, grpc_closure* cb) {
   grpc_mock_endpoint* m = (grpc_mock_endpoint*)ep;
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
-    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_NONE);
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -54,41 +54,44 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   gpr_mu_unlock(&m->mu);
 }
 
-static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb) {
+static void me_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                     grpc_slice_buffer* slices, grpc_closure* cb) {
   grpc_mock_endpoint* m = (grpc_mock_endpoint*)ep;
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);
   }
-  GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_NONE);
 }
 
-static void me_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
+static void me_add_to_pollset(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                              grpc_pollset* pollset) {}
 
-static void me_add_to_pollset_set(grpc_endpoint* ep,
+static void me_add_to_pollset_set(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                                   grpc_pollset_set* pollset) {}
 
-static void me_delete_from_pollset_set(grpc_endpoint* ep,
+static void me_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
+                                       grpc_endpoint* ep,
                                        grpc_pollset_set* pollset) {}
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error* why) {
+static void me_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                        grpc_error* why) {
   grpc_mock_endpoint* m = (grpc_mock_endpoint*)ep;
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
-    GRPC_CLOSURE_SCHED(m->on_read,
+    GRPC_CLOSURE_SCHED(exec_ctx, m->on_read,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "Endpoint Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->mu);
-  grpc_resource_user_shutdown(m->resource_user);
+  grpc_resource_user_shutdown(exec_ctx, m->resource_user);
   GRPC_ERROR_UNREF(why);
 }
 
-static void me_destroy(grpc_endpoint* ep) {
+static void me_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
   grpc_mock_endpoint* m = (grpc_mock_endpoint*)ep;
   grpc_slice_buffer_destroy(&m->read_buffer);
-  grpc_resource_user_unref(m->resource_user);
+  grpc_resource_user_unref(exec_ctx, m->resource_user);
   gpr_free(m);
 }
 
@@ -131,12 +134,13 @@ grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
   return &m->base;
 }
 
-void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice) {
+void grpc_mock_endpoint_put_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                                 grpc_slice slice) {
   grpc_mock_endpoint* m = (grpc_mock_endpoint*)ep;
   gpr_mu_lock(&m->mu);
   if (m->on_read != nullptr) {
     grpc_slice_buffer_add(m->on_read_out, slice);
-    GRPC_CLOSURE_SCHED(m->on_read, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, m->on_read, GRPC_ERROR_NONE);
     m->on_read = nullptr;
   } else {
     grpc_slice_buffer_add(&m->read_buffer, slice);

@@ -62,9 +62,9 @@ void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
   }
 }
 
-int grpc_stats_histo_find_bucket_slow(int value, const int* table,
-                                      int table_size) {
-  GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS();
+int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx* exec_ctx, int value,
+                                      const int* table, int table_size) {
+  GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS(exec_ctx);
   const int* const start = table;
   while (table_size > 0) {
     int step = table_size / 2;

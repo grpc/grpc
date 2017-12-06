@@ -23,13 +23,13 @@
 #include "src/core/lib/iomgr/port.h"
 
 /** Initializes the iomgr. */
-void grpc_iomgr_init();
+void grpc_iomgr_init(grpc_exec_ctx* exec_ctx);
 
 /** Starts any background threads for iomgr. */
-void grpc_iomgr_start();
+void grpc_iomgr_start(grpc_exec_ctx* exec_ctx);
 
 /** Signals the intention to shutdown the iomgr. Expects to be able to flush
  * exec_ctx. */
-void grpc_iomgr_shutdown();
+void grpc_iomgr_shutdown(grpc_exec_ctx* exec_ctx);
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_H */

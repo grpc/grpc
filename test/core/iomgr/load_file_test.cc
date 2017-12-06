@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -153,11 +152,9 @@ static void test_load_big_file(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
   test_load_empty_file();
   test_load_failure();
   test_load_small_file();
   test_load_big_file();
-  grpc_shutdown();
   return 0;
 }

@@ -96,7 +96,7 @@ done:
   return err;
 }
 
-static void tc_on_alarm(void* acp, grpc_error* error) {
+static void tc_on_alarm(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
   int done;
   async_connect* ac = (async_connect*)acp;
   if (grpc_tcp_trace.enabled()) {
@@ -107,24 +107,26 @@ static void tc_on_alarm(void* acp, grpc_error* error) {
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
     grpc_fd_shutdown(
-        ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
+        exec_ctx, ac->fd,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
-    grpc_channel_args_destroy(ac->channel_args);
+    grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_free(ac);
   }
 }
 
 grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str) {
-  return grpc_tcp_create(fd, channel_args, addr_str);
+    grpc_exec_ctx* exec_ctx, grpc_fd* fd, const grpc_channel_args* channel_args,
+    const char* addr_str) {
+  return grpc_tcp_create(exec_ctx, fd, channel_args, addr_str);
 }
 
-static void on_writable(void* acp, grpc_error* error) {
+static void on_writable(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
   async_connect* ac = (async_connect*)acp;
   int so_error = 0;
   socklen_t so_error_size;
@@ -148,7 +150,7 @@ static void on_writable(void* acp, grpc_error* error) {
   ac->fd = nullptr;
   gpr_mu_unlock(&ac->mu);
 
-  grpc_timer_cancel(&ac->alarm);
+  grpc_timer_cancel(exec_ctx, &ac->alarm);
 
   gpr_mu_lock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
@@ -170,8 +172,9 @@ static void on_writable(void* acp, grpc_error* error) {
 
   switch (so_error) {
     case 0:
-      grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args, ac->addr_str);
+      grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
+      *ep = grpc_tcp_client_create_from_fd(exec_ctx, fd, ac->channel_args,
+                                           ac->addr_str);
       fd = nullptr;
       break;
     case ENOBUFS:
@@ -191,7 +194,7 @@ static void on_writable(void* acp, grpc_error* error) {
          don't do that! */
       gpr_log(GPR_ERROR, "kernel out of buffers");
       gpr_mu_unlock(&ac->mu);
-      grpc_fd_notify_on_write(fd, &ac->write_closure);
+      grpc_fd_notify_on_write(exec_ctx, fd, &ac->write_closure);
       return;
     case ECONNREFUSED:
       /* This error shouldn't happen for anything other than connect(). */
@@ -206,8 +209,8 @@ static void on_writable(void* acp, grpc_error* error) {
 
 finish:
   if (fd != nullptr) {
-    grpc_pollset_set_del_fd(ac->interested_parties, fd);
-    grpc_fd_orphan(fd, nullptr, nullptr, false /* already_closed */,
+    grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
+    grpc_fd_orphan(exec_ctx, fd, nullptr, nullptr, false /* already_closed */,
                    "tcp_client_orphan");
     fd = nullptr;
   }
@@ -230,13 +233,14 @@ finish:
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
-    grpc_channel_args_destroy(ac->channel_args);
+    grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_free(ac);
   }
-  GRPC_CLOSURE_SCHED(closure, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
 }
 
-static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
+static void tcp_client_connect_impl(grpc_exec_ctx* exec_ctx,
+                                    grpc_closure* closure, grpc_endpoint** ep,
                                     grpc_pollset_set* interested_parties,
                                     const grpc_channel_args* channel_args,
                                     const grpc_resolved_address* addr,
@@ -261,7 +265,7 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
 
   error = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
   if (error != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(closure, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
     return;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
@@ -270,7 +274,7 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
     addr = &addr4_copy;
   }
   if ((error = prepare_socket(addr, fd, channel_args)) != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(closure, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
     return;
   }
 
@@ -285,19 +289,20 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
   fdobj = grpc_fd_create(fd, name);
 
   if (err >= 0) {
-    *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_str);
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+    *ep =
+        grpc_tcp_client_create_from_fd(exec_ctx, fdobj, channel_args, addr_str);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    grpc_fd_orphan(fdobj, nullptr, nullptr, false /* already_closed */,
-                   "tcp_client_connect_error");
-    GRPC_CLOSURE_SCHED(closure, GRPC_OS_ERROR(errno, "connect"));
+    grpc_fd_orphan(exec_ctx, fdobj, nullptr, nullptr,
+                   false /* already_closed */, "tcp_client_connect_error");
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"));
     goto done;
   }
 
-  grpc_pollset_set_add_fd(interested_parties, fdobj);
+  grpc_pollset_set_add_fd(exec_ctx, interested_parties, fdobj);
 
   ac = (async_connect*)gpr_malloc(sizeof(async_connect));
   ac->closure = closure;
@@ -319,8 +324,8 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
 
   gpr_mu_lock(&ac->mu);
   GRPC_CLOSURE_INIT(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
-  grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
-  grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
+  grpc_timer_init(exec_ctx, &ac->alarm, deadline, &ac->on_alarm);
+  grpc_fd_notify_on_write(exec_ctx, ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 
 done:
@@ -330,18 +335,19 @@ done:
 
 // overridden by api_fuzzer.c
 void (*grpc_tcp_client_connect_impl)(
-    grpc_closure* closure, grpc_endpoint** ep,
+    grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr,
     grpc_millis deadline) = tcp_client_connect_impl;
 
-void grpc_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
+void grpc_tcp_client_connect(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
+                             grpc_endpoint** ep,
                              grpc_pollset_set* interested_parties,
                              const grpc_channel_args* channel_args,
                              const grpc_resolved_address* addr,
                              grpc_millis deadline) {
-  grpc_tcp_client_connect_impl(closure, ep, interested_parties, channel_args,
-                               addr, deadline);
+  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties,
+                               channel_args, addr, deadline);
 }
 
 #endif

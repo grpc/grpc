@@ -68,17 +68,18 @@ typedef struct {
 
 typedef struct {
   /// Destroys the handshaker.
-  void (*destroy)(grpc_handshaker* handshaker);
+  void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker);
 
   /// Shuts down the handshaker (e.g., to clean up when the operation is
   /// aborted in the middle).
-  void (*shutdown)(grpc_handshaker* handshaker, grpc_error* why);
+  void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
+                   grpc_error* why);
 
   /// Performs handshaking, modifying \a args as needed (e.g., to
   /// replace \a endpoint with a wrapped endpoint).
   /// When finished, invokes \a on_handshake_done.
   /// \a acceptor will be NULL for client-side handshakers.
-  void (*do_handshake)(grpc_handshaker* handshaker,
+  void (*do_handshake)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
                        grpc_tcp_server_acceptor* acceptor,
                        grpc_closure* on_handshake_done,
                        grpc_handshaker_args* args);
@@ -94,9 +95,12 @@ struct grpc_handshaker {
 void grpc_handshaker_init(const grpc_handshaker_vtable* vtable,
                           grpc_handshaker* handshaker);
 
-void grpc_handshaker_destroy(grpc_handshaker* handshaker);
-void grpc_handshaker_shutdown(grpc_handshaker* handshaker, grpc_error* why);
-void grpc_handshaker_do_handshake(grpc_handshaker* handshaker,
+void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
+                             grpc_handshaker* handshaker);
+void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
+                              grpc_handshaker* handshaker, grpc_error* why);
+void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
+                                  grpc_handshaker* handshaker,
                                   grpc_tcp_server_acceptor* acceptor,
                                   grpc_closure* on_handshake_done,
                                   grpc_handshaker_args* args);
@@ -116,13 +120,15 @@ void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
                                 grpc_handshaker* handshaker);
 
 /// Destroys the handshake manager.
-void grpc_handshake_manager_destroy(grpc_handshake_manager* mgr);
+void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
+                                    grpc_handshake_manager* mgr);
 
 /// Shuts down the handshake manager (e.g., to clean up when the operation is
 /// aborted in the middle).
 /// The caller must still call grpc_handshake_manager_destroy() after
 /// calling this function.
-void grpc_handshake_manager_shutdown(grpc_handshake_manager* mgr,
+void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
+                                     grpc_handshake_manager* mgr,
                                      grpc_error* why);
 
 /// Invokes handshakers in the order they were added.
@@ -140,10 +146,11 @@ void grpc_handshake_manager_shutdown(grpc_handshake_manager* mgr,
 /// the necessary clean-up.  Otherwise, the callback takes ownership of
 /// the arguments.
 void grpc_handshake_manager_do_handshake(
-    grpc_handshake_manager* mgr, grpc_pollset_set* interested_parties,
-    grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
-    grpc_millis deadline, grpc_tcp_server_acceptor* acceptor,
-    grpc_iomgr_cb_func on_handshake_done, void* user_data);
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
+    grpc_pollset_set* interested_parties, grpc_endpoint* endpoint,
+    const grpc_channel_args* channel_args, grpc_millis deadline,
+    grpc_tcp_server_acceptor* acceptor, grpc_iomgr_cb_func on_handshake_done,
+    void* user_data);
 
 /// Add \a mgr to the server side list of all pending handshake managers, the
 /// list starts with \a *head.
@@ -159,6 +166,6 @@ void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
 /// Shutdown all pending handshake managers on the server side.
 // Not thread-safe. Caller needs to synchronize.
 void grpc_handshake_manager_pending_list_shutdown_all(
-    grpc_handshake_manager* head, grpc_error* why);
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

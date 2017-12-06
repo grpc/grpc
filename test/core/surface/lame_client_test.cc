@@ -32,19 +32,20 @@ grpc_closure transport_op_cb;
 
 static void* tag(intptr_t x) { return (void*)x; }
 
-void verify_connectivity(void* arg, grpc_error* error) {
+void verify_connectivity(grpc_exec_ctx* exec_ctx, void* arg,
+                         grpc_error* error) {
   grpc_connectivity_state* state = static_cast<grpc_connectivity_state*>(arg);
   GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *state);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
 }
 
-void do_nothing(void* arg, grpc_error* error) {}
+void do_nothing(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {}
 
 void test_transport_op(grpc_channel* channel) {
   grpc_transport_op* op;
   grpc_channel_element* elem;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  grpc_core::ExecCtx exec_ctx;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   GRPC_CLOSURE_INIT(&transport_op_cb, verify_connectivity, &state,
                     grpc_schedule_on_exec_ctx);
@@ -53,12 +54,14 @@ void test_transport_op(grpc_channel* channel) {
   op->on_connectivity_state_change = &transport_op_cb;
   op->connectivity_state = &state;
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
-  elem->filter->start_transport_op(elem, op);
+  elem->filter->start_transport_op(&exec_ctx, elem, op);
+  grpc_exec_ctx_finish(&exec_ctx);
 
   GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, nullptr,
                     grpc_schedule_on_exec_ctx);
   op = grpc_make_transport_op(&transport_op_cb);
-  elem->filter->start_transport_op(elem, op);
+  elem->filter->start_transport_op(&exec_ctx, elem, op);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char** argv) {

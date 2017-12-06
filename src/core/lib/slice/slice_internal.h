@@ -25,11 +25,14 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 grpc_slice grpc_slice_ref_internal(grpc_slice slice);
-void grpc_slice_unref_internal(grpc_slice slice);
-void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
-void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
+void grpc_slice_unref_internal(grpc_exec_ctx* exec_ctx, grpc_slice slice);
+void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx* exec_ctx,
+                                                grpc_slice_buffer* sb);
+void grpc_slice_buffer_partial_unref_internal(grpc_exec_ctx* exec_ctx,
+                                              grpc_slice_buffer* sb,
                                               size_t idx);
-void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb);
+void grpc_slice_buffer_destroy_internal(grpc_exec_ctx* exec_ctx,
+                                        grpc_slice_buffer* sb);
 
 /* Check if a slice is interned */
 bool grpc_slice_is_interned(grpc_slice slice);

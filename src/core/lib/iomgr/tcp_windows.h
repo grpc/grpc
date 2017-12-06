@@ -38,7 +38,7 @@
 /* Create a tcp endpoint given a winsock handle.
  * Takes ownership of the handle.
  */
-grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
+grpc_endpoint* grpc_tcp_create(grpc_exec_ctx* exec_ctx, grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
                                const char* peer_string);
 

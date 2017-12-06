@@ -49,8 +49,9 @@ TEST(StatsTest, IncCounters) {
   for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
     Snapshot snapshot;
 
-    grpc_core::ExecCtx exec_ctx;
-    GRPC_STATS_INC_COUNTER((grpc_stats_counters)i);
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    GRPC_STATS_INC_COUNTER(&exec_ctx, (grpc_stats_counters)i);
+    grpc_exec_ctx_finish(&exec_ctx);
 
     EXPECT_EQ(snapshot.delta().counters[i], 1);
   }
@@ -59,8 +60,9 @@ TEST(StatsTest, IncCounters) {
 TEST(StatsTest, IncSpecificCounter) {
   Snapshot snapshot;
 
-  grpc_core::ExecCtx exec_ctx;
-  GRPC_STATS_INC_SYSCALL_POLL();
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GRPC_STATS_INC_SYSCALL_POLL(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
 
   EXPECT_EQ(snapshot.delta().counters[GRPC_STATS_COUNTER_SYSCALL_POLL], 1);
 }
@@ -92,8 +94,9 @@ TEST_P(HistogramTest, IncHistogram) {
     for (auto j : test_values) {
       Snapshot snapshot;
 
-      grpc_core::ExecCtx exec_ctx;
-      grpc_stats_inc_histogram[kHistogram](j);
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+      grpc_stats_inc_histogram[kHistogram](&exec_ctx, j);
+      grpc_exec_ctx_finish(&exec_ctx);
 
       auto delta = snapshot.delta();
 
