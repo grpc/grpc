@@ -19,12 +19,9 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H
 
+#include <ares.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 
@@ -52,10 +49,6 @@ void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver* ev_driver);
 /* Shutdown all the grpc_fds used by \a ev_driver */
 void grpc_ares_ev_driver_shutdown(grpc_exec_ctx* exec_ctx,
                                   grpc_ares_ev_driver* ev_driver);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H \
         */

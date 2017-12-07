@@ -25,10 +25,6 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/sync.h>
 
-extern "C" {
-struct grpc_byte_buffer;
-}
-
 namespace grpc {
 
 /// Interface between the codegen library and the minimal subset of core

@@ -19,10 +19,6 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_CORE_LIB_SURFACE_CALL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -102,8 +98,7 @@ void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
 void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
-  if (GRPC_TRACER_ON(grpc_api_trace))                  \
-  grpc_call_log_batch(sev, call, ops, nops, tag)
+  if (grpc_api_trace.enabled()) grpc_call_log_batch(sev, call, ops, nops, tag)
 
 uint8_t grpc_call_is_client(grpc_call* call);
 
@@ -112,11 +107,7 @@ uint8_t grpc_call_is_client(grpc_call* call);
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call* call, grpc_compression_level level);
 
-extern grpc_tracer_flag grpc_call_error_trace;
-extern grpc_tracer_flag grpc_compression_trace;
-
-#ifdef __cplusplus
-}
-#endif
+extern grpc_core::TraceFlag grpc_call_error_trace;
+extern grpc_core::TraceFlag grpc_compression_trace;
 
 #endif /* GRPC_CORE_LIB_SURFACE_CALL_H */

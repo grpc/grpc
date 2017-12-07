@@ -174,7 +174,7 @@ class EndpointPairFixture : public BaseFixture {
       const grpc_channel_args* server_args =
           grpc_server_get_channel_args(server_->c_server());
       server_transport_ = grpc_create_chttp2_transport(
-          &exec_ctx, server_args, endpoints.server, 0 /* is_client */);
+          &exec_ctx, server_args, endpoints.server, false /* is_client */);
 
       grpc_pollset** pollsets;
       size_t num_pollsets = 0;
@@ -185,8 +185,9 @@ class EndpointPairFixture : public BaseFixture {
       }
 
       grpc_server_setup_transport(&exec_ctx, server_->c_server(),
-                                  server_transport_, NULL, server_args);
-      grpc_chttp2_transport_start_reading(&exec_ctx, server_transport_, NULL);
+                                  server_transport_, nullptr, server_args);
+      grpc_chttp2_transport_start_reading(&exec_ctx, server_transport_, nullptr,
+                                          nullptr);
     }
 
     /* create channel */
@@ -196,13 +197,14 @@ class EndpointPairFixture : public BaseFixture {
       fixture_configuration.ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      client_transport_ =
-          grpc_create_chttp2_transport(&exec_ctx, &c_args, endpoints.client, 1);
+      client_transport_ = grpc_create_chttp2_transport(&exec_ctx, &c_args,
+                                                       endpoints.client, true);
       GPR_ASSERT(client_transport_);
       grpc_channel* channel =
           grpc_channel_create(&exec_ctx, "target", &c_args,
                               GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
-      grpc_chttp2_transport_start_reading(&exec_ctx, client_transport_, NULL);
+      grpc_chttp2_transport_start_reading(&exec_ctx, client_transport_, nullptr,
+                                          nullptr);
 
       channel_ = CreateChannelInternal("", channel);
     }
@@ -244,7 +246,7 @@ class SockPair : public EndpointPairFixture {
   SockPair(Service* service, const FixtureConfiguration& fixture_configuration =
                                  FixtureConfiguration())
       : EndpointPairFixture(service,
-                            grpc_iomgr_create_endpoint_pair("test", NULL),
+                            grpc_iomgr_create_endpoint_pair("test", nullptr),
                             fixture_configuration) {}
 };
 

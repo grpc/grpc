@@ -149,7 +149,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    NULL);
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -188,16 +188,16 @@ static void start_lb_server(server_fixture* sf, int* ports, size_t nports,
 
   // make sure we've received the initial metadata from the grpclb request.
   GPR_ASSERT(request_metadata_recv.count > 0);
-  GPR_ASSERT(request_metadata_recv.metadata != NULL);
+  GPR_ASSERT(request_metadata_recv.metadata != nullptr);
 
   // receive request for backends
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(202), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(202), 1);
   cq_verify(cqv);
@@ -222,14 +222,14 @@ static void start_lb_server(server_fixture* sf, int* ports, size_t nports,
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(201), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(201), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   gpr_log(GPR_INFO, "LB Server[%s](%s) after tag 201", sf->servers_hostport,
           sf->balancer_name);
@@ -252,9 +252,10 @@ static void start_lb_server(server_fixture* sf, int* ports, size_t nports,
     op->op = GRPC_OP_SEND_MESSAGE;
     op->data.send_message.send_message = response_payload;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(203), NULL);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(203), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(203), 1);
     cq_verify(cqv);
@@ -274,9 +275,9 @@ static void start_lb_server(server_fixture* sf, int* ports, size_t nports,
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(204), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(204), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(201), 1);
@@ -318,8 +319,8 @@ static void start_backend_server(server_fixture* sf) {
                                      tag(100));
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] up", sf->servers_hostport);
-    ev = grpc_completion_queue_next(sf->cq,
-                                    grpc_timeout_seconds_to_deadline(60), NULL);
+    ev = grpc_completion_queue_next(
+        sf->cq, grpc_timeout_seconds_to_deadline(60), nullptr);
     if (!ev.success) {
       gpr_log(GPR_INFO, "Server[%s] being torn down", sf->servers_hostport);
       cq_verifier_destroy(cqv);
@@ -341,14 +342,15 @@ static void start_backend_server(server_fixture* sf) {
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
     op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
     op->data.recv_close_on_server.cancelled = &was_cancelled;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), NULL);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);
 
@@ -359,15 +361,16 @@ static void start_backend_server(server_fixture* sf) {
       op->op = GRPC_OP_RECV_MESSAGE;
       op->data.recv_message.recv_message = &request_payload_recv;
       op->flags = 0;
-      op->reserved = NULL;
+      op->reserved = nullptr;
       op++;
-      error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
+      error =
+          grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
       ev = grpc_completion_queue_next(
-          sf->cq, grpc_timeout_seconds_to_deadline(3), NULL);
+          sf->cq, grpc_timeout_seconds_to_deadline(3), nullptr);
       if (ev.type == GRPC_OP_COMPLETE && ev.success) {
         GPR_ASSERT(ev.tag = tag(102));
-        if (request_payload_recv == NULL) {
+        if (request_payload_recv == nullptr) {
           exit = true;
           gpr_log(GPR_INFO,
                   "Server[%s] recv \"close\" from client, exiting. Call #%d",
@@ -388,13 +391,13 @@ static void start_backend_server(server_fixture* sf) {
         op->op = GRPC_OP_SEND_MESSAGE;
         op->data.send_message.send_message = response_payload;
         op->flags = 0;
-        op->reserved = NULL;
+        op->reserved = nullptr;
         op++;
-        error =
-            grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+        error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103),
+                                      nullptr);
         GPR_ASSERT(GRPC_CALL_OK == error);
         ev = grpc_completion_queue_next(
-            sf->cq, grpc_timeout_seconds_to_deadline(3), NULL);
+            sf->cq, grpc_timeout_seconds_to_deadline(3), nullptr);
         if (ev.type == GRPC_OP_COMPLETE && ev.success) {
           GPR_ASSERT(ev.tag = tag(103));
         } else {
@@ -422,9 +425,10 @@ static void start_backend_server(server_fixture* sf) {
         grpc_slice_from_static_string("Backend server out a-ok");
     op->data.send_status_from_server.status_details = &status_details;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
@@ -459,10 +463,10 @@ static void perform_request(client_fixture* cf) {
       grpc_slice_from_copied_string("hello world");
 
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
-  c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
+  c = grpc_channel_create_call(cf->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, grpc_slice_from_static_string("/foo"),
                                &host, grpc_timeout_seconds_to_deadline(5),
-                               NULL);
+                               nullptr);
   gpr_log(GPR_INFO, "Call 0x%" PRIxPTR " created", (intptr_t)c);
   GPR_ASSERT(c);
   char* peer;
@@ -474,21 +478,21 @@ static void perform_request(client_fixture* cf) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   for (i = 0; i < 4; i++) {
@@ -498,14 +502,14 @@ static void perform_request(client_fixture* cf) {
     op->op = GRPC_OP_SEND_MESSAGE;
     op->data.send_message.send_message = request_payload;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
     op->op = GRPC_OP_RECV_MESSAGE;
     op->data.recv_message.recv_message = &response_payload_recv;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
+    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
@@ -522,9 +526,9 @@ static void perform_request(client_fixture* cf) {
   op = ops;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
-  op->reserved = NULL;
+  op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -550,20 +554,20 @@ static void setup_client(const server_fixture* lb_server,
                          const server_fixture* backends, client_fixture* cf) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  char* expected_target_names = NULL;
+  char* expected_target_names = nullptr;
   const char* backends_name = lb_server->servers_hostport;
   gpr_asprintf(&expected_target_names, "%s;%s", backends_name, BALANCERS_NAME);
 
   grpc_fake_resolver_response_generator* response_generator =
       grpc_fake_resolver_response_generator_create();
 
-  grpc_lb_addresses* addresses = grpc_lb_addresses_create(1, NULL);
+  grpc_lb_addresses* addresses = grpc_lb_addresses_create(1, nullptr);
   char* lb_uri_str;
   gpr_asprintf(&lb_uri_str, "ipv4:%s", lb_server->servers_hostport);
   grpc_uri* lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
-  GPR_ASSERT(lb_uri != NULL);
+  GPR_ASSERT(lb_uri != nullptr);
   grpc_lb_addresses_set_address_from_uri(addresses, 0, lb_uri, true,
-                                         lb_server->balancer_name, NULL);
+                                         lb_server->balancer_name, nullptr);
   grpc_uri_destroy(lb_uri);
   gpr_free(lb_uri_str);
 
@@ -571,22 +575,22 @@ static void setup_client(const server_fixture* lb_server,
   const grpc_arg fake_addresses =
       grpc_lb_addresses_create_channel_arg(addresses);
   grpc_channel_args* fake_result =
-      grpc_channel_args_copy_and_add(NULL, &fake_addresses, 1);
+      grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
   grpc_lb_addresses_destroy(&exec_ctx, addresses);
 
   const grpc_arg new_args[] = {
       grpc_fake_transport_expected_targets_arg(expected_target_names),
       grpc_fake_resolver_response_generator_arg(response_generator)};
 
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(NULL, new_args, GPR_ARRAY_SIZE(new_args));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(
+      nullptr, new_args, GPR_ARRAY_SIZE(new_args));
   gpr_free(expected_target_names);
 
-  cf->cq = grpc_completion_queue_create_for_next(NULL);
+  cf->cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel_credentials* fake_creds =
       grpc_fake_transport_security_credentials_create();
   cf->client =
-      grpc_secure_channel_create(fake_creds, cf->server_uri, args, NULL);
+      grpc_secure_channel_create(fake_creds, cf->server_uri, args, nullptr);
   grpc_fake_resolver_response_generator_set_response(
       &exec_ctx, response_generator, fake_result);
   grpc_channel_args_destroy(&exec_ctx, fake_result);
@@ -600,16 +604,16 @@ static void teardown_client(client_fixture* cf) {
   grpc_completion_queue_shutdown(cf->cq);
   drain_cq(cf->cq);
   grpc_completion_queue_destroy(cf->cq);
-  cf->cq = NULL;
+  cf->cq = nullptr;
   grpc_channel_destroy(cf->client);
-  cf->client = NULL;
+  cf->client = nullptr;
   gpr_free(cf->server_uri);
 }
 
 static void setup_server(const char* host, server_fixture* sf) {
   int assigned_port;
 
-  sf->cq = grpc_completion_queue_create_for_next(NULL);
+  sf->cq = grpc_completion_queue_create_for_next(nullptr);
   const char* colon_idx = strchr(host, ':');
   if (colon_idx) {
     const char* port_str = colon_idx + 1;
@@ -623,8 +627,8 @@ static void setup_server(const char* host, server_fixture* sf) {
   grpc_server_credentials* server_creds =
       grpc_fake_transport_security_server_credentials_create();
 
-  sf->server = grpc_server_create(NULL, NULL);
-  grpc_server_register_completion_queue(sf->server, sf->cq, NULL);
+  sf->server = grpc_server_create(nullptr, nullptr);
+  grpc_server_register_completion_queue(sf->server, sf->cq, nullptr);
   GPR_ASSERT((assigned_port = grpc_server_add_secure_http2_port(
                   sf->server, sf->servers_hostport, server_creds)) > 0);
   grpc_server_credentials_release(server_creds);
@@ -638,17 +642,17 @@ static void teardown_server(server_fixture* sf) {
   gpr_log(GPR_INFO, "Server[%s] shutting down", sf->servers_hostport);
 
   grpc_completion_queue* shutdown_cq =
-      grpc_completion_queue_create_for_pluck(NULL);
+      grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(sf->server, shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
                                          grpc_timeout_seconds_to_deadline(5),
-                                         NULL)
+                                         nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(sf->server);
   gpr_thd_join(sf->tid);
 
-  sf->server = NULL;
+  sf->server = nullptr;
   grpc_completion_queue_shutdown(sf->cq);
   drain_cq(sf->cq);
   grpc_completion_queue_destroy(sf->cq);
@@ -689,14 +693,15 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
       tf.lb_backends[i].lb_token_prefix = "";
     }
     setup_server("127.0.0.1", &tf.lb_backends[i]);
-    gpr_thd_new(&tf.lb_backends[i].tid, fork_backend_server, &tf.lb_backends[i],
-                &options);
+    gpr_thd_new(&tf.lb_backends[i].tid, "grpclb_backend", fork_backend_server,
+                &tf.lb_backends[i], &options);
   }
 
   tf.lb_server.lb_token_prefix = LB_TOKEN_PREFIX;
   tf.lb_server.balancer_name = BALANCERS_NAME;
   setup_server("127.0.0.1", &tf.lb_server);
-  gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
+  gpr_thd_new(&tf.lb_server.tid, "grpclb_server", fork_lb_server, &tf.lb_server,
+              &options);
   setup_client(&tf.lb_server, tf.lb_backends, &tf.client);
   return tf;
 }

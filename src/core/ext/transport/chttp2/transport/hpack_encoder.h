@@ -34,9 +34,7 @@
 /* maximum table size we'll actually use */
 #define GRPC_CHTTP2_HPACKC_MAX_TABLE_SIZE (1024 * 1024)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern grpc_core::TraceFlag grpc_http_trace;
 
 typedef struct {
   uint32_t filter_elems_sum;
@@ -94,9 +92,5 @@ void grpc_chttp2_encode_header(grpc_exec_ctx* exec_ctx,
                                grpc_metadata_batch* metadata,
                                const grpc_encode_header_options* options,
                                grpc_slice_buffer* outbuf);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H */

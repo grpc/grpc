@@ -201,7 +201,7 @@ static void json_reader_container_begins(void* userdata, grpc_json_type type) {
 
   container = json_create_and_link(userdata, type);
   state->current_container = container;
-  state->current_value = NULL;
+  state->current_value = nullptr;
 }
 
 /* It's important to remember that the reader is mostly stateless, so it
@@ -280,13 +280,13 @@ static grpc_json_reader_vtable reader_vtable = {
 grpc_json* grpc_json_parse_string_with_len(char* input, size_t size) {
   grpc_json_reader reader;
   json_reader_userdata state;
-  grpc_json* json = NULL;
+  grpc_json* json = nullptr;
   grpc_json_reader_status status;
 
-  if (!input) return NULL;
+  if (!input) return nullptr;
 
-  state.top = state.current_container = state.current_value = NULL;
-  state.string = state.key = NULL;
+  state.top = state.current_container = state.current_value = nullptr;
+  state.string = state.key = nullptr;
   state.string_ptr = state.input = (uint8_t*)input;
   state.remaining_input = size;
   grpc_json_reader_init(&reader, &reader_vtable, &state);
@@ -296,7 +296,7 @@ grpc_json* grpc_json_parse_string_with_len(char* input, size_t size) {
 
   if ((status != GRPC_JSON_DONE) && json) {
     grpc_json_destroy(json);
-    json = NULL;
+    json = nullptr;
   }
 
   return json;
@@ -352,7 +352,7 @@ char* grpc_json_dump_to_string(grpc_json* json, int indent) {
   grpc_json_writer writer;
   json_writer_userdata state;
 
-  state.output = NULL;
+  state.output = nullptr;
   state.free_space = state.string_len = state.allocated = 0;
   grpc_json_writer_init(&writer, indent, &writer_vtable, &state);
 

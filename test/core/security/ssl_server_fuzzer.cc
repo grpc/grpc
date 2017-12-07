@@ -78,10 +78,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   pem_key_cert_pair.private_key = (const char*)GRPC_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char*)GRPC_SLICE_START_PTR(cert_slice);
   grpc_server_credentials* creds = grpc_ssl_server_credentials_create(
-      ca_cert, &pem_key_cert_pair, 1, 0, NULL);
+      ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
 
   // Create security connector
-  grpc_server_security_connector* sc = NULL;
+  grpc_server_security_connector* sc = nullptr;
   grpc_security_status status =
       grpc_server_credentials_create_security_connector(&exec_ctx, creds, &sc);
   GPR_ASSERT(status == GRPC_SECURITY_OK);
@@ -92,8 +92,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_handshake_manager* handshake_mgr = grpc_handshake_manager_create();
   grpc_server_security_connector_add_handshakers(&exec_ctx, sc, handshake_mgr);
   grpc_handshake_manager_do_handshake(
-      &exec_ctx, handshake_mgr, mock_endpoint, NULL /* channel_args */,
-      deadline, NULL /* acceptor */, on_handshake_done, &state);
+      &exec_ctx, handshake_mgr, nullptr /* interested_parties */, mock_endpoint,
+      nullptr /* channel_args */, deadline, nullptr /* acceptor */,
+      on_handshake_done, &state);
   grpc_exec_ctx_flush(&exec_ctx);
 
   // If the given string happens to be part of the correct client hello, the

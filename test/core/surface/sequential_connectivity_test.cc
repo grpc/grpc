@@ -45,9 +45,9 @@ typedef struct {
 static void server_thread_func(void* args) {
   server_thread_args* a = static_cast<server_thread_args*>(args);
   grpc_event ev = grpc_completion_queue_next(
-      a->cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+      a->cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == NULL);
+  GPR_ASSERT(ev.tag == nullptr);
   GPR_ASSERT(ev.success == true);
 }
 
@@ -59,20 +59,20 @@ static void run_test(const test_fixture* fixture) {
   char* addr;
   gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
 
-  grpc_server* server = grpc_server_create(NULL, NULL);
+  grpc_server* server = grpc_server_create(nullptr, nullptr);
   fixture->add_server_port(server, addr);
   grpc_completion_queue* server_cq =
-      grpc_completion_queue_create_for_next(NULL);
-  grpc_server_register_completion_queue(server, server_cq, NULL);
+      grpc_completion_queue_create_for_next(nullptr);
+  grpc_server_register_completion_queue(server, server_cq, nullptr);
   grpc_server_start(server);
 
   server_thread_args sta = {server, server_cq};
   gpr_thd_id server_thread;
   gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&thdopt);
-  gpr_thd_new(&server_thread, server_thread_func, &sta, &thdopt);
+  gpr_thd_new(&server_thread, "grpc_server", server_thread_func, &sta, &thdopt);
 
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel* channels[NUM_CONNECTIONS];
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
     channels[i] = fixture->create_channel(addr);
@@ -82,31 +82,31 @@ static void run_test(const test_fixture* fixture) {
     while ((state = grpc_channel_check_connectivity_state(channels[i], 1)) !=
            GRPC_CHANNEL_READY) {
       grpc_channel_watch_connectivity_state(channels[i], state,
-                                            connect_deadline, cq, NULL);
+                                            connect_deadline, cq, nullptr);
       grpc_event ev = grpc_completion_queue_next(
-          cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+          cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
       /* check that the watcher from "watch state" was free'd */
       GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channels[i]) ==
                  0);
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-      GPR_ASSERT(ev.tag == NULL);
+      GPR_ASSERT(ev.tag == nullptr);
       GPR_ASSERT(ev.success == true);
     }
   }
 
-  grpc_server_shutdown_and_notify(server, server_cq, NULL);
+  grpc_server_shutdown_and_notify(server, server_cq, nullptr);
   gpr_thd_join(server_thread);
 
   grpc_completion_queue_shutdown(server_cq);
   grpc_completion_queue_shutdown(cq);
 
   while (grpc_completion_queue_next(server_cq,
-                                    gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
+                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
              .type != GRPC_QUEUE_SHUTDOWN)
     ;
-  while (
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
-          .type != GRPC_QUEUE_SHUTDOWN)
+  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    nullptr)
+             .type != GRPC_QUEUE_SHUTDOWN)
     ;
 
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
@@ -126,7 +126,7 @@ static void insecure_test_add_port(grpc_server* server, const char* addr) {
 }
 
 static grpc_channel* insecure_test_create_channel(const char* addr) {
-  return grpc_insecure_channel_create(addr, NULL, NULL);
+  return grpc_insecure_channel_create(addr, nullptr, nullptr);
 }
 
 static const test_fixture insecure_test = {
@@ -138,23 +138,23 @@ static const test_fixture insecure_test = {
 static void secure_test_add_port(grpc_server* server, const char* addr) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
-  grpc_server_credentials* ssl_creds =
-      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0, NULL);
+  grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
+      nullptr, &pem_cert_key_pair, 1, 0, nullptr);
   grpc_server_add_secure_http2_port(server, addr, ssl_creds);
   grpc_server_credentials_release(ssl_creds);
 }
 
 static grpc_channel* secure_test_create_channel(const char* addr) {
   grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(test_root_cert, NULL, NULL);
+      grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
       {const_cast<char*>("foo.test.google.fr")}};
   grpc_channel_args* new_client_args =
-      grpc_channel_args_copy_and_add(NULL, &ssl_name_override, 1);
+      grpc_channel_args_copy_and_add(nullptr, &ssl_name_override, 1);
   grpc_channel* channel =
-      grpc_secure_channel_create(ssl_creds, addr, new_client_args, NULL);
+      grpc_secure_channel_create(ssl_creds, addr, new_client_args, nullptr);
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_channel_args_destroy(&exec_ctx, new_client_args);

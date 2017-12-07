@@ -36,13 +36,13 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
-#include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "test/core/util/histogram.h"
 
 typedef struct fd_pair {
   int read_fd;
@@ -275,14 +275,14 @@ static void server_thread_wrap(void* arg) {
   server_thread(args);
 }
 
-static void print_histogram(gpr_histogram* histogram) {
+static void print_histogram(grpc_histogram* histogram) {
   /* TODO(klempner): Print more detailed information, such as detailed histogram
      buckets */
   gpr_log(GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f",
-          gpr_histogram_percentile(histogram, 50),
-          gpr_histogram_percentile(histogram, 95),
-          gpr_histogram_percentile(histogram, 99),
-          gpr_histogram_percentile(histogram, 99.9));
+          grpc_histogram_percentile(histogram, 50),
+          grpc_histogram_percentile(histogram, 95),
+          grpc_histogram_percentile(histogram, 99),
+          grpc_histogram_percentile(histogram, 99.9));
 }
 
 static double now(void) {
@@ -293,7 +293,7 @@ static double now(void) {
 static void client_thread(thread_args* args) {
   char* buf = static_cast<char*>(gpr_malloc(args->msg_size * sizeof(char)));
   memset(buf, 0, args->msg_size * sizeof(char));
-  gpr_histogram* histogram = gpr_histogram_create(0.01, 60e9);
+  grpc_histogram* histogram = grpc_histogram_create(0.01, 60e9);
   double start_time;
   double end_time;
   double interval;
@@ -316,13 +316,13 @@ static void client_thread(thread_args* args) {
     end_time = now();
     if (i > kNumIters / 2) {
       interval = end_time - start_time;
-      gpr_histogram_add(histogram, interval);
+      grpc_histogram_add(histogram, interval);
     }
   }
   print_histogram(histogram);
 error:
   gpr_free(buf);
-  gpr_histogram_destroy(histogram);
+  grpc_histogram_destroy(histogram);
 }
 
 /* This roughly matches tcp_server's create_listening_socket */
@@ -405,7 +405,7 @@ error:
 }
 
 static int accept_server(int listen_fd) {
-  int fd = accept(listen_fd, NULL, NULL);
+  int fd = accept(listen_fd, nullptr, nullptr);
   if (fd < 0) {
     gpr_log(GPR_ERROR, "Accept failed: %s", strerror(errno));
     return -1;
@@ -583,7 +583,7 @@ static int run_benchmark(const char* socket_type, thread_args* client_args,
   gpr_log(GPR_INFO, "Starting test %s %s %zu", client_args->strategy_name,
           socket_type, client_args->msg_size);
 
-  gpr_thd_new(&tid, server_thread_wrap, server_args, NULL);
+  gpr_thd_new(&tid, "server_thread", server_thread_wrap, server_args, nullptr);
   client_thread(client_args);
   return 0;
 }
@@ -626,10 +626,10 @@ int main(int argc, char** argv) {
   thread_args* server_args =
       static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
   int msg_size = -1;
-  const char* read_strategy = NULL;
-  const char* socket_type = NULL;
+  const char* read_strategy = nullptr;
+  const char* socket_type = nullptr;
   size_t i;
-  const test_strategy* strategy = NULL;
+  const test_strategy* strategy = nullptr;
   int error = 0;
 
   gpr_cmdline* cmdline =
@@ -647,12 +647,12 @@ int main(int argc, char** argv) {
     msg_size = 50;
   }
 
-  if (read_strategy == NULL) {
+  if (read_strategy == nullptr) {
     gpr_log(GPR_INFO, "No strategy specified, running all benchmarks");
     return run_all_benchmarks((size_t)msg_size);
   }
 
-  if (socket_type == NULL) {
+  if (socket_type == nullptr) {
     socket_type = "tcp";
   }
   if (msg_size <= 0) {
@@ -666,7 +666,7 @@ int main(int argc, char** argv) {
       strategy = &test_strategies[i];
     }
   }
-  if (strategy == NULL) {
+  if (strategy == nullptr) {
     fprintf(stderr, "Invalid read strategy %s\n", read_strategy);
     return -1;
   }

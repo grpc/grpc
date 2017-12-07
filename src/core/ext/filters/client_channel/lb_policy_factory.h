@@ -29,10 +29,6 @@
 // Channel arg key for grpc_lb_addresses.
 #define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
 
@@ -133,9 +129,5 @@ void grpc_lb_policy_factory_unref(grpc_lb_policy_factory* factory);
 grpc_lb_policy* grpc_lb_policy_factory_create_lb_policy(
     grpc_exec_ctx* exec_ctx, grpc_lb_policy_factory* factory,
     grpc_lb_policy_args* args);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H */

@@ -36,13 +36,9 @@
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
-grpc_tracer_flag grpc_polling_trace =
-    GRPC_TRACER_INITIALIZER(false, "polling"); /* Disabled by default */
-
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_fd_refcount =
-    GRPC_TRACER_INITIALIZER(false, "fd_refcount");
-#endif
+grpc_core::TraceFlag grpc_polling_trace(false,
+                                        "polling"); /* Disabled by default */
+grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
@@ -51,7 +47,7 @@ grpc_poll_function_type grpc_poll_function = poll;
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
 static const grpc_event_engine_vtable* g_event_engine;
-static const char* g_poll_strategy_name = NULL;
+static const char* g_poll_strategy_name = nullptr;
 
 typedef const grpc_event_engine_vtable* (*event_engine_factory_fn)(
     bool explicit_request);
@@ -62,8 +58,6 @@ typedef struct {
 } event_engine_factory;
 
 namespace {
-
-extern "C" {
 
 grpc_poll_function_type real_poll_function;
 
@@ -76,7 +70,6 @@ int dummy_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
     return -1;
   }
 }
-}  // extern "C"
 
 const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
   if (!explicit_request) {
@@ -114,7 +107,7 @@ static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
 
 static void split(const char* s, char*** ss, size_t* ns) {
   const char* c = strchr(s, ',');
-  if (c == NULL) {
+  if (c == nullptr) {
     add(s, s + strlen(s), ss, ns);
   } else {
     add(s, c, ss, ns);
@@ -153,18 +146,16 @@ const grpc_event_engine_vtable* grpc_get_event_engine_test_only() {
 const char* grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
-  grpc_register_tracer(&grpc_polling_trace);
-
   char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-  if (s == NULL) {
+  if (s == nullptr) {
     s = gpr_strdup("all");
   }
 
-  char** strings = NULL;
+  char** strings = nullptr;
   size_t nstrings = 0;
   split(s, &strings, &nstrings);
 
-  for (size_t i = 0; g_event_engine == NULL && i < nstrings; i++) {
+  for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
     try_engine(strings[i]);
   }
 
@@ -173,7 +164,7 @@ void grpc_event_engine_init(void) {
   }
   gpr_free(strings);
 
-  if (g_event_engine == NULL) {
+  if (g_event_engine == nullptr) {
     gpr_log(GPR_ERROR, "No event engine could be initialized from %s", s);
     abort();
   }
@@ -182,7 +173,7 @@ void grpc_event_engine_init(void) {
 
 void grpc_event_engine_shutdown(void) {
   g_event_engine->shutdown_engine();
-  g_event_engine = NULL;
+  g_event_engine = nullptr;
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name) {

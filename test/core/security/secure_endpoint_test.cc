@@ -40,15 +40,17 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     bool use_zero_copy_protector) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   tsi_frame_protector* fake_read_protector =
-      tsi_create_fake_frame_protector(NULL);
+      tsi_create_fake_frame_protector(nullptr);
   tsi_frame_protector* fake_write_protector =
-      tsi_create_fake_frame_protector(NULL);
+      tsi_create_fake_frame_protector(nullptr);
   tsi_zero_copy_grpc_protector* fake_read_zero_copy_protector =
-      use_zero_copy_protector ? tsi_create_fake_zero_copy_grpc_protector(NULL)
-                              : NULL;
+      use_zero_copy_protector
+          ? tsi_create_fake_zero_copy_grpc_protector(nullptr)
+          : nullptr;
   tsi_zero_copy_grpc_protector* fake_write_zero_copy_protector =
-      use_zero_copy_protector ? tsi_create_fake_zero_copy_grpc_protector(NULL)
-                              : NULL;
+      use_zero_copy_protector
+          ? tsi_create_fake_zero_copy_grpc_protector(nullptr)
+          : nullptr;
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 
@@ -64,7 +66,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   if (leftover_nslices == 0) {
     f.client_ep = grpc_secure_endpoint_create(fake_read_protector,
                                               fake_read_zero_copy_protector,
-                                              tcp.client, NULL, 0);
+                                              tcp.client, nullptr, 0);
   } else {
     unsigned i;
     tsi_result result;
@@ -114,21 +116,21 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
 
   f.server_ep = grpc_secure_endpoint_create(fake_write_protector,
                                             fake_write_zero_copy_protector,
-                                            tcp.server, NULL, 0);
+                                            tcp.server, nullptr, 0);
   grpc_exec_ctx_finish(&exec_ctx);
   return f;
 }
 
 static grpc_endpoint_test_fixture
 secure_endpoint_create_fixture_tcp_socketpair_noleftover(size_t slice_size) {
-  return secure_endpoint_create_fixture_tcp_socketpair(slice_size, NULL, 0,
+  return secure_endpoint_create_fixture_tcp_socketpair(slice_size, nullptr, 0,
                                                        false);
 }
 
 static grpc_endpoint_test_fixture
 secure_endpoint_create_fixture_tcp_socketpair_noleftover_zero_copy(
     size_t slice_size) {
-  return secure_endpoint_create_fixture_tcp_socketpair(slice_size, NULL, 0,
+  return secure_endpoint_create_fixture_tcp_socketpair(slice_size, nullptr, 0,
                                                        true);
 }
 

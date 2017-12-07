@@ -51,12 +51,15 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     {
       // Generate .pbrpc.h
 
-      ::grpc::string imports = ::grpc::string("#import \"") + file_name +
-                               ".pbobjc.h\"\n\n"
-                               "#import <ProtoRPC/ProtoService.h>\n"
-                               "#import <ProtoRPC/ProtoRPC.h>\n"
-                               "#import <RxLibrary/GRXWriteable.h>\n"
-                               "#import <RxLibrary/GRXWriter.h>\n";
+      ::grpc::string imports =
+          ::grpc::string("#if !GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO\n") +
+          "#import \"" + file_name +
+          ".pbobjc.h\"\n"
+          "#endif\n\n"
+          "#import <ProtoRPC/ProtoService.h>\n"
+          "#import <ProtoRPC/ProtoRPC.h>\n"
+          "#import <RxLibrary/GRXWriteable.h>\n"
+          "#import <RxLibrary/GRXWriter.h>\n";
 
       ::grpc::string proto_imports;
       proto_imports += "#if GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO\n" +
@@ -105,7 +108,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       // Generate .pbrpc.m
 
       ::grpc::string imports = ::grpc::string("#import \"") + file_name +
-                               ".pbrpc.h\"\n\n"
+                               ".pbrpc.h\"\n"
+                               "#import \"" +
+                               file_name +
+                               ".pbobjc.h\"\n\n"
                                "#import <ProtoRPC/ProtoRPC.h>\n"
                                "#import <RxLibrary/GRXWriter+Immediate.h>\n";
       for (int i = 0; i < file->dependency_count(); i++) {

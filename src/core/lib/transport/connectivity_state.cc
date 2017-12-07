@@ -24,8 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-grpc_tracer_flag grpc_connectivity_state_trace =
-    GRPC_TRACER_INITIALIZER(false, "connectivity_state");
+grpc_core::TraceFlag grpc_connectivity_state_trace(false, "connectivity_state");
 
 const char* grpc_connectivity_state_name(grpc_connectivity_state state) {
   switch (state) {
@@ -48,7 +47,7 @@ void grpc_connectivity_state_init(grpc_connectivity_state_tracker* tracker,
                                   const char* name) {
   gpr_atm_no_barrier_store(&tracker->current_state_atm, init_state);
   tracker->current_error = GRPC_ERROR_NONE;
-  tracker->watchers = NULL;
+  tracker->watchers = nullptr;
   tracker->name = gpr_strdup(name);
 }
 
@@ -78,7 +77,7 @@ grpc_connectivity_state grpc_connectivity_state_check(
   grpc_connectivity_state cur =
       (grpc_connectivity_state)gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
-  if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {
+  if (grpc_connectivity_state_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CONWATCH: %p %s: get %s", tracker, tracker->name,
             grpc_connectivity_state_name(cur));
   }
@@ -90,11 +89,11 @@ grpc_connectivity_state grpc_connectivity_state_get(
   grpc_connectivity_state cur =
       (grpc_connectivity_state)gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
-  if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {
+  if (grpc_connectivity_state_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CONWATCH: %p %s: get %s", tracker, tracker->name,
             grpc_connectivity_state_name(cur));
   }
-  if (error != NULL) {
+  if (error != nullptr) {
     *error = GRPC_ERROR_REF(tracker->current_error);
   }
   return cur;
@@ -102,7 +101,7 @@ grpc_connectivity_state grpc_connectivity_state_get(
 
 bool grpc_connectivity_state_has_watchers(
     grpc_connectivity_state_tracker* connectivity_state) {
-  return connectivity_state->watchers != NULL;
+  return connectivity_state->watchers != nullptr;
 }
 
 bool grpc_connectivity_state_notify_on_state_change(
@@ -111,8 +110,8 @@ bool grpc_connectivity_state_notify_on_state_change(
   grpc_connectivity_state cur =
       (grpc_connectivity_state)gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
-  if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {
-    if (current == NULL) {
+  if (grpc_connectivity_state_trace.enabled()) {
+    if (current == nullptr) {
       gpr_log(GPR_DEBUG, "CONWATCH: %p %s: unsubscribe notify=%p", tracker,
               tracker->name, notify);
     } else {
@@ -121,17 +120,17 @@ bool grpc_connectivity_state_notify_on_state_change(
               grpc_connectivity_state_name(cur), notify);
     }
   }
-  if (current == NULL) {
+  if (current == nullptr) {
     grpc_connectivity_state_watcher* w = tracker->watchers;
-    if (w != NULL && w->notify == notify) {
+    if (w != nullptr && w->notify == notify) {
       GRPC_CLOSURE_SCHED(exec_ctx, notify, GRPC_ERROR_CANCELLED);
       tracker->watchers = w->next;
       gpr_free(w);
       return false;
     }
-    while (w != NULL) {
+    while (w != nullptr) {
       grpc_connectivity_state_watcher* rm_candidate = w->next;
-      if (rm_candidate != NULL && rm_candidate->notify == notify) {
+      if (rm_candidate != nullptr && rm_candidate->notify == notify) {
         GRPC_CLOSURE_SCHED(exec_ctx, notify, GRPC_ERROR_CANCELLED);
         w->next = w->next->next;
         gpr_free(rm_candidate);
@@ -165,7 +164,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx* exec_ctx,
       (grpc_connectivity_state)gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
   grpc_connectivity_state_watcher* w;
-  if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {
+  if (grpc_connectivity_state_trace.enabled()) {
     const char* error_string = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "SET: %p %s: %s --> %s [%s] error=%p %s", tracker,
             tracker->name, grpc_connectivity_state_name(cur),
@@ -189,10 +188,10 @@ void grpc_connectivity_state_set(grpc_exec_ctx* exec_ctx,
   }
   GPR_ASSERT(cur != GRPC_CHANNEL_SHUTDOWN);
   gpr_atm_no_barrier_store(&tracker->current_state_atm, state);
-  while ((w = tracker->watchers) != NULL) {
+  while ((w = tracker->watchers) != nullptr) {
     *w->current = state;
     tracker->watchers = w->next;
-    if (GRPC_TRACER_ON(grpc_connectivity_state_trace)) {
+    if (grpc_connectivity_state_trace.enabled()) {
       gpr_log(GPR_DEBUG, "NOTIFY: %p %s: %p", tracker, tracker->name,
               w->notify);
     }

@@ -58,7 +58,7 @@ GPRAPI void gpr_free_aligned(void* ptr);
 GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
 
 /** Return the family of allocation functions currently in effect. */
-GPRAPI gpr_allocation_functions gpr_get_allocation_functions();
+GPRAPI gpr_allocation_functions gpr_get_allocation_functions(void);
 
 #ifdef __cplusplus
 }

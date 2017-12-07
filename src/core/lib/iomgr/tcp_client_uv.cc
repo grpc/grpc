@@ -32,7 +32,7 @@
 #include "src/core/lib/iomgr/tcp_uv.h"
 #include "src/core/lib/iomgr/timer.h"
 
-extern grpc_tracer_flag grpc_tcp_trace;
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 typedef struct grpc_uv_tcp_connect {
   uv_connect_t connect_req;
@@ -59,7 +59,7 @@ static void uv_tc_on_alarm(grpc_exec_ctx* exec_ctx, void* acp,
                            grpc_error* error) {
   int done;
   grpc_uv_tcp_connect* connect = (grpc_uv_tcp_connect*)acp;
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     const char* str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s",
             connect->addr_name, str);
@@ -147,7 +147,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx* exec_ctx,
   connect->connect_req.data = connect;
   connect->refs = 2;  // One for the connect operation, one for the timer.
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
             connect->addr_name);
   }
@@ -161,13 +161,11 @@ static void tcp_client_connect_impl(grpc_exec_ctx* exec_ctx,
 }
 
 // overridden by api_fuzzer.c
-extern "C" {
 void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr,
     grpc_millis deadline) = tcp_client_connect_impl;
-}
 
 void grpc_tcp_client_connect(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
                              grpc_endpoint** ep,

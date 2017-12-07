@@ -53,11 +53,11 @@ fake_transport_security_server_create_security_connector(
 
 static grpc_channel_credentials_vtable
     fake_transport_security_credentials_vtable = {
-        NULL, fake_transport_security_create_security_connector, NULL};
+        nullptr, fake_transport_security_create_security_connector, nullptr};
 
 static grpc_server_credentials_vtable
     fake_transport_security_server_credentials_vtable = {
-        NULL, fake_transport_security_server_create_security_connector};
+        nullptr, fake_transport_security_server_create_security_connector};
 
 grpc_channel_credentials* grpc_fake_transport_security_credentials_create(
     void) {
@@ -89,11 +89,11 @@ const char* grpc_fake_transport_get_expected_targets(
     const grpc_channel_args* args) {
   const grpc_arg* expected_target_arg =
       grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
-  if (expected_target_arg != NULL &&
+  if (expected_target_arg != nullptr &&
       expected_target_arg->type == GRPC_ARG_STRING) {
     return expected_target_arg->value.string;
   }
-  return NULL;
+  return nullptr;
 }
 
 /* -- Metadata-only test credentials. -- */

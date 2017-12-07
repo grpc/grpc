@@ -21,11 +21,11 @@
 
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifdef GRPC_WINSOCK_SOCKET
+
+#include "src/core/lib/iomgr/socket_windows.h"
 
 typedef enum {
   GRPC_IOCP_WORK_WORK,
@@ -41,8 +41,6 @@ void grpc_iocp_flush(void);
 void grpc_iocp_shutdown(void);
 void grpc_iocp_add_socket(grpc_winsocket*);
 
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOCP_WINDOWS_H */

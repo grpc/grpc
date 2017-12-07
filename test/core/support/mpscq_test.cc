@@ -45,7 +45,7 @@ static void test_serial(void) {
   gpr_mpscq q;
   gpr_mpscq_init(&q);
   for (size_t i = 0; i < 10000000; i++) {
-    gpr_mpscq_push(&q, &new_node(i, NULL)->node);
+    gpr_mpscq_push(&q, &new_node(i, nullptr)->node);
   }
   for (size_t i = 0; i < 10000000; i++) {
     test_node* n = (test_node*)gpr_mpscq_pop(&q);
@@ -85,14 +85,15 @@ static void test_mt(void) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    GPR_ASSERT(gpr_thd_new(&thds[i], test_thread, &ta[i], &options));
+    GPR_ASSERT(
+        gpr_thd_new(&thds[i], "grpc_mt_test", test_thread, &ta[i], &options));
   }
   size_t num_done = 0;
   size_t spins = 0;
   gpr_event_set(&start, (void*)1);
   while (num_done != GPR_ARRAY_SIZE(thds)) {
     gpr_mpscq_node* n;
-    while ((n = gpr_mpscq_pop(&q)) == NULL) {
+    while ((n = gpr_mpscq_pop(&q)) == nullptr) {
       spins++;
     }
     test_node* tn = (test_node*)n;
@@ -129,7 +130,7 @@ static void pull_thread(void* arg) {
       return;
     }
     gpr_mpscq_node* n;
-    while ((n = gpr_mpscq_pop(pa->q)) == NULL) {
+    while ((n = gpr_mpscq_pop(pa->q)) == nullptr) {
       pa->spins++;
     }
     test_node* tn = (test_node*)n;
@@ -156,7 +157,8 @@ static void test_mt_multipop(void) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    GPR_ASSERT(gpr_thd_new(&thds[i], test_thread, &ta[i], &options));
+    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_multipop_test", test_thread, &ta[i],
+                           &options));
   }
   pull_args pa;
   pa.ta = ta;
@@ -169,7 +171,8 @@ static void test_mt_multipop(void) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
     gpr_thd_options options = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&options);
-    GPR_ASSERT(gpr_thd_new(&pull_thds[i], pull_thread, &pa, &options));
+    GPR_ASSERT(gpr_thd_new(&pull_thds[i], "grpc_multipop_pull", pull_thread,
+                           &pa, &options));
   }
   gpr_event_set(&start, (void*)1);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {

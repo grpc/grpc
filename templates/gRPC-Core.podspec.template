@@ -61,6 +61,10 @@
       :tag => "v#{version}",
     }
 
+    # gRPC podspecs depend on fix for https://github.com/CocoaPods/CocoaPods/issues/6024,
+    # which was released in Cocoapods v1.2.0.
+    s.cocoapods_version = '>= 1.2.0'
+
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'
     s.requires_arc = false
@@ -112,6 +116,7 @@
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
       'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
+      'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
     }
 
     s.default_subspecs = 'Interface', 'Implementation'

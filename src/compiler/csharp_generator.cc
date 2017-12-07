@@ -666,7 +666,7 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
     grpc::string leading_comments = GetCsharpComments(file, true);
     if (!leading_comments.empty()) {
       out.Print("// Original file comments:\n");
-      out.Print(leading_comments.c_str());
+      out.PrintRaw(leading_comments.c_str());
     }
 
     out.Print("#pragma warning disable 1591\n");

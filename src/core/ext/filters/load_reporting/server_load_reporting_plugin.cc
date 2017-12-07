@@ -48,8 +48,8 @@ static bool maybe_add_server_load_reporting_filter(
       !grpc_channel_stack_builder_iterator_is_end(it);
   grpc_channel_stack_builder_iterator_destroy(it);
   if (is_load_reporting_enabled(args) && !already_has_load_reporting_filter) {
-    return grpc_channel_stack_builder_prepend_filter(builder, filter, NULL,
-                                                     NULL);
+    return grpc_channel_stack_builder_prepend_filter(builder, filter, nullptr,
+                                                     nullptr);
   }
   return true;
 }
@@ -61,10 +61,10 @@ grpc_arg grpc_load_reporting_enable_arg() {
 
 /* Plugin registration */
 
-extern "C" void grpc_server_load_reporting_plugin_init(void) {
+void grpc_server_load_reporting_plugin_init(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
                                    maybe_add_server_load_reporting_filter,
                                    (void*)&grpc_server_load_reporting_filter);
 }
 
-extern "C" void grpc_server_load_reporting_plugin_shutdown() {}
+void grpc_server_load_reporting_plugin_shutdown() {}

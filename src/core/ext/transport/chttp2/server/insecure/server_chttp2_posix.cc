@@ -36,7 +36,7 @@
 
 void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
                                               void* reserved, int fd) {
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   char* name;
@@ -50,7 +50,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
 
   const grpc_channel_args* server_args = grpc_server_get_channel_args(server);
   grpc_transport* transport = grpc_create_chttp2_transport(
-      &exec_ctx, server_args, server_endpoint, 0 /* is_client */);
+      &exec_ctx, server_args, server_endpoint, false /* is_client */);
 
   grpc_pollset** pollsets;
   size_t num_pollsets = 0;
@@ -60,8 +60,9 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
     grpc_endpoint_add_to_pollset(&exec_ctx, server_endpoint, pollsets[i]);
   }
 
-  grpc_server_setup_transport(&exec_ctx, server, transport, NULL, server_args);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
+  grpc_server_setup_transport(&exec_ctx, server, transport, nullptr,
+                              server_args);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr, nullptr);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

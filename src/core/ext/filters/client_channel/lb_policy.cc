@@ -21,10 +21,8 @@
 
 #define WEAK_REF_BITS 16
 
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_lb_policy_refcount =
-    GRPC_TRACER_INITIALIZER(false, "lb_policy_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
+    false, "lb_policy_refcount");
 
 void grpc_lb_policy_init(grpc_lb_policy* policy,
                          const grpc_lb_policy_vtable* vtable,
@@ -52,7 +50,7 @@ static gpr_atm ref_mutate(grpc_lb_policy* c, gpr_atm delta,
   gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_lb_policy_refcount)) {
+  if (grpc_trace_lb_policy_refcount.enabled()) {
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "LB_POLICY: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
             purpose, old_val, old_val + delta, reason);
@@ -162,4 +160,31 @@ void grpc_lb_policy_update_locked(grpc_exec_ctx* exec_ctx,
                                   grpc_lb_policy* policy,
                                   const grpc_lb_policy_args* lb_policy_args) {
   policy->vtable->update_locked(exec_ctx, policy, lb_policy_args);
+}
+
+void grpc_lb_policy_set_reresolve_closure_locked(
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
+    grpc_closure* request_reresolution) {
+  policy->vtable->set_reresolve_closure_locked(exec_ctx, policy,
+                                               request_reresolution);
+}
+
+void grpc_lb_policy_try_reresolve(grpc_exec_ctx* exec_ctx,
+                                  grpc_lb_policy* policy,
+                                  grpc_core::TraceFlag* grpc_lb_trace,
+                                  grpc_error* error) {
+  if (policy->request_reresolution != nullptr) {
+    GRPC_CLOSURE_SCHED(exec_ctx, policy->request_reresolution, error);
+    policy->request_reresolution = nullptr;
+    if (grpc_lb_trace->enabled()) {
+      gpr_log(GPR_DEBUG,
+              "%s %p: scheduling re-resolution closure with error=%s.",
+              grpc_lb_trace->name(), policy, grpc_error_string(error));
+    }
+  } else {
+    if (grpc_lb_trace->enabled() && error == GRPC_ERROR_NONE) {
+      gpr_log(GPR_DEBUG, "%s %p: re-resolution already in progress.",
+              grpc_lb_trace->name(), policy);
+    }
+  }
 }

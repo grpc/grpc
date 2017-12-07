@@ -25,7 +25,6 @@
 
 #include "src/core/lib/support/atomic.h"
 
-extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -33,7 +32,6 @@ extern "C" {
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/static_metadata.h"
-}
 
 namespace grpc_core {
 
@@ -68,7 +66,7 @@ static void fill_metadata(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
   calld->details.md = grpc_mdelem_from_slices(
       exec_ctx, GRPC_MDSTR_GRPC_MESSAGE,
       grpc_slice_from_copied_string(chand->error_message));
-  calld->status.prev = calld->details.next = NULL;
+  calld->status.prev = calld->details.next = nullptr;
   calld->status.next = &calld->details;
   calld->details.prev = &calld->status;
   mdb->list.head = &calld->status;
@@ -106,13 +104,13 @@ static void lame_start_transport_op(grpc_exec_ctx* exec_ctx,
     GRPC_CLOSURE_SCHED(exec_ctx, op->on_connectivity_state_change,
                        GRPC_ERROR_NONE);
   }
-  if (op->send_ping != NULL) {
+  if (op->send_ping != nullptr) {
     GRPC_CLOSURE_SCHED(
         exec_ctx, op->send_ping,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
-  if (op->on_consumed != NULL) {
+  if (op->on_consumed != nullptr) {
     GRPC_CLOSURE_SCHED(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
   }
 }
@@ -146,7 +144,7 @@ static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
 
 }  // namespace grpc_core
 
-extern "C" const grpc_channel_filter grpc_lame_filter = {
+const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_start_transport_stream_op_batch,
     grpc_core::lame_start_transport_op,
     sizeof(grpc_core::CallData),
@@ -167,8 +165,8 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
                                               const char* error_message) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_element* elem;
-  grpc_channel* channel = grpc_channel_create(&exec_ctx, target, NULL,
-                                              GRPC_CLIENT_LAME_CHANNEL, NULL);
+  grpc_channel* channel = grpc_channel_create(
+      &exec_ctx, target, nullptr, GRPC_CLIENT_LAME_CHANNEL, nullptr);
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   GRPC_API_TRACE(
       "grpc_lame_client_channel_create(target=%s, error_code=%d, "

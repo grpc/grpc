@@ -651,9 +651,9 @@ static const uint8_t inverse_base64[256] = {
 /* emission helpers */
 static grpc_error* on_hdr(grpc_exec_ctx* exec_ctx, grpc_chttp2_hpack_parser* p,
                           grpc_mdelem md, int add_to_table) {
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
-    char* v = NULL;
+    char* v = nullptr;
     if (grpc_is_binary_header(GRPC_MDKEY(md))) {
       v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
     } else {
@@ -674,7 +674,7 @@ static grpc_error* on_hdr(grpc_exec_ctx* exec_ctx, grpc_chttp2_hpack_parser* p,
     grpc_error* err = grpc_chttp2_hptbl_add(exec_ctx, &p->table, md);
     if (err != GRPC_ERROR_NONE) return err;
   }
-  if (p->on_header == NULL) {
+  if (p->on_header == nullptr) {
     GRPC_MDELEM_UNREF(exec_ctx, md);
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("on_header callback not set");
   }
@@ -1047,7 +1047,7 @@ static grpc_error* parse_lithdr_nvridx_v(grpc_exec_ctx* exec_ctx,
 static grpc_error* finish_max_tbl_size(grpc_exec_ctx* exec_ctx,
                                        grpc_chttp2_hpack_parser* p,
                                        const uint8_t* cur, const uint8_t* end) {
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
   }
   grpc_error* err =
@@ -1523,7 +1523,7 @@ static grpc_error* begin_parse_string(grpc_exec_ctx* exec_ctx,
                                       uint8_t binary,
                                       grpc_chttp2_hpack_parser_string* str) {
   if (!p->huff && binary == NOT_BINARY && (end - cur) >= (intptr_t)p->strlen &&
-      p->current_slice_refcount != NULL) {
+      p->current_slice_refcount != nullptr) {
     GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED(exec_ctx);
     str->copied = false;
     str->data.referenced.refcount = p->current_slice_refcount;
@@ -1613,15 +1613,15 @@ static grpc_error* parse_value_string_with_literal_key(
 
 void grpc_chttp2_hpack_parser_init(grpc_exec_ctx* exec_ctx,
                                    grpc_chttp2_hpack_parser* p) {
-  p->on_header = NULL;
-  p->on_header_user_data = NULL;
+  p->on_header = nullptr;
+  p->on_header_user_data = nullptr;
   p->state = parse_begin;
   p->key.data.referenced = grpc_empty_slice();
-  p->key.data.copied.str = NULL;
+  p->key.data.copied.str = nullptr;
   p->key.data.copied.capacity = 0;
   p->key.data.copied.length = 0;
   p->value.data.referenced = grpc_empty_slice();
-  p->value.data.copied.str = NULL;
+  p->value.data.copied.str = nullptr;
   p->value.data.copied.capacity = 0;
   p->value.data.copied.length = 0;
   p->dynamic_table_update_allowed = 2;
@@ -1659,7 +1659,7 @@ grpc_error* grpc_chttp2_hpack_parser_parse(grpc_exec_ctx* exec_ctx,
     error = p->state(exec_ctx, p, start, target);
     start = target;
   }
-  p->current_slice_refcount = NULL;
+  p->current_slice_refcount = nullptr;
   return error;
 }
 
@@ -1689,7 +1689,7 @@ static void parse_stream_compression_md(grpc_exec_ctx* exec_ctx,
                                         grpc_chttp2_transport* t,
                                         grpc_chttp2_stream* s,
                                         grpc_metadata_batch* initial_metadata) {
-  if (initial_metadata->idx.named.content_encoding == NULL ||
+  if (initial_metadata->idx.named.content_encoding == nullptr ||
       grpc_stream_compression_method_parse(
           GRPC_MDVALUE(initial_metadata->idx.named.content_encoding->md), false,
           &s->stream_decompression_method) == 0) {
@@ -1705,7 +1705,7 @@ grpc_error* grpc_chttp2_header_parser_parse(grpc_exec_ctx* exec_ctx,
                                             grpc_slice slice, int is_last) {
   grpc_chttp2_hpack_parser* parser = (grpc_chttp2_hpack_parser*)hpack_parser;
   GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
-  if (s != NULL) {
+  if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
   grpc_error* error = grpc_chttp2_hpack_parser_parse(exec_ctx, parser, slice);
@@ -1721,7 +1721,7 @@ grpc_error* grpc_chttp2_header_parser_parse(grpc_exec_ctx* exec_ctx,
     }
     /* need to check for null stream: this can occur if we receive an invalid
        stream id on a header */
-    if (s != NULL) {
+    if (s != nullptr) {
       if (parser->is_boundary) {
         if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
           GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
@@ -1756,8 +1756,8 @@ grpc_error* grpc_chttp2_header_parser_parse(grpc_exec_ctx* exec_ctx,
                                        GRPC_ERROR_NONE);
       }
     }
-    parser->on_header = NULL;
-    parser->on_header_user_data = NULL;
+    parser->on_header = nullptr;
+    parser->on_header_user_data = nullptr;
     parser->is_boundary = 0xde;
     parser->is_eof = 0xde;
     parser->dynamic_table_update_allowed = 2;

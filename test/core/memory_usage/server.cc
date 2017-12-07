@@ -45,8 +45,8 @@ static grpc_op metadata_ops[2];
 static grpc_op snapshot_ops[5];
 static grpc_op status_op;
 static int got_sigint = 0;
-static grpc_byte_buffer* payload_buffer = NULL;
-static grpc_byte_buffer* terminal_buffer = NULL;
+static grpc_byte_buffer* payload_buffer = nullptr;
+static grpc_byte_buffer* terminal_buffer = nullptr;
 static int was_cancelled = 2;
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -88,7 +88,8 @@ static void send_initial_metadata_unary(void* tag) {
   metadata_ops[0].data.send_initial_metadata.count = 0;
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
-                                                   metadata_ops, 1, tag, NULL));
+                                                   metadata_ops, 1, tag,
+                                                   nullptr));
 }
 
 static void send_status(void* tag) {
@@ -99,7 +100,8 @@ static void send_status(void* tag) {
   status_op.data.send_status_from_server.status_details = &details;
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
-                                                   &status_op, 1, tag, NULL));
+                                                   &status_op, 1, tag,
+                                                   nullptr));
 }
 
 static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
@@ -118,7 +120,7 @@ static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
   op->data.recv_message.recv_message = &terminal_buffer;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  if (payload_buffer == NULL) {
+  if (payload_buffer == nullptr) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }
   op->data.send_message.send_message = payload_buffer;
@@ -135,7 +137,7 @@ static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
 
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
-                                   (size_t)(op - snapshot_ops), tag, NULL));
+                                   (size_t)(op - snapshot_ops), tag, nullptr));
 }
 /* We have some sort of deadlock, so let's not exit gracefully for now.
    When that is resolved, please remove the #include <unistd.h> above. */
@@ -144,14 +146,14 @@ static void sigint_handler(int x) { _exit(0); }
 int main(int argc, char** argv) {
   grpc_memory_counters_init();
   grpc_event ev;
-  char* addr_buf = NULL;
+  char* addr_buf = nullptr;
   gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
   int shutdown_finished = 0;
 
   int secure = 0;
-  const char* addr = NULL;
+  const char* addr = nullptr;
 
   char* fake_argv[1];
 
@@ -168,13 +170,13 @@ int main(int argc, char** argv) {
   gpr_cmdline_parse(cl, argc, argv);
   gpr_cmdline_destroy(cl);
 
-  if (addr == NULL) {
+  if (addr == nullptr) {
     gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
     addr = addr_buf;
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
-  cq = grpc_completion_queue_create_for_next(NULL);
+  cq = grpc_completion_queue_create_for_next(nullptr);
 
   struct grpc_memory_counters before_server_create =
       grpc_memory_counters_snapshot();
@@ -182,23 +184,23 @@ int main(int argc, char** argv) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-        NULL, &pem_key_cert_pair, 1, 0, NULL);
-    server = grpc_server_create(NULL, NULL);
+        nullptr, &pem_key_cert_pair, 1, 0, nullptr);
+    server = grpc_server_create(nullptr, nullptr);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
-    server = grpc_server_create(NULL, NULL);
+    server = grpc_server_create(nullptr, nullptr);
     GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
   }
 
-  grpc_server_register_completion_queue(server, cq, NULL);
+  grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
   struct grpc_memory_counters after_server_create =
       grpc_memory_counters_snapshot();
 
   gpr_free(addr_buf);
-  addr = addr_buf = NULL;
+  addr = addr_buf = nullptr;
 
   // initialize call instances
   for (int i = 0; i < (int)(sizeof(calls) / sizeof(fling_call)); i++) {
@@ -217,12 +219,12 @@ int main(int argc, char** argv) {
     if (got_sigint && !shutdown_started) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
 
-      shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+      shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
-      GPR_ASSERT(
-          grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                      grpc_timeout_seconds_to_deadline(5), NULL)
-              .type == GRPC_OP_COMPLETE);
+      GPR_ASSERT(grpc_completion_queue_pluck(
+                     shutdown_cq, tag(1000),
+                     grpc_timeout_seconds_to_deadline(5), nullptr)
+                     .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
@@ -231,7 +233,7 @@ int main(int argc, char** argv) {
         cq,
         gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                      gpr_time_from_micros(1000000, GPR_TIMESPAN)),
-        NULL);
+        nullptr);
     fling_call* s = static_cast<fling_call*>(ev.tag);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
@@ -294,8 +296,8 @@ int main(int argc, char** argv) {
             grpc_call_details_destroy(&s->call_details);
             grpc_metadata_array_destroy(&s->initial_metadata_send);
             grpc_metadata_array_destroy(&s->request_metadata_recv);
-            terminal_buffer = NULL;
-            payload_buffer = NULL;
+            terminal_buffer = nullptr;
+            payload_buffer = nullptr;
             break;
         }
         break;

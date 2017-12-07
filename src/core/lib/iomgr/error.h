@@ -24,13 +24,10 @@
 
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /// Opaque representation of an error.
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
@@ -38,9 +35,7 @@ extern "C" {
 
 typedef struct grpc_error grpc_error;
 
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_error_refcount;
-#endif
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount;
 
 typedef enum {
   /// 'errno' from the operating system
@@ -184,9 +179,15 @@ grpc_error* grpc_error_add_child(grpc_error* src,
                                  grpc_error* child) GRPC_MUST_USE_RESULT;
 grpc_error* grpc_os_error(const char* file, int line, int err,
                           const char* call_name) GRPC_MUST_USE_RESULT;
+
+inline grpc_error* grpc_assert_never_ok(grpc_error* error) {
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  return error;
+}
+
 /// create an error associated with errno!=0 (an 'operating system' error)
 #define GRPC_OS_ERROR(err, call_name) \
-  grpc_os_error(__FILE__, __LINE__, err, call_name)
+  grpc_assert_never_ok(grpc_os_error(__FILE__, __LINE__, err, call_name))
 grpc_error* grpc_wsa_error(const char* file, int line, int err,
                            const char* call_name) GRPC_MUST_USE_RESULT;
 /// windows only: create an error associated with WSAGetLastError()!=0
@@ -197,9 +198,5 @@ bool grpc_log_if_error(const char* what, grpc_error* error, const char* file,
                        int line);
 #define GRPC_LOG_IF_ERROR(what, error) \
   grpc_log_if_error((what), (error), __FILE__, __LINE__)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

@@ -54,7 +54,7 @@ void args_init(grpc_exec_ctx* exec_ctx, args_struct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(exec_ctx, args->pollset_set, args->pollset);
-  args->addrs = NULL;
+  args->addrs = nullptr;
 }
 
 void args_finish(grpc_exec_ctx* exec_ctx, args_struct* args) {
@@ -63,7 +63,7 @@ void args_finish(grpc_exec_ctx* exec_ctx, args_struct* args) {
   grpc_pollset_set_del_pollset(exec_ctx, args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(exec_ctx, args->pollset_set);
   grpc_closure do_nothing_cb;
-  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, NULL,
+  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(exec_ctx, args->pollset, &do_nothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
@@ -89,7 +89,7 @@ static void actually_poll(void* argsp) {
     grpc_millis time_left = deadline - grpc_exec_ctx_now(&exec_ctx);
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRIdPTR, done, time_left);
     GPR_ASSERT(time_left >= 0);
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
                       grpc_pollset_work(&exec_ctx, args->pollset, &worker,
@@ -104,14 +104,14 @@ static void actually_poll(void* argsp) {
 static void poll_pollset_until_request_done(args_struct* args) {
   gpr_atm_rel_store(&args->done_atm, 0);
   gpr_thd_id id;
-  gpr_thd_new(&id, actually_poll, args, NULL);
+  gpr_thd_new(&id, "grpc_poll_pollset", actually_poll, args, nullptr);
 }
 
 static void must_succeed(grpc_exec_ctx* exec_ctx, void* argsp,
                          grpc_error* err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
-  GPR_ASSERT(args->addrs != NULL);
+  GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
   gpr_atm_rel_store(&args->done_atm, 1);
 }
@@ -128,7 +128,7 @@ static void test_unix_socket(void) {
   args_init(&exec_ctx, &args);
   poll_pollset_until_request_done(&args);
   grpc_resolve_address(
-      &exec_ctx, "unix:/path/name", NULL, args.pollset_set,
+      &exec_ctx, "unix:/path/name", nullptr, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
   args_finish(&exec_ctx, &args);
@@ -141,7 +141,7 @@ static void test_unix_socket_path_name_too_long(void) {
   args_init(&exec_ctx, &args);
   const char prefix[] = "unix:/path/name";
   size_t path_name_length =
-      GPR_ARRAY_SIZE(((struct sockaddr_un*)0)->sun_path) + 6;
+      GPR_ARRAY_SIZE(((struct sockaddr_un*)nullptr)->sun_path) + 6;
   char* path_name =
       static_cast<char*>(gpr_malloc(sizeof(char) * path_name_length));
   memset(path_name, 'a', path_name_length);
@@ -150,7 +150,7 @@ static void test_unix_socket_path_name_too_long(void) {
 
   poll_pollset_until_request_done(&args);
   grpc_resolve_address(
-      &exec_ctx, path_name, NULL, args.pollset_set,
+      &exec_ctx, path_name, nullptr, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
   gpr_free(path_name);

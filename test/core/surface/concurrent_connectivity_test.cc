@@ -49,28 +49,31 @@
 #define NUM_OUTER_LOOPS_SHORT_TIMEOUTS 10
 #define NUM_INNER_LOOPS_SHORT_TIMEOUTS 100
 #define DELAY_MILLIS_SHORT_TIMEOUTS 1
-// in a successful test run, POLL_MILLIS should never be reached beause all runs
-// should
-// end after the shorter delay_millis
+// in a successful test run, POLL_MILLIS should never be reached because all
+// runs should end after the shorter delay_millis
 #define POLL_MILLIS_SHORT_TIMEOUTS 30000
+// it should never take longer that this to shutdown the server
+#define SERVER_SHUTDOWN_TIMEOUT 30000
 
 static void* tag(int n) { return (void*)(uintptr_t)n; }
 static int detag(void* p) { return (int)(uintptr_t)p; }
 
 void create_loop_destroy(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
-    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
-    grpc_channel* chan = grpc_insecure_channel_create((char*)addr, NULL, NULL);
+    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel* chan =
+        grpc_insecure_channel_create((char*)addr, nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
       gpr_timespec later_time =
           grpc_timeout_milliseconds_to_deadline(DELAY_MILLIS);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 1);
-      grpc_channel_watch_connectivity_state(chan, state, later_time, cq, NULL);
+      grpc_channel_watch_connectivity_state(chan, state, later_time, cq,
+                                            nullptr);
       gpr_timespec poll_time =
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS);
-      GPR_ASSERT(grpc_completion_queue_next(cq, poll_time, NULL).type ==
+      GPR_ASSERT(grpc_completion_queue_next(cq, poll_time, nullptr).type ==
                  GRPC_OP_COMPLETE);
       /* check that the watcher from "watch state" was free'd */
       GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(chan) == 0);
@@ -93,8 +96,9 @@ struct server_thread_args {
 void server_thread(void* vargs) {
   struct server_thread_args* args = (struct server_thread_args*)vargs;
   grpc_event ev;
-  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  ev = grpc_completion_queue_next(args->cq, deadline, NULL);
+  gpr_timespec deadline =
+      grpc_timeout_milliseconds_to_deadline(SERVER_SHUTDOWN_TIMEOUT);
+  ev = grpc_completion_queue_next(args->cq, deadline, nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(detag(ev.tag) == 0xd1e);
 }
@@ -109,7 +113,7 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* vargs, grpc_endpoint* tcp,
   grpc_endpoint_destroy(exec_ctx, tcp);
   gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
+                    grpc_pollset_kick(exec_ctx, args->pollset, nullptr));
   gpr_mu_unlock(args->mu);
 }
 
@@ -121,7 +125,7 @@ void bad_server_thread(void* vargs) {
   struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
   int port;
   grpc_tcp_server* s;
-  grpc_error* error = grpc_tcp_server_create(&exec_ctx, NULL, NULL, &s);
+  grpc_error* error = grpc_tcp_server_create(&exec_ctx, nullptr, nullptr, &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->ss_family = AF_INET;
@@ -137,7 +141,7 @@ void bad_server_thread(void* vargs) {
   while (gpr_atm_acq_load(&args->stop) == 0) {
     grpc_millis deadline = grpc_exec_ctx_now(&exec_ctx) + 100;
 
-    grpc_pollset_worker* worker = NULL;
+    grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(&exec_ctx, args->pollset, &worker, deadline))) {
@@ -178,7 +182,8 @@ int run_concurrent_connectivity_test() {
   /* First round, no server */
   gpr_log(GPR_DEBUG, "Wave 1");
   for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], create_loop_destroy, localhost, &options);
+    gpr_thd_new(&threads[i], "grpc_wave_1", create_loop_destroy, localhost,
+                &options);
   }
   for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);
@@ -189,15 +194,16 @@ int run_concurrent_connectivity_test() {
   gpr_log(GPR_DEBUG, "Wave 2");
   int port = grpc_pick_unused_port_or_die();
   gpr_asprintf(&args.addr, "localhost:%d", port);
-  args.server = grpc_server_create(NULL, NULL);
+  args.server = grpc_server_create(nullptr, nullptr);
   grpc_server_add_insecure_http2_port(args.server, args.addr);
-  args.cq = grpc_completion_queue_create_for_next(NULL);
-  grpc_server_register_completion_queue(args.server, args.cq, NULL);
+  args.cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_server_register_completion_queue(args.server, args.cq, nullptr);
   grpc_server_start(args.server);
-  gpr_thd_new(&server, server_thread, &args, &options);
+  gpr_thd_new(&server, "grpc_wave_2_server", server_thread, &args, &options);
 
   for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], create_loop_destroy, args.addr, &options);
+    gpr_thd_new(&threads[i], "grpc_wave_2", create_loop_destroy, args.addr,
+                &options);
   }
   for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);
@@ -214,11 +220,13 @@ int run_concurrent_connectivity_test() {
   args.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args.pollset, &args.mu);
   gpr_event_init(&args.ready);
-  gpr_thd_new(&server, bad_server_thread, &args, &options);
+  gpr_thd_new(&server, "grpc_wave_3_server", bad_server_thread, &args,
+              &options);
   gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
   for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], create_loop_destroy, args.addr, &options);
+    gpr_thd_new(&threads[i], "grpc_wave_3", create_loop_destroy, args.addr,
+                &options);
   }
   for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);
@@ -238,8 +246,9 @@ int run_concurrent_connectivity_test() {
 
 void watches_with_short_timeouts(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS_SHORT_TIMEOUTS; ++i) {
-    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
-    grpc_channel* chan = grpc_insecure_channel_create((char*)addr, NULL, NULL);
+    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel* chan =
+        grpc_insecure_channel_create((char*)addr, nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS_SHORT_TIMEOUTS; ++j) {
       gpr_timespec later_time =
@@ -247,10 +256,11 @@ void watches_with_short_timeouts(void* addr) {
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 0);
       GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
-      grpc_channel_watch_connectivity_state(chan, state, later_time, cq, NULL);
+      grpc_channel_watch_connectivity_state(chan, state, later_time, cq,
+                                            nullptr);
       gpr_timespec poll_time =
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS_SHORT_TIMEOUTS);
-      grpc_event ev = grpc_completion_queue_next(cq, poll_time, NULL);
+      grpc_event ev = grpc_completion_queue_next(cq, poll_time, nullptr);
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       GPR_ASSERT(ev.success == false);
       /* check that the watcher from "watch state" was free'd */
@@ -274,7 +284,8 @@ int run_concurrent_watches_with_short_timeouts_test() {
   gpr_thd_options_set_joinable(&options);
 
   for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], watches_with_short_timeouts, localhost, &options);
+    gpr_thd_new(&threads[i], "grpc_short_watches", watches_with_short_timeouts,
+                localhost, &options);
   }
   for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);

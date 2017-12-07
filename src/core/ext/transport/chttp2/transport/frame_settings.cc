@@ -131,6 +131,11 @@ grpc_error* grpc_chttp2_settings_parser_parse(grpc_exec_ctx* exec_ctx, void* p,
             memcpy(parser->target_settings, parser->incoming_settings,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
+            if (t->notify_on_receive_settings != nullptr) {
+              GRPC_CLOSURE_SCHED(exec_ctx, t->notify_on_receive_settings,
+                                 GRPC_ERROR_NONE);
+              t->notify_on_receive_settings = nullptr;
+            }
           }
           return GRPC_ERROR_NONE;
         }
@@ -204,20 +209,19 @@ grpc_error* grpc_chttp2_settings_parser_parse(grpc_exec_ctx* exec_ctx, void* p,
               parser->incoming_settings[id] != parser->value) {
             t->initial_window_update +=
                 (int64_t)parser->value - parser->incoming_settings[id];
-            if (GRPC_TRACER_ON(grpc_http_trace) ||
-                GRPC_TRACER_ON(grpc_flowctl_trace)) {
+            if (grpc_http_trace.enabled() || grpc_flowctl_trace.enabled()) {
               gpr_log(GPR_DEBUG, "%p[%s] adding %d for initial_window change",
                       t, t->is_client ? "cli" : "svr",
                       (int)t->initial_window_update);
             }
           }
           parser->incoming_settings[id] = parser->value;
-          if (GRPC_TRACER_ON(grpc_http_trace)) {
+          if (grpc_http_trace.enabled()) {
             gpr_log(GPR_DEBUG, "CHTTP2:%s:%s: got setting %s = %d",
                     t->is_client ? "CLI" : "SVR", t->peer_string, sp->name,
                     parser->value);
           }
-        } else if (GRPC_TRACER_ON(grpc_http_trace)) {
+        } else if (grpc_http_trace.enabled()) {
           gpr_log(GPR_ERROR, "CHTTP2: Ignoring unknown setting %d (value %d)",
                   parser->id, parser->value);
         }

@@ -100,7 +100,7 @@ class DummyEndpoint : public grpc_endpoint {
     GRPC_CLOSURE_SCHED(exec_ctx, cb, GRPC_ERROR_NONE);
   }
 
-  static grpc_workqueue* get_workqueue(grpc_endpoint* ep) { return NULL; }
+  static grpc_workqueue* get_workqueue(grpc_endpoint* ep) { return nullptr; }
 
   static void add_to_pollset(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                              grpc_pollset* pollset) {}
@@ -137,7 +137,7 @@ class Fixture {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new DummyEndpoint;
     t_ = grpc_create_chttp2_transport(exec_ctx(), &c_args, ep_, client);
-    grpc_chttp2_transport_start_reading(exec_ctx(), t_, NULL);
+    grpc_chttp2_transport_start_reading(exec_ctx(), t_, nullptr, nullptr);
     FlushExecCtx();
   }
 
@@ -222,7 +222,7 @@ class Stream {
     }
     grpc_transport_init_stream(f_->exec_ctx(), f_->transport(),
                                static_cast<grpc_stream*>(stream_), &refcount_,
-                               NULL, arena_);
+                               nullptr, arena_);
   }
 
   void DestroyThen(grpc_exec_ctx* exec_ctx, grpc_closure* closure) {
@@ -586,7 +586,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
       });
 
   drain_start = MakeClosure([&](grpc_exec_ctx* exec_ctx, grpc_error* error) {
-    if (recv_stream == NULL) {
+    if (recv_stream == nullptr) {
       GPR_ASSERT(!state.KeepRunning());
       return;
     }

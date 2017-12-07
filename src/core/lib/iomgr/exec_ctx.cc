@@ -47,7 +47,7 @@ bool grpc_always_ready_to_finish(grpc_exec_ctx* exec_ctx, void* arg_ignored) {
 }
 
 bool grpc_exec_ctx_has_work(grpc_exec_ctx* exec_ctx) {
-  return exec_ctx->active_combiner != NULL ||
+  return exec_ctx->active_combiner != nullptr ||
          !grpc_closure_list_empty(exec_ctx->closure_list);
 }
 
@@ -60,7 +60,7 @@ static void exec_ctx_run(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
                          grpc_error* error) {
 #ifndef NDEBUG
   closure->scheduled = false;
-  if (GRPC_TRACER_ON(grpc_trace_closure)) {
+  if (grpc_trace_closure.enabled()) {
     gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
             closure, closure->file_created, closure->line_created,
             closure->run ? "run" : "scheduled", closure->file_initiated,
@@ -69,7 +69,7 @@ static void exec_ctx_run(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
 #endif
   closure->cb(exec_ctx, closure->cb_arg, error);
 #ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_closure)) {
+  if (grpc_trace_closure.enabled()) {
     gpr_log(GPR_DEBUG, "closure %p finished", closure);
   }
 #endif
@@ -82,8 +82,8 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx* exec_ctx) {
   for (;;) {
     if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
       grpc_closure* c = exec_ctx->closure_list.head;
-      exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
-      while (c != NULL) {
+      exec_ctx->closure_list.head = exec_ctx->closure_list.tail = nullptr;
+      while (c != nullptr) {
         grpc_closure* next = c->next_data.next;
         grpc_error* error = c->error_data.error;
         did_something = true;
@@ -94,7 +94,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx* exec_ctx) {
       break;
     }
   }
-  GPR_ASSERT(exec_ctx->active_combiner == NULL);
+  GPR_ASSERT(exec_ctx->active_combiner == nullptr);
   GPR_TIMER_END("grpc_exec_ctx_flush", 0);
   return did_something;
 }
@@ -104,23 +104,16 @@ static void exec_ctx_sched(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
   grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }
 
-static gpr_timespec
-    g_start_time[GPR_TIMESPAN + 1];  // assumes GPR_TIMESPAN is the
-                                     // last enum value in
-                                     // gpr_clock_type
+static gpr_timespec g_start_time;
 
 void grpc_exec_ctx_global_init(void) {
-  for (int i = 0; i < GPR_TIMESPAN; i++) {
-    g_start_time[i] = gpr_now((gpr_clock_type)i);
-  }
-  // allows uniform treatment in conversion functions
-  g_start_time[GPR_TIMESPAN] = gpr_time_0(GPR_TIMESPAN);
+  g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
 }
 
 void grpc_exec_ctx_global_shutdown(void) {}
 
 static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time[ts.clock_type]);
+  ts = gpr_time_sub(ts, g_start_time);
   double x =
       GPR_MS_PER_SEC * (double)ts.tv_sec + (double)ts.tv_nsec / GPR_NS_PER_MS;
   if (x < 0) return 0;
@@ -129,7 +122,7 @@ static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
 }
 
 static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time[ts.clock_type]);
+  ts = gpr_time_sub(ts, g_start_time);
   double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
              (double)ts.tv_nsec / GPR_NS_PER_MS +
              (double)(GPR_NS_PER_SEC - 1) / (double)GPR_NS_PER_SEC;
@@ -164,16 +157,18 @@ gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
   if (clock_type == GPR_TIMESPAN) {
     return gpr_time_from_millis(millis, GPR_TIMESPAN);
   }
-  return gpr_time_add(g_start_time[clock_type],
+  return gpr_time_add(gpr_convert_clock_type(g_start_time, clock_type),
                       gpr_time_from_millis(millis, GPR_TIMESPAN));
 }
 
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts) {
-  return timespec_to_atm_round_down(ts);
+  return timespec_to_atm_round_down(
+      gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
-  return timespec_to_atm_round_up(ts);
+  return timespec_to_atm_round_up(
+      gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {

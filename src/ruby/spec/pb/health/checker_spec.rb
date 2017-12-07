@@ -99,6 +99,35 @@ describe Grpc::Health::Checker do
     end
   end
 
+  context 'method `add_statuses`' do
+    it 'should add status to each service' do
+      checker = Grpc::Health::Checker.new
+      checker.add_statuses(
+        'service1' => ServingStatus::SERVING,
+        'service2' => ServingStatus::NOT_SERVING
+      )
+      service1_health = checker.check(HCReq.new(service: 'service1'), nil)
+      service2_health = checker.check(HCReq.new(service: 'service2'), nil)
+      expect(service1_health).to eq(HCResp.new(status: ServingStatus::SERVING))
+      expect(service2_health).to eq(HCResp.new(status: ServingStatus::NOT_SERVING))
+    end
+  end
+
+  context 'method `set_status_for_services`' do
+    it 'should add given status to all given services' do
+      checker = Grpc::Health::Checker.new
+      checker.set_status_for_services(
+        ServingStatus::SERVING,
+        'service1',
+        'service2'
+      )
+      service1_health = checker.check(HCReq.new(service: 'service1'), nil)
+      service2_health = checker.check(HCReq.new(service: 'service2'), nil)
+      expect(service1_health).to eq(HCResp.new(status: ServingStatus::SERVING))
+      expect(service2_health).to eq(HCResp.new(status: ServingStatus::SERVING))
+    end
+  end
+
   context 'method `check`' do
     success_tests.each do |t|
       it "should fail with NOT_FOUND when #{t[:desc]}" do

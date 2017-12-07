@@ -43,7 +43,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
 
-extern grpc_tracer_flag grpc_tcp_trace;
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 typedef struct {
   gpr_mu mu;
@@ -99,13 +99,13 @@ done:
 static void tc_on_alarm(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
   int done;
   async_connect* ac = (async_connect*)acp;
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     const char* str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
             str);
   }
   gpr_mu_lock(&ac->mu);
-  if (ac->fd != NULL) {
+  if (ac->fd != nullptr) {
     grpc_fd_shutdown(
         exec_ctx, ac->fd,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
@@ -138,7 +138,7 @@ static void on_writable(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
 
   GRPC_ERROR_REF(error);
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     const char* str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: error=%s",
             ac->addr_str, str);
@@ -147,7 +147,7 @@ static void on_writable(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
   gpr_mu_lock(&ac->mu);
   GPR_ASSERT(ac->fd);
   fd = ac->fd;
-  ac->fd = NULL;
+  ac->fd = nullptr;
   gpr_mu_unlock(&ac->mu);
 
   grpc_timer_cancel(exec_ctx, &ac->alarm);
@@ -175,7 +175,7 @@ static void on_writable(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
       grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
       *ep = grpc_tcp_client_create_from_fd(exec_ctx, fd, ac->channel_args,
                                            ac->addr_str);
-      fd = NULL;
+      fd = nullptr;
       break;
     case ENOBUFS:
       /* We will get one of these errors if we have run out of
@@ -208,11 +208,11 @@ static void on_writable(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
   }
 
 finish:
-  if (fd != NULL) {
+  if (fd != nullptr) {
     grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
-    grpc_fd_orphan(exec_ctx, fd, NULL, NULL, false /* already_closed */,
+    grpc_fd_orphan(exec_ctx, fd, nullptr, nullptr, false /* already_closed */,
                    "tcp_client_orphan");
-    fd = NULL;
+    fd = nullptr;
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -256,7 +256,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx* exec_ctx,
   char* addr_str;
   grpc_error* error;
 
-  *ep = NULL;
+  *ep = nullptr;
 
   /* Use dualstack sockets where available. */
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
@@ -296,8 +296,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx* exec_ctx,
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, false /* already_closed */,
-                   "tcp_client_connect_error");
+    grpc_fd_orphan(exec_ctx, fdobj, nullptr, nullptr,
+                   false /* already_closed */, "tcp_client_connect_error");
     GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"));
     goto done;
   }
@@ -310,14 +310,14 @@ static void tcp_client_connect_impl(grpc_exec_ctx* exec_ctx,
   ac->fd = fdobj;
   ac->interested_parties = interested_parties;
   ac->addr_str = addr_str;
-  addr_str = NULL;
+  addr_str = nullptr;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
   ac->channel_args = grpc_channel_args_copy(channel_args);
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
             ac->addr_str, fdobj);
   }
@@ -334,13 +334,11 @@ done:
 }
 
 // overridden by api_fuzzer.c
-extern "C" {
 void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr,
     grpc_millis deadline) = tcp_client_connect_impl;
-}
 
 void grpc_tcp_client_connect(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
                              grpc_endpoint** ep,

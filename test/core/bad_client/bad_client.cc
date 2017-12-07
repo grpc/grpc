@@ -58,7 +58,7 @@ static void done_write(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
 static void server_setup_transport(void* ts, grpc_transport* transport) {
   thd_args* a = (thd_args*)ts;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport(&exec_ctx, a->server, transport, NULL,
+  grpc_server_setup_transport(&exec_ctx, a->server, transport, nullptr,
                               grpc_server_get_channel_args(a->server));
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -101,23 +101,24 @@ void grpc_run_bad_client_test(
   grpc_init();
 
   /* Create endpoints */
-  sfd = grpc_iomgr_create_endpoint_pair("fixture", NULL);
+  sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
 
   /* Create server, completion events */
-  a.server = grpc_server_create(NULL, NULL);
-  a.cq = grpc_completion_queue_create_for_next(NULL);
+  a.server = grpc_server_create(nullptr, nullptr);
+  a.cq = grpc_completion_queue_create_for_next(nullptr);
   gpr_event_init(&a.done_thd);
   gpr_event_init(&a.done_write);
   a.validator = server_validator;
-  grpc_server_register_completion_queue(a.server, a.cq, NULL);
+  grpc_server_register_completion_queue(a.server, a.cq, nullptr);
   a.registered_method =
       grpc_server_register_method(a.server, GRPC_BAD_CLIENT_REGISTERED_METHOD,
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  transport = grpc_create_chttp2_transport(&exec_ctx, NULL, sfd.server, 0);
+  transport =
+      grpc_create_chttp2_transport(&exec_ctx, nullptr, sfd.server, false);
   server_setup_transport(&a, transport);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr, nullptr);
   grpc_exec_ctx_finish(&exec_ctx);
 
   /* Bind everything into the same pollset */
@@ -128,7 +129,7 @@ void grpc_run_bad_client_test(
   GPR_ASSERT(grpc_server_has_open_connections(a.server));
 
   /* Start validator */
-  gpr_thd_new(&id, thd_func, &a, NULL);
+  gpr_thd_new(&id, "grpc_bad_client", thd_func, &a, nullptr);
 
   grpc_slice_buffer_init(&outgoing);
   grpc_slice_buffer_add(&outgoing, slice);
@@ -152,14 +153,14 @@ void grpc_run_bad_client_test(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);
-    sfd.client = NULL;
+    sfd.client = nullptr;
   }
 
   GPR_ASSERT(gpr_event_wait(&a.done_thd, grpc_timeout_seconds_to_deadline(5)));
 
-  if (sfd.client != NULL) {
+  if (sfd.client != nullptr) {
     // Validate client stream, if requested.
-    if (client_validator != NULL) {
+    if (client_validator != nullptr) {
       gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
       grpc_slice_buffer incoming;
       grpc_slice_buffer_init(&incoming);
@@ -175,9 +176,10 @@ void grpc_run_bad_client_test(
         grpc_exec_ctx_finish(&exec_ctx);
         do {
           GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
-          GPR_ASSERT(grpc_completion_queue_next(
-                         a.cq, grpc_timeout_milliseconds_to_deadline(100), NULL)
-                         .type == GRPC_QUEUE_TIMEOUT);
+          GPR_ASSERT(
+              grpc_completion_queue_next(
+                  a.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+                  .type == GRPC_QUEUE_TIMEOUT);
         } while (!gpr_event_get(&read_done_event));
         if (client_validator(&incoming)) break;
         gpr_log(GPR_INFO,
@@ -196,10 +198,11 @@ void grpc_run_bad_client_test(
 
   GPR_ASSERT(
       gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(1)));
-  shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
-  grpc_server_shutdown_and_notify(a.server, shutdown_cq, NULL);
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 shutdown_cq, NULL, grpc_timeout_seconds_to_deadline(1), NULL)
+  shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
+  grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
+  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
+                                         grpc_timeout_seconds_to_deadline(1),
+                                         nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(a.server);

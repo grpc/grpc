@@ -21,6 +21,7 @@
 #include <limits.h>
 #include <memory.h>
 
+#include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -39,6 +40,8 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/fork.h"
+#include "src/core/lib/support/thd_internal.h"
 #include "src/core/lib/surface/alarm_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -62,34 +65,36 @@ static int g_initializations;
 
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
+  grpc_fork_support_init();
   gpr_mu_init(&g_init_mu);
   grpc_register_built_in_plugins();
   grpc_cq_global_init();
   g_initializations = 0;
+  grpc_fork_handlers_auto_register();
 }
 
 static bool append_filter(grpc_exec_ctx* exec_ctx,
                           grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter*)arg, NULL, NULL);
+      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
 }
 
 static bool prepend_filter(grpc_exec_ctx* exec_ctx,
                            grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, (const grpc_channel_filter*)arg, NULL, NULL);
+      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
 }
 
 static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, NULL);
+                                   grpc_add_connected_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, NULL);
+                                   grpc_add_connected_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, NULL);
+                                   grpc_add_connected_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    append_filter, (void*)&grpc_lame_filter);
@@ -122,41 +127,18 @@ void grpc_init(void) {
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
+    gpr_thd_init();
     grpc_stats_init();
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
-    grpc_register_tracer(&grpc_api_trace);
-    grpc_register_tracer(&grpc_trace_channel);
-    grpc_register_tracer(&grpc_connectivity_state_trace);
-    grpc_register_tracer(&grpc_trace_channel_stack_builder);
-    grpc_register_tracer(&grpc_http1_trace);
-    grpc_register_tracer(&grpc_cq_pluck_trace);  // default on
-    grpc_register_tracer(&grpc_call_combiner_trace);
-    grpc_register_tracer(&grpc_combiner_trace);
-    grpc_register_tracer(&grpc_server_channel_trace);
-    grpc_register_tracer(&grpc_bdp_estimator_trace);
-    grpc_register_tracer(&grpc_cq_event_timeout_trace);  // default on
-    grpc_register_tracer(&grpc_trace_operation_failures);
-    grpc_register_tracer(&grpc_resource_quota_trace);
-    grpc_register_tracer(&grpc_call_error_trace);
-#ifndef NDEBUG
-    grpc_register_tracer(&grpc_trace_pending_tags);
-    grpc_register_tracer(&grpc_trace_alarm_refcount);
-    grpc_register_tracer(&grpc_trace_cq_refcount);
-    grpc_register_tracer(&grpc_trace_closure);
-    grpc_register_tracer(&grpc_trace_error_refcount);
-    grpc_register_tracer(&grpc_trace_stream_refcount);
-    grpc_register_tracer(&grpc_trace_fd_refcount);
-    grpc_register_tracer(&grpc_trace_metadata);
-#endif
     grpc_security_pre_init();
     grpc_iomgr_init(&exec_ctx);
     gpr_timers_global_init();
     grpc_handshaker_factory_registry_init();
     grpc_security_init();
     for (i = 0; i < g_number_of_plugins; i++) {
-      if (g_all_of_the_plugins[i].init != NULL) {
+      if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
       }
     }
@@ -178,13 +160,13 @@ void grpc_shutdown(void) {
   int i;
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
   grpc_exec_ctx exec_ctx =
-      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
+      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, nullptr);
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_executor_shutdown(&exec_ctx);
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     for (i = g_number_of_plugins; i >= 0; i--) {
-      if (g_all_of_the_plugins[i].destroy != NULL) {
+      if (g_all_of_the_plugins[i].destroy != nullptr) {
         g_all_of_the_plugins[i].destroy();
       }
     }
