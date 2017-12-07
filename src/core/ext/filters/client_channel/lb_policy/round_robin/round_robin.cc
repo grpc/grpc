@@ -72,8 +72,6 @@ typedef struct round_robin_lb_policy {
 
   /** have we started picking? */
   bool started_picking;
-  /** are we shutting down? */
-  bool shutdown;
   /** List of picks that are waiting on connectivity */
   pending_pick* pending_picks;
 
@@ -173,7 +171,7 @@ static void rr_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_DEBUG, "[RR %p] Shutting down", p);
   }
-  p->shutdown = true;
+  p->base.shutting_down = true;
   pending_pick* pp;
   while ((pp = p->pending_picks) != nullptr) {
     p->pending_picks = pp->next;
@@ -276,9 +274,9 @@ static int rr_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol,
   round_robin_lb_policy* p = (round_robin_lb_policy*)pol;
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] Trying to pick (shutdown: %d)", (void*)pol,
-            p->shutdown);
+            p->base.shutting_down);
   }
-  GPR_ASSERT(!p->shutdown);
+  GPR_ASSERT(!p->base.shutting_down);
   if (p->subchannel_list != nullptr) {
     const size_t next_ready_index = get_next_ready_subchannel_index_locked(p);
     if (next_ready_index < p->subchannel_list->num_subchannels) {
@@ -420,16 +418,16 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
     gpr_log(
         GPR_DEBUG,
         "[RR %p] connectivity changed for subchannel %p, subchannel_list %p: "
-        "prev_state=%s new_state=%s p->shutdown=%d "
+        "prev_state=%s new_state=%s p->base.shutting_down=%d "
         "sd->subchannel_list->shutting_down=%d error=%s",
         (void*)p, (void*)sd->subchannel, (void*)sd->subchannel_list,
         grpc_connectivity_state_name(sd->prev_connectivity_state),
         grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe),
-        p->shutdown, sd->subchannel_list->shutting_down,
+        p->base.shutting_down, sd->subchannel_list->shutting_down,
         grpc_error_string(error));
   }
   // If the policy is shutting down, unref and return.
-  if (p->shutdown) {
+  if (p->base.shutting_down) {
     grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
     grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd, "rr_shutdown");
     grpc_lb_subchannel_list_unref_for_connectivity_watch(
@@ -635,15 +633,6 @@ static void rr_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
   }
 }
 
-static void rr_set_reresolve_closure_locked(
-    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
-    grpc_closure* request_reresolution) {
-  round_robin_lb_policy* p = (round_robin_lb_policy*)policy;
-  GPR_ASSERT(!p->shutdown);
-  GPR_ASSERT(policy->request_reresolution == nullptr);
-  policy->request_reresolution = request_reresolution;
-}
-
 static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
     rr_destroy,
     rr_shutdown_locked,
@@ -654,8 +643,7 @@ static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
     rr_exit_idle_locked,
     rr_check_connectivity_locked,
     rr_notify_on_state_change_locked,
-    rr_update_locked,
-    rr_set_reresolve_closure_locked};
+    rr_update_locked};
 
 static void round_robin_factory_ref(grpc_lb_policy_factory* factory) {}
 

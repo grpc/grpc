@@ -354,8 +354,6 @@ typedef struct glb_lb_policy {
   /** list of pings that are waiting on RR's policy connectivity */
   pending_ping* pending_pings;
 
-  bool shutting_down;
-
   /** are we currently updating lb_call? */
   bool updating_lb_call;
 
@@ -853,7 +851,7 @@ static void create_rr_locked(grpc_exec_ctx* exec_ctx, glb_lb_policy* glb_policy,
 /* glb_policy->rr_policy may be NULL (initial handover) */
 static void rr_handover_locked(grpc_exec_ctx* exec_ctx,
                                glb_lb_policy* glb_policy) {
-  if (glb_policy->shutting_down) return;
+  if (glb_policy->base.shutting_down) return;
   grpc_lb_policy_args* args = lb_policy_args_create(exec_ctx, glb_policy);
   GPR_ASSERT(args != nullptr);
   if (glb_policy->rr_policy != nullptr) {
@@ -891,7 +889,7 @@ static void glb_rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx,
                                                void* arg, grpc_error* error) {
   rr_connectivity_data* rr_connectivity = (rr_connectivity_data*)arg;
   glb_lb_policy* glb_policy = rr_connectivity->glb_policy;
-  if (glb_policy->shutting_down) {
+  if (glb_policy->base.shutting_down) {
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
                               "glb_rr_connectivity_cb");
     gpr_free(rr_connectivity);
@@ -1023,7 +1021,7 @@ static void glb_destroy(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
 static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)pol;
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
-  glb_policy->shutting_down = true;
+  glb_policy->base.shutting_down = true;
 
   /* We need a copy of the lb_call pointer because we can't cancell the call
    * while holding glb_policy->mu: lb_on_server_status_received, invoked due to
@@ -1033,7 +1031,7 @@ static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   /* glb_policy->lb_call and this local lb_call must be consistent at this point
    * because glb_policy->lb_call is only assigned in lb_call_init_locked as part
    * of query_for_backends_locked, which can only be invoked while
-   * glb_policy->shutting_down is false. */
+   * glb_policy->base.shutting_down is false. */
   if (lb_call != nullptr) {
     grpc_call_cancel(lb_call, nullptr);
     /* lb_on_server_status_received will pick up the cancel and clean up */
@@ -1308,7 +1306,7 @@ static void lb_call_on_retry_timer_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                           grpc_error* error) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
   glb_policy->retry_timer_active = false;
-  if (!glb_policy->shutting_down && glb_policy->lb_call == nullptr &&
+  if (!glb_policy->base.shutting_down && glb_policy->lb_call == nullptr &&
       error == GRPC_ERROR_NONE) {
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server", glb_policy);
@@ -1324,9 +1322,10 @@ static void maybe_restart_lb_call(grpc_exec_ctx* exec_ctx,
     if (glb_policy->retry_timer_active) {
       grpc_timer_cancel(exec_ctx, &glb_policy->lb_call_retry_timer);
     }
-    if (!glb_policy->shutting_down) start_picking_locked(exec_ctx, glb_policy);
+    if (!glb_policy->base.shutting_down)
+      start_picking_locked(exec_ctx, glb_policy);
     glb_policy->updating_lb_call = false;
-  } else if (!glb_policy->shutting_down) {
+  } else if (!glb_policy->base.shutting_down) {
     /* if we aren't shutting down, restart the LB client call after some time */
     grpc_millis next_try =
         grpc_backoff_step(exec_ctx, &glb_policy->lb_call_backoff_state)
@@ -1459,7 +1458,7 @@ static void lb_call_init_locked(grpc_exec_ctx* exec_ctx,
   GPR_ASSERT(glb_policy->server_name != nullptr);
   GPR_ASSERT(glb_policy->server_name[0] != '\0');
   GPR_ASSERT(glb_policy->lb_call == nullptr);
-  GPR_ASSERT(!glb_policy->shutting_down);
+  GPR_ASSERT(!glb_policy->base.shutting_down);
 
   /* Note the following LB call progresses every time there's activity in \a
    * glb_policy->base.interested_parties, which is comprised of the polling
@@ -1533,7 +1532,7 @@ static void lb_call_destroy_locked(grpc_exec_ctx* exec_ctx,
 static void query_for_backends_locked(grpc_exec_ctx* exec_ctx,
                                       glb_lb_policy* glb_policy) {
   GPR_ASSERT(glb_policy->lb_channel != nullptr);
-  if (glb_policy->shutting_down) return;
+  if (glb_policy->base.shutting_down) return;
 
   lb_call_init_locked(exec_ctx, glb_policy);
 
@@ -1720,7 +1719,7 @@ static void lb_on_response_received_locked(grpc_exec_ctx* exec_ctx, void* arg,
       }
     }
     grpc_slice_unref_internal(exec_ctx, response_slice);
-    if (!glb_policy->shutting_down) {
+    if (!glb_policy->base.shutting_down) {
       /* keep listening for serverlist updates */
       op->op = GRPC_OP_RECV_MESSAGE;
       op->data.recv_message.recv_message = &glb_policy->lb_response_payload;
@@ -1751,7 +1750,7 @@ static void lb_on_fallback_timer_locked(grpc_exec_ctx* exec_ctx, void* arg,
   glb_policy->fallback_timer_active = false;
   /* If we receive a serverlist after the timer fires but before this callback
    * actually runs, don't fall back. */
-  if (glb_policy->serverlist == nullptr && !glb_policy->shutting_down &&
+  if (glb_policy->serverlist == nullptr && !glb_policy->base.shutting_down &&
       error == GRPC_ERROR_NONE) {
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO,
@@ -1868,7 +1867,7 @@ static void on_reresolution_requested_locked(grpc_exec_ctx* exec_ctx, void* arg,
    * before this callback actually runs, don't re-resolve. */
   if (glb_policy->lost_lb_connection &&
       glb_policy->rr_state != GRPC_CHANNEL_READY &&
-      !glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
+      !glb_policy->base.shutting_down && error == GRPC_ERROR_NONE) {
     grpc_lb_policy_try_reresolve(exec_ctx, &glb_policy->base,
                                  &grpc_lb_glb_trace, error);
   }
@@ -1882,7 +1881,7 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx* exec_ctx,
                                                       void* arg,
                                                       grpc_error* error) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
-  if (glb_policy->shutting_down) goto done;
+  if (glb_policy->base.shutting_down) goto done;
   // Re-initialize the lb_call. This should also take care of updating the
   // embedded RR policy. Note that the current RR policy, if any, will stay in
   // effect until an update from the new lb_call is received.
@@ -1929,15 +1928,6 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx* exec_ctx,
   }
 }
 
-static void glb_set_reresolve_closure_locked(
-    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
-    grpc_closure* request_reresolution) {
-  glb_lb_policy* glb_policy = (glb_lb_policy*)policy;
-  GPR_ASSERT(!glb_policy->shutting_down);
-  GPR_ASSERT(glb_policy->base.request_reresolution == nullptr);
-  glb_policy->base.request_reresolution = request_reresolution;
-}
-
 /* Code wiring the policy with the rest of the core */
 static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_destroy,
@@ -1949,8 +1939,7 @@ static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_exit_idle_locked,
     glb_check_connectivity_locked,
     glb_notify_on_state_change_locked,
-    glb_update_locked,
-    glb_set_reresolve_closure_locked};
+    glb_update_locked};
 
 static grpc_lb_policy* glb_create(grpc_exec_ctx* exec_ctx,
                                   grpc_lb_policy_factory* factory,
