@@ -588,13 +588,13 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   gpr_log(GPR_INFO, "****** SERVERS RESTARTED *******");
   gpr_log(GPR_INFO, "****** SENDING REQUEST TO SUCCEED *******");
   // Client request should eventually (but still fairly soon) succeed.
-  bool call_succeeded = false;
-  for (gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-       gpr_time_cmp(deadline, gpr_now(GPR_CLOCK_MONOTONIC)) > 0;) {
-    call_succeeded = SendRpc().ok();
-    if (call_succeeded) break;
+  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  while (gpr_time_cmp(deadline, now) > 0) {
+    if (SendRpc().ok()) break;
+    now = gpr_now(GPR_CLOCK_MONOTONIC);
   }
-  GPR_ASSERT(call_succeeded);
+  GPR_ASSERT(gpr_time_cmp(deadline, now) > 0);
 }
 
 }  // namespace
