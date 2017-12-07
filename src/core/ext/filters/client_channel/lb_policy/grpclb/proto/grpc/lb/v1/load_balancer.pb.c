@@ -62,9 +62,9 @@ const pb_field_t grpc_lb_v1_InitialLoadBalanceResponse_fields[3] = {
 };
 
 const pb_field_t grpc_lb_v1_ServerList_fields[2] = {
-    PB_FIELD(1, MESSAGE, REPEATED, CALLBACK, FIRST, grpc_lb_v1_ServerList,
-             servers, servers, &grpc_lb_v1_Server_fields),
-    PB_LAST_FIELD};
+    PB_FIELD(  1, MESSAGE , REPEATED, CALLBACK, FIRST, grpc_lb_v1_ServerList, servers, servers, &grpc_lb_v1_Server_fields),
+    PB_LAST_FIELD
+};
 
 const pb_field_t grpc_lb_v1_Server_fields[5] = {
     PB_FIELD(  1, BYTES   , OPTIONAL, STATIC  , FIRST, grpc_lb_v1_Server, ip_address, ip_address, 0),
@@ -84,17 +84,7 @@ const pb_field_t grpc_lb_v1_Server_fields[5] = {
  * numbers or field sizes that are larger than what can fit in 8 or 16 bit
  * field descriptors.
  */
-PB_STATIC_ASSERT(
-    (pb_membersize(grpc_lb_v1_LoadBalanceRequest, initial_request) < 65536 &&
-     pb_membersize(grpc_lb_v1_LoadBalanceRequest, client_stats) < 65536 &&
-     pb_membersize(grpc_lb_v1_ClientStats, timestamp) < 65536 &&
-     pb_membersize(grpc_lb_v1_ClientStats, calls_finished_with_drop) < 65536 &&
-     pb_membersize(grpc_lb_v1_LoadBalanceResponse, initial_response) < 65536 &&
-     pb_membersize(grpc_lb_v1_LoadBalanceResponse, server_list) < 65536 &&
-     pb_membersize(grpc_lb_v1_InitialLoadBalanceResponse,
-                   client_stats_report_interval) < 65536 &&
-     pb_membersize(grpc_lb_v1_ServerList, servers) < 65536),
-    YOU_MUST_DEFINE_PB_FIELD_32BIT_FOR_MESSAGES_grpc_lb_v1_Duration_grpc_lb_v1_Timestamp_grpc_lb_v1_LoadBalanceRequest_grpc_lb_v1_InitialLoadBalanceRequest_grpc_lb_v1_ClientStatsPerToken_grpc_lb_v1_ClientStats_grpc_lb_v1_LoadBalanceResponse_grpc_lb_v1_InitialLoadBalanceResponse_grpc_lb_v1_ServerList_grpc_lb_v1_Server)
+PB_STATIC_ASSERT((pb_membersize(grpc_lb_v1_LoadBalanceRequest, initial_request) < 65536 && pb_membersize(grpc_lb_v1_LoadBalanceRequest, client_stats) < 65536 && pb_membersize(grpc_lb_v1_ClientStats, timestamp) < 65536 && pb_membersize(grpc_lb_v1_ClientStats, calls_finished_with_drop) < 65536 && pb_membersize(grpc_lb_v1_LoadBalanceResponse, initial_response) < 65536 && pb_membersize(grpc_lb_v1_LoadBalanceResponse, server_list) < 65536 && pb_membersize(grpc_lb_v1_InitialLoadBalanceResponse, client_stats_report_interval) < 65536 && pb_membersize(grpc_lb_v1_ServerList, servers) < 65536), YOU_MUST_DEFINE_PB_FIELD_32BIT_FOR_MESSAGES_grpc_lb_v1_Duration_grpc_lb_v1_Timestamp_grpc_lb_v1_LoadBalanceRequest_grpc_lb_v1_InitialLoadBalanceRequest_grpc_lb_v1_ClientStatsPerToken_grpc_lb_v1_ClientStats_grpc_lb_v1_LoadBalanceResponse_grpc_lb_v1_InitialLoadBalanceResponse_grpc_lb_v1_ServerList_grpc_lb_v1_Server)
 #endif
 
 #if !defined(PB_FIELD_16BIT) && !defined(PB_FIELD_32BIT)
@@ -105,17 +95,7 @@ PB_STATIC_ASSERT(
  * numbers or field sizes that are larger than what can fit in the default
  * 8 bit descriptors.
  */
-PB_STATIC_ASSERT(
-    (pb_membersize(grpc_lb_v1_LoadBalanceRequest, initial_request) < 256 &&
-     pb_membersize(grpc_lb_v1_LoadBalanceRequest, client_stats) < 256 &&
-     pb_membersize(grpc_lb_v1_ClientStats, timestamp) < 256 &&
-     pb_membersize(grpc_lb_v1_ClientStats, calls_finished_with_drop) < 256 &&
-     pb_membersize(grpc_lb_v1_LoadBalanceResponse, initial_response) < 256 &&
-     pb_membersize(grpc_lb_v1_LoadBalanceResponse, server_list) < 256 &&
-     pb_membersize(grpc_lb_v1_InitialLoadBalanceResponse,
-                   client_stats_report_interval) < 256 &&
-     pb_membersize(grpc_lb_v1_ServerList, servers) < 256),
-    YOU_MUST_DEFINE_PB_FIELD_16BIT_FOR_MESSAGES_grpc_lb_v1_Duration_grpc_lb_v1_Timestamp_grpc_lb_v1_LoadBalanceRequest_grpc_lb_v1_InitialLoadBalanceRequest_grpc_lb_v1_ClientStatsPerToken_grpc_lb_v1_ClientStats_grpc_lb_v1_LoadBalanceResponse_grpc_lb_v1_InitialLoadBalanceResponse_grpc_lb_v1_ServerList_grpc_lb_v1_Server)
+PB_STATIC_ASSERT((pb_membersize(grpc_lb_v1_LoadBalanceRequest, initial_request) < 256 && pb_membersize(grpc_lb_v1_LoadBalanceRequest, client_stats) < 256 && pb_membersize(grpc_lb_v1_ClientStats, timestamp) < 256 && pb_membersize(grpc_lb_v1_ClientStats, calls_finished_with_drop) < 256 && pb_membersize(grpc_lb_v1_LoadBalanceResponse, initial_response) < 256 && pb_membersize(grpc_lb_v1_LoadBalanceResponse, server_list) < 256 && pb_membersize(grpc_lb_v1_InitialLoadBalanceResponse, client_stats_report_interval) < 256 && pb_membersize(grpc_lb_v1_ServerList, servers) < 256), YOU_MUST_DEFINE_PB_FIELD_16BIT_FOR_MESSAGES_grpc_lb_v1_Duration_grpc_lb_v1_Timestamp_grpc_lb_v1_LoadBalanceRequest_grpc_lb_v1_InitialLoadBalanceRequest_grpc_lb_v1_ClientStatsPerToken_grpc_lb_v1_ClientStats_grpc_lb_v1_LoadBalanceResponse_grpc_lb_v1_InitialLoadBalanceResponse_grpc_lb_v1_ServerList_grpc_lb_v1_Server)
 #endif
 
 

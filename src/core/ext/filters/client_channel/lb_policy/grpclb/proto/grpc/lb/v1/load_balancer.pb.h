@@ -15,8 +15,8 @@ extern "C" {
 
 /* Struct definitions */
 typedef struct _grpc_lb_v1_ServerList {
-  pb_callback_t servers;
-  /* @@protoc_insertion_point(struct:grpc_lb_v1_ServerList) */
+    pb_callback_t servers;
+/* @@protoc_insertion_point(struct:grpc_lb_v1_ServerList) */
 } grpc_lb_v1_ServerList;
 
 typedef struct _grpc_lb_v1_ClientStatsPerToken {
@@ -111,10 +111,7 @@ typedef struct _grpc_lb_v1_LoadBalanceResponse {
 #define grpc_lb_v1_ClientStats_init_default      {false, grpc_lb_v1_Timestamp_init_default, false, 0, false, 0, false, 0, false, 0, {{NULL}, NULL}}
 #define grpc_lb_v1_LoadBalanceResponse_init_default {false, grpc_lb_v1_InitialLoadBalanceResponse_init_default, false, grpc_lb_v1_ServerList_init_default}
 #define grpc_lb_v1_InitialLoadBalanceResponse_init_default {false, "", false, grpc_lb_v1_Duration_init_default}
-#define grpc_lb_v1_ServerList_init_default \
-  {                                        \
-    { {NULL}, NULL }                       \
-  }
+#define grpc_lb_v1_ServerList_init_default       {{{NULL}, NULL}}
 #define grpc_lb_v1_Server_init_default           {false, {0, {0}}, false, 0, false, "", false, 0}
 #define grpc_lb_v1_Duration_init_zero            {false, 0, false, 0}
 #define grpc_lb_v1_Timestamp_init_zero           {false, 0, false, 0}
@@ -124,14 +121,11 @@ typedef struct _grpc_lb_v1_LoadBalanceResponse {
 #define grpc_lb_v1_ClientStats_init_zero         {false, grpc_lb_v1_Timestamp_init_zero, false, 0, false, 0, false, 0, false, 0, {{NULL}, NULL}}
 #define grpc_lb_v1_LoadBalanceResponse_init_zero {false, grpc_lb_v1_InitialLoadBalanceResponse_init_zero, false, grpc_lb_v1_ServerList_init_zero}
 #define grpc_lb_v1_InitialLoadBalanceResponse_init_zero {false, "", false, grpc_lb_v1_Duration_init_zero}
-#define grpc_lb_v1_ServerList_init_zero \
-  {                                     \
-    { {NULL}, NULL }                    \
-  }
+#define grpc_lb_v1_ServerList_init_zero          {{{NULL}, NULL}}
 #define grpc_lb_v1_Server_init_zero              {false, {0, {0}}, false, 0, false, "", false, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
-#define grpc_lb_v1_ServerList_servers_tag 1
+#define grpc_lb_v1_ServerList_servers_tag        1
 #define grpc_lb_v1_ClientStatsPerToken_load_balance_token_tag 1
 #define grpc_lb_v1_ClientStatsPerToken_num_calls_tag 2
 #define grpc_lb_v1_Duration_seconds_tag          1
