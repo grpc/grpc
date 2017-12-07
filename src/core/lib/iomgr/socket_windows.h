@@ -20,6 +20,9 @@
 #define GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_WINSOCK_SOCKET
 #include <winsock2.h>
 
 #include <grpc/support/atm.h>
@@ -113,6 +116,8 @@ void grpc_socket_become_ready(grpc_exec_ctx* exec_ctx,
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */

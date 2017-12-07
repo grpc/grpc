@@ -35,7 +35,7 @@ static struct {
   const char* value;
 } static_table[] = {
     /* 0: */
-    {NULL, NULL},
+    {nullptr, nullptr},
     /* 1: */
     {":authority", ""},
     /* 2: */

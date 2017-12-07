@@ -24,8 +24,8 @@
 void grpc_census_call_set_context(grpc_call* call, census_context* context) {
   GRPC_API_TRACE("grpc_census_call_set_context(call=%p, census_context=%p)", 2,
                  (call, context));
-  if (context != NULL) {
-    grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, NULL);
+  if (context != nullptr) {
+    grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, nullptr);
   }
 }
 

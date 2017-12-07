@@ -87,11 +87,11 @@ static void test_algorithm_failure(void) {
   gpr_log(GPR_DEBUG, "test_algorithm_failure");
 
   GPR_ASSERT(grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT,
-                                             NULL) == 0);
+                                             nullptr) == 0);
   GPR_ASSERT(
       grpc_compression_algorithm_name(static_cast<grpc_compression_algorithm>(
                                           GRPC_COMPRESS_ALGORITHMS_COUNT + 1),
-                                      NULL) == 0);
+                                      nullptr) == 0);
   mdstr = grpc_slice_from_static_string("this-is-an-invalid-algorithm");
   GPR_ASSERT(grpc_compression_algorithm_from_slice(mdstr) ==
              GRPC_COMPRESS_ALGORITHMS_COUNT);

@@ -100,7 +100,7 @@ void grpc_iomgr_shutdown(grpc_exec_ctx* exec_ctx) {
     }
     exec_ctx->now_is_valid = true;
     exec_ctx->now = GRPC_MILLIS_INF_FUTURE;
-    if (grpc_timer_check(exec_ctx, NULL) == GRPC_TIMERS_FIRED) {
+    if (grpc_timer_check(exec_ctx, nullptr) == GRPC_TIMERS_FIRED) {
       gpr_mu_unlock(&g_mu);
       grpc_exec_ctx_flush(exec_ctx);
       grpc_iomgr_platform_flush();

@@ -75,7 +75,7 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
     goto done;
   }
   // Parse port.
-  if (port == NULL) {
+  if (port == nullptr) {
     if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
     goto done;
   }
@@ -118,7 +118,7 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
   in6->sin6_family = AF_INET6;
   // Handle the RFC6874 syntax for IPv6 zone identifiers.
   char* host_end = (char*)gpr_memrchr(host, '%', strlen(host));
-  if (host_end != NULL) {
+  if (host_end != nullptr) {
     GPR_ASSERT(host_end >= host);
     char host_without_scope[INET6_ADDRSTRLEN];
     size_t host_without_scope_len = (size_t)(host_end - host);
@@ -144,7 +144,7 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
     }
   }
   // Parse port.
-  if (port == NULL) {
+  if (port == nullptr) {
     if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
     goto done;
   }

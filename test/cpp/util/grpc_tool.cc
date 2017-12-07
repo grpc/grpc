@@ -230,7 +230,7 @@ const Command* FindCommand(const grpc::string& name) {
       return &ops[i];
     }
   }
-  return NULL;
+  return nullptr;
 }
 }  // namespace
 
@@ -245,13 +245,13 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
   argv += 2;
 
   const Command* cmd = FindCommand(command);
-  if (cmd != NULL) {
+  if (cmd != nullptr) {
     GrpcTool grpc_tool;
     if (argc < cmd->min_args || argc > cmd->max_args) {
       // Force the command to print its usage message
       fprintf(stderr, "\nWrong number of arguments for %s\n", command.c_str());
       grpc_tool.SetPrintCommandMode(1);
-      return cmd->function(&grpc_tool, -1, NULL, cred, callback);
+      return cmd->function(&grpc_tool, -1, nullptr, cred, callback);
     }
     const bool ok = cmd->function(&grpc_tool, argc, argv, cred, callback);
     return ok ? 0 : 1;
@@ -281,11 +281,11 @@ bool GrpcTool::Help(int argc, const char** argv, const CliCredentials& cred,
     Usage("");
   } else {
     const Command* cmd = FindCommand(argv[0]);
-    if (cmd == NULL) {
+    if (cmd == nullptr) {
       Usage("Unknown command '" + grpc::string(argv[0]) + "'");
     }
     SetPrintCommandMode(0);
-    cmd->function(this, -1, NULL, cred, callback);
+    cmd->function(this, -1, nullptr, cred, callback);
   }
   return true;
 }

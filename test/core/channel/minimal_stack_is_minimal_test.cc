@@ -79,26 +79,27 @@ int main(int argc, char** argv) {
                         "http-client", "connected", NULL);
   errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_SERVER_CHANNEL,
                         "server", "http-server", "connected", NULL);
-  errors += CHECK_STACK(NULL, &minimal_stack_args, GRPC_CLIENT_CHANNEL,
+  errors += CHECK_STACK(nullptr, &minimal_stack_args, GRPC_CLIENT_CHANNEL,
                         "client-channel", NULL);
 
   // tests with a default stack
-  errors += CHECK_STACK("unknown", NULL, GRPC_CLIENT_DIRECT_CHANNEL,
+  errors += CHECK_STACK("unknown", nullptr, GRPC_CLIENT_DIRECT_CHANNEL,
                         "message_size", "deadline", "connected", NULL);
-  errors += CHECK_STACK("unknown", NULL, GRPC_CLIENT_SUBCHANNEL, "message_size",
-                        "connected", NULL);
-  errors += CHECK_STACK("unknown", NULL, GRPC_SERVER_CHANNEL, "server",
+  errors += CHECK_STACK("unknown", nullptr, GRPC_CLIENT_SUBCHANNEL,
+                        "message_size", "connected", NULL);
+  errors += CHECK_STACK("unknown", nullptr, GRPC_SERVER_CHANNEL, "server",
                         "message_size", "deadline", "connected", NULL);
-  errors += CHECK_STACK("chttp2", NULL, GRPC_CLIENT_DIRECT_CHANNEL,
+  errors += CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_DIRECT_CHANNEL,
                         "message_size", "deadline", "http-client",
                         "message_compress", "connected", NULL);
-  errors += CHECK_STACK("chttp2", NULL, GRPC_CLIENT_SUBCHANNEL, "message_size",
-                        "http-client", "message_compress", "connected", NULL);
-  errors += CHECK_STACK("chttp2", NULL, GRPC_SERVER_CHANNEL, "server",
+  errors +=
+      CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_SUBCHANNEL, "message_size",
+                  "http-client", "message_compress", "connected", NULL);
+  errors += CHECK_STACK("chttp2", nullptr, GRPC_SERVER_CHANNEL, "server",
                         "message_size", "deadline", "http-server",
                         "message_compress", "connected", NULL);
-  errors +=
-      CHECK_STACK(NULL, NULL, GRPC_CLIENT_CHANNEL, "client-channel", NULL);
+  errors += CHECK_STACK(nullptr, nullptr, GRPC_CLIENT_CHANNEL, "client-channel",
+                        NULL);
 
   GPR_ASSERT(errors == 0);
   grpc_shutdown();
@@ -120,7 +121,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   grpc_transport fake_transport = {&fake_transport_vtable};
   grpc_channel_stack_builder_set_target(builder, "foo.test.google.fr");
   grpc_channel_args* channel_args = grpc_channel_args_copy(init_args);
-  if (transport_name != NULL) {
+  if (transport_name != nullptr) {
     grpc_channel_stack_builder_set_transport(builder, &fake_transport);
   }
   {
@@ -139,12 +140,12 @@ static int check_stack(const char* file, int line, const char* transport_name,
   va_start(args, channel_stack_type);
   for (;;) {
     char* a = va_arg(args, char*);
-    if (a == NULL) break;
+    if (a == nullptr) break;
     if (v.count != 0) gpr_strvec_add(&v, gpr_strdup(", "));
     gpr_strvec_add(&v, gpr_strdup(a));
   }
   va_end(args);
-  char* expect = gpr_strvec_flatten(&v, NULL);
+  char* expect = gpr_strvec_flatten(&v, nullptr);
   gpr_strvec_destroy(&v);
 
   // build up our "got" list
@@ -153,11 +154,11 @@ static int check_stack(const char* file, int line, const char* transport_name,
       grpc_channel_stack_builder_create_iterator_at_first(builder);
   while (grpc_channel_stack_builder_move_next(it)) {
     const char* name = grpc_channel_stack_builder_iterator_filter_name(it);
-    if (name == NULL) continue;
+    if (name == nullptr) continue;
     if (v.count != 0) gpr_strvec_add(&v, gpr_strdup(", "));
     gpr_strvec_add(&v, gpr_strdup(name));
   }
-  char* got = gpr_strvec_flatten(&v, NULL);
+  char* got = gpr_strvec_flatten(&v, nullptr);
   gpr_strvec_destroy(&v);
   grpc_channel_stack_builder_iterator_destroy(it);
 
@@ -189,7 +190,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
       }
     }
     gpr_strvec_add(&v, gpr_strdup("}"));
-    char* args_str = gpr_strvec_flatten(&v, NULL);
+    char* args_str = gpr_strvec_flatten(&v, nullptr);
     gpr_strvec_destroy(&v);
 
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR,

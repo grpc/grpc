@@ -87,7 +87,7 @@ void grpc_grpclb_client_stats_add_call_dropped_locked(
   gpr_atm_full_fetch_add(&client_stats->num_calls_started, (gpr_atm)1);
   gpr_atm_full_fetch_add(&client_stats->num_calls_finished, (gpr_atm)1);
   // Record the drop.
-  if (client_stats->drop_token_counts == NULL) {
+  if (client_stats->drop_token_counts == nullptr) {
     client_stats->drop_token_counts =
         (grpc_grpclb_dropped_call_counts*)gpr_zalloc(
             sizeof(grpc_grpclb_dropped_call_counts));
@@ -136,12 +136,12 @@ void grpc_grpclb_client_stats_get_locked(
       num_calls_finished_known_received,
       &client_stats->num_calls_finished_known_received);
   *drop_token_counts = client_stats->drop_token_counts;
-  client_stats->drop_token_counts = NULL;
+  client_stats->drop_token_counts = nullptr;
 }
 
 void grpc_grpclb_dropped_call_counts_destroy(
     grpc_grpclb_dropped_call_counts* drop_entries) {
-  if (drop_entries != NULL) {
+  if (drop_entries != nullptr) {
     for (size_t i = 0; i < drop_entries->num_entries; ++i) {
       gpr_free(drop_entries->token_counts[i].token);
     }

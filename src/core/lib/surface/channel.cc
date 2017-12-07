@@ -85,7 +85,7 @@ grpc_channel* grpc_channel_create_with_builder(
     GRPC_STATS_INC_CLIENT_CHANNELS_CREATED(exec_ctx);
   }
   grpc_error* error = grpc_channel_stack_builder_finish(
-      exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL,
+      exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, nullptr,
       (void**)&channel);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
@@ -99,7 +99,7 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   gpr_mu_init(&channel->registered_call_mu);
-  channel->registered_calls = NULL;
+  channel->registered_calls = nullptr;
 
   gpr_atm_no_barrier_store(
       &channel->call_size_estimate,
@@ -179,7 +179,7 @@ grpc_channel* grpc_channel_create(grpc_exec_ctx* exec_ctx, const char* target,
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
   if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
     grpc_channel_stack_builder_destroy(exec_ctx, builder);
-    return NULL;
+    return nullptr;
   }
   return grpc_channel_create_with_builder(exec_ctx, builder,
                                           channel_stack_type);
@@ -240,7 +240,7 @@ static grpc_call* grpc_channel_create_call_internal(
   size_t num_metadata = 0;
 
   GPR_ASSERT(channel->is_client);
-  GPR_ASSERT(!(cq != NULL && pollset_set_alternative != NULL));
+  GPR_ASSERT(!(cq != nullptr && pollset_set_alternative != nullptr));
 
   send_metadata[num_metadata++] = path_mdelem;
   if (!GRPC_MDISNULL(authority_mdelem)) {
@@ -256,7 +256,7 @@ static grpc_call* grpc_channel_create_call_internal(
   args.propagation_mask = propagation_mask;
   args.cq = cq;
   args.pollset_set_alternative = pollset_set_alternative;
-  args.server_transport_data = NULL;
+  args.server_transport_data = nullptr;
   args.add_initial_metadata = send_metadata;
   args.add_initial_metadata_count = num_metadata;
   args.send_deadline = deadline;
@@ -275,12 +275,12 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
   GPR_ASSERT(!reserved);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_call* call = grpc_channel_create_call_internal(
-      &exec_ctx, channel, parent_call, propagation_mask, cq, NULL,
+      &exec_ctx, channel, parent_call, propagation_mask, cq, nullptr,
       grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_PATH,
                               grpc_slice_ref_internal(method)),
-      host != NULL ? grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_AUTHORITY,
-                                             grpc_slice_ref_internal(*host))
-                   : GRPC_MDNULL,
+      host != nullptr ? grpc_mdelem_from_slices(&exec_ctx, GRPC_MDSTR_AUTHORITY,
+                                                grpc_slice_ref_internal(*host))
+                      : GRPC_MDNULL,
       grpc_timespec_to_millis_round_up(deadline));
   grpc_exec_ctx_finish(&exec_ctx);
   return call;
@@ -292,12 +292,12 @@ grpc_call* grpc_channel_create_pollset_set_call(
     const grpc_slice* host, grpc_millis deadline, void* reserved) {
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
-      exec_ctx, channel, parent_call, propagation_mask, NULL, pollset_set,
+      exec_ctx, channel, parent_call, propagation_mask, nullptr, pollset_set,
       grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_PATH,
                               grpc_slice_ref_internal(method)),
-      host != NULL ? grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
-                                             grpc_slice_ref_internal(*host))
-                   : GRPC_MDNULL,
+      host != nullptr ? grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
+                                                grpc_slice_ref_internal(*host))
+                      : GRPC_MDNULL,
       deadline);
 }
 
@@ -345,8 +345,8 @@ grpc_call* grpc_channel_create_registered_call(
   GPR_ASSERT(!reserved);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_call* call = grpc_channel_create_call_internal(
-      &exec_ctx, channel, parent_call, propagation_mask, completion_queue, NULL,
-      GRPC_MDELEM_REF(rc->path), GRPC_MDELEM_REF(rc->authority),
+      &exec_ctx, channel, parent_call, propagation_mask, completion_queue,
+      nullptr, GRPC_MDELEM_REF(rc->path), GRPC_MDELEM_REF(rc->authority),
       grpc_timespec_to_millis_round_up(deadline));
   grpc_exec_ctx_finish(&exec_ctx);
   return call;
@@ -386,7 +386,7 @@ static void destroy_channel(grpc_exec_ctx* exec_ctx, void* arg,
 }
 
 void grpc_channel_destroy(grpc_channel* channel) {
-  grpc_transport_op* op = grpc_make_transport_op(NULL);
+  grpc_transport_op* op = grpc_make_transport_op(nullptr);
   grpc_channel_element* elem;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (channel));

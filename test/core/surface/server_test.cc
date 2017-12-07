@@ -28,40 +28,42 @@
 #include "test/core/util/test_config.h"
 
 void test_register_method_fail(void) {
-  grpc_server* server = grpc_server_create(NULL, NULL);
+  grpc_server* server = grpc_server_create(nullptr, nullptr);
   void* method;
   void* method_old;
-  method =
-      grpc_server_register_method(server, NULL, NULL, GRPC_SRM_PAYLOAD_NONE, 0);
-  GPR_ASSERT(method == NULL);
+  method = grpc_server_register_method(server, nullptr, nullptr,
+                                       GRPC_SRM_PAYLOAD_NONE, 0);
+  GPR_ASSERT(method == nullptr);
   method_old =
       grpc_server_register_method(server, "m", "h", GRPC_SRM_PAYLOAD_NONE, 0);
-  GPR_ASSERT(method_old != NULL);
+  GPR_ASSERT(method_old != nullptr);
   method = grpc_server_register_method(
       server, "m", "h", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
-  GPR_ASSERT(method == NULL);
+  GPR_ASSERT(method == nullptr);
   method_old =
       grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE,
                                   GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-  GPR_ASSERT(method_old != NULL);
+  GPR_ASSERT(method_old != nullptr);
   method =
       grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE, 0);
-  GPR_ASSERT(method == NULL);
+  GPR_ASSERT(method == nullptr);
   method = grpc_server_register_method(
       server, "m2", "h2", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
       GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-  GPR_ASSERT(method == NULL);
+  GPR_ASSERT(method == nullptr);
   grpc_server_destroy(server);
 }
 
 void test_request_call_on_no_server_cq(void) {
-  grpc_completion_queue* cc = grpc_completion_queue_create_for_next(NULL);
-  grpc_server* server = grpc_server_create(NULL, NULL);
+  grpc_completion_queue* cc = grpc_completion_queue_create_for_next(nullptr);
+  grpc_server* server = grpc_server_create(nullptr, nullptr);
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
-             grpc_server_request_call(server, NULL, NULL, NULL, cc, cc, NULL));
+             grpc_server_request_call(server, nullptr, nullptr, nullptr, cc, cc,
+                                      nullptr));
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
-             grpc_server_request_registered_call(server, NULL, NULL, NULL, NULL,
-                                                 NULL, cc, cc, NULL));
+             grpc_server_request_registered_call(server, nullptr, nullptr,
+                                                 nullptr, nullptr, nullptr, cc,
+                                                 cc, nullptr));
   grpc_completion_queue_destroy(cc);
   grpc_server_destroy(server);
 }
@@ -74,24 +76,24 @@ void test_bind_server_twice(void) {
   grpc_channel_args args = {1, &a};
 
   char* addr;
-  grpc_server* server1 = grpc_server_create(&args, NULL);
-  grpc_server* server2 = grpc_server_create(&args, NULL);
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
+  grpc_server* server1 = grpc_server_create(&args, nullptr);
+  grpc_server* server2 = grpc_server_create(&args, nullptr);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   int port = grpc_pick_unused_port_or_die();
   gpr_asprintf(&addr, "[::]:%d", port);
-  grpc_server_register_completion_queue(server1, cq, NULL);
-  grpc_server_register_completion_queue(server2, cq, NULL);
-  GPR_ASSERT(0 == grpc_server_add_secure_http2_port(server2, addr, NULL));
+  grpc_server_register_completion_queue(server1, cq, nullptr);
+  grpc_server_register_completion_queue(server2, cq, nullptr);
+  GPR_ASSERT(0 == grpc_server_add_secure_http2_port(server2, addr, nullptr));
   GPR_ASSERT(port == grpc_server_add_insecure_http2_port(server1, addr));
   GPR_ASSERT(0 == grpc_server_add_insecure_http2_port(server2, addr));
   grpc_server_credentials* fake_creds =
       grpc_fake_transport_security_server_credentials_create();
   GPR_ASSERT(0 == grpc_server_add_secure_http2_port(server2, addr, fake_creds));
   grpc_server_credentials_release(fake_creds);
-  grpc_server_shutdown_and_notify(server1, cq, NULL);
-  grpc_server_shutdown_and_notify(server2, cq, NULL);
-  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
-  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
+  grpc_server_shutdown_and_notify(server1, cq, nullptr);
+  grpc_server_shutdown_and_notify(server2, cq, nullptr);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   grpc_server_destroy(server1);
   grpc_server_destroy(server2);
   grpc_completion_queue_destroy(cq);
@@ -104,7 +106,7 @@ void test_bind_server_to_addr(const char* host, bool secure) {
   gpr_join_host_port(&addr, host, port);
   gpr_log(GPR_INFO, "Test bind to %s", addr);
 
-  grpc_server* server = grpc_server_create(NULL, NULL);
+  grpc_server* server = grpc_server_create(nullptr, nullptr);
   if (secure) {
     grpc_server_credentials* fake_creds =
         grpc_fake_transport_security_server_credentials_create();
@@ -113,21 +115,21 @@ void test_bind_server_to_addr(const char* host, bool secure) {
   } else {
     GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
   }
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(NULL);
-  grpc_server_register_completion_queue(server, cq, NULL);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
-  grpc_server_shutdown_and_notify(server, cq, NULL);
-  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
+  grpc_server_shutdown_and_notify(server, cq, nullptr);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   gpr_free(addr);
 }
 
 static int external_dns_works(const char* host) {
-  grpc_resolved_addresses* res = NULL;
+  grpc_resolved_addresses* res = nullptr;
   grpc_error* error = grpc_blocking_resolve_address(host, "80", &res);
   GRPC_ERROR_UNREF(error);
-  if (res != NULL) {
+  if (res != nullptr) {
     grpc_resolved_addresses_destroy(res);
     return 1;
   }
