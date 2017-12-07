@@ -294,11 +294,11 @@ typedef struct {
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
 /* Timeout in milliseconds to wait for the serverlist from the grpclb load
    balancer before using fallback backend addresses from the resolver.
-   If 0, fallback will never be used. */
+   If 0, fallback will never be used. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
 /* Timeout in milliseconds to confirm that we have lost contact with all the
  * balancers and backends before re-resolving. If 0, re-resolution will never be
- * used. */
+ * used. Default value is 1000. */
 #define GRPC_ARG_GRPCLB_RERESOLUTION_TIMEOUT_MS \
   "grpc.grpclb_reresolution_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */

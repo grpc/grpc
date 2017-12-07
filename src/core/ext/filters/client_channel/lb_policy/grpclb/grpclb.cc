@@ -363,7 +363,8 @@ typedef struct glb_lb_policy {
   bool watching_lb_channel;
 
   /** have we lost contact with the balancers (i.e., the last LB call has
-   * terminated and the new call hasn't returned any non-empty serverlist) */
+   * terminated and the new call hasn't returned any new non-empty serverlist)
+   */
   bool lost_lb_connection;
 
   /** is \a lb_call_retry_timer active? */
@@ -871,8 +872,8 @@ static void rr_handover_locked(grpc_exec_ctx* exec_ctx,
   lb_policy_args_destroy(exec_ctx, args);
 }
 
-static void check_reresolution_need(grpc_exec_ctx* exec_ctx,
-                                    glb_lb_policy* glb_policy) {
+static void maybe_start_reresolution_timer(grpc_exec_ctx* exec_ctx,
+                                           glb_lb_policy* glb_policy) {
   if (glb_policy->reresolution_timeout_ms > 0 &&
       !glb_policy->reresolution_timer_active &&
       glb_policy->lost_lb_connection &&
@@ -899,7 +900,7 @@ static void glb_rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx,
   glb_policy->rr_state = rr_connectivity->state;
   GPR_ASSERT(glb_policy->rr_state != GRPC_CHANNEL_SHUTDOWN);
   if (glb_policy->rr_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    check_reresolution_need(exec_ctx, glb_policy);
+    maybe_start_reresolution_timer(exec_ctx, glb_policy);
   } else if (glb_policy->rr_state == GRPC_CHANNEL_READY &&
              glb_policy->reresolution_timer_active) {
     grpc_timer_cancel(exec_ctx, &glb_policy->reresolution_timer);
@@ -1668,11 +1669,6 @@ static void lb_on_response_received_locked(grpc_exec_ctx* exec_ctx, void* arg,
         }
         /* update serverlist */
         if (serverlist->num_servers > 0) {
-          glb_policy->lost_lb_connection = false;
-          if (glb_policy->reresolution_timer_active) {
-            grpc_timer_cancel(exec_ctx, &glb_policy->reresolution_timer);
-            glb_policy->reresolution_timer_active = false;
-          }
           if (grpc_grpclb_serverlist_equals(glb_policy->serverlist,
                                             serverlist)) {
             if (grpc_lb_glb_trace.enabled()) {
@@ -1702,6 +1698,11 @@ static void lb_on_response_received_locked(grpc_exec_ctx* exec_ctx, void* arg,
             glb_policy->serverlist = serverlist;
             glb_policy->serverlist_index = 0;
             rr_handover_locked(exec_ctx, glb_policy);
+            glb_policy->lost_lb_connection = false;
+            if (glb_policy->reresolution_timer_active) {
+              grpc_timer_cancel(exec_ctx, &glb_policy->reresolution_timer);
+              glb_policy->reresolution_timer_active = false;
+            }
           }
         } else {
           if (grpc_lb_glb_trace.enabled()) {
@@ -1750,16 +1751,15 @@ static void lb_on_fallback_timer_locked(grpc_exec_ctx* exec_ctx, void* arg,
   glb_policy->fallback_timer_active = false;
   /* If we receive a serverlist after the timer fires but before this callback
    * actually runs, don't fall back. */
-  if (glb_policy->serverlist == nullptr) {
-    if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
-      if (grpc_lb_glb_trace.enabled()) {
-        gpr_log(GPR_INFO,
-                "[grpclb %p] Falling back to use backends from resolver",
-                glb_policy);
-      }
-      GPR_ASSERT(glb_policy->fallback_backend_addresses != nullptr);
-      rr_handover_locked(exec_ctx, glb_policy);
+  if (glb_policy->serverlist == nullptr && !glb_policy->shutting_down &&
+      error == GRPC_ERROR_NONE) {
+    if (grpc_lb_glb_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "[grpclb %p] Falling back to use backends from resolver",
+              glb_policy);
     }
+    GPR_ASSERT(glb_policy->fallback_backend_addresses != nullptr);
+    rr_handover_locked(exec_ctx, glb_policy);
   }
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
                             "grpclb_fallback_timer");
@@ -1782,7 +1782,7 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx* exec_ctx,
   /* We need to perform cleanups no matter what. */
   lb_call_destroy_locked(exec_ctx, glb_policy);
   glb_policy->lost_lb_connection = true;
-  check_reresolution_need(exec_ctx, glb_policy);
+  maybe_start_reresolution_timer(exec_ctx, glb_policy);
   // If the load report timer is still pending, we wait for it to be
   // called before restarting the call.  Otherwise, we restart the call
   // here.
@@ -1867,11 +1867,10 @@ static void on_reresolution_requested_locked(grpc_exec_ctx* exec_ctx, void* arg,
   /* If we regain contact with balancers or backends after the timer fires but
    * before this callback actually runs, don't re-resolve. */
   if (glb_policy->lost_lb_connection &&
-      glb_policy->rr_state != GRPC_CHANNEL_READY) {
-    if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
-      grpc_lb_policy_try_reresolve(exec_ctx, &glb_policy->base,
-                                   &grpc_lb_glb_trace, error);
-    }
+      glb_policy->rr_state != GRPC_CHANNEL_READY &&
+      !glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
+    grpc_lb_policy_try_reresolve(exec_ctx, &glb_policy->base,
+                                 &grpc_lb_glb_trace, error);
   }
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base, "reresolution_timer");
 }
