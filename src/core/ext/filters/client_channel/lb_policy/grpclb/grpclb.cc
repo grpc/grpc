@@ -875,7 +875,8 @@ static void maybe_start_reresolution_timer(grpc_exec_ctx* exec_ctx,
   if (glb_policy->reresolution_timeout_ms > 0 &&
       !glb_policy->reresolution_timer_active &&
       glb_policy->lost_lb_connection &&
-      glb_policy->rr_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      (glb_policy->rr_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+       glb_policy->rr_state == GRPC_CHANNEL_IDLE)) {
     grpc_millis deadline =
         grpc_exec_ctx_now(exec_ctx) + glb_policy->reresolution_timeout_ms;
     GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "reresolution_timer");
@@ -897,7 +898,8 @@ static void glb_rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx,
   }
   glb_policy->rr_state = rr_connectivity->state;
   GPR_ASSERT(glb_policy->rr_state != GRPC_CHANNEL_SHUTDOWN);
-  if (glb_policy->rr_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+  if (glb_policy->rr_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+      glb_policy->rr_state == GRPC_CHANNEL_IDLE) {
     maybe_start_reresolution_timer(exec_ctx, glb_policy);
   } else if (glb_policy->rr_state == GRPC_CHANNEL_READY &&
              glb_policy->reresolution_timer_active) {

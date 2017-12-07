@@ -358,9 +358,8 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx* exec_ctx,
    * 2) RULE: ANY subchannel is CONNECTING => policy is CONNECTING.
    *    CHECK: sd->curr_connectivity_state == CONNECTING.
    *
-   * 3) RULE: ALL subchannels are SHUTDOWN =>
-   *          if can't re-resolve, policy is TRANSIENT_FAILURE
-   *          otherwise, policy is IDLE (and requests re-resolution).
+   * 3) RULE: ALL subchannels are SHUTDOWN => policy is IDLE (and requests
+   *          re-resolution).
    *    CHECK: subchannel_list->num_shutdown ==
    *           subchannel_list->num_subchannels.
    *
@@ -385,19 +384,13 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx* exec_ctx,
                                 "rr_connecting");
   } else if (subchannel_list->num_shutdown ==
              subchannel_list->num_subchannels) {
-    /* 3) [TRANSIENT_FAILURE] or [IDLE and re-resolve] */
-    if (p->base.request_reresolution == nullptr) {
-      grpc_connectivity_state_set(
-          exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-          GRPC_ERROR_REF(error), "rr_exhausted_subchannels");
-    } else {
-      grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                  GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                  "rr_exhausted_subchannels+reresolve");
-      p->started_picking = false;
-      grpc_lb_policy_try_reresolve(exec_ctx, &p->base,
-                                   &grpc_lb_round_robin_trace, GRPC_ERROR_NONE);
-    }
+    /* 3) IDLE and re-resolve */
+    grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
+                                GRPC_ERROR_NONE,
+                                "rr_exhausted_subchannels+reresolve");
+    p->started_picking = false;
+    grpc_lb_policy_try_reresolve(exec_ctx, &p->base, &grpc_lb_round_robin_trace,
+                                 GRPC_ERROR_NONE);
   } else if (subchannel_list->num_shutdown +
                  subchannel_list->num_transient_failures ==
              subchannel_list->num_subchannels) {
