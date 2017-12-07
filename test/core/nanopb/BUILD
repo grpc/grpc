@@ -22,8 +22,8 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "fuzzer_response",
-    srcs = ["fuzzer_response.c"],
-    language = "C",
+    srcs = ["fuzzer_response.cc"],
+    language = "C++",
     corpus = "corpus_response",
     deps = [
         "//:gpr",
@@ -34,8 +34,8 @@ grpc_fuzzer(
 
 grpc_fuzzer(
     name = "fuzzer_serverlist",
-    srcs = ["fuzzer_serverlist.c"],
-    language = "C",
+    srcs = ["fuzzer_serverlist.cc"],
+    language = "C++",
     corpus = "corpus_serverlist",
     deps = [
         "//:gpr",

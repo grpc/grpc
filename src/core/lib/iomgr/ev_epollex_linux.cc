@@ -18,6 +18,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <grpc/support/log.h>
+
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
 
@@ -34,7 +36,6 @@
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
@@ -48,6 +49,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/support/spinlock.h"
 
 // debug aid: create workers on the heap (allows asan to spot
@@ -153,8 +155,8 @@ struct grpc_fd {
   gpr_mu pollable_mu;
   pollable* pollable_obj;
 
-  gpr_atm read_closure;
-  gpr_atm write_closure;
+  grpc_core::ManualConstructor<grpc_core::LockfreeEvent> read_closure;
+  grpc_core::ManualConstructor<grpc_core::LockfreeEvent> write_closure;
 
   struct grpc_fd* freelist_next;
   grpc_closure* on_done_closure;
@@ -286,8 +288,8 @@ static void fd_destroy(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   fd->freelist_next = fd_freelist;
   fd_freelist = fd;
 
-  grpc_lfev_destroy(&fd->read_closure);
-  grpc_lfev_destroy(&fd->write_closure);
+  fd->read_closure.Destroy();
+  fd->write_closure.Destroy();
 
   gpr_mu_unlock(&fd_freelist_mu);
 }
@@ -347,8 +349,8 @@ static grpc_fd* fd_create(int fd, const char* name) {
   new_fd->pollable_obj = NULL;
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
-  grpc_lfev_init(&new_fd->read_closure);
-  grpc_lfev_init(&new_fd->write_closure);
+  new_fd->read_closure.Init();
+  new_fd->write_closure.Init();
   gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = NULL;
@@ -411,27 +413,26 @@ static grpc_pollset* fd_get_read_notifier_pollset(grpc_exec_ctx* exec_ctx,
 }
 
 static bool fd_is_shutdown(grpc_fd* fd) {
-  return grpc_lfev_is_shutdown(&fd->read_closure);
+  return fd->read_closure->IsShutdown();
 }
 
 /* Might be called multiple times */
 static void fd_shutdown(grpc_exec_ctx* exec_ctx, grpc_fd* fd, grpc_error* why) {
-  if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
-                             GRPC_ERROR_REF(why))) {
+  if (fd->read_closure->SetShutdown(exec_ctx, GRPC_ERROR_REF(why))) {
     shutdown(fd->fd, SHUT_RDWR);
-    grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
+    fd->write_closure->SetShutdown(exec_ctx, GRPC_ERROR_REF(why));
   }
   GRPC_ERROR_UNREF(why);
 }
 
 static void fd_notify_on_read(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                               grpc_closure* closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
+  fd->read_closure->NotifyOn(exec_ctx, closure);
 }
 
 static void fd_notify_on_write(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                                grpc_closure* closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
+  fd->write_closure->NotifyOn(exec_ctx, closure);
 }
 
 /*******************************************************************************
@@ -702,7 +703,7 @@ static int poll_deadline_to_millis_timeout(grpc_exec_ctx* exec_ctx,
 
 static void fd_become_readable(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                                grpc_pollset* notifier) {
-  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
+  fd->read_closure->SetReady(exec_ctx);
 
   /* Note, it is possible that fd_become_readable might be called twice with
      different 'notifier's when an fd becomes readable and it is in two epoll
@@ -714,7 +715,7 @@ static void fd_become_readable(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx* exec_ctx, grpc_fd* fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
+  fd->write_closure->SetReady(exec_ctx);
 }
 
 static grpc_error* fd_get_or_become_pollable(grpc_fd* fd, pollable** p) {
@@ -1451,10 +1452,12 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
   }
 
   if (!grpc_has_wakeup_fd()) {
+    gpr_log(GPR_ERROR, "Skipping epollex because of no wakeup fd.");
     return NULL;
   }
 
   if (!grpc_is_epollexclusive_available()) {
+    gpr_log(GPR_INFO, "Skipping epollex because it is not supported.");
     return NULL;
   }
 
@@ -1480,6 +1483,8 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
  * NULL */
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested) {
+  gpr_log(GPR_ERROR,
+          "Skipping epollex becuase GRPC_LINUX_EPOLL is not defined.");
   return NULL;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */

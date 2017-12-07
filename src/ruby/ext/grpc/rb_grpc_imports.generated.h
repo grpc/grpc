@@ -629,7 +629,7 @@ extern gpr_cmdline_add_int_type gpr_cmdline_add_int_import;
 typedef void(*gpr_cmdline_add_flag_type)(gpr_cmdline* cl, const char* name, const char* help, int* value);
 extern gpr_cmdline_add_flag_type gpr_cmdline_add_flag_import;
 #define gpr_cmdline_add_flag gpr_cmdline_add_flag_import
-typedef void(*gpr_cmdline_add_string_type)(gpr_cmdline* cl, const char* name, const char* help, char** value);
+typedef void(*gpr_cmdline_add_string_type)(gpr_cmdline* cl, const char* name, const char* help, const char** value);
 extern gpr_cmdline_add_string_type gpr_cmdline_add_string_import;
 #define gpr_cmdline_add_string gpr_cmdline_add_string_import
 typedef void(*gpr_cmdline_on_extra_arg_type)(gpr_cmdline* cl, const char* name, const char* help, void (*on_extra_arg)(void* user_data, const char* arg), void* user_data);

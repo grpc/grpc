@@ -46,7 +46,7 @@ def main():
             'build': 'private',
             'language': 'c',
             'src': [
-              'test/core/bad_client/bad_client.c'
+              'test/core/bad_client/bad_client.cc'
             ],
             'headers': [
               'test/core/bad_client/bad_client.h'
@@ -66,7 +66,7 @@ def main():
               'build': 'test',
               'language': 'c',
               'secure': 'no',
-              'src': ['test/core/bad_client/tests/%s.c' % t],
+              'src': ['test/core/bad_client/tests/%s.cc' % t],
               'vs_proj_dir': 'test',
               'exclude_iomgrs': ['uv'],
               'deps': [

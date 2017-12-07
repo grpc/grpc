@@ -225,6 +225,11 @@ static void timer_main_loop(grpc_exec_ctx* exec_ctx) {
   for (;;) {
     grpc_millis next = GRPC_MILLIS_INF_FUTURE;
     grpc_exec_ctx_invalidate_now(exec_ctx);
+
+    /* Calibrate g_start_time in exec_ctx.cc with a regular interval in case the
+     * system clock has changed */
+    grpc_exec_ctx_maybe_update_start_time(exec_ctx);
+
     // check timer state, updates next to the next time to run a check
     switch (grpc_timer_check(exec_ctx, &next)) {
       case GRPC_TIMERS_FIRED:

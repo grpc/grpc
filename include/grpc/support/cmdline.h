@@ -65,7 +65,7 @@ GPRAPI void gpr_cmdline_add_flag(gpr_cmdline* cl, const char* name,
                                  const char* help, int* value);
 /** And for a string */
 GPRAPI void gpr_cmdline_add_string(gpr_cmdline* cl, const char* name,
-                                   const char* help, char** value);
+                                   const char* help, const char** value);
 /** Set a callback for non-named arguments */
 GPRAPI void gpr_cmdline_on_extra_arg(
     gpr_cmdline* cl, const char* name, const char* help,

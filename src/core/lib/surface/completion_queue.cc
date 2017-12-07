@@ -127,6 +127,7 @@ static grpc_error* non_polling_poller_work(grpc_exec_ctx* exec_ctx,
   while (!npp->shutdown && !w.kicked &&
          !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts))
     ;
+  grpc_exec_ctx_invalidate_now(exec_ctx);
   if (&w == npp->root) {
     npp->root = w.next;
     if (&w == npp->root) {
@@ -375,8 +376,8 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
       (grpc_completion_queue*)gpr_tls_get(&g_cached_cq) == cq) {
     *tag = storage->tag;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    storage->done(&exec_ctx, storage->done_arg, storage);
     *ok = (storage->next & (uintptr_t)(1)) == 1;
+    storage->done(&exec_ctx, storage->done_arg, storage);
     ret = 1;
     cq_next_data* cqd = (cq_next_data*)DATA_FROM_CQ(cq);
     if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
