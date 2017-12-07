@@ -294,7 +294,6 @@ static void add_pending_ping(pending_ping** root, grpc_closure* notify) {
 /*
  * glb_lb_policy
  */
-typedef struct rr_connectivity_data rr_connectivity_data;
 
 typedef struct glb_lb_policy {
   /** base policy: must be first */
@@ -377,6 +376,9 @@ typedef struct glb_lb_policy {
   /** called upon changes to the LB channel's connectivity. */
   grpc_closure lb_channel_on_connectivity_changed;
 
+  /** called upon changes to the RR's connectivity. */
+  grpc_closure rr_on_connectivity_changed;
+
   /************************************************************/
   /*  client data associated with the LB server communication */
   /************************************************************/
@@ -441,13 +443,6 @@ typedef struct glb_lb_policy {
   /* Client load report message payload. */
   grpc_byte_buffer* client_load_report_payload;
 } glb_lb_policy;
-
-/* Keeps track and reacts to changes in connectivity of the RR instance */
-struct rr_connectivity_data {
-  grpc_closure on_change;
-  grpc_connectivity_state state;
-  glb_lb_policy* glb_policy;
-};
 
 static bool is_server_valid(const grpc_grpclb_server* server, size_t idx,
                             bool log) {
@@ -799,21 +794,11 @@ static void create_rr_locked(grpc_exec_ctx* exec_ctx, glb_lb_policy* glb_policy,
                                    glb_policy->rr_policy->interested_parties,
                                    glb_policy->base.interested_parties);
 
-  /* Allocate the data for the tracking of the new RR policy's connectivity.
-   * It'll be deallocated in glb_rr_connectivity_changed() */
-  rr_connectivity_data* rr_connectivity =
-      (rr_connectivity_data*)gpr_zalloc(sizeof(rr_connectivity_data));
-  GRPC_CLOSURE_INIT(&rr_connectivity->on_change,
-                    glb_rr_connectivity_changed_locked, rr_connectivity,
-                    grpc_combiner_scheduler(glb_policy->base.combiner));
-  rr_connectivity->glb_policy = glb_policy;
-  rr_connectivity->state = glb_policy->rr_state;
-
   /* Subscribe to changes to the connectivity of the new RR */
   GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "glb_rr_connectivity_cb");
-  grpc_lb_policy_notify_on_state_change_locked(exec_ctx, glb_policy->rr_policy,
-                                               &rr_connectivity->state,
-                                               &rr_connectivity->on_change);
+  grpc_lb_policy_notify_on_state_change_locked(
+      exec_ctx, glb_policy->rr_policy, &glb_policy->rr_state,
+      &glb_policy->rr_on_connectivity_changed);
   grpc_lb_policy_exit_idle_locked(exec_ctx, glb_policy->rr_policy);
 
   /* Update picks and pings in wait */
@@ -888,15 +873,12 @@ static void maybe_start_reresolution_timer(grpc_exec_ctx* exec_ctx,
 
 static void glb_rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx,
                                                void* arg, grpc_error* error) {
-  rr_connectivity_data* rr_connectivity = (rr_connectivity_data*)arg;
-  glb_lb_policy* glb_policy = rr_connectivity->glb_policy;
+  glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
   if (glb_policy->base.shutting_down) {
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
                               "glb_rr_connectivity_cb");
-    gpr_free(rr_connectivity);
     return;
   }
-  glb_policy->rr_state = rr_connectivity->state;
   GPR_ASSERT(glb_policy->rr_state != GRPC_CHANNEL_SHUTDOWN);
   if (glb_policy->rr_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
       glb_policy->rr_state == GRPC_CHANNEL_IDLE) {
@@ -909,9 +891,9 @@ static void glb_rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx,
   update_lb_connectivity_status_locked(exec_ctx, glb_policy,
                                        GRPC_ERROR_REF(error));
   /* Resubscribe. Reuse the "glb_rr_connectivity_cb" weak ref. */
-  grpc_lb_policy_notify_on_state_change_locked(exec_ctx, glb_policy->rr_policy,
-                                               &rr_connectivity->state,
-                                               &rr_connectivity->on_change);
+  grpc_lb_policy_notify_on_state_change_locked(
+      exec_ctx, glb_policy->rr_policy, &glb_policy->rr_state,
+      &glb_policy->rr_on_connectivity_changed);
 }
 
 static void destroy_balancer_name(grpc_exec_ctx* exec_ctx,
@@ -2027,6 +2009,9 @@ static grpc_lb_policy* glb_create(grpc_exec_ctx* exec_ctx,
     return nullptr;
   }
   grpc_subchannel_index_ref();
+  GRPC_CLOSURE_INIT(&glb_policy->rr_on_connectivity_changed,
+                    glb_rr_connectivity_changed_locked, glb_policy,
+                    grpc_combiner_scheduler(args->combiner));
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
