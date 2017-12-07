@@ -25,6 +25,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/any.h"
 #include "src/core/lib/support/arena.h"
 #include "src/core/lib/support/function.h"
 #include "src/core/lib/support/memory.h"
@@ -66,19 +67,31 @@ extern DebugOnlyTraceFlag grpc_trace_metadata;
 namespace metadata {
 
 class Collection;
-
-typedef Function<bool(Collection*)> CollectionSetFunc;
+typedef Any<> AnyValue;
 
 class Key {
  public:
-  virtual bool Parse(grpc_slice slice, CollectionSetFunc* set_fn) = 0;
+  virtual AnyValue Parse(grpc_slice slice) const = 0;
+  virtual bool ParseIntoCollection(grpc_slice slice,
+                                   Collection* collection) const = 0;
+  virtual bool SetInCollection(const AnyValue& value,
+                               Collection* collection) const = 0;
+  virtual AnyValue GetFromCollection(const Collection* collection) const = 0;
+  virtual bool SerializeValue(const AnyValue& value,
+                              grpc_slice_buffer* buffer) const = 0;
+  virtual bool SerializeFromCollection(const Collection* collection,
+                                       grpc_slice_buffer* buffer) const = 0;
 };
 
 template <typename T>
 class TypedKey : public Key {
  public:
-  virtual void SetInCollection(const T& value, Collection* collection) = 0;
-  virtual const T* GetFromCollection(const Collection* collection) = 0;
+  virtual void TypedSetInCollection(const T& value,
+                                    Collection* collection) const = 0;
+  virtual const T* TypedGetFromCollection(
+      const Collection* collection) const = 0;
+  virtual bool TypedSerializeValue(const T& value,
+                                   grpc_slice_buffer* buffer) const = 0;
 };
 
 enum class HttpMethod : uint8_t {
@@ -215,23 +228,49 @@ const Key* LookupKey(grpc_slice key_name);
 namespace impl {
 
 template <NamedKeys key>
-class NamedKey : public Key {
+class NamedKey final : public Key {
  public:
-  bool ParseInto(grpc_slice slice, Collection* collection) {
+  bool ParseIntoCollection(grpc_slice slice, Collection* collection) {
     return collection->SetNamedKey(key, slice, false);
   }
 };
 
 template <typename T, bool (Collection::*SetFn)(T, bool),
-          bool (*Parse)(grpc_slice slice, T* value)>
-class SpecialKey : public Key {
+          bool (Collection::*HasFn)() const,
+          const T& (Collection::*GetFn)() const,
+          bool (*ParseFn)(grpc_slice slice, T* value),
+          bool (*SerializeFn)(const T& value, grpc_slice_buffer* buffer)>
+class SpecialKey final : public TypedKey<T> {
  public:
-  bool ParseInto(grpc_slice slice, Collection* collection) {
-    T val;
-    if (!Parse(slice, &val)) {
-      return false;
+  AnyValue Parse(grpc_slice slice, AnyValue* value) const override {
+    T x;
+    if (ParseFn(slice, &x)) {
+      return AnyValue(std::move(x));
+    } else {
+      return AnyValue();
     }
+  }
+  bool ParseIntoCollection(grpc_slice slice,
+                           Collection* collection) const override {
+    T val;
+    if (!ParseFn(slice, &val)) return false;
     return (collection->*SetFn)(val, false);
+  }
+  bool SetInCollection(const AnyValue& value,
+                       Collection* collection) const override {
+    const T* p = value.as<T>();
+    if (p == nullptr) return false;
+    return (collection->*SetFn)(*p, false);
+  }
+  AnyValue GetFromCollection(const Collection* collection) const override {
+    if (!(collection->*HasFn)()) return AnyValue();
+    return AnyValue((collection->*GetFn)());
+  }
+  bool SerializeValue(const AnyValue& value,
+                      grpc_slice_buffer* buffer) const override {
+    const T* val = value.as<T>();
+    if (!val) return false;
+    return SerializeFn(*val, buffer);
   }
 };
 
@@ -377,28 +416,23 @@ typedef struct grpc_metadata_batch {
 } grpc_metadata_batch;
 
 void grpc_metadata_batch_init(grpc_metadata_batch* batch);
-void grpc_metadata_batch_destroy(grpc_exec_ctx* exec_ctx,
-                                 grpc_metadata_batch* batch);
-void grpc_metadata_batch_clear(grpc_exec_ctx* exec_ctx,
-                               grpc_metadata_batch* batch);
+void grpc_metadata_batch_destroy(grpc_metadata_batch* batch);
+void grpc_metadata_batch_clear(grpc_metadata_batch* batch);
 bool grpc_metadata_batch_is_empty(grpc_metadata_batch* batch);
 
 /* Returns the transport size of the batch. */
 size_t grpc_metadata_batch_size(grpc_metadata_batch* batch);
 
 /** Remove \a storage from the batch, unreffing the mdelem contained */
-void grpc_metadata_batch_remove(grpc_exec_ctx* exec_ctx,
-                                grpc_metadata_batch* batch,
+void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
                                 grpc_linked_mdelem* storage);
 
 /** Substitute a new mdelem for an old value */
-grpc_error* grpc_metadata_batch_substitute(grpc_exec_ctx* exec_ctx,
-                                           grpc_metadata_batch* batch,
+grpc_error* grpc_metadata_batch_substitute(grpc_metadata_batch* batch,
                                            grpc_linked_mdelem* storage,
                                            grpc_mdelem new_value);
 
-void grpc_metadata_batch_set_value(grpc_exec_ctx* exec_ctx,
-                                   grpc_linked_mdelem* storage,
+void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
                                    grpc_slice value);
 
 /** Add \a storage to the beginning of \a batch. storage->md is
@@ -406,17 +440,17 @@ void grpc_metadata_batch_set_value(grpc_exec_ctx* exec_ctx,
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */
-grpc_error* grpc_metadata_batch_link_head(
-    grpc_exec_ctx* exec_ctx, grpc_metadata_batch* batch,
-    grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
+grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
+                                          grpc_linked_mdelem* storage)
+    GRPC_MUST_USE_RESULT;
 /** Add \a storage to the end of \a batch. storage->md is
     assumed to be valid.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */
-grpc_error* grpc_metadata_batch_link_tail(
-    grpc_exec_ctx* exec_ctx, grpc_metadata_batch* batch,
-    grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
+grpc_error* grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
+                                          grpc_linked_mdelem* storage)
+    GRPC_MUST_USE_RESULT;
 
 /** Add \a elem_to_add as the first element in \a batch, using
     \a storage as backing storage for the linked list element.
@@ -425,8 +459,8 @@ grpc_error* grpc_metadata_batch_link_tail(
     for the lifetime of the call.
     Takes ownership of \a elem_to_add */
 grpc_error* grpc_metadata_batch_add_head(
-    grpc_exec_ctx* exec_ctx, grpc_metadata_batch* batch,
-    grpc_linked_mdelem* storage, grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
     \a storage is owned by the caller and must survive for the
@@ -434,8 +468,8 @@ grpc_error* grpc_metadata_batch_add_head(
     for the lifetime of the call.
     Takes ownership of \a elem_to_add */
 grpc_error* grpc_metadata_batch_add_tail(
-    grpc_exec_ctx* exec_ctx, grpc_metadata_batch* batch,
-    grpc_linked_mdelem* storage, grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 
 grpc_error* grpc_attach_md_to_error(grpc_error* src, grpc_mdelem md);
 
@@ -452,11 +486,10 @@ typedef struct {
   { GRPC_ERROR_NONE, GRPC_MDNULL }
 
 typedef grpc_filtered_mdelem (*grpc_metadata_batch_filter_func)(
-    grpc_exec_ctx* exec_ctx, void* user_data, grpc_mdelem elem);
+    void* user_data, grpc_mdelem elem);
 grpc_error* grpc_metadata_batch_filter(
-    grpc_exec_ctx* exec_ctx, grpc_metadata_batch* batch,
-    grpc_metadata_batch_filter_func func, void* user_data,
-    const char* composite_error_string) GRPC_MUST_USE_RESULT;
+    grpc_metadata_batch* batch, grpc_metadata_batch_filter_func func,
+    void* user_data, const char* composite_error_string) GRPC_MUST_USE_RESULT;
 
 #ifndef NDEBUG
 void grpc_metadata_batch_assert_ok(grpc_metadata_batch* comd);

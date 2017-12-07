@@ -835,6 +835,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
+        "support_any",
     ],
 )
 
