@@ -262,7 +262,7 @@ static void poll_server_until_read_done(test_tcp_server* server,
   poll_args* pa = (poll_args*)gpr_malloc(sizeof(*pa));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
-  gpr_thd_new(&id, actually_poll_server, pa, nullptr);
+  gpr_thd_new(&id, "grpc_poll_server", actually_poll_server, pa, nullptr);
 }
 
 static void run_test(const char* response_payload,

@@ -23,19 +23,13 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** A load balancing policy: specified by a vtable and a struct (which
     is expected to be extended to contain some parameters) */
 typedef struct grpc_lb_policy grpc_lb_policy;
 typedef struct grpc_lb_policy_vtable grpc_lb_policy_vtable;
 typedef struct grpc_lb_policy_args grpc_lb_policy_args;
 
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_lb_policy_refcount;
-#endif
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable* vtable;
@@ -44,6 +38,8 @@ struct grpc_lb_policy {
   grpc_pollset_set* interested_parties;
   /* combiner under which lb_policy actions take place */
   grpc_combiner* combiner;
+  /* callback to force a re-resolution */
+  grpc_closure* request_reresolution;
 };
 
 /** Extra arguments for an LB pick */
@@ -102,6 +98,11 @@ struct grpc_lb_policy_vtable {
 
   void (*update_locked)(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
                         const grpc_lb_policy_args* args);
+
+  /** \see grpc_lb_policy_set_reresolve_closure */
+  void (*set_reresolve_closure_locked)(grpc_exec_ctx* exec_ctx,
+                                       grpc_lb_policy* policy,
+                                       grpc_closure* request_reresolution);
 };
 
 #ifndef NDEBUG
@@ -208,8 +209,16 @@ void grpc_lb_policy_update_locked(grpc_exec_ctx* exec_ctx,
                                   grpc_lb_policy* policy,
                                   const grpc_lb_policy_args* lb_policy_args);
 
-#ifdef __cplusplus
-}
-#endif
+/** Set the re-resolution closure to \a request_reresolution. */
+void grpc_lb_policy_set_reresolve_closure_locked(
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
+    grpc_closure* request_reresolution);
+
+/** Try to request a re-resolution. It's NOT a public API; it's only for use by
+    the LB policy implementations. */
+void grpc_lb_policy_try_reresolve(grpc_exec_ctx* exec_ctx,
+                                  grpc_lb_policy* policy,
+                                  grpc_core::TraceFlag* grpc_lb_trace,
+                                  grpc_error* error);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H */

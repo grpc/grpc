@@ -39,7 +39,7 @@ _IMAGE_BUILDER = 'tools/run_tests/dockerize/build_interop_image.sh'
 _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
 _RELEASES = sorted(list(set(
-    i for l in client_matrix.LANG_RELEASE_MATRIX.values() for i in l)))
+    client_matrix.get_release_tag_name(info) for lang in client_matrix.LANG_RELEASE_MATRIX.values() for info in lang)))
 
 # Destination directory inside docker image to keep extra info from build time.
 _BUILD_INFO = '/var/local/build_info'
@@ -76,6 +76,15 @@ argp.add_argument('--git_checkout_root',
 argp.add_argument('--keep',
                   action='store_true',
                   help='keep the created local images after uploading to GCR')
+
+argp.add_argument('--reuse_git_root',
+                  default=False,
+                  action='store_const',
+                  const=True,                  
+                  help='reuse the repo dir. If False, the existing git root '
+                  'directory will removed before a clean checkout, because '
+                  'reusing the repo can cause git checkout error if you switch '
+                  'between releases.')
 
 
 args = argp.parse_args()
@@ -132,8 +141,11 @@ def build_image_jobspec(runtime, env, gcr_tag, stack_base):
       'TTY_FLAG': '-t'
   }
   build_env.update(env)
+  image_builder_path = _IMAGE_BUILDER
+  if client_matrix.should_build_docker_interop_image_from_release_tag(lang):
+    image_builder_path = os.path.join(stack_base, _IMAGE_BUILDER)
   build_job = jobset.JobSpec(
-          cmdline=[os.path.join(stack_base, _IMAGE_BUILDER)],
+          cmdline=[image_builder_path],
           environ=build_env,
           shortname='build_docker_%s' % runtime,
           timeout_seconds=30*60)
@@ -148,10 +160,10 @@ def build_all_images_for_lang(lang):
     releases = ['master']
   else:
     if args.release == 'all':
-      releases = client_matrix.LANG_RELEASE_MATRIX[lang]
+      releases = client_matrix.get_release_tags(lang)
     else:
       # Build a particular release.
-      if args.release not in ['master'] + client_matrix.LANG_RELEASE_MATRIX[lang]:
+      if args.release not in ['master'] + client_matrix.get_release_tags(lang):
         jobset.message('SKIPPED',
                        '%s for %s is not defined' % (args.release, lang),
                        do_newline=True)
@@ -214,6 +226,33 @@ def cleanup():
 docker_images_cleanup = []
 atexit.register(cleanup)
 
+def maybe_apply_patches_on_git_tag(stack_base, lang, release):
+  files_to_patch = []
+  for release_info in client_matrix.LANG_RELEASE_MATRIX[lang]:
+    if client_matrix.get_release_tag_name(release_info) == release:
+      files_to_patch = release_info[release].get('patch')
+      break
+  if not files_to_patch:
+    return
+  patch_file_relative_path = 'patches/%s_%s/git_repo.patch' % (lang, release)
+  patch_file = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                            patch_file_relative_path))
+  if not os.path.exists(patch_file):
+    jobset.message('FAILED', 'expected patch file |%s| to exist' % patch_file)
+    sys.exit(1)
+  subprocess.check_output(
+      ['git', 'apply', patch_file], cwd=stack_base, stderr=subprocess.STDOUT)
+  for repo_relative_path in files_to_patch:
+    subprocess.check_output(
+        ['git', 'add', repo_relative_path],
+        cwd=stack_base,
+        stderr=subprocess.STDOUT)
+  subprocess.check_output(
+      ['git', 'commit', '-m', ('Hack performed on top of %s git '
+                               'tag in order to build and run the %s '
+                               'interop tests on that tag.' % (lang, release))],
+      cwd=stack_base, stderr=subprocess.STDOUT)
+
 def checkout_grpc_stack(lang, release):
   """Invokes 'git check' for the lang/release and returns directory created."""
   assert args.git_checkout and args.git_checkout_root
@@ -227,6 +266,11 @@ def checkout_grpc_stack(lang, release):
   repo_dir = os.path.splitext(os.path.basename(repo))[0]
   stack_base = os.path.join(args.git_checkout_root, repo_dir)
 
+  # Clean up leftover repo dir if necessary.
+  if not args.reuse_git_root and os.path.exists(stack_base):
+    jobset.message('START', 'Removing git checkout root.', do_newline=True)
+    shutil.rmtree(stack_base)
+
   if not os.path.exists(stack_base):
     subprocess.check_call(['git', 'clone', '--recursive', repo],
                           cwd=os.path.dirname(stack_base))
@@ -238,6 +282,7 @@ def checkout_grpc_stack(lang, release):
   assert not os.path.dirname(__file__).startswith(stack_base)
   output = subprocess.check_output(
       ['git', 'checkout', release], cwd=stack_base, stderr=subprocess.STDOUT)
+  maybe_apply_patches_on_git_tag(stack_base, lang, release)
   commit_log = subprocess.check_output(['git', 'log', '-1'], cwd=stack_base)
   jobset.message('SUCCESS', 'git checkout', 
                  '%s: %s' % (str(output), commit_log), 

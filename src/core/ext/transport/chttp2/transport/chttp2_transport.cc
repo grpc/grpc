@@ -90,13 +90,9 @@ static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
 static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
-grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false, "http");
-grpc_tracer_flag grpc_flowctl_trace = GRPC_TRACER_INITIALIZER(false, "flowctl");
-
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_chttp2_refcount =
-    GRPC_TRACER_INITIALIZER(false, "chttp2_refcount");
-#endif
+grpc_core::TraceFlag grpc_http_trace(false, "http");
+grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
+                                                         "chttp2_refcount");
 
 /* forward declarations of various callbacks that we'll build closures around */
 static void write_action_begin_locked(grpc_exec_ctx* exec_ctx, void* t,
@@ -235,7 +231,7 @@ static void destruct_transport(grpc_exec_ctx* exec_ctx,
 void grpc_chttp2_unref_transport(grpc_exec_ctx* exec_ctx,
                                  grpc_chttp2_transport* t, const char* reason,
                                  const char* file, int line) {
-  if (GRPC_TRACER_ON(grpc_trace_chttp2_refcount)) {
+  if (grpc_trace_chttp2_refcount.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&t->refs.count);
     gpr_log(GPR_DEBUG, "chttp2:unref:%p %" PRIdPTR "->%" PRIdPTR " %s [%s:%d]",
             t, val, val - 1, reason, file, line);
@@ -246,7 +242,7 @@ void grpc_chttp2_unref_transport(grpc_exec_ctx* exec_ctx,
 
 void grpc_chttp2_ref_transport(grpc_chttp2_transport* t, const char* reason,
                                const char* file, int line) {
-  if (GRPC_TRACER_ON(grpc_trace_chttp2_refcount)) {
+  if (grpc_trace_chttp2_refcount.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&t->refs.count);
     gpr_log(GPR_DEBUG, "chttp2:  ref:%p %" PRIdPTR "->%" PRIdPTR " %s [%s:%d]",
             t, val, val + 1, reason, file, line);
@@ -553,6 +549,7 @@ static void init_transport(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
   /* No pings allowed before receiving a header or data frame. */
   t->ping_state.pings_before_data_required = 0;
   t->ping_state.is_delayed_ping_timer_set = false;
+  t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
 
   t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
   t->ping_recv_state.ping_strikes = 0;
@@ -654,6 +651,11 @@ static void close_transport_locked(grpc_exec_ctx* exec_ctx,
     }
     GPR_ASSERT(t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE);
     grpc_endpoint_shutdown(exec_ctx, t->ep, GRPC_ERROR_REF(error));
+  }
+  if (t->notify_on_receive_settings != nullptr) {
+    GRPC_CLOSURE_SCHED(exec_ctx, t->notify_on_receive_settings,
+                       GRPC_ERROR_CANCELLED);
+    t->notify_on_receive_settings = nullptr;
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1237,7 +1239,7 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx* exec_ctx,
     return;
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     const char* errstr = grpc_error_string(error);
     gpr_log(
         GPR_DEBUG,
@@ -1396,7 +1398,7 @@ static void perform_stream_op_locked(grpc_exec_ctx* exec_ctx, void* stream_op,
 
   GRPC_STATS_INC_HTTP2_OP_BATCHES(exec_ctx);
 
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     char* str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_DEBUG, "perform_stream_op_locked: %s; on_complete = %p", str,
             op->on_complete);
@@ -1686,7 +1688,7 @@ static void perform_stream_op(grpc_exec_ctx* exec_ctx, grpc_transport* gt,
     }
   }
 
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     char* str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_DEBUG, "perform_stream_op[s=%p]: %s", s, str);
     gpr_free(str);
@@ -1762,7 +1764,7 @@ static void send_goaway(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
   grpc_http2_error_code http_error;
   grpc_slice slice;
   grpc_error_get_status(exec_ctx, error, GRPC_MILLIS_INF_FUTURE, nullptr,
-                        &slice, &http_error);
+                        &slice, &http_error, nullptr);
   grpc_chttp2_goaway_append(t->last_new_stream_id, (uint32_t)http_error,
                             grpc_slice_ref_internal(slice), &t->qbuf);
   grpc_chttp2_initiate_write(exec_ctx, t,
@@ -1794,7 +1796,6 @@ static void perform_transport_op_locked(grpc_exec_ctx* exec_ctx,
   grpc_transport_op* op = (grpc_transport_op*)stream_op;
   grpc_chttp2_transport* t =
       (grpc_chttp2_transport*)op->handler_private.extra_arg;
-  grpc_error* close_transport = op->disconnect_with_error;
 
   if (op->goaway_error) {
     send_goaway(exec_ctx, t, op->goaway_error);
@@ -1826,8 +1827,8 @@ static void perform_transport_op_locked(grpc_exec_ctx* exec_ctx,
         op->on_connectivity_state_change);
   }
 
-  if (close_transport != GRPC_ERROR_NONE) {
-    close_transport_locked(exec_ctx, t, close_transport);
+  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+    close_transport_locked(exec_ctx, t, op->disconnect_with_error);
   }
 
   GRPC_CLOSURE_RUN(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
@@ -2065,7 +2066,7 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx* exec_ctx,
     if (s->id != 0) {
       grpc_http2_error_code http_error;
       grpc_error_get_status(exec_ctx, due_to_error, s->deadline, nullptr,
-                            nullptr, &http_error);
+                            nullptr, &http_error, nullptr);
       grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(s->id, (uint32_t)http_error,
                                                   &s->stats.outgoing));
@@ -2083,7 +2084,8 @@ void grpc_chttp2_fake_status(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
                              grpc_chttp2_stream* s, grpc_error* error) {
   grpc_status_code status;
   grpc_slice slice;
-  grpc_error_get_status(exec_ctx, error, s->deadline, &status, &slice, nullptr);
+  grpc_error_get_status(exec_ctx, error, s->deadline, &status, &slice, nullptr,
+                        nullptr);
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
   }
@@ -2248,7 +2250,7 @@ static void close_from_api(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
   grpc_status_code grpc_status;
   grpc_slice slice;
   grpc_error_get_status(exec_ctx, error, s->deadline, &grpc_status, &slice,
-                        nullptr);
+                        nullptr, nullptr);
 
   GPR_ASSERT(grpc_status >= 0 && (int)grpc_status < 100);
 
@@ -2594,7 +2596,7 @@ static void schedule_bdp_ping_locked(grpc_exec_ctx* exec_ctx,
 static void start_bdp_ping_locked(grpc_exec_ctx* exec_ctx, void* tp,
                                   grpc_error* error) {
   grpc_chttp2_transport* t = (grpc_chttp2_transport*)tp;
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     gpr_log(GPR_DEBUG, "%s: Start BDP ping err=%s", t->peer_string,
             grpc_error_string(error));
   }
@@ -2608,7 +2610,7 @@ static void start_bdp_ping_locked(grpc_exec_ctx* exec_ctx, void* tp,
 static void finish_bdp_ping_locked(grpc_exec_ctx* exec_ctx, void* tp,
                                    grpc_error* error) {
   grpc_chttp2_transport* t = (grpc_chttp2_transport*)tp;
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     gpr_log(GPR_DEBUG, "%s: Complete BDP ping err=%s", t->peer_string,
             grpc_error_string(error));
   }
@@ -3109,7 +3111,7 @@ static void benign_reclaimer_locked(grpc_exec_ctx* exec_ctx, void* arg,
       grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
     /* Channel with no active streams: send a goaway to try and make it
      * disconnect cleanly */
-    if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+    if (grpc_resource_quota_trace.enabled()) {
       gpr_log(GPR_DEBUG, "HTTP2: %s - send goaway to free memory",
               t->peer_string);
     }
@@ -3117,8 +3119,7 @@ static void benign_reclaimer_locked(grpc_exec_ctx* exec_ctx, void* arg,
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
-  } else if (error == GRPC_ERROR_NONE &&
-             GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+  } else if (error == GRPC_ERROR_NONE && grpc_resource_quota_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",
@@ -3140,7 +3141,7 @@ static void destructive_reclaimer_locked(grpc_exec_ctx* exec_ctx, void* arg,
   if (error == GRPC_ERROR_NONE && n > 0) {
     grpc_chttp2_stream* s =
         (grpc_chttp2_stream*)grpc_chttp2_stream_map_rand(&t->stream_map);
-    if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+    if (grpc_resource_quota_trace.enabled()) {
       gpr_log(GPR_DEBUG, "HTTP2: %s - abandon stream id %d", t->peer_string,
               s->id);
     }
@@ -3235,16 +3236,16 @@ static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
 
 grpc_transport* grpc_create_chttp2_transport(
     grpc_exec_ctx* exec_ctx, const grpc_channel_args* channel_args,
-    grpc_endpoint* ep, int is_client) {
+    grpc_endpoint* ep, bool is_client) {
   grpc_chttp2_transport* t =
       (grpc_chttp2_transport*)gpr_zalloc(sizeof(grpc_chttp2_transport));
-  init_transport(exec_ctx, t, channel_args, ep, is_client != 0);
+  init_transport(exec_ctx, t, channel_args, ep, is_client);
   return &t->base;
 }
 
-void grpc_chttp2_transport_start_reading(grpc_exec_ctx* exec_ctx,
-                                         grpc_transport* transport,
-                                         grpc_slice_buffer* read_buffer) {
+void grpc_chttp2_transport_start_reading(
+    grpc_exec_ctx* exec_ctx, grpc_transport* transport,
+    grpc_slice_buffer* read_buffer, grpc_closure* notify_on_receive_settings) {
   grpc_chttp2_transport* t = (grpc_chttp2_transport*)transport;
   GRPC_CHTTP2_REF_TRANSPORT(
       t, "reading_action"); /* matches unref inside reading_action */
@@ -3252,5 +3253,6 @@ void grpc_chttp2_transport_start_reading(grpc_exec_ctx* exec_ctx,
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);
   }
+  t->notify_on_receive_settings = notify_on_receive_settings;
   GRPC_CLOSURE_SCHED(exec_ctx, &t->read_action_locked, GRPC_ERROR_NONE);
 }

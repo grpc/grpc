@@ -213,7 +213,7 @@ static void finish_accept(grpc_exec_ctx* exec_ctx, grpc_tcp_listener* sp) {
   } else {
     gpr_log(GPR_INFO, "uv_tcp_getpeername error: %s", uv_strerror(err));
   }
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     if (peer_name_string) {
       gpr_log(GPR_DEBUG, "SERVER_CONNECT: %p accepted connection: %s",
               sp->server, peer_name_string);
@@ -247,7 +247,7 @@ static void on_connect(uv_stream_t* server, int status) {
 
   GPR_ASSERT(!sp->has_pending_connection);
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "SERVER_CONNECT: %p incoming connection", sp->server);
   }
 
@@ -260,15 +260,36 @@ static void on_connect(uv_stream_t* server, int status) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static grpc_error* add_socket_to_server(grpc_tcp_server* s, uv_tcp_t* handle,
-                                        const grpc_resolved_address* addr,
-                                        unsigned port_index,
-                                        grpc_tcp_listener** listener) {
+static grpc_error* add_addr_to_server(grpc_tcp_server* s,
+                                      const grpc_resolved_address* addr,
+                                      unsigned port_index,
+                                      grpc_tcp_listener** listener) {
   grpc_tcp_listener* sp = NULL;
   int port = -1;
   int status;
   grpc_error* error;
   grpc_resolved_address sockname_temp;
+  uv_tcp_t* handle = (uv_tcp_t*)gpr_malloc(sizeof(uv_tcp_t));
+  int family = grpc_sockaddr_get_family(addr);
+
+  status = uv_tcp_init_ex(uv_default_loop(), handle, (unsigned int)family);
+#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
+  if (family == AF_INET || family == AF_INET6) {
+    int fd;
+    uv_fileno((uv_handle_t*)handle, &fd);
+    int enable = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
+  }
+#endif /* GPR_LINUX && SO_REUSEPORT */
+
+  if (status != 0) {
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to initialize UV tcp handle");
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                           grpc_slice_from_static_string(uv_strerror(status)));
+    return error;
+  }
 
   // The last argument to uv_tcp_bind is flags
   status = uv_tcp_bind(handle, (struct sockaddr*)addr->addr, 0);
@@ -325,20 +346,48 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, uv_tcp_t* handle,
   return GRPC_ERROR_NONE;
 }
 
+static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
+                                                unsigned port_index,
+                                                int requested_port,
+                                                grpc_tcp_listener** listener) {
+  grpc_resolved_address wild4;
+  grpc_resolved_address wild6;
+  grpc_tcp_listener* sp = nullptr;
+  grpc_tcp_listener* sp2 = nullptr;
+  grpc_error* v6_err = GRPC_ERROR_NONE;
+  grpc_error* v4_err = GRPC_ERROR_NONE;
+
+  grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
+  /* Try listening on IPv6 first. */
+  if ((v6_err = add_addr_to_server(s, &wild6, port_index, &sp)) ==
+      GRPC_ERROR_NONE) {
+    *listener = sp;
+    return GRPC_ERROR_NONE;
+  }
+
+  if ((v4_err = add_addr_to_server(s, &wild4, port_index, &sp2)) ==
+      GRPC_ERROR_NONE) {
+    *listener = sp2;
+    return GRPC_ERROR_NONE;
+  }
+
+  grpc_error* root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Failed to add any wildcard listeners");
+  root_err = grpc_error_add_child(root_err, v6_err);
+  root_err = grpc_error_add_child(root_err, v4_err);
+  return root_err;
+}
+
 grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
                                      const grpc_resolved_address* addr,
                                      int* port) {
   // This function is mostly copied from tcp_server_windows.c
   grpc_tcp_listener* sp = NULL;
-  uv_tcp_t* handle;
   grpc_resolved_address addr6_v4mapped;
-  grpc_resolved_address wildcard;
   grpc_resolved_address* allocated_addr = NULL;
   grpc_resolved_address sockname_temp;
   unsigned port_index = 0;
-  int status;
   grpc_error* error = GRPC_ERROR_NONE;
-  int family;
 
   GRPC_UV_ASSERT_SAME_THREAD();
 
@@ -367,43 +416,20 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
     }
   }
 
-  if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
-    addr = &addr6_v4mapped;
-  }
-
   /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
   if (grpc_sockaddr_is_wildcard(addr, port)) {
-    grpc_sockaddr_make_wildcard6(*port, &wildcard);
-
-    addr = &wildcard;
-  }
-
-  handle = (uv_tcp_t*)gpr_malloc(sizeof(uv_tcp_t));
-
-  family = grpc_sockaddr_get_family(addr);
-  status = uv_tcp_init_ex(uv_default_loop(), handle, (unsigned int)family);
-#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
-  if (family == AF_INET || family == AF_INET6) {
-    int fd;
-    uv_fileno((uv_handle_t*)handle, &fd);
-    int enable = 1;
-    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
-  }
-#endif /* GPR_LINUX && SO_REUSEPORT */
-
-  if (status == 0) {
-    error = add_socket_to_server(s, handle, addr, port_index, &sp);
+    error = add_wildcard_addrs_to_server(s, port_index, *port, &sp);
   } else {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Failed to initialize UV tcp handle");
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                           grpc_slice_from_static_string(uv_strerror(status)));
+    if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
+      addr = &addr6_v4mapped;
+    }
+
+    error = add_addr_to_server(s, addr, port_index, &sp);
   }
 
   gpr_free(allocated_addr);
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     char* port_string;
     grpc_sockaddr_to_string(&port_string, addr, 0);
     const char* str = grpc_error_string(error);
@@ -435,7 +461,7 @@ void grpc_tcp_server_start(grpc_exec_ctx* exec_ctx, grpc_tcp_server* server,
   (void)pollsets;
   (void)pollset_count;
   GRPC_UV_ASSERT_SAME_THREAD();
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "SERVER_START %p", server);
   }
   GPR_ASSERT(on_accept_cb);

@@ -100,7 +100,8 @@ static void concurrent_test(void) {
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     gpr_thd_options opt = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&opt);
-    gpr_thd_new(&thds[i], concurrent_test_body, &args, &opt);
+    gpr_thd_new(&thds[i], "grpc_concurrent_test", concurrent_test_body, &args,
+                &opt);
   }
 
   gpr_event_set(&args.ev_start, (void*)1);

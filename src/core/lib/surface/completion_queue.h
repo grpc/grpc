@@ -27,18 +27,11 @@
 
 /* These trace flags default to 1. The corresponding lines are only traced
    if grpc_api_trace is also truthy */
-extern grpc_tracer_flag grpc_cq_pluck_trace;
-extern grpc_tracer_flag grpc_cq_event_timeout_trace;
-extern grpc_tracer_flag grpc_trace_operation_failures;
-
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_pending_tags;
-extern grpc_tracer_flag grpc_trace_cq_refcount;
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern grpc_core::TraceFlag grpc_cq_pluck_trace;
+extern grpc_core::TraceFlag grpc_cq_event_timeout_trace;
+extern grpc_core::TraceFlag grpc_trace_operation_failures;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount;
 
 typedef struct grpc_cq_completion {
   gpr_mpscq_node node;
@@ -97,9 +90,5 @@ int grpc_get_cq_poll_num(grpc_completion_queue* cc);
 
 grpc_completion_queue* grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H */

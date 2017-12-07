@@ -38,21 +38,13 @@
 
 #include <uv.h>
 
-extern grpc_tracer_flag grpc_tcp_trace;
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 grpc_endpoint* grpc_tcp_create(uv_tcp_t* handle,
                                grpc_resource_quota* resource_quota,
                                char* peer_string);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_UV */
 

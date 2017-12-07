@@ -41,7 +41,7 @@ import upload_test_results
 _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
 _RELEASES = sorted(list(set(
-    i for l in client_matrix.LANG_RELEASE_MATRIX.values() for i in l)))
+    client_matrix.get_release_tag_name(info) for lang in client_matrix.LANG_RELEASE_MATRIX.values() for info in lang)))
 _TEST_TIMEOUT = 30
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
@@ -93,14 +93,14 @@ def find_all_images_for_lang(lang):
   """
   # Find all defined releases.
   if args.release == 'all':
-    releases = ['master'] + client_matrix.LANG_RELEASE_MATRIX[lang]
+    releases = ['master'] + client_matrix.get_release_tags(lang)
   else:
     # Look for a particular release.
-    if args.release not in ['master'] + client_matrix.LANG_RELEASE_MATRIX[lang]:
+    if args.release not in ['master'] + client_matrix.get_release_tags(lang):
       jobset.message('SKIPPED',
                      '%s for %s is not defined' % (args.release, lang),
                      do_newline=True)
-      return []
+      return {}
     releases = [args.release]
 
   # Images tuples keyed by runtime.

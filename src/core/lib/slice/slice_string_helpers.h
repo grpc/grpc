@@ -28,10 +28,6 @@
 
 #include "src/core/lib/support/string.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Calls gpr_dump on a slice. */
 char* grpc_dump_slice(grpc_slice slice, uint32_t flags);
 
@@ -46,9 +42,5 @@ void grpc_slice_split_without_space(grpc_slice str, const char* sep,
                                     grpc_slice_buffer* dst);
 
 bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t* result);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H */

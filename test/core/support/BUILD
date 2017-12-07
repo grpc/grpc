@@ -69,16 +69,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "histogram_test",
-    srcs = ["histogram_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//test/core/util:gpr_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
     language = "C++",
@@ -119,8 +109,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "stack_lockfree_test",
-    srcs = ["stack_lockfree_test.cc"],
+    name = "string_test",
+    srcs = ["string_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -129,8 +119,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "string_test",
-    srcs = ["string_test.cc"],
+    name = "manual_constructor_test",
+    srcs = ["manual_constructor_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -201,9 +191,35 @@ grpc_cc_test(
 grpc_cc_test(
     name = "memory_test",
     srcs = ["memory_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:grpc",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "vector_test",
+    srcs = ["vector_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ref_counted_test",
+    srcs = ["ref_counted_test.cc"],
+    language = "C++",
+    deps = [
+        "//:ref_counted",
         "//test/core/util:gpr_test_util",
     ],
     external_deps = [
@@ -212,11 +228,12 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "vector_test",
-    srcs = ["vector_test.cc"],
+    name = "ref_counted_ptr_test",
+    srcs = ["ref_counted_ptr_test.cc"],
     language = "C++",
     deps = [
-        "//:grpc",
+        "//:ref_counted",
+        "//:ref_counted_ptr",
         "//test/core/util:gpr_test_util",
     ],
     external_deps = [

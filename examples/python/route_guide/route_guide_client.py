@@ -17,7 +17,6 @@
 from __future__ import print_function
 
 import random
-import time
 
 import grpc
 
@@ -66,7 +65,6 @@ def generate_route(feature_list):
     random_feature = feature_list[random.randint(0, len(feature_list) - 1)]
     print("Visiting point %s" % random_feature.location)
     yield random_feature.location
-    time.sleep(random.uniform(0.5, 1.5))
 
 
 def guide_record_route(stub):
@@ -91,7 +89,6 @@ def generate_messages():
   for msg in messages:
     print("Sending %s at %s" % (msg.message, msg.location))
     yield msg
-    time.sleep(random.uniform(0.5, 1.0))
 
 
 def guide_route_chat(stub):

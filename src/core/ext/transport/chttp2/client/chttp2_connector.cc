@@ -117,11 +117,35 @@ static void on_handshake_done(grpc_exec_ctx* exec_ctx, void* arg,
   } else {
     grpc_endpoint_delete_from_pollset_set(exec_ctx, args->endpoint,
                                           c->args.interested_parties);
-    c->result->transport =
-        grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 1);
+    c->result->transport = grpc_create_chttp2_transport(exec_ctx, args->args,
+                                                        args->endpoint, true);
     GPR_ASSERT(c->result->transport);
+    // TODO(roth): We ideally want to wait until we receive HTTP/2
+    // settings from the server before we consider the connection
+    // established.  If that doesn't happen before the connection
+    // timeout expires, then we should consider the connection attempt a
+    // failure and feed that information back into the backoff code.
+    // We could pass a notify_on_receive_settings callback to
+    // grpc_chttp2_transport_start_reading() to let us know when
+    // settings are received, but we would need to figure out how to use
+    // that information here.
+    //
+    // Unfortunately, we don't currently have a way to split apart the two
+    // effects of scheduling c->notify: we start sending RPCs immediately
+    // (which we want to do) and we consider the connection attempt successful
+    // (which we don't want to do until we get the notify_on_receive_settings
+    // callback from the transport).  If we could split those things
+    // apart, then we could start sending RPCs but then wait for our
+    // timeout before deciding if the connection attempt is successful.
+    // If the attempt is not successful, then we would tear down the
+    // transport and feed the failure back into the backoff code.
+    //
+    // In addition, even if we did that, we would probably not want to do
+    // so until after transparent retries is implemented.  Otherwise, any
+    // RPC that we attempt to send on the connection before the timeout
+    // would fail instead of being retried on a subsequent attempt.
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport,
-                                        args->read_buffer);
+                                        args->read_buffer, nullptr);
     c->result->channel_args = args->args;
   }
   grpc_closure* notify = c->notify;
@@ -141,8 +165,9 @@ static void start_handshake_locked(grpc_exec_ctx* exec_ctx,
   grpc_endpoint_add_to_pollset_set(exec_ctx, c->endpoint,
                                    c->args.interested_parties);
   grpc_handshake_manager_do_handshake(
-      exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
-      c->args.deadline, nullptr /* acceptor */, on_handshake_done, c);
+      exec_ctx, c->handshake_mgr, c->args.interested_parties, c->endpoint,
+      c->args.channel_args, c->args.deadline, nullptr /* acceptor */,
+      on_handshake_done, c);
   c->endpoint = nullptr;  // Endpoint handed off to handshake manager.
 }
 

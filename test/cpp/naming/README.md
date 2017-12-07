@@ -31,7 +31,7 @@ After making a change to `resolver_test_record_groups.yaml`:
 3. From the repo root, run:
 
 ```
-$ test/cpp/naming/create_dns_private_zone.sh
+$ test/cpp/naming/create_private_dns_zone.sh
 $ test/cpp/naming/private_dns_zone_init.sh
 ```
 

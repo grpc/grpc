@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 5.0.0-dev
-  g_stands_for: generous
-  version: 1.8.0-dev
+  g_stands_for: glossy
+  version: 1.9.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -40,7 +40,7 @@ filegroups:
   - src/core/lib/support/env_linux.cc
   - src/core/lib/support/env_posix.cc
   - src/core/lib/support/env_windows.cc
-  - src/core/lib/support/histogram.cc
+  - src/core/lib/support/fork.cc
   - src/core/lib/support/host_port.cc
   - src/core/lib/support/log.cc
   - src/core/lib/support/log_android.cc
@@ -49,7 +49,6 @@ filegroups:
   - src/core/lib/support/log_windows.cc
   - src/core/lib/support/mpscq.cc
   - src/core/lib/support/murmur_hash.cc
-  - src/core/lib/support/stack_lockfree.cc
   - src/core/lib/support/string.cc
   - src/core/lib/support/string_posix.cc
   - src/core/lib/support/string_util_windows.cc
@@ -83,7 +82,6 @@ filegroups:
   - include/grpc/support/avl.h
   - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
-  - include/grpc/support/histogram.h
   - include/grpc/support/host_port.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
@@ -104,19 +102,21 @@ filegroups:
   - include/grpc/support/useful.h
   headers:
   - src/core/lib/profiling/timers.h
+  - src/core/lib/support/abstract.h
   - src/core/lib/support/arena.h
   - src/core/lib/support/atomic.h
   - src/core/lib/support/atomic_with_atm.h
   - src/core/lib/support/atomic_with_std.h
   - src/core/lib/support/env.h
+  - src/core/lib/support/fork.h
   - src/core/lib/support/manual_constructor.h
   - src/core/lib/support/memory.h
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/spinlock.h
-  - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
+  - src/core/lib/support/thd_internal.h
   - src/core/lib/support/time_precise.h
   - src/core/lib/support/tmpfile.h
   uses:
@@ -127,6 +127,7 @@ filegroups:
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_slice.h
   - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/port_platform.h
@@ -170,7 +171,6 @@ filegroups:
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/call_combiner.cc
-  - src/core/lib/iomgr/closure.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/endpoint.cc
   - src/core/lib/iomgr/endpoint_pair_posix.cc
@@ -185,6 +185,8 @@ filegroups:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/fork_posix.cc
+  - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
   - src/core/lib/iomgr/gethostname_host_name_max.cc
   - src/core/lib/iomgr/gethostname_sysconf.cc
@@ -296,6 +298,7 @@ filegroups:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
   - include/grpc/compression_ruby.h
+  - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security_constants.h
@@ -397,7 +400,9 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/support/vector.h
+  - src/core/lib/support/debug_location.h
+  - src/core/lib/support/ref_counted.h
+  - src/core/lib/support/ref_counted_ptr.h
   - src/core/lib/surface/alarm_internal.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
@@ -711,6 +716,7 @@ filegroups:
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/debugger_macros.h
   - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
   - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
@@ -718,6 +724,7 @@ filegroups:
   - test/core/util/port.h
   - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
+  - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
@@ -727,13 +734,16 @@ filegroups:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
   - test/core/util/memory_counters.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
   - test/core/util/passthru_endpoint.cc
   - test/core/util/port.cc
+  - test/core/util/port_isolated_runtime_environment.cc
   - test/core/util/port_server_client.cc
   - test/core/util/slice_splitter.cc
+  - test/core/util/tracer_util.cc
   - test/core/util/trickle_endpoint.cc
   deps:
   - gpr_test_util
@@ -2191,15 +2201,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: gpr_histogram_test
-  build: test
-  language: c
-  src:
-  - test/core/support/histogram_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: gpr_host_port_test
   build: test
   language: c
@@ -2214,6 +2215,16 @@ targets:
   language: c
   src:
   - test/core/support/log_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  uses_polling: false
+- name: gpr_manual_constructor_test
+  cpu_cost: 3
+  build: test
+  language: c
+  src:
+  - test/core/support/manual_constructor_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2234,16 +2245,6 @@ targets:
   language: c
   src:
   - test/core/support/spinlock_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: gpr_stack_lockfree_test
-  cpu_cost: 7
-  build: test
-  language: c
-  src:
-  - test/core/support/stack_lockfree_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2515,8 +2516,11 @@ targets:
 - name: handshake_server
   build: test
   language: c
+  headers:
+  - test/core/handshake/server_ssl_common.h
   src:
   - test/core/handshake/server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
   deps:
   - grpc_test_util
   - grpc
@@ -2527,6 +2531,33 @@ targets:
   platforms:
   - linux
   secure: true
+- name: handshake_server_with_readahead_handshaker
+  build: test
+  language: c
+  headers:
+  - test/core/handshake/server_ssl_common.h
+  src:
+  - test/core/handshake/readahead_handshaker_server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
+  secure: true
+- name: histogram_test
+  build: test
+  language: c
+  src:
+  - test/core/util/histogram_test.cc
+  deps:
+  - grpc_test_util
+  - gpr
+  uses_polling: false
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c
@@ -3797,6 +3828,18 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: chttp2_settings_timeout_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/chttp2/settings_timeout_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: true
 - name: cli_call_test
   gtest: true
   build: test
@@ -3805,6 +3848,20 @@ targets:
   - test/cpp/util/cli_call_test.cc
   deps:
   - grpc_cli_libs
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: client_channel_stress_test
+  gtest: false
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/client/client_channel_stress_test.cc
+  deps:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4498,6 +4555,34 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: ref_counted_ptr_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/ref_counted_ptr_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
+- name: ref_counted_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/ref_counted_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -4739,20 +4824,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: vector_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/core/support/vector_test.cc
-  deps:
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses:
-  - grpc++_test
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5
@@ -4872,8 +4943,8 @@ configs:
   msan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins
-      -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
-      -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0
+      -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang++
@@ -4881,6 +4952,8 @@ configs:
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
     compile_the_world: true
+    test_environ:
+      MSAN_OPTIONS: poison_in_dtor=1
   mutrace:
     CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
@@ -4933,8 +5006,8 @@ defaults:
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
   global:
+    COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
-      -Ithird_party/abseil-cpp
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

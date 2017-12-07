@@ -73,7 +73,7 @@ EXIT_CODE=0
 # in the resolver.
 
 $FLAGS_test_bin_path \
-  --target_name='srv-ipv4-single-target.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:1234,True' \
   --expected_chosen_service_config='' \
   --expected_lb_policy='' \
@@ -81,7 +81,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='srv-ipv4-multi-target.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='srv-ipv4-multi-target.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.5:1234,True;1.2.3.6:1234,True;1.2.3.7:1234,True' \
   --expected_chosen_service_config='' \
   --expected_lb_policy='' \
@@ -89,7 +89,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='srv-ipv6-single-target.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='srv-ipv6-single-target.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='[2607:f8b0:400a:801::1001]:1234,True' \
   --expected_chosen_service_config='' \
   --expected_lb_policy='' \
@@ -97,7 +97,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='srv-ipv6-multi-target.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='srv-ipv6-multi-target.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='[2607:f8b0:400a:801::1002]:1234,True;[2607:f8b0:400a:801::1003]:1234,True;[2607:f8b0:400a:801::1004]:1234,True' \
   --expected_chosen_service_config='' \
   --expected_lb_policy='' \
@@ -105,7 +105,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='srv-ipv4-simple-service-config.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='srv-ipv4-simple-service-config.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:1234,True' \
   --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}' \
   --expected_lb_policy='round_robin' \
@@ -113,7 +113,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='ipv4-no-srv-simple-service-config.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='ipv4-no-srv-simple-service-config.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
   --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService","waitForReady":true}]}]}' \
   --expected_lb_policy='round_robin' \
@@ -121,7 +121,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='ipv4-no-config-for-cpp.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='ipv4-no-config-for-cpp.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
   --expected_chosen_service_config='' \
   --expected_lb_policy='' \
@@ -129,7 +129,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='ipv4-cpp-config-has-zero-percentage.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='ipv4-cpp-config-has-zero-percentage.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
   --expected_chosen_service_config='' \
   --expected_lb_policy='' \
@@ -137,7 +137,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='ipv4-second-language-is-cpp.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='ipv4-second-language-is-cpp.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
   --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}' \
   --expected_lb_policy='round_robin' \
@@ -145,7 +145,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='ipv4-config-with-percentages.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='ipv4-config-with-percentages.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
   --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService","waitForReady":true}]}]}' \
   --expected_lb_policy='round_robin' \
@@ -153,7 +153,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:1234,True;1.2.3.4:443,False' \
   --expected_chosen_service_config='' \
   --expected_lb_policy='' \
@@ -161,7 +161,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='[2607:f8b0:400a:801::1002]:1234,True;[2607:f8b0:400a:801::1002]:443,False' \
   --expected_chosen_service_config='' \
   --expected_lb_policy='' \
@@ -169,7 +169,7 @@ $FLAGS_test_bin_path \
 wait $! || EXIT_CODE=1
 
 $FLAGS_test_bin_path \
-  --target_name='ipv4-config-causing-fallback-to-tcp.resolver-tests-version-1.grpctestingexp.' \
+  --target_name='ipv4-config-causing-fallback-to-tcp.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
   --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}' \
   --expected_lb_policy='' \

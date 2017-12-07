@@ -42,10 +42,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
 typedef enum {
@@ -244,6 +240,8 @@ struct grpc_chttp2_transport {
   char* peer_string;
 
   grpc_combiner* combiner;
+
+  grpc_closure* notify_on_receive_settings;
 
   /** write execution state of the transport */
   grpc_chttp2_write_state write_state;
@@ -674,13 +672,13 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx* exec_ctx,
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-extern grpc_tracer_flag grpc_http_trace;
-extern grpc_tracer_flag grpc_flowctl_trace;
+// extern grpc_core::TraceFlag grpc_http_trace;
+// extern grpc_core::TraceFlag grpc_flowctl_trace;
 
-#define GRPC_CHTTP2_IF_TRACING(stmt)      \
-  if (!(GRPC_TRACER_ON(grpc_http_trace))) \
-    ;                                     \
-  else                                    \
+#define GRPC_CHTTP2_IF_TRACING(stmt) \
+  if (!(grpc_http_trace.enabled()))  \
+    ;                                \
+  else                               \
     stmt
 
 void grpc_chttp2_fake_status(grpc_exec_ctx* exec_ctx, grpc_chttp2_transport* t,
@@ -777,9 +775,5 @@ void grpc_chttp2_fail_pending_writes(grpc_exec_ctx* exec_ctx,
     initialization */
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

@@ -24,10 +24,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* String utility functions */
 
 /* Flags for gpr_dump function. */
@@ -109,8 +105,5 @@ void* gpr_memrchr(const void* s, int c, size_t n);
 
 /** Return true if lower(s) equals "true", "yes" or "1", otherwise false. */
 bool gpr_is_true(const char* s);
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SUPPORT_STRING_H */

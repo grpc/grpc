@@ -96,7 +96,8 @@ static void test_too_many_plucks(void) {
     }
     thread_states[i].cc = cc;
     thread_states[i].tag = tags[i];
-    gpr_thd_new(thread_ids + i, pluck_one, thread_states + i, &thread_options);
+    gpr_thd_new(thread_ids + i, "grpc_pluck_test", pluck_one, thread_states + i,
+                &thread_options);
   }
 
   /* wait until all other threads are plucking */
@@ -234,6 +235,7 @@ static void test_threading(size_t producers, size_t consumers) {
     options[i].cc = cc;
     options[i].id = optid++;
     GPR_ASSERT(gpr_thd_new(&id,
+                           i < producers ? "grpc_producer" : "grpc_consumer",
                            i < producers ? producer_thread : consumer_thread,
                            options + i, nullptr));
     gpr_event_wait(&options[i].on_started, ten_seconds_time());

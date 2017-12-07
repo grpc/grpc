@@ -21,10 +21,6 @@
 
 #include <grpc/grpc.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Return the message compression algorithm from \a call.
  *
  * \warning This function should \b only be used in test code. */
@@ -41,9 +37,5 @@ uint32_t grpc_call_test_only_get_message_flags(grpc_call* call);
  *
  * To be indexed by grpc_compression_algorithm enum values. */
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_CALL_TEST_ONLY_H */

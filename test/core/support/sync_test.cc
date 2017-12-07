@@ -189,7 +189,7 @@ static void test_create_threads(struct test* m, void (*body)(void* arg)) {
   gpr_thd_id id;
   int i;
   for (i = 0; i != m->threads; i++) {
-    GPR_ASSERT(gpr_thd_new(&id, body, m, nullptr));
+    GPR_ASSERT(gpr_thd_new(&id, "grpc_create_threads", body, m, nullptr));
   }
 }
 
@@ -244,7 +244,7 @@ static void test(const char* name, void (*body)(void* m),
     m = test_new(10, iterations, incr_step);
     if (extra != nullptr) {
       gpr_thd_id id;
-      GPR_ASSERT(gpr_thd_new(&id, extra, m, nullptr));
+      GPR_ASSERT(gpr_thd_new(&id, name, extra, m, nullptr));
       m->done++; /* one more thread to wait for */
     }
     test_create_threads(m, body);

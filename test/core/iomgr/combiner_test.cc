@@ -112,7 +112,8 @@ static void test_execute_many(void) {
     ta[i].ctr = 0;
     ta[i].lock = lock;
     gpr_event_init(&ta[i].done);
-    GPR_ASSERT(gpr_thd_new(&thds[i], execute_many_loop, &ta[i], &options));
+    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_execute_many", execute_many_loop,
+                           &ta[i], &options));
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     GPR_ASSERT(gpr_event_wait(&ta[i].done,

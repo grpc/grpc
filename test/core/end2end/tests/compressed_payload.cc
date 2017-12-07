@@ -421,7 +421,8 @@ static void request_with_payload_template(
       op->flags = client_send_flags_bitmask;
       op->reserved = nullptr;
       op++;
-      error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), nullptr);
+      error =
+          grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
       CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
     }
@@ -433,7 +434,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -451,7 +453,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     memset(ops, 0, sizeof(ops));
@@ -561,8 +564,8 @@ static void test_invoke_request_with_uncompressed_payload(
   request_with_payload_template(
       config, "test_invoke_request_with_uncompressed_payload", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
-      GRPC_COMPRESS_NONE, nullptr, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
-      false);
+      GRPC_COMPRESS_NONE, nullptr, false,
+      /* ignored */ GRPC_COMPRESS_LEVEL_NONE, false);
 }
 
 static void test_invoke_request_with_compressed_payload(

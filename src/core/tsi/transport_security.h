@@ -24,11 +24,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern grpc_tracer_flag tsi_tracing_enabled;
+extern grpc_core::TraceFlag tsi_tracing_enabled;
 
 /* Base for tsi_frame_protector implementations.
    See transport_security_interface.h for documentation. */
@@ -125,9 +121,5 @@ tsi_result tsi_construct_string_peer_property_from_cstring(
 
 /* Utils. */
 char* tsi_strdup(const char* src); /* Sadly, no strdup in C89. */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_H */

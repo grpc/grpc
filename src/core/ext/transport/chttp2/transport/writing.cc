@@ -51,8 +51,7 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* ping already in-flight: wait */
-    if (GRPC_TRACER_ON(grpc_http_trace) ||
-        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%s: Ping delayed [%p]: already pinging",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string);
     }
@@ -61,8 +60,7 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
   if (t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
     /* need to receive something of substance before sending a ping again */
-    if (GRPC_TRACER_ON(grpc_http_trace) ||
-        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
       gpr_log(GPR_DEBUG, "%s: Ping delayed [%p]: too many recent pings: %d/%d",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string,
               t->ping_state.pings_before_data_required,
@@ -71,21 +69,24 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
     return;
   }
   grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+
+  grpc_millis next_allowed_ping_interval =
+      (t->keepalive_permit_without_calls == 0 &&
+       grpc_chttp2_stream_map_size(&t->stream_map) == 0)
+          ? 7200 * GPR_MS_PER_SEC
+          : t->ping_policy.min_sent_ping_interval_without_data;
   grpc_millis next_allowed_ping =
-      t->ping_state.last_ping_sent_time +
-      t->ping_policy.min_sent_ping_interval_without_data;
-  if (t->keepalive_permit_without_calls == 0 &&
-      grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
-    next_allowed_ping =
-        t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
-  }
+      t->ping_state.last_ping_sent_time + next_allowed_ping_interval;
+
   if (next_allowed_ping > now) {
     /* not enough elapsed time between successive pings */
-    if (GRPC_TRACER_ON(grpc_http_trace) ||
-        GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
       gpr_log(GPR_DEBUG,
-              "%s: Ping delayed [%p]: not enough time elapsed since last ping",
-              t->is_client ? "CLIENT" : "SERVER", t->peer_string);
+              "%s: Ping delayed [%p]: not enough time elapsed since last ping. "
+              " Last ping %f: Next ping %f: Now %f",
+              t->is_client ? "CLIENT" : "SERVER", t->peer_string,
+              (double)t->ping_state.last_ping_sent_time,
+              (double)next_allowed_ping, (double)now);
     }
     if (!t->ping_state.is_delayed_ping_timer_set) {
       t->ping_state.is_delayed_ping_timer_set = true;
@@ -94,6 +95,7 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
     }
     return;
   }
+
   pq->inflight_id = t->ping_ctr;
   t->ping_ctr++;
   GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
@@ -103,8 +105,7 @@ static void maybe_initiate_ping(grpc_exec_ctx* exec_ctx,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
   GRPC_STATS_INC_HTTP2_PINGS_SENT(exec_ctx);
   t->ping_state.last_ping_sent_time = now;
-  if (GRPC_TRACER_ON(grpc_http_trace) ||
-      GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+  if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
     gpr_log(GPR_DEBUG, "%s: Ping sent [%p]: %d/%d",
             t->is_client ? "CLIENT" : "SERVER", t->peer_string,
             t->ping_state.pings_before_data_required,
@@ -322,7 +323,7 @@ class DataSendContext {
         GPR_MIN(stream_remote_window(), t_->flow_control->remote_window()));
   }
 
-  bool AnyOutgoing() const { return max_outgoing() != 0; }
+  bool AnyOutgoing() const { return max_outgoing() > 0; }
 
   void FlushCompressedBytes() {
     uint32_t send_bytes =

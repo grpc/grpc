@@ -85,7 +85,8 @@ static void test_mt(void) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    GPR_ASSERT(gpr_thd_new(&thds[i], test_thread, &ta[i], &options));
+    GPR_ASSERT(
+        gpr_thd_new(&thds[i], "grpc_mt_test", test_thread, &ta[i], &options));
   }
   size_t num_done = 0;
   size_t spins = 0;
@@ -156,7 +157,8 @@ static void test_mt_multipop(void) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    GPR_ASSERT(gpr_thd_new(&thds[i], test_thread, &ta[i], &options));
+    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_multipop_test", test_thread, &ta[i],
+                           &options));
   }
   pull_args pa;
   pa.ta = ta;
@@ -169,7 +171,8 @@ static void test_mt_multipop(void) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
     gpr_thd_options options = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&options);
-    GPR_ASSERT(gpr_thd_new(&pull_thds[i], pull_thread, &pa, &options));
+    GPR_ASSERT(gpr_thd_new(&pull_thds[i], "grpc_multipop_pull", pull_thread,
+                           &pa, &options));
   }
   gpr_event_set(&start, (void*)1);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {

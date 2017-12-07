@@ -114,7 +114,7 @@ CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang++
 LDXX_msan = clang++
-CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
@@ -327,7 +327,8 @@ CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 endif
-CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp
+CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
+COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
@@ -411,8 +412,8 @@ Q = @
 endif
 
 CORE_VERSION = 5.0.0-dev
-CPP_VERSION = 1.8.0-dev
-CSHARP_VERSION = 1.8.0-dev
+CPP_VERSION = 1.9.0-dev
+CSHARP_VERSION = 1.9.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -987,12 +988,11 @@ gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
 gpr_cmdline_test: $(BINDIR)/$(CONFIG)/gpr_cmdline_test
 gpr_cpu_test: $(BINDIR)/$(CONFIG)/gpr_cpu_test
 gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
-gpr_histogram_test: $(BINDIR)/$(CONFIG)/gpr_histogram_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
+gpr_manual_constructor_test: $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test
 gpr_mpscq_test: $(BINDIR)/$(CONFIG)/gpr_mpscq_test
 gpr_spinlock_test: $(BINDIR)/$(CONFIG)/gpr_spinlock_test
-gpr_stack_lockfree_test: $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test
 gpr_string_test: $(BINDIR)/$(CONFIG)/gpr_string_test
 gpr_sync_test: $(BINDIR)/$(CONFIG)/gpr_sync_test
 gpr_thd_test: $(BINDIR)/$(CONFIG)/gpr_thd_test
@@ -1019,6 +1019,8 @@ grpc_ssl_credentials_test: $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test
 grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 handshake_client: $(BINDIR)/$(CONFIG)/handshake_client
 handshake_server: $(BINDIR)/$(CONFIG)/handshake_server
+handshake_server_with_readahead_handshaker: $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker
+histogram_test: $(BINDIR)/$(CONFIG)/histogram_test
 hpack_parser_fuzzer_test: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test
 hpack_parser_test: $(BINDIR)/$(CONFIG)/hpack_parser_test
 hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
@@ -1112,7 +1114,9 @@ bm_metadata: $(BINDIR)/$(CONFIG)/bm_metadata
 bm_pollset: $(BINDIR)/$(CONFIG)/bm_pollset
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
+chttp2_settings_timeout_test: $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
+client_channel_stress_test: $(BINDIR)/$(CONFIG)/client_channel_stress_test
 client_crash_test: $(BINDIR)/$(CONFIG)/client_crash_test
 client_crash_test_server: $(BINDIR)/$(CONFIG)/client_crash_test_server
 client_lb_end2end_test: $(BINDIR)/$(CONFIG)/client_lb_end2end_test
@@ -1161,6 +1165,8 @@ qps_openloop_test: $(BINDIR)/$(CONFIG)/qps_openloop_test
 qps_worker: $(BINDIR)/$(CONFIG)/qps_worker
 reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
 reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
+ref_counted_ptr_test: $(BINDIR)/$(CONFIG)/ref_counted_ptr_test
+ref_counted_test: $(BINDIR)/$(CONFIG)/ref_counted_test
 secure_auth_context_test: $(BINDIR)/$(CONFIG)/secure_auth_context_test
 secure_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
 server_builder_plugin_test: $(BINDIR)/$(CONFIG)/server_builder_plugin_test
@@ -1177,7 +1183,6 @@ stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
-vector_test: $(BINDIR)/$(CONFIG)/vector_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
@@ -1379,12 +1384,11 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_cmdline_test \
   $(BINDIR)/$(CONFIG)/gpr_cpu_test \
   $(BINDIR)/$(CONFIG)/gpr_env_test \
-  $(BINDIR)/$(CONFIG)/gpr_histogram_test \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
+  $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test \
   $(BINDIR)/$(CONFIG)/gpr_mpscq_test \
   $(BINDIR)/$(CONFIG)/gpr_spinlock_test \
-  $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test \
   $(BINDIR)/$(CONFIG)/gpr_string_test \
   $(BINDIR)/$(CONFIG)/gpr_sync_test \
   $(BINDIR)/$(CONFIG)/gpr_thd_test \
@@ -1408,6 +1412,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test \
   $(BINDIR)/$(CONFIG)/handshake_client \
   $(BINDIR)/$(CONFIG)/handshake_server \
+  $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker \
+  $(BINDIR)/$(CONFIG)/histogram_test \
   $(BINDIR)/$(CONFIG)/hpack_parser_test \
   $(BINDIR)/$(CONFIG)/hpack_table_test \
   $(BINDIR)/$(CONFIG)/http_parser_test \
@@ -1552,7 +1558,9 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_pollset \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
+  $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
+  $(BINDIR)/$(CONFIG)/client_channel_stress_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
@@ -1594,6 +1602,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/qps_worker \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
+  $(BINDIR)/$(CONFIG)/ref_counted_ptr_test \
+  $(BINDIR)/$(CONFIG)/ref_counted_test \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
@@ -1610,7 +1620,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
-  $(BINDIR)/$(CONFIG)/vector_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/boringssl_aes_test \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
@@ -1677,7 +1686,9 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_pollset \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
+  $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
+  $(BINDIR)/$(CONFIG)/client_channel_stress_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
@@ -1719,6 +1730,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/qps_worker \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
+  $(BINDIR)/$(CONFIG)/ref_counted_ptr_test \
+  $(BINDIR)/$(CONFIG)/ref_counted_test \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
@@ -1735,7 +1748,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
-  $(BINDIR)/$(CONFIG)/vector_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
@@ -1820,18 +1832,16 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_cpu_test || ( echo test gpr_cpu_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_env_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_env_test || ( echo test gpr_env_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_histogram_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_histogram_test || ( echo test gpr_histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_host_port_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_log_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_manual_constructor_test"
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test || ( echo test gpr_manual_constructor_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_mpscq_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_mpscq_test || ( echo test gpr_mpscq_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_spinlock_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_spinlock_test || ( echo test gpr_spinlock_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_stack_lockfree_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test || ( echo test gpr_stack_lockfree_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_string_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_string_test || ( echo test gpr_string_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_sync_test"
@@ -1876,6 +1886,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_client || ( echo test handshake_client failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_server"
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_server || ( echo test handshake_server failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_server_with_readahead_handshaker"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker || ( echo test handshake_server_with_readahead_handshaker failed ; exit 1 )
+	$(E) "[RUN]     Testing histogram_test"
+	$(Q) $(BINDIR)/$(CONFIG)/histogram_test || ( echo test histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/hpack_parser_test || ( echo test hpack_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_table_test"
@@ -2058,8 +2072,12 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_filter_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_filter_test || ( echo test channel_filter_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_settings_timeout_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test || ( echo test chttp2_settings_timeout_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cli_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/cli_call_test || ( echo test cli_call_test failed ; exit 1 )
+	$(E) "[RUN]     Testing client_channel_stress_test"
+	$(Q) $(BINDIR)/$(CONFIG)/client_channel_stress_test || ( echo test client_channel_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_crash_test"
 	$(Q) $(BINDIR)/$(CONFIG)/client_crash_test || ( echo test client_crash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_lb_end2end_test"
@@ -2116,6 +2134,10 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/proto_utils_test || ( echo test proto_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_openloop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/qps_openloop_test || ( echo test qps_openloop_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ref_counted_ptr_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ref_counted_ptr_test || ( echo test ref_counted_ptr_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ref_counted_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ref_counted_test || ( echo test ref_counted_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_auth_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_auth_context_test || ( echo test secure_auth_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_sync_unary_ping_pong_test"
@@ -2144,8 +2166,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_pid_controller_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
-	$(E) "[RUN]     Testing vector_test"
-	$(Q) $(BINDIR)/$(CONFIG)/vector_test || ( echo test vector_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker_unsecure"
@@ -2499,12 +2519,12 @@ $(GENDIR)/src/proto/grpc/testing/services.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: protoc_dep_error
 else
 
-$(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc
+$(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -2569,6 +2589,16 @@ $(OBJDIR)/$(CONFIG)/src/compiler/%.o : src/compiler/%.cc
 	$(E) "[HOSTCXX] Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+$(OBJDIR)/$(CONFIG)/src/core/%.o : src/core/%.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+$(OBJDIR)/$(CONFIG)/test/core/%.o : test/core/%.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(E) "[CXX]     Compiling $<"
@@ -2803,7 +2833,7 @@ LIBGPR_SRC = \
     src/core/lib/support/env_linux.cc \
     src/core/lib/support/env_posix.cc \
     src/core/lib/support/env_windows.cc \
-    src/core/lib/support/histogram.cc \
+    src/core/lib/support/fork.cc \
     src/core/lib/support/host_port.cc \
     src/core/lib/support/log.cc \
     src/core/lib/support/log_android.cc \
@@ -2812,7 +2842,6 @@ LIBGPR_SRC = \
     src/core/lib/support/log_windows.cc \
     src/core/lib/support/mpscq.cc \
     src/core/lib/support/murmur_hash.cc \
-    src/core/lib/support/stack_lockfree.cc \
     src/core/lib/support/string.cc \
     src/core/lib/support/string_posix.cc \
     src/core/lib/support/string_util_windows.cc \
@@ -2844,7 +2873,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -2867,6 +2895,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -2961,7 +2990,6 @@ LIBGRPC_SRC = \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
@@ -2976,6 +3004,8 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
@@ -3206,6 +3236,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -3219,6 +3250,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
     include/grpc/compression_ruby.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -3304,7 +3336,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
@@ -3319,6 +3350,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
@@ -3520,6 +3553,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -3597,13 +3631,16 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/iomgr/endpoint_tests.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.cc \
+    test/core/util/histogram.cc \
     test/core/util/memory_counters.cc \
     test/core/util/mock_endpoint.cc \
     test/core/util/parse_hexstring.cc \
     test/core/util/passthru_endpoint.cc \
     test/core/util/port.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
     test/core/util/port_server_client.cc \
     test/core/util/slice_splitter.cc \
+    test/core/util/tracer_util.cc \
     test/core/util/trickle_endpoint.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -3626,7 +3663,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
@@ -3641,6 +3677,8 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
@@ -3804,6 +3842,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -3855,13 +3894,16 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/iomgr/endpoint_tests.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.cc \
+    test/core/util/histogram.cc \
     test/core/util/memory_counters.cc \
     test/core/util/mock_endpoint.cc \
     test/core/util/parse_hexstring.cc \
     test/core/util/passthru_endpoint.cc \
     test/core/util/port.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
     test/core/util/port_server_client.cc \
     test/core/util/slice_splitter.cc \
+    test/core/util/tracer_util.cc \
     test/core/util/trickle_endpoint.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -3884,7 +3926,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
@@ -3899,6 +3940,8 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
@@ -4062,6 +4105,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -4115,7 +4159,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
@@ -4130,6 +4173,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
@@ -4328,6 +4373,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -4340,6 +4386,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
     include/grpc/compression_ruby.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -4563,7 +4610,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -4586,6 +4632,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -4598,6 +4645,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
     include/grpc/compression_ruby.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -4848,7 +4896,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/call_combiner.cc \
-    src/core/lib/iomgr/closure.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
@@ -4863,6 +4910,8 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
@@ -5051,7 +5100,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -5074,6 +5122,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -5086,6 +5135,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
     include/grpc/compression_ruby.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -5500,6 +5550,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -5617,6 +5668,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -5770,7 +5822,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -5793,6 +5844,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -5805,6 +5857,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
     include/grpc/compression_ruby.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -10063,38 +10116,6 @@ endif
 endif
 
 
-GPR_HISTOGRAM_TEST_SRC = \
-    test/core/support/histogram_test.cc \
-
-GPR_HISTOGRAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_histogram_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_histogram_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/histogram_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_HISTOGRAM_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GPR_HOST_PORT_TEST_SRC = \
     test/core/support/host_port_test.cc \
 
@@ -10159,6 +10180,38 @@ endif
 endif
 
 
+GPR_MANUAL_CONSTRUCTOR_TEST_SRC = \
+    test/core/support/manual_constructor_test.cc \
+
+GPR_MANUAL_CONSTRUCTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_MANUAL_CONSTRUCTOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gpr_manual_constructor_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gpr_manual_constructor_test: $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/manual_constructor_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_gpr_manual_constructor_test: $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 GPR_MPSCQ_TEST_SRC = \
     test/core/support/mpscq_test.cc \
 
@@ -10219,38 +10272,6 @@ deps_gpr_spinlock_test: $(GPR_SPINLOCK_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GPR_SPINLOCK_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_STACK_LOCKFREE_TEST_SRC = \
-    test/core/support/stack_lockfree_test.cc \
-
-GPR_STACK_LOCKFREE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_STACK_LOCKFREE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test: $(GPR_STACK_LOCKFREE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_STACK_LOCKFREE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/stack_lockfree_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_stack_lockfree_test: $(GPR_STACK_LOCKFREE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_STACK_LOCKFREE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -11057,6 +11078,7 @@ endif
 
 HANDSHAKE_SERVER_SRC = \
     test/core/handshake/server_ssl.cc \
+    test/core/handshake/server_ssl_common.cc \
 
 HANDSHAKE_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_SERVER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11078,11 +11100,80 @@ endif
 
 $(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+$(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl_common.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_handshake_server: $(HANDSHAKE_SERVER_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(HANDSHAKE_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_SRC = \
+    test/core/handshake/readahead_handshaker_server_ssl.cc \
+    test/core/handshake/server_ssl_common.cc \
+
+HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker: $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/handshake/readahead_handshaker_server_ssl.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl_common.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_handshake_server_with_readahead_handshaker: $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS:.o=.dep)
+endif
+endif
+
+
+HISTOGRAM_TEST_SRC = \
+    test/core/util/histogram_test.cc \
+
+HISTOGRAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HISTOGRAM_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/histogram_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/histogram_test: $(HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/histogram_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/util/histogram_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_histogram_test: $(HISTOGRAM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HISTOGRAM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -14300,6 +14391,49 @@ endif
 endif
 
 
+CHTTP2_SETTINGS_TIMEOUT_TEST_SRC = \
+    test/core/transport/chttp2/settings_timeout_test.cc \
+
+CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SETTINGS_TIMEOUT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test: $(PROTOBUF_DEP) $(CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/chttp2/settings_timeout_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_chttp2_settings_timeout_test: $(CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CLI_CALL_TEST_SRC = \
     test/cpp/util/cli_call_test.cc \
 
@@ -14341,6 +14475,53 @@ ifneq ($(NO_DEPS),true)
 -include $(CLI_CALL_TEST_OBJS:.o=.dep)
 endif
 endif
+
+
+CLIENT_CHANNEL_STRESS_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
+    test/cpp/client/client_channel_stress_test.cc \
+
+CLIENT_CHANNEL_STRESS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_CHANNEL_STRESS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/client_channel_stress_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/client_channel_stress_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/client_channel_stress_test: $(PROTOBUF_DEP) $(CLIENT_CHANNEL_STRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_CHANNEL_STRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/client_channel_stress_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/client/client_channel_stress_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_client_channel_stress_test: $(CLIENT_CHANNEL_STRESS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CLIENT_CHANNEL_STRESS_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/client/client_channel_stress_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
 CLIENT_CRASH_TEST_SRC = \
@@ -16375,6 +16556,92 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
+REF_COUNTED_PTR_TEST_SRC = \
+    test/core/support/ref_counted_ptr_test.cc \
+
+REF_COUNTED_PTR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(REF_COUNTED_PTR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ref_counted_ptr_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/ref_counted_ptr_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/ref_counted_ptr_test: $(PROTOBUF_DEP) $(REF_COUNTED_PTR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(REF_COUNTED_PTR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/ref_counted_ptr_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/ref_counted_ptr_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_ref_counted_ptr_test: $(REF_COUNTED_PTR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(REF_COUNTED_PTR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+REF_COUNTED_TEST_SRC = \
+    test/core/support/ref_counted_test.cc \
+
+REF_COUNTED_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(REF_COUNTED_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ref_counted_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/ref_counted_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/ref_counted_test: $(PROTOBUF_DEP) $(REF_COUNTED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(REF_COUNTED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/ref_counted_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/ref_counted_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_ref_counted_test: $(REF_COUNTED_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(REF_COUNTED_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 SECURE_AUTH_CONTEXT_TEST_SRC = \
     test/cpp/common/secure_auth_context_test.cc \
 
@@ -17098,49 +17365,6 @@ deps_transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-VECTOR_TEST_SRC = \
-    test/core/support/vector_test.cc \
-
-VECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(VECTOR_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/vector_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/vector_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/vector_test: $(PROTOBUF_DEP) $(VECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(VECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/vector_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/vector_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_vector_test: $(VECTOR_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(VECTOR_TEST_OBJS:.o=.dep)
 endif
 endif
 

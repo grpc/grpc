@@ -36,13 +36,13 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
-#include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "test/core/util/histogram.h"
 
 typedef struct fd_pair {
   int read_fd;
@@ -275,14 +275,14 @@ static void server_thread_wrap(void* arg) {
   server_thread(args);
 }
 
-static void print_histogram(gpr_histogram* histogram) {
+static void print_histogram(grpc_histogram* histogram) {
   /* TODO(klempner): Print more detailed information, such as detailed histogram
      buckets */
   gpr_log(GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f",
-          gpr_histogram_percentile(histogram, 50),
-          gpr_histogram_percentile(histogram, 95),
-          gpr_histogram_percentile(histogram, 99),
-          gpr_histogram_percentile(histogram, 99.9));
+          grpc_histogram_percentile(histogram, 50),
+          grpc_histogram_percentile(histogram, 95),
+          grpc_histogram_percentile(histogram, 99),
+          grpc_histogram_percentile(histogram, 99.9));
 }
 
 static double now(void) {
@@ -293,7 +293,7 @@ static double now(void) {
 static void client_thread(thread_args* args) {
   char* buf = static_cast<char*>(gpr_malloc(args->msg_size * sizeof(char)));
   memset(buf, 0, args->msg_size * sizeof(char));
-  gpr_histogram* histogram = gpr_histogram_create(0.01, 60e9);
+  grpc_histogram* histogram = grpc_histogram_create(0.01, 60e9);
   double start_time;
   double end_time;
   double interval;
@@ -316,13 +316,13 @@ static void client_thread(thread_args* args) {
     end_time = now();
     if (i > kNumIters / 2) {
       interval = end_time - start_time;
-      gpr_histogram_add(histogram, interval);
+      grpc_histogram_add(histogram, interval);
     }
   }
   print_histogram(histogram);
 error:
   gpr_free(buf);
-  gpr_histogram_destroy(histogram);
+  grpc_histogram_destroy(histogram);
 }
 
 /* This roughly matches tcp_server's create_listening_socket */
@@ -583,7 +583,7 @@ static int run_benchmark(const char* socket_type, thread_args* client_args,
   gpr_log(GPR_INFO, "Starting test %s %s %zu", client_args->strategy_name,
           socket_type, client_args->msg_size);
 
-  gpr_thd_new(&tid, server_thread_wrap, server_args, nullptr);
+  gpr_thd_new(&tid, "server_thread", server_thread_wrap, server_args, nullptr);
   client_thread(client_args);
   return 0;
 }

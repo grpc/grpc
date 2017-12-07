@@ -26,10 +26,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /// Handshakers are used to perform initial handshakes on a connection
 /// before the client sends the initial request.  Some examples of what
 /// a handshaker can be used for includes support for HTTP CONNECT on
@@ -58,6 +54,7 @@ typedef struct grpc_handshaker grpc_handshaker;
 /// For the on_handshake_done callback, all members are input arguments,
 /// which the callback takes ownership of.
 typedef struct {
+  grpc_pollset_set* interested_parties;
   grpc_endpoint* endpoint;
   grpc_channel_args* args;
   grpc_slice_buffer* read_buffer;
@@ -135,11 +132,13 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
                                      grpc_error* why);
 
 /// Invokes handshakers in the order they were added.
+/// \a interested_parties may be non-nullptr to provide a pollset_set that
+/// may be used during handshaking. Ownership is not taken.
 /// Takes ownership of \a endpoint, and then passes that ownership to
 /// the \a on_handshake_done callback.
 /// Does NOT take ownership of \a channel_args.  Instead, makes a copy before
 /// invoking the first handshaker.
-/// \a acceptor will be NULL for client-side handshakers.
+/// \a acceptor will be nullptr for client-side handshakers.
 ///
 /// When done, invokes \a on_handshake_done with a grpc_handshaker_args
 /// object as its argument.  If the callback is invoked with error !=
@@ -148,9 +147,10 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 /// the arguments.
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
-    grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
-    grpc_millis deadline, grpc_tcp_server_acceptor* acceptor,
-    grpc_iomgr_cb_func on_handshake_done, void* user_data);
+    grpc_pollset_set* interested_parties, grpc_endpoint* endpoint,
+    const grpc_channel_args* channel_args, grpc_millis deadline,
+    grpc_tcp_server_acceptor* acceptor, grpc_iomgr_cb_func on_handshake_done,
+    void* user_data);
 
 /// Add \a mgr to the server side list of all pending handshake managers, the
 /// list starts with \a *head.
@@ -167,9 +167,5 @@ void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
 // Not thread-safe. Caller needs to synchronize.
 void grpc_handshake_manager_pending_list_shutdown_all(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* head, grpc_error* why);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

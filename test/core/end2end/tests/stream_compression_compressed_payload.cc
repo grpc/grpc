@@ -432,7 +432,8 @@ static void request_with_payload_template(
       op->flags = client_send_flags_bitmask;
       op->reserved = nullptr;
       op++;
-      error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), nullptr);
+      error =
+          grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
       CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
     }
@@ -444,7 +445,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -460,7 +462,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
+    error =
+        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     memset(ops, 0, sizeof(ops));
@@ -571,8 +574,8 @@ static void test_invoke_request_with_server_level(
   request_with_payload_template(
       config, "test_invoke_request_with_server_level", 0, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_STREAM_GZIP,
-      /* ignored */ nullptr, true, GRPC_COMPRESS_LEVEL_STREAM_HIGH, false, false,
-      GRPC_COMPRESS_NONE);
+      /* ignored */ nullptr, true, GRPC_COMPRESS_LEVEL_STREAM_HIGH, false,
+      false, GRPC_COMPRESS_NONE);
 }
 
 static void test_invoke_request_with_compressed_payload_md_override(
@@ -625,7 +628,8 @@ static void test_stream_compression_override_message_compression(
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
       grpc_compression_algorithm_for_level(
           level, (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1),
-      /* ignored */ nullptr, true, level, false, true, GRPC_COMPRESS_MESSAGE_GZIP);
+      /* ignored */ nullptr, true, level, false, true,
+      GRPC_COMPRESS_MESSAGE_GZIP);
 }
 
 void stream_compression_compressed_payload(grpc_end2end_test_config config) {

@@ -72,13 +72,12 @@ cdef class Call:
         result = grpc_call_cancel(self.c_call, NULL)
       return result
 
-  def set_credentials(
-      self, CallCredentials call_credentials not None):
-    cdef grpc_call_error result
-    with nogil:
-      result = grpc_call_set_credentials(
-          self.c_call, call_credentials.c_credentials)
-    return result
+  def set_credentials(self, CallCredentials call_credentials not None):
+    cdef grpc_call_credentials *c_call_credentials = call_credentials.c()
+    cdef grpc_call_error call_error = grpc_call_set_credentials(
+        self.c_call, c_call_credentials)
+    grpc_call_credentials_release(c_call_credentials)
+    return call_error
 
   def peer(self):
     cdef char *peer = NULL

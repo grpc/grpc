@@ -30,22 +30,19 @@
   (h) ^= (h) >> 16;
 
 uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
-  const uint8_t* data = (const uint8_t*)key;
-  const size_t nblocks = len / 4;
-  int i;
-
   uint32_t h1 = seed;
   uint32_t k1;
 
   const uint32_t c1 = 0xcc9e2d51;
   const uint32_t c2 = 0x1b873593;
 
-  const uint32_t* blocks = ((const uint32_t*)key) + nblocks;
-  const uint8_t* tail = (const uint8_t*)(data + nblocks * 4);
+  const uint8_t* keyptr = (const uint8_t*)key;
+  const size_t bsize = sizeof(k1);
+  const size_t nblocks = len / bsize;
 
   /* body */
-  for (i = -(int)nblocks; i; i++) {
-    memcpy(&k1, blocks + i, sizeof(uint32_t));
+  for (size_t i = 0; i < nblocks; i++, keyptr += bsize) {
+    memcpy(&k1, keyptr, bsize);
 
     k1 *= c1;
     k1 = ROTL32(k1, 15);
@@ -61,13 +58,13 @@ uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
   /* tail */
   switch (len & 3) {
     case 3:
-      k1 ^= ((uint32_t)tail[2]) << 16;
+      k1 ^= ((uint32_t)keyptr[2]) << 16;
     /* fallthrough */
     case 2:
-      k1 ^= ((uint32_t)tail[1]) << 8;
+      k1 ^= ((uint32_t)keyptr[1]) << 8;
     /* fallthrough */
     case 1:
-      k1 ^= tail[0];
+      k1 ^= keyptr[0];
       k1 *= c1;
       k1 = ROTL32(k1, 15);
       k1 *= c2;
