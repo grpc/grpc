@@ -156,7 +156,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  Status SendRpc(EchoResponse* response = nullptr) {
+  bool SendRpc(EchoResponse* response = nullptr) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
@@ -164,19 +164,19 @@ class ClientLbEnd2endTest : public ::testing::Test {
     ClientContext context;
     Status status = stub_->Echo(&context, request, response);
     if (local_response) delete response;
-    return status;
+    return status.ok();
   }
 
   void CheckRpcSendOk() {
     EchoResponse response;
-    const Status status = SendRpc(&response);
-    EXPECT_TRUE(status.ok());
+    const bool success = SendRpc(&response);
+    EXPECT_TRUE(success);
     EXPECT_EQ(response.message(), kRequestMessage_);
   }
 
   void CheckRpcSendFailure() {
-    const Status status = SendRpc();
-    EXPECT_FALSE(status.ok());
+    const bool success = SendRpc();
+    EXPECT_FALSE(success);
   }
 
   struct ServerData {
@@ -591,7 +591,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   while (gpr_time_cmp(deadline, now) > 0) {
-    if (SendRpc().ok()) break;
+    if (SendRpc()) break;
     now = gpr_now(GPR_CLOCK_MONOTONIC);
   }
   GPR_ASSERT(gpr_time_cmp(deadline, now) > 0);
