@@ -51,8 +51,10 @@ class InlinedVector {
       T& value = *reinterpret_cast<T*>(inline_ + i);
       value.~T();
     }
-    for (size_t i = 0; i < size_ - N; ++i) {
-      dynamic_[i].~T();
+    if (size_ > N) {  // Avoid subtracting two signed values.
+      for (size_t i = 0; i < size_ - N; ++i) {
+        dynamic_[i].~T();
+      }
     }
     gpr_free(dynamic_);
   }

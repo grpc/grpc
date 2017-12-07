@@ -36,6 +36,18 @@ TEST(InlinedVectorTest, CreateAndIterate) {
   }
 }
 
+TEST(InlinedVectorTest, ValuesAreInlined) {
+  const int kNumElements = 5;
+  InlinedVector<int, 10> v;
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(i);
+  }
+  EXPECT_EQ(static_cast<size_t>(kNumElements), v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    EXPECT_EQ(i, v[i]);
+  }
+}
+
 TEST(InlinedVectorTest, PushBackWithMove) {
   InlinedVector<UniquePtr<int>, 1> v;
   UniquePtr<int> i = MakeUnique<int>(3);
