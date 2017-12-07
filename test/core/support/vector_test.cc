@@ -18,6 +18,7 @@
 
 #include "src/core/lib/support/vector.h"
 #include <gtest/gtest.h>
+#include "src/core/lib/support/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -33,6 +34,21 @@ TEST(InlinedVectorTest, CreateAndIterate) {
   for (int i = 0; i < kNumElements; ++i) {
     EXPECT_EQ(i, v[i]);
   }
+}
+
+TEST(InlinedVectorTest, PushBackWithMove) {
+  InlinedVector<UniquePtr<int>, 1> v;
+  UniquePtr<int> i = MakeUnique<int>(3);
+  v.push_back(std::move(i));
+  EXPECT_EQ(1, v.size());
+  EXPECT_EQ(3, *v[0]);
+}
+
+TEST(InlinedVectorTest, EmplaceBack) {
+  InlinedVector<UniquePtr<int>, 1> v;
+  v.emplace_back(new int(3));
+  EXPECT_EQ(1, v.size());
+  EXPECT_EQ(3, *v[0]);
 }
 
 }  // namespace testing
