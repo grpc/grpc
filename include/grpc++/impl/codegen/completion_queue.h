@@ -56,7 +56,19 @@ class ServerWriter;
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
-}
+}  // namespace internal
+
+class Channel;
+class ChannelInterface;
+class ClientContext;
+class CompletionQueue;
+class Server;
+class ServerBuilder;
+class ServerContext;
+
+namespace internal {
+class CompletionQueueTag;
+class RpcMethod;
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -66,16 +78,11 @@ class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
 class UnknownMethodHandler;
-
-class Channel;
-class ChannelInterface;
-class ClientContext;
-class CompletionQueueTag;
-class CompletionQueue;
-class RpcMethod;
-class Server;
-class ServerBuilder;
-class ServerContext;
+template <class Streamer, bool WriteNeeded>
+class TemplatedBidiStreamingHandler;
+template <class InputMessage, class OutputMessage>
+class BlockingUnaryCallImpl;
+}  // namespace internal
 
 extern CoreCodegenInterface* g_core_codegen_interface;
 
@@ -108,6 +115,30 @@ class CompletionQueue : private GrpcLibraryCodegen {
                 ///< associated value; \a ok indicating its success.
     TIMEOUT     ///< deadline was reached.
   };
+
+  /// EXPERIMENTAL
+  /// First executes \a F, then reads from the queue, blocking up to
+  /// \a deadline (or the queue's shutdown).
+  /// Both \a tag and \a ok are updated upon success (if an event is available
+  /// within the \a deadline).  A \a tag points to an arbitrary location usually
+  /// employed to uniquely identify an event.
+  ///
+  /// \param F[in] Function to execute before calling AsyncNext on this queue.
+  /// \param tag[out] Upon sucess, updated to point to the event's tag.
+  /// \param ok[out] Upon sucess, true if read a regular event, false otherwise.
+  /// \param deadline[in] How long to block in wait for an event.
+  ///
+  /// \return The type of event read.
+  template <typename T, typename F>
+  NextStatus DoThenAsyncNext(F&& f, void** tag, bool* ok, const T& deadline) {
+    CompletionQueueTLSCache cache = CompletionQueueTLSCache(this);
+    f();
+    if (cache.Flush(tag, ok)) {
+      return GOT_EVENT;
+    } else {
+      return AsyncNext(tag, ok, deadline);
+    }
+  }
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
   /// Both \a tag and \a ok are updated upon success (if an event is available
@@ -196,28 +227,39 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class W, class R>
   friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class RpcMethodHandler;
+  friend class ::grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ClientStreamingHandler;
+  friend class ::grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ServerStreamingHandler;
+  friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class TemplatedBidiStreamingHandler;
-  friend class UnknownMethodHandler;
+  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  friend class ::grpc::internal::UnknownMethodHandler;
   friend class ::grpc::Server;
   friend class ::grpc::ServerContext;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel,
-                                  const RpcMethod& method,
-                                  ClientContext* context,
-                                  const InputMessage& request,
-                                  OutputMessage* result);
+  friend class ::grpc::internal::BlockingUnaryCallImpl;
+
+  /// EXPERIMENTAL
+  /// Creates a Thread Local cache to store the first event
+  /// On this completion queue queued from this thread.  Once
+  /// initialized, it must be flushed on the same thread.
+  class CompletionQueueTLSCache {
+   public:
+    CompletionQueueTLSCache(CompletionQueue* cq);
+    ~CompletionQueueTLSCache();
+    bool Flush(void** tag, bool* ok);
+
+   private:
+    CompletionQueue* cq_;
+    bool flushed_;
+  };
 
   NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
 
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
-  bool Pluck(CompletionQueueTag* tag) {
+  bool Pluck(internal::CompletionQueueTag* tag) {
     auto deadline =
         g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
@@ -238,7 +280,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// implementation to simple call the other TryPluck function with a zero
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
-  void TryPluck(CompletionQueueTag* tag) {
+  void TryPluck(internal::CompletionQueueTag* tag) {
     auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
@@ -254,7 +296,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///
   /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
   /// that the tag is internal not something that is returned to the user.
-  void TryPluck(CompletionQueueTag* tag, gpr_timespec deadline) {
+  void TryPluck(internal::CompletionQueueTag* tag, gpr_timespec deadline) {
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {

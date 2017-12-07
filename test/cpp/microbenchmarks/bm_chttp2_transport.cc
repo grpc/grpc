@@ -26,14 +26,12 @@
 #include <memory>
 #include <queue>
 #include <sstream>
-extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
-}
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
@@ -46,10 +44,16 @@ auto &force_library_initialization = Library::get();
 class DummyEndpoint : public grpc_endpoint {
  public:
   DummyEndpoint() {
-    static const grpc_endpoint_vtable my_vtable = {
-        read,     write,   add_to_pollset,    add_to_pollset_set,
-        shutdown, destroy, get_resource_user, get_peer,
-        get_fd};
+    static const grpc_endpoint_vtable my_vtable = {read,
+                                                   write,
+                                                   add_to_pollset,
+                                                   add_to_pollset_set,
+                                                   delete_from_pollset_set,
+                                                   shutdown,
+                                                   destroy,
+                                                   get_resource_user,
+                                                   get_peer,
+                                                   get_fd};
     grpc_endpoint::vtable = &my_vtable;
     ru_ = grpc_resource_user_create(Library::get().rq(), "dummy_endpoint");
   }
@@ -103,6 +107,10 @@ class DummyEndpoint : public grpc_endpoint {
 
   static void add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                  grpc_pollset_set *pollset) {}
+
+  static void delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
+                                      grpc_endpoint *ep,
+                                      grpc_pollset_set *pollset) {}
 
   static void shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                        grpc_error *why) {
@@ -430,9 +438,8 @@ static void BM_TransportStreamSend(benchmark::State &state) {
           return;
         }
         // force outgoing window to be yuge
-        s->chttp2_stream()->flow_control.remote_window_delta =
-            1024 * 1024 * 1024;
-        f.chttp2_transport()->flow_control.remote_window = 1024 * 1024 * 1024;
+        s->chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
+        f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
         grpc_slice_buffer_stream_init(&send_stream, &send_buffer, 0);
         reset_op();
         op.on_complete = c.get();
@@ -562,22 +569,21 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   std::unique_ptr<Closure> drain_continue;
   grpc_slice recv_slice;
 
-  std::unique_ptr<Closure> c = MakeClosure([&](grpc_exec_ctx *exec_ctx,
-                                               grpc_error *error) {
-    if (!state.KeepRunning()) return;
-    // force outgoing window to be yuge
-    s.chttp2_stream()->flow_control.local_window_delta = 1024 * 1024 * 1024;
-    s.chttp2_stream()->flow_control.announced_window_delta = 1024 * 1024 * 1024;
-    f.chttp2_transport()->flow_control.announced_window = 1024 * 1024 * 1024;
-    received = 0;
-    reset_op();
-    op.on_complete = do_nothing.get();
-    op.recv_message = true;
-    op.payload->recv_message.recv_message = &recv_stream;
-    op.payload->recv_message.recv_message_ready = drain_start.get();
-    s.Op(exec_ctx, &op);
-    f.PushInput(grpc_slice_ref(incoming_data));
-  });
+  std::unique_ptr<Closure> c =
+      MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
+        if (!state.KeepRunning()) return;
+        // force outgoing window to be yuge
+        s.chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
+        f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
+        received = 0;
+        reset_op();
+        op.on_complete = do_nothing.get();
+        op.recv_message = true;
+        op.payload->recv_message.recv_message = &recv_stream;
+        op.payload->recv_message.recv_message_ready = drain_start.get();
+        s.Op(exec_ctx, &op);
+        f.PushInput(grpc_slice_ref(incoming_data));
+      });
 
   drain_start = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
     if (recv_stream == NULL) {

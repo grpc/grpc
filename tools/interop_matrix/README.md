@@ -5,31 +5,20 @@ This directory contains scripts that facilitate building and running gRPC tests 
 The setup builds gRPC docker images for each language/runtime and upload it to Google Container Registry (GCR). These images, encapsulating gRPC stack
 from specific releases/tag, are used to test version compatiblity between gRPC release versions.
 
-## Step-by-step instructions for adding a new release to compatibility test
+## Step-by-step instructions for adding a GCR image for a new release for compatibility test
 We have continuous nightly test setup to test gRPC backward compatibility between old clients and latest server.  When a gRPC developer creates a new gRPC release, s/he is also responsible to add the just-released gRPC client to the nightly test.  The steps are:
-- Add (or update) an entry in ./client_matrix.py file to reference the github tag for the release.
+- Add (or update) an entry in `./client_matrix.py` file to reference the github tag for the release.
 - Build new client docker image(s).  For example, for java release `v1.9.9`, do
   - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --language=java`
 - Verify that the new docker image was built successfully and uploaded to GCR.  For example,
-  - `gcloud beta container images list-tags gcr.io/grpc-testing/grpc_interop_java_oracle8`
-  - should show an image entry with tag `v1.9.9`.
+  - `gcloud beta container images list --repository gcr.io/grpc-testing` shows image repos.
+  - `gcloud beta container images list-tags gcr.io/grpc-testing/grpc_interop_java_oracle8` should show an image entry with tag `v1.9.9`.
 - Verify the just-created docker client image would pass backward compatibility test (it should).  For example,
   - `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9` followed by
-  - `docker_image=gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9 ./testcases/java__master`
+  - `docker_image=gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9 tools/interop_matrix/testcases/java__master`
 - git commit the change and merge it to upstream/master.
 - (Optional) clean up the tmp directory to where grpc source is cloned at `/export/hda3/tmp/grpc_matrix/`.
 For more details on each step, refer to sections below.
-
-## Instructions for creating GCR images
-- Edit  `./client_matrix.py` to include desired gRPC release.
-- Run `tools/interop_matrix/create_matrix_images.py`.  Useful options:
-  - `--git_checkout` enables git checkout grpc release branch/tag.
-  - `--release` specifies a git release tag.  Make sure it is a valid tag in the grpc github rep.
-  - `--language` specifies a language.
-  For example, To build all languages for all gRPC releases across all runtimes, do `tools/interop_matrix/create_matrix_images.py --git_checkout --release=all`.
-- Verify the newly created docker images are uploaded to GCR.  For example:
-  - `gcloud beta container images list --repository gcr.io/grpc-testing` shows image repos.
-  - `gcloud beta container images list-tags gcr.io/grpc-testing/grpc_interop_go1.7` show tags for a image repo.
 
 ## Instructions for adding new language/runtimes*
 - Create new `Dockerfile.template`, `build_interop.sh.template` for the language/runtime under `template/tools/dockerfile/`.
@@ -47,7 +36,7 @@ For more details on each step, refer to sections below.
 
 ## Instructions for running test cases against GCR images
 - Run `tools/interop_matrix/run_interop_matrix_tests.py`.  Useful options:
-  - `--release` specifies a git release tag.  Defaults to `--release=master`.  Make sure the GCR images with the tag have been created using `create_matrix_images.py` above.
+  - `--release` specifies a git release tag.  Defaults to `--release=all`.  Make sure the GCR images with the tag have been created using `create_matrix_images.py` above.
   - `--language` specifies a language.  Defaults to `--language=all`.
   For example, To test all languages for all gRPC releases across all runtimes, do `tools/interop_matrix/run_interop_matrix_test.py --release=all`.
 - The output for all the test cases is recorded in a junit style xml file (default to 'report.xml').

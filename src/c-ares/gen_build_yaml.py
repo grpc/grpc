@@ -29,10 +29,14 @@ try:
     subprocess.call("third_party/cares/cares/configure", shell=True)
 
   def config_platform(x):
-    if 'linux' in sys.platform:
-      return 'src/cares/cares/config_linux/ares_config.h'
     if 'darwin' in sys.platform:
       return 'src/cares/cares/config_darwin/ares_config.h'
+    if 'freebsd' in sys.platform:
+      return 'src/cares/cares/config_freebsd/ares_config.h'
+    if 'linux' in sys.platform:
+      return 'src/cares/cares/config_linux/ares_config.h'
+    if 'openbsd' in sys.platform:
+      return 'src/cares/cares/config_openbsd/ares_config.h'
     if not os.path.isfile('third_party/cares/cares/ares_config.h'):
       gen_ares_build(x)
     return 'third_party/cares/cares/ares_config.h'
@@ -124,8 +128,10 @@ try:
         "third_party/cares/cares/config-win32.h",
         "third_party/cares/cares/setup_once.h",
         "third_party/cares/ares_build.h",
+        "third_party/cares/config_darwin/ares_config.h",
+        "third_party/cares/config_freebsd/ares_config.h",
         "third_party/cares/config_linux/ares_config.h",
-        "third_party/cares/config_darwin/ares_config.h"
+        "third_party/cares/config_openbsd/ares_config.h"
     ],
   }]
 except:

@@ -115,6 +115,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     }
     memset(c->result, 0, sizeof(*c->result));
   } else {
+    grpc_endpoint_delete_from_pollset_set(exec_ctx, args->endpoint,
+                                          c->args.interested_parties);
     c->result->transport =
         grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 1);
     GPR_ASSERT(c->result->transport);
@@ -136,6 +138,8 @@ static void start_handshake_locked(grpc_exec_ctx *exec_ctx,
   c->handshake_mgr = grpc_handshake_manager_create();
   grpc_handshakers_add(exec_ctx, HANDSHAKER_CLIENT, c->args.channel_args,
                        c->handshake_mgr);
+  grpc_endpoint_add_to_pollset_set(exec_ctx, c->endpoint,
+                                   c->args.interested_parties);
   grpc_handshake_manager_do_handshake(
       exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
       c->args.deadline, NULL /* acceptor */, on_handshake_done, c);

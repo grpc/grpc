@@ -61,12 +61,40 @@ typedef struct {
   event_engine_factory_fn factory;
 } event_engine_factory;
 
+namespace {
+
+extern "C" {
+
+grpc_poll_function_type real_poll_function;
+
+int dummy_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
+  if (timeout == 0) {
+    return real_poll_function(fds, nfds, 0);
+  } else {
+    gpr_log(GPR_ERROR, "Attempted a blocking poll when declared non-polling.");
+    GPR_ASSERT(false);
+    return -1;
+  }
+}
+}  // extern "C"
+
+const grpc_event_engine_vtable *init_non_polling(bool explicit_request) {
+  if (!explicit_request) {
+    return nullptr;
+  }
+  // return the simplest engine as a dummy but also override the poller
+  auto ret = grpc_init_poll_posix(explicit_request);
+  real_poll_function = grpc_poll_function;
+  grpc_poll_function = dummy_poll;
+
+  return ret;
+}
+}  // namespace
+
 static const event_engine_factory g_factories[] = {
-    {"epoll1", grpc_init_epoll1_linux},
-    {"epollsig", grpc_init_epollsig_linux},
-    {"poll", grpc_init_poll_posix},
-    {"poll-cv", grpc_init_poll_cv_posix},
-    {"epollex", grpc_init_epollex_linux},
+    {"epollex", grpc_init_epollex_linux},   {"epoll1", grpc_init_epoll1_linux},
+    {"epollsig", grpc_init_epollsig_linux}, {"poll", grpc_init_poll_posix},
+    {"poll-cv", grpc_init_poll_cv_posix},   {"none", init_non_polling},
 };
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {

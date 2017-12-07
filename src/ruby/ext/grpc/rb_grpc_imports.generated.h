@@ -25,7 +25,6 @@
 
 #include <windows.h>
 
-#include <grpc/census.h>
 #include <grpc/compression.h>
 #include <grpc/compression_ruby.h>
 #include <grpc/grpc.h>
@@ -48,90 +47,6 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
-typedef int(*census_initialize_type)(int features);
-extern census_initialize_type census_initialize_import;
-#define census_initialize census_initialize_import
-typedef void(*census_shutdown_type)(void);
-extern census_shutdown_type census_shutdown_import;
-#define census_shutdown census_shutdown_import
-typedef int(*census_supported_type)(void);
-extern census_supported_type census_supported_import;
-#define census_supported census_supported_import
-typedef int(*census_enabled_type)(void);
-extern census_enabled_type census_enabled_import;
-#define census_enabled census_enabled_import
-typedef census_context *(*census_context_create_type)(const census_context *base, const census_tag *tags, int ntags, census_context_status const **status);
-extern census_context_create_type census_context_create_import;
-#define census_context_create census_context_create_import
-typedef void(*census_context_destroy_type)(census_context *context);
-extern census_context_destroy_type census_context_destroy_import;
-#define census_context_destroy census_context_destroy_import
-typedef const census_context_status *(*census_context_get_status_type)(const census_context *context);
-extern census_context_get_status_type census_context_get_status_import;
-#define census_context_get_status census_context_get_status_import
-typedef void(*census_context_initialize_iterator_type)(const census_context *context, census_context_iterator *iterator);
-extern census_context_initialize_iterator_type census_context_initialize_iterator_import;
-#define census_context_initialize_iterator census_context_initialize_iterator_import
-typedef int(*census_context_next_tag_type)(census_context_iterator *iterator, census_tag *tag);
-extern census_context_next_tag_type census_context_next_tag_import;
-#define census_context_next_tag census_context_next_tag_import
-typedef int(*census_context_get_tag_type)(const census_context *context, const char *key, census_tag *tag);
-extern census_context_get_tag_type census_context_get_tag_import;
-#define census_context_get_tag census_context_get_tag_import
-typedef size_t(*census_context_encode_type)(const census_context *context, char *buffer, size_t buf_size);
-extern census_context_encode_type census_context_encode_import;
-#define census_context_encode census_context_encode_import
-typedef census_context *(*census_context_decode_type)(const char *buffer, size_t size);
-extern census_context_decode_type census_context_decode_import;
-#define census_context_decode census_context_decode_import
-typedef int(*census_trace_mask_type)(const census_context *context);
-extern census_trace_mask_type census_trace_mask_import;
-#define census_trace_mask census_trace_mask_import
-typedef void(*census_set_trace_mask_type)(int trace_mask);
-extern census_set_trace_mask_type census_set_trace_mask_import;
-#define census_set_trace_mask census_set_trace_mask_import
-typedef census_timestamp(*census_start_rpc_op_timestamp_type)(void);
-extern census_start_rpc_op_timestamp_type census_start_rpc_op_timestamp_import;
-#define census_start_rpc_op_timestamp census_start_rpc_op_timestamp_import
-typedef census_context *(*census_start_client_rpc_op_type)(const census_context *context, int64_t rpc_name_id, const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask, const census_timestamp *start_time);
-extern census_start_client_rpc_op_type census_start_client_rpc_op_import;
-#define census_start_client_rpc_op census_start_client_rpc_op_import
-typedef void(*census_set_rpc_client_peer_type)(census_context *context, const char *peer);
-extern census_set_rpc_client_peer_type census_set_rpc_client_peer_import;
-#define census_set_rpc_client_peer census_set_rpc_client_peer_import
-typedef census_context *(*census_start_server_rpc_op_type)(const char *buffer, int64_t rpc_name_id, const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask, census_timestamp *start_time);
-extern census_start_server_rpc_op_type census_start_server_rpc_op_import;
-#define census_start_server_rpc_op census_start_server_rpc_op_import
-typedef census_context *(*census_start_op_type)(census_context *context, const char *family, const char *name, int trace_mask);
-extern census_start_op_type census_start_op_import;
-#define census_start_op census_start_op_import
-typedef void(*census_end_op_type)(census_context *context, int status);
-extern census_end_op_type census_end_op_import;
-#define census_end_op census_end_op_import
-typedef void(*census_trace_print_type)(census_context *context, uint32_t type, const char *buffer, size_t n);
-extern census_trace_print_type census_trace_print_import;
-#define census_trace_print census_trace_print_import
-typedef int(*census_trace_scan_start_type)(int consume);
-extern census_trace_scan_start_type census_trace_scan_start_import;
-#define census_trace_scan_start census_trace_scan_start_import
-typedef int(*census_get_trace_record_type)(census_trace_record *trace_record);
-extern census_get_trace_record_type census_get_trace_record_import;
-#define census_get_trace_record census_get_trace_record_import
-typedef void(*census_trace_scan_end_type)();
-extern census_trace_scan_end_type census_trace_scan_end_import;
-#define census_trace_scan_end census_trace_scan_end_import
-typedef int32_t(*census_define_resource_type)(const uint8_t *resource_pb, size_t resource_pb_size);
-extern census_define_resource_type census_define_resource_import;
-#define census_define_resource census_define_resource_import
-typedef void(*census_delete_resource_type)(int32_t resource_id);
-extern census_delete_resource_type census_delete_resource_import;
-#define census_delete_resource census_delete_resource_import
-typedef int32_t(*census_resource_id_type)(const char *name);
-extern census_resource_id_type census_resource_id_import;
-#define census_resource_id census_resource_id_import
-typedef void(*census_record_values_type)(census_context *context, census_value *values, size_t nvalues);
-extern census_record_values_type census_record_values_import;
-#define census_record_values census_record_values_import
 typedef int(*grpc_compression_algorithm_is_message_type)(grpc_compression_algorithm algorithm);
 extern grpc_compression_algorithm_is_message_type grpc_compression_algorithm_is_message_import;
 #define grpc_compression_algorithm_is_message grpc_compression_algorithm_is_message_import
@@ -216,6 +131,12 @@ extern grpc_completion_queue_shutdown_type grpc_completion_queue_shutdown_import
 typedef void(*grpc_completion_queue_destroy_type)(grpc_completion_queue *cq);
 extern grpc_completion_queue_destroy_type grpc_completion_queue_destroy_import;
 #define grpc_completion_queue_destroy grpc_completion_queue_destroy_import
+typedef void(*grpc_completion_queue_thread_local_cache_init_type)(grpc_completion_queue *cq);
+extern grpc_completion_queue_thread_local_cache_init_type grpc_completion_queue_thread_local_cache_init_import;
+#define grpc_completion_queue_thread_local_cache_init grpc_completion_queue_thread_local_cache_init_import
+typedef int(*grpc_completion_queue_thread_local_cache_flush_type)(grpc_completion_queue *cq, void **tag, int *ok);
+extern grpc_completion_queue_thread_local_cache_flush_type grpc_completion_queue_thread_local_cache_flush_import;
+#define grpc_completion_queue_thread_local_cache_flush grpc_completion_queue_thread_local_cache_flush_import
 typedef grpc_alarm *(*grpc_alarm_create_type)(void *reserved);
 extern grpc_alarm_create_type grpc_alarm_create_import;
 #define grpc_alarm_create grpc_alarm_create_import
@@ -444,12 +365,30 @@ extern grpc_secure_channel_create_type grpc_secure_channel_create_import;
 typedef void(*grpc_server_credentials_release_type)(grpc_server_credentials *creds);
 extern grpc_server_credentials_release_type grpc_server_credentials_release_import;
 #define grpc_server_credentials_release grpc_server_credentials_release_import
+typedef grpc_ssl_server_certificate_config *(*grpc_ssl_server_certificate_config_create_type)(const char *pem_root_certs, const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs, size_t num_key_cert_pairs);
+extern grpc_ssl_server_certificate_config_create_type grpc_ssl_server_certificate_config_create_import;
+#define grpc_ssl_server_certificate_config_create grpc_ssl_server_certificate_config_create_import
+typedef void(*grpc_ssl_server_certificate_config_destroy_type)(grpc_ssl_server_certificate_config *config);
+extern grpc_ssl_server_certificate_config_destroy_type grpc_ssl_server_certificate_config_destroy_import;
+#define grpc_ssl_server_certificate_config_destroy grpc_ssl_server_certificate_config_destroy_import
 typedef grpc_server_credentials *(*grpc_ssl_server_credentials_create_type)(const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs, size_t num_key_cert_pairs, int force_client_auth, void *reserved);
 extern grpc_ssl_server_credentials_create_type grpc_ssl_server_credentials_create_import;
 #define grpc_ssl_server_credentials_create grpc_ssl_server_credentials_create_import
 typedef grpc_server_credentials *(*grpc_ssl_server_credentials_create_ex_type)(const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs, size_t num_key_cert_pairs, grpc_ssl_client_certificate_request_type client_certificate_request, void *reserved);
 extern grpc_ssl_server_credentials_create_ex_type grpc_ssl_server_credentials_create_ex_import;
 #define grpc_ssl_server_credentials_create_ex grpc_ssl_server_credentials_create_ex_import
+typedef grpc_ssl_server_credentials_options *(*grpc_ssl_server_credentials_create_options_using_config_type)(grpc_ssl_client_certificate_request_type client_certificate_request, grpc_ssl_server_certificate_config *certificate_config);
+extern grpc_ssl_server_credentials_create_options_using_config_type grpc_ssl_server_credentials_create_options_using_config_import;
+#define grpc_ssl_server_credentials_create_options_using_config grpc_ssl_server_credentials_create_options_using_config_import
+typedef grpc_ssl_server_credentials_options *(*grpc_ssl_server_credentials_create_options_using_config_fetcher_type)(grpc_ssl_client_certificate_request_type client_certificate_request, grpc_ssl_server_certificate_config_callback cb, void *user_data);
+extern grpc_ssl_server_credentials_create_options_using_config_fetcher_type grpc_ssl_server_credentials_create_options_using_config_fetcher_import;
+#define grpc_ssl_server_credentials_create_options_using_config_fetcher grpc_ssl_server_credentials_create_options_using_config_fetcher_import
+typedef void(*grpc_ssl_server_credentials_options_destroy_type)(grpc_ssl_server_credentials_options *options);
+extern grpc_ssl_server_credentials_options_destroy_type grpc_ssl_server_credentials_options_destroy_import;
+#define grpc_ssl_server_credentials_options_destroy grpc_ssl_server_credentials_options_destroy_import
+typedef grpc_server_credentials *(*grpc_ssl_server_credentials_create_with_options_type)(grpc_ssl_server_credentials_options *options);
+extern grpc_ssl_server_credentials_create_with_options_type grpc_ssl_server_credentials_create_with_options_import;
+#define grpc_ssl_server_credentials_create_with_options grpc_ssl_server_credentials_create_with_options_import
 typedef int(*grpc_server_add_secure_http2_port_type)(grpc_server *server, const char *addr, grpc_server_credentials *creds);
 extern grpc_server_add_secure_http2_port_type grpc_server_add_secure_http2_port_import;
 #define grpc_server_add_secure_http2_port grpc_server_add_secure_http2_port_import
@@ -561,9 +500,6 @@ extern grpc_slice_cmp_type grpc_slice_cmp_import;
 typedef int(*grpc_slice_str_cmp_type)(grpc_slice a, const char *b);
 extern grpc_slice_str_cmp_type grpc_slice_str_cmp_import;
 #define grpc_slice_str_cmp grpc_slice_str_cmp_import
-typedef int(*grpc_slice_buf_cmp_type)(grpc_slice a, const void *b, size_t blen);
-extern grpc_slice_buf_cmp_type grpc_slice_buf_cmp_import;
-#define grpc_slice_buf_cmp grpc_slice_buf_cmp_import
 typedef int(*grpc_slice_buf_start_eq_type)(grpc_slice a, const void *b, size_t blen);
 extern grpc_slice_buf_start_eq_type grpc_slice_buf_start_eq_import;
 #define grpc_slice_buf_start_eq grpc_slice_buf_start_eq_import

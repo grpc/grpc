@@ -221,6 +221,7 @@ static VALUE grpc_rb_call_close(VALUE self) {
   TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
   if (call != NULL) {
     destroy_call(call);
+    xfree(RTYPEDDATA_DATA(self));
     RTYPEDDATA_DATA(self) = NULL;
   }
   return Qnil;

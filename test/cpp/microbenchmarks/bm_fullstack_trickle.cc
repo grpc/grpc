@@ -21,17 +21,16 @@
 #include <benchmark/benchmark.h>
 #include <gflags/gflags.h>
 #include <fstream>
-#include "src/core/lib/profiling/timers.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
-#include "test/cpp/microbenchmarks/fullstack_fixtures.h"
-#include "test/cpp/util/test_config.h"
-extern "C" {
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/trickle_endpoint.h"
-}
+#include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
+#include "test/cpp/microbenchmarks/fullstack_fixtures.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(log, false, "Log state to CSV files");
 DEFINE_int32(
@@ -144,15 +143,18 @@ class TrickledCHTTP2 : public EndpointPairFixture {
         client->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != nullptr,
         server->lists[GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT].head != nullptr,
         server->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != nullptr,
-        client->flow_control.remote_window, server->flow_control.remote_window,
-        client->flow_control.announced_window,
-        server->flow_control.announced_window,
-        client_stream ? client_stream->flow_control.remote_window_delta : -1,
-        server_stream ? server_stream->flow_control.remote_window_delta : -1,
-        client_stream ? client_stream->flow_control.local_window_delta : -1,
-        server_stream ? server_stream->flow_control.local_window_delta : -1,
-        client_stream ? client_stream->flow_control.announced_window_delta : -1,
-        server_stream ? server_stream->flow_control.announced_window_delta : -1,
+        client->flow_control->remote_window_,
+        server->flow_control->remote_window_,
+        client->flow_control->announced_window_,
+        server->flow_control->announced_window_,
+        client_stream ? client_stream->flow_control->remote_window_delta_ : -1,
+        server_stream ? server_stream->flow_control->remote_window_delta_ : -1,
+        client_stream ? client_stream->flow_control->local_window_delta_ : -1,
+        server_stream ? server_stream->flow_control->local_window_delta_ : -1,
+        client_stream ? client_stream->flow_control->announced_window_delta_
+                      : -1,
+        server_stream ? server_stream->flow_control->announced_window_delta_
+                      : -1,
         client->settings[GRPC_PEER_SETTINGS]
                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
         client->settings[GRPC_LOCAL_SETTINGS]

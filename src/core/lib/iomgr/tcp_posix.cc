@@ -186,7 +186,7 @@ static void cover_self(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   }
   if (old_count == 0) {
     GRPC_STATS_INC_TCP_BACKUP_POLLERS_CREATED(exec_ctx);
-    p = (backup_poller *)gpr_malloc(sizeof(*p) + grpc_pollset_size());
+    p = (backup_poller *)gpr_zalloc(sizeof(*p) + grpc_pollset_size());
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p create", p);
     }
@@ -704,6 +704,13 @@ static void tcp_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_pollset_set_add_fd(exec_ctx, pollset_set, tcp->em_fd);
 }
 
+static void tcp_delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
+                                        grpc_endpoint *ep,
+                                        grpc_pollset_set *pollset_set) {
+  grpc_tcp *tcp = (grpc_tcp *)ep;
+  grpc_pollset_set_del_fd(exec_ctx, pollset_set, tcp->em_fd);
+}
+
 static char *tcp_get_peer(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   return gpr_strdup(tcp->peer_string);
@@ -719,10 +726,16 @@ static grpc_resource_user *tcp_get_resource_user(grpc_endpoint *ep) {
   return tcp->resource_user;
 }
 
-static const grpc_endpoint_vtable vtable = {
-    tcp_read,     tcp_write,   tcp_add_to_pollset,    tcp_add_to_pollset_set,
-    tcp_shutdown, tcp_destroy, tcp_get_resource_user, tcp_get_peer,
-    tcp_get_fd};
+static const grpc_endpoint_vtable vtable = {tcp_read,
+                                            tcp_write,
+                                            tcp_add_to_pollset,
+                                            tcp_add_to_pollset_set,
+                                            tcp_delete_from_pollset_set,
+                                            tcp_shutdown,
+                                            tcp_destroy,
+                                            tcp_get_resource_user,
+                                            tcp_get_peer,
+                                            tcp_get_fd};
 
 #define MAX_CHUNK_SIZE 32 * 1024 * 1024
 

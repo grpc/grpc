@@ -40,7 +40,6 @@ namespace grpc {
 class AsyncGenericService;
 class ResourceQuota;
 class CompletionQueue;
-class RpcService;
 class Server;
 class ServerCompletionQueue;
 class ServerCredentials;
@@ -140,7 +139,7 @@ class ServerBuilder {
   /// please use IPv6 any, i.e., [::]:<port>, which also accepts IPv4
   /// connections.  Valid values include dns:///localhost:1234, /
   /// 192.168.1.1:31416, dns:///[::1]:27182, etc.).
-  /// \params creds The credentials associated with the server.
+  /// \param creds The credentials associated with the server.
   /// \param selected_port[out] If not `nullptr`, gets populated with the port
   /// number bound to the \a grpc::Server for the corresponding endpoint after
   /// it is successfully bound, 0 otherwise.
