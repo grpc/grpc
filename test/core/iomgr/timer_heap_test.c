@@ -34,8 +34,8 @@
 
 static gpr_atm random_deadline(void) { return rand(); }
 
-static grpc_timer *create_test_elements(size_t num_elements) {
-  grpc_timer *elems = gpr_malloc(num_elements * sizeof(grpc_timer));
+static grpc_timer* create_test_elements(size_t num_elements) {
+  grpc_timer* elems = gpr_malloc(num_elements * sizeof(grpc_timer));
   size_t i;
   for (i = 0; i < num_elements; i++) {
     elems[i].deadline = random_deadline();
@@ -43,7 +43,7 @@ static grpc_timer *create_test_elements(size_t num_elements) {
   return elems;
 }
 
-static int contains(grpc_timer_heap *pq, grpc_timer *el) {
+static int contains(grpc_timer_heap* pq, grpc_timer* el) {
   size_t i;
   for (i = 0; i < pq->timer_count; i++) {
     if (pq->timers[i] == el) return 1;
@@ -51,7 +51,7 @@ static int contains(grpc_timer_heap *pq, grpc_timer *el) {
   return 0;
 }
 
-static void check_valid(grpc_timer_heap *pq) {
+static void check_valid(grpc_timer_heap* pq) {
   size_t i;
   for (i = 0; i < pq->timer_count; ++i) {
     size_t left_child = 1u + 2u * i;
@@ -74,8 +74,8 @@ static void test1(void) {
   const size_t num_test_elements = 200;
   const size_t num_test_operations = 10000;
   size_t i;
-  grpc_timer *test_elements = create_test_elements(num_test_elements);
-  uint8_t *inpq = gpr_malloc(num_test_elements);
+  grpc_timer* test_elements = create_test_elements(num_test_elements);
+  uint8_t* inpq = gpr_malloc(num_test_elements);
 
   gpr_log(GPR_INFO, "test1");
 
@@ -102,7 +102,7 @@ static void test1(void) {
 
   for (i = 0; i < num_test_operations; ++i) {
     size_t elem_num = (size_t)rand() % num_test_elements;
-    grpc_timer *el = &test_elements[elem_num];
+    grpc_timer* el = &test_elements[elem_num];
     if (!inpq[elem_num]) { /* not in pq */
       GPR_ASSERT(!contains(&pq, el));
       el->deadline = random_deadline();
@@ -133,9 +133,9 @@ typedef struct {
   bool inserted;
 } elem_struct;
 
-static elem_struct *search_elems(elem_struct *elems, size_t count,
+static elem_struct* search_elems(elem_struct* elems, size_t count,
                                  bool inserted) {
-  size_t *search_order = gpr_malloc(count * sizeof(*search_order));
+  size_t* search_order = gpr_malloc(count * sizeof(*search_order));
   for (size_t i = 0; i < count; i++) {
     search_order[i] = i;
   }
@@ -144,7 +144,7 @@ static elem_struct *search_elems(elem_struct *elems, size_t count,
     size_t b = (size_t)rand() % count;
     GPR_SWAP(size_t, search_order[a], search_order[b]);
   }
-  elem_struct *out = NULL;
+  elem_struct* out = NULL;
   for (size_t i = 0; out == NULL && i < count; i++) {
     if (elems[search_order[i]].inserted == inserted) {
       out = &elems[search_order[i]];
@@ -160,7 +160,7 @@ static void test2(void) {
   grpc_timer_heap pq;
 
   static const size_t elems_size = 1000;
-  elem_struct *elems = gpr_malloc(elems_size * sizeof(elem_struct));
+  elem_struct* elems = gpr_malloc(elems_size * sizeof(elem_struct));
   size_t num_inserted = 0;
 
   grpc_timer_heap_init(&pq);
@@ -170,7 +170,7 @@ static void test2(void) {
     int r = rand() % 1000;
     if (r <= 550) {
       /* 55% of the time we try to add something */
-      elem_struct *el = search_elems(elems, GPR_ARRAY_SIZE(elems), false);
+      elem_struct* el = search_elems(elems, GPR_ARRAY_SIZE(elems), false);
       if (el != NULL) {
         el->elem.deadline = random_deadline();
         grpc_timer_heap_add(&pq, &el->elem);
@@ -180,7 +180,7 @@ static void test2(void) {
       }
     } else if (r <= 650) {
       /* 10% of the time we try to remove something */
-      elem_struct *el = search_elems(elems, GPR_ARRAY_SIZE(elems), true);
+      elem_struct* el = search_elems(elems, GPR_ARRAY_SIZE(elems), true);
       if (el != NULL) {
         grpc_timer_heap_remove(&pq, &el->elem);
         el->inserted = false;
@@ -190,7 +190,7 @@ static void test2(void) {
     } else {
       /* the remaining times we pop */
       if (num_inserted > 0) {
-        grpc_timer *top = grpc_timer_heap_top(&pq);
+        grpc_timer* top = grpc_timer_heap_top(&pq);
         grpc_timer_heap_pop(&pq);
         for (size_t i = 0; i < elems_size; i++) {
           if (top == &elems[i].elem) {
@@ -204,7 +204,7 @@ static void test2(void) {
     }
 
     if (num_inserted) {
-      gpr_atm *min_deadline = NULL;
+      gpr_atm* min_deadline = NULL;
       for (size_t i = 0; i < elems_size; i++) {
         if (elems[i].inserted) {
           if (min_deadline == NULL) {
@@ -246,7 +246,7 @@ static void shrink_test(void) {
 
   /* Remove elements until the Size is 1/4 the original size. */
   while (pq.timer_count > num_elements / 4) {
-    grpc_timer *const te = pq.timers[pq.timer_count - 1];
+    grpc_timer* const te = pq.timers[pq.timer_count - 1];
     grpc_timer_heap_remove(&pq, te);
     gpr_free(te);
   }
@@ -263,7 +263,7 @@ static void shrink_test(void) {
   expected_size = pq.timer_count;
   while (pq.timer_count > 0) {
     const size_t which = (size_t)rand() % pq.timer_count;
-    grpc_timer *te = pq.timers[which];
+    grpc_timer* te = pq.timers[which];
     grpc_timer_heap_remove(&pq, te);
     gpr_free(te);
     expected_size--;
@@ -283,7 +283,7 @@ static void shrink_test(void) {
   grpc_timer_heap_destroy(&pq);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   int i;
 
   grpc_test_init(argc, argv);
@@ -299,6 +299,6 @@ int main(int argc, char **argv) {
 
 #else /* GRPC_TIMER_USE_GENERIC */
 
-int main(int argc, char **argv) { return 1; }
+int main(int argc, char** argv) { return 1; }
 
 #endif /* GRPC_TIMER_USE_GENERIC */

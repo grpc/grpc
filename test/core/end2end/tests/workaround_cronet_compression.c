@@ -36,12 +36,12 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char *test_name,
-                                            grpc_channel_args *client_args,
-                                            grpc_channel_args *server_args) {
+                                            const char* test_name,
+                                            grpc_channel_args* client_args,
+                                            grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -58,14 +58,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
+static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
@@ -76,13 +76,13 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   f->server = NULL;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture *f) {
+static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = NULL;
 }
 
-static void end_test(grpc_end2end_test_fixture *f) {
+static void end_test(grpc_end2end_test_fixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -93,36 +93,36 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 static void request_with_payload_template(
-    grpc_end2end_test_config config, const char *test_name,
+    grpc_end2end_test_config config, const char* test_name,
     uint32_t client_send_flags_bitmask,
     grpc_compression_algorithm default_client_channel_compression_algorithm,
     grpc_compression_algorithm default_server_channel_compression_algorithm,
     grpc_compression_algorithm expected_algorithm_from_client,
     grpc_compression_algorithm expected_algorithm_from_server,
-    grpc_metadata *client_init_metadata, bool set_server_level,
+    grpc_metadata* client_init_metadata, bool set_server_level,
     grpc_compression_level server_compression_level,
-    char *user_agent_override) {
-  grpc_call *c;
-  grpc_call *s;
+    char* user_agent_override) {
+  grpc_call* c;
+  grpc_call* s;
   grpc_slice request_payload_slice;
-  grpc_byte_buffer *request_payload;
-  grpc_channel_args *client_args;
-  grpc_channel_args *server_args;
+  grpc_byte_buffer* request_payload;
+  grpc_channel_args* client_args;
+  grpc_channel_args* server_args;
   grpc_end2end_test_fixture f;
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer *request_payload_recv = NULL;
-  grpc_byte_buffer *response_payload;
-  grpc_byte_buffer *response_payload_recv;
+  grpc_byte_buffer* request_payload_recv = NULL;
+  grpc_byte_buffer* response_payload;
+  grpc_byte_buffer* response_payload_recv;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  cq_verifier *cqv;
+  cq_verifier* cqv;
   char request_str[1024];
   char response_str[1024];
 
@@ -143,7 +143,7 @@ static void request_with_payload_template(
 
   if (user_agent_override) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args *client_args_old = client_args;
+    grpc_channel_args* client_args_old = client_args;
     grpc_arg arg;
     arg.key = GRPC_ARG_PRIMARY_USER_AGENT_STRING;
     arg.type = GRPC_ARG_STRING;
@@ -360,7 +360,7 @@ static void request_with_payload_template(
 }
 
 typedef struct workaround_cronet_compression_config {
-  char *user_agent_override;
+  char* user_agent_override;
   grpc_compression_algorithm expected_algorithm_from_server;
 } workaround_cronet_compression_config;
 

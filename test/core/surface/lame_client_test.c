@@ -30,20 +30,20 @@
 
 grpc_closure transport_op_cb;
 
-static void *tag(intptr_t x) { return (void *)x; }
+static void* tag(intptr_t x) { return (void*)x; }
 
-void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg,
-                         grpc_error *error) {
-  grpc_connectivity_state *state = arg;
+void verify_connectivity(grpc_exec_ctx* exec_ctx, void* arg,
+                         grpc_error* error) {
+  grpc_connectivity_state* state = arg;
   GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *state);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
 }
 
-void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
+void do_nothing(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {}
 
-void test_transport_op(grpc_channel *channel) {
-  grpc_transport_op *op;
-  grpc_channel_element *elem;
+void test_transport_op(grpc_channel* channel) {
+  grpc_transport_op* op;
+  grpc_channel_element* elem;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -64,19 +64,19 @@ void test_transport_op(grpc_channel *channel) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-int main(int argc, char **argv) {
-  grpc_channel *chan;
-  grpc_call *call;
-  grpc_completion_queue *cq;
-  cq_verifier *cqv;
+int main(int argc, char** argv) {
+  grpc_channel* chan;
+  grpc_call* call;
+  grpc_completion_queue* cq;
+  cq_verifier* cqv;
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  char *peer;
+  char* peer;
 
   grpc_test_init(argc, argv);
   grpc_init();

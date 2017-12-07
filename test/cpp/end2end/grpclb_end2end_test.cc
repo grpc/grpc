@@ -75,9 +75,9 @@ extern "C" {
 
 using std::chrono::system_clock;
 
-using grpc::lb::v1::LoadBalancer;
 using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;
+using grpc::lb::v1::LoadBalancer;
 
 namespace grpc {
 namespace testing {
@@ -661,8 +661,9 @@ TEST_F(SingleBalancerTest, Fallback) {
 
   // Send non-empty serverlist only after kServerlistDelayMs.
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(kNumBackendInResolution /* start_index */), {}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumBackendInResolution /* start_index */), {}),
       kServerlistDelayMs);
 
   // Wait until all the fallback backends are reachable.
@@ -727,10 +728,11 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
 
   // Send non-empty serverlist only after kServerlistDelayMs.
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(kNumBackendInResolution +
-                             kNumBackendInResolutionUpdate /* start_index */),
-             {}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumBackendInResolution +
+                          kNumBackendInResolutionUpdate /* start_index */),
+          {}),
       kServerlistDelayMs);
 
   // Wait until all the fallback backends are reachable.
@@ -1071,10 +1073,11 @@ TEST_F(SingleBalancerTest, Drop) {
                                     num_of_drop_by_load_balancing_addresses;
   const int num_total_addresses = num_backends_ + num_of_drop_addresses;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(),
-             {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
-              {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(),
+          {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+           {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
   // Wait until all backends are ready.
   WaitForAllBackends();
@@ -1110,9 +1113,10 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
   const int num_of_drop_by_rate_limiting_addresses = 1;
   const int num_of_drop_by_load_balancing_addresses = 1;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
-                  {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+               {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
   const Status status = SendRpc();
   EXPECT_FALSE(status.ok());
@@ -1126,9 +1130,10 @@ TEST_F(SingleBalancerTest, DropAll) {
   const int num_of_drop_by_rate_limiting_addresses = 1;
   const int num_of_drop_by_load_balancing_addresses = 1;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
-                  {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+               {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       1000);
 
   // First call succeeds.
@@ -1190,10 +1195,11 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
                                     num_of_drop_by_load_balancing_addresses;
   const int num_total_addresses = num_backends_ + num_of_drop_addresses;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(),
-             {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
-              {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(),
+          {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+           {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
   // Wait until all backends are ready.
   int num_warmup_ok = 0;

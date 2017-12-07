@@ -23,7 +23,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 
 int grpc_compression_algorithm_parse_ruby(
-    grpc_slice name, grpc_compression_algorithm *algorithm) {
+    grpc_slice name, grpc_compression_algorithm* algorithm) {
   if (grpc_slice_eq(name, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_COMPRESS_NONE;
     return 1;
@@ -43,7 +43,7 @@ int grpc_compression_algorithm_parse_ruby(
 }
 
 int grpc_compression_algorithm_name_ruby(grpc_compression_algorithm algorithm,
-                                         const char **name) {
+                                         const char** name) {
   GRPC_API_TRACE("grpc_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
   switch (algorithm) {

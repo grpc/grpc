@@ -34,60 +34,60 @@ class CallCredentials : public Nan::ObjectWrap {
   static void Init(v8::Local<v8::Object> exports);
   static bool HasInstance(v8::Local<v8::Value> val);
   /* Wrap a grpc_call_credentials struct in a javascript object */
-  static v8::Local<v8::Value> WrapStruct(grpc_call_credentials *credentials);
+  static v8::Local<v8::Value> WrapStruct(grpc_call_credentials* credentials);
 
   /* Returns the grpc_call_credentials struct that this object wraps */
-  grpc_call_credentials *GetWrappedCredentials();
+  grpc_call_credentials* GetWrappedCredentials();
 
  private:
-  explicit CallCredentials(grpc_call_credentials *credentials);
+  explicit CallCredentials(grpc_call_credentials* credentials);
   ~CallCredentials();
 
   // Prevent copying
-  CallCredentials(const CallCredentials &);
-  CallCredentials &operator=(const CallCredentials &);
+  CallCredentials(const CallCredentials&);
+  CallCredentials& operator=(const CallCredentials&);
 
   static NAN_METHOD(New);
   static NAN_METHOD(CreateSsl);
   static NAN_METHOD(CreateFromPlugin);
 
   static NAN_METHOD(Compose);
-  static Nan::Callback *constructor;
+  static Nan::Callback* constructor;
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
-  grpc_call_credentials *wrapped_credentials;
+  grpc_call_credentials* wrapped_credentials;
 };
 
 /* Auth metadata plugin functionality */
 
 typedef struct plugin_callback_data {
-  const char *service_url;
+  const char* service_url;
   grpc_credentials_plugin_metadata_cb cb;
-  void *user_data;
+  void* user_data;
 } plugin_callback_data;
 
 typedef struct plugin_state {
-  Nan::Callback *callback;
-  std::queue<plugin_callback_data *> *pending_callbacks;
+  Nan::Callback* callback;
+  std::queue<plugin_callback_data*>* pending_callbacks;
   uv_mutex_t plugin_mutex;
   // async.data == this
   uv_async_t plugin_async;
 } plugin_state;
 
 int plugin_get_metadata(
-    void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    void* state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void* user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t *num_creds_md, grpc_status_code *status, const char **error_details);
+    size_t* num_creds_md, grpc_status_code* status, const char** error_details);
 
-void plugin_destroy_state(void *state);
+void plugin_destroy_state(void* state);
 
 NAN_METHOD(PluginCallback);
 
 NAUV_WORK_CB(SendPluginCallback);
 
 }  // namespace node
-}  // namepsace grpc
+}  // namespace grpc
 
 #endif  // GRPC_NODE_CALL_CREDENTIALS_H_

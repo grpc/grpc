@@ -31,24 +31,24 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/security/oauth2_utils.h"
 
-static grpc_call_credentials *create_refresh_token_creds(
-    const char *json_refresh_token_file_path) {
+static grpc_call_credentials* create_refresh_token_creds(
+    const char* json_refresh_token_file_path) {
   grpc_slice refresh_token;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file",
       grpc_load_file(json_refresh_token_file_path, 1, &refresh_token)));
   return grpc_google_refresh_token_credentials_create(
-      (const char *)GRPC_SLICE_START_PTR(refresh_token), NULL);
+      (const char*)GRPC_SLICE_START_PTR(refresh_token), NULL);
 }
 
-int main(int argc, char **argv) {
-  grpc_call_credentials *creds = NULL;
-  char *json_key_file_path = NULL;
-  char *json_refresh_token_file_path = NULL;
-  char *token = NULL;
+int main(int argc, char** argv) {
+  grpc_call_credentials* creds = NULL;
+  char* json_key_file_path = NULL;
+  char* json_refresh_token_file_path = NULL;
+  char* token = NULL;
   int use_gce = 0;
-  char *scope = NULL;
-  gpr_cmdline *cl = gpr_cmdline_create("fetch_oauth2");
+  char* scope = NULL;
+  gpr_cmdline* cl = gpr_cmdline_create("fetch_oauth2");
   gpr_cmdline_add_string(cl, "json_refresh_token",
                          "File path of the json refresh token.",
                          &json_refresh_token_file_path);

@@ -36,7 +36,7 @@
 
 static void test_read_one_slice(void) {
   grpc_slice slice;
-  grpc_byte_buffer *buffer;
+  grpc_byte_buffer* buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice first_slice, second_slice;
   int first_code, second_code;
@@ -58,7 +58,7 @@ static void test_read_one_slice(void) {
 
 static void test_read_one_slice_malloc(void) {
   grpc_slice slice;
-  grpc_byte_buffer *buffer;
+  grpc_byte_buffer* buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice first_slice, second_slice;
   int first_code, second_code;
@@ -81,7 +81,7 @@ static void test_read_one_slice_malloc(void) {
 
 static void test_read_none_compressed_slice(void) {
   grpc_slice slice;
-  grpc_byte_buffer *buffer;
+  grpc_byte_buffer* buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice first_slice, second_slice;
   int first_code, second_code;
@@ -103,7 +103,7 @@ static void test_read_none_compressed_slice(void) {
 
 static void test_read_corrupted_slice(void) {
   grpc_slice slice;
-  grpc_byte_buffer *buffer;
+  grpc_byte_buffer* buffer;
   grpc_byte_buffer_reader reader;
 
   LOG_TEST("test_read_corrupted_slice");
@@ -120,7 +120,7 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   grpc_slice input_slice;
   grpc_slice_buffer sliceb_in;
   grpc_slice_buffer sliceb_out;
-  grpc_byte_buffer *buffer;
+  grpc_byte_buffer* buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice read_slice;
   size_t read_count = 0;
@@ -197,10 +197,10 @@ static void test_byte_buffer_from_reader(void) {
 }
 
 static void test_readall(void) {
-  char *lotsa_as[512];
-  char *lotsa_bs[1024];
+  char* lotsa_as[512];
+  char* lotsa_bs[1024];
   grpc_slice slices[2];
-  grpc_byte_buffer *buffer;
+  grpc_byte_buffer* buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice slice_out;
 
@@ -231,11 +231,11 @@ static void test_readall(void) {
 }
 
 static void test_byte_buffer_copy(void) {
-  char *lotsa_as[512];
-  char *lotsa_bs[1024];
+  char* lotsa_as[512];
+  char* lotsa_bs[1024];
   grpc_slice slices[2];
-  grpc_byte_buffer *buffer;
-  grpc_byte_buffer *copied_buffer;
+  grpc_byte_buffer* buffer;
+  grpc_byte_buffer* copied_buffer;
   grpc_byte_buffer_reader reader;
   grpc_slice slice_out;
 
@@ -267,7 +267,7 @@ static void test_byte_buffer_copy(void) {
   grpc_byte_buffer_destroy(copied_buffer);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_read_one_slice();
   test_read_one_slice_malloc();

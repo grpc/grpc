@@ -30,31 +30,31 @@
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
 typedef struct {
-  grpc_pollset *pollset;
-  gpr_mu *mu;
+  grpc_pollset* pollset;
+  gpr_mu* mu;
   int is_done;
   int success;
 } synchronizer;
 
-static void print_usage_and_exit(gpr_cmdline *cl, const char *argv0) {
-  char *usage = gpr_cmdline_usage_string(cl, argv0);
+static void print_usage_and_exit(gpr_cmdline* cl, const char* argv0) {
+  char* usage = gpr_cmdline_usage_string(cl, argv0);
   fprintf(stderr, "%s", usage);
   gpr_free(usage);
   gpr_cmdline_destroy(cl);
   exit(1);
 }
 
-static void on_jwt_verification_done(grpc_exec_ctx *exec_ctx, void *user_data,
+static void on_jwt_verification_done(grpc_exec_ctx* exec_ctx, void* user_data,
                                      grpc_jwt_verifier_status status,
-                                     grpc_jwt_claims *claims) {
-  synchronizer *sync = user_data;
+                                     grpc_jwt_claims* claims) {
+  synchronizer* sync = user_data;
 
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
   if (sync->success) {
-    char *claims_str;
+    char* claims_str;
     GPR_ASSERT(claims != NULL);
     claims_str =
-        grpc_json_dump_to_string((grpc_json *)grpc_jwt_claims_json(claims), 2);
+        grpc_json_dump_to_string((grpc_json*)grpc_jwt_claims_json(claims), 2);
     printf("Claims: \n\n%s\n", claims_str);
     gpr_free(claims_str);
     grpc_jwt_claims_destroy(exec_ctx, claims);
@@ -71,12 +71,12 @@ static void on_jwt_verification_done(grpc_exec_ctx *exec_ctx, void *user_data,
   gpr_mu_unlock(sync->mu);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   synchronizer sync;
-  grpc_jwt_verifier *verifier;
-  gpr_cmdline *cl;
-  char *jwt = NULL;
-  char *aud = NULL;
+  grpc_jwt_verifier* verifier;
+  gpr_cmdline* cl;
+  char* jwt = NULL;
+  char* aud = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   grpc_init();
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
-    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_worker* worker = NULL;
     if (!GRPC_LOG_IF_ERROR("pollset_work",
                            grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
                                              GRPC_MILLIS_INF_FUTURE)))

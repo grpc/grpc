@@ -35,7 +35,7 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata(gpr_strvec *b, grpc_mdelem md) {
+static void put_metadata(gpr_strvec* b, grpc_mdelem md) {
   gpr_strvec_add(b, gpr_strdup("key="));
   gpr_strvec_add(
       b, grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII));
@@ -45,23 +45,23 @@ static void put_metadata(gpr_strvec *b, grpc_mdelem md) {
       b, grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII));
 }
 
-static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
-  grpc_linked_mdelem *m;
+static void put_metadata_list(gpr_strvec* b, grpc_metadata_batch md) {
+  grpc_linked_mdelem* m;
   for (m = md.list.head; m != NULL; m = m->next) {
     if (m != md.list.head) gpr_strvec_add(b, gpr_strdup(", "));
     put_metadata(b, m->md);
   }
   if (md.deadline != GRPC_MILLIS_INF_FUTURE) {
-    char *tmp;
+    char* tmp;
     gpr_asprintf(&tmp, " deadline=%" PRIdPTR, md.deadline);
     gpr_strvec_add(b, tmp);
   }
 }
 
-char *grpc_transport_stream_op_batch_string(
-    grpc_transport_stream_op_batch *op) {
-  char *tmp;
-  char *out;
+char* grpc_transport_stream_op_batch_string(
+    grpc_transport_stream_op_batch* op) {
+  char* tmp;
+  char* out;
 
   gpr_strvec b;
   gpr_strvec_init(&b);
@@ -107,7 +107,7 @@ char *grpc_transport_stream_op_batch_string(
 
   if (op->cancel_stream) {
     gpr_strvec_add(&b, gpr_strdup(" "));
-    const char *msg =
+    const char* msg =
         grpc_error_string(op->payload->cancel_stream.cancel_error);
     gpr_asprintf(&tmp, "CANCEL:%s", msg);
 
@@ -127,9 +127,9 @@ char *grpc_transport_stream_op_batch_string(
   return out;
 }
 
-char *grpc_transport_op_string(grpc_transport_op *op) {
-  char *tmp;
-  char *out;
+char* grpc_transport_op_string(grpc_transport_op* op) {
+  char* tmp;
+  char* out;
   bool first = true;
 
   gpr_strvec b;
@@ -153,7 +153,7 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = false;
-    const char *err = grpc_error_string(op->disconnect_with_error);
+    const char* err = grpc_error_string(op->disconnect_with_error);
     gpr_asprintf(&tmp, "DISCONNECT:%s", err);
     gpr_strvec_add(&b, tmp);
   }
@@ -161,7 +161,7 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
   if (op->goaway_error) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = false;
-    const char *msg = grpc_error_string(op->goaway_error);
+    const char* msg = grpc_error_string(op->goaway_error);
     gpr_asprintf(&tmp, "SEND_GOAWAY:%s", msg);
 
     gpr_strvec_add(&b, tmp);
@@ -199,10 +199,10 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
   return out;
 }
 
-void grpc_call_log_op(const char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem,
-                      grpc_transport_stream_op_batch *op) {
-  char *str = grpc_transport_stream_op_batch_string(op);
+void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
+                      grpc_call_element* elem,
+                      grpc_transport_stream_op_batch* op) {
+  char* str = grpc_transport_stream_op_batch_string(op);
   gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem, str);
   gpr_free(str);
 }

@@ -51,8 +51,9 @@ using grpc::ServerCredentials;
 using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
-using grpc::WriteOptions;
 using grpc::SslServerCredentialsOptions;
+using grpc::Status;
+using grpc::WriteOptions;
 using grpc::testing::InteropServerContextInspector;
 using grpc::testing::Payload;
 using grpc::testing::SimpleRequest;
@@ -62,7 +63,6 @@ using grpc::testing::StreamingInputCallResponse;
 using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
-using grpc::Status;
 
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";

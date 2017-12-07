@@ -31,7 +31,7 @@ static void test_create(void) {
   grpc_arg arg_int;
   grpc_arg arg_string;
   grpc_arg to_add[2];
-  grpc_channel_args *ch_args;
+  grpc_channel_args* ch_args;
 
   arg_int.key = "int_arg";
   arg_int.type = GRPC_ARG_INTEGER;
@@ -61,7 +61,7 @@ static void test_create(void) {
 
 static void test_set_compression_algorithm(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_channel_args *ch_args;
+  grpc_channel_args* ch_args;
 
   ch_args = grpc_channel_args_set_compression_algorithm(
       NULL, GRPC_COMPRESS_MESSAGE_GZIP);
@@ -135,7 +135,7 @@ static void test_compression_algorithm_states(void) {
 }
 
 static void test_set_socket_mutator(void) {
-  grpc_channel_args *ch_args;
+  grpc_channel_args* ch_args;
   grpc_socket_mutator mutator;
   grpc_socket_mutator_init(&mutator, NULL);
 
@@ -151,7 +151,7 @@ static void test_set_socket_mutator(void) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_create();

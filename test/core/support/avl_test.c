@@ -27,36 +27,36 @@
 
 #include "test/core/util/test_config.h"
 
-static int *box(int x) {
-  int *b = gpr_malloc(sizeof(*b));
+static int* box(int x) {
+  int* b = gpr_malloc(sizeof(*b));
   *b = x;
   return b;
 }
 
-static long int_compare(void *int1, void *int2, void *unused) {
-  return (*(int *)int1) - (*(int *)int2);
+static long int_compare(void* int1, void* int2, void* unused) {
+  return (*(int*)int1) - (*(int*)int2);
 }
-static void *int_copy(void *p, void *unused) { return box(*(int *)p); }
+static void* int_copy(void* p, void* unused) { return box(*(int*)p); }
 
-static void destroy(void *p, void *unused) { gpr_free(p); }
+static void destroy(void* p, void* unused) { gpr_free(p); }
 
 static const gpr_avl_vtable int_int_vtable = {destroy, int_copy, int_compare,
                                               destroy, int_copy};
 
 static void check_get(gpr_avl avl, int key, int value) {
-  int *k = box(key);
-  GPR_ASSERT(*(int *)gpr_avl_get(avl, k, NULL) == value);
+  int* k = box(key);
+  GPR_ASSERT(*(int*)gpr_avl_get(avl, k, NULL) == value);
   gpr_free(k);
 }
 
 static void check_negget(gpr_avl avl, int key) {
-  int *k = box(key);
+  int* k = box(key);
   GPR_ASSERT(gpr_avl_get(avl, k, NULL) == NULL);
   gpr_free(k);
 }
 
 static gpr_avl remove_int(gpr_avl avl, int key) {
-  int *k = box(key);
+  int* k = box(key);
   avl = gpr_avl_remove(avl, k, NULL);
   gpr_free(k);
   return avl;
@@ -83,9 +83,9 @@ static void test_ll(void) {
   avl = gpr_avl_add(avl, box(5), box(1), NULL);
   avl = gpr_avl_add(avl, box(4), box(2), NULL);
   avl = gpr_avl_add(avl, box(3), box(3), NULL);
-  GPR_ASSERT(*(int *)avl.root->key == 4);
-  GPR_ASSERT(*(int *)avl.root->left->key == 3);
-  GPR_ASSERT(*(int *)avl.root->right->key == 5);
+  GPR_ASSERT(*(int*)avl.root->key == 4);
+  GPR_ASSERT(*(int*)avl.root->left->key == 3);
+  GPR_ASSERT(*(int*)avl.root->right->key == 5);
   gpr_avl_unref(avl, NULL);
 }
 
@@ -96,9 +96,9 @@ static void test_lr(void) {
   avl = gpr_avl_add(avl, box(5), box(1), NULL);
   avl = gpr_avl_add(avl, box(3), box(2), NULL);
   avl = gpr_avl_add(avl, box(4), box(3), NULL);
-  GPR_ASSERT(*(int *)avl.root->key == 4);
-  GPR_ASSERT(*(int *)avl.root->left->key == 3);
-  GPR_ASSERT(*(int *)avl.root->right->key == 5);
+  GPR_ASSERT(*(int*)avl.root->key == 4);
+  GPR_ASSERT(*(int*)avl.root->left->key == 3);
+  GPR_ASSERT(*(int*)avl.root->right->key == 5);
   gpr_avl_unref(avl, NULL);
 }
 
@@ -109,9 +109,9 @@ static void test_rr(void) {
   avl = gpr_avl_add(avl, box(3), box(1), NULL);
   avl = gpr_avl_add(avl, box(4), box(2), NULL);
   avl = gpr_avl_add(avl, box(5), box(3), NULL);
-  GPR_ASSERT(*(int *)avl.root->key == 4);
-  GPR_ASSERT(*(int *)avl.root->left->key == 3);
-  GPR_ASSERT(*(int *)avl.root->right->key == 5);
+  GPR_ASSERT(*(int*)avl.root->key == 4);
+  GPR_ASSERT(*(int*)avl.root->left->key == 3);
+  GPR_ASSERT(*(int*)avl.root->right->key == 5);
   gpr_avl_unref(avl, NULL);
 }
 
@@ -122,9 +122,9 @@ static void test_rl(void) {
   avl = gpr_avl_add(avl, box(3), box(1), NULL);
   avl = gpr_avl_add(avl, box(5), box(2), NULL);
   avl = gpr_avl_add(avl, box(4), box(3), NULL);
-  GPR_ASSERT(*(int *)avl.root->key == 4);
-  GPR_ASSERT(*(int *)avl.root->left->key == 3);
-  GPR_ASSERT(*(int *)avl.root->right->key == 5);
+  GPR_ASSERT(*(int*)avl.root->key == 4);
+  GPR_ASSERT(*(int*)avl.root->left->key == 3);
+  GPR_ASSERT(*(int*)avl.root->right->key == 5);
   gpr_avl_unref(avl, NULL);
 }
 
@@ -137,11 +137,11 @@ static void test_unbalanced(void) {
   avl = gpr_avl_add(avl, box(3), box(3), NULL);
   avl = gpr_avl_add(avl, box(2), box(4), NULL);
   avl = gpr_avl_add(avl, box(1), box(5), NULL);
-  GPR_ASSERT(*(int *)avl.root->key == 4);
-  GPR_ASSERT(*(int *)avl.root->left->key == 2);
-  GPR_ASSERT(*(int *)avl.root->left->left->key == 1);
-  GPR_ASSERT(*(int *)avl.root->left->right->key == 3);
-  GPR_ASSERT(*(int *)avl.root->right->key == 5);
+  GPR_ASSERT(*(int*)avl.root->key == 4);
+  GPR_ASSERT(*(int*)avl.root->left->key == 2);
+  GPR_ASSERT(*(int*)avl.root->left->left->key == 1);
+  GPR_ASSERT(*(int*)avl.root->left->right->key == 3);
+  GPR_ASSERT(*(int*)avl.root->right->key == 5);
   gpr_avl_unref(avl, NULL);
 }
 
@@ -3639,7 +3639,7 @@ static void test_stress(int amount_of_stress) {
   gpr_avl_unref(avl, NULL);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   grpc_test_init(argc, argv);
 
   test_get();

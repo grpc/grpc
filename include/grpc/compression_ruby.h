@@ -32,14 +32,14 @@ extern "C" {
  * algorithm following algorithm names compatible with Ruby. Returns 1 upon
  * success, 0 otherwise. */
 GRPCAPI int grpc_compression_algorithm_parse_ruby(
-    grpc_slice value, grpc_compression_algorithm *algorithm);
+    grpc_slice value, grpc_compression_algorithm* algorithm);
 
 /** Updates \a name with the encoding name corresponding to a valid \a
  * algorithm. The \a name follows names compatible with Ruby. Note that \a name
  * is statically allocated and must *not* be freed. Returns 1 upon success, 0
  * otherwise. */
 GRPCAPI int grpc_compression_algorithm_name_ruby(
-    grpc_compression_algorithm algorithm, const char **name);
+    grpc_compression_algorithm algorithm, const char** name);
 
 #ifdef __cplusplus
 }

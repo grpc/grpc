@@ -25,7 +25,7 @@ extern "C" {
 
 // Returns the hostname of the local machine.
 // Caller takes ownership of result.
-char *grpc_gethostname();
+char* grpc_gethostname();
 
 #ifdef __cplusplus
 }

@@ -37,7 +37,7 @@ struct gpr_pthread_thread_local {
 #ifdef __cplusplus
 extern "C" {
 #endif
-intptr_t gpr_tls_set(struct gpr_pthread_thread_local *tls, intptr_t value);
+intptr_t gpr_tls_set(struct gpr_pthread_thread_local* tls, intptr_t value);
 #ifdef __cplusplus
 }
 #endif

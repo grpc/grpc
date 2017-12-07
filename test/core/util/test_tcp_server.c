@@ -33,14 +33,14 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void on_server_destroyed(grpc_exec_ctx *exec_ctx, void *data,
-                                grpc_error *error) {
-  test_tcp_server *server = data;
+static void on_server_destroyed(grpc_exec_ctx* exec_ctx, void* data,
+                                grpc_error* error) {
+  test_tcp_server* server = data;
   server->shutdown = 1;
 }
 
-void test_tcp_server_init(test_tcp_server *server,
-                          grpc_tcp_server_cb on_connect, void *user_data) {
+void test_tcp_server_init(test_tcp_server* server,
+                          grpc_tcp_server_cb on_connect, void* user_data) {
   grpc_init();
   server->tcp_server = NULL;
   GRPC_CLOSURE_INIT(&server->shutdown_complete, on_server_destroyed, server,
@@ -52,9 +52,9 @@ void test_tcp_server_init(test_tcp_server *server,
   server->cb_data = user_data;
 }
 
-void test_tcp_server_start(test_tcp_server *server, int port) {
+void test_tcp_server_start(test_tcp_server* server, int port) {
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
+  struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   int port_added;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -62,7 +62,7 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
   addr->sin_port = htons((uint16_t)port);
   memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
 
-  grpc_error *error = grpc_tcp_server_create(
+  grpc_error* error = grpc_tcp_server_create(
       &exec_ctx, &server->shutdown_complete, NULL, &server->tcp_server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   error =
@@ -77,8 +77,8 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void test_tcp_server_poll(test_tcp_server *server, int seconds) {
-  grpc_pollset_worker *worker = NULL;
+void test_tcp_server_poll(test_tcp_server* server, int seconds) {
+  grpc_pollset_worker* worker = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_millis deadline = grpc_timespec_to_millis_round_up(
       grpc_timeout_seconds_to_deadline(seconds));
@@ -90,13 +90,13 @@ void test_tcp_server_poll(test_tcp_server *server, int seconds) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
-static void finish_pollset(grpc_exec_ctx *exec_ctx, void *arg,
-                           grpc_error *error) {
+static void do_nothing(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {}
+static void finish_pollset(grpc_exec_ctx* exec_ctx, void* arg,
+                           grpc_error* error) {
   grpc_pollset_destroy(exec_ctx, arg);
 }
 
-void test_tcp_server_destroy(test_tcp_server *server) {
+void test_tcp_server_destroy(test_tcp_server* server) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_timespec shutdown_deadline;
   grpc_closure do_nothing_cb;

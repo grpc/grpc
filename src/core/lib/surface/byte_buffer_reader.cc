@@ -29,7 +29,7 @@
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-static int is_compressed(grpc_byte_buffer *buffer) {
+static int is_compressed(grpc_byte_buffer* buffer) {
   switch (buffer->type) {
     case GRPC_BB_RAW:
       if (buffer->data.raw.compression == GRPC_COMPRESS_NONE) {
@@ -40,8 +40,8 @@ static int is_compressed(grpc_byte_buffer *buffer) {
   return 1 /* GPR_TRUE */;
 }
 
-int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
-                                 grpc_byte_buffer *buffer) {
+int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
+                                 grpc_byte_buffer* buffer) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_slice_buffer decompressed_slices_buffer;
   reader->buffer_in = buffer;
@@ -78,7 +78,7 @@ int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
   return 1;
 }
 
-void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) {
+void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader) {
   switch (reader->buffer_in->type) {
     case GRPC_BB_RAW:
       /* keeping the same if-else structure as in the init function */
@@ -89,11 +89,11 @@ void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) {
   }
 }
 
-int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
-                                 grpc_slice *slice) {
+int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
+                                 grpc_slice* slice) {
   switch (reader->buffer_in->type) {
     case GRPC_BB_RAW: {
-      grpc_slice_buffer *slice_buffer;
+      grpc_slice_buffer* slice_buffer;
       slice_buffer = &reader->buffer_out->data.raw.slice_buffer;
       if (reader->current.index < slice_buffer->count) {
         *slice = grpc_slice_ref_internal(
@@ -107,12 +107,12 @@ int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
   return 0;
 }
 
-grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader *reader) {
+grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader) {
   grpc_slice in_slice;
   size_t bytes_read = 0;
   const size_t input_size = grpc_byte_buffer_length(reader->buffer_out);
   grpc_slice out_slice = GRPC_SLICE_MALLOC(input_size);
-  uint8_t *const outbuf = GRPC_SLICE_START_PTR(out_slice); /* just an alias */
+  uint8_t* const outbuf = GRPC_SLICE_START_PTR(out_slice); /* just an alias */
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (grpc_byte_buffer_reader_next(reader, &in_slice) != 0) {

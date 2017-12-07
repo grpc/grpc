@@ -34,16 +34,16 @@
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
 static void expect_slice_dump(grpc_slice slice, uint32_t flags,
-                              const char *result) {
-  char *got = grpc_dump_slice(slice, flags);
+                              const char* result) {
+  char* got = grpc_dump_slice(slice, flags);
   GPR_ASSERT(0 == strcmp(got, result));
   gpr_free(got);
   grpc_slice_unref(slice);
 }
 
 static void test_dump_slice(void) {
-  static const char *text = "HELLO WORLD!";
-  static const char *long_text =
+  static const char* text = "HELLO WORLD!";
+  static const char* long_text =
       "It was a bright cold day in April, and the clocks were striking "
       "thirteen. Winston Smith, his chin nuzzled into his breast in an effort "
       "to escape the vile wind, slipped quickly through the glass doors of "
@@ -62,7 +62,7 @@ static void test_dump_slice(void) {
 }
 
 static void test_strsplit(void) {
-  grpc_slice_buffer *parts;
+  grpc_slice_buffer* parts;
   grpc_slice str;
 
   LOG_TEST_NAME("test_strsplit");
@@ -128,7 +128,7 @@ static void test_strsplit(void) {
 }
 
 static void test_strsplit_nospace(void) {
-  grpc_slice_buffer *parts;
+  grpc_slice_buffer* parts;
   grpc_slice str;
 
   LOG_TEST_NAME("test_strsplit_nospace");
@@ -193,7 +193,7 @@ static void test_strsplit_nospace(void) {
   gpr_free(parts);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_dump_slice();
   test_strsplit();

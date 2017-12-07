@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 
 static void test_empty_context(void) {
-  grpc_auth_context *ctx = grpc_auth_context_create(NULL);
+  grpc_auth_context* ctx = grpc_auth_context_create(NULL);
   grpc_auth_property_iterator it;
 
   gpr_log(GPR_INFO, "test_empty_context");
@@ -44,7 +44,7 @@ static void test_empty_context(void) {
 }
 
 static void test_simple_context(void) {
-  grpc_auth_context *ctx = grpc_auth_context_create(NULL);
+  grpc_auth_context* ctx = grpc_auth_context_create(NULL);
   grpc_auth_property_iterator it;
   size_t i;
 
@@ -61,7 +61,7 @@ static void test_simple_context(void) {
       strcmp(grpc_auth_context_peer_identity_property_name(ctx), "name") == 0);
   it = grpc_auth_context_property_iterator(ctx);
   for (i = 0; i < ctx->properties.count; i++) {
-    const grpc_auth_property *p = grpc_auth_property_iterator_next(&it);
+    const grpc_auth_property* p = grpc_auth_property_iterator_next(&it);
     GPR_ASSERT(p == &ctx->properties.array[i]);
   }
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
@@ -82,8 +82,8 @@ static void test_simple_context(void) {
 }
 
 static void test_chained_context(void) {
-  grpc_auth_context *chained = grpc_auth_context_create(NULL);
-  grpc_auth_context *ctx = grpc_auth_context_create(chained);
+  grpc_auth_context* chained = grpc_auth_context_create(NULL);
+  grpc_auth_context* ctx = grpc_auth_context_create(chained);
   grpc_auth_property_iterator it;
   size_t i;
 
@@ -101,11 +101,11 @@ static void test_chained_context(void) {
       strcmp(grpc_auth_context_peer_identity_property_name(ctx), "name") == 0);
   it = grpc_auth_context_property_iterator(ctx);
   for (i = 0; i < ctx->properties.count; i++) {
-    const grpc_auth_property *p = grpc_auth_property_iterator_next(&it);
+    const grpc_auth_property* p = grpc_auth_property_iterator_next(&it);
     GPR_ASSERT(p == &ctx->properties.array[i]);
   }
   for (i = 0; i < chained->properties.count; i++) {
-    const grpc_auth_property *p = grpc_auth_property_iterator_next(&it);
+    const grpc_auth_property* p = grpc_auth_property_iterator_next(&it);
     GPR_ASSERT(p == &chained->properties.array[i]);
   }
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
@@ -129,7 +129,7 @@ static void test_chained_context(void) {
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_empty_context();
   test_simple_context();

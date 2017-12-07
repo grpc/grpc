@@ -22,8 +22,8 @@
 #define PFX_STR "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define ONE_SETTING_HDR "\x00\x00\x06\x04\x00\x00\x00\x00\x00"
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq,
-                     void *registered_method) {
+static void verifier(grpc_server* server, grpc_completion_queue* cq,
+                     void* registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), NULL)
@@ -31,7 +31,7 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq,
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
 
   /* various partial prefixes */
@@ -92,7 +92,8 @@ int main(int argc, char **argv) {
                            PFX_STR ONE_SETTING_HDR "\x00\x04\x00\x01\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   /* ack with data */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL,
+                           PFX_STR
                            "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
                            "\x00\x00\x01\x04\x01\x00\x00\x00\x00",
                            0);

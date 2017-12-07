@@ -34,12 +34,12 @@
 
 #include "test/core/end2end/cq_verifier.h"
 
-static void *tag(intptr_t t) { return (void *)t; }
+static void* tag(intptr_t t) { return (void*)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char *test_name,
-                                            grpc_channel_args *client_args,
-                                            grpc_channel_args *server_args) {
+                                            const char* test_name,
+                                            grpc_channel_args* client_args,
+                                            grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   // We intentionally do not pass the client and server args to
@@ -59,14 +59,14 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
+static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev = grpc_completion_queue_next(
@@ -77,13 +77,13 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   f->server = NULL;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture *f) {
+static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = NULL;
 }
 
-static void end_test(grpc_end2end_test_fixture *f) {
+static void end_test(grpc_end2end_test_fixture* f) {
   shutdown_server(f);
   shutdown_client(f);
 
@@ -106,16 +106,16 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
           send_limit, use_service_config, use_string_json_value);
 
   grpc_end2end_test_fixture f;
-  grpc_call *c = NULL;
-  grpc_call *s = NULL;
-  cq_verifier *cqv;
+  grpc_call* c = NULL;
+  grpc_call* s = NULL;
+  cq_verifier* cqv;
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer *request_payload =
+  grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer *recv_payload = NULL;
+  grpc_byte_buffer* recv_payload = NULL;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -125,8 +125,8 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
 
-  grpc_channel_args *client_args = NULL;
-  grpc_channel_args *server_args = NULL;
+  grpc_channel_args* client_args = NULL;
+  grpc_channel_args* server_args = NULL;
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(send_limit);
@@ -160,7 +160,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
                          : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH;
     arg.type = GRPC_ARG_INTEGER;
     arg.value.integer = 5;
-    grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
+    grpc_channel_args* args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
     if (send_limit) {
       client_args = args;
     } else {
@@ -297,16 +297,16 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
           send_limit, use_service_config, use_string_json_value);
 
   grpc_end2end_test_fixture f;
-  grpc_call *c = NULL;
-  grpc_call *s = NULL;
-  cq_verifier *cqv;
+  grpc_call* c = NULL;
+  grpc_call* s = NULL;
+  cq_verifier* cqv;
   grpc_op ops[6];
-  grpc_op *op;
+  grpc_op* op;
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer *response_payload =
+  grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  grpc_byte_buffer *recv_payload = NULL;
+  grpc_byte_buffer* recv_payload = NULL;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -316,8 +316,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
 
-  grpc_channel_args *client_args = NULL;
-  grpc_channel_args *server_args = NULL;
+  grpc_channel_args* client_args = NULL;
+  grpc_channel_args* server_args = NULL;
   if (use_service_config) {
     // We don't currently support service configs on the server side.
     GPR_ASSERT(!send_limit);
@@ -350,7 +350,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
                          : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH;
     arg.type = GRPC_ARG_INTEGER;
     arg.value.integer = 5;
-    grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
+    grpc_channel_args* args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
     if (send_limit) {
       server_args = args;
     } else {

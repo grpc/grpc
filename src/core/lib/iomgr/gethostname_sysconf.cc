@@ -25,9 +25,9 @@
 
 #include <grpc/support/alloc.h>
 
-char *grpc_gethostname() {
+char* grpc_gethostname() {
   size_t host_name_max = (size_t)sysconf(_SC_HOST_NAME_MAX);
-  char *hostname = (char *)gpr_malloc(host_name_max);
+  char* hostname = (char*)gpr_malloc(host_name_max);
   if (gethostname(hostname, host_name_max) != 0) {
     gpr_free(hostname);
     return NULL;

@@ -29,18 +29,18 @@ extern "C" {
  *
  * \warning This function should \b only be used in test code. */
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
-    grpc_call *call);
+    grpc_call* call);
 
 /** Return the message flags from \a call.
  *
  * \warning This function should \b only be used in test code. */
-uint32_t grpc_call_test_only_get_message_flags(grpc_call *call);
+uint32_t grpc_call_test_only_get_message_flags(grpc_call* call);
 
 /** Returns a bitset for the encodings (compression algorithms) supported by \a
  * call's peer.
  *
  * To be indexed by grpc_compression_algorithm enum values. */
-uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call);
+uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call);
 
 #ifdef __cplusplus
 }
