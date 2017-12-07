@@ -24,12 +24,15 @@ namespace grpc_core {
 namespace testing {
 
 TEST(InlinedVectorTest, CreateAndIterate) {
-  InlinedVector<int, 1> v{1, 2, 3};
-  int sum = 0;
-  for (auto i : v) {
-    sum += i;
+  const int kNumElements = 9;
+  InlinedVector<int, 2> v;
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(i);
   }
-  EXPECT_EQ(6, sum);
+  EXPECT_EQ(static_cast<size_t>(kNumElements), v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    EXPECT_EQ(i, v[i]);
+  }
 }
 
 }  // namespace testing
