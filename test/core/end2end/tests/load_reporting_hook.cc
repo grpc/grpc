@@ -300,9 +300,8 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
                                 &trailing_lr_metadata);
   end_test(&f);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, lr_server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(lr_server_args);
   }
   config.tear_down_data(&f);
 }

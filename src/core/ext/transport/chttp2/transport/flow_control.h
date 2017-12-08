@@ -161,7 +161,7 @@ class TransportFlowControlBase {
   // Using the protected members, returns and Action to be taken by the
   // tranport. Also checks for updates to our BDP estimate and acts
   // accordingly.
-  virtual FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx) { abort(); }
+  virtual FlowControlAction PeriodicUpdate() { abort(); }
 
   // Called to do bookkeeping when a stream owned by this transport sends
   // data on the wire
@@ -211,9 +211,7 @@ class TransportFlowControlDisabled final : public TransportFlowControlBase {
   // Never do anything.
   uint32_t MaybeSendUpdate(bool writing_anyway) override { return 0; }
   FlowControlAction MakeAction() override { return FlowControlAction(); }
-  FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx) override {
-    return FlowControlAction();
-  }
+  FlowControlAction PeriodicUpdate() override { return FlowControlAction(); }
   void StreamSentData(int64_t size) override {}
   grpc_error* RecvData(int64_t incoming_frame_size) override {
     return GRPC_ERROR_NONE;
@@ -225,8 +223,7 @@ class TransportFlowControlDisabled final : public TransportFlowControlBase {
 // to be as performant as possible.
 class TransportFlowControl final : public TransportFlowControlBase {
  public:
-  TransportFlowControl(grpc_exec_ctx* exec_ctx, const grpc_chttp2_transport* t,
-                       bool enable_bdp_probe);
+  TransportFlowControl(const grpc_chttp2_transport* t, bool enable_bdp_probe);
   ~TransportFlowControl() {}
 
   bool flow_control_enabled() const override { return true; }
@@ -248,7 +245,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let chttp2 change its parameters
-  FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx) override;
+  FlowControlAction PeriodicUpdate() override;
 
   void StreamSentData(int64_t size) override { remote_window_ -= size; }
 
@@ -306,7 +303,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
 
  private:
   double TargetLogBdp();
-  double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
+  double SmoothLogBdp(double value);
   FlowControlAction::Urgency DeltaUrgency(int32_t value,
                                           grpc_chttp2_setting_id setting_id);
 

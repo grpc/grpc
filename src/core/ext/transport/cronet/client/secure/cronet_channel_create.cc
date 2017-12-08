@@ -49,7 +49,6 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
   grpc_transport* ct =
       grpc_create_cronet_transport(engine, target, args, reserved);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  return grpc_channel_create(&exec_ctx, target, args,
-                             GRPC_CLIENT_DIRECT_CHANNEL, ct);
+  grpc_core::ExecCtx exec_ctx;
+  return grpc_channel_create(target, args, GRPC_CLIENT_DIRECT_CHANNEL, ct);
 }

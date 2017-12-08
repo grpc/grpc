@@ -45,11 +45,11 @@ static void alarm_ref(grpc_alarm* alarm) { gpr_ref(&alarm->refs); }
 
 static void alarm_unref(grpc_alarm* alarm) {
   if (gpr_unref(&alarm->refs)) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     if (alarm->cq != nullptr) {
-      GRPC_CQ_INTERNAL_UNREF(&exec_ctx, alarm->cq, "alarm");
+      GRPC_CQ_INTERNAL_UNREF(alarm->cq, "alarm");
     }
-    grpc_exec_ctx_finish(&exec_ctx);
+
     gpr_free(alarm);
   }
 }
@@ -80,20 +80,19 @@ static void alarm_unref_dbg(grpc_alarm* alarm, const char* reason,
 }
 #endif
 
-static void alarm_end_completion(grpc_exec_ctx* exec_ctx, void* arg,
-                                 grpc_cq_completion* c) {
+static void alarm_end_completion(void* arg, grpc_cq_completion* c) {
   grpc_alarm* alarm = (grpc_alarm*)arg;
   GRPC_ALARM_UNREF(alarm, "dequeue-end-op");
 }
 
-static void alarm_cb(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+static void alarm_cb(void* arg, grpc_error* error) {
   grpc_alarm* alarm = (grpc_alarm*)arg;
 
   /* We are queuing an op on completion queue. This means, the alarm's structure
      cannot be destroyed until the op is dequeued. Adding an extra ref
      here and unref'ing when the op is dequeued will achieve this */
   GRPC_ALARM_REF(alarm, "queue-end-op");
-  grpc_cq_end_op(exec_ctx, alarm->cq, alarm->tag, error, alarm_end_completion,
+  grpc_cq_end_op(alarm->cq, alarm->tag, error, alarm_end_completion,
                  (void*)alarm, &alarm->completion);
 }
 
@@ -116,22 +115,20 @@ grpc_alarm* grpc_alarm_create(void* reserved) {
 
 void grpc_alarm_set(grpc_alarm* alarm, grpc_completion_queue* cq,
                     gpr_timespec deadline, void* tag, void* reserved) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   GRPC_CQ_INTERNAL_REF(cq, "alarm");
   alarm->cq = cq;
   alarm->tag = tag;
 
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
-  grpc_timer_init(&exec_ctx, &alarm->alarm,
-                  grpc_timespec_to_millis_round_up(deadline), &alarm->on_alarm);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_timer_init(&alarm->alarm, grpc_timespec_to_millis_round_up(deadline),
+                  &alarm->on_alarm);
 }
 
 void grpc_alarm_cancel(grpc_alarm* alarm, void* reserved) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_timer_cancel(&exec_ctx, &alarm->alarm);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_timer_cancel(&alarm->alarm);
 }
 
 void grpc_alarm_destroy(grpc_alarm* alarm, void* reserved) {

@@ -71,14 +71,13 @@ grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) {
 
 void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
   if (!bb) return;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   switch (bb->type) {
     case GRPC_BB_RAW:
-      grpc_slice_buffer_destroy_internal(&exec_ctx, &bb->data.raw.slice_buffer);
+      grpc_slice_buffer_destroy_internal(&bb->data.raw.slice_buffer);
       break;
   }
   gpr_free(bb);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 size_t grpc_byte_buffer_length(grpc_byte_buffer* bb) {

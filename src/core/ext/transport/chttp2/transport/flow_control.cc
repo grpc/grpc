@@ -168,8 +168,7 @@ TransportFlowControlDisabled::TransportFlowControlDisabled(
       kMaxWindow;
 }
 
-TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
-                                           const grpc_chttp2_transport* t,
+TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
                                            bool enable_bdp_probe)
     : t_(t),
       enable_bdp_probe_(enable_bdp_probe),
@@ -182,7 +181,7 @@ TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
                           .set_min_control_value(-1)
                           .set_max_control_value(25)
                           .set_integral_range(10)),
-      last_pid_update_(grpc_exec_ctx_now(exec_ctx)) {}
+      last_pid_update_(grpc_core::ExecCtx::Get()->Now()) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
@@ -327,9 +326,8 @@ double TransportFlowControl::TargetLogBdp() {
       1 + log2(bdp_estimator_.EstimateBdp()));
 }
 
-double TransportFlowControl::SmoothLogBdp(grpc_exec_ctx* exec_ctx,
-                                          double value) {
-  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+double TransportFlowControl::SmoothLogBdp(double value) {
+  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   double bdp_error = value - pid_controller_.last_control_value();
   const double dt = (double)(now - last_pid_update_) * 1e-3;
   last_pid_update_ = now;
@@ -350,15 +348,14 @@ FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(
   }
 }
 
-FlowControlAction TransportFlowControl::PeriodicUpdate(
-    grpc_exec_ctx* exec_ctx) {
+FlowControlAction TransportFlowControl::PeriodicUpdate() {
   FlowControlAction action;
   if (enable_bdp_probe_) {
     // get bdp estimate and update initial_window accordingly.
     // target might change based on how much memory pressure we are under
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
-    const double target = pow(2, SmoothLogBdp(exec_ctx, TargetLogBdp()));
+    const double target = pow(2, SmoothLogBdp(TargetLogBdp()));
 
     // Though initial window 'could' drop to 0, we keep the floor at 128
     target_initial_window_size_ = (int32_t)GPR_CLAMP(target, 128, INT32_MAX);
