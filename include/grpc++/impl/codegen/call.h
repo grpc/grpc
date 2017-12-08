@@ -595,8 +595,7 @@ class CallOpClientRecvStatus {
                                         GRPC_SLICE_END_PTR(error_message_)),
                            binary_error_details);
     client_context_->set_debug_error_string(
-        debug_error_string_ != nullptr ? grpc::string(debug_error_string_)
-                                       : "");
+        debug_error_string_ != nullptr ? debug_error_string_ : "");
     g_core_codegen_interface->grpc_slice_unref(error_message_);
     if (debug_error_string_ != nullptr) {
       g_core_codegen_interface->gpr_free((void*)debug_error_string_);

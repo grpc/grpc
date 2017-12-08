@@ -741,7 +741,7 @@ TEST_P(End2endTest, RequestStreamOneRequest) {
   Status s = stream->Finish();
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
-  EXPECT_TRUE(context.debug_error_string() == "");
+  EXPECT_TRUE(context.debug_error_string().empty());
 }
 
 TEST_P(End2endTest, RequestStreamOneRequestWithCoalescingApi) {

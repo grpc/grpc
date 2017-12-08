@@ -382,7 +382,7 @@ class ClientContext {
   friend class ::grpc::internal::BlockingUnaryCallImpl;
 
   // Used by friend class CallOpClientRecvStatus
-  void set_debug_error_string(grpc::string debug_error_string) {
+  void set_debug_error_string(const grpc::string& debug_error_string) {
     debug_error_string_ = debug_error_string;
   }
 
