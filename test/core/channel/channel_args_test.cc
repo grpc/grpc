@@ -26,7 +26,7 @@
 #include "test/core/util/test_config.h"
 
 static void test_create(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   grpc_arg arg_int;
   grpc_arg arg_string;
@@ -55,12 +55,11 @@ static void test_create(void) {
   GPR_ASSERT(strcmp(ch_args->args[1].value.string, arg_string.value.string) ==
              0);
 
-  grpc_channel_args_destroy(&exec_ctx, ch_args);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_channel_args_destroy(ch_args);
 }
 
 static void test_set_compression_algorithm(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_channel_args* ch_args;
 
   ch_args = grpc_channel_args_set_compression_algorithm(
@@ -70,12 +69,11 @@ static void test_set_compression_algorithm(void) {
                     GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) == 0);
   GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_INTEGER);
 
-  grpc_channel_args_destroy(&exec_ctx, ch_args);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_channel_args_destroy(ch_args);
 }
 
 static void test_compression_algorithm_states(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_channel_args *ch_args, *ch_args_wo_gzip, *ch_args_wo_gzip_deflate,
       *ch_args_wo_gzip_deflate_gzip;
   unsigned states_bitset;
@@ -92,14 +90,14 @@ static void test_compression_algorithm_states(void) {
 
   /* disable message/gzip and message/deflate and stream/gzip */
   ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
-      &exec_ctx, &ch_args, GRPC_COMPRESS_MESSAGE_GZIP, 0);
+      &ch_args, GRPC_COMPRESS_MESSAGE_GZIP, 0);
   GPR_ASSERT(ch_args == ch_args_wo_gzip);
   ch_args_wo_gzip_deflate = grpc_channel_args_compression_algorithm_set_state(
-      &exec_ctx, &ch_args_wo_gzip, GRPC_COMPRESS_MESSAGE_DEFLATE, 0);
+      &ch_args_wo_gzip, GRPC_COMPRESS_MESSAGE_DEFLATE, 0);
   GPR_ASSERT(ch_args_wo_gzip == ch_args_wo_gzip_deflate);
   ch_args_wo_gzip_deflate_gzip =
       grpc_channel_args_compression_algorithm_set_state(
-          &exec_ctx, &ch_args_wo_gzip_deflate, GRPC_COMPRESS_STREAM_GZIP, 0);
+          &ch_args_wo_gzip_deflate, GRPC_COMPRESS_STREAM_GZIP, 0);
   GPR_ASSERT(ch_args_wo_gzip_deflate == ch_args_wo_gzip_deflate_gzip);
 
   states_bitset = (unsigned)grpc_channel_args_compression_algorithm_get_states(
@@ -115,9 +113,9 @@ static void test_compression_algorithm_states(void) {
 
   /* re-enabled message/gzip and stream/gzip only */
   ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
-      &exec_ctx, &ch_args_wo_gzip_deflate_gzip, GRPC_COMPRESS_MESSAGE_GZIP, 1);
+      &ch_args_wo_gzip_deflate_gzip, GRPC_COMPRESS_MESSAGE_GZIP, 1);
   ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
-      &exec_ctx, &ch_args_wo_gzip, GRPC_COMPRESS_STREAM_GZIP, 1);
+      &ch_args_wo_gzip, GRPC_COMPRESS_STREAM_GZIP, 1);
   GPR_ASSERT(ch_args_wo_gzip == ch_args_wo_gzip_deflate_gzip);
 
   states_bitset = (unsigned)grpc_channel_args_compression_algorithm_get_states(
@@ -130,8 +128,7 @@ static void test_compression_algorithm_states(void) {
     }
   }
 
-  grpc_channel_args_destroy(&exec_ctx, ch_args);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_channel_args_destroy(ch_args);
 }
 
 static void test_set_socket_mutator(void) {
@@ -145,9 +142,8 @@ static void test_set_socket_mutator(void) {
   GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_POINTER);
 
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, ch_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(ch_args);
   }
 }
 

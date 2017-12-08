@@ -562,7 +562,7 @@ extern grpc_slice_buffer_move_first_type grpc_slice_buffer_move_first_import;
 typedef void(*grpc_slice_buffer_move_first_no_ref_type)(grpc_slice_buffer* src, size_t n, grpc_slice_buffer* dst);
 extern grpc_slice_buffer_move_first_no_ref_type grpc_slice_buffer_move_first_no_ref_import;
 #define grpc_slice_buffer_move_first_no_ref grpc_slice_buffer_move_first_no_ref_import
-typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_exec_ctx* exec_ctx, grpc_slice_buffer* src, size_t n, void* dst);
+typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_slice_buffer* src, size_t n, void* dst);
 extern grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_buffer_import;
 #define grpc_slice_buffer_move_first_into_buffer grpc_slice_buffer_move_first_into_buffer_import
 typedef grpc_slice(*grpc_slice_buffer_take_first_type)(grpc_slice_buffer* src);

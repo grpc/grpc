@@ -69,20 +69,19 @@ static void init_globals() {
   gpr_free(env);
 }
 
-static void backup_poller_shutdown_unref(grpc_exec_ctx* exec_ctx,
-                                         backup_poller* p) {
+static void backup_poller_shutdown_unref(backup_poller* p) {
   if (gpr_unref(&p->shutdown_refs)) {
-    grpc_pollset_destroy(exec_ctx, p->pollset);
+    grpc_pollset_destroy(p->pollset);
     gpr_free(p->pollset);
     gpr_free(p);
   }
 }
 
-static void done_poller(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
-  backup_poller_shutdown_unref(exec_ctx, (backup_poller*)arg);
+static void done_poller(void* arg, grpc_error* error) {
+  backup_poller_shutdown_unref((backup_poller*)arg);
 }
 
-static void g_poller_unref(grpc_exec_ctx* exec_ctx) {
+static void g_poller_unref() {
   gpr_mu_lock(&g_poller_mu);
   if (gpr_unref(&g_poller->refs)) {
     backup_poller* p = g_poller;
@@ -90,42 +89,42 @@ static void g_poller_unref(grpc_exec_ctx* exec_ctx) {
     gpr_mu_unlock(&g_poller_mu);
     gpr_mu_lock(p->pollset_mu);
     p->shutting_down = true;
-    grpc_pollset_shutdown(exec_ctx, p->pollset,
-                          GRPC_CLOSURE_INIT(&p->shutdown_closure, done_poller,
-                                            p, grpc_schedule_on_exec_ctx));
+    grpc_pollset_shutdown(
+        p->pollset, GRPC_CLOSURE_INIT(&p->shutdown_closure, done_poller, p,
+                                      grpc_schedule_on_exec_ctx));
     gpr_mu_unlock(p->pollset_mu);
-    grpc_timer_cancel(exec_ctx, &p->polling_timer);
+    grpc_timer_cancel(&p->polling_timer);
   } else {
     gpr_mu_unlock(&g_poller_mu);
   }
 }
 
-static void run_poller(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+static void run_poller(void* arg, grpc_error* error) {
   backup_poller* p = (backup_poller*)arg;
   if (error != GRPC_ERROR_NONE) {
     if (error != GRPC_ERROR_CANCELLED) {
       GRPC_LOG_IF_ERROR("run_poller", GRPC_ERROR_REF(error));
     }
-    backup_poller_shutdown_unref(exec_ctx, p);
+    backup_poller_shutdown_unref(p);
     return;
   }
   gpr_mu_lock(p->pollset_mu);
   if (p->shutting_down) {
     gpr_mu_unlock(p->pollset_mu);
-    backup_poller_shutdown_unref(exec_ctx, p);
+    backup_poller_shutdown_unref(p);
     return;
   }
-  grpc_error* err = grpc_pollset_work(exec_ctx, p->pollset, nullptr,
-                                      grpc_exec_ctx_now(exec_ctx));
+  grpc_error* err =
+      grpc_pollset_work(p->pollset, nullptr, grpc_core::ExecCtx::Get()->Now());
   gpr_mu_unlock(p->pollset_mu);
   GRPC_LOG_IF_ERROR("Run client channel backup poller", err);
-  grpc_timer_init(exec_ctx, &p->polling_timer,
-                  grpc_exec_ctx_now(exec_ctx) + g_poll_interval_ms,
+  grpc_timer_init(&p->polling_timer,
+                  grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms,
                   &p->run_poller_closure);
 }
 
 void grpc_client_channel_start_backup_polling(
-    grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties) {
+    grpc_pollset_set* interested_parties) {
   gpr_once_init(&g_once, init_globals);
   if (g_poll_interval_ms == 0) {
     return;
@@ -141,8 +140,8 @@ void grpc_client_channel_start_backup_polling(
     gpr_ref_init(&g_poller->shutdown_refs, 2);
     GRPC_CLOSURE_INIT(&g_poller->run_poller_closure, run_poller, g_poller,
                       grpc_schedule_on_exec_ctx);
-    grpc_timer_init(exec_ctx, &g_poller->polling_timer,
-                    grpc_exec_ctx_now(exec_ctx) + g_poll_interval_ms,
+    grpc_timer_init(&g_poller->polling_timer,
+                    grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms,
                     &g_poller->run_poller_closure);
   }
 
@@ -154,14 +153,14 @@ void grpc_client_channel_start_backup_polling(
   grpc_pollset* pollset = g_poller->pollset;
   gpr_mu_unlock(&g_poller_mu);
 
-  grpc_pollset_set_add_pollset(exec_ctx, interested_parties, pollset);
+  grpc_pollset_set_add_pollset(interested_parties, pollset);
 }
 
 void grpc_client_channel_stop_backup_polling(
-    grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties) {
+    grpc_pollset_set* interested_parties) {
   if (g_poll_interval_ms == 0) {
     return;
   }
-  grpc_pollset_set_del_pollset(exec_ctx, interested_parties, g_poller->pollset);
-  g_poller_unref(exec_ctx);
+  grpc_pollset_set_del_pollset(interested_parties, g_poller->pollset);
+  g_poller_unref();
 }

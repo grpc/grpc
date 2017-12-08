@@ -40,26 +40,24 @@ grpc_combiner* grpc_combiner_create(void);
   , const char *file, int line, const char *reason
 #define GRPC_COMBINER_REF(combiner, reason) \
   grpc_combiner_ref((combiner), __FILE__, __LINE__, (reason))
-#define GRPC_COMBINER_UNREF(exec_ctx, combiner, reason) \
-  grpc_combiner_unref((exec_ctx), (combiner), __FILE__, __LINE__, (reason))
+#define GRPC_COMBINER_UNREF(combiner, reason) \
+  grpc_combiner_unref((combiner), __FILE__, __LINE__, (reason))
 #else
 #define GRPC_COMBINER_DEBUG_ARGS
 #define GRPC_COMBINER_REF(combiner, reason) grpc_combiner_ref((combiner))
-#define GRPC_COMBINER_UNREF(exec_ctx, combiner, reason) \
-  grpc_combiner_unref((exec_ctx), (combiner))
+#define GRPC_COMBINER_UNREF(combiner, reason) grpc_combiner_unref((combiner))
 #endif
 
 // Ref/unref the lock, for when we're sharing the lock ownership
 // Prefer to use the macros above
 grpc_combiner* grpc_combiner_ref(grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS);
-void grpc_combiner_unref(grpc_exec_ctx* exec_ctx,
-                         grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS);
+void grpc_combiner_unref(grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS);
 // Fetch a scheduler to schedule closures against
 grpc_closure_scheduler* grpc_combiner_scheduler(grpc_combiner* lock);
 // Scheduler to execute \a action within the lock just prior to unlocking.
 grpc_closure_scheduler* grpc_combiner_finally_scheduler(grpc_combiner* lock);
 
-bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx* exec_ctx);
+bool grpc_combiner_continue_exec_ctx();
 
 extern grpc_core::TraceFlag grpc_combiner_trace;
 

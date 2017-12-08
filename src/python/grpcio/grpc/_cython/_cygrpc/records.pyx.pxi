@@ -320,7 +320,7 @@ cdef void* copy_ptr(void* ptr):
   return ptr
 
 
-cdef void destroy_ptr(grpc_exec_ctx* ctx, void* ptr):
+cdef void destroy_ptr(void* ptr):
   pass
 
 
@@ -348,7 +348,7 @@ cdef class ChannelArg:
     elif hasattr(value, '__int__'):
       # Pointer objects must override __int__() to return
       # the underlying C address (Python ints are word size).  The
-      # lifecycle of the pointer is fixed to the lifecycle of the 
+      # lifecycle of the pointer is fixed to the lifecycle of the
       # python object wrapping it.
       self.ptr_vtable.copy = &copy_ptr
       self.ptr_vtable.destroy = &destroy_ptr

@@ -59,9 +59,7 @@ static void check_non_existent_value(const char* key_string,
   grpc_slice_unref(key);
 }
 
-static void destroy_string(grpc_exec_ctx* exec_ctx, void* value) {
-  gpr_free(value);
-}
+static void destroy_string(void* value) { gpr_free(value); }
 
 static grpc_slice_hash_table* create_table_from_entries(
     const test_entry* test_entries, size_t num_test_entries,
@@ -121,9 +119,8 @@ static void test_slice_hash_table() {
   check_values(test_entries, num_entries, table);
   check_non_existent_value("XX", table);
   // Clean up.
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_hash_table_unref(&exec_ctx, table);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_hash_table_unref(table);
 }
 
 static int value_cmp_fn(void* a, void* b) {
@@ -149,10 +146,9 @@ static void test_slice_hash_table_eq() {
       create_table_from_entries(test_entries_b, num_entries_b, value_cmp_fn);
 
   GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b) == 0);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_hash_table_unref(&exec_ctx, table_a);
-  grpc_slice_hash_table_unref(&exec_ctx, table_b);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_hash_table_unref(table_a);
+  grpc_slice_hash_table_unref(table_b);
 }
 
 static void test_slice_hash_table_not_eq() {
@@ -221,23 +217,24 @@ static void test_slice_hash_table_not_eq() {
       create_table_from_entries(test_entries_h, num_entries_h, pointer_cmp_fn);
   GPR_ASSERT(grpc_slice_hash_table_cmp(table_g, table_h) != 0);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_hash_table_unref(&exec_ctx, table_a);
-  grpc_slice_hash_table_unref(&exec_ctx, table_b_larger);
-  grpc_slice_hash_table_unref(&exec_ctx, table_b_smaller);
-  grpc_slice_hash_table_unref(&exec_ctx, table_c);
-  grpc_slice_hash_table_unref(&exec_ctx, table_d);
-  grpc_slice_hash_table_unref(&exec_ctx, table_e);
-  grpc_slice_hash_table_unref(&exec_ctx, table_f);
-  grpc_slice_hash_table_unref(&exec_ctx, table_g);
-  grpc_slice_hash_table_unref(&exec_ctx, table_h);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_hash_table_unref(table_a);
+  grpc_slice_hash_table_unref(table_b_larger);
+  grpc_slice_hash_table_unref(table_b_smaller);
+  grpc_slice_hash_table_unref(table_c);
+  grpc_slice_hash_table_unref(table_d);
+  grpc_slice_hash_table_unref(table_e);
+  grpc_slice_hash_table_unref(table_f);
+  grpc_slice_hash_table_unref(table_g);
+  grpc_slice_hash_table_unref(table_h);
 }
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_core::ExecCtx::GlobalInit();
   test_slice_hash_table();
   test_slice_hash_table_eq();
   test_slice_hash_table_not_eq();
+  grpc_core::ExecCtx::GlobalShutdown();
   return 0;
 }

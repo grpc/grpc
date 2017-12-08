@@ -91,11 +91,11 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
     // TODO(mxyan): Design algorithm to select from all algorithms, including
     // stream compression algorithm
     if (!grpc_compression_algorithm_from_message_stream_compression_algorithm(
-          &algo,
-          grpc_message_compression_algorithm_for_level(
-              level,
-              grpc_compression_bitset_to_message_bitset(accepted_encodings)),
-          static_cast<grpc_stream_compression_algorithm>(0))){
+            &algo,
+            grpc_message_compression_algorithm_for_level(
+                level,
+                grpc_compression_bitset_to_message_bitset(accepted_encodings)),
+            static_cast<grpc_stream_compression_algorithm>(0))) {
       gpr_log(GPR_ERROR, "Parse compression level error");
       return GRPC_COMPRESS_NONE;
     }

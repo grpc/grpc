@@ -37,7 +37,7 @@
 
 grpc_channel* grpc_insecure_channel_create_from_fd(
     const char* target, int fd, const grpc_channel_args* args) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_insecure_channel_create(target=%p, fd=%d, args=%p)", 3,
                  (target, fd, args));
 
@@ -50,17 +50,17 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
 
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
-      &exec_ctx, grpc_fd_create(fd, "client"), args, "fd-client");
+      grpc_fd_create(fd, "client"), args, "fd-client");
 
   grpc_transport* transport =
-      grpc_create_chttp2_transport(&exec_ctx, final_args, client, true);
+      grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
   grpc_channel* channel = grpc_channel_create(
-      &exec_ctx, target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-  grpc_channel_args_destroy(&exec_ctx, final_args);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr, nullptr);
+      target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+  grpc_channel_args_destroy(final_args);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx::Get()->Flush();
 
   return channel != nullptr ? channel
                             : grpc_lame_client_channel_create(
@@ -73,7 +73,7 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
 grpc_channel* grpc_insecure_channel_create_from_fd(
     const char* target, int fd, const grpc_channel_args* args) {
   GPR_ASSERT(0);
-  return NULL;
+  return nullptr;
 }
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD

@@ -25,8 +25,7 @@
 
 /// Creates a security handshaker using \a handshaker.
 grpc_handshaker* grpc_security_handshaker_create(
-    grpc_exec_ctx* exec_ctx, tsi_handshaker* handshaker,
-    grpc_security_connector* connector);
+    tsi_handshaker* handshaker, grpc_security_connector* connector);
 
 /// Registers security handshaker factories.
 void grpc_security_register_handshaker_factories();

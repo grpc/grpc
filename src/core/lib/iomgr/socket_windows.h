@@ -98,16 +98,13 @@ void grpc_winsocket_shutdown(grpc_winsocket* socket);
 /* Destroy a socket. Should only be called if there's no pending operation. */
 void grpc_winsocket_destroy(grpc_winsocket* socket);
 
-void grpc_socket_notify_on_write(grpc_exec_ctx* exec_ctx,
-                                 grpc_winsocket* winsocket,
+void grpc_socket_notify_on_write(grpc_winsocket* winsocket,
                                  grpc_closure* closure);
 
-void grpc_socket_notify_on_read(grpc_exec_ctx* exec_ctx,
-                                grpc_winsocket* winsocket,
+void grpc_socket_notify_on_read(grpc_winsocket* winsocket,
                                 grpc_closure* closure);
 
-void grpc_socket_become_ready(grpc_exec_ctx* exec_ctx,
-                              grpc_winsocket* winsocket,
+void grpc_socket_become_ready(grpc_winsocket* winsocket,
                               grpc_winsocket_callback_info* ci);
 
 #endif
