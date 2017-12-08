@@ -35,17 +35,6 @@ def _metadata_plugin(context, callback):
 
 class TypeSmokeTest(unittest.TestCase):
 
-    def testOperationsIteration(self):
-        operations = cygrpc.Operations(
-            [cygrpc.operation_send_message(b'asdf', _EMPTY_FLAGS)])
-        iterator = iter(operations)
-        operation = next(iterator)
-        self.assertIsInstance(operation, cygrpc.Operation)
-        # `Operation`s are write-only structures; can't directly debug anything out
-        # of them. Just check that we stop iterating.
-        with self.assertRaises(StopIteration):
-            next(iterator)
-
     def testOperationFlags(self):
         operation = cygrpc.operation_send_message(b'asdf',
                                                   cygrpc.WriteFlag.no_compress)
@@ -155,8 +144,7 @@ class ServerClientMixin(object):
         def performer():
             tag = object()
             try:
-                call_result = call.start_client_batch(
-                    cygrpc.Operations(operations), tag)
+                call_result = call.start_client_batch(operations, tag)
                 self.assertEqual(cygrpc.CallError.ok, call_result)
                 event = queue.poll(deadline)
                 self.assertEqual(cygrpc.CompletionType.operation_complete,
