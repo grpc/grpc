@@ -35,7 +35,6 @@ typedef grpc_lb_v1_Duration grpc_grpclb_duration;
 typedef struct {
   grpc_grpclb_server** servers;
   size_t num_servers;
-  grpc_grpclb_duration expiration_interval;
 } grpc_grpclb_serverlist;
 
 /** Create a request for a gRPC LB service under \a lb_service_name */

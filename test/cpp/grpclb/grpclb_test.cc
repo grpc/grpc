@@ -113,10 +113,9 @@ typedef struct test_fixture {
 
 static void* tag(intptr_t t) { return (void*)t; }
 
-static grpc_slice build_response_payload_slice(
-    const char* host, int* ports, size_t nports,
-    int64_t expiration_interval_secs, int32_t expiration_interval_nanos,
-    const char* token_prefix) {
+static grpc_slice build_response_payload_slice(const char* host, int* ports,
+                                               size_t nports,
+                                               const char* token_prefix) {
   // server_list {
   //   servers {
   //     ip_address: <in_addr/6 bytes of an IP>
@@ -128,15 +127,6 @@ static grpc_slice build_response_payload_slice(
   grpc::lb::v1::LoadBalanceResponse response;
   auto* serverlist = response.mutable_server_list();
 
-  if (expiration_interval_secs > 0 || expiration_interval_nanos > 0) {
-    auto* expiration_interval = serverlist->mutable_expiration_interval();
-    if (expiration_interval_secs > 0) {
-      expiration_interval->set_seconds(expiration_interval_secs);
-    }
-    if (expiration_interval_nanos > 0) {
-      expiration_interval->set_nanos(expiration_interval_nanos);
-    }
-  }
   for (size_t i = 0; i < nports; i++) {
     auto* server = serverlist->add_servers();
     // TODO(dgq): test ipv6
@@ -248,13 +238,13 @@ static void start_lb_server(server_fixture* sf, int* ports, size_t nports,
     if (i == 0) {
       // First half of the ports.
       response_payload_slice = build_response_payload_slice(
-          "127.0.0.1", ports, nports / 2, -1, -1, sf->lb_token_prefix);
+          "127.0.0.1", ports, nports / 2, sf->lb_token_prefix);
     } else {
       // Second half of the ports.
       sleep_ms(update_delay_ms);
       response_payload_slice = build_response_payload_slice(
-          "127.0.0.1", ports + (nports / 2), (nports + 1) / 2 /* ceil */, -1,
-          -1, "" /* this half doesn't get to receive an LB token */);
+          "127.0.0.1", ports + (nports / 2), (nports + 1) / 2 /* ceil */,
+          "" /* this half doesn't get to receive an LB token */);
     }
 
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
@@ -562,7 +552,7 @@ static void perform_request(client_fixture* cf) {
 #define BALANCERS_NAME "lb.name"
 static void setup_client(const server_fixture* lb_server,
                          const server_fixture* backends, client_fixture* cf) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   char* expected_target_names = nullptr;
   const char* backends_name = lb_server->servers_hostport;
@@ -574,7 +564,7 @@ static void setup_client(const server_fixture* lb_server,
   grpc_lb_addresses* addresses = grpc_lb_addresses_create(1, nullptr);
   char* lb_uri_str;
   gpr_asprintf(&lb_uri_str, "ipv4:%s", lb_server->servers_hostport);
-  grpc_uri* lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
+  grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
   GPR_ASSERT(lb_uri != nullptr);
   grpc_lb_addresses_set_address_from_uri(addresses, 0, lb_uri, true,
                                          lb_server->balancer_name, nullptr);
@@ -586,7 +576,7 @@ static void setup_client(const server_fixture* lb_server,
       grpc_lb_addresses_create_channel_arg(addresses);
   grpc_channel_args* fake_result =
       grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-  grpc_lb_addresses_destroy(&exec_ctx, addresses);
+  grpc_lb_addresses_destroy(addresses);
 
   const grpc_arg new_args[] = {
       grpc_fake_transport_expected_targets_arg(expected_target_names),
@@ -601,13 +591,12 @@ static void setup_client(const server_fixture* lb_server,
       grpc_fake_transport_security_credentials_create();
   cf->client =
       grpc_secure_channel_create(fake_creds, cf->server_uri, args, nullptr);
-  grpc_fake_resolver_response_generator_set_response(
-      &exec_ctx, response_generator, fake_result);
-  grpc_channel_args_destroy(&exec_ctx, fake_result);
-  grpc_channel_credentials_unref(&exec_ctx, fake_creds);
-  grpc_channel_args_destroy(&exec_ctx, args);
+  grpc_fake_resolver_response_generator_set_response(response_generator,
+                                                     fake_result);
+  grpc_channel_args_destroy(fake_result);
+  grpc_channel_credentials_unref(fake_creds);
+  grpc_channel_args_destroy(args);
   grpc_fake_resolver_response_generator_unref(response_generator);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void teardown_client(client_fixture* cf) {
@@ -703,14 +692,15 @@ static test_fixture setup_test_fixture(int lb_server_update_delay_ms) {
       tf.lb_backends[i].lb_token_prefix = "";
     }
     setup_server("127.0.0.1", &tf.lb_backends[i]);
-    gpr_thd_new(&tf.lb_backends[i].tid, fork_backend_server, &tf.lb_backends[i],
-                &options);
+    gpr_thd_new(&tf.lb_backends[i].tid, "grpclb_backend", fork_backend_server,
+                &tf.lb_backends[i], &options);
   }
 
   tf.lb_server.lb_token_prefix = LB_TOKEN_PREFIX;
   tf.lb_server.balancer_name = BALANCERS_NAME;
   setup_server("127.0.0.1", &tf.lb_server);
-  gpr_thd_new(&tf.lb_server.tid, fork_lb_server, &tf.lb_server, &options);
+  gpr_thd_new(&tf.lb_server.tid, "grpclb_server", fork_lb_server, &tf.lb_server,
+              &options);
   setup_client(&tf.lb_server, tf.lb_backends, &tf.client);
   return tf;
 }

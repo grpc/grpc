@@ -33,6 +33,11 @@ struct gpr_gcc_thread_local {
 #define GPR_TLS_DECL(name) \
   static __thread struct gpr_gcc_thread_local name = {0}
 
+#define GPR_TLS_CLASS_DECL(name) \
+  static __thread struct gpr_gcc_thread_local name
+
+#define GPR_TLS_CLASS_DEF(name) __thread struct gpr_gcc_thread_local name = {0}
+
 #define gpr_tls_init(tls) \
   do {                    \
   } while (0)

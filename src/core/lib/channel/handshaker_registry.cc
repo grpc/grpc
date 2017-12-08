@@ -47,18 +47,17 @@ static void grpc_handshaker_factory_list_register(
 }
 
 static void grpc_handshaker_factory_list_add_handshakers(
-    grpc_exec_ctx* exec_ctx, grpc_handshaker_factory_list* list,
-    const grpc_channel_args* args, grpc_handshake_manager* handshake_mgr) {
+    grpc_handshaker_factory_list* list, const grpc_channel_args* args,
+    grpc_handshake_manager* handshake_mgr) {
   for (size_t i = 0; i < list->num_factories; ++i) {
-    grpc_handshaker_factory_add_handshakers(exec_ctx, list->list[i], args,
-                                            handshake_mgr);
+    grpc_handshaker_factory_add_handshakers(list->list[i], args, handshake_mgr);
   }
 }
 
 static void grpc_handshaker_factory_list_destroy(
-    grpc_exec_ctx* exec_ctx, grpc_handshaker_factory_list* list) {
+    grpc_handshaker_factory_list* list) {
   for (size_t i = 0; i < list->num_factories; ++i) {
-    grpc_handshaker_factory_destroy(exec_ctx, list->list[i]);
+    grpc_handshaker_factory_destroy(list->list[i]);
   }
   gpr_free(list->list);
 }
@@ -74,10 +73,9 @@ void grpc_handshaker_factory_registry_init() {
   memset(g_handshaker_factory_lists, 0, sizeof(g_handshaker_factory_lists));
 }
 
-void grpc_handshaker_factory_registry_shutdown(grpc_exec_ctx* exec_ctx) {
+void grpc_handshaker_factory_registry_shutdown() {
   for (size_t i = 0; i < NUM_HANDSHAKER_TYPES; ++i) {
-    grpc_handshaker_factory_list_destroy(exec_ctx,
-                                         &g_handshaker_factory_lists[i]);
+    grpc_handshaker_factory_list_destroy(&g_handshaker_factory_lists[i]);
   }
 }
 
@@ -88,11 +86,9 @@ void grpc_handshaker_factory_register(bool at_start,
       &g_handshaker_factory_lists[handshaker_type], at_start, factory);
 }
 
-void grpc_handshakers_add(grpc_exec_ctx* exec_ctx,
-                          grpc_handshaker_type handshaker_type,
+void grpc_handshakers_add(grpc_handshaker_type handshaker_type,
                           const grpc_channel_args* args,
                           grpc_handshake_manager* handshake_mgr) {
   grpc_handshaker_factory_list_add_handshakers(
-      exec_ctx, &g_handshaker_factory_lists[handshaker_type], args,
-      handshake_mgr);
+      &g_handshaker_factory_lists[handshaker_type], args, handshake_mgr);
 }

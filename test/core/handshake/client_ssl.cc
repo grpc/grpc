@@ -231,7 +231,8 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   gpr_thd_id thdid;
   gpr_thd_options_set_joinable(&thdopt);
   server_args args = {server_socket, server_alpn_preferred};
-  GPR_ASSERT(gpr_thd_new(&thdid, server_thread, &args, &thdopt));
+  GPR_ASSERT(gpr_thd_new(&thdid, "grpc_client_ssl_test", server_thread, &args,
+                         &thdopt));
 
   // Load key pair and establish client SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;

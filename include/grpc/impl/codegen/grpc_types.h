@@ -85,7 +85,7 @@ typedef enum {
 
 typedef struct grpc_arg_pointer_vtable {
   void* (*copy)(void* p);
-  void (*destroy)(grpc_exec_ctx* exec_ctx, void* p);
+  void (*destroy)(void* p);
   int (*cmp)(void* p, void* q);
 } grpc_arg_pointer_vtable;
 
@@ -240,6 +240,9 @@ typedef struct {
 /** The time between the first and second connection attempts, in ms */
 #define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS \
   "grpc.initial_reconnect_backoff_ms"
+/** The timeout used on servers for finishing handshaking on an incoming
+    connection.  Defaults to 120 seconds. */
+#define GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS "grpc.server_handshake_timeout_ms"
 /** This *should* be used for testing only.
     The caller of the secure_channel_create functions may override the target
     name used for SSL host name checking using this channel argument which is of

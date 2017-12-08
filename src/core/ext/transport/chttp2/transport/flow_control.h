@@ -134,8 +134,7 @@ class FlowControlTrace {
 
 class TransportFlowControl {
  public:
-  TransportFlowControl(grpc_exec_ctx* exec_ctx, const grpc_chttp2_transport* t,
-                       bool enable_bdp_probe);
+  TransportFlowControl(const grpc_chttp2_transport* t, bool enable_bdp_probe);
   ~TransportFlowControl() {}
 
   bool bdp_probe() const { return enable_bdp_probe_; }
@@ -153,7 +152,7 @@ class TransportFlowControl {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let chttp2 change its parameters
-  FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx);
+  FlowControlAction PeriodicUpdate();
 
   void StreamSentData(int64_t size) { remote_window_ -= size; }
 
@@ -212,7 +211,7 @@ class TransportFlowControl {
  private:
   friend class ::grpc::testing::TrickledCHTTP2;
   double TargetLogBdp();
-  double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
+  double SmoothLogBdp(double value);
   FlowControlAction::Urgency DeltaUrgency(int32_t value,
                                           grpc_chttp2_setting_id setting_id);
 

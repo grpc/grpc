@@ -55,15 +55,14 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg,
                           const char* object_type);
 void grpc_stream_ref(grpc_stream_refcount* refcount, const char* reason);
-void grpc_stream_unref(grpc_exec_ctx* exec_ctx, grpc_stream_refcount* refcount,
-                       const char* reason);
+void grpc_stream_unref(grpc_stream_refcount* refcount, const char* reason);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   grpc_stream_ref_init(rc, ir, cb, cb_arg, objtype)
 #else
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg);
 void grpc_stream_ref(grpc_stream_refcount* refcount);
-void grpc_stream_unref(grpc_exec_ctx* exec_ctx, grpc_stream_refcount* refcount);
+void grpc_stream_unref(grpc_stream_refcount* refcount);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   grpc_stream_ref_init(rc, ir, cb, cb_arg)
 #endif
@@ -237,16 +236,21 @@ typedef struct grpc_transport_op {
       If true, the callback is set to set_accept_stream_fn, with its
       user_data argument set to set_accept_stream_user_data */
   bool set_accept_stream;
-  void (*set_accept_stream_fn)(grpc_exec_ctx* exec_ctx, void* user_data,
-                               grpc_transport* transport,
+  void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
                                const void* server_data);
   void* set_accept_stream_user_data;
   /** add this transport to a pollset */
   grpc_pollset* bind_pollset;
   /** add this transport to a pollset_set */
   grpc_pollset_set* bind_pollset_set;
-  /** send a ping, call this back if not NULL */
-  grpc_closure* send_ping;
+  /** send a ping, if either on_initiate or on_ack is not NULL */
+  struct {
+    /** Ping may be delayed by the transport, on_initiate callback will be
+        called when the ping is actually being sent. */
+    grpc_closure* on_initiate;
+    /** Called when the ping ack is received */
+    grpc_closure* on_ack;
+  } send_ping;
 
   /***************************************************************************
    * remaining fields are initialized and used at the discretion of the
@@ -269,13 +273,12 @@ size_t grpc_transport_stream_size(grpc_transport* transport);
      stream      - a pointer to uninitialized memory to initialize
      server_data - either NULL for a client initiated stream, or a pointer
                    supplied from the accept_stream callback function */
-int grpc_transport_init_stream(grpc_exec_ctx* exec_ctx,
-                               grpc_transport* transport, grpc_stream* stream,
+int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
                                grpc_stream_refcount* refcount,
                                const void* server_data, gpr_arena* arena);
 
-void grpc_transport_set_pops(grpc_exec_ctx* exec_ctx, grpc_transport* transport,
-                             grpc_stream* stream, grpc_polling_entity* pollent);
+void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
+                             grpc_polling_entity* pollent);
 
 /* Destroy transport data for a stream.
 
@@ -287,14 +290,13 @@ void grpc_transport_set_pops(grpc_exec_ctx* exec_ctx, grpc_transport* transport,
      transport - the transport on which to create this stream
      stream    - the grpc_stream to destroy (memory is still owned by the
                  caller, but any child memory must be cleaned up) */
-void grpc_transport_destroy_stream(grpc_exec_ctx* exec_ctx,
-                                   grpc_transport* transport,
+void grpc_transport_destroy_stream(grpc_transport* transport,
                                    grpc_stream* stream,
                                    grpc_closure* then_schedule_closure);
 
 void grpc_transport_stream_op_batch_finish_with_failure(
-    grpc_exec_ctx* exec_ctx, grpc_transport_stream_op_batch* op,
-    grpc_error* error, grpc_call_combiner* call_combiner);
+    grpc_transport_stream_op_batch* op, grpc_error* error,
+    grpc_call_combiner* call_combiner);
 
 char* grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch* op);
 char* grpc_transport_op_string(grpc_transport_op* op);
@@ -309,13 +311,11 @@ char* grpc_transport_op_string(grpc_transport_op* op);
                  non-NULL and previously initialized by the same transport.
      op        - a grpc_transport_stream_op_batch specifying the op to perform
    */
-void grpc_transport_perform_stream_op(grpc_exec_ctx* exec_ctx,
-                                      grpc_transport* transport,
+void grpc_transport_perform_stream_op(grpc_transport* transport,
                                       grpc_stream* stream,
                                       grpc_transport_stream_op_batch* op);
 
-void grpc_transport_perform_op(grpc_exec_ctx* exec_ctx,
-                               grpc_transport* transport,
+void grpc_transport_perform_op(grpc_transport* transport,
                                grpc_transport_op* op);
 
 /* Send a ping on a transport
@@ -327,15 +327,11 @@ void grpc_transport_ping(grpc_transport* transport, grpc_closure* cb);
 void grpc_transport_goaway(grpc_transport* transport, grpc_status_code status,
                            grpc_slice debug_data);
 
-/* Close a transport. Aborts all open streams. */
-void grpc_transport_close(grpc_transport* transport);
-
 /* Destroy the transport */
-void grpc_transport_destroy(grpc_exec_ctx* exec_ctx, grpc_transport* transport);
+void grpc_transport_destroy(grpc_transport* transport);
 
 /* Get the endpoint used by \a transport */
-grpc_endpoint* grpc_transport_get_endpoint(grpc_exec_ctx* exec_ctx,
-                                           grpc_transport* transport);
+grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport);
 
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */
