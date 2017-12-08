@@ -243,8 +243,14 @@ typedef struct grpc_transport_op {
   grpc_pollset* bind_pollset;
   /** add this transport to a pollset_set */
   grpc_pollset_set* bind_pollset_set;
-  /** send a ping, call this back if not NULL */
-  grpc_closure* send_ping;
+  /** send a ping, if either on_initiate or on_ack is not NULL */
+  struct {
+    /** Ping may be delayed by the transport, on_initiate callback will be
+        called when the ping is actually being sent. */
+    grpc_closure* on_initiate;
+    /** Called when the ping ack is received */
+    grpc_closure* on_ack;
+  } send_ping;
 
   /***************************************************************************
    * remaining fields are initialized and used at the discretion of the

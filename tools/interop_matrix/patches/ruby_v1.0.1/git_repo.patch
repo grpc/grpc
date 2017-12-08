@@ -1,0 +1,34 @@
+diff --git a/tools/dockerfile/interoptest/grpc_interop_ruby/Dockerfile b/tools/dockerfile/interoptest/grpc_interop_ruby/Dockerfile
+index 88b5130..7ae9f7d 100644
+--- a/tools/dockerfile/interoptest/grpc_interop_ruby/Dockerfile
++++ b/tools/dockerfile/interoptest/grpc_interop_ruby/Dockerfile
+@@ -70,12 +70,12 @@ RUN apt-get update && apt-get install -y time && apt-get clean
+ RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+ RUN \curl -sSL https://get.rvm.io | bash -s stable
+ 
+-# Install Ruby 2.1
+-RUN /bin/bash -l -c "rvm install ruby-2.1"
+-RUN /bin/bash -l -c "rvm use --default ruby-2.1"
++# Install Ruby 2.1.8
++RUN /bin/bash -l -c "rvm install ruby-2.1.8"
++RUN /bin/bash -l -c "rvm use --default ruby-2.1.8"
+ RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
+ RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
+-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
++RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1.8' >> ~/.bashrc"
+ RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
+ 
+ # Prepare ccache
+diff --git a/tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh b/tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh
+index 97b3860..cec046d 100755
+--- a/tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh
++++ b/tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh
+@@ -38,7 +38,7 @@ git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+ cp -r /var/local/jenkins/service_account $HOME || true
+ 
+ cd /var/local/git/grpc
+-rvm --default use ruby-2.1
++rvm --default use ruby-2.1.8
+ 
+ # build Ruby interop client and server
+ (cd src/ruby && gem update bundler && bundle && rake compile)

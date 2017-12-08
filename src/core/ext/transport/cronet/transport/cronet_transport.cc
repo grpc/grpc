@@ -397,7 +397,7 @@ static void execute_from_storage(stream_obj* s) {
   Cronet callback
 */
 static void on_failed(bidirectional_stream* stream, int net_error) {
-  CRONET_LOG(GPR_DEBUG, "on_failed(%p, %d)", stream, net_error);
+  gpr_log(GPR_ERROR, "on_failed(%p, %d)", stream, net_error);
   grpc_core::ExecCtx exec_ctx;
 
   stream_obj* s = (stream_obj*)stream->annotation;

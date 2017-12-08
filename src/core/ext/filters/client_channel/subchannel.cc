@@ -562,10 +562,12 @@ void grpc_connected_subchannel_notify_on_state_change(
 }
 
 void grpc_connected_subchannel_ping(grpc_connected_subchannel* con,
-                                    grpc_closure* closure) {
+                                    grpc_closure* on_initiate,
+                                    grpc_closure* on_ack) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   grpc_channel_element* elem;
-  op->send_ping = closure;
+  op->send_ping.on_initiate = on_initiate;
+  op->send_ping.on_ack = on_ack;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(con), 0);
   elem->filter->start_transport_op(elem, op);
 }

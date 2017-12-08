@@ -99,9 +99,15 @@ static void lame_start_transport_op(grpc_channel_element* elem,
     *op->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
     GRPC_CLOSURE_SCHED(op->on_connectivity_state_change, GRPC_ERROR_NONE);
   }
-  if (op->send_ping != nullptr) {
-    GRPC_CLOSURE_SCHED(op->send_ping, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                          "lame client channel"));
+  if (op->send_ping.on_initiate != nullptr) {
+    GRPC_CLOSURE_SCHED(
+        op->send_ping.on_initiate,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
+  }
+  if (op->send_ping.on_ack != nullptr) {
+    GRPC_CLOSURE_SCHED(
+        op->send_ping.on_ack,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
   if (op->on_consumed != nullptr) {

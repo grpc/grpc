@@ -77,7 +77,8 @@ struct grpc_lb_policy_vtable {
                               grpc_error* error);
 
   /** \see grpc_lb_policy_ping_one */
-  void (*ping_one_locked)(grpc_lb_policy* policy, grpc_closure* closure);
+  void (*ping_one_locked)(grpc_lb_policy* policy, grpc_closure* on_initiate,
+                          grpc_closure* on_ack);
 
   /** Try to enter a READY connectivity state */
   void (*exit_idle_locked)(grpc_lb_policy* policy);
@@ -166,7 +167,8 @@ int grpc_lb_policy_pick_locked(grpc_lb_policy* policy,
 /** Perform a connected subchannel ping (see \a grpc_connected_subchannel_ping)
     against one of the connected subchannels managed by \a policy. */
 void grpc_lb_policy_ping_one_locked(grpc_lb_policy* policy,
-                                    grpc_closure* closure);
+                                    grpc_closure* on_initiate,
+                                    grpc_closure* on_ack);
 
 /** Cancel picks for \a target.
     The \a on_complete callback of the pending picks will be invoked with \a

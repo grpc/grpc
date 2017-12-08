@@ -572,15 +572,28 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
     CheckRpcSendOk();
   }
   // Kill all servers
+  gpr_log(GPR_INFO, "****** ABOUT TO KILL SERVERS *******");
   for (size_t i = 0; i < servers_.size(); ++i) {
     servers_[i]->Shutdown(false);
   }
-  // Client request should fail.
-  CheckRpcSendFailure();
+  gpr_log(GPR_INFO, "****** SERVERS KILLED *******");
+  gpr_log(GPR_INFO, "****** SENDING DOOMED REQUESTS *******");
+  // Client requests should fail. Send enough to tickle all subchannels.
+  for (size_t i = 0; i < servers_.size(); ++i) CheckRpcSendFailure();
+  gpr_log(GPR_INFO, "****** DOOMED REQUESTS SENT *******");
   // Bring servers back up on the same port (we aren't recreating the channel).
+  gpr_log(GPR_INFO, "****** RESTARTING SERVERS *******");
   StartServers(kNumServers, ports);
-  // Client request should succeed.
-  CheckRpcSendOk();
+  gpr_log(GPR_INFO, "****** SERVERS RESTARTED *******");
+  gpr_log(GPR_INFO, "****** SENDING REQUEST TO SUCCEED *******");
+  // Client request should eventually (but still fairly soon) succeed.
+  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  while (gpr_time_cmp(deadline, now) > 0) {
+    if (SendRpc().ok()) break;
+    now = gpr_now(GPR_CLOCK_MONOTONIC);
+  }
+  GPR_ASSERT(gpr_time_cmp(deadline, now) > 0);
 }
 
 }  // namespace
