@@ -87,22 +87,18 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
   grpc_compression_algorithm algo;
   if (level == GRPC_COMPRESS_LEVEL_NONE) {
     return GRPC_COMPRESS_NONE;
-  } else if (level <= GRPC_COMPRESS_LEVEL_MESSAGE_HIGH) {
-    GPR_ASSERT(
-        grpc_compression_algorithm_from_message_stream_compression_algorithm(
-            &algo,
-            grpc_message_compression_algorithm_for_level(
-                grpc_compression_level_to_message_compression_level(level),
-                grpc_compression_bitset_to_message_bitset(accepted_encodings)),
-            (grpc_stream_compression_algorithm)0));
-    return algo;
-  } else if (level <= GRPC_COMPRESS_LEVEL_STREAM_HIGH) {
-    GPR_ASSERT(
-        grpc_compression_algorithm_from_message_stream_compression_algorithm(
-            &algo, (grpc_message_compression_algorithm)0,
-            grpc_stream_compression_algorithm_for_level(
-                grpc_compression_level_to_stream_compression_level(level),
-                grpc_compression_bitset_to_stream_bitset(accepted_encodings))));
+  } else if (level <= GRPC_COMPRESS_LEVEL_HIGH) {
+    // TODO(mxyan): Design algorithm to select from all algorithms, including
+    // stream compression algorithm
+    if (!grpc_compression_algorithm_from_message_stream_compression_algorithm(
+          &algo,
+          grpc_message_compression_algorithm_for_level(
+              level,
+              grpc_compression_bitset_to_message_bitset(accepted_encodings)),
+          static_cast<grpc_stream_compression_algorithm>(0))){
+      gpr_log(GPR_ERROR, "Parse compression level error");
+      return GRPC_COMPRESS_NONE;
+    }
     return algo;
   } else {
     gpr_log(GPR_ERROR, "Unknown compression level: %d", level);

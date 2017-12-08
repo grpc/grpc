@@ -591,7 +591,7 @@ static void test_invoke_request_with_server_level(
   request_with_payload_template(
       config, "test_invoke_request_with_server_level", 0, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE /* ignored */,
-      nullptr, true, GRPC_COMPRESS_LEVEL_MESSAGE_HIGH, false);
+      nullptr, true, GRPC_COMPRESS_LEVEL_HIGH, false);
 }
 
 static void test_invoke_request_with_compressed_payload_md_override(

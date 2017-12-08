@@ -40,37 +40,8 @@ typedef enum {
   GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT
 } grpc_stream_compression_algorithm;
 
-/** Compression levels allow a party with knowledge of its peer's accepted
- * encodings to request compression in an abstract way. The level-algorithm
- * mapping is performed internally and depends on the peer's supported
- * compression algorithms. */
-typedef enum {
-  GRPC_MESSAGE_COMPRESS_LEVEL_NONE = 0,
-  GRPC_MESSAGE_COMPRESS_LEVEL_LOW,
-  GRPC_MESSAGE_COMPRESS_LEVEL_MED,
-  GRPC_MESSAGE_COMPRESS_LEVEL_HIGH,
-  GRPC_MESSAGE_COMPRESS_LEVEL_COUNT
-} grpc_message_compression_level;
-
-/** Compression levels for stream compression algorithms */
-typedef enum {
-  GRPC_STREAM_COMPRESS_LEVEL_NONE = 0,
-  GRPC_STREAM_COMPRESS_LEVEL_LOW,
-  GRPC_STREAM_COMPRESS_LEVEL_MED,
-  GRPC_STREAM_COMPRESS_LEVEL_HIGH,
-  GRPC_STREAM_COMPRESS_LEVEL_COUNT
-} grpc_stream_compression_level;
-
 /* Interfaces performing transformation between compression algorithms and
  * levels. */
-
-grpc_message_compression_level
-grpc_compression_level_to_message_compression_level(
-    grpc_compression_level level);
-
-grpc_stream_compression_level
-grpc_compression_level_to_stream_compression_level(
-    grpc_compression_level level);
 
 grpc_message_compression_algorithm
 grpc_compression_algorithm_to_message_compression_algorithm(
@@ -98,15 +69,12 @@ int grpc_message_compression_algorithm_name(
     grpc_message_compression_algorithm algorithm, const char** name);
 
 grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
-    grpc_message_compression_level level, uint32_t accepted_encodings);
+    grpc_compression_level level, uint32_t accepted_encodings);
 
 int grpc_message_compression_algorithm_parse(
     grpc_slice value, grpc_message_compression_algorithm* algorithm);
 
 /* Interfaces for stream compression. */
-
-grpc_stream_compression_algorithm grpc_stream_compression_algorithm_for_level(
-    grpc_stream_compression_level level, uint32_t accepted_encodings);
 
 int grpc_stream_compression_algorithm_parse(
     grpc_slice value, grpc_stream_compression_algorithm* algorithm);

@@ -76,29 +76,6 @@ grpc_mdelem grpc_stream_compression_encoding_mdelem(
 
 /* Interfaces performing transformation between compression algorithms and
  * levels. */
-grpc_message_compression_level
-grpc_compression_level_to_message_compression_level(
-    grpc_compression_level level) {
-  if (level >= GRPC_COMPRESS_LEVEL_COUNT) {
-    return GRPC_MESSAGE_COMPRESS_LEVEL_NONE;
-  }
-  return (grpc_message_compression_level)(
-      (uint32_t)(level - GRPC_COMPRESS_LEVEL_NONE) +
-      (uint32_t)GRPC_MESSAGE_COMPRESS_LEVEL_NONE);
-}
-
-grpc_stream_compression_level
-grpc_compression_level_to_stream_compression_level(
-    grpc_compression_level level) {
-  if (level >= GRPC_COMPRESS_LEVEL_COUNT) {
-    return GRPC_STREAM_COMPRESS_LEVEL_NONE;
-  }
-  return (grpc_stream_compression_level)(
-      (uint32_t)(level - (GRPC_MESSAGE_COMPRESS_LEVEL_COUNT - 1) -
-                 GRPC_COMPRESS_LEVEL_NONE) +
-      (uint32_t)GRPC_STREAM_COMPRESS_LEVEL_NONE);
-}
-
 grpc_message_compression_algorithm
 grpc_compression_algorithm_to_message_compression_algorithm(
     grpc_compression_algorithm algo) {
@@ -209,17 +186,17 @@ int grpc_message_compression_algorithm_name(
 /* TODO(dgq): Add the ability to specify parameters to the individual
  * compression algorithms */
 grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
-    grpc_message_compression_level level, uint32_t accepted_encodings) {
+    grpc_compression_level level, uint32_t accepted_encodings) {
   GRPC_API_TRACE("grpc_message_compression_algorithm_for_level(level=%d)", 1,
                  ((int)level));
-  if (level > GRPC_MESSAGE_COMPRESS_LEVEL_HIGH) {
+  if (level > GRPC_COMPRESS_LEVEL_HIGH) {
     gpr_log(GPR_ERROR, "Unknown message compression level %d.", (int)level);
     abort();
   }
 
   const size_t num_supported =
       GPR_BITCOUNT(accepted_encodings) - 1; /* discard NONE */
-  if (level == GRPC_MESSAGE_COMPRESS_LEVEL_NONE || num_supported == 0) {
+  if (level == GRPC_COMPRESS_LEVEL_NONE || num_supported == 0) {
     return GRPC_MESSAGE_COMPRESS_NONE;
   }
 
@@ -249,13 +226,13 @@ grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
   }
 
   switch (level) {
-    case GRPC_MESSAGE_COMPRESS_LEVEL_NONE:
+    case GRPC_COMPRESS_LEVEL_NONE:
       abort(); /* should have been handled already */
-    case GRPC_MESSAGE_COMPRESS_LEVEL_LOW:
+    case GRPC_COMPRESS_LEVEL_LOW:
       return sorted_supported_algos[0];
-    case GRPC_MESSAGE_COMPRESS_LEVEL_MED:
+    case GRPC_COMPRESS_LEVEL_MED:
       return sorted_supported_algos[num_supported / 2];
-    case GRPC_MESSAGE_COMPRESS_LEVEL_HIGH:
+    case GRPC_COMPRESS_LEVEL_HIGH:
       return sorted_supported_algos[num_supported - 1];
     default:
       abort();
@@ -280,23 +257,6 @@ int grpc_message_compression_algorithm_parse(
 }
 
 /* Interfaces for stream compression. */
-
-grpc_stream_compression_algorithm grpc_stream_compression_algorithm_for_level(
-    grpc_stream_compression_level level, uint32_t accepted_encodings) {
-  GRPC_API_TRACE("grpc_stream_compression_algorithm_for_level(level=%d)", 1,
-                 ((int)level));
-  if (level > GRPC_STREAM_COMPRESS_LEVEL_HIGH) {
-    gpr_log(GPR_ERROR, "Unknown stream compression level %d.", (int)level);
-    abort();
-  }
-
-  /* TODO(mxyan): Use more sophisticated scheme when more algorithms added. */
-  if (level != GRPC_STREAM_COMPRESS_LEVEL_NONE &&
-      GPR_BITGET(accepted_encodings, GRPC_STREAM_COMPRESS_GZIP)) {
-    return GRPC_STREAM_COMPRESS_GZIP;
-  }
-  return GRPC_STREAM_COMPRESS_NONE;
-}
 
 int grpc_stream_compression_algorithm_parse(
     grpc_slice value, grpc_stream_compression_algorithm* algorithm) {

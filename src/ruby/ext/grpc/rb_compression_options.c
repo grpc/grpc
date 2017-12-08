@@ -128,11 +128,11 @@ grpc_compression_level grpc_rb_compression_options_level_name_to_value_internal(
   if (id_compress_level_none == SYM2ID(level_name)) {
     return GRPC_COMPRESS_LEVEL_NONE;
   } else if (id_compress_level_low == SYM2ID(level_name)) {
-    return GRPC_COMPRESS_LEVEL_MESSAGE_LOW;
+    return GRPC_COMPRESS_LEVEL_LOW;
   } else if (id_compress_level_medium == SYM2ID(level_name)) {
-    return GRPC_COMPRESS_LEVEL_MESSAGE_MED;
+    return GRPC_COMPRESS_LEVEL_MED;
   } else if (id_compress_level_high == SYM2ID(level_name)) {
-    return GRPC_COMPRESS_LEVEL_MESSAGE_HIGH;
+    return GRPC_COMPRESS_LEVEL_HIGH;
   }
 
   rb_raise(rb_eArgError,
@@ -265,11 +265,11 @@ VALUE grpc_rb_compression_options_level_value_to_name_internal(
   switch (compression_value) {
     case GRPC_COMPRESS_LEVEL_NONE:
       return ID2SYM(id_compress_level_none);
-    case GRPC_COMPRESS_LEVEL_MESSAGE_LOW:
+    case GRPC_COMPRESS_LEVEL_LOW:
       return ID2SYM(id_compress_level_low);
-    case GRPC_COMPRESS_LEVEL_MESSAGE_MED:
+    case GRPC_COMPRESS_LEVEL_MED:
       return ID2SYM(id_compress_level_medium);
-    case GRPC_COMPRESS_LEVEL_MESSAGE_HIGH:
+    case GRPC_COMPRESS_LEVEL_HIGH:
       return ID2SYM(id_compress_level_high);
     default:
       rb_raise(
