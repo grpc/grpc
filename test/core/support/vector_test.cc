@@ -52,14 +52,14 @@ TEST(InlinedVectorTest, PushBackWithMove) {
   InlinedVector<UniquePtr<int>, 1> v;
   UniquePtr<int> i = MakeUnique<int>(3);
   v.push_back(std::move(i));
-  EXPECT_EQ(1, v.size());
+  EXPECT_EQ(1UL, v.size());
   EXPECT_EQ(3, *v[0]);
 }
 
 TEST(InlinedVectorTest, EmplaceBack) {
   InlinedVector<UniquePtr<int>, 1> v;
   v.emplace_back(new int(3));
-  EXPECT_EQ(1, v.size());
+  EXPECT_EQ(1UL, v.size());
   EXPECT_EQ(3, *v[0]);
 }
 
