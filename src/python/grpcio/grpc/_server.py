@@ -129,15 +129,14 @@ def _abort(state, call, code, details):
         effective_details = details if state.details is None else state.details
         if state.initial_metadata_allowed:
             operations = (cygrpc.operation_send_initial_metadata(
-                _common.EMPTY_METADATA,
-                _EMPTY_FLAGS), cygrpc.operation_send_status_from_server(
-                    _common.to_cygrpc_metadata(state.trailing_metadata),
-                    effective_code, effective_details, _EMPTY_FLAGS),)
+                (), _EMPTY_FLAGS), cygrpc.operation_send_status_from_server(
+                    state.trailing_metadata, effective_code, effective_details,
+                    _EMPTY_FLAGS),)
             token = _SEND_INITIAL_METADATA_AND_SEND_STATUS_FROM_SERVER_TOKEN
         else:
             operations = (cygrpc.operation_send_status_from_server(
-                _common.to_cygrpc_metadata(state.trailing_metadata),
-                effective_code, effective_details, _EMPTY_FLAGS),)
+                state.trailing_metadata, effective_code, effective_details,
+                _EMPTY_FLAGS),)
             token = _SEND_STATUS_FROM_SERVER_TOKEN
         call.start_server_batch(
             cygrpc.Operations(operations),
@@ -237,7 +236,7 @@ class _Context(grpc.ServicerContext):
             self._state.disable_next_compression = True
 
     def invocation_metadata(self):
-        return _common.to_application_metadata(self._rpc_event.request_metadata)
+        return self._rpc_event.request_metadata
 
     def peer(self):
         return _common.decode(self._rpc_event.operation_call.peer())
@@ -263,8 +262,7 @@ class _Context(grpc.ServicerContext):
             else:
                 if self._state.initial_metadata_allowed:
                     operation = cygrpc.operation_send_initial_metadata(
-                        _common.to_cygrpc_metadata(initial_metadata),
-                        _EMPTY_FLAGS)
+                        initial_metadata, _EMPTY_FLAGS)
                     self._rpc_event.operation_call.start_server_batch(
                         cygrpc.Operations((operation,)),
                         _send_initial_metadata(self._state))
@@ -275,8 +273,7 @@ class _Context(grpc.ServicerContext):
 
     def set_trailing_metadata(self, trailing_metadata):
         with self._state.condition:
-            self._state.trailing_metadata = _common.to_cygrpc_metadata(
-                trailing_metadata)
+            self._state.trailing_metadata = trailing_metadata
 
     def set_code(self, code):
         with self._state.condition:
@@ -417,9 +414,8 @@ def _send_response(rpc_event, state, serialized_response):
         else:
             if state.initial_metadata_allowed:
                 operations = (cygrpc.operation_send_initial_metadata(
-                    _common.EMPTY_METADATA, _EMPTY_FLAGS),
-                              cygrpc.operation_send_message(serialized_response,
-                                                            _EMPTY_FLAGS),)
+                    (), _EMPTY_FLAGS), cygrpc.operation_send_message(
+                        serialized_response, _EMPTY_FLAGS),)
                 state.initial_metadata_allowed = False
                 token = _SEND_INITIAL_METADATA_AND_SEND_MESSAGE_TOKEN
             else:
@@ -438,8 +434,7 @@ def _send_response(rpc_event, state, serialized_response):
 def _status(rpc_event, state, serialized_response):
     with state.condition:
         if state.client is not _CANCELLED:
-            trailing_metadata = _common.to_cygrpc_metadata(
-                state.trailing_metadata)
+            trailing_metadata = state.trailing_metadata
             code = _completion_code(state)
             details = _details(state)
             operations = [
@@ -448,8 +443,7 @@ def _status(rpc_event, state, serialized_response):
             ]
             if state.initial_metadata_allowed:
                 operations.append(
-                    cygrpc.operation_send_initial_metadata(
-                        _common.EMPTY_METADATA, _EMPTY_FLAGS))
+                    cygrpc.operation_send_initial_metadata((), _EMPTY_FLAGS))
             if serialized_response is not None:
                 operations.append(
                     cygrpc.operation_send_message(serialized_response,
@@ -551,11 +545,10 @@ def _find_method_handler(rpc_event, generic_handlers):
 
 
 def _reject_rpc(rpc_event, status, details):
-    operations = (cygrpc.operation_send_initial_metadata(_common.EMPTY_METADATA,
-                                                         _EMPTY_FLAGS),
+    operations = (cygrpc.operation_send_initial_metadata((), _EMPTY_FLAGS),
                   cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
-                  cygrpc.operation_send_status_from_server(
-                      _common.EMPTY_METADATA, status, details, _EMPTY_FLAGS),)
+                  cygrpc.operation_send_status_from_server((), status, details,
+                                                           _EMPTY_FLAGS),)
     rpc_state = _RPCState()
     rpc_event.operation_call.start_server_batch(
         operations, lambda ignored_event: (rpc_state, (),))

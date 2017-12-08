@@ -23,17 +23,14 @@ RPC_COUNT = 4000
 INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
 EMPTY_FLAGS = 0
 
-INVOCATION_METADATA = cygrpc.Metadata(
-    (cygrpc.Metadatum(b'client-md-key', b'client-md-key'),
-     cygrpc.Metadatum(b'client-md-key-bin', b'\x00\x01' * 3000),))
+INVOCATION_METADATA = (('client-md-key', 'client-md-key'),
+                       ('client-md-key-bin', b'\x00\x01' * 3000),)
 
-INITIAL_METADATA = cygrpc.Metadata(
-    (cygrpc.Metadatum(b'server-initial-md-key', b'server-initial-md-value'),
-     cygrpc.Metadatum(b'server-initial-md-key-bin', b'\x00\x02' * 3000),))
+INITIAL_METADATA = (('server-initial-md-key', 'server-initial-md-value'),
+                    ('server-initial-md-key-bin', b'\x00\x02' * 3000),)
 
-TRAILING_METADATA = cygrpc.Metadata(
-    (cygrpc.Metadatum(b'server-trailing-md-key', b'server-trailing-md-value'),
-     cygrpc.Metadatum(b'server-trailing-md-key-bin', b'\x00\x03' * 3000),))
+TRAILING_METADATA = (('server-trailing-md-key', 'server-trailing-md-value'),
+                     ('server-trailing-md-key-bin', b'\x00\x03' * 3000),)
 
 
 class QueueDriver(object):
