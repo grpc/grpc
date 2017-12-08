@@ -39,7 +39,7 @@ grpc_fake_resolver_response_generator_create();
 // Instruct the fake resolver associated with the \a response_generator instance
 // to trigger a new resolution for \a uri and \a args.
 void grpc_fake_resolver_response_generator_set_response(
-    grpc_exec_ctx* exec_ctx, grpc_fake_resolver_response_generator* generator,
+    grpc_fake_resolver_response_generator* generator,
     grpc_channel_args* next_response);
 
 // Return a \a grpc_arg for a \a grpc_fake_resolver_response_generator instance.

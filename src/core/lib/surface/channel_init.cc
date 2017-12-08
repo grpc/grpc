@@ -89,8 +89,7 @@ void grpc_channel_init_shutdown(void) {
   }
 }
 
-bool grpc_channel_init_create_stack(grpc_exec_ctx* exec_ctx,
-                                    grpc_channel_stack_builder* builder,
+bool grpc_channel_init_create_stack(grpc_channel_stack_builder* builder,
                                     grpc_channel_stack_type type) {
   GPR_ASSERT(g_finalized);
 
@@ -99,7 +98,7 @@ bool grpc_channel_init_create_stack(grpc_exec_ctx* exec_ctx,
 
   for (size_t i = 0; i < g_slots[type].num_slots; i++) {
     const stage_slot* slot = &g_slots[type].slots[i];
-    if (!slot->fn(exec_ctx, builder, slot->arg)) {
+    if (!slot->fn(builder, slot->arg)) {
       return false;
     }
   }

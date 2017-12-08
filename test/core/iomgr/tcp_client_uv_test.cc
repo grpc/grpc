@@ -46,30 +46,28 @@ static grpc_millis test_deadline(void) {
   return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
 }
 
-static void finish_connection(grpc_exec_ctx* exec_ctx) {
+static void finish_connection() {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
-                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
-static void must_succeed(grpc_exec_ctx* exec_ctx, void* arg,
-                         grpc_error* error) {
+static void must_succeed(void* arg, grpc_error* error) {
   GPR_ASSERT(g_connecting != NULL);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_endpoint_shutdown(
-      exec_ctx, g_connecting,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("must_succeed called"));
-  grpc_endpoint_destroy(exec_ctx, g_connecting);
+  grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                           "must_succeed called"));
+  grpc_endpoint_destroy(g_connecting);
   g_connecting = NULL;
-  finish_connection(exec_ctx);
+  finish_connection();
 }
 
-static void must_fail(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+static void must_fail(void* arg, grpc_error* error) {
   GPR_ASSERT(g_connecting == NULL);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  finish_connection(exec_ctx);
+  finish_connection();
 }
 
 static void close_cb(uv_handle_t* handle) { gpr_free(handle); }
@@ -89,7 +87,7 @@ void test_succeeds(void) {
   uv_tcp_t* svr_handle = static_cast<uv_tcp_t*>(gpr_malloc(sizeof(uv_tcp_t)));
   int connections_complete_before;
   grpc_closure done;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
@@ -110,8 +108,8 @@ void test_succeeds(void) {
   GPR_ASSERT(uv_tcp_getsockname(svr_handle, (struct sockaddr*)addr,
                                 (int*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, NULL, NULL,
-                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting, NULL, NULL, &resolved_addr,
+                          GRPC_MILLIS_INF_FUTURE);
 
   gpr_mu_lock(g_mu);
 
@@ -119,11 +117,11 @@ void test_succeeds(void) {
     grpc_pollset_worker* worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+        grpc_pollset_work(g_pollset, &worker,
                           grpc_timespec_to_millis_round_up(
                               grpc_timeout_seconds_to_deadline(5)))));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
 
@@ -131,8 +129,6 @@ void test_succeeds(void) {
   uv_close((uv_handle_t*)svr_handle, close_cb);
 
   gpr_mu_unlock(g_mu);
-
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void test_fails(void) {
@@ -140,7 +136,7 @@ void test_fails(void) {
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
   int connections_complete_before;
   grpc_closure done;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_DEBUG, "test_fails");
 
@@ -154,8 +150,8 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, NULL, NULL,
-                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting, NULL, NULL, &resolved_addr,
+                          GRPC_MILLIS_INF_FUTURE);
 
   gpr_mu_lock(g_mu);
 
@@ -164,7 +160,7 @@ void test_fails(void) {
     grpc_pollset_worker* worker = NULL;
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     grpc_millis polling_deadline = test_deadline();
-    switch (grpc_timer_check(&exec_ctx, &polling_deadline)) {
+    switch (grpc_timer_check(&polling_deadline)) {
       case GRPC_TIMERS_FIRED:
         break;
       case GRPC_TIMERS_NOT_CHECKED:
@@ -172,39 +168,37 @@ void test_fails(void) {
       /* fall through */
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                                              polling_deadline)));
+            "pollset_work",
+            grpc_pollset_work(g_pollset, &worker, polling_deadline)));
         break;
     }
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
 
   gpr_mu_unlock(g_mu);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* p,
-                            grpc_error* error) {
-  grpc_pollset_destroy(exec_ctx, static_cast<grpc_pollset*>(p));
+static void destroy_pollset(void* p, grpc_error* error) {
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset = static_cast<grpc_pollset*>(gpr_malloc(grpc_pollset_size()));
   grpc_pollset_init(g_pollset, &g_mu);
-  grpc_exec_ctx_finish(&exec_ctx);
+
   test_succeeds();
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
   GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_pollset_shutdown(g_pollset, &destroyed);
+
   grpc_shutdown();
   gpr_free(g_pollset);
   return 0;
