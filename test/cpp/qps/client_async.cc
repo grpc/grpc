@@ -280,6 +280,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         },
         &got_tag, &ok, gpr_inf_future(GPR_CLOCK_REALTIME))) {
       t->UpdateHistogram(entry_ptr);
+      entry = HistogramEntry();
       shutdown_mu->lock();
       ctx = ProcessTag(thread_idx, got_tag);
       if (ctx == nullptr) {

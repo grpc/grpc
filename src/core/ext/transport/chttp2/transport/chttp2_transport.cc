@@ -1815,8 +1815,9 @@ static void perform_transport_op_locked(grpc_exec_ctx* exec_ctx,
     grpc_endpoint_add_to_pollset_set(exec_ctx, t->ep, op->bind_pollset_set);
   }
 
-  if (op->send_ping) {
-    send_ping_locked(exec_ctx, t, nullptr, op->send_ping);
+  if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
+    send_ping_locked(exec_ctx, t, op->send_ping.on_initiate,
+                     op->send_ping.on_ack);
     grpc_chttp2_initiate_write(exec_ctx, t,
                                GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING);
   }

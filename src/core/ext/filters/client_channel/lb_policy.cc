@@ -138,8 +138,9 @@ void grpc_lb_policy_exit_idle_locked(grpc_exec_ctx* exec_ctx,
 
 void grpc_lb_policy_ping_one_locked(grpc_exec_ctx* exec_ctx,
                                     grpc_lb_policy* policy,
-                                    grpc_closure* closure) {
-  policy->vtable->ping_one_locked(exec_ctx, policy, closure);
+                                    grpc_closure* on_initiate,
+                                    grpc_closure* on_ack) {
+  policy->vtable->ping_one_locked(exec_ctx, policy, on_initiate, on_ack);
 }
 
 void grpc_lb_policy_notify_on_state_change_locked(

@@ -113,10 +113,9 @@ typedef struct test_fixture {
 
 static void* tag(intptr_t t) { return (void*)t; }
 
-static grpc_slice build_response_payload_slice(
-    const char* host, int* ports, size_t nports,
-    int64_t expiration_interval_secs, int32_t expiration_interval_nanos,
-    const char* token_prefix) {
+static grpc_slice build_response_payload_slice(const char* host, int* ports,
+                                               size_t nports,
+                                               const char* token_prefix) {
   // server_list {
   //   servers {
   //     ip_address: <in_addr/6 bytes of an IP>
@@ -128,15 +127,6 @@ static grpc_slice build_response_payload_slice(
   grpc::lb::v1::LoadBalanceResponse response;
   auto* serverlist = response.mutable_server_list();
 
-  if (expiration_interval_secs > 0 || expiration_interval_nanos > 0) {
-    auto* expiration_interval = serverlist->mutable_expiration_interval();
-    if (expiration_interval_secs > 0) {
-      expiration_interval->set_seconds(expiration_interval_secs);
-    }
-    if (expiration_interval_nanos > 0) {
-      expiration_interval->set_nanos(expiration_interval_nanos);
-    }
-  }
   for (size_t i = 0; i < nports; i++) {
     auto* server = serverlist->add_servers();
     // TODO(dgq): test ipv6
@@ -248,13 +238,13 @@ static void start_lb_server(server_fixture* sf, int* ports, size_t nports,
     if (i == 0) {
       // First half of the ports.
       response_payload_slice = build_response_payload_slice(
-          "127.0.0.1", ports, nports / 2, -1, -1, sf->lb_token_prefix);
+          "127.0.0.1", ports, nports / 2, sf->lb_token_prefix);
     } else {
       // Second half of the ports.
       sleep_ms(update_delay_ms);
       response_payload_slice = build_response_payload_slice(
-          "127.0.0.1", ports + (nports / 2), (nports + 1) / 2 /* ceil */, -1,
-          -1, "" /* this half doesn't get to receive an LB token */);
+          "127.0.0.1", ports + (nports / 2), (nports + 1) / 2 /* ceil */,
+          "" /* this half doesn't get to receive an LB token */);
     }
 
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);

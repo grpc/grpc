@@ -643,16 +643,22 @@ static void start_transport_op_locked(grpc_exec_ctx* exec_ctx, void* arg,
     op->connectivity_state = nullptr;
   }
 
-  if (op->send_ping != nullptr) {
+  if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
     if (chand->lb_policy == nullptr) {
       GRPC_CLOSURE_SCHED(
-          exec_ctx, op->send_ping,
+          exec_ctx, op->send_ping.on_initiate,
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Ping with no load balancing"));
+      GRPC_CLOSURE_SCHED(
+          exec_ctx, op->send_ping.on_ack,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Ping with no load balancing"));
     } else {
-      grpc_lb_policy_ping_one_locked(exec_ctx, chand->lb_policy, op->send_ping);
+      grpc_lb_policy_ping_one_locked(exec_ctx, chand->lb_policy,
+                                     op->send_ping.on_initiate,
+                                     op->send_ping.on_ack);
       op->bind_pollset = nullptr;
     }
-    op->send_ping = nullptr;
+    op->send_ping.on_initiate = nullptr;
+    op->send_ping.on_ack = nullptr;
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
