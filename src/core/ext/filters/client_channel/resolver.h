@@ -19,67 +19,56 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 
-#include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include <grpc/impl/codegen/grpc_types.h>
 
-typedef struct grpc_resolver grpc_resolver;
-typedef struct grpc_resolver_vtable grpc_resolver_vtable;
+#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/support/abstract.h"
+#include "src/core/lib/support/ref_counted.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
-/** \a grpc_resolver provides \a grpc_channel_args objects to its caller */
-struct grpc_resolver {
-  const grpc_resolver_vtable* vtable;
-  gpr_refcount refs;
-  grpc_combiner* combiner;
+namespace grpc_core {
+
+/// Interface for name resolution.
+/// Note: All methods with a "Locked" suffix must be called from the
+/// combiner passed to the constructor.
+class Resolver : public RefCountedWithTracing {
+ public:
+  // Not copyable nor movable.
+  Resolver(const Resolver&) = delete;
+  Resolver& operator=(const Resolver&) = delete;
+
+  /// Gets the next result from the resolver.  Sets \a *result to the
+  /// new channel args and schedules \a on_complete for execution.
+  ///
+  /// If resolution is fatally broken, sets \a *result to NULL and
+  /// schedules \a on_complete with an error.
+  virtual void NextLocked(grpc_channel_args** result,
+                          grpc_closure* on_complete) GRPC_ABSTRACT;
+
+  /// Notifies the resolver that the channel has seen an error on some address.
+  /// Can be used as a hint that re-resolution is desirable soon.
+  virtual void ChannelSawErrorLocked() GRPC_ABSTRACT;
+
+  /// Shuts down the resolver.  If there is a pending call to
+  /// NextLocked(), the callback will be scheduled with an error.
+  virtual void ShutdownLocked() GRPC_ABSTRACT;
+
+  grpc_combiner* combiner() const { return combiner_; }
+
+  GRPC_ABSTRACT_BASE_CLASS
+
+ protected:
+  /// Does NOT take ownership of the reference to \a combiner.
+  explicit Resolver(grpc_combiner* combiner);
+
+  virtual ~Resolver();
+
+ private:
+  grpc_combiner* combiner_;
 };
 
-struct grpc_resolver_vtable {
-  void (*destroy)(grpc_resolver* resolver);
-  void (*shutdown_locked)(grpc_resolver* resolver);
-  void (*channel_saw_error_locked)(grpc_resolver* resolver);
-  void (*next_locked)(grpc_resolver* resolver, grpc_channel_args** result,
-                      grpc_closure* on_complete);
-};
-
-#ifndef NDEBUG
-#define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_RESOLVER_UNREF(p, r) \
-  grpc_resolver_unref((p), __FILE__, __LINE__, (r))
-void grpc_resolver_ref(grpc_resolver* policy, const char* file, int line,
-                       const char* reason);
-void grpc_resolver_unref(grpc_resolver* policy, const char* file, int line,
-                         const char* reason);
-#else
-#define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p))
-#define GRPC_RESOLVER_UNREF(p, r) grpc_resolver_unref((p))
-void grpc_resolver_ref(grpc_resolver* policy);
-void grpc_resolver_unref(grpc_resolver* policy);
-#endif
-
-void grpc_resolver_init(grpc_resolver* resolver,
-                        const grpc_resolver_vtable* vtable,
-                        grpc_combiner* combiner);
-
-void grpc_resolver_shutdown_locked(grpc_resolver* resolver);
-
-/** Notification that the channel has seen an error on some address.
-    Can be used as a hint that re-resolution is desirable soon.
-
-    Must be called from the combiner passed as a resolver_arg at construction
-    time.*/
-void grpc_resolver_channel_saw_error_locked(grpc_resolver* resolver);
-
-/** Get the next result from the resolver.  Expected to set \a *result with
-    new channel args and then schedule \a on_complete for execution.
-
-    If resolution is fatally broken, set \a *result to NULL and
-    schedule \a on_complete.
-
-    Must be called from the combiner passed as a resolver_arg at construction
-    time.*/
-void grpc_resolver_next_locked(grpc_resolver* resolver,
-                               grpc_channel_args** result,
-                               grpc_closure* on_complete);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H */

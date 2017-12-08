@@ -37,7 +37,7 @@ grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
 
 grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
     grpc_slice_hash_table* targets_info,
-    grpc_fake_resolver_response_generator* response_generator,
+    grpc_core::FakeResolverResponseGenerator* response_generator,
     const grpc_channel_args* args);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CHANNEL_H \

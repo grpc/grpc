@@ -165,7 +165,7 @@ struct external_connectivity_watcher;
 
 typedef struct client_channel_channel_data {
   /** resolver for this channel */
-  grpc_resolver* resolver;
+  grpc_core::RefCountedPtr<grpc_core::Resolver> resolver;
   /** have we started resolving this channel */
   bool started_resolving;
   /** is deadline checking enabled? */
@@ -300,8 +300,8 @@ static void start_resolving_locked(channel_data* chand) {
   GPR_ASSERT(!chand->started_resolving);
   chand->started_resolving = true;
   GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-  grpc_resolver_next_locked(chand->resolver, &chand->resolver_result,
-                            &chand->on_resolver_result_changed);
+  chand->resolver->NextLocked(&chand->resolver_result,
+                              &chand->on_resolver_result_changed);
 }
 
 typedef struct {
@@ -370,7 +370,7 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
   // If this invocation is for a stale LB policy, treat it as an LB shutdown
   // signal.
   if (args->lb_policy != chand->lb_policy || error != GRPC_ERROR_NONE ||
-      chand->resolver == nullptr) {
+      chand->resolver.get() == nullptr) {
     GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "re-resolution");
     gpr_free(args);
     return;
@@ -378,7 +378,7 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p: started name re-resolving", chand);
   }
-  grpc_resolver_channel_saw_error_locked(chand->resolver);
+  chand->resolver->ChannelSawErrorLocked();
   // Give back the closure to the LB policy.
   grpc_lb_policy_set_reresolve_closure_locked(chand->lb_policy, &args->closure);
 }
@@ -398,7 +398,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   grpc_server_retry_throttle_data* retry_throttle_data = nullptr;
   grpc_slice_hash_table* method_params_table = nullptr;
   if (chand->resolver_result != nullptr) {
-    if (chand->resolver != nullptr) {
+    if (chand->resolver.get() != nullptr) {
       // Find LB policy name.
       const char* lb_policy_name = nullptr;
       const grpc_arg* channel_arg = grpc_channel_args_find(
@@ -545,7 +545,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   // to create the new LB policy (in which case we want to continue using the
   // most recent one we had).
   if (new_lb_policy != nullptr || error != GRPC_ERROR_NONE ||
-      chand->resolver == nullptr) {
+      chand->resolver.get() == nullptr) {
     if (chand->lb_policy != nullptr) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p: unreffing lb_policy=%p", chand,
@@ -559,17 +559,16 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   }
   // Now that we've swapped out the relevant fields of chand, check for
   // error or shutdown.
-  if (error != GRPC_ERROR_NONE || chand->resolver == nullptr) {
+  if (error != GRPC_ERROR_NONE || chand->resolver.get() == nullptr) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p: shutting down", chand);
     }
-    if (chand->resolver != nullptr) {
+    if (chand->resolver.get() != nullptr) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p: shutting down resolver", chand);
       }
-      grpc_resolver_shutdown_locked(chand->resolver);
-      GRPC_RESOLVER_UNREF(chand->resolver, "channel");
-      chand->resolver = nullptr;
+      chand->resolver->ShutdownLocked();
+      chand->resolver.reset(nullptr);
     }
     set_channel_connectivity_state_locked(
         chand, GRPC_CHANNEL_SHUTDOWN,
@@ -605,8 +604,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       set_channel_connectivity_state_locked(
           chand, state, GRPC_ERROR_REF(state_error), "new_lb+resolver");
     }
-    grpc_resolver_next_locked(chand->resolver, &chand->resolver_result,
-                              &chand->on_resolver_result_changed);
+    chand->resolver->NextLocked(&chand->resolver_result,
+                                &chand->on_resolver_result_changed);
     GRPC_ERROR_UNREF(state_error);
   }
 }
@@ -643,13 +642,12 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    if (chand->resolver != nullptr) {
+    if (chand->resolver.get() != nullptr) {
       set_channel_connectivity_state_locked(
           chand, GRPC_CHANNEL_SHUTDOWN,
           GRPC_ERROR_REF(op->disconnect_with_error), "disconnect");
-      grpc_resolver_shutdown_locked(chand->resolver);
-      GRPC_RESOLVER_UNREF(chand->resolver, "channel");
-      chand->resolver = nullptr;
+      chand->resolver->ShutdownLocked();
+      chand->resolver.reset(nullptr);
       if (!chand->started_resolving) {
         grpc_closure_list_fail_all(&chand->waiting_for_resolver_result_closures,
                                    GRPC_ERROR_REF(op->disconnect_with_error));
@@ -757,13 +755,13 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   grpc_proxy_mappers_map_name(arg->value.string, args->channel_args,
                               &proxy_name, &new_args);
   // Instantiate resolver.
-  chand->resolver = grpc_resolver_create(
+  chand->resolver = grpc_core::ResolverRegistry::Global()->CreateResolver(
       proxy_name != nullptr ? proxy_name : arg->value.string,
       new_args != nullptr ? new_args : args->channel_args,
       chand->interested_parties, chand->combiner);
   if (proxy_name != nullptr) gpr_free(proxy_name);
   if (new_args != nullptr) grpc_channel_args_destroy(new_args);
-  if (chand->resolver == nullptr) {
+  if (chand->resolver.get() == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
   }
   chand->deadline_checking_enabled =
@@ -772,17 +770,18 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
 }
 
 static void shutdown_resolver_locked(void* arg, grpc_error* error) {
-  grpc_resolver* resolver = (grpc_resolver*)arg;
-  grpc_resolver_shutdown_locked(resolver);
-  GRPC_RESOLVER_UNREF(resolver, "channel");
+  grpc_core::Resolver* resolver = static_cast<grpc_core::Resolver*>(arg);
+  resolver->ShutdownLocked();
+  resolver->Unref(DEBUG_LOCATION, "shutdown_callback");
 }
 
 /* Destructor for channel_data */
 static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = (channel_data*)elem->channel_data;
-  if (chand->resolver != nullptr) {
+  if (chand->resolver.get() != nullptr) {
+    chand->resolver->Ref(DEBUG_LOCATION, "shutdown_callback");
     GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(shutdown_resolver_locked, chand->resolver,
+        GRPC_CLOSURE_CREATE(shutdown_resolver_locked, chand->resolver.get(),
                             grpc_combiner_scheduler(chand->combiner)),
         GRPC_ERROR_NONE);
   }
@@ -1244,7 +1243,7 @@ static void pick_after_resolver_result_done_locked(void* arg,
   // removed in https://github.com/grpc/grpc/pull/12297.  Need to figure
   // out what is actually causing this to occur and then figure out the
   // right way to deal with it.
-  else if (chand->resolver != nullptr) {
+  else if (chand->resolver.get() != nullptr) {
     // No LB policy, so try again.
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
@@ -1299,7 +1298,7 @@ static void start_pick_locked(void* arg, grpc_error* ignored) {
     }
   } else {
     // We do not yet have an LB policy, so wait for a resolver result.
-    if (chand->resolver == nullptr) {
+    if (chand->resolver.get() == nullptr) {
       pick_done_locked(elem,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
       return;
@@ -1511,7 +1510,7 @@ static void try_to_connect_locked(void* arg, grpc_error* error_ignored) {
     grpc_lb_policy_exit_idle_locked(chand->lb_policy);
   } else {
     chand->exit_idle_when_lb_policy_arrives = true;
-    if (!chand->started_resolving && chand->resolver != nullptr) {
+    if (!chand->started_resolving && chand->resolver.get() != nullptr) {
       start_resolving_locked(chand);
     }
   }

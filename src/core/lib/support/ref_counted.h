@@ -23,6 +23,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/support/abstract.h"
 #include "src/core/lib/support/debug_location.h"
 #include "src/core/lib/support/memory.h"
 
@@ -44,6 +45,8 @@ class RefCounted {
   // Not copyable nor movable.
   RefCounted(const RefCounted&) = delete;
   RefCounted& operator=(const RefCounted&) = delete;
+
+  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   // Allow Delete() to access destructor.
@@ -97,6 +100,8 @@ class RefCountedWithTracing {
   // Not copyable nor movable.
   RefCountedWithTracing(const RefCountedWithTracing&) = delete;
   RefCountedWithTracing& operator=(const RefCountedWithTracing&) = delete;
+
+  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   // Allow Delete() to access destructor.
