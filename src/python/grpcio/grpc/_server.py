@@ -138,9 +138,8 @@ def _abort(state, call, code, details):
                 state.trailing_metadata, effective_code, effective_details,
                 _EMPTY_FLAGS),)
             token = _SEND_STATUS_FROM_SERVER_TOKEN
-        call.start_server_batch(
-            cygrpc.Operations(operations),
-            _send_status_from_server(state, token))
+        call.start_server_batch(operations,
+                                _send_status_from_server(state, token))
         state.statused = True
         state.due.add(token)
 
@@ -264,8 +263,7 @@ class _Context(grpc.ServicerContext):
                     operation = cygrpc.operation_send_initial_metadata(
                         initial_metadata, _EMPTY_FLAGS)
                     self._rpc_event.operation_call.start_server_batch(
-                        cygrpc.Operations((operation,)),
-                        _send_initial_metadata(self._state))
+                        (operation,), _send_initial_metadata(self._state))
                     self._state.initial_metadata_allowed = False
                     self._state.due.add(_SEND_INITIAL_METADATA_TOKEN)
                 else:
@@ -298,8 +296,7 @@ class _RequestIterator(object):
             raise StopIteration()
         else:
             self._call.start_server_batch(
-                cygrpc.Operations(
-                    (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
+                (cygrpc.operation_receive_message(_EMPTY_FLAGS),),
                 _receive_message(self._state, self._call,
                                  self._request_deserializer))
             self._state.due.add(_RECEIVE_MESSAGE_TOKEN)
@@ -342,8 +339,7 @@ def _unary_request(rpc_event, state, request_deserializer):
                 return None
             else:
                 rpc_event.operation_call.start_server_batch(
-                    cygrpc.Operations(
-                        (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
+                    (cygrpc.operation_receive_message(_EMPTY_FLAGS),),
                     _receive_message(state, rpc_event.operation_call,
                                      request_deserializer))
                 state.due.add(_RECEIVE_MESSAGE_TOKEN)
@@ -371,10 +367,10 @@ def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
     context = _Context(rpc_event, state, request_deserializer)
     try:
         return behavior(argument, context), True
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as exception:  # pylint: disable=broad-except
         with state.condition:
-            if e not in state.rpc_errors:
-                details = 'Exception calling application: {}'.format(e)
+            if exception not in state.rpc_errors:
+                details = 'Exception calling application: {}'.format(exception)
                 logging.exception(details)
                 _abort(state, rpc_event.operation_call,
                        cygrpc.StatusCode.unknown, _common.encode(details))
@@ -386,10 +382,10 @@ def _take_response_from_response_iterator(rpc_event, state, response_iterator):
         return next(response_iterator), True
     except StopIteration:
         return None, True
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as exception:  # pylint: disable=broad-except
         with state.condition:
-            if e not in state.rpc_errors:
-                details = 'Exception iterating responses: {}'.format(e)
+            if exception not in state.rpc_errors:
+                details = 'Exception iterating responses: {}'.format(exception)
                 logging.exception(details)
                 _abort(state, rpc_event.operation_call,
                        cygrpc.StatusCode.unknown, _common.encode(details))
@@ -423,7 +419,7 @@ def _send_response(rpc_event, state, serialized_response):
                                                             _EMPTY_FLAGS),)
                 token = _SEND_MESSAGE_TOKEN
             rpc_event.operation_call.start_server_batch(
-                cygrpc.Operations(operations), _send_message(state, token))
+                operations, _send_message(state, token))
             state.due.add(token)
             while True:
                 state.condition.wait()
@@ -449,7 +445,7 @@ def _status(rpc_event, state, serialized_response):
                     cygrpc.operation_send_message(serialized_response,
                                                   _EMPTY_FLAGS))
             rpc_event.operation_call.start_server_batch(
-                cygrpc.Operations(operations),
+                operations,
                 _send_status_from_server(state, _SEND_STATUS_FROM_SERVER_TOKEN))
             state.statused = True
             state.due.add(_SEND_STATUS_FROM_SERVER_TOKEN)
@@ -559,8 +555,7 @@ def _handle_with_method_handler(rpc_event, method_handler, thread_pool):
     state = _RPCState()
     with state.condition:
         rpc_event.operation_call.start_server_batch(
-            cygrpc.Operations(
-                (cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),)),
+            (cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),),
             _receive_close_on_server(state))
         state.due.add(_RECEIVE_CLOSE_ON_SERVER_TOKEN)
         if method_handler.request_streaming:
@@ -584,7 +579,13 @@ def _handle_call(rpc_event, generic_handlers, thread_pool,
     if not rpc_event.success:
         return None, None
     if rpc_event.request_call_details.method is not None:
-        method_handler = _find_method_handler(rpc_event, generic_handlers)
+        try:
+            method_handler = _find_method_handler(rpc_event, generic_handlers)
+        except Exception as exception:  # pylint: disable=broad-except
+            details = 'Exception servicing handler: {}'.format(exception)
+            logging.exception(details)
+            return _reject_rpc(rpc_event, cygrpc.StatusCode.unknown,
+                               b'Error in service handler!'), None
         if method_handler is None:
             return _reject_rpc(rpc_event, cygrpc.StatusCode.unimplemented,
                                b'Method not found!'), None

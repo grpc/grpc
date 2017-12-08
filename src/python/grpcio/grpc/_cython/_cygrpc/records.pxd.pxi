@@ -38,8 +38,13 @@ cdef class OperationTag:
   cdef Call operation_call
   cdef CallDetails request_call_details
   cdef grpc_metadata_array _c_request_metadata
-  cdef Operations batch_operations
+  cdef grpc_op *c_ops
+  cdef size_t c_nops
+  cdef readonly object _operations
   cdef bint is_new_request
+
+  cdef void store_ops(self)
+  cdef object release_ops(self)
 
 
 cdef class Event:
@@ -57,7 +62,7 @@ cdef class Event:
   cdef readonly Call operation_call
 
   # For Call.start_batch
-  cdef readonly Operations batch_operations
+  cdef readonly object batch_operations
 
 
 cdef class ByteBuffer:
@@ -98,13 +103,6 @@ cdef class Operation:
   cdef int _received_cancelled
   cdef readonly bint is_valid
   cdef object references
-
-
-cdef class Operations:
-
-  cdef grpc_op *c_ops
-  cdef size_t c_nops
-  cdef list operations
 
 
 cdef class CompressionOptions:

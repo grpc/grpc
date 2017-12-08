@@ -78,13 +78,12 @@ cdef class Server:
       raise ValueError("server must be started and not shutting down")
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
-    cdef OperationTag operation_tag = OperationTag(tag)
+    cdef OperationTag operation_tag = OperationTag(tag, None)
     operation_tag.operation_call = Call()
     operation_tag.request_call_details = CallDetails()
     grpc_metadata_array_init(&operation_tag._c_request_metadata)
     operation_tag.references.extend([self, call_queue, server_queue])
     operation_tag.is_new_request = True
-    operation_tag.batch_operations = Operations([])
     cpython.Py_INCREF(operation_tag)
     return grpc_server_request_call(
         self.c_server, &operation_tag.operation_call.c_call,
@@ -132,7 +131,7 @@ cdef class Server:
 
   cdef _c_shutdown(self, CompletionQueue queue, tag):
     self.is_shutting_down = True
-    operation_tag = OperationTag(tag)
+    operation_tag = OperationTag(tag, None)
     operation_tag.shutting_down_server = self
     cpython.Py_INCREF(operation_tag)
     with nogil:

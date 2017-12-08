@@ -220,9 +220,26 @@ cdef class CallDetails:
 
 cdef class OperationTag:
 
-  def __cinit__(self, user_tag):
+  def __cinit__(self, user_tag, operations):
     self.user_tag = user_tag
     self.references = []
+    self._operations = operations
+
+  cdef void store_ops(self):
+    self.c_nops = 0 if self._operations is None else len(self._operations)
+    if 0 < self.c_nops:
+      self.c_ops = <grpc_op *>gpr_malloc(sizeof(grpc_op) * self.c_nops)
+      for index in range(self.c_nops):
+        self.c_ops[index] = (<Operation>(self._operations[index])).c_op
+
+  cdef object release_ops(self):
+    if 0 < self.c_nops:
+      for index, operation in enumerate(self._operations):
+        (<Operation>operation).c_op = self.c_ops[index]
+      gpr_free(self.c_ops)
+      return self._operations
+    else:
+      return ()
 
 
 cdef class Event:
@@ -232,7 +249,7 @@ cdef class Event:
                 CallDetails request_call_details,
                 object request_metadata,
                 bint is_new_request,
-                Operations batch_operations):
+                object batch_operations):
     self.type = type
     self.success = success
     self.tag = tag
@@ -567,59 +584,6 @@ def operation_receive_close_on_server(int flags):
   op.c_op.data.receive_close_on_server.cancelled = &op._received_cancelled
   op.is_valid = True
   return op
-
-
-cdef class _OperationsIterator:
-
-  cdef size_t i
-  cdef Operations operations
-
-  def __cinit__(self, Operations operations not None):
-    self.i = 0
-    self.operations = operations
-
-  def __iter__(self):
-    return self
-
-  def __next__(self):
-    if self.i < len(self.operations):
-      result = self.operations[self.i]
-      self.i = self.i + 1
-      return result
-    else:
-      raise StopIteration()
-
-
-cdef class Operations:
-
-  def __cinit__(self, operations):
-    grpc_init()
-    self.operations = list(operations)  # normalize iterable
-    self.c_ops = NULL
-    self.c_nops = 0
-    for operation in self.operations:
-      if not isinstance(operation, Operation):
-        raise TypeError("expected operations to be iterable of Operation")
-    self.c_nops = len(self.operations)
-    with nogil:
-      self.c_ops = <grpc_op *>gpr_malloc(sizeof(grpc_op)*self.c_nops)
-    for i in range(self.c_nops):
-      self.c_ops[i] = (<Operation>(self.operations[i])).c_op
-
-  def __len__(self):
-    return self.c_nops
-
-  def __getitem__(self, size_t i):
-    # self.operations is never stale; it's only updated from this file
-    return self.operations[i]
-
-  def __dealloc__(self):
-    with nogil:
-      gpr_free(self.c_ops)
-    grpc_shutdown()
-
-  def __iter__(self):
-    return _OperationsIterator(self)
 
 
 cdef class CompressionOptions:
