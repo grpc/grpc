@@ -54,8 +54,7 @@ typedef struct {
 /* initialize per-stream state for data frame parsing */
 grpc_error* grpc_chttp2_data_parser_init(grpc_chttp2_data_parser* parser);
 
-void grpc_chttp2_data_parser_destroy(grpc_exec_ctx* exec_ctx,
-                                     grpc_chttp2_data_parser* parser);
+void grpc_chttp2_data_parser_destroy(grpc_chttp2_data_parser* parser);
 
 /* start processing a new data frame */
 grpc_error* grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser* parser,
@@ -65,7 +64,7 @@ grpc_error* grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser* parser,
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
-grpc_error* grpc_chttp2_data_parser_parse(grpc_exec_ctx* exec_ctx, void* parser,
+grpc_error* grpc_chttp2_data_parser_parse(void* parser,
                                           grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s,
                                           grpc_slice slice, int is_last);
@@ -76,7 +75,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
                              grpc_slice_buffer* outbuf);
 
 grpc_error* grpc_deframe_unprocessed_incoming_frames(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
+    grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
     grpc_slice_buffer* slices, grpc_slice* slice_out,
     grpc_byte_stream** stream_out);
 

@@ -33,15 +33,14 @@ typedef struct {
   grpc_cq_completion completion_storage;
 } ping_result;
 
-static void ping_destroy(grpc_exec_ctx* exec_ctx, void* arg,
-                         grpc_cq_completion* storage) {
+static void ping_destroy(void* arg, grpc_cq_completion* storage) {
   gpr_free(arg);
 }
 
-static void ping_done(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+static void ping_done(void* arg, grpc_error* error) {
   ping_result* pr = (ping_result*)arg;
-  grpc_cq_end_op(exec_ctx, pr->cq, pr->tag, GRPC_ERROR_REF(error), ping_destroy,
-                 pr, &pr->completion_storage);
+  grpc_cq_end_op(pr->cq, pr->tag, GRPC_ERROR_REF(error), ping_destroy, pr,
+                 &pr->completion_storage);
 }
 
 void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
@@ -52,14 +51,13 @@ void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
   ping_result* pr = (ping_result*)gpr_malloc(sizeof(*pr));
   grpc_channel_element* top_elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(reserved == nullptr);
   pr->tag = tag;
   pr->cq = cq;
   GRPC_CLOSURE_INIT(&pr->closure, ping_done, pr, grpc_schedule_on_exec_ctx);
-  op->send_ping = &pr->closure;
+  op->send_ping.on_ack = &pr->closure;
   op->bind_pollset = grpc_cq_pollset(cq);
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
-  top_elem->filter->start_transport_op(&exec_ctx, top_elem, op);
-  grpc_exec_ctx_finish(&exec_ctx);
+  top_elem->filter->start_transport_op(top_elem, op);
 }

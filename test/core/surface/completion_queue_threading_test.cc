@@ -59,8 +59,7 @@ static void shutdown_and_destroy(grpc_completion_queue* cc) {
   grpc_completion_queue_destroy(cc);
 }
 
-static void do_nothing_end_completion(grpc_exec_ctx* exec_ctx, void* arg,
-                                      grpc_cq_completion* c) {}
+static void do_nothing_end_completion(void* arg, grpc_cq_completion* c) {}
 
 struct thread_state {
   grpc_completion_queue* cc;
@@ -81,7 +80,7 @@ static void test_too_many_plucks(void) {
   gpr_thd_id thread_ids[GPR_ARRAY_SIZE(tags)];
   struct thread_state thread_states[GPR_ARRAY_SIZE(tags)];
   gpr_thd_options thread_options = gpr_thd_options_default();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   unsigned i, j;
 
   LOG_TEST("test_too_many_plucks");
@@ -109,8 +108,8 @@ static void test_too_many_plucks(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]));
-    grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
-                   do_nothing_end_completion, nullptr, &completions[i]);
+    grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
+                   nullptr, &completions[i]);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -118,7 +117,6 @@ static void test_too_many_plucks(void) {
   }
 
   shutdown_and_destroy(cc);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 #define TEST_THREAD_EVENTS 10000
@@ -138,15 +136,13 @@ gpr_timespec ten_seconds_time(void) {
   return grpc_timeout_seconds_to_deadline(10);
 }
 
-static void free_completion(grpc_exec_ctx* exec_ctx, void* arg,
-                            grpc_cq_completion* completion) {
+static void free_completion(void* arg, grpc_cq_completion* completion) {
   gpr_free(completion);
 }
 
 static void producer_thread(void* arg) {
   test_thread_options* opt = static_cast<test_thread_options*>(arg);
   int i;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "producer %d started", opt->id);
   gpr_event_set(&opt->on_started, (void*)(intptr_t)1);
@@ -163,17 +159,16 @@ static void producer_thread(void* arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_end_op(&exec_ctx, opt->cc, (void*)(intptr_t)1, GRPC_ERROR_NONE,
+    grpc_core::ExecCtx exec_ctx;
+    grpc_cq_end_op(opt->cc, (void*)(intptr_t)1, GRPC_ERROR_NONE,
                    free_completion, nullptr,
                    static_cast<grpc_cq_completion*>(
                        gpr_malloc(sizeof(grpc_cq_completion))));
     opt->events_triggered++;
-    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   gpr_log(GPR_INFO, "producer %d phase 2 done", opt->id);
   gpr_event_set(&opt->on_finished, (void*)(intptr_t)1);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void consumer_thread(void* arg) {
