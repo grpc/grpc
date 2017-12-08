@@ -177,6 +177,9 @@ on outside context */
   /** Check if ready to finish */
   virtual bool CheckReadyToFinish() { return false; }
 
+  /** Disallow delete on ExecCtx */
+  static void operator delete(void* p) { abort(); }
+
  private:
   /** Set exec_ctx_ to exec_ctx */
   void Set(ExecCtx* exec_ctx) {
