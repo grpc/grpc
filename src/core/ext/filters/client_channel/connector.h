@@ -23,10 +23,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_connector grpc_connector;
 typedef struct grpc_connector_vtable grpc_connector_vtable;
 
@@ -53,29 +49,23 @@ typedef struct {
 
 struct grpc_connector_vtable {
   void (*ref)(grpc_connector* connector);
-  void (*unref)(grpc_exec_ctx* exec_ctx, grpc_connector* connector);
+  void (*unref)(grpc_connector* connector);
   /** Implementation of grpc_connector_shutdown */
-  void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
-                   grpc_error* why);
+  void (*shutdown)(grpc_connector* connector, grpc_error* why);
   /** Implementation of grpc_connector_connect */
-  void (*connect)(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
+  void (*connect)(grpc_connector* connector,
                   const grpc_connect_in_args* in_args,
                   grpc_connect_out_args* out_args, grpc_closure* notify);
 };
 
 grpc_connector* grpc_connector_ref(grpc_connector* connector);
-void grpc_connector_unref(grpc_exec_ctx* exec_ctx, grpc_connector* connector);
+void grpc_connector_unref(grpc_connector* connector);
 /** Connect using the connector: max one outstanding call at a time */
-void grpc_connector_connect(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
+void grpc_connector_connect(grpc_connector* connector,
                             const grpc_connect_in_args* in_args,
                             grpc_connect_out_args* out_args,
                             grpc_closure* notify);
 /** Cancel any pending connection */
-void grpc_connector_shutdown(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
-                             grpc_error* why);
-
-#ifdef __cplusplus
-}
-#endif
+void grpc_connector_shutdown(grpc_connector* connector, grpc_error* why);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H */

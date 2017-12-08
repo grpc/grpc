@@ -27,7 +27,7 @@ cc_library(
         "zutil.h",
     ],
     includes = [
-        "include",
+        ".",
     ],
     linkstatic = 1,
     visibility = [

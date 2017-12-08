@@ -49,7 +49,8 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
 
 def create_jobspec(name, cmdline, environ=None, shell=False,
                    flake_retries=0, timeout_retries=0,
-                   use_workspace=False):
+                   use_workspace=False,
+                   timeout_seconds=10*60):
   """Creates jobspec."""
   environ = environ.copy()
   if use_workspace:
@@ -60,7 +61,7 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
           cmdline=cmdline,
           environ=environ,
           shortname='distribtest.%s' % (name),
-          timeout_seconds=10*60,
+          timeout_seconds=timeout_seconds,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
           shell=shell)
@@ -214,7 +215,10 @@ class CppDistribTest(object):
   """Tests Cpp make intall by building examples."""
 
   def __init__(self, platform, arch, docker_suffix=None, testcase=None):
-    self.name = 'cpp_%s_%s_%s_%s' % (platform, arch, docker_suffix, testcase)
+    if platform == 'linux':
+      self.name = 'cpp_%s_%s_%s_%s' % (platform, arch, docker_suffix, testcase)
+    else:
+      self.name = 'cpp_%s_%s_%s' % (platform, arch, testcase)
     self.platform = platform
     self.arch = arch
     self.docker_suffix = docker_suffix
@@ -231,6 +235,12 @@ class CppDistribTest(object):
                                        self.docker_suffix,
                                        self.arch),
                                    'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase)
+    elif self.platform == 'windows':
+      return create_jobspec(self.name,
+                            ['test\\distrib\\cpp\\run_distrib_test_%s.bat' % self.testcase],
+                            environ={},
+                            timeout_seconds=30*60,
+                            use_workspace=True)
     else:
       raise Exception("Not supported yet.")
 
@@ -242,6 +252,7 @@ def targets():
   """Gets list of supported targets"""
   return [CppDistribTest('linux', 'x64', 'jessie', 'routeguide'),
           CppDistribTest('linux', 'x64', 'jessie', 'cmake'),
+          CppDistribTest('windows', 'x86', testcase='cmake'),
           CSharpDistribTest('linux', 'x64', 'wheezy'),
           CSharpDistribTest('linux', 'x64', 'jessie'),
           CSharpDistribTest('linux', 'x86', 'jessie'),

@@ -23,10 +23,6 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/iomgr/socket_mutator.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // Channel args are intentionally immutable, to avoid the need for locking.
 
 /** Copy the arguments in \a src into a new instance */
@@ -57,7 +53,7 @@ grpc_channel_args* grpc_channel_args_union(const grpc_channel_args* a,
                                            const grpc_channel_args* b);
 
 /** Destroy arguments created by \a grpc_channel_args_copy */
-void grpc_channel_args_destroy(grpc_exec_ctx* exec_ctx, grpc_channel_args* a);
+void grpc_channel_args_destroy(grpc_channel_args* a);
 
 /** Returns the compression algorithm set in \a a. */
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
@@ -89,8 +85,7 @@ grpc_channel_args* grpc_channel_args_set_stream_compression_algorithm(
  * modified to point to the returned instance (which may be different from the
  * input value of \a a). */
 grpc_channel_args* grpc_channel_args_compression_algorithm_set_state(
-    grpc_exec_ctx* exec_ctx, grpc_channel_args** a,
-    grpc_compression_algorithm algorithm, int enabled);
+    grpc_channel_args** a, grpc_compression_algorithm algorithm, int enabled);
 
 /** Sets the support for the given stream compression algorithm. By default, all
  * stream compression algorithms are enabled. It's an error to disable an
@@ -100,8 +95,8 @@ grpc_channel_args* grpc_channel_args_compression_algorithm_set_state(
  * modified to point to the returned instance (which may be different from the
  * input value of \a a). */
 grpc_channel_args* grpc_channel_args_stream_compression_algorithm_set_state(
-    grpc_exec_ctx* exec_ctx, grpc_channel_args** a,
-    grpc_stream_compression_algorithm algorithm, int enabled);
+    grpc_channel_args** a, grpc_stream_compression_algorithm algorithm,
+    int enabled);
 
 /** Returns the bitset representing the support state (true for enabled, false
  * for disabled) for compression algorithms.
@@ -152,9 +147,5 @@ grpc_arg grpc_channel_arg_string_create(char* name, char* value);
 grpc_arg grpc_channel_arg_integer_create(char* name, int value);
 grpc_arg grpc_channel_arg_pointer_create(char* name, void* value,
                                          const grpc_arg_pointer_vtable* vtable);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H */

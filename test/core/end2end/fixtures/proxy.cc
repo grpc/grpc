@@ -98,7 +98,8 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
 
   grpc_call_details_init(&proxy->new_call_details);
   gpr_thd_options_set_joinable(&opt);
-  GPR_ASSERT(gpr_thd_new(&proxy->thd, thread_main, proxy, &opt));
+  GPR_ASSERT(
+      gpr_thd_new(&proxy->thd, "grpc_end2end_proxy", thread_main, proxy, &opt));
 
   request_call(proxy);
 

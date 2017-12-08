@@ -24,10 +24,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /// grpc_channel_stack_builder offers a programmatic interface to selected
 /// and order channel filters
 typedef struct grpc_channel_stack_builder grpc_channel_stack_builder;
@@ -58,8 +54,7 @@ grpc_transport* grpc_channel_stack_builder_get_transport(
 
 /// Set channel arguments: copies args
 void grpc_channel_stack_builder_set_channel_arguments(
-    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder,
-    const grpc_channel_args* args);
+    grpc_channel_stack_builder* builder, const grpc_channel_args* args);
 
 /// Return a borrowed pointer to the channel arguments
 const grpc_channel_args* grpc_channel_stack_builder_get_channel_arguments(
@@ -152,18 +147,12 @@ void grpc_channel_stack_builder_iterator_destroy(
 /// \a initial_refs, \a destroy, \a destroy_arg are as per
 /// grpc_channel_stack_init
 grpc_error* grpc_channel_stack_builder_finish(
-    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder,
-    size_t prefix_bytes, int initial_refs, grpc_iomgr_cb_func destroy,
-    void* destroy_arg, void** result);
+    grpc_channel_stack_builder* builder, size_t prefix_bytes, int initial_refs,
+    grpc_iomgr_cb_func destroy, void* destroy_arg, void** result);
 
 /// Destroy the builder without creating a channel stack
-void grpc_channel_stack_builder_destroy(grpc_exec_ctx* exec_ctx,
-                                        grpc_channel_stack_builder* builder);
+void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder);
 
 extern grpc_core::TraceFlag grpc_trace_channel_stack_builder;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H */

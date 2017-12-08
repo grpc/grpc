@@ -1231,7 +1231,7 @@ if not args.disable_auto_set_flakes:
       if test.flaky: flaky_tests.add(test.name)
       if test.cpu > 0: shortname_to_cpu[test.name] = test.cpu
   except:
-    print("Unexpected error getting flaky tests:", sys.exc_info()[0])
+    print("Unexpected error getting flaky tests: %s" % traceback.format_exc())
 
 if args.force_default_poller:
   _POLLING_STRATEGIES = {}

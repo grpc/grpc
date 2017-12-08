@@ -173,6 +173,7 @@
 #endif /* _LP64 */
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
+#define GPR_LINUX_PTHREAD_NAME 1
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1
 #endif
@@ -195,6 +196,7 @@
 #else /* __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7 */
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_TLS 1
+#define GPR_APPLE_PTHREAD_NAME 1
 #endif
 #else /* __MAC_OS_X_VERSION_MIN_REQUIRED */
 #define GPR_CPU_POSIX 1

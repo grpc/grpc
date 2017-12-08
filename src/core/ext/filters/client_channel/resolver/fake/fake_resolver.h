@@ -21,10 +21,6 @@
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"
 
@@ -43,7 +39,7 @@ grpc_fake_resolver_response_generator_create();
 // Instruct the fake resolver associated with the \a response_generator instance
 // to trigger a new resolution for \a uri and \a args.
 void grpc_fake_resolver_response_generator_set_response(
-    grpc_exec_ctx* exec_ctx, grpc_fake_resolver_response_generator* generator,
+    grpc_fake_resolver_response_generator* generator,
     grpc_channel_args* next_response);
 
 // Return a \a grpc_arg for a \a grpc_fake_resolver_response_generator instance.
@@ -59,10 +55,6 @@ grpc_fake_resolver_response_generator_ref(
     grpc_fake_resolver_response_generator* generator);
 void grpc_fake_resolver_response_generator_unref(
     grpc_fake_resolver_response_generator* generator);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H \
         */

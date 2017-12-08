@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/surface/server.h"
@@ -72,6 +73,7 @@ int main(int argc, char** argv) {
 #define SEND_SIZE (6 * 1024 * 1024)
 #define NUM_FRAMES (SEND_SIZE / FRAME_SIZE + 1)
   grpc_test_init(argc, argv);
+  grpc_init();
 
   addbuf(PFX_STR, sizeof(PFX_STR) - 1);
   for (i = 0; i < NUM_FRAMES; i++) {
@@ -93,6 +95,7 @@ int main(int argc, char** argv) {
   grpc_run_bad_client_test(verifier, nullptr, g_buffer, g_count,
                            GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free(g_buffer);
+  grpc_shutdown();
 
   return 0;
 }

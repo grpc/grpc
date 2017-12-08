@@ -54,7 +54,7 @@ static bool validate_flags() {
   return true;
 }
 
-static void on_jwt_verification_done(grpc_exec_ctx* exec_ctx, void* user_data,
+static void on_jwt_verification_done(void* user_data,
                                      grpc_jwt_verifier_status status,
                                      grpc_jwt_claims* claims) {
   synchronizer* sync = static_cast<synchronizer*>(user_data);
@@ -67,7 +67,7 @@ static void on_jwt_verification_done(grpc_exec_ctx* exec_ctx, void* user_data,
         grpc_json_dump_to_string((grpc_json*)grpc_jwt_claims_json(claims), 2);
     printf("Claims: \n\n%s\n", claims_str);
     gpr_free(claims_str);
-    grpc_jwt_claims_destroy(exec_ctx, claims);
+    grpc_jwt_claims_destroy(claims);
   } else {
     GPR_ASSERT(claims == nullptr);
     fprintf(stderr, "Verification failed with error %s\n",
@@ -76,53 +76,55 @@ static void on_jwt_verification_done(grpc_exec_ctx* exec_ctx, void* user_data,
 
   gpr_mu_lock(sync->mu);
   sync->is_done = 1;
-  GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(exec_ctx, sync->pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(sync->pollset, nullptr));
   gpr_mu_unlock(sync->mu);
 }
 
 int main(int argc, char** argv) {
   synchronizer sync;
   grpc_jwt_verifier* verifier;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ParseCommandLineFlags(&argc, &argv, true);
 
-  if (!validate_flags()) {
-    fprintf(stderr,
-            "Missing or invalid arguments. Print help for more information\n");
-    return 1;
-  }
+    if (!validate_flags()) {
+      fprintf(
+          stderr,
+          "Missing or invalid arguments. Print help for more information\n");
+      return 1;
+    }
 
-  verifier = grpc_jwt_verifier_create(nullptr, 0);
+    verifier = grpc_jwt_verifier_create(nullptr, 0);
 
-  grpc_init();
+    grpc_init();
 
-  sync.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(sync.pollset, &sync.mu);
-  sync.is_done = 0;
+    sync.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(sync.pollset, &sync.mu);
+    sync.is_done = 0;
 
-  grpc_jwt_verifier_verify(&exec_ctx, verifier, sync.pollset, FLAGS_jwt.c_str(),
-                           FLAGS_aud.c_str(), on_jwt_verification_done, &sync);
+    grpc_jwt_verifier_verify(verifier, sync.pollset, FLAGS_jwt.c_str(),
+                             FLAGS_aud.c_str(), on_jwt_verification_done,
+                             &sync);
 
-  gpr_mu_lock(sync.mu);
-  while (!sync.is_done) {
-    grpc_pollset_worker* worker = nullptr;
-    if (!GRPC_LOG_IF_ERROR("pollset_work",
-                           grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
-                                             GRPC_MILLIS_INF_FUTURE)))
-      sync.is_done = true;
-    gpr_mu_unlock(sync.mu);
-    grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(sync.mu);
+    while (!sync.is_done) {
+      grpc_pollset_worker* worker = nullptr;
+      if (!GRPC_LOG_IF_ERROR(
+              "pollset_work",
+              grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE)))
+        sync.is_done = true;
+      gpr_mu_unlock(sync.mu);
+      grpc_core::ExecCtx::Get()->Flush();
+      gpr_mu_lock(sync.mu);
+    }
+    gpr_mu_unlock(sync.mu);
+
+    gpr_free(sync.pollset);
+
+    grpc_jwt_verifier_destroy(verifier);
   }
-  gpr_mu_unlock(sync.mu);
-
-  gpr_free(sync.pollset);
-
-  grpc_jwt_verifier_destroy(&exec_ctx, verifier);
-  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
   return !sync.success;
 }

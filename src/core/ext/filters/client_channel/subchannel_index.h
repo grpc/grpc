@@ -21,10 +21,6 @@
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** \file Provides an index of active subchannels so that they can be
     shared amongst channels */
 
@@ -33,26 +29,22 @@ grpc_subchannel_key* grpc_subchannel_key_create(
     const grpc_subchannel_args* args);
 
 /** Destroy a subchannel key */
-void grpc_subchannel_key_destroy(grpc_exec_ctx* exec_ctx,
-                                 grpc_subchannel_key* key);
+void grpc_subchannel_key_destroy(grpc_subchannel_key* key);
 
 /** Given a subchannel key, find the subchannel registered for it.
     Returns NULL if no such channel exists.
     Thread-safe. */
-grpc_subchannel* grpc_subchannel_index_find(grpc_exec_ctx* exec_ctx,
-                                            grpc_subchannel_key* key);
+grpc_subchannel* grpc_subchannel_index_find(grpc_subchannel_key* key);
 
 /** Register a subchannel against a key.
     Takes ownership of \a constructed.
     Returns the registered subchannel. This may be different from
     \a constructed in the case of a registration race. */
-grpc_subchannel* grpc_subchannel_index_register(grpc_exec_ctx* exec_ctx,
-                                                grpc_subchannel_key* key,
+grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
                                                 grpc_subchannel* constructed);
 
 /** Remove \a constructed as the registered subchannel for \a key. */
-void grpc_subchannel_index_unregister(grpc_exec_ctx* exec_ctx,
-                                      grpc_subchannel_key* key,
+void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
                                       grpc_subchannel* constructed);
 
 int grpc_subchannel_key_compare(const grpc_subchannel_key* a,
@@ -81,9 +73,5 @@ void grpc_subchannel_index_unref(void);
  * Tests using this function \em MUST run tests with and without \a
  * force_creation set. */
 void grpc_subchannel_index_test_only_set_force_creation(bool force_creation);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INDEX_H */

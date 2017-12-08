@@ -24,10 +24,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** \file Tracks resource usage against a pool.
 
     The current implementation tracks only memory usage, but in the future
@@ -69,8 +65,7 @@ extern grpc_core::TraceFlag grpc_resource_quota_trace;
 
 grpc_resource_quota* grpc_resource_quota_ref_internal(
     grpc_resource_quota* resource_quota);
-void grpc_resource_quota_unref_internal(grpc_exec_ctx* exec_ctx,
-                                        grpc_resource_quota* resource_quota);
+void grpc_resource_quota_unref_internal(grpc_resource_quota* resource_quota);
 grpc_resource_quota* grpc_resource_quota_from_channel_args(
     const grpc_channel_args* channel_args);
 
@@ -93,32 +88,26 @@ grpc_resource_quota* grpc_resource_user_quota(
     grpc_resource_user* resource_user);
 
 void grpc_resource_user_ref(grpc_resource_user* resource_user);
-void grpc_resource_user_unref(grpc_exec_ctx* exec_ctx,
-                              grpc_resource_user* resource_user);
-void grpc_resource_user_shutdown(grpc_exec_ctx* exec_ctx,
-                                 grpc_resource_user* resource_user);
+void grpc_resource_user_unref(grpc_resource_user* resource_user);
+void grpc_resource_user_shutdown(grpc_resource_user* resource_user);
 
 /* Allocate from the resource user (and its quota).
    If optional_on_done is NULL, then allocate immediately. This may push the
    quota over-limit, at which point reclamation will kick in.
    If optional_on_done is non-NULL, it will be scheduled when the allocation has
    been granted by the quota. */
-void grpc_resource_user_alloc(grpc_exec_ctx* exec_ctx,
-                              grpc_resource_user* resource_user, size_t size,
+void grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
                               grpc_closure* optional_on_done);
 /* Release memory back to the quota */
-void grpc_resource_user_free(grpc_exec_ctx* exec_ctx,
-                             grpc_resource_user* resource_user, size_t size);
+void grpc_resource_user_free(grpc_resource_user* resource_user, size_t size);
 /* Post a memory reclaimer to the resource user. Only one benign and one
    destructive reclaimer can be posted at once. When executed, the reclaimer
    MUST call grpc_resource_user_finish_reclamation before it completes, to
    return control to the resource quota. */
-void grpc_resource_user_post_reclaimer(grpc_exec_ctx* exec_ctx,
-                                       grpc_resource_user* resource_user,
+void grpc_resource_user_post_reclaimer(grpc_resource_user* resource_user,
                                        bool destructive, grpc_closure* closure);
 /* Finish a reclamation step */
-void grpc_resource_user_finish_reclamation(grpc_exec_ctx* exec_ctx,
-                                           grpc_resource_user* resource_user);
+void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user);
 
 /* Helper to allocate slices from a resource user */
 typedef struct grpc_resource_user_slice_allocator {
@@ -145,17 +134,11 @@ void grpc_resource_user_slice_allocator_init(
 /* Allocate \a count slices of length \a length into \a dest. Only one request
    can be outstanding at a time. */
 void grpc_resource_user_alloc_slices(
-    grpc_exec_ctx* exec_ctx,
     grpc_resource_user_slice_allocator* slice_allocator, size_t length,
     size_t count, grpc_slice_buffer* dest);
 
 /* Allocate one slice of length \a size synchronously. */
-grpc_slice grpc_resource_user_slice_malloc(grpc_exec_ctx* exec_ctx,
-                                           grpc_resource_user* resource_user,
+grpc_slice grpc_resource_user_slice_malloc(grpc_resource_user* resource_user,
                                            size_t size);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

@@ -56,6 +56,7 @@ Gemfile.lock
 
 # Temporary test reports
 report.xml
+*/sponge_log.xml
 latency_trace.txt
 latency_trace.*.txt
 
@@ -120,6 +121,7 @@ gdb.txt
 tags
 
 # perf data
+memory_usage.csv
 perf.data
 perf.data.old
 

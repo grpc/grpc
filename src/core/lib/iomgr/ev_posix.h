@@ -27,10 +27,6 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern grpc_core::TraceFlag grpc_polling_trace; /* Disabled by default */
 
 typedef struct grpc_fd grpc_fd;
@@ -40,48 +36,36 @@ typedef struct grpc_event_engine_vtable {
 
   grpc_fd* (*fd_create)(int fd, const char* name);
   int (*fd_wrapped_fd)(grpc_fd* fd);
-  void (*fd_orphan)(grpc_exec_ctx* exec_ctx, grpc_fd* fd, grpc_closure* on_done,
-                    int* release_fd, bool already_closed, const char* reason);
-  void (*fd_shutdown)(grpc_exec_ctx* exec_ctx, grpc_fd* fd, grpc_error* why);
-  void (*fd_notify_on_read)(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
-                            grpc_closure* closure);
-  void (*fd_notify_on_write)(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
-                             grpc_closure* closure);
+  void (*fd_orphan)(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
+                    bool already_closed, const char* reason);
+  void (*fd_shutdown)(grpc_fd* fd, grpc_error* why);
+  void (*fd_notify_on_read)(grpc_fd* fd, grpc_closure* closure);
+  void (*fd_notify_on_write)(grpc_fd* fd, grpc_closure* closure);
   bool (*fd_is_shutdown)(grpc_fd* fd);
-  grpc_pollset* (*fd_get_read_notifier_pollset)(grpc_exec_ctx* exec_ctx,
-                                                grpc_fd* fd);
+  grpc_pollset* (*fd_get_read_notifier_pollset)(grpc_fd* fd);
 
   void (*pollset_init)(grpc_pollset* pollset, gpr_mu** mu);
-  void (*pollset_shutdown)(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
-                           grpc_closure* closure);
-  void (*pollset_destroy)(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset);
-  grpc_error* (*pollset_work)(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
+  void (*pollset_shutdown)(grpc_pollset* pollset, grpc_closure* closure);
+  void (*pollset_destroy)(grpc_pollset* pollset);
+  grpc_error* (*pollset_work)(grpc_pollset* pollset,
                               grpc_pollset_worker** worker,
                               grpc_millis deadline);
-  grpc_error* (*pollset_kick)(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
+  grpc_error* (*pollset_kick)(grpc_pollset* pollset,
                               grpc_pollset_worker* specific_worker);
-  void (*pollset_add_fd)(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
-                         struct grpc_fd* fd);
+  void (*pollset_add_fd)(grpc_pollset* pollset, struct grpc_fd* fd);
 
   grpc_pollset_set* (*pollset_set_create)(void);
-  void (*pollset_set_destroy)(grpc_exec_ctx* exec_ctx,
-                              grpc_pollset_set* pollset_set);
-  void (*pollset_set_add_pollset)(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
+  void (*pollset_set_destroy)(grpc_pollset_set* pollset_set);
+  void (*pollset_set_add_pollset)(grpc_pollset_set* pollset_set,
                                   grpc_pollset* pollset);
-  void (*pollset_set_del_pollset)(grpc_exec_ctx* exec_ctx,
-                                  grpc_pollset_set* pollset_set,
+  void (*pollset_set_del_pollset)(grpc_pollset_set* pollset_set,
                                   grpc_pollset* pollset);
-  void (*pollset_set_add_pollset_set)(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
+  void (*pollset_set_add_pollset_set)(grpc_pollset_set* bag,
                                       grpc_pollset_set* item);
-  void (*pollset_set_del_pollset_set)(grpc_exec_ctx* exec_ctx,
-                                      grpc_pollset_set* bag,
+  void (*pollset_set_del_pollset_set)(grpc_pollset_set* bag,
                                       grpc_pollset_set* item);
-  void (*pollset_set_add_fd)(grpc_exec_ctx* exec_ctx,
-                             grpc_pollset_set* pollset_set, grpc_fd* fd);
-  void (*pollset_set_del_fd)(grpc_exec_ctx* exec_ctx,
-                             grpc_pollset_set* pollset_set, grpc_fd* fd);
+  void (*pollset_set_add_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
+  void (*pollset_set_del_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
 
   void (*shutdown_engine)(void);
 } grpc_event_engine_vtable;
@@ -107,14 +91,14 @@ int grpc_fd_wrapped_fd(grpc_fd* fd);
    Requires: *fd initialized; no outstanding notify_on_read or
    notify_on_write.
    MUST NOT be called with a pollset lock taken */
-void grpc_fd_orphan(grpc_exec_ctx* exec_ctx, grpc_fd* fd, grpc_closure* on_done,
-                    int* release_fd, bool already_closed, const char* reason);
+void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
+                    bool already_closed, const char* reason);
 
 /* Has grpc_fd_shutdown been called on an fd? */
 bool grpc_fd_is_shutdown(grpc_fd* fd);
 
 /* Cause any current and future callbacks to fail. */
-void grpc_fd_shutdown(grpc_exec_ctx* exec_ctx, grpc_fd* fd, grpc_error* why);
+void grpc_fd_shutdown(grpc_fd* fd, grpc_error* why);
 
 /* Register read interest, causing read_cb to be called once when fd becomes
    readable, on deadline specified by deadline, or on shutdown triggered by
@@ -129,29 +113,23 @@ void grpc_fd_shutdown(grpc_exec_ctx* exec_ctx, grpc_fd* fd, grpc_error* why);
    underlying platform. This means that users must drain fd in read_cb before
    calling notify_on_read again. Users are also expected to handle spurious
    events, i.e read_cb is called while nothing can be readable from fd  */
-void grpc_fd_notify_on_read(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
-                            grpc_closure* closure);
+void grpc_fd_notify_on_read(grpc_fd* fd, grpc_closure* closure);
 
 /* Exactly the same semantics as above, except based on writable events.  */
-void grpc_fd_notify_on_write(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
-                             grpc_closure* closure);
+void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure);
 
 /* Return the read notifier pollset from the fd */
-grpc_pollset* grpc_fd_get_read_notifier_pollset(grpc_exec_ctx* exec_ctx,
-                                                grpc_fd* fd);
+grpc_pollset* grpc_fd_get_read_notifier_pollset(grpc_fd* fd);
 
 /* pollset_posix functions */
 
 /* Add an fd to a pollset */
-void grpc_pollset_add_fd(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
-                         struct grpc_fd* fd);
+void grpc_pollset_add_fd(grpc_pollset* pollset, struct grpc_fd* fd);
 
 /* pollset_set_posix functions */
 
-void grpc_pollset_set_add_fd(grpc_exec_ctx* exec_ctx,
-                             grpc_pollset_set* pollset_set, grpc_fd* fd);
-void grpc_pollset_set_del_fd(grpc_exec_ctx* exec_ctx,
-                             grpc_pollset_set* pollset_set, grpc_fd* fd);
+void grpc_pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
+void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
 
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd*, nfds_t, int);
@@ -161,9 +139,5 @@ extern grpc_poll_function_type grpc_poll_function;
  * ONLY */
 void grpc_set_event_engine_test_only(const grpc_event_engine_vtable*);
 const grpc_event_engine_vtable* grpc_get_event_engine_test_only();
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

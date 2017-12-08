@@ -741,6 +741,7 @@ TEST_P(End2endTest, RequestStreamOneRequest) {
   Status s = stream->Finish();
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(context.debug_error_string().empty());
 }
 
 TEST_P(End2endTest, RequestStreamOneRequestWithCoalescingApi) {
@@ -1258,6 +1259,13 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
+    EXPECT_TRUE(context.debug_error_string().find("created") !=
+                std::string::npos);
+    EXPECT_TRUE(context.debug_error_string().find("file") != std::string::npos);
+    EXPECT_TRUE(context.debug_error_string().find("line") != std::string::npos);
+    EXPECT_TRUE(context.debug_error_string().find("status") !=
+                std::string::npos);
+    EXPECT_TRUE(context.debug_error_string().find("13") != std::string::npos);
   }
 }
 

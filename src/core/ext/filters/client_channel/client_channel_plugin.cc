@@ -34,14 +34,12 @@
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/surface/channel_init.h"
 
-static bool append_filter(grpc_exec_ctx* exec_ctx,
-                          grpc_channel_stack_builder* builder, void* arg) {
+static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
       builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
 }
 
-static bool set_default_host_if_unset(grpc_exec_ctx* exec_ctx,
-                                      grpc_channel_stack_builder* builder,
+static bool set_default_host_if_unset(grpc_channel_stack_builder* builder,
                                       void* unused) {
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
@@ -52,20 +50,19 @@ static bool set_default_host_if_unset(grpc_exec_ctx* exec_ctx,
     }
   }
   char* default_authority = grpc_get_default_authority(
-      exec_ctx, grpc_channel_stack_builder_get_target(builder));
+      grpc_channel_stack_builder_get_target(builder));
   if (default_authority != nullptr) {
     grpc_arg arg = grpc_channel_arg_string_create(
         (char*)GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
-    grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
-                                                     new_args);
+    grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
     gpr_free(default_authority);
-    grpc_channel_args_destroy(exec_ctx, new_args);
+    grpc_channel_args_destroy(new_args);
   }
   return true;
 }
 
-extern "C" void grpc_client_channel_init(void) {
+void grpc_client_channel_init(void) {
   grpc_lb_policy_registry_init();
   grpc_resolver_registry_init();
   grpc_retry_throttle_map_init();
@@ -80,7 +77,7 @@ extern "C" void grpc_client_channel_init(void) {
   grpc_http_connect_register_handshaker_factory();
 }
 
-extern "C" void grpc_client_channel_shutdown(void) {
+void grpc_client_channel_shutdown(void) {
   grpc_subchannel_index_shutdown();
   grpc_channel_init_shutdown();
   grpc_proxy_mapper_registry_shutdown();

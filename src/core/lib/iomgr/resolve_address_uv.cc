@@ -114,7 +114,7 @@ static grpc_error* handle_addrinfo_result(int status, struct addrinfo* result,
 static void getaddrinfo_callback(uv_getaddrinfo_t* req, int status,
                                  struct addrinfo* res) {
   request* r = (request*)req->data;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_error* error;
   int retry_status;
   char* port = r->port;
@@ -130,8 +130,8 @@ static void getaddrinfo_callback(uv_getaddrinfo_t* req, int status,
   /* Either no retry was attempted, or the retry failed. Either way, the
      original error probably has more interesting information */
   error = handle_addrinfo_result(status, res, r->addresses);
-  GRPC_CLOSURE_SCHED(&exec_ctx, r->on_done, error);
-  grpc_exec_ctx_finish(&exec_ctx);
+  GRPC_CLOSURE_SCHED(r->on_done, error);
+
   gpr_free(r->hints);
   gpr_free(r->host);
   gpr_free(r->port);
@@ -224,8 +224,7 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addrs) {
   gpr_free(addrs);
 }
 
-static void resolve_address_impl(grpc_exec_ctx* exec_ctx, const char* name,
-                                 const char* default_port,
+static void resolve_address_impl(const char* name, const char* default_port,
                                  grpc_pollset_set* interested_parties,
                                  grpc_closure* on_done,
                                  grpc_resolved_addresses** addrs) {
@@ -239,7 +238,7 @@ static void resolve_address_impl(grpc_exec_ctx* exec_ctx, const char* name,
   GRPC_UV_ASSERT_SAME_THREAD();
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(exec_ctx, on_done, err);
+    GRPC_CLOSURE_SCHED(on_done, err);
     gpr_free(host);
     gpr_free(port);
     return;
@@ -268,7 +267,7 @@ static void resolve_address_impl(grpc_exec_ctx* exec_ctx, const char* name,
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("getaddrinfo failed");
     err = grpc_error_set_str(err, GRPC_ERROR_STR_OS_ERROR,
                              grpc_slice_from_static_string(uv_strerror(s)));
-    GRPC_CLOSURE_SCHED(exec_ctx, on_done, err);
+    GRPC_CLOSURE_SCHED(on_done, err);
     gpr_free(r);
     gpr_free(req);
     gpr_free(hints);
@@ -278,7 +277,7 @@ static void resolve_address_impl(grpc_exec_ctx* exec_ctx, const char* name,
 }
 
 void (*grpc_resolve_address)(
-    grpc_exec_ctx* exec_ctx, const char* name, const char* default_port,
+    const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_resolved_addresses** addrs) = resolve_address_impl;
 

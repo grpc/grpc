@@ -43,7 +43,7 @@ namespace Grpc.Microbenchmarks
         public void Run(int threadCount, int iterations, bool useSharedRegistry)
         {
             Console.WriteLine(string.Format("CompletionRegistryBenchmark: threads={0}, iterations={1}, useSharedRegistry={2}", threadCount, iterations, useSharedRegistry));
-            CompletionRegistry sharedRegistry = useSharedRegistry ? new CompletionRegistry(environment) : null;
+            CompletionRegistry sharedRegistry = useSharedRegistry ? new CompletionRegistry(environment, () => BatchContextSafeHandle.Create(), () => RequestCallContextSafeHandle.Create()) : null;
             var threadedBenchmark = new ThreadedBenchmark(threadCount, () => ThreadBody(iterations, sharedRegistry));
             threadedBenchmark.Run();
             // TODO: parametrize by number of pending completions
@@ -51,7 +51,7 @@ namespace Grpc.Microbenchmarks
 
         private void ThreadBody(int iterations, CompletionRegistry optionalSharedRegistry)
         {
-            var completionRegistry = optionalSharedRegistry ?? new CompletionRegistry(environment);
+            var completionRegistry = optionalSharedRegistry ?? new CompletionRegistry(environment, () => throw new NotImplementedException(), () => throw new NotImplementedException());
             var ctx = BatchContextSafeHandle.Create();
   
             var stopwatch = Stopwatch.StartNew();
@@ -64,7 +64,7 @@ namespace Grpc.Microbenchmarks
             stopwatch.Stop();
             Console.WriteLine("Elapsed millis: " + stopwatch.ElapsedMilliseconds);          
 
-            ctx.Dispose();
+            ctx.Recycle();
         }
 
         private class NopCompletionCallback : IOpCompletionCallback

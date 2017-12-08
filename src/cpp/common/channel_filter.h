@@ -26,11 +26,9 @@
 #include <functional>
 #include <vector>
 
-extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata_batch.h"
-}
 
 /// An interface to define filters.
 ///
@@ -56,8 +54,7 @@ class MetadataBatch {
   /// Adds metadata and returns the newly allocated storage.
   /// The caller takes ownership of the result, which must exist for the
   /// lifetime of the gRPC call.
-  grpc_linked_mdelem* AddMetadata(grpc_exec_ctx* exec_ctx, const string& key,
-                                  const string& value);
+  grpc_linked_mdelem* AddMetadata(const string& key, const string& value);
 
   class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
                                               const grpc_mdelem> {
@@ -224,18 +221,17 @@ class ChannelData {
   // TODO(roth): Come up with a more C++-like API for the channel element.
 
   /// Initializes the channel data.
-  virtual grpc_error* Init(grpc_exec_ctx* exec_ctx, grpc_channel_element* elem,
+  virtual grpc_error* Init(grpc_channel_element* elem,
                            grpc_channel_element_args* args) {
     return GRPC_ERROR_NONE;
   }
 
   // Called before destruction.
-  virtual void Destroy(grpc_exec_ctx* exec_ctx, grpc_channel_element* elem) {}
+  virtual void Destroy(grpc_channel_element* elem) {}
 
-  virtual void StartTransportOp(grpc_exec_ctx* exec_ctx,
-                                grpc_channel_element* elem, TransportOp* op);
+  virtual void StartTransportOp(grpc_channel_element* elem, TransportOp* op);
 
-  virtual void GetInfo(grpc_exec_ctx* exec_ctx, grpc_channel_element* elem,
+  virtual void GetInfo(grpc_channel_element* elem,
                        const grpc_channel_info* channel_info);
 };
 
@@ -248,24 +244,22 @@ class CallData {
   // TODO(roth): Come up with a more C++-like API for the call element.
 
   /// Initializes the call data.
-  virtual grpc_error* Init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+  virtual grpc_error* Init(grpc_call_element* elem,
                            const grpc_call_element_args* args) {
     return GRPC_ERROR_NONE;
   }
 
   // Called before destruction.
-  virtual void Destroy(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+  virtual void Destroy(grpc_call_element* elem,
                        const grpc_call_final_info* final_info,
                        grpc_closure* then_call_closure) {}
 
   /// Starts a new stream operation.
-  virtual void StartTransportStreamOpBatch(grpc_exec_ctx* exec_ctx,
-                                           grpc_call_element* elem,
+  virtual void StartTransportStreamOpBatch(grpc_call_element* elem,
                                            TransportStreamOpBatch* op);
 
   /// Sets a pollset or pollset set.
-  virtual void SetPollsetOrPollsetSet(grpc_exec_ctx* exec_ctx,
-                                      grpc_call_element* elem,
+  virtual void SetPollsetOrPollsetSet(grpc_call_element* elem,
                                       grpc_polling_entity* pollent);
 };
 
@@ -279,71 +273,63 @@ class ChannelFilter final {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 
-  static grpc_error* InitChannelElement(grpc_exec_ctx* exec_ctx,
-                                        grpc_channel_element* elem,
+  static grpc_error* InitChannelElement(grpc_channel_element* elem,
                                         grpc_channel_element_args* args) {
     // Construct the object in the already-allocated memory.
     ChannelDataType* channel_data = new (elem->channel_data) ChannelDataType();
-    return channel_data->Init(exec_ctx, elem, args);
+    return channel_data->Init(elem, args);
   }
 
-  static void DestroyChannelElement(grpc_exec_ctx* exec_ctx,
-                                    grpc_channel_element* elem) {
+  static void DestroyChannelElement(grpc_channel_element* elem) {
     ChannelDataType* channel_data =
         reinterpret_cast<ChannelDataType*>(elem->channel_data);
-    channel_data->Destroy(exec_ctx, elem);
+    channel_data->Destroy(elem);
     channel_data->~ChannelDataType();
   }
 
-  static void StartTransportOp(grpc_exec_ctx* exec_ctx,
-                               grpc_channel_element* elem,
+  static void StartTransportOp(grpc_channel_element* elem,
                                grpc_transport_op* op) {
     ChannelDataType* channel_data =
         reinterpret_cast<ChannelDataType*>(elem->channel_data);
     TransportOp op_wrapper(op);
-    channel_data->StartTransportOp(exec_ctx, elem, &op_wrapper);
+    channel_data->StartTransportOp(elem, &op_wrapper);
   }
 
-  static void GetChannelInfo(grpc_exec_ctx* exec_ctx,
-                             grpc_channel_element* elem,
+  static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* channel_info) {
     ChannelDataType* channel_data =
         reinterpret_cast<ChannelDataType*>(elem->channel_data);
-    channel_data->GetInfo(exec_ctx, elem, channel_info);
+    channel_data->GetInfo(elem, channel_info);
   }
 
   static const size_t call_data_size = sizeof(CallDataType);
 
-  static grpc_error* InitCallElement(grpc_exec_ctx* exec_ctx,
-                                     grpc_call_element* elem,
+  static grpc_error* InitCallElement(grpc_call_element* elem,
                                      const grpc_call_element_args* args) {
     // Construct the object in the already-allocated memory.
     CallDataType* call_data = new (elem->call_data) CallDataType();
-    return call_data->Init(exec_ctx, elem, args);
+    return call_data->Init(elem, args);
   }
 
-  static void DestroyCallElement(grpc_exec_ctx* exec_ctx,
-                                 grpc_call_element* elem,
+  static void DestroyCallElement(grpc_call_element* elem,
                                  const grpc_call_final_info* final_info,
                                  grpc_closure* then_call_closure) {
     CallDataType* call_data = reinterpret_cast<CallDataType*>(elem->call_data);
-    call_data->Destroy(exec_ctx, elem, final_info, then_call_closure);
+    call_data->Destroy(elem, final_info, then_call_closure);
     call_data->~CallDataType();
   }
 
-  static void StartTransportStreamOpBatch(grpc_exec_ctx* exec_ctx,
-                                          grpc_call_element* elem,
+  static void StartTransportStreamOpBatch(grpc_call_element* elem,
                                           grpc_transport_stream_op_batch* op) {
     CallDataType* call_data = reinterpret_cast<CallDataType*>(elem->call_data);
     TransportStreamOpBatch op_wrapper(op);
-    call_data->StartTransportStreamOpBatch(exec_ctx, elem, &op_wrapper);
+    call_data->StartTransportStreamOpBatch(elem, &op_wrapper);
   }
 
-  static void SetPollsetOrPollsetSet(grpc_exec_ctx* exec_ctx,
-                                     grpc_call_element* elem,
+  static void SetPollsetOrPollsetSet(grpc_call_element* elem,
                                      grpc_polling_entity* pollent) {
     CallDataType* call_data = reinterpret_cast<CallDataType*>(elem->call_data);
-    call_data->SetPollsetOrPollsetSet(exec_ctx, elem, pollent);
+    call_data->SetPollsetOrPollsetSet(elem, pollent);
   }
 };
 
