@@ -29,7 +29,16 @@ struct gpr_pthread_thread_local {
   pthread_key_t key;
 };
 
+/** Use GPR_TLS_DECL to declare tls static variables outside a class */
 #define GPR_TLS_DECL(name) static struct gpr_pthread_thread_local name = {0}
+
+/** Use GPR_TLS_CLASS_DECL to declare tls static variable members of a class.
+ *  GPR_TLS_CLASS_DEF needs to be called to define this member. */
+#define GPR_TLS_CLASS_DECL(name) static struct gpr_pthread_thread_local name
+
+/** Use GPR_TLS_CLASS_DEF to declare tls static variable members of a class.
+ *  GPR_TLS_CLASS_DEF needs to be called to define this member. */
+#define GPR_TLS_CLASS_DEF(name) struct gpr_pthread_thread_local name = {0}
 
 #define gpr_tls_init(tls) GPR_ASSERT(0 == pthread_key_create(&(tls)->key, NULL))
 #define gpr_tls_destroy(tls) pthread_key_delete((tls)->key)

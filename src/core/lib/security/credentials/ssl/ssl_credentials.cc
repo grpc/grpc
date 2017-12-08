@@ -41,18 +41,16 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
   gpr_free(kp);
 }
 
-static void ssl_destruct(grpc_exec_ctx* exec_ctx,
-                         grpc_channel_credentials* creds) {
+static void ssl_destruct(grpc_channel_credentials* creds) {
   grpc_ssl_credentials* c = (grpc_ssl_credentials*)creds;
   gpr_free(c->config.pem_root_certs);
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(c->config.pem_key_cert_pair, 1);
 }
 
 static grpc_security_status ssl_create_security_connector(
-    grpc_exec_ctx* exec_ctx, grpc_channel_credentials* creds,
-    grpc_call_credentials* call_creds, const char* target,
-    const grpc_channel_args* args, grpc_channel_security_connector** sc,
-    grpc_channel_args** new_args) {
+    grpc_channel_credentials* creds, grpc_call_credentials* call_creds,
+    const char* target, const grpc_channel_args* args,
+    grpc_channel_security_connector** sc, grpc_channel_args** new_args) {
   grpc_ssl_credentials* c = (grpc_ssl_credentials*)creds;
   grpc_security_status status = GRPC_SECURITY_OK;
   const char* overridden_target_name = nullptr;
@@ -65,8 +63,7 @@ static grpc_security_status ssl_create_security_connector(
     }
   }
   status = grpc_ssl_channel_security_connector_create(
-      exec_ctx, creds, call_creds, &c->config, target, overridden_target_name,
-      sc);
+      creds, call_creds, &c->config, target, overridden_target_name, sc);
   if (status != GRPC_SECURITY_OK) {
     return status;
   }
@@ -125,8 +122,7 @@ struct grpc_ssl_server_credentials_options {
   grpc_ssl_server_certificate_config_fetcher* certificate_config_fetcher;
 };
 
-static void ssl_server_destruct(grpc_exec_ctx* exec_ctx,
-                                grpc_server_credentials* creds) {
+static void ssl_server_destruct(grpc_server_credentials* creds) {
   grpc_ssl_server_credentials* c = (grpc_ssl_server_credentials*)creds;
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(c->config.pem_key_cert_pairs,
                                           c->config.num_key_cert_pairs);
@@ -134,9 +130,8 @@ static void ssl_server_destruct(grpc_exec_ctx* exec_ctx,
 }
 
 static grpc_security_status ssl_server_create_security_connector(
-    grpc_exec_ctx* exec_ctx, grpc_server_credentials* creds,
-    grpc_server_security_connector** sc) {
-  return grpc_ssl_server_security_connector_create(exec_ctx, creds, sc);
+    grpc_server_credentials* creds, grpc_server_security_connector** sc) {
+  return grpc_ssl_server_security_connector_create(creds, sc);
 }
 
 static grpc_server_credentials_vtable ssl_server_vtable = {

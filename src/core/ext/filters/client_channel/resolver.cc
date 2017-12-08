@@ -46,8 +46,8 @@ void grpc_resolver_ref(grpc_resolver* resolver) {
 }
 
 #ifndef NDEBUG
-void grpc_resolver_unref(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
-                         const char* file, int line, const char* reason) {
+void grpc_resolver_unref(grpc_resolver* resolver, const char* file, int line,
+                         const char* reason) {
   if (grpc_trace_resolver_refcount.enabled()) {
     gpr_atm old_refs = gpr_atm_no_barrier_load(&resolver->refs.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
@@ -55,27 +55,25 @@ void grpc_resolver_unref(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
             old_refs, old_refs - 1, reason);
   }
 #else
-void grpc_resolver_unref(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver) {
+void grpc_resolver_unref(grpc_resolver* resolver) {
 #endif
   if (gpr_unref(&resolver->refs)) {
     grpc_combiner* combiner = resolver->combiner;
-    resolver->vtable->destroy(exec_ctx, resolver);
-    GRPC_COMBINER_UNREF(exec_ctx, combiner, "resolver");
+    resolver->vtable->destroy(resolver);
+    GRPC_COMBINER_UNREF(combiner, "resolver");
   }
 }
 
-void grpc_resolver_shutdown_locked(grpc_exec_ctx* exec_ctx,
-                                   grpc_resolver* resolver) {
-  resolver->vtable->shutdown_locked(exec_ctx, resolver);
+void grpc_resolver_shutdown_locked(grpc_resolver* resolver) {
+  resolver->vtable->shutdown_locked(resolver);
 }
 
-void grpc_resolver_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
-                                            grpc_resolver* resolver) {
-  resolver->vtable->channel_saw_error_locked(exec_ctx, resolver);
+void grpc_resolver_channel_saw_error_locked(grpc_resolver* resolver) {
+  resolver->vtable->channel_saw_error_locked(resolver);
 }
 
-void grpc_resolver_next_locked(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
+void grpc_resolver_next_locked(grpc_resolver* resolver,
                                grpc_channel_args** result,
                                grpc_closure* on_complete) {
-  resolver->vtable->next_locked(exec_ctx, resolver, result, on_complete);
+  resolver->vtable->next_locked(resolver, result, on_complete);
 }

@@ -63,7 +63,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
         self._pool.shutdown(wait=False)
 
 
-class AccessTokenCallCredentials(grpc.AuthMetadataPlugin):
+class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
     """Metadata wrapper for raw access token credentials."""
 
     def __init__(self, access_token):

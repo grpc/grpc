@@ -50,20 +50,19 @@ static void thd_func(void* arg) {
   gpr_event_set(&a->done_thd, (void*)1);
 }
 
-static void done_write(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+static void done_write(void* arg, grpc_error* error) {
   thd_args* a = (thd_args*)arg;
   gpr_event_set(&a->done_write, (void*)1);
 }
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
   thd_args* a = (thd_args*)ts;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport(&exec_ctx, a->server, transport, nullptr,
+  grpc_core::ExecCtx exec_ctx;
+  grpc_server_setup_transport(a->server, transport, nullptr,
                               grpc_server_get_channel_args(a->server));
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void read_done(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+static void read_done(void* arg, grpc_error* error) {
   gpr_event* read_done = (gpr_event*)arg;
   gpr_event_set(read_done, (void*)1);
 }
@@ -81,7 +80,7 @@ void grpc_run_bad_client_test(
       grpc_slice_from_copied_buffer(client_payload, client_payload_length);
   grpc_slice_buffer outgoing;
   grpc_closure done_write_closure;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_completion_queue* shutdown_cq;
 
   if (client_payload_length < 4 * 1024) {
@@ -115,20 +114,19 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  transport = grpc_create_chttp2_transport(&exec_ctx, nullptr, sfd.server, 0);
+  transport = grpc_create_chttp2_transport(nullptr, sfd.server, false);
   server_setup_transport(&a, transport);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
   /* Bind everything into the same pollset */
-  grpc_endpoint_add_to_pollset(&exec_ctx, sfd.client, grpc_cq_pollset(a.cq));
-  grpc_endpoint_add_to_pollset(&exec_ctx, sfd.server, grpc_cq_pollset(a.cq));
+  grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(a.cq));
+  grpc_endpoint_add_to_pollset(sfd.server, grpc_cq_pollset(a.cq));
 
   /* Check a ground truth */
   GPR_ASSERT(grpc_server_has_open_connections(a.server));
 
   /* Start validator */
-  gpr_thd_new(&id, thd_func, &a, nullptr);
+  gpr_thd_new(&id, "grpc_bad_client", thd_func, &a, nullptr);
 
   grpc_slice_buffer_init(&outgoing);
   grpc_slice_buffer_add(&outgoing, slice);
@@ -136,8 +134,8 @@ void grpc_run_bad_client_test(
                     grpc_schedule_on_exec_ctx);
 
   /* Write data */
-  grpc_endpoint_write(&exec_ctx, sfd.client, &outgoing, &done_write_closure);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_endpoint_write(sfd.client, &outgoing, &done_write_closure);
+  grpc_core::ExecCtx::Get()->Flush();
 
   /* Await completion, unless the request is large and write may not finish
    * before the peer shuts down. */
@@ -148,10 +146,9 @@ void grpc_run_bad_client_test(
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
     grpc_endpoint_shutdown(
-        &exec_ctx, sfd.client,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
-    grpc_endpoint_destroy(&exec_ctx, sfd.client);
-    grpc_exec_ctx_finish(&exec_ctx);
+        sfd.client, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
+    grpc_endpoint_destroy(sfd.client);
+    grpc_core::ExecCtx::Get()->Flush();
     sfd.client = nullptr;
   }
 
@@ -170,9 +167,8 @@ void grpc_run_bad_client_test(
         grpc_closure read_done_closure;
         GRPC_CLOSURE_INIT(&read_done_closure, read_done, &read_done_event,
                           grpc_schedule_on_exec_ctx);
-        grpc_endpoint_read(&exec_ctx, sfd.client, &incoming,
-                           &read_done_closure);
-        grpc_exec_ctx_finish(&exec_ctx);
+        grpc_endpoint_read(sfd.client, &incoming, &read_done_closure);
+        grpc_core::ExecCtx::Get()->Flush();
         do {
           GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
           GPR_ASSERT(
@@ -185,14 +181,13 @@ void grpc_run_bad_client_test(
                 "client validator failed; trying additional read "
                 "in case we didn't get all the data");
       }
-      grpc_slice_buffer_destroy_internal(&exec_ctx, &incoming);
+      grpc_slice_buffer_destroy_internal(&incoming);
     }
     // Shutdown.
     grpc_endpoint_shutdown(
-        &exec_ctx, sfd.client,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
-    grpc_endpoint_destroy(&exec_ctx, sfd.client);
-    grpc_exec_ctx_finish(&exec_ctx);
+        sfd.client, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+    grpc_endpoint_destroy(sfd.client);
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   GPR_ASSERT(
@@ -206,8 +201,7 @@ void grpc_run_bad_client_test(
   grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
-  grpc_slice_buffer_destroy_internal(&exec_ctx, &outgoing);
+  grpc_slice_buffer_destroy_internal(&outgoing);
 
-  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 }
