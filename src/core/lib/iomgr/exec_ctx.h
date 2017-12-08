@@ -80,7 +80,7 @@ class ExecCtx {
   ExecCtx(uintptr_t fl) : flags_(fl) { Set(this); }
 
   /** Destructor */
-  ~ExecCtx() {
+  virtual ~ExecCtx() {
     flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
     Set(last_exec_ctx_);

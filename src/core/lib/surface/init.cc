@@ -157,9 +157,6 @@ void grpc_init(void) {
 void grpc_shutdown(void) {
   int i;
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
-  if (grpc_core::ExecCtx::Get()) {
-    grpc_core::ExecCtx::Get()->Flush();
-  }
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     {
