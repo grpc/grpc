@@ -95,27 +95,15 @@ static void test_compression_algorithm_for_level(void) {
 
     GPR_ASSERT(GRPC_COMPRESS_NONE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_LOW, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_LOW, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_NONE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_MED, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_MED, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_NONE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_HIGH, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_LOW, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_MED, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_HIGH, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_HIGH, accepted_encodings));
   }
 
   {
@@ -130,27 +118,15 @@ static void test_compression_algorithm_for_level(void) {
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_GZIP ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_LOW, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_LOW, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_GZIP ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_MED, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_MED, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_GZIP ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_HIGH, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_LOW, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_MED, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_HIGH, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_HIGH, accepted_encodings));
   }
 
   {
@@ -165,27 +141,15 @@ static void test_compression_algorithm_for_level(void) {
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_DEFLATE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_LOW, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_LOW, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_DEFLATE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_MED, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_MED, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_DEFLATE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_HIGH, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_LOW, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_MED, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_HIGH, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_HIGH, accepted_encodings));
   }
 
   {
@@ -201,27 +165,15 @@ static void test_compression_algorithm_for_level(void) {
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_GZIP ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_LOW, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_LOW, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_DEFLATE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_MED, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_MED, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_DEFLATE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_HIGH, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_LOW, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_MED, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_NONE ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_HIGH, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_HIGH, accepted_encodings));
   }
 
   {
@@ -236,27 +188,15 @@ static void test_compression_algorithm_for_level(void) {
 
     GPR_ASSERT(GRPC_COMPRESS_NONE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_LOW, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_LOW, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_NONE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_MED, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_MED, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_NONE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_HIGH, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_STREAM_GZIP ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_LOW, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_STREAM_GZIP ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_MED, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_STREAM_GZIP ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_HIGH, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_HIGH, accepted_encodings));
   }
 
   {
@@ -273,27 +213,15 @@ static void test_compression_algorithm_for_level(void) {
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_GZIP ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_LOW, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_LOW, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_DEFLATE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_MED, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_MED, accepted_encodings));
 
     GPR_ASSERT(GRPC_COMPRESS_MESSAGE_DEFLATE ==
                grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_MESSAGE_HIGH, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_STREAM_GZIP ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_LOW, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_STREAM_GZIP ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_MED, accepted_encodings));
-
-    GPR_ASSERT(GRPC_COMPRESS_STREAM_GZIP ==
-               grpc_compression_algorithm_for_level(
-                   GRPC_COMPRESS_LEVEL_STREAM_HIGH, accepted_encodings));
+                   GRPC_COMPRESS_LEVEL_HIGH, accepted_encodings));
   }
 }
 
