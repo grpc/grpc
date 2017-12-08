@@ -56,7 +56,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "stream_compress_test",
-    srcs = ["stream_compression_test.c"],
+    srcs = ["stream_compression_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
