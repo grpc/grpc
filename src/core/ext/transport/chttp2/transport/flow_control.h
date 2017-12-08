@@ -45,10 +45,11 @@ namespace chttp2 {
 
 static constexpr uint32_t kDefaultWindow = 65535;
 static constexpr int64_t kMaxWindow = (int64_t)((1u << 31) - 1);
+// TODO(ncteisen): Tune this
+static constexpr uint32_t kFrameSize = 1024 * 1024;
 
 class TransportFlowControl;
 class StreamFlowControl;
-
 
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
@@ -153,12 +154,12 @@ class TransportFlowControlBase {
   // Called to check if the transport needs to send a WINDOW_UPDATE frame
   virtual uint32_t MaybeSendUpdate(bool writing_anyway) { abort(); }
 
-  // Using the protected members, returns and Action to be taken by the 
+  // Using the protected members, returns and Action to be taken by the
   // tranport.
   virtual FlowControlAction MakeAction() { abort(); }
 
-  // Using the protected members, returns and Action to be taken by the 
-  // tranport. Also checks for updates to our BDP estimate and acts 
+  // Using the protected members, returns and Action to be taken by the
+  // tranport. Also checks for updates to our BDP estimate and acts
   // accordingly.
   virtual FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx) { abort(); }
 
@@ -166,7 +167,7 @@ class TransportFlowControlBase {
   // data on the wire
   virtual void StreamSentData(int64_t size) { abort(); }
 
-  // Called to do bookkeeping when a stream owned by this transport receives 
+  // Called to do bookkeeping when a stream owned by this transport receives
   // data from the wire. Also does error checking for frame size.
   virtual grpc_error* RecvData(int64_t incoming_frame_size) { abort(); }
 
@@ -202,13 +203,8 @@ class TransportFlowControlBase {
 // performance.
 class TransportFlowControlDisabled final : public TransportFlowControlBase {
  public:
-
   // Maxes out all values
-  TransportFlowControlDisabled() {
-    remote_window_ = kMaxWindow;
-    target_initial_window_size_ = kMaxWindow;
-    announced_window_ = kMaxWindow;
-  }
+  TransportFlowControlDisabled(grpc_chttp2_transport* t);
 
   bool flow_control_enabled() const override { return false; }
 
@@ -275,7 +271,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
     remote_window_ += size;
   }
 
-  // See comment above announced_stream_total_over_incoming_window_ for the 
+  // See comment above announced_stream_total_over_incoming_window_ for the
   // logic behind this decision.
   int64_t target_window() const override {
     return (uint32_t)GPR_MIN((int64_t)((1u << 31) - 1),
@@ -357,7 +353,7 @@ class StreamFlowControlBase {
   // Updates an action using the protected members.
   virtual FlowControlAction UpdateAction(FlowControlAction action) { abort(); }
 
-  // Using the protected members, returns an Action for this stream to be 
+  // Using the protected members, returns an Action for this stream to be
   // taken by the tranport.
   virtual FlowControlAction MakeAction() { abort(); }
 

@@ -149,6 +149,25 @@ void FlowControlAction::Trace(grpc_chttp2_transport* t) const {
   gpr_free(mf_str);
 }
 
+TransportFlowControlDisabled::TransportFlowControlDisabled(
+    grpc_chttp2_transport* t) {
+  remote_window_ = kMaxWindow;
+  target_initial_window_size_ = kMaxWindow;
+  announced_window_ = kMaxWindow;
+  t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE] =
+      kFrameSize;
+  t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE] =
+      kFrameSize;
+  t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE] =
+      kFrameSize;
+  t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] =
+      kMaxWindow;
+  t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] =
+      kMaxWindow;
+  t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] =
+      kMaxWindow;
+}
+
 TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
                                            const grpc_chttp2_transport* t,
                                            bool enable_bdp_probe)

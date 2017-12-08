@@ -197,7 +197,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_exec_ctx* exec_ctx,
           return GRPC_ERROR_NONE;
         }
         goto dts_fh_0; /* loop */
-      } else if (!true /*disable flow control*/ &&
+      } else if (t->flow_control->flow_control_enabled() &&
                  t->incoming_frame_size >
                      t->settings[GRPC_ACKED_SETTINGS]
                                 [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
