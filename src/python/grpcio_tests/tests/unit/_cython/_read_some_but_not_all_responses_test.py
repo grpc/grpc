@@ -20,7 +20,7 @@ from grpc._cython import cygrpc
 
 _INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
 _EMPTY_FLAGS = 0
-_EMPTY_METADATA = cygrpc.Metadata(())
+_EMPTY_METADATA = ()
 
 
 class _ServerDriver(object):
@@ -197,8 +197,8 @@ class ReadSomeButNotAllResponsesTest(unittest.TestCase):
                 server_rpc_event.operation_call.start_server_batch([
                     cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
                     cygrpc.operation_send_status_from_server(
-                        cygrpc.Metadata(()), cygrpc.StatusCode.ok,
-                        b'test details', _EMPTY_FLAGS),
+                        (), cygrpc.StatusCode.ok, b'test details',
+                        _EMPTY_FLAGS),
                 ], server_complete_rpc_tag))
         server_send_second_message_event = server_call_driver.event_with_tag(
             server_send_second_message_tag)

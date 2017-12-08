@@ -22,7 +22,7 @@ from tests.unit.framework.common import test_constants
 
 _INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
 _EMPTY_FLAGS = 0
-_EMPTY_METADATA = cygrpc.Metadata(())
+_EMPTY_METADATA = ()
 
 _SERVER_SHUTDOWN_TAG = 'server_shutdown'
 _REQUEST_CALL_TAG = 'request_call'
