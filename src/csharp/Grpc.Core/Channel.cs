@@ -152,8 +152,11 @@ namespace Grpc.Core
                 "Shutdown is a terminal state. No further state changes can occur.");
             var tcs = new TaskCompletionSource<object>();
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
-            // pass "tcs" as "state" for WatchConnectivityStateHandler.
-            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+            lock (myLock)
+            {
+                // pass "tcs" as "state" for WatchConnectivityStateHandler.
+                handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+            }
             return tcs.Task;
         }
 
@@ -236,7 +239,10 @@ namespace Grpc.Core
                 Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
             }
 
-            handle.Dispose();
+            lock (myLock)
+            {
+                handle.Dispose();
+            }
 
             await Task.WhenAll(GrpcEnvironment.ReleaseAsync(), connectivityWatcherTask).ConfigureAwait(false);
         }
@@ -285,7 +291,10 @@ namespace Grpc.Core
         {
             try
             {
-                return handle.CheckConnectivityState(tryToConnect);
+                lock (myLock)
+                {
+                    return handle.CheckConnectivityState(tryToConnect);
+                }
             }
             catch (ObjectDisposedException)
             {
