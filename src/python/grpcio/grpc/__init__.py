@@ -835,27 +835,47 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def abort(self, code, details):
+        """Raises an exception to terminate the RPC with a non-OK status.
+
+        The code and details passed as arguments will supercede any existing
+        ones.
+
+        Args:
+          code: A StatusCode object to be sent to the client.
+            It must not be StatusCode.OK.
+          details: An ASCII-encodable string to be sent to the client upon
+            termination of the RPC.
+
+        Raises:
+          Exception: An exception is always raised to signal the abortion the
+            RPC to the gRPC runtime.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def set_code(self, code):
         """Sets the value to be used as status code upon RPC completion.
 
-    This method need not be called by method implementations if they wish the
-    gRPC runtime to determine the status code of the RPC.
+        This method need not be called by method implementations if they wish
+        the gRPC runtime to determine the status code of the RPC.
 
-    Args:
-      code: A StatusCode object to be sent to the client.
-    """
+        Args:
+          code: A StatusCode object to be sent to the client.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def set_details(self, details):
         """Sets the value to be used as detail string upon RPC completion.
 
-    This method need not be called by method implementations if they have no
-    details to transmit.
+        This method need not be called by method implementations if they have
+        no details to transmit.
 
-    Args:
-      details: An arbitrary string to be sent to the client upon completion.
-    """
+        Args:
+          details: An ASCII-encodable string to be sent to the client upon
+            termination of the RPC.
+        """
         raise NotImplementedError()
 
 

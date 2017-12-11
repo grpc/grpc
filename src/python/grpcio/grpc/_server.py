@@ -96,6 +96,7 @@ class _RPCState(object):
         self.statused = False
         self.rpc_errors = []
         self.callbacks = []
+        self.abortion = None
 
 
 def _raise_rpc_error(state):
@@ -273,6 +274,13 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.trailing_metadata = trailing_metadata
 
+    def abort(self, code, details):
+        with self._state.condition:
+            self._state.code = code
+            self._state.details = _common.encode(details)
+            self._state.abortion = Exception()
+            raise self._state.abortion
+
     def set_code(self, code):
         with self._state.condition:
             self._state.code = code
@@ -369,7 +377,10 @@ def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
         return behavior(argument, context), True
     except Exception as exception:  # pylint: disable=broad-except
         with state.condition:
-            if exception not in state.rpc_errors:
+            if exception is state.abortion:
+                _abort(state, rpc_event.operation_call,
+                       cygrpc.StatusCode.unknown, b'RPC Aborted')
+            elif exception not in state.rpc_errors:
                 details = 'Exception calling application: {}'.format(exception)
                 logging.exception(details)
                 _abort(state, rpc_event.operation_call,
@@ -384,7 +395,10 @@ def _take_response_from_response_iterator(rpc_event, state, response_iterator):
         return None, True
     except Exception as exception:  # pylint: disable=broad-except
         with state.condition:
-            if exception not in state.rpc_errors:
+            if exception is state.abortion:
+                _abort(state, rpc_event.operation_call,
+                       cygrpc.StatusCode.unknown, b'RPC Aborted')
+            elif exception not in state.rpc_errors:
                 details = 'Exception iterating responses: {}'.format(exception)
                 logging.exception(details)
                 _abort(state, rpc_event.operation_call,
@@ -430,12 +444,11 @@ def _send_response(rpc_event, state, serialized_response):
 def _status(rpc_event, state, serialized_response):
     with state.condition:
         if state.client is not _CANCELLED:
-            trailing_metadata = state.trailing_metadata
             code = _completion_code(state)
             details = _details(state)
             operations = [
                 cygrpc.operation_send_status_from_server(
-                    trailing_metadata, code, details, _EMPTY_FLAGS),
+                    state.trailing_metadata, code, details, _EMPTY_FLAGS),
             ]
             if state.initial_metadata_allowed:
                 operations.append(
