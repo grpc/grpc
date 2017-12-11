@@ -15,6 +15,7 @@
 
 import grpc
 from grpc import _common
+from grpc.beta import _metadata
 from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
@@ -157,10 +158,10 @@ class _Rendezvous(future.Future, face.Call):
         return _InvocationProtocolContext()
 
     def initial_metadata(self):
-        return self._call.initial_metadata()
+        return _metadata.beta(self._call.initial_metadata())
 
     def terminal_metadata(self):
-        return self._call.terminal_metadata()
+        return _metadata.beta(self._call.terminal_metadata())
 
     def code(self):
         return self._call.code()
@@ -182,14 +183,14 @@ def _blocking_unary_unary(channel, group, method, timeout, with_call,
             response, call = multi_callable.with_call(
                 request,
                 timeout=timeout,
-                metadata=effective_metadata,
+                metadata=_metadata.unbeta(effective_metadata),
                 credentials=_credentials(protocol_options))
             return response, _Rendezvous(None, None, call)
         else:
             return multi_callable(
                 request,
                 timeout=timeout,
-                metadata=effective_metadata,
+                metadata=_metadata.unbeta(effective_metadata),
                 credentials=_credentials(protocol_options))
     except grpc.RpcError as rpc_error_call:
         raise _abortion_error(rpc_error_call)
@@ -206,7 +207,7 @@ def _future_unary_unary(channel, group, method, timeout, protocol_options,
     response_future = multi_callable.future(
         request,
         timeout=timeout,
-        metadata=effective_metadata,
+        metadata=_metadata.unbeta(effective_metadata),
         credentials=_credentials(protocol_options))
     return _Rendezvous(response_future, None, response_future)
 
@@ -222,7 +223,7 @@ def _unary_stream(channel, group, method, timeout, protocol_options, metadata,
     response_iterator = multi_callable(
         request,
         timeout=timeout,
-        metadata=effective_metadata,
+        metadata=_metadata.unbeta(effective_metadata),
         credentials=_credentials(protocol_options))
     return _Rendezvous(None, response_iterator, response_iterator)
 
@@ -241,14 +242,14 @@ def _blocking_stream_unary(channel, group, method, timeout, with_call,
             response, call = multi_callable.with_call(
                 request_iterator,
                 timeout=timeout,
-                metadata=effective_metadata,
+                metadata=_metadata.unbeta(effective_metadata),
                 credentials=_credentials(protocol_options))
             return response, _Rendezvous(None, None, call)
         else:
             return multi_callable(
                 request_iterator,
                 timeout=timeout,
-                metadata=effective_metadata,
+                metadata=_metadata.unbeta(effective_metadata),
                 credentials=_credentials(protocol_options))
     except grpc.RpcError as rpc_error_call:
         raise _abortion_error(rpc_error_call)
@@ -265,7 +266,7 @@ def _future_stream_unary(channel, group, method, timeout, protocol_options,
     response_future = multi_callable.future(
         request_iterator,
         timeout=timeout,
-        metadata=effective_metadata,
+        metadata=_metadata.unbeta(effective_metadata),
         credentials=_credentials(protocol_options))
     return _Rendezvous(response_future, None, response_future)
 
@@ -281,7 +282,7 @@ def _stream_stream(channel, group, method, timeout, protocol_options, metadata,
     response_iterator = multi_callable(
         request_iterator,
         timeout=timeout,
-        metadata=effective_metadata,
+        metadata=_metadata.unbeta(effective_metadata),
         credentials=_credentials(protocol_options))
     return _Rendezvous(None, response_iterator, response_iterator)
 

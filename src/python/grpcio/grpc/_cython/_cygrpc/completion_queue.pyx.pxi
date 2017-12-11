@@ -42,7 +42,7 @@ cdef class CompletionQueue:
     cdef Call operation_call = None
     cdef CallDetails request_call_details = None
     cdef object request_metadata = None
-    cdef Operations batch_operations = None
+    cdef object batch_operations = None
     if event.type == GRPC_QUEUE_TIMEOUT:
       return Event(
           event.type, False, None, None, None, None, False, None)
@@ -61,9 +61,10 @@ cdef class CompletionQueue:
         user_tag = tag.user_tag
         operation_call = tag.operation_call
         request_call_details = tag.request_call_details
-        if tag.request_metadata is not None:
-          request_metadata = tuple(tag.request_metadata)
-        batch_operations = tag.batch_operations
+        if tag.is_new_request:
+          request_metadata = _metadata(&tag._c_request_metadata)
+          grpc_metadata_array_destroy(&tag._c_request_metadata)
+        batch_operations = tag.release_ops()
         if tag.is_new_request:
           # Stuff in the tag not explicitly handled by us needs to live through
           # the life of the call
