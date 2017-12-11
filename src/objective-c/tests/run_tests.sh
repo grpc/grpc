@@ -43,6 +43,7 @@ while [ $retries -lt 3 ] && ! open -a Simulator --args -CurrentDeviceUDID $udid 
 retries=$(($retries+1))
 done
 if [ $retries == 3 ]; then
+  echo "Xcode simulator failed to start after 3 retries."
   exit 1
 fi
 
