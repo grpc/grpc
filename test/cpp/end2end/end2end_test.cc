@@ -1308,12 +1308,19 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_skip_cancelled_check(true);
-  // Let server sleep for 2 ms first to guarantee expiry
-  request.mutable_param()->set_server_sleep_us(2 * 1000);
+  // Let server sleep for 40 ms first to guarantee expiry.
+  // 40 ms might seem a bit extreme but the timer manager would have been just
+  // initialized (when ResetStub() was called) and there are some warmup costs
+  // i.e the timer thread many not have even started. There might also be other
+  // delays in the timer manager thread (in acquiring locks, timer data
+  // structure manipulations, starting backup timer threads) that add to the
+  // delays. 40ms is still not enough in some cases but this significantly
+  // reduces the test flakes
+  request.mutable_param()->set_server_sleep_us(40 * 1000);
 
   ClientContext context;
   std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::microseconds(10);
+      std::chrono::system_clock::now() + std::chrono::milliseconds(1);
   context.set_deadline(deadline);
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.error_code());
