@@ -962,6 +962,34 @@ class ServiceRpcHandler(six.with_metaclass(abc.ABCMeta, GenericRpcHandler)):
         raise NotImplementedError()
 
 
+####################  Service-Side Interceptor Interfaces  #####################
+
+
+class ServerInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting incoming RPCs on the service-side.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_service(self, continuation, handler_call_details):
+        """Intercepts incoming RPCs before handing them over to a handler.
+
+        Args:
+          continuation: A function that takes a HandlerCallDetails and
+            proceeds to invoke the next interceptor in the chain, if any,
+            or the RPC handler lookup logic, with the call details passed
+            as an argument, and returns an RpcMethodHandler instance if
+            the RPC is considered serviced, or None otherwise.
+          handler_call_details: A HandlerCallDetails describing the RPC.
+
+        Returns:
+          An RpcMethodHandler with which the RPC may be serviced if the
+          interceptor chooses to service this RPC, or None otherwise.
+        """
+        raise NotImplementedError()
+
+
 #############################  Server Interface  ###############################
 
 
@@ -1378,51 +1406,56 @@ def secure_channel(target, credentials, options=None):
 
 def server(thread_pool,
            handlers=None,
+           interceptors=None,
            options=None,
            maximum_concurrent_rpcs=None):
     """Creates a Server with which RPCs can be serviced.
 
-  Args:
-    thread_pool: A futures.ThreadPoolExecutor to be used by the Server
-      to execute RPC handlers.
-    handlers: An optional list of GenericRpcHandlers used for executing RPCs.
-      More handlers may be added by calling add_generic_rpc_handlers any time
-      before the server is started.
-    options: An optional list of key-value pairs (channel args in gRPC runtime)
-    to configure the channel.
-    maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
-      will service before returning RESOURCE_EXHAUSTED status, or None to
-      indicate no limit.
+    Args:
+      thread_pool: A futures.ThreadPoolExecutor to be used by the Server
+        to execute RPC handlers.
+      handlers: An optional list of GenericRpcHandlers used for executing RPCs.
+        More handlers may be added by calling add_generic_rpc_handlers any time
+        before the server is started.
+      interceptors: An optional list of ServerInterceptor objects that observe
+        and optionally manipulate the incoming RPCs before handing them over to
+        handlers. The interceptors are given control in the order they are
+        specified. This is an EXPERIMENTAL API.
+      options: An optional list of key-value pairs (channel args in gRPC runtime)
+      to configure the channel.
+      maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
+        will service before returning RESOURCE_EXHAUSTED status, or None to
+        indicate no limit.
 
-  Returns:
-    A Server object.
-  """
+    Returns:
+      A Server object.
+    """
     from grpc import _server  # pylint: disable=cyclic-import
     return _server.Server(thread_pool, () if handlers is None else handlers, ()
-                          if options is None else options,
-                          maximum_concurrent_rpcs)
+                          if interceptors is None else interceptors, () if
+                          options is None else options, maximum_concurrent_rpcs)
 
 
 ###################################  __all__  #################################
 
-__all__ = ('FutureTimeoutError', 'FutureCancelledError', 'Future',
-           'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext',
-           'Call', 'ChannelCredentials', 'CallCredentials',
-           'AuthMetadataContext', 'AuthMetadataPluginCallback',
-           'AuthMetadataPlugin', 'ServerCertificateConfiguration',
-           'ServerCredentials', 'UnaryUnaryMultiCallable',
-           'UnaryStreamMultiCallable', 'StreamUnaryMultiCallable',
-           'StreamStreamMultiCallable', 'Channel', 'ServicerContext',
-           'RpcMethodHandler', 'HandlerCallDetails', 'GenericRpcHandler',
-           'ServiceRpcHandler', 'Server', 'unary_unary_rpc_method_handler',
-           'unary_stream_rpc_method_handler', 'stream_unary_rpc_method_handler',
-           'stream_stream_rpc_method_handler',
-           'method_handlers_generic_handler', 'ssl_channel_credentials',
-           'metadata_call_credentials', 'access_token_call_credentials',
-           'composite_call_credentials', 'composite_channel_credentials',
-           'ssl_server_credentials', 'ssl_server_certificate_configuration',
-           'dynamic_ssl_server_credentials', 'channel_ready_future',
-           'insecure_channel', 'secure_channel', 'server',)
+__all__ = (
+    'FutureTimeoutError', 'FutureCancelledError', 'Future',
+    'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext', 'Call',
+    'ChannelCredentials', 'CallCredentials', 'AuthMetadataContext',
+    'AuthMetadataPluginCallback', 'AuthMetadataPlugin',
+    'ServerCertificateConfiguration', 'ServerCredentials',
+    'UnaryUnaryMultiCallable', 'UnaryStreamMultiCallable',
+    'StreamUnaryMultiCallable', 'StreamStreamMultiCallable', 'Channel',
+    'ServicerContext', 'RpcMethodHandler', 'HandlerCallDetails',
+    'GenericRpcHandler', 'ServiceRpcHandler', 'Server', 'ServerInterceptor',
+    'unary_unary_rpc_method_handler', 'unary_stream_rpc_method_handler',
+    'stream_unary_rpc_method_handler', 'stream_stream_rpc_method_handler',
+    'method_handlers_generic_handler', 'ssl_channel_credentials',
+    'metadata_call_credentials', 'access_token_call_credentials',
+    'composite_call_credentials', 'composite_channel_credentials',
+    'ssl_server_credentials', 'ssl_server_certificate_configuration',
+    'dynamic_ssl_server_credentials', 'channel_ready_future',
+    'insecure_channel', 'secure_channel', 'server',)
 
 ############################### Extension Shims ################################
 
