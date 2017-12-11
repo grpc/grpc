@@ -225,7 +225,7 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
   tmp.key = GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
-  tmp.value.integer = algorithm;
+  tmp.value.integer = (int)algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
 
