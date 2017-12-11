@@ -103,6 +103,13 @@ class ClientAsyncResponseReader final
     assert(size == sizeof(ClientAsyncResponseReader));
   }
 
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // Issue# 11301). Note at the time of adding this there is no tests catching
+  // the compiler warning.
+  static void operator delete(void*, void*) {}
+
   void StartCall() override {
     assert(!started_);
     started_ = true;
