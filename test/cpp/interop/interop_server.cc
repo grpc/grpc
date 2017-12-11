@@ -163,7 +163,7 @@ class TestServiceImpl : public TestService::Service {
               compression_requested ? "enabled" : "disabled", __func__);
       if (compression_requested) {
         // Any level would do, let's go for HIGH because we are overachievers.
-        context->set_compression_level(GRPC_COMPRESS_LEVEL_MESSAGE_HIGH);
+        context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
       } else {
         context->set_compression_level(GRPC_COMPRESS_LEVEL_NONE);
       }
@@ -204,7 +204,7 @@ class TestServiceImpl : public TestService::Service {
       WriteOptions wopts;
       if (request->response_parameters(i).has_compressed()) {
         // Compress by default. Disabled on a per-message basis.
-        context->set_compression_level(GRPC_COMPRESS_LEVEL_MESSAGE_HIGH);
+        context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
         const bool compression_requested =
             request->response_parameters(i).compressed().value();
         gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",

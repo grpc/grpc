@@ -118,9 +118,9 @@ class CompressionAlgorithm:
 
 class CompressionLevel:
   none = GRPC_COMPRESS_LEVEL_NONE
-  low = GRPC_COMPRESS_LEVEL_MESSAGE_LOW
-  medium = GRPC_COMPRESS_LEVEL_MESSAGE_MED
-  high = GRPC_COMPRESS_LEVEL_MESSAGE_HIGH
+  low = GRPC_COMPRESS_LEVEL_LOW
+  medium = GRPC_COMPRESS_LEVEL_MED
+  high = GRPC_COMPRESS_LEVEL_HIGH
 
 
 cdef class Timespec:
