@@ -25,6 +25,7 @@ DIRS=(
     'tools/distrib'
     'tools/interop_matrix'
     'tools/profiling'
+    'tools/run_tests/python_utils'
 )
 EXCLUSIONS=(
     'grpcio/grpc_*.py'
