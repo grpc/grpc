@@ -39,6 +39,35 @@ def get_target(name):
     assert False, 'no target %s' % name
 
 
+def get_headers_transitive():
+    """Computes set of headers transitively provided by each target"""
+    target_headers_transitive = {}
+    for target in js:
+        target_name = target['name']
+        assert not target_headers_transitive.has_key(target_name)
+        target_headers_transitive[target_name] = set(target['headers'])
+
+    # Make sure each target's transitive headers contain those
+    # of their dependencies. If not, add them and continue doing
+    # so until we get a full pass over all targets without any updates.
+    closure_changed = True
+    while closure_changed:
+        closure_changed = False
+        for target in js:
+            target_name = target['name']
+            for dep in target['deps']:
+                headers = target_headers_transitive[target_name]
+                old_count = len(headers)
+                headers.update(target_headers_transitive[dep])
+                if old_count != len(headers):
+                    closure_changed = True
+    return target_headers_transitive
+
+
+# precompute transitive closure of headers provided by each target
+target_headers_transitive = get_headers_transitive()
+
+
 def target_has_header(target, name):
     if name.startswith('absl/'): return True
     # print target['name'], name
