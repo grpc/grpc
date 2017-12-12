@@ -24,6 +24,7 @@ DIRS=(
     'tools/codegen'
     'tools/distrib'
     'tools/interop_matrix'
+    'tools/profiling'
 )
 EXCLUSIONS=(
     'grpcio/grpc_*.py'

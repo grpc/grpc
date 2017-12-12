@@ -262,8 +262,8 @@ def maybe_apply_patches_on_git_tag(stack_base, lang, release):
     patch_file = os.path.abspath(
         os.path.join(os.path.dirname(__file__), patch_file_relative_path))
     if not os.path.exists(patch_file):
-        jobset.message('FAILED', 'expected patch file |%s| to exist' %
-                       patch_file)
+        jobset.message('FAILED',
+                       'expected patch file |%s| to exist' % patch_file)
         sys.exit(1)
     subprocess.check_output(
         ['git', 'apply', patch_file], cwd=stack_base, stderr=subprocess.STDOUT)
