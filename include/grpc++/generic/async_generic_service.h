@@ -42,6 +42,23 @@ class GenericServerContext final : public ServerContext {
   grpc::string host_;
 };
 
+// A generic service at the server side accepts all RPC methods and hosts. It is
+// typically used in proxies. The generic service can be registered to a server
+// which also has other services.
+// Sample usage:
+//   ServerBuilder builder;
+//   auto cq = builder.AddCompletionQueue();
+//   AsyncGenericService generic_service;
+//   builder.RegisterAsyncGeneicService(&generic_service);
+//   auto server = builder.BuildAndStart();
+//
+//   // request a new call
+//   GenericServerContext context;
+//   GenericAsyncReaderWriter stream;
+//   generic_service.RequestCall(&context, &stream, cq.get(), cq.get(), tag);
+//
+// When tag is retrieved from cq->Next(), context.method() can be used to look
+// at the method and the RPC can be handled accordingly.
 class AsyncGenericService final {
  public:
   AsyncGenericService() : server_(nullptr) {}
