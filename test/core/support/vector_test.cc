@@ -58,7 +58,7 @@ TEST(InlinedVectorTest, PushBackWithMove) {
 
 TEST(InlinedVectorTest, EmplaceBack) {
   InlinedVector<UniquePtr<int>, 1> v;
-  v.emplace_back(new int(3));
+  v.emplace_back(New<int>(3));
   EXPECT_EQ(1UL, v.size());
   EXPECT_EQ(3, *v[0]);
 }
