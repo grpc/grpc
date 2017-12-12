@@ -1,7 +1,7 @@
 # gRPC over HTTP2
 
 ## Introduction
-This document serves as a detailed description for an implementation of gRPC carried over <a href="https://tools.ietf.org/html/rfc7540"> HTTP2 framing</a>. It assumes familiarity with the HTTP2 specification.
+This document serves as a detailed description for an implementation of gRPC carried over <a href="https://tools.ietf.org/html/rfc7540">HTTP2 framing</a>. It assumes familiarity with the HTTP2 specification.
 
 ## Protocol
 Production rules are using <a href="http://tools.ietf.org/html/rfc5234">ABNF syntax</a>.
