@@ -98,7 +98,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         args = [
           poller,
           '$(location %s)' % name
-        ],
+        ] + args['args'],
       )
   else:
     native.cc_test(**args)
