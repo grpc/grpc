@@ -22,7 +22,6 @@ DIRS=(
     'src/python'
 )
 EXCLUSIONS=(
-    'grpcio_testing/grpc_*.py'
     'grpcio_tests/grpc_*.py'
 )
 
