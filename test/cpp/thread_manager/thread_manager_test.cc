@@ -31,8 +31,14 @@
 namespace grpc {
 class ThreadManagerTest final : public grpc::ThreadManager {
  public:
-  ThreadManagerTest()
-      : ThreadManager(kMinPollers, kMaxPollers),
+  ThreadManagerTest(int min_pollers, int max_pollers)
+      : ThreadManager(min_pollers, max_pollers),
+        num_do_work_(0),
+        num_poll_for_work_(0),
+        num_work_found_(0) {}
+
+  ThreadManagerTest(int min_pollers, int max_pollers, int max_threads)
+      : ThreadManager(min_pollers, max_pollers, max_threads),
         num_do_work_(0),
         num_poll_for_work_(0),
         num_work_found_(0) {}
@@ -43,9 +49,6 @@ class ThreadManagerTest final : public grpc::ThreadManager {
 
  private:
   void SleepForMs(int sleep_time_ms);
-
-  static const int kMinPollers = 2;
-  static const int kMaxPollers = 10;
 
   static const int kPollingTimeoutMsec = 10;
   static const int kDoWorkDurationMsec = 1;
@@ -114,8 +117,20 @@ int main(int argc, char** argv) {
   std::srand(std::time(nullptr));
 
   grpc::testing::InitTest(&argc, &argv, true);
-  grpc::ThreadManagerTest test_rpc_manager;
-  test_rpc_manager.PerformTest();
+  {
+    grpc::ThreadManagerTest test_thd_manager(2, 10);
+    test_thd_manager.PerformTest();
+  }
+
+  {
+    grpc::ThreadManagerTest test_thd_manager(1, 1, 1);
+    test_thd_manager.PerformTest();
+  }
+
+  {
+    grpc::ThreadManagerTest test_thd_manager(2, 3, 4);
+    test_thd_manager.PerformTest();
+  }
 
   return 0;
 }

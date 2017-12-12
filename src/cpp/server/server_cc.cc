@@ -257,9 +257,9 @@ class Server::SyncRequestThreadManager : public ThreadManager {
  public:
   SyncRequestThreadManager(Server* server, CompletionQueue* server_cq,
                            std::shared_ptr<GlobalCallbacks> global_callbacks,
-                           int min_pollers, int max_pollers,
+                           int min_pollers, int max_pollers, int max_threads,
                            int cq_timeout_msec)
-      : ThreadManager(min_pollers, max_pollers),
+      : ThreadManager(min_pollers, max_pollers, max_threads),
         server_(server),
         server_cq_(server_cq),
         cq_timeout_msec_(cq_timeout_msec),
@@ -367,7 +367,7 @@ Server::Server(
     int max_receive_message_size, ChannelArguments* args,
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
-    int min_pollers, int max_pollers, int sync_cq_timeout_msec)
+    int min_pollers, int max_pollers, int max_threads, int sync_cq_timeout_msec)
     : max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(sync_server_cqs),
       started_(false),
@@ -386,7 +386,7 @@ Server::Server(
        it++) {
     sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
         this, (*it).get(), global_callbacks_, min_pollers, max_pollers,
-        sync_cq_timeout_msec));
+        max_threads, sync_cq_timeout_msec));
   }
 
   grpc_channel_args channel_args;
