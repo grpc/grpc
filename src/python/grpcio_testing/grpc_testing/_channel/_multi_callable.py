@@ -16,6 +16,7 @@ import grpc
 from grpc_testing import _common
 from grpc_testing._channel import _invocation
 
+
 # All per-call credentials parameters are unused by this test infrastructure.
 # pylint: disable=unused-argument
 class UnaryUnary(grpc.UnaryUnaryMultiCallable):
@@ -26,20 +27,20 @@ class UnaryUnary(grpc.UnaryUnaryMultiCallable):
 
     def __call__(self, request, timeout=None, metadata=None, credentials=None):
         rpc_handler = self._channel_handler.invoke_rpc(
-            self._method_full_rpc_name, _common.fuss_with_metadata(metadata),
-            [request], True, timeout)
+            self._method_full_rpc_name,
+            _common.fuss_with_metadata(metadata), [request], True, timeout)
         return _invocation.blocking_unary_response(rpc_handler)
 
     def with_call(self, request, timeout=None, metadata=None, credentials=None):
         rpc_handler = self._channel_handler.invoke_rpc(
-            self._method_full_rpc_name, _common.fuss_with_metadata(metadata),
-            [request], True, timeout)
+            self._method_full_rpc_name,
+            _common.fuss_with_metadata(metadata), [request], True, timeout)
         return _invocation.blocking_unary_response_with_call(rpc_handler)
 
     def future(self, request, timeout=None, metadata=None, credentials=None):
         rpc_handler = self._channel_handler.invoke_rpc(
-            self._method_full_rpc_name, _common.fuss_with_metadata(metadata),
-            [request], True, timeout)
+            self._method_full_rpc_name,
+            _common.fuss_with_metadata(metadata), [request], True, timeout)
         return _invocation.future_call(rpc_handler)
 
 
@@ -112,4 +113,6 @@ class StreamStream(grpc.StreamStreamMultiCallable):
             _common.fuss_with_metadata(metadata), [], False, timeout)
         _invocation.consume_requests(request_iterator, rpc_handler)
         return _invocation.ResponseIteratorCall(rpc_handler)
+
+
 # pylint: enable=unused-argument
