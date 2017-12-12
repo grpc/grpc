@@ -25,11 +25,10 @@ class State(_common.ChannelHandler):
         self._condition = threading.Condition()
         self._rpc_states = collections.defaultdict(list)
 
-    def invoke_rpc(
-            self, method_full_rpc_name, invocation_metadata, requests,
-            requests_closed, timeout):
-        rpc_state = _rpc_state.State(
-            invocation_metadata, requests, requests_closed)
+    def invoke_rpc(self, method_full_rpc_name, invocation_metadata, requests,
+                   requests_closed, timeout):
+        rpc_state = _rpc_state.State(invocation_metadata, requests,
+                                     requests_closed)
         with self._condition:
             self._rpc_states[method_full_rpc_name].append(rpc_state)
             self._condition.notify_all()

@@ -170,10 +170,8 @@ class _Handler(Handler):
                     if self._unary_response is None:
                         if self._responses:
                             self._unary_response = self._responses.pop(0)
-                    return (
-                        self._unary_response, self._trailing_metadata,
-                        self._code, self._details,)
-
+                    return (self._unary_response, self._trailing_metadata,
+                            self._code, self._details,)
 
     def stream_response_termination(self):
         with self._condition:
