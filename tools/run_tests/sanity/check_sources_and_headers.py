@@ -29,27 +29,57 @@ assert re_inc1.match('#include "foo"').group(1) == 'foo'
 re_inc2 = re.compile(r'^#\s*include\s*<((grpc|grpc\+\+)/[^"]*)>')
 assert re_inc2.match('#include <grpc++/foo>').group(1) == 'grpc++/foo'
 
+
 def get_target(name):
   for target in js:
     if target['name'] == name:
       return target
   assert False, 'no target %s' % name
 
+
+def get_headers_transitive():
+  """Computes set of headers transitively provided by each target"""
+  target_headers_transitive = {}
+  for target in js:
+    target_name = target['name']
+    assert not target_headers_transitive.has_key(target_name)
+    target_headers_transitive[target_name] = set(target['headers'])
+
+  # Make sure each target's transitive headers contain those
+  # of their dependencies. If not, add them and continue doing
+  # so until we get a full pass over all targets without any updates.
+  closure_changed = True
+  while closure_changed:
+    closure_changed = False
+    for target in js:
+      target_name = target['name']
+      for dep in target['deps']:
+        headers = target_headers_transitive[target_name]
+        old_count = len(headers)
+        headers.update(target_headers_transitive[dep])
+        if old_count != len(headers):
+          closure_changed=True
+  return target_headers_transitive
+
+
+# precompute transitive closure of headers provided by each target
+target_headers_transitive = get_headers_transitive()
+
+
 def target_has_header(target, name):
-  if name.startswith('absl/'): return True
-  # print target['name'], name
-  if name in target['headers']:
+  if name in target_headers_transitive[target['name']]:
     return True
-  for dep in target['deps']:
-    if target_has_header(get_target(dep), name):
-      return True
+  if name.startswith('absl/'):
+    return True
   if name in ['src/core/lib/profiling/stap_probes.h',
               'src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h']:
     return True
   return False
 
+
 def produces_object(name):
   return os.path.splitext(name)[1] in ['.c', '.cc']
+
 
 c_ish = {}
 obj_producer_to_source = {'c': c_ish, 'c++': c_ish, 'csharp': {}}

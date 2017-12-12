@@ -373,34 +373,5 @@ namespace Grpc.Core.Tests
             });
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
         }
-
-        [Test]
-        public async Task Channel_WaitForStateChangedAsync()
-        {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
-            {
-                return Task.FromResult(request);
-            });
-
-            Assert.ThrowsAsync(typeof(TaskCanceledException), 
-                async () => await channel.WaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(10)));
-
-            var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);
-
-            await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc");
-
-            await stateChangedTask;
-            Assert.AreEqual(ChannelState.Ready, channel.State);
-        }
-
-        [Test]
-        public async Task Channel_ConnectAsync()
-        {
-            await channel.ConnectAsync();
-            Assert.AreEqual(ChannelState.Ready, channel.State);
-
-            await channel.ConnectAsync(DateTime.UtcNow.AddMilliseconds(1000));
-            Assert.AreEqual(ChannelState.Ready, channel.State);
-        }
     }
 }
