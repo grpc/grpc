@@ -40,8 +40,7 @@ static bool is_building_http_like_transport(
   return t != nullptr && strstr(t->vtable->name, "http");
 }
 
-static bool maybe_add_optional_filter(grpc_exec_ctx* exec_ctx,
-                                      grpc_channel_stack_builder* builder,
+static bool maybe_add_optional_filter(grpc_channel_stack_builder* builder,
                                       void* arg) {
   if (!is_building_http_like_transport(builder)) return true;
   optional_filter* filtarg = (optional_filter*)arg;
@@ -55,8 +54,7 @@ static bool maybe_add_optional_filter(grpc_exec_ctx* exec_ctx,
                 : true;
 }
 
-static bool maybe_add_required_filter(grpc_exec_ctx* exec_ctx,
-                                      grpc_channel_stack_builder* builder,
+static bool maybe_add_required_filter(grpc_channel_stack_builder* builder,
                                       void* arg) {
   return is_building_http_like_transport(builder)
              ? grpc_channel_stack_builder_prepend_filter(

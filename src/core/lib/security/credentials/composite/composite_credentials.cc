@@ -39,17 +39,15 @@ typedef struct {
   grpc_closure internal_on_request_metadata;
 } grpc_composite_call_credentials_metadata_context;
 
-static void composite_call_destruct(grpc_exec_ctx* exec_ctx,
-                                    grpc_call_credentials* creds) {
+static void composite_call_destruct(grpc_call_credentials* creds) {
   grpc_composite_call_credentials* c = (grpc_composite_call_credentials*)creds;
   for (size_t i = 0; i < c->inner.num_creds; i++) {
-    grpc_call_credentials_unref(exec_ctx, c->inner.creds_array[i]);
+    grpc_call_credentials_unref(c->inner.creds_array[i]);
   }
   gpr_free(c->inner.creds_array);
 }
 
-static void composite_call_metadata_cb(grpc_exec_ctx* exec_ctx, void* arg,
-                                       grpc_error* error) {
+static void composite_call_metadata_cb(void* arg, grpc_error* error) {
   grpc_composite_call_credentials_metadata_context* ctx =
       (grpc_composite_call_credentials_metadata_context*)arg;
   if (error == GRPC_ERROR_NONE) {
@@ -58,23 +56,23 @@ static void composite_call_metadata_cb(grpc_exec_ctx* exec_ctx, void* arg,
       grpc_call_credentials* inner_creds =
           ctx->composite_creds->inner.creds_array[ctx->creds_index++];
       if (grpc_call_credentials_get_request_metadata(
-              exec_ctx, inner_creds, ctx->pollent, ctx->auth_md_context,
-              ctx->md_array, &ctx->internal_on_request_metadata, &error)) {
+              inner_creds, ctx->pollent, ctx->auth_md_context, ctx->md_array,
+              &ctx->internal_on_request_metadata, &error)) {
         // Synchronous response, so call ourselves recursively.
-        composite_call_metadata_cb(exec_ctx, arg, error);
+        composite_call_metadata_cb(arg, error);
         GRPC_ERROR_UNREF(error);
       }
       return;
     }
     // We're done!
   }
-  GRPC_CLOSURE_SCHED(exec_ctx, ctx->on_request_metadata, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_SCHED(ctx->on_request_metadata, GRPC_ERROR_REF(error));
   gpr_free(ctx);
 }
 
 static bool composite_call_get_request_metadata(
-    grpc_exec_ctx* exec_ctx, grpc_call_credentials* creds,
-    grpc_polling_entity* pollent, grpc_auth_metadata_context auth_md_context,
+    grpc_call_credentials* creds, grpc_polling_entity* pollent,
+    grpc_auth_metadata_context auth_md_context,
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
     grpc_error** error) {
   grpc_composite_call_credentials* c = (grpc_composite_call_credentials*)creds;
@@ -93,8 +91,8 @@ static bool composite_call_get_request_metadata(
     grpc_call_credentials* inner_creds =
         ctx->composite_creds->inner.creds_array[ctx->creds_index++];
     if (grpc_call_credentials_get_request_metadata(
-            exec_ctx, inner_creds, ctx->pollent, ctx->auth_md_context,
-            ctx->md_array, &ctx->internal_on_request_metadata, error)) {
+            inner_creds, ctx->pollent, ctx->auth_md_context, ctx->md_array,
+            &ctx->internal_on_request_metadata, error)) {
       if (*error != GRPC_ERROR_NONE) break;
     } else {
       synchronous = false;  // Async return.
@@ -106,12 +104,12 @@ static bool composite_call_get_request_metadata(
 }
 
 static void composite_call_cancel_get_request_metadata(
-    grpc_exec_ctx* exec_ctx, grpc_call_credentials* creds,
-    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
+    grpc_call_credentials* creds, grpc_credentials_mdelem_array* md_array,
+    grpc_error* error) {
   grpc_composite_call_credentials* c = (grpc_composite_call_credentials*)creds;
   for (size_t i = 0; i < c->inner.num_creds; ++i) {
     grpc_call_credentials_cancel_get_request_metadata(
-        exec_ctx, c->inner.creds_array[i], md_array, GRPC_ERROR_REF(error));
+        c->inner.creds_array[i], md_array, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -200,19 +198,17 @@ grpc_call_credentials* grpc_credentials_contains_type(
 
 /* -- Composite channel credentials. -- */
 
-static void composite_channel_destruct(grpc_exec_ctx* exec_ctx,
-                                       grpc_channel_credentials* creds) {
+static void composite_channel_destruct(grpc_channel_credentials* creds) {
   grpc_composite_channel_credentials* c =
       (grpc_composite_channel_credentials*)creds;
-  grpc_channel_credentials_unref(exec_ctx, c->inner_creds);
-  grpc_call_credentials_unref(exec_ctx, c->call_creds);
+  grpc_channel_credentials_unref(c->inner_creds);
+  grpc_call_credentials_unref(c->call_creds);
 }
 
 static grpc_security_status composite_channel_create_security_connector(
-    grpc_exec_ctx* exec_ctx, grpc_channel_credentials* creds,
-    grpc_call_credentials* call_creds, const char* target,
-    const grpc_channel_args* args, grpc_channel_security_connector** sc,
-    grpc_channel_args** new_args) {
+    grpc_channel_credentials* creds, grpc_call_credentials* call_creds,
+    const char* target, const grpc_channel_args* args,
+    grpc_channel_security_connector** sc, grpc_channel_args** new_args) {
   grpc_composite_channel_credentials* c =
       (grpc_composite_channel_credentials*)creds;
   grpc_security_status status = GRPC_SECURITY_ERROR;
@@ -227,12 +223,11 @@ static grpc_security_status composite_channel_create_security_connector(
         grpc_composite_call_credentials_create(c->call_creds, call_creds,
                                                nullptr);
     status = c->inner_creds->vtable->create_security_connector(
-        exec_ctx, c->inner_creds, composite_call_creds, target, args, sc,
-        new_args);
-    grpc_call_credentials_unref(exec_ctx, composite_call_creds);
+        c->inner_creds, composite_call_creds, target, args, sc, new_args);
+    grpc_call_credentials_unref(composite_call_creds);
   } else {
     status = c->inner_creds->vtable->create_security_connector(
-        exec_ctx, c->inner_creds, c->call_creds, target, args, sc, new_args);
+        c->inner_creds, c->call_creds, target, args, sc, new_args);
   }
   return status;
 }

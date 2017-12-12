@@ -38,8 +38,7 @@ typedef struct {
 /* Asynchronously resolve addr. Use default_port if a port isn't designated
    in addr, otherwise use the port in addr. */
 /* TODO(ctiller): add a timeout here */
-extern void (*grpc_resolve_address)(grpc_exec_ctx* exec_ctx, const char* addr,
-                                    const char* default_port,
+extern void (*grpc_resolve_address)(const char* addr, const char* default_port,
                                     grpc_pollset_set* interested_parties,
                                     grpc_closure* on_done,
                                     grpc_resolved_addresses** addresses);

@@ -23,8 +23,7 @@
 
 extern const grpc_channel_filter grpc_connected_filter;
 
-bool grpc_add_connected_filter(grpc_exec_ctx* exec_ctx,
-                               grpc_channel_stack_builder* builder,
+bool grpc_add_connected_filter(grpc_channel_stack_builder* builder,
                                void* arg_must_be_null);
 
 /* Debug helper to dig the transport stream out of a call element */

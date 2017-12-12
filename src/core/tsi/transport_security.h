@@ -90,7 +90,7 @@ struct tsi_handshaker {
 typedef struct {
   tsi_result (*extract_peer)(const tsi_handshaker_result* self, tsi_peer* peer);
   tsi_result (*create_zero_copy_grpc_protector)(
-      void* exec_ctx, const tsi_handshaker_result* self,
+      const tsi_handshaker_result* self,
       size_t* max_output_protected_frame_size,
       tsi_zero_copy_grpc_protector** protector);
   tsi_result (*create_frame_protector)(const tsi_handshaker_result* self,

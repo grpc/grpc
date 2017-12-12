@@ -72,7 +72,7 @@ static void* socket_factory_arg_copy(void* p) {
   return grpc_socket_factory_ref((grpc_socket_factory*)p);
 }
 
-static void socket_factory_arg_destroy(grpc_exec_ctx* exec_ctx, void* p) {
+static void socket_factory_arg_destroy(void* p) {
   grpc_socket_factory_unref((grpc_socket_factory*)p);
 }
 
