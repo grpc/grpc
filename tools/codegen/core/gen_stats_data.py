@@ -154,8 +154,8 @@ def gen_bucket_code(histogram):
     if done_trivial:
         first_nontrivial_code = dbl2u64(first_nontrivial)
         code_bounds = [dbl2u64(x) - first_nontrivial_code for x in bounds]
-        shift_data = find_ideal_shift(code_bounds[first_nontrivial:], 256 *
-                                      histogram.buckets)
+        shift_data = find_ideal_shift(code_bounds[first_nontrivial:],
+                                      256 * histogram.buckets)
     #print first_nontrivial, shift_data, bounds
     #if shift_data is not None: print [hex(x >> shift_data[0]) for x in code_bounds[first_nontrivial:]]
     code = 'value = GPR_CLAMP(value, 0, %d);\n' % histogram.max
@@ -352,9 +352,9 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
         len(inst_map['Histogram']), ','.join('grpc_stats_table_%d' % x
                                              for x in histo_bucket_boundaries))
     print >> C, "void (*const grpc_stats_inc_histogram[%d])(int x) = {%s};" % (
-        len(inst_map['Histogram']),
-        ','.join('grpc_stats_inc_%s' % histogram.name.lower()
-                 for histogram in inst_map['Histogram']))
+        len(inst_map['Histogram']), ','.join(
+            'grpc_stats_inc_%s' % histogram.name.lower()
+            for histogram in inst_map['Histogram']))
 
 # patch qps_test bigquery schema
 RECORD_EXPLICIT_PERCENTILES = [50, 95, 99]

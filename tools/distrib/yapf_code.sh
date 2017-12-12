@@ -22,6 +22,7 @@ DIRS=(
     'src/python'
     'tools/buildgen'
     'tools/codegen'
+    'tools/distrib'
 )
 EXCLUSIONS=(
     'grpcio/grpc_*.py'
