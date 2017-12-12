@@ -19,9 +19,11 @@ set -ex
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
+    'examples/python'
     'src/python'
 )
 EXCLUSIONS=(
+    '*_pb2*.py'
 )
 
 VIRTUALENV=yapf_virtual_environment
