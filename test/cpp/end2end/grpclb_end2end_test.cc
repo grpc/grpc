@@ -1082,6 +1082,97 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
+TEST_F(UpdatesTest, Reresolve) {
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
+  SetNextResolution(addresses);
+  const std::vector<int> first_backend{GetBackendPorts()[0]};
+  const std::vector<int> second_backend{GetBackendPorts()[1]};
+
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
+  ScheduleResponseForBalancer(
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
+
+  // Start servers and send 10 RPCs per server.
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  CheckRpcSendOk(10);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  // All 10 requests should have gone to the first backend.
+  EXPECT_EQ(10U, backend_servers_[0].service_->request_count());
+
+  // Kill balancer 0
+  gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
+  balancers_[0]->NotifyDoneWithServerlists();
+  if (balancers_[0]->Shutdown()) balancer_servers_[0].Shutdown();
+  gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
+
+  // This is serviced by the existing serverlist
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  CheckRpcSendOk(10);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  // All 10 requests should again have gone to the first backend.
+  EXPECT_EQ(20U, backend_servers_[0].service_->request_count());
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
+
+  // Kill backend 0
+  gpr_log(GPR_INFO, "********** ABOUT TO KILL BACKEND 0 *************");
+  if (backends_[0]->Shutdown()) backend_servers_[0].Shutdown();
+  gpr_log(GPR_INFO, "********** KILLED BACKEND 0 *************");
+
+  CheckRpcSendFailure();
+
+  balancers_[0]->NotifyDoneWithServerlists();
+  balancers_[1]->NotifyDoneWithServerlists();
+  balancers_[2]->NotifyDoneWithServerlists();
+  // Balancer 0 got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
+
+//  sleep(1);
+
+  addresses.clear();
+  addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
+  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
+  SetNextResolution(addresses);
+  gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
+
+  // Wait until update has been processed, as signaled by the second backend
+  // receiving a request.
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
+  WaitForBackend(1);
+
+  // This is serviced by the new serverlist
+  gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
+  CheckRpcSendOk(10);
+  gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
+  // All 10 requests should have gone to the second backend.
+  EXPECT_EQ(10U, backend_servers_[1].service_->request_count());
+
+  balancers_[0]->NotifyDoneWithServerlists();
+  balancers_[1]->NotifyDoneWithServerlists();
+  balancers_[2]->NotifyDoneWithServerlists();
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  // The second balancer, published as part of the first update, may end up
+  // getting two requests (that is, 1 <= #req <= 2) if the LB call retry timer
+  // firing races with the arrival of the update containing the second
+  // balancer.
+  EXPECT_GE(balancer_servers_[1].service_->request_count(), 1U);
+  EXPECT_GE(balancer_servers_[1].service_->response_count(), 1U);
+  EXPECT_LE(balancer_servers_[1].service_->request_count(), 2U);
+  EXPECT_LE(balancer_servers_[1].service_->response_count(), 2U);
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
 TEST_F(SingleBalancerTest, Drop) {
   SetNextResolutionAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
