@@ -1,0 +1,165 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/bazel', './tools/dockerfile/test/bazel']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/csharp_jessie_x64', './tools/dockerfile/test/csharp_jessie_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_alpine_x64', './tools/dockerfile/test/cxx_alpine_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_jessie_x64', './tools/dockerfile/test/cxx_jessie_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_jessie_x86', './tools/dockerfile/test/cxx_jessie_x86']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_ubuntu1404_x64', './tools/dockerfile/test/cxx_ubuntu1404_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_ubuntu1604_x64', './tools/dockerfile/test/cxx_ubuntu1604_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/fuzzer', './tools/dockerfile/test/fuzzer']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/multilang_jessie_x64', './tools/dockerfile/test/multilang_jessie_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/node_jessie_x64', './tools/dockerfile/test/node_jessie_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/php7_jessie_x64', './tools/dockerfile/test/php7_jessie_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/php_jessie_x64', './tools/dockerfile/test/php_jessie_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/python_alpine_x64', './tools/dockerfile/test/python_alpine_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/python_jessie_x64', './tools/dockerfile/test/python_jessie_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/python_pyenv_x64', './tools/dockerfile/test/python_pyenv_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/ruby_jessie_x64', './tools/dockerfile/test/ruby_jessie_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/test/sanity', './tools/dockerfile/test/sanity']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_linux_armv6', './tools/dockerfile/grpc_artifact_linux_armv6']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_linux_armv7', './tools/dockerfile/grpc_artifact_linux_armv7']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_linux_x64', './tools/dockerfile/grpc_artifact_linux_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_linux_x86', './tools/dockerfile/grpc_artifact_linux_x86']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_protoc', './tools/dockerfile/grpc_artifact_protoc']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_python_manylinux_x64', './tools/dockerfile/grpc_artifact_python_manylinux_x64']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_python_manylinux_x86', './tools/dockerfile/grpc_artifact_python_manylinux_x86']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_android_java', './tools/dockerfile/interoptest/grpc_interop_android_java']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_csharp', './tools/dockerfile/interoptest/grpc_interop_csharp']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_csharpcoreclr', './tools/dockerfile/interoptest/grpc_interop_csharpcoreclr']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_cxx', './tools/dockerfile/interoptest/grpc_interop_cxx']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_go', './tools/dockerfile/interoptest/grpc_interop_go']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_go1.7', './tools/dockerfile/interoptest/grpc_interop_go1.7']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_go1.8', './tools/dockerfile/interoptest/grpc_interop_go1.8']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_http2', './tools/dockerfile/interoptest/grpc_interop_http2']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_java', './tools/dockerfile/interoptest/grpc_interop_java']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_java_oracle8', './tools/dockerfile/interoptest/grpc_interop_java_oracle8']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_node', './tools/dockerfile/interoptest/grpc_interop_node']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_php', './tools/dockerfile/interoptest/grpc_interop_php']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_php7', './tools/dockerfile/interoptest/grpc_interop_php7']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_python', './tools/dockerfile/interoptest/grpc_interop_python']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_ruby', './tools/dockerfile/interoptest/grpc_interop_ruby']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/grpc-testing/third_party/rake-compiler-dock', './third_party/rake-compiler-dock']
+
+images:
+- 'gcr.io/grpc-testing/tools/dockerfile/test/bazel'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/csharp_jessie_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_alpine_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_jessie_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_jessie_x86'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_ubuntu1404_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/cxx_ubuntu1604_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/fuzzer'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/multilang_jessie_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/node_jessie_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/php7_jessie_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/php_jessie_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/python_alpine_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/python_jessie_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/python_pyenv_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/ruby_jessie_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/test/sanity'
+- 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_linux_armv6'
+- 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_linux_armv7'
+- 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_linux_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_linux_x86'
+- 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_protoc'
+- 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_python_manylinux_x64'
+- 'gcr.io/grpc-testing/tools/dockerfile/grpc_artifact_python_manylinux_x86'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_android_java'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_csharp'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_csharpcoreclr'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_cxx'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_go'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_go1.7'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_go1.8'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_http2'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_java'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_java_oracle8'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_node'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_php'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_php7'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_python'
+- 'gcr.io/grpc-testing/tools/dockerfile/interoptest/grpc_interop_ruby'
+- 'gcr.io/grpc-testing/third_party/rake-compiler-dock'
+
+# It can take a long time to upload images if many Dockerfiles are changed
+timeout: 2880m
