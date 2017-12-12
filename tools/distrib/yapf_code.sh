@@ -23,6 +23,7 @@ DIRS=(
     'tools'
 )
 EXCLUSIONS=(
+    '*protoc_lib_deps.py'  # this file is auto-generated
 )
 
 VIRTUALENV=yapf_virtual_environment
