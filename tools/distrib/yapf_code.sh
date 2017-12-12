@@ -22,7 +22,6 @@ DIRS=(
     'src/python'
 )
 EXCLUSIONS=(
-    'grpcio_tests/grpc_*.py'
 )
 
 VIRTUALENV=yapf_virtual_environment
