@@ -883,11 +883,9 @@ static void glb_rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx,
     return;
   }
   GPR_ASSERT(glb_policy->rr_state != GRPC_CHANNEL_SHUTDOWN);
-  if (glb_policy->rr_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-      glb_policy->rr_state == GRPC_CHANNEL_IDLE) {
-    maybe_start_reresolution_timer(exec_ctx, glb_policy);
-  } else if (glb_policy->rr_state == GRPC_CHANNEL_READY &&
-             glb_policy->reresolution_timer_active) {
+  maybe_start_reresolution_timer(exec_ctx, glb_policy);
+  if (glb_policy->rr_state == GRPC_CHANNEL_READY &&
+      glb_policy->reresolution_timer_active) {
     gpr_log(GPR_INFO, "before cancelling re-re timer");
     grpc_timer_cancel(exec_ctx, &glb_policy->reresolution_timer);
     glb_policy->reresolution_timer_active = false;
@@ -1010,12 +1008,10 @@ static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)pol;
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   glb_policy->base.shutting_down = true;
-
   /* We need a copy of the lb_call pointer because we can't cancell the call
    * while holding glb_policy->mu: lb_on_server_status_received, invoked due to
    * the cancel, needs to acquire that same lock */
   grpc_call* lb_call = glb_policy->lb_call;
-
   /* glb_policy->lb_call and this local lb_call must be consistent at this point
    * because glb_policy->lb_call is only assigned in lb_call_init_locked as part
    * of query_for_backends_locked, which can only be invoked while
@@ -1032,14 +1028,12 @@ static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
     grpc_timer_cancel(exec_ctx, &glb_policy->lb_fallback_timer);
     glb_policy->fallback_timer_active = false;
   }
-
   gpr_log(GPR_INFO, "before cheking cancelling re-re timer");
   if (glb_policy->reresolution_timer_active) {
     gpr_log(GPR_INFO, "before cancelling re-re timer");
     grpc_timer_cancel(exec_ctx, &glb_policy->reresolution_timer);
     glb_policy->reresolution_timer_active = false;
   }
-
   pending_pick* pp = glb_policy->pending_picks;
   glb_policy->pending_picks = nullptr;
   pending_ping* pping = glb_policy->pending_pings;
@@ -1058,10 +1052,8 @@ static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   grpc_connectivity_state_set(exec_ctx, &glb_policy->state_tracker,
                               GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
                               "glb_shutdown");
-
   grpc_lb_policy_try_reresolve(exec_ctx, pol, &grpc_lb_glb_trace,
                                GRPC_ERROR_CANCELLED);
-
   while (pp != nullptr) {
     pending_pick* next = pp->next;
     *pp->target = nullptr;
@@ -1070,7 +1062,6 @@ static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
     gpr_free(pp);
     pp = next;
   }
-
   while (pping != nullptr) {
     pending_ping* next = pping->next;
     GRPC_CLOSURE_SCHED(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
@@ -1853,7 +1844,6 @@ static void glb_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
 
 static void on_reresolution_requested_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                              grpc_error* error) {
-
   gpr_log(GPR_INFO, "beginning of re-re cb");
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
   glb_policy->reresolution_timer_active = false;
