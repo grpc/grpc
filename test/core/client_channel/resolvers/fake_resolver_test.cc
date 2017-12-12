@@ -29,10 +29,11 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/support/ref_counted_ptr.h"
 
 #include "test/core/util/test_config.h"
 
-static grpc_core::RefCountedPtr<grpc_core::Resolver> build_fake_resolver(
+static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
     grpc_combiner* combiner,
     grpc_core::FakeResolverResponseGenerator* response_generator) {
   grpc_core::ResolverFactory* factory =
@@ -44,7 +45,7 @@ static grpc_core::RefCountedPtr<grpc_core::Resolver> build_fake_resolver(
   grpc_core::ResolverArgs args;
   args.args = &channel_args;
   args.combiner = combiner;
-  grpc_core::RefCountedPtr<grpc_core::Resolver> resolver =
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(args);
   return resolver;
 }
@@ -56,6 +57,7 @@ typedef struct on_resolution_arg {
 } on_resolution_arg;
 
 void on_resolution_cb(void* arg, grpc_error* error) {
+  if (error != GRPC_ERROR_NONE) return;
   on_resolution_arg* res = static_cast<on_resolution_arg*>(arg);
   // We only check the addresses channel arg because that's the only one
   // explicitly set by the test via
@@ -78,7 +80,7 @@ static void test_fake_resolver() {
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator =
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  grpc_core::RefCountedPtr<grpc_core::Resolver> resolver =
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       build_fake_resolver(combiner, response_generator.get());
   GPR_ASSERT(resolver.get() != nullptr);
 
@@ -146,8 +148,10 @@ static void test_fake_resolver() {
   GPR_ASSERT(gpr_event_wait(&on_res_arg_update.ev,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);
 
-  // Requesting a new resolution without re-senting the response shouldn't
+  // Requesting a new resolution without re-sending the response shouldn't
   // trigger the resolution callback.
+  on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg,
+                                      grpc_combiner_scheduler(combiner));
   memset(&on_res_arg, 0, sizeof(on_res_arg));
   resolver->NextLocked(&on_res_arg.resolver_result, on_resolution);
   grpc_core::ExecCtx::Get()->Flush();

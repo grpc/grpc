@@ -22,7 +22,7 @@
 #include "src/core/ext/filters/client_channel/resolver_factory.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/support/memory.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
+#include "src/core/lib/support/orphanable.h"
 #include "src/core/lib/support/vector.h"
 
 namespace grpc_core {
@@ -46,7 +46,7 @@ class ResolverRegistry {
   /// to target and tries again.
   /// If a resolver factory was found, uses it to instantiate a resolver and
   /// returns it; otherwise, returns nullptr.
-  RefCountedPtr<Resolver> CreateResolver(const char* target,
+  OrphanablePtr<Resolver> CreateResolver(const char* target,
                                          const grpc_channel_args* args,
                                          grpc_pollset_set* pollset_set,
                                          grpc_combiner* combiner);

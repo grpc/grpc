@@ -245,13 +245,13 @@ void NativeDnsResolver::MaybeFinishNextLocked() {
 
 class NativeDnsResolverFactory : public ResolverFactory {
  public:
-  RefCountedPtr<Resolver> CreateResolver(const ResolverArgs& args)
+  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
       const override {
     if (0 != strcmp(args.uri->authority, "")) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
-      return RefCountedPtr<Resolver>(nullptr);
+      return OrphanablePtr<Resolver>(nullptr);
     }
-    return RefCountedPtr<Resolver>(New<NativeDnsResolver>(args));
+    return OrphanablePtr<Resolver>(New<NativeDnsResolver>(args));
   }
 
   const char* scheme() const override { return "dns"; }
@@ -259,24 +259,26 @@ class NativeDnsResolverFactory : public ResolverFactory {
 
 }  // namespace
 
-void NativeDnsResolverInit() {
+}  // namespace grpc_core
+
+void grpc_resolver_dns_native_init() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
-    ResolverRegistry::Global()->RegisterResolverFactory(
-        UniquePtr<ResolverFactory>(New<NativeDnsResolverFactory>()));
+    grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
+        grpc_core::UniquePtr<grpc_core::ResolverFactory>(
+            grpc_core::New<grpc_core::NativeDnsResolverFactory>()));
   } else {
-    ResolverFactory* existing_factory =
-        ResolverRegistry::Global()->LookupResolverFactory("dns");
+    grpc_core::ResolverFactory* existing_factory =
+        grpc_core::ResolverRegistry::Global()->LookupResolverFactory("dns");
     if (existing_factory == nullptr) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");
-      ResolverRegistry::Global()->RegisterResolverFactory(
-          UniquePtr<ResolverFactory>(New<NativeDnsResolverFactory>()));
+      grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
+          grpc_core::UniquePtr<grpc_core::ResolverFactory>(
+              grpc_core::New<grpc_core::NativeDnsResolverFactory>()));
     }
   }
   gpr_free(resolver_env);
 }
 
-void NativeDnsResolverShutdown() {}
-
-}  // namespace grpc_core
+void grpc_resolver_dns_native_shutdown() {}

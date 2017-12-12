@@ -24,7 +24,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/support/abstract.h"
-#include "src/core/lib/support/ref_counted.h"
+#include "src/core/lib/support/orphanable.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
@@ -33,7 +33,7 @@ namespace grpc_core {
 /// Interface for name resolution.
 /// Note: All methods with a "Locked" suffix must be called from the
 /// combiner passed to the constructor.
-class Resolver : public RefCountedWithTracing {
+class Resolver : public InternallyRefCountedWithTracing {
  public:
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;
@@ -51,9 +51,13 @@ class Resolver : public RefCountedWithTracing {
   /// Can be used as a hint that re-resolution is desirable soon.
   virtual void ChannelSawErrorLocked() GRPC_ABSTRACT;
 
-  /// Shuts down the resolver.  If there is a pending call to
-  /// NextLocked(), the callback will be scheduled with an error.
-  virtual void ShutdownLocked() GRPC_ABSTRACT;
+  void Orphan() override {
+    // Invoke ShutdownLocked() inside of the combiner.
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_CREATE(&Resolver::ShutdownLocked, this,
+                            grpc_combiner_scheduler(combiner_)),
+        GRPC_ERROR_NONE);
+  }
 
   grpc_combiner* combiner() const { return combiner_; }
 
@@ -61,11 +65,24 @@ class Resolver : public RefCountedWithTracing {
 
  protected:
   /// Does NOT take ownership of the reference to \a combiner.
+  // TODO(roth): Once we have a C++-like interface for combiners, this
+  // API should change to take a smart pointer that does pass ownership
+  // of a reference.
   explicit Resolver(grpc_combiner* combiner);
 
   virtual ~Resolver();
 
+  /// Shuts down the resolver.  If there is a pending call to
+  /// NextLocked(), the callback will be scheduled with an error.
+  virtual void ShutdownLocked() GRPC_ABSTRACT;
+
  private:
+  static void ShutdownLocked(void* arg, grpc_error* ignored) {
+    Resolver* resolver = static_cast<Resolver*>(arg);
+    resolver->ShutdownLocked();
+    resolver->Unref();
+  }
+
   grpc_combiner* combiner_;
 };
 

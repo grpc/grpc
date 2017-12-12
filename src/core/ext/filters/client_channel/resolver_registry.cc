@@ -91,7 +91,7 @@ ResolverFactory* ResolverRegistry::FindFactory(const char* target,
   return factory;
 }
 
-RefCountedPtr<Resolver> ResolverRegistry::CreateResolver(
+OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     const char* target, const grpc_channel_args* args,
     grpc_pollset_set* pollset_set, grpc_combiner* combiner) {
   grpc_uri* uri = nullptr;
@@ -102,7 +102,7 @@ RefCountedPtr<Resolver> ResolverRegistry::CreateResolver(
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
   resolver_args.combiner = combiner;
-  RefCountedPtr<Resolver> resolver = factory->CreateResolver(resolver_args);
+  OrphanablePtr<Resolver> resolver = factory->CreateResolver(resolver_args);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return resolver;

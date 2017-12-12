@@ -79,7 +79,7 @@ static grpc_ares_request* my_dns_lookup_ares(
   return nullptr;
 }
 
-static grpc_core::RefCountedPtr<grpc_core::Resolver> create_resolver(
+static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
     const char* name) {
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::Global()->LookupResolverFactory("dns");
@@ -88,7 +88,7 @@ static grpc_core::RefCountedPtr<grpc_core::Resolver> create_resolver(
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  grpc_core::RefCountedPtr<grpc_core::Resolver> resolver =
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(args);
   grpc_uri_destroy(uri);
   return resolver;
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::RefCountedPtr<grpc_core::Resolver> resolver =
+    grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
         create_resolver("dns:test");
     gpr_event ev1;
     gpr_event_init(&ev1);

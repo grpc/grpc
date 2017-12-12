@@ -26,7 +26,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/support/abstract.h"
 #include "src/core/lib/support/memory.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
+#include "src/core/lib/support/orphanable.h"
 
 namespace grpc_core {
 
@@ -44,7 +44,7 @@ struct ResolverArgs {
 class ResolverFactory {
  public:
   /// Returns a new resolver instance.
-  virtual RefCountedPtr<Resolver> CreateResolver(const ResolverArgs& args)
+  virtual OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
       const GRPC_ABSTRACT;
 
   /// Returns a string representing the default authority to use for this

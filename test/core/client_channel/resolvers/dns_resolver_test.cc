@@ -37,9 +37,9 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  grpc_core::RefCountedPtr<grpc_core::Resolver> resolver =
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(args);
-  GPR_ASSERT(resolver.get() != nullptr);
+  GPR_ASSERT(resolver != nullptr);
   grpc_uri_destroy(uri);
 }
 
@@ -53,9 +53,9 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  grpc_core::RefCountedPtr<grpc_core::Resolver> resolver =
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(args);
-  GPR_ASSERT(resolver.get() == nullptr);
+  GPR_ASSERT(resolver == nullptr);
   grpc_uri_destroy(uri);
 }
 

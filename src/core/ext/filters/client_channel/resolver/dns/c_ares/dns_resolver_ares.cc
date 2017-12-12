@@ -89,28 +89,28 @@ class AresDnsResolver : public Resolver {
   grpc_closure dns_ares_on_retry_timer_locked_;
   grpc_closure dns_ares_on_resolved_locked_;
   /// are we currently resolving?
-  bool resolving_;
+  bool resolving_ = false;
   /// the pending resolving request
-  grpc_ares_request* pending_request_;
+  grpc_ares_request* pending_request_ = nullptr;
   /// which version of the result have we published?
-  int published_version_;
+  int published_version_ = 0;
   /// which version of the result is current?
-  int resolved_version_;
+  int resolved_version_ = 0;
   /// pending next completion, or NULL
-  grpc_closure* next_completion_;
+  grpc_closure* next_completion_ = nullptr;
   /// target result address for next completion
-  grpc_channel_args** target_result_;
+  grpc_channel_args** target_result_ = nullptr;
   /// current (fully resolved) result
-  grpc_channel_args* resolved_result_;
+  grpc_channel_args* resolved_result_ = nullptr;
   /// retry timer
-  bool have_retry_timer_;
+  bool have_retry_timer_ = false;
   grpc_timer retry_timer_;
   /// retry backoff state
   grpc_backoff backoff_state_;
   /// currently resolving addresses
-  grpc_lb_addresses* lb_addresses_;
+  grpc_lb_addresses* lb_addresses_ = nullptr;
   /// currently resolving service config
-  char* service_config_json_;
+  char* service_config_json_ = nullptr;
 };
 
 AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
@@ -379,9 +379,9 @@ void AresDnsResolver::MaybeFinishNextLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  RefCountedPtr<Resolver> CreateResolver(const ResolverArgs& args)
+  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
       const override {
-    return RefCountedPtr<Resolver>(New<AresDnsResolver>(args));
+    return OrphanablePtr<Resolver>(New<AresDnsResolver>(args));
   }
 
   const char* scheme() const override { return "dns"; }
@@ -389,7 +389,9 @@ class AresDnsResolverFactory : public ResolverFactory {
 
 }  // namespace
 
-void AresDnsResolverInit() {
+}  // namespace grpc_core
+
+void grpc_resolver_dns_ares_init() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   /* TODO(zyc): Turn on c-ares based resolver by default after the address
      sorter and the CNAME support are added. */
@@ -400,13 +402,14 @@ void AresDnsResolverInit() {
       return;
     }
     grpc_resolve_address = grpc_resolve_address_ares;
-    ResolverRegistry::Global()->RegisterResolverFactory(
-        UniquePtr<ResolverFactory>(New<AresDnsResolverFactory>()));
+    grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
+        grpc_core::UniquePtr<grpc_core::ResolverFactory>(
+            grpc_core::New<grpc_core::AresDnsResolverFactory>()));
   }
   gpr_free(resolver_env);
 }
 
-void AresDnsResolverShutdown() {
+void grpc_resolver_dns_ares_shutdown() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
     grpc_ares_cleanup();
@@ -421,5 +424,3 @@ void grpc_resolver_dns_ares_init(void) {}
 void grpc_resolver_dns_ares_shutdown(void) {}
 
 #endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */
-
-}  // namespace grpc_core

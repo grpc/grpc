@@ -120,13 +120,13 @@ void SockaddrResolver::MaybeFinishNextLocked() {
 
 void DoNothing(void* ignored) {}
 
-RefCountedPtr<Resolver> CreateSockaddrResolver(
+OrphanablePtr<Resolver> CreateSockaddrResolver(
     const ResolverArgs& args,
     bool parse(const grpc_uri* uri, grpc_resolved_address* dst)) {
   if (0 != strcmp(args.uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
             args.uri->scheme);
-    return RefCountedPtr<Resolver>(nullptr);
+    return OrphanablePtr<Resolver>(nullptr);
   }
   // Construct addresses.
   grpc_slice path_slice =
@@ -151,15 +151,15 @@ RefCountedPtr<Resolver> CreateSockaddrResolver(
   grpc_slice_unref_internal(path_slice);
   if (errors_found) {
     grpc_lb_addresses_destroy(addresses);
-    return RefCountedPtr<Resolver>(nullptr);
+    return OrphanablePtr<Resolver>(nullptr);
   }
   // Instantiate resolver.
-  return RefCountedPtr<Resolver>(New<SockaddrResolver>(args, addresses));
+  return OrphanablePtr<Resolver>(New<SockaddrResolver>(args, addresses));
 }
 
 class IPv4ResolverFactory : public ResolverFactory {
  public:
-  RefCountedPtr<Resolver> CreateResolver(const ResolverArgs& args)
+  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
       const override {
     return CreateSockaddrResolver(args, grpc_parse_ipv4);
   }
@@ -169,7 +169,7 @@ class IPv4ResolverFactory : public ResolverFactory {
 
 class IPv6ResolverFactory : public ResolverFactory {
  public:
-  RefCountedPtr<Resolver> CreateResolver(const ResolverArgs& args)
+  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
       const override {
     return CreateSockaddrResolver(args, grpc_parse_ipv6);
   }
@@ -180,7 +180,7 @@ class IPv6ResolverFactory : public ResolverFactory {
 #ifdef GRPC_HAVE_UNIX_SOCKET
 class UnixResolverFactory : public ResolverFactory {
  public:
-  RefCountedPtr<Resolver> CreateResolver(const ResolverArgs& args)
+  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
       const override {
     return CreateSockaddrResolver(args, grpc_parse_unix);
   }
@@ -195,18 +195,21 @@ class UnixResolverFactory : public ResolverFactory {
 
 }  // namespace
 
-void SockaddrResolverInit() {
-  ResolverRegistry* registry = ResolverRegistry::Global();
+}  // namespace grpc_core
+
+void grpc_resolver_sockaddr_init() {
+  grpc_core::ResolverRegistry* registry = grpc_core::ResolverRegistry::Global();
   registry->RegisterResolverFactory(
-      UniquePtr<ResolverFactory>(New<IPv4ResolverFactory>()));
+      grpc_core::UniquePtr<grpc_core::ResolverFactory>(
+          grpc_core::New<grpc_core::IPv4ResolverFactory>()));
   registry->RegisterResolverFactory(
-      UniquePtr<ResolverFactory>(New<IPv6ResolverFactory>()));
+      grpc_core::UniquePtr<grpc_core::ResolverFactory>(
+          grpc_core::New<grpc_core::IPv6ResolverFactory>()));
 #ifdef GRPC_HAVE_UNIX_SOCKET
   registry->RegisterResolverFactory(
-      UniquePtr<ResolverFactory>(New<UnixResolverFactory>()));
+      grpc_core::UniquePtr<grpc_core::ResolverFactory>(
+          grpc_core::New<grpc_core::UnixResolverFactory>()));
 #endif
 }
 
-void SockaddrResolverShutdown() {}
-
-}  // namespace grpc_core
+void grpc_resolver_sockaddr_shutdown() {}

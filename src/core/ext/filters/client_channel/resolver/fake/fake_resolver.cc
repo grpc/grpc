@@ -55,8 +55,6 @@ class FakeResolver : public Resolver {
 
   void ChannelSawErrorLocked() override;
 
-  void ShutdownLocked() override;
-
  private:
   friend class FakeResolverResponseGenerator;
 
@@ -64,18 +62,20 @@ class FakeResolver : public Resolver {
 
   void MaybeFinishNextLocked();
 
+  void ShutdownLocked() override;
+
   // passed-in parameters
-  grpc_channel_args* channel_args_;
+  grpc_channel_args* channel_args_ = nullptr;
   // If not NULL, the next set of resolution results to be returned to
   // NextLocked()'s closure.
-  grpc_channel_args* next_results_;
+  grpc_channel_args* next_results_ = nullptr;
   // Results to use for the pretended re-resolution in
   // ChannelSawErrorLocked().
-  grpc_channel_args* results_upon_error_;
+  grpc_channel_args* results_upon_error_ = nullptr;
   // pending next completion, or NULL
-  grpc_closure* next_completion_;
+  grpc_closure* next_completion_ = nullptr;
   // target result address for next completion
-  grpc_channel_args** target_result_;
+  grpc_channel_args** target_result_ = nullptr;
 };
 
 FakeResolver::FakeResolver(const ResolverArgs& args)
@@ -94,7 +94,7 @@ FakeResolver::~FakeResolver() {
 
 void FakeResolver::NextLocked(grpc_channel_args** target_result,
                               grpc_closure* on_complete) {
-  GPR_ASSERT(!next_completion_);
+  GPR_ASSERT(next_completion_ == nullptr);
   next_completion_ = on_complete;
   target_result_ = target_result;
   MaybeFinishNextLocked();
@@ -108,16 +108,6 @@ void FakeResolver::ChannelSawErrorLocked() {
   MaybeFinishNextLocked();
 }
 
-void FakeResolver::ShutdownLocked() {
-  if (next_completion_ != nullptr) {
-    *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(
-        next_completion_,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
-    next_completion_ = nullptr;
-  }
-}
-
 void FakeResolver::MaybeFinishNextLocked() {
   if (next_completion_ != nullptr && next_results_ != nullptr) {
     *target_result_ =
@@ -125,6 +115,16 @@ void FakeResolver::MaybeFinishNextLocked() {
     grpc_channel_args_destroy(next_results_);
     next_results_ = nullptr;
     GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_NONE);
+    next_completion_ = nullptr;
+  }
+}
+
+void FakeResolver::ShutdownLocked() {
+  if (next_completion_ != nullptr) {
+    *target_result_ = nullptr;
+    GRPC_CLOSURE_SCHED(
+        next_completion_,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     next_completion_ = nullptr;
   }
 }
@@ -142,18 +142,18 @@ struct SetResponseClosureArg {
 void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
                                                       grpc_error* error) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  FakeResolverResponseGenerator* generator = closure_arg->generator;
-  if (generator->resolver_->next_results_ != nullptr) {
-    grpc_channel_args_destroy(generator->resolver_->next_results_);
+  FakeResolver* resolver = closure_arg->generator->resolver_;
+  if (resolver->next_results_ != nullptr) {
+    grpc_channel_args_destroy(resolver->next_results_);
   }
-  generator->resolver_->next_results_ = closure_arg->next_response;
-  if (generator->resolver_->results_upon_error_ != nullptr) {
-    grpc_channel_args_destroy(generator->resolver_->results_upon_error_);
+  resolver->next_results_ = closure_arg->next_response;
+  if (resolver->results_upon_error_ != nullptr) {
+    grpc_channel_args_destroy(resolver->results_upon_error_);
   }
-  generator->resolver_->results_upon_error_ =
+  resolver->results_upon_error_ =
       grpc_channel_args_copy(closure_arg->next_response);
   gpr_free(closure_arg);
-  generator->resolver_->MaybeFinishNextLocked();
+  resolver->MaybeFinishNextLocked();
 }
 
 void FakeResolverResponseGenerator::SetResponse(
@@ -219,9 +219,9 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
-  RefCountedPtr<Resolver> CreateResolver(const ResolverArgs& args)
+  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
       const override {
-    return RefCountedPtr<Resolver>(New<FakeResolver>(args));
+    return OrphanablePtr<Resolver>(New<FakeResolver>(args));
   }
 
   const char* scheme() const override { return "fake"; }
@@ -229,12 +229,12 @@ class FakeResolverFactory : public ResolverFactory {
 
 }  // namespace
 
-void FakeResolverInit() {
+}  // namespace grpc_core
+
+void grpc_resolver_fake_init() {
   grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
       grpc_core::UniquePtr<grpc_core::ResolverFactory>(
           grpc_core::New<grpc_core::FakeResolverFactory>()));
 }
 
-void FakeResolverShutdown() {}
-
-}  // namespace grpc_core
+void grpc_resolver_fake_shutdown() {}

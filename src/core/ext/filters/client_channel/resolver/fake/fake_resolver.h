@@ -29,9 +29,14 @@ namespace grpc_core {
 
 class FakeResolver;
 
-// Instances of \a grpc_fake_resolver_response_generator are passed to the
-// fake resolver in a channel argument (see \a MakeChannelArg) in order to
-// inject and trigger custom resolutions.
+/// A mechanism for generating responses for the fake resolver.
+/// An instance of this class is passed to the fake resolver via a channel
+/// argument (see \a MakeChannelArg()) and used to inject and trigger custom
+/// resolutions.
+// TODO(roth): I would ideally like this to be InternallyRefCounted
+// instead of RefCounted, but external refs are currently needed to
+// encode this in channel args.  Once channel_args are converted to C++,
+// see if we can find a way to fix this.
 class FakeResolverResponseGenerator : public RefCounted {
  public:
   FakeResolverResponseGenerator() {}
