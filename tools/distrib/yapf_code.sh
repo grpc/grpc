@@ -21,6 +21,7 @@ cd "$(dirname "${0}")/../.."
 DIRS=(
     'src/python'
     'tools/buildgen'
+    'tools/codegen'
 )
 EXCLUSIONS=(
     'grpcio/grpc_*.py'
