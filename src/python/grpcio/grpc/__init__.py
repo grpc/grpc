@@ -342,6 +342,170 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
         raise NotImplementedError()
 
 
+##############  Invocation-Side Interceptor Interfaces & Classes  ##############
+
+
+class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
+    """Describes an RPC to be invoked.
+
+    This is an EXPERIMENTAL API.
+
+    Attributes:
+      method: The method name of the RPC.
+      timeout: An optional duration of time in seconds to allow for the RPC.
+      metadata: Optional :term:`metadata` to be transmitted to
+        the service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
+    """
+
+
+class UnaryUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting unary-unary invocations.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        """Intercepts a unary-unary invocation asynchronously.
+
+        Args:
+          continuation: A function that proceeds with the invocation by
+            executing the next interceptor in chain or invoking the
+            actual RPC on the underlying Channel. It is the interceptor's
+            responsibility to call it if it decides to move the RPC forward.
+            The interceptor can use
+            `response_future = continuation(client_call_details, request)`
+            to continue with the RPC. `continuation` returns an object that is
+            both a Call for the RPC and a Future. In the event of RPC
+            completion, the return Call-Future's result value will be
+            the response message of the RPC. Should the event terminate
+            with non-OK status, the returned Call-Future's exception value
+            will be an RpcError.
+          client_call_details: A ClientCallDetails object describing the
+            outgoing RPC.
+          request: The request value for the RPC.
+
+        Returns:
+            An object that is both a Call for the RPC and a Future.
+            In the event of RPC completion, the return Call-Future's
+            result value will be the response message of the RPC.
+            Should the event terminate with non-OK status, the returned
+            Call-Future's exception value will be an RpcError.
+        """
+        raise NotImplementedError()
+
+
+class UnaryStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting unary-stream invocations.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_unary_stream(self, continuation, client_call_details,
+                               request):
+        """Intercepts a unary-stream invocation.
+
+        Args:
+          continuation: A function that proceeds with the invocation by
+            executing the next interceptor in chain or invoking the
+            actual RPC on the underlying Channel. It is the interceptor's
+            responsibility to call it if it decides to move the RPC forward.
+            The interceptor can use
+            `response_iterator = continuation(client_call_details, request)`
+            to continue with the RPC. `continuation` returns an object that is
+            both a Call for the RPC and an iterator for response values.
+            Drawing response values from the returned Call-iterator may
+            raise RpcError indicating termination of the RPC with non-OK
+            status.
+          client_call_details: A ClientCallDetails object describing the
+            outgoing RPC.
+          request: The request value for the RPC.
+
+        Returns:
+            An object that is both a Call for the RPC and an iterator of
+            response values. Drawing response values from the returned
+            Call-iterator may raise RpcError indicating termination of
+            the RPC with non-OK status.
+        """
+        raise NotImplementedError()
+
+
+class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting stream-unary invocations.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_stream_unary(self, continuation, client_call_details,
+                               request_iterator):
+        """Intercepts a stream-unary invocation asynchronously.
+
+        Args:
+          continuation: A function that proceeds with the invocation by
+            executing the next interceptor in chain or invoking the
+            actual RPC on the underlying Channel. It is the interceptor's
+            responsibility to call it if it decides to move the RPC forward.
+            The interceptor can use
+            `response_future = continuation(client_call_details,
+                                            request_iterator)`
+            to continue with the RPC. `continuation` returns an object that is
+            both a Call for the RPC and a Future. In the event of RPC completion,
+            the return Call-Future's result value will be the response message
+            of the RPC. Should the event terminate with non-OK status, the
+            returned Call-Future's exception value will be an RpcError.
+          client_call_details: A ClientCallDetails object describing the
+            outgoing RPC.
+          request_iterator: An iterator that yields request values for the RPC.
+
+        Returns:
+            An object that is both a Call for the RPC and a Future.
+            In the event of RPC completion, the return Call-Future's
+            result value will be the response message of the RPC.
+            Should the event terminate with non-OK status, the returned
+            Call-Future's exception value will be an RpcError.
+        """
+        raise NotImplementedError()
+
+
+class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting stream-stream invocations.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_stream_stream(self, continuation, client_call_details,
+                                request_iterator):
+        """Intercepts a stream-stream invocation.
+
+          continuation: A function that proceeds with the invocation by
+            executing the next interceptor in chain or invoking the
+            actual RPC on the underlying Channel. It is the interceptor's
+            responsibility to call it if it decides to move the RPC forward.
+            The interceptor can use
+            `response_iterator = continuation(client_call_details,
+                                              request_iterator)`
+            to continue with the RPC. `continuation` returns an object that is
+            both a Call for the RPC and an iterator for response values.
+            Drawing response values from the returned Call-iterator may
+            raise RpcError indicating termination of the RPC with non-OK
+            status.
+          client_call_details: A ClientCallDetails object describing the
+            outgoing RPC.
+          request_iterator: An iterator that yields request values for the RPC.
+
+        Returns:
+            An object that is both a Call for the RPC and an iterator of
+            response values. Drawing response values from the returned
+            Call-iterator may raise RpcError indicating termination of
+            the RPC with non-OK status.
+        """
+        raise NotImplementedError()
+
+
 ############  Authentication & Authorization Interfaces & Classes  #############
 
 
@@ -962,6 +1126,34 @@ class ServiceRpcHandler(six.with_metaclass(abc.ABCMeta, GenericRpcHandler)):
         raise NotImplementedError()
 
 
+####################  Service-Side Interceptor Interfaces  #####################
+
+
+class ServerInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting incoming RPCs on the service-side.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_service(self, continuation, handler_call_details):
+        """Intercepts incoming RPCs before handing them over to a handler.
+
+        Args:
+          continuation: A function that takes a HandlerCallDetails and
+            proceeds to invoke the next interceptor in the chain, if any,
+            or the RPC handler lookup logic, with the call details passed
+            as an argument, and returns an RpcMethodHandler instance if
+            the RPC is considered serviced, or None otherwise.
+          handler_call_details: A HandlerCallDetails describing the RPC.
+
+        Returns:
+          An RpcMethodHandler with which the RPC may be serviced if the
+          interceptor chooses to service this RPC, or None otherwise.
+        """
+        raise NotImplementedError()
+
+
 #############################  Server Interface  ###############################
 
 
@@ -1376,53 +1568,88 @@ def secure_channel(target, credentials, options=None):
                             credentials._credentials)
 
 
+def intercept_channel(channel, *interceptors):
+    """Intercepts a channel through a set of interceptors.
+
+    This is an EXPERIMENTAL API.
+
+    Args:
+      channel: A Channel.
+      interceptors: Zero or more objects of type
+        UnaryUnaryClientInterceptor,
+        UnaryStreamClientInterceptor,
+        StreamUnaryClientInterceptor, or
+        StreamStreamClientInterceptor.
+        Interceptors are given control in the order they are listed.
+
+    Returns:
+      A Channel that intercepts each invocation via the provided interceptors.
+
+    Raises:
+      TypeError: If interceptor does not derive from any of
+        UnaryUnaryClientInterceptor,
+        UnaryStreamClientInterceptor,
+        StreamUnaryClientInterceptor, or
+        StreamStreamClientInterceptor.
+    """
+    from grpc import _interceptor  # pylint: disable=cyclic-import
+    return _interceptor.intercept_channel(channel, *interceptors)
+
+
 def server(thread_pool,
            handlers=None,
+           interceptors=None,
            options=None,
            maximum_concurrent_rpcs=None):
     """Creates a Server with which RPCs can be serviced.
 
-  Args:
-    thread_pool: A futures.ThreadPoolExecutor to be used by the Server
-      to execute RPC handlers.
-    handlers: An optional list of GenericRpcHandlers used for executing RPCs.
-      More handlers may be added by calling add_generic_rpc_handlers any time
-      before the server is started.
-    options: An optional list of key-value pairs (channel args in gRPC runtime)
-    to configure the channel.
-    maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
-      will service before returning RESOURCE_EXHAUSTED status, or None to
-      indicate no limit.
+    Args:
+      thread_pool: A futures.ThreadPoolExecutor to be used by the Server
+        to execute RPC handlers.
+      handlers: An optional list of GenericRpcHandlers used for executing RPCs.
+        More handlers may be added by calling add_generic_rpc_handlers any time
+        before the server is started.
+      interceptors: An optional list of ServerInterceptor objects that observe
+        and optionally manipulate the incoming RPCs before handing them over to
+        handlers. The interceptors are given control in the order they are
+        specified. This is an EXPERIMENTAL API.
+      options: An optional list of key-value pairs (channel args in gRPC runtime)
+      to configure the channel.
+      maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
+        will service before returning RESOURCE_EXHAUSTED status, or None to
+        indicate no limit.
 
-  Returns:
-    A Server object.
-  """
+    Returns:
+      A Server object.
+    """
     from grpc import _server  # pylint: disable=cyclic-import
     return _server.Server(thread_pool, () if handlers is None else handlers, ()
-                          if options is None else options,
-                          maximum_concurrent_rpcs)
+                          if interceptors is None else interceptors, () if
+                          options is None else options, maximum_concurrent_rpcs)
 
 
 ###################################  __all__  #################################
 
-__all__ = ('FutureTimeoutError', 'FutureCancelledError', 'Future',
-           'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext',
-           'Call', 'ChannelCredentials', 'CallCredentials',
-           'AuthMetadataContext', 'AuthMetadataPluginCallback',
-           'AuthMetadataPlugin', 'ServerCertificateConfiguration',
-           'ServerCredentials', 'UnaryUnaryMultiCallable',
-           'UnaryStreamMultiCallable', 'StreamUnaryMultiCallable',
-           'StreamStreamMultiCallable', 'Channel', 'ServicerContext',
-           'RpcMethodHandler', 'HandlerCallDetails', 'GenericRpcHandler',
-           'ServiceRpcHandler', 'Server', 'unary_unary_rpc_method_handler',
-           'unary_stream_rpc_method_handler', 'stream_unary_rpc_method_handler',
-           'stream_stream_rpc_method_handler',
-           'method_handlers_generic_handler', 'ssl_channel_credentials',
-           'metadata_call_credentials', 'access_token_call_credentials',
-           'composite_call_credentials', 'composite_channel_credentials',
-           'ssl_server_credentials', 'ssl_server_certificate_configuration',
-           'dynamic_ssl_server_credentials', 'channel_ready_future',
-           'insecure_channel', 'secure_channel', 'server',)
+__all__ = (
+    'FutureTimeoutError', 'FutureCancelledError', 'Future',
+    'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext', 'Call',
+    'ChannelCredentials', 'CallCredentials', 'AuthMetadataContext',
+    'AuthMetadataPluginCallback', 'AuthMetadataPlugin', 'ClientCallDetails',
+    'ServerCertificateConfiguration', 'ServerCredentials',
+    'UnaryUnaryMultiCallable', 'UnaryStreamMultiCallable',
+    'StreamUnaryMultiCallable', 'StreamStreamMultiCallable',
+    'UnaryUnaryClientInterceptor', 'UnaryStreamClientInterceptor',
+    'StreamUnaryClientInterceptor', 'StreamStreamClientInterceptor', 'Channel',
+    'ServicerContext', 'RpcMethodHandler', 'HandlerCallDetails',
+    'GenericRpcHandler', 'ServiceRpcHandler', 'Server', 'ServerInterceptor',
+    'unary_unary_rpc_method_handler', 'unary_stream_rpc_method_handler',
+    'stream_unary_rpc_method_handler', 'stream_stream_rpc_method_handler',
+    'method_handlers_generic_handler', 'ssl_channel_credentials',
+    'metadata_call_credentials', 'access_token_call_credentials',
+    'composite_call_credentials', 'composite_channel_credentials',
+    'ssl_server_credentials', 'ssl_server_certificate_configuration',
+    'dynamic_ssl_server_credentials', 'channel_ready_future',
+    'insecure_channel', 'secure_channel', 'intercept_channel', 'server',)
 
 ############################### Extension Shims ################################
 
