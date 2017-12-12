@@ -20,6 +20,7 @@ cd "$(dirname "${0}")/../.."
 
 DIRS=(
     'src/python'
+    'tools/buildgen'
 )
 EXCLUSIONS=(
     'grpcio/grpc_*.py'
