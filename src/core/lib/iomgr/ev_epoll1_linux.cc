@@ -738,7 +738,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
       }
 
       if (gpr_cv_wait(&worker->cv, &pollset->mu,
-                      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)) &&
+                      grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC)) &&
           worker->state == UNKICKED) {
         /* If gpr_cv_wait returns true (i.e a timeout), pretend that the worker
            received a kick */

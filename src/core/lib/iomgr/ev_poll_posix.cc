@@ -1471,7 +1471,7 @@ static void run_poll(void* args) {
       decref_poll_result(result);
       // Leave this polling thread alive for a grace period to do another poll()
       // op
-      gpr_timespec deadline = gpr_now(GPR_CLOCK_REALTIME);
+      gpr_timespec deadline = gpr_now(GPR_CLOCK_MONOTONIC);
       deadline = gpr_time_add(deadline, thread_grace);
       pargs->trigger_set = 0;
       gpr_cv_wait(&pargs->trigger, &g_cvfds.mu, deadline);
@@ -1526,9 +1526,9 @@ static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
     }
   }
 
-  gpr_timespec deadline = gpr_now(GPR_CLOCK_REALTIME);
+  gpr_timespec deadline = gpr_now(GPR_CLOCK_MONOTONIC);
   if (timeout < 0) {
-    deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+    deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   } else {
     deadline =
         gpr_time_add(deadline, gpr_time_from_millis(timeout, GPR_TIMESPAN));
@@ -1631,7 +1631,7 @@ static void global_cv_fd_table_shutdown() {
   // Not doing so will result in reported memory leaks
   if (!gpr_unref(&g_cvfds.pollcount)) {
     int res = gpr_cv_wait(&g_cvfds.shutdown_cv, &g_cvfds.mu,
-                          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                        gpr_time_from_seconds(3, GPR_TIMESPAN)));
     GPR_ASSERT(res == 0);
   }

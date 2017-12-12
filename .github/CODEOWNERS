@@ -4,3 +4,4 @@
 /**/OWNERS @markdroth @nicolasnoble @ctiller
 /bazel/** @nicolasnoble @dgquintas @ctiller
 /src/core/ext/filters/client_channel/** @markdroth @dgquintas @ctiller
+/tools/run_tests/performance/** @ncteisen @matt-kwong @ctiller
