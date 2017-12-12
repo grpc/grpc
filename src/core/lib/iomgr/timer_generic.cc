@@ -164,8 +164,11 @@ static void remove_from_ht(grpc_timer* t) {
             t, c, c->file_created, c->line_created, c->file_initiated,
             c->line_initiated);
     abort();
+  } else {
+    gpr_log(GPR_ERROR,
+            "** Removed timer (%p)",
+            t);
   }
-
   t->hash_table_next = nullptr;
 }
 
@@ -372,8 +375,8 @@ void grpc_timer_init(grpc_exec_ctx* exec_ctx, grpc_timer* timer,
   }
   if (grpc_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG,
-            "  .. add to shard %d with queue_deadline_cap=%" PRIdPTR
-            " => is_first_timer=%s",
+            "  timer (%p) .. add to shard %d with queue_deadline_cap=%" PRIdPTR
+            " => is_first_timer=%s", timer,
             (int)(shard - g_shards), shard->queue_deadline_cap,
             is_first_timer ? "true" : "false");
   }

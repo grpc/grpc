@@ -866,8 +866,11 @@ static void maybe_start_reresolution_timer(grpc_exec_ctx* exec_ctx,
         grpc_exec_ctx_now(exec_ctx) + glb_policy->reresolution_timeout_ms;
     GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "reresolution_timer");
     glb_policy->reresolution_timer_active = true;
+
+    gpr_log(GPR_INFO, "before init re-re timer");
     grpc_timer_init(exec_ctx, &glb_policy->reresolution_timer, deadline,
                     &glb_policy->on_reresolution);
+    gpr_log(GPR_INFO, "after init re-re timer");
   }
 }
 
@@ -885,6 +888,7 @@ static void glb_rr_connectivity_changed_locked(grpc_exec_ctx* exec_ctx,
     maybe_start_reresolution_timer(exec_ctx, glb_policy);
   } else if (glb_policy->rr_state == GRPC_CHANNEL_READY &&
              glb_policy->reresolution_timer_active) {
+    gpr_log(GPR_INFO, "before cancelling re-re timer");
     grpc_timer_cancel(exec_ctx, &glb_policy->reresolution_timer);
     glb_policy->reresolution_timer_active = false;
   }
@@ -1028,7 +1032,10 @@ static void glb_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
     grpc_timer_cancel(exec_ctx, &glb_policy->lb_fallback_timer);
     glb_policy->fallback_timer_active = false;
   }
+
+  gpr_log(GPR_INFO, "before cheking cancelling re-re timer");
   if (glb_policy->reresolution_timer_active) {
+    gpr_log(GPR_INFO, "before cancelling re-re timer");
     grpc_timer_cancel(exec_ctx, &glb_policy->reresolution_timer);
     glb_policy->reresolution_timer_active = false;
   }
@@ -1683,6 +1690,7 @@ static void lb_on_response_received_locked(grpc_exec_ctx* exec_ctx, void* arg,
             rr_handover_locked(exec_ctx, glb_policy);
             glb_policy->lost_lb_connection = false;
             if (glb_policy->reresolution_timer_active) {
+              gpr_log(GPR_INFO, "before cancelling re-re timer");
               grpc_timer_cancel(exec_ctx, &glb_policy->reresolution_timer);
               glb_policy->reresolution_timer_active = false;
             }
@@ -1845,6 +1853,8 @@ static void glb_update_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
 
 static void on_reresolution_requested_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                              grpc_error* error) {
+
+  gpr_log(GPR_INFO, "beginning of re-re cb");
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
   glb_policy->reresolution_timer_active = false;
   /* If we regain contact with balancers or backends after the timer fires but
@@ -1856,6 +1866,7 @@ static void on_reresolution_requested_locked(grpc_exec_ctx* exec_ctx, void* arg,
                                  &grpc_lb_glb_trace, error);
   }
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base, "reresolution_timer");
+  gpr_log(GPR_INFO, "end of re-re cb");
 }
 
 // Invoked as part of the update process. It continues watching the LB channel
