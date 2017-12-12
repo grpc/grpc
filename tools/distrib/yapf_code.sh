@@ -23,6 +23,7 @@ DIRS=(
     'tools/buildgen'
     'tools/codegen'
     'tools/distrib'
+    'tools/interop_matrix'
 )
 EXCLUSIONS=(
     'grpcio/grpc_*.py'
