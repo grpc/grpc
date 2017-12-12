@@ -49,6 +49,8 @@ typedef struct {
   grpc_lb_subchannel_data* selected;
   /** have we started picking? */
   bool started_picking;
+  /** are we shut down? */
+  bool shutdown;
   /** list of picks that are waiting on connectivity */
   pending_pick* pending_picks;
   /** our connectivity state tracker */
@@ -74,7 +76,7 @@ static void pf_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* pol) {
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Pick First %p Shutting down", p);
   }
-  p->base.shutting_down = true;
+  p->shutdown = true;
   pending_pick* pp;
   while ((pp = p->pending_picks) != nullptr) {
     p->pending_picks = pp->next;
@@ -367,17 +369,17 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
     gpr_log(GPR_DEBUG,
             "Pick First %p connectivity changed for subchannel %p (%" PRIuPTR
             " of %" PRIuPTR
-            "), subchannel_list %p: state=%s p->base.shutting_down=%d "
+            "), subchannel_list %p: state=%s p->shutdown=%d "
             "sd->subchannel_list->shutting_down=%d error=%s",
             (void*)p, (void*)sd->subchannel,
             sd->subchannel_list->checking_subchannel,
             sd->subchannel_list->num_subchannels, (void*)sd->subchannel_list,
             grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe),
-            p->base.shutting_down, sd->subchannel_list->shutting_down,
+            p->shutdown, sd->subchannel_list->shutting_down,
             grpc_error_string(error));
   }
   // If the policy is shutting down, unref and return.
-  if (p->base.shutting_down) {
+  if (p->shutdown) {
     grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
     grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd, "pf_shutdown");
     grpc_lb_subchannel_list_unref_for_connectivity_watch(
@@ -571,6 +573,15 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx* exec_ctx, void* arg,
   }
 }
 
+static void pf_set_reresolve_closure_locked(
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
+    grpc_closure* request_reresolution) {
+  pick_first_lb_policy* p = (pick_first_lb_policy*)policy;
+  GPR_ASSERT(!p->shutdown);
+  GPR_ASSERT(policy->request_reresolution == nullptr);
+  policy->request_reresolution = request_reresolution;
+}
+
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_destroy,
     pf_shutdown_locked,
@@ -581,7 +592,8 @@ static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_exit_idle_locked,
     pf_check_connectivity_locked,
     pf_notify_on_state_change_locked,
-    pf_update_locked};
+    pf_update_locked,
+    pf_set_reresolve_closure_locked};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory* factory) {}
 

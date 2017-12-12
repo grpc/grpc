@@ -162,11 +162,11 @@ void grpc_lb_policy_update_locked(grpc_exec_ctx* exec_ctx,
   policy->vtable->update_locked(exec_ctx, policy, lb_policy_args);
 }
 
-void grpc_lb_policy_set_reresolve_closure(grpc_lb_policy* policy,
-                                          grpc_closure* request_reresolution) {
-  GPR_ASSERT(!policy->shutting_down);
-  GPR_ASSERT(policy->request_reresolution == nullptr);
-  policy->request_reresolution = request_reresolution;
+void grpc_lb_policy_set_reresolve_closure_locked(
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
+    grpc_closure* request_reresolution) {
+  policy->vtable->set_reresolve_closure_locked(exec_ctx, policy,
+                                               request_reresolution);
 }
 
 void grpc_lb_policy_try_reresolve(grpc_exec_ctx* exec_ctx,

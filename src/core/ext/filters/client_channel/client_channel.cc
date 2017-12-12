@@ -386,7 +386,8 @@ static void request_reresolution_locked(grpc_exec_ctx* exec_ctx, void* arg,
   }
   grpc_resolver_channel_saw_error_locked(exec_ctx, chand->resolver);
   // Give back the closure to the LB policy.
-  grpc_lb_policy_set_reresolve_closure_locked(chand->lb_policy, &args->closure);
+  grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, chand->lb_policy,
+                                              &args->closure);
 }
 
 static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
@@ -474,7 +475,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx* exec_ctx,
           GRPC_CLOSURE_INIT(&args->closure, request_reresolution_locked, args,
                             grpc_combiner_scheduler(chand->combiner));
           GRPC_CHANNEL_STACK_REF(chand->owning_stack, "re-resolution");
-          grpc_lb_policy_set_reresolve_closure_locked(new_lb_policy,
+          grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, new_lb_policy,
                                                       &args->closure);
         }
       }
