@@ -27,6 +27,7 @@ DIRS=(
     'tools/profiling'
     'tools/run_tests/python_utils'
     'tools/run_tests/sanity'
+    'tools/run_tests/performance'
 )
 EXCLUSIONS=(
     'grpcio/grpc_*.py'
