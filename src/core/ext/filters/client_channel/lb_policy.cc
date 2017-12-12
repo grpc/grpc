@@ -182,8 +182,8 @@ void grpc_lb_policy_try_reresolve(grpc_exec_ctx* exec_ctx,
               grpc_lb_trace->name(), policy, grpc_error_string(error));
     }
   } else {
-    if (grpc_lb_trace->enabled() && error == GRPC_ERROR_NONE) {
-      gpr_log(GPR_DEBUG, "%s %p: re-resolution already in progress.",
+    if (grpc_lb_trace->enabled()) {
+      gpr_log(GPR_DEBUG, "%s %p: no available re-resolution closure.",
               grpc_lb_trace->name(), policy);
     }
   }
