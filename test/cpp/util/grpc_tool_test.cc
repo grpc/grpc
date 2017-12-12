@@ -86,6 +86,7 @@ DECLARE_bool(binary_output);
 DECLARE_bool(l);
 DECLARE_bool(batch);
 DECLARE_string(metadata);
+DECLARE_string(protofiles);
 
 namespace {
 
@@ -697,6 +698,16 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
                 strstr(output_stream.str().c_str(), "message: \"Hello\""));
   }
 
+  FLAGS_metadata = "";
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'"
+  const char* argv[] = {"grpc_cli", "call", "localhost:10000", "Echo",
+                        "message: 'Hello'"};
+  FLAGS_protofiles = "src/proto/grpc/testing/echo.proto";
+
   {
     std::stringstream output_stream;
     FLAGS_metadata = "key0:val0:key1";
@@ -720,7 +731,7 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
   }
 
   FLAGS_metadata = "";
-  ShutdownServer();
+  FLAGS_protofiles = "";
 }
 
 }  // namespace testing
