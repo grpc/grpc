@@ -52,9 +52,9 @@ void grpc_credentials_mdelem_array_append(grpc_credentials_mdelem_array* dst,
 }
 
 void grpc_credentials_mdelem_array_destroy(
-    grpc_exec_ctx* exec_ctx, grpc_credentials_mdelem_array* list) {
+    grpc_credentials_mdelem_array* list) {
   for (size_t i = 0; i < list->size; ++i) {
-    GRPC_MDELEM_UNREF(exec_ctx, list->md[i]);
+    GRPC_MDELEM_UNREF(list->md[i]);
   }
   gpr_free(list->md);
 }

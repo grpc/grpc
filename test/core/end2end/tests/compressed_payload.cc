@@ -129,10 +129,9 @@ static void request_for_disabled_algorithm(
   server_args =
       grpc_channel_args_set_compression_algorithm(nullptr, GRPC_COMPRESS_NONE);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     server_args = grpc_channel_args_compression_algorithm_set_state(
-        &exec_ctx, &server_args, algorithm_to_disable, false);
-    grpc_exec_ctx_finish(&exec_ctx);
+        &server_args, algorithm_to_disable, false);
   }
 
   f = begin_test(config, test_name, client_args, server_args);
@@ -257,10 +256,9 @@ static void request_for_disabled_algorithm(
   grpc_byte_buffer_destroy(request_payload_recv);
 
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(client_args);
+    grpc_channel_args_destroy(server_args);
   }
 
   end_test(&f);
@@ -539,10 +537,9 @@ static void request_with_payload_template(
   cq_verifier_destroy(cqv);
 
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(client_args);
+    grpc_channel_args_destroy(server_args);
   }
 
   end_test(&f);

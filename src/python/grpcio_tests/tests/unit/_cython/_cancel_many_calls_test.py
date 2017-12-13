@@ -22,7 +22,7 @@ from tests.unit.framework.common import test_constants
 
 _INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
 _EMPTY_FLAGS = 0
-_EMPTY_METADATA = cygrpc.Metadata(())
+_EMPTY_METADATA = ()
 
 _SERVER_SHUTDOWN_TAG = 'server_shutdown'
 _REQUEST_CALL_TAG = 'request_call'
@@ -65,12 +65,10 @@ class _Handler(object):
 
         with self._lock:
             self._call.start_server_batch(
-                cygrpc.Operations(
-                    (cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),)),
+                (cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),),
                 _RECEIVE_CLOSE_ON_SERVER_TAG)
             self._call.start_server_batch(
-                cygrpc.Operations(
-                    (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
+                (cygrpc.operation_receive_message(_EMPTY_FLAGS),),
                 _RECEIVE_MESSAGE_TAG)
         first_event = self._completion_queue.poll()
         if _is_cancellation_event(first_event):
@@ -84,8 +82,8 @@ class _Handler(object):
                     cygrpc.operation_send_status_from_server(
                         _EMPTY_METADATA, cygrpc.StatusCode.ok, b'test details!',
                         _EMPTY_FLAGS),)
-                self._call.start_server_batch(
-                    cygrpc.Operations(operations), _SERVER_COMPLETE_CALL_TAG)
+                self._call.start_server_batch(operations,
+                                              _SERVER_COMPLETE_CALL_TAG)
             self._completion_queue.poll()
             self._completion_queue.poll()
 
@@ -179,8 +177,7 @@ class CancelManyCallsTest(unittest.TestCase):
                     cygrpc.operation_receive_message(_EMPTY_FLAGS),
                     cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
                 tag = 'client_complete_call_{0:04d}_tag'.format(index)
-                client_call.start_client_batch(
-                    cygrpc.Operations(operations), tag)
+                client_call.start_client_batch(operations, tag)
                 client_due.add(tag)
                 client_calls.append(client_call)
 

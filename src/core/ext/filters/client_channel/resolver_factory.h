@@ -43,8 +43,7 @@ struct grpc_resolver_factory_vtable {
   void (*unref)(grpc_resolver_factory* factory);
 
   /** Implementation of grpc_resolver_factory_create_resolver */
-  grpc_resolver* (*create_resolver)(grpc_exec_ctx* exec_ctx,
-                                    grpc_resolver_factory* factory,
+  grpc_resolver* (*create_resolver)(grpc_resolver_factory* factory,
                                     grpc_resolver_args* args);
 
   /** Implementation of grpc_resolver_factory_get_default_authority */
@@ -59,8 +58,7 @@ void grpc_resolver_factory_unref(grpc_resolver_factory* resolver);
 
 /** Create a resolver instance for a name */
 grpc_resolver* grpc_resolver_factory_create_resolver(
-    grpc_exec_ctx* exec_ctx, grpc_resolver_factory* factory,
-    grpc_resolver_args* args);
+    grpc_resolver_factory* factory, grpc_resolver_args* args);
 
 /** Return a (freshly allocated with gpr_malloc) string representing
     the default authority to use for this scheme. */

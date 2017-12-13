@@ -108,8 +108,7 @@ grpc_error* grpc_chttp2_settings_parser_begin_frame(
   }
 }
 
-grpc_error* grpc_chttp2_settings_parser_parse(grpc_exec_ctx* exec_ctx, void* p,
-                                              grpc_chttp2_transport* t,
+grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
                                               grpc_chttp2_stream* s,
                                               grpc_slice slice, int is_last) {
   grpc_chttp2_settings_parser* parser = (grpc_chttp2_settings_parser*)p;
@@ -132,7 +131,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(grpc_exec_ctx* exec_ctx, void* p,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
             if (t->notify_on_receive_settings != nullptr) {
-              GRPC_CLOSURE_SCHED(exec_ctx, t->notify_on_receive_settings,
+              GRPC_CLOSURE_SCHED(t->notify_on_receive_settings,
                                  GRPC_ERROR_NONE);
               t->notify_on_receive_settings = nullptr;
             }

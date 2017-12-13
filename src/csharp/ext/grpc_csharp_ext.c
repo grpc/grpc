@@ -226,17 +226,22 @@ grpcsharp_batch_context_destroy(grpcsharp_batch_context* ctx) {
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_request_call_context_destroy(grpcsharp_request_call_context* ctx) {
-  if (!ctx) {
-    return;
-  }
+grpcsharp_request_call_context_reset(grpcsharp_request_call_context* ctx) {
   /* NOTE: ctx->server_rpc_new.call is not destroyed because callback handler is
      supposed
      to take its ownership. */
 
   grpc_call_details_destroy(&(ctx->call_details));
   grpcsharp_metadata_array_destroy_metadata_only(&(ctx->request_metadata));
+  memset(ctx, 0, sizeof(grpcsharp_request_call_context));
+}
 
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_request_call_context_destroy(grpcsharp_request_call_context* ctx) {
+  if (!ctx) {
+    return;
+  }
+  grpcsharp_request_call_context_reset(ctx);
   gpr_free(ctx);
 }
 

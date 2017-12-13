@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
   gpr_thd_options_set_joinable(&opt);
 
   for (i = 0; i < NUM_THREADS; i++) {
-    gpr_thd_new(&threads[i], thd_body, nullptr, &opt);
+    gpr_thd_new(&threads[i], "grpc_tls_test", thd_body, nullptr, &opt);
   }
   for (i = 0; i < NUM_THREADS; i++) {
     gpr_thd_join(threads[i]);

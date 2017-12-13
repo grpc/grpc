@@ -73,8 +73,7 @@ struct grpc_tcp_server {
   grpc_resource_quota* resource_quota;
 };
 
-grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
-                                   grpc_closure* shutdown_complete,
+grpc_error* grpc_tcp_server_create(grpc_closure* shutdown_complete,
                                    const grpc_channel_args* args,
                                    grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
@@ -82,11 +81,11 @@ grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(s->resource_quota);
         s->resource_quota = grpc_resource_quota_ref_internal(
             (grpc_resource_quota*)args->args[i].value.pointer.p);
       } else {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
@@ -119,10 +118,10 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s,
                            GRPC_ERROR_NONE);
 }
 
-static void finish_shutdown(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+static void finish_shutdown(grpc_tcp_server* s) {
   GPR_ASSERT(s->shutdown);
   if (s->shutdown_complete != NULL) {
-    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   while (s->head) {
@@ -132,18 +131,17 @@ static void finish_shutdown(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
     gpr_free(sp->handle);
     gpr_free(sp);
   }
-  grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+  grpc_resource_quota_unref_internal(s->resource_quota);
   gpr_free(s);
 }
 
 static void handle_close_callback(uv_handle_t* handle) {
   grpc_tcp_listener* sp = (grpc_tcp_listener*)handle->data;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   sp->server->open_ports--;
   if (sp->server->open_ports == 0 && sp->server->shutdown) {
-    finish_shutdown(&exec_ctx, sp->server);
+    finish_shutdown(sp->server);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void close_listener(grpc_tcp_listener* sp) {
@@ -153,7 +151,7 @@ static void close_listener(grpc_tcp_listener* sp) {
   }
 }
 
-static void tcp_server_destroy(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+static void tcp_server_destroy(grpc_tcp_server* s) {
   int immediately_done = 0;
   grpc_tcp_listener* sp;
 
@@ -168,28 +166,22 @@ static void tcp_server_destroy(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
   }
 
   if (immediately_done) {
-    finish_shutdown(exec_ctx, s);
+    finish_shutdown(s);
   }
 }
 
-void grpc_tcp_server_unref(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+void grpc_tcp_server_unref(grpc_tcp_server* s) {
   GRPC_UV_ASSERT_SAME_THREAD();
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
-    grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
-    GRPC_CLOSURE_LIST_SCHED(&local_exec_ctx, &s->shutdown_starting);
-    if (exec_ctx == NULL) {
-      grpc_exec_ctx_flush(&local_exec_ctx);
-      tcp_server_destroy(&local_exec_ctx, s);
-      grpc_exec_ctx_finish(&local_exec_ctx);
-    } else {
-      grpc_exec_ctx_finish(&local_exec_ctx);
-      tcp_server_destroy(exec_ctx, s);
-    }
+    grpc_core::ExecCtx exec_ctx;
+    GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);
+    grpc_core::ExecCtx::Get()->Flush();
+    tcp_server_destroy(s);
   }
 }
 
-static void finish_accept(grpc_exec_ctx* exec_ctx, grpc_tcp_listener* sp) {
+static void finish_accept(grpc_tcp_listener* sp) {
   grpc_tcp_server_acceptor* acceptor =
       (grpc_tcp_server_acceptor*)gpr_malloc(sizeof(*acceptor));
   uv_tcp_t* client = NULL;
@@ -225,14 +217,13 @@ static void finish_accept(grpc_exec_ctx* exec_ctx, grpc_tcp_listener* sp) {
   acceptor->from_server = sp->server;
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;
-  sp->server->on_accept_cb(exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
-                           acceptor);
+  sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, NULL, acceptor);
   gpr_free(peer_name_string);
 }
 
 static void on_connect(uv_stream_t* server, int status) {
   grpc_tcp_listener* sp = (grpc_tcp_listener*)server->data;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   if (status < 0) {
     switch (status) {
@@ -253,11 +244,10 @@ static void on_connect(uv_stream_t* server, int status) {
 
   // Create acceptor.
   if (sp->server->on_accept_cb) {
-    finish_accept(&exec_ctx, sp);
+    finish_accept(sp);
   } else {
     sp->has_pending_connection = true;
   }
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static grpc_error* add_addr_to_server(grpc_tcp_server* s,
@@ -454,8 +444,8 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
   return error;
 }
 
-void grpc_tcp_server_start(grpc_exec_ctx* exec_ctx, grpc_tcp_server* server,
-                           grpc_pollset** pollsets, size_t pollset_count,
+void grpc_tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
+                           size_t pollset_count,
                            grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
   grpc_tcp_listener* sp;
   (void)pollsets;
@@ -470,13 +460,12 @@ void grpc_tcp_server_start(grpc_exec_ctx* exec_ctx, grpc_tcp_server* server,
   server->on_accept_cb_arg = cb_arg;
   for (sp = server->head; sp; sp = sp->next) {
     if (sp->has_pending_connection) {
-      finish_accept(exec_ctx, sp);
+      finish_accept(sp);
       sp->has_pending_connection = false;
     }
   }
 }
 
-void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx* exec_ctx,
-                                        grpc_tcp_server* s) {}
+void grpc_tcp_server_shutdown_listeners(grpc_tcp_server* s) {}
 
 #endif /* GRPC_UV */

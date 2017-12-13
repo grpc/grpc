@@ -16,7 +16,7 @@
  *
  */
 
-/* generates constant tables for hpack.c */
+/* generates constant tables for hpack.cc */
 
 #include <assert.h>
 #include <stddef.h>

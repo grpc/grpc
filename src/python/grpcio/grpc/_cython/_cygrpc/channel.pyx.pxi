@@ -76,7 +76,7 @@ cdef class Channel:
   def watch_connectivity_state(
       self, grpc_connectivity_state last_observed_state,
       Timespec deadline not None, CompletionQueue queue not None, tag):
-    cdef OperationTag operation_tag = OperationTag(tag)
+    cdef OperationTag operation_tag = OperationTag(tag, None)
     cpython.Py_INCREF(operation_tag)
     with nogil:
       grpc_channel_watch_connectivity_state(

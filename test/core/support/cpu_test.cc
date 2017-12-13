@@ -110,11 +110,12 @@ static void cpu_test(void) {
   gpr_cv_init(&ct.done_cv);
   ct.is_done = 0;
   for (i = 0; i < ct.ncores * 3; i++) {
-    GPR_ASSERT(gpr_thd_new(&thd, &worker_thread, &ct, nullptr));
+    GPR_ASSERT(
+        gpr_thd_new(&thd, "grpc_cpu_test", &worker_thread, &ct, nullptr));
   }
   gpr_mu_lock(&ct.mu);
   while (!ct.is_done) {
-    gpr_cv_wait(&ct.done_cv, &ct.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&ct.done_cv, &ct.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(&ct.mu);
   fprintf(stderr, "Saw cores [");

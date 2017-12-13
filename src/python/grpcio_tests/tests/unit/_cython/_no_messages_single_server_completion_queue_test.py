@@ -43,20 +43,19 @@ class Test(_common.RpcTest, unittest.TestCase):
         client_complete_rpc_tag = 'client_complete_rpc_tag'
         with self.client_condition:
             client_receive_initial_metadata_start_batch_result = (
-                client_call.start_client_batch(
-                    cygrpc.Operations([
-                        cygrpc.operation_receive_initial_metadata(
-                            _common.EMPTY_FLAGS),
-                    ]), client_receive_initial_metadata_tag))
+                client_call.start_client_batch([
+                    cygrpc.operation_receive_initial_metadata(
+                        _common.EMPTY_FLAGS),
+                ], client_receive_initial_metadata_tag))
             client_complete_rpc_start_batch_result = client_call.start_client_batch(
-                cygrpc.Operations([
+                [
                     cygrpc.operation_send_initial_metadata(
                         _common.INVOCATION_METADATA, _common.EMPTY_FLAGS),
                     cygrpc.operation_send_close_from_client(
                         _common.EMPTY_FLAGS),
                     cygrpc.operation_receive_status_on_client(
                         _common.EMPTY_FLAGS),
-                ]), client_complete_rpc_tag)
+                ], client_complete_rpc_tag)
             self.client_driver.add_due({
                 client_receive_initial_metadata_tag,
                 client_complete_rpc_tag,

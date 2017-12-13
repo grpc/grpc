@@ -215,9 +215,6 @@ grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
       return nullptr;
     }
   }
-  if (res.server_list.has_expiration_interval) {
-    sl->expiration_interval = res.server_list.expiration_interval;
-  }
   return sl;
 }
 
@@ -237,8 +234,6 @@ grpc_grpclb_serverlist* grpc_grpclb_serverlist_copy(
   grpc_grpclb_serverlist* copy =
       (grpc_grpclb_serverlist*)gpr_zalloc(sizeof(grpc_grpclb_serverlist));
   copy->num_servers = sl->num_servers;
-  memcpy(&copy->expiration_interval, &sl->expiration_interval,
-         sizeof(grpc_grpclb_duration));
   copy->servers = (grpc_grpclb_server**)gpr_malloc(sizeof(grpc_grpclb_server*) *
                                                    sl->num_servers);
   for (size_t i = 0; i < sl->num_servers; i++) {
@@ -255,10 +250,6 @@ bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist* lhs,
     return false;
   }
   if (lhs->num_servers != rhs->num_servers) {
-    return false;
-  }
-  if (grpc_grpclb_duration_compare(&lhs->expiration_interval,
-                                   &rhs->expiration_interval) != 0) {
     return false;
   }
   for (size_t i = 0; i < lhs->num_servers; i++) {

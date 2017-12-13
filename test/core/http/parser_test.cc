@@ -21,6 +21,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -217,6 +218,7 @@ int main(int argc, char** argv) {
   char *tmp1, *tmp2;
 
   grpc_test_init(argc, argv);
+  grpc_init();
 
   for (i = 0; i < GPR_ARRAY_SIZE(split_modes); i++) {
     test_succeeds(split_modes[i],
@@ -300,5 +302,6 @@ int main(int argc, char** argv) {
     gpr_free(tmp2);
   }
 
+  grpc_shutdown();
   return 0;
 }
