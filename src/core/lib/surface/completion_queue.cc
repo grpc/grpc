@@ -115,7 +115,7 @@ static grpc_error* non_polling_poller_work(grpc_pollset* pollset,
   }
   w.kicked = false;
   gpr_timespec deadline_ts =
-      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME);
+      grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC);
   while (!npp->shutdown && !w.kicked &&
          !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts))
     ;

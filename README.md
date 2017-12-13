@@ -25,15 +25,15 @@ This repository contains source code for gRPC libraries for multiple languages w
 
 Libraries in different languages may be in different states of development. We are seeking contributions for all of these libraries.
 
-| Language                | Source                              | Status  |
-|-------------------------|-------------------------------------|---------|
-| Shared C [core library] | [src/core](src/core)                | 1.6     |
-| C++                     | [src/cpp](src/cpp)                  | 1.6     |
-| Ruby                    | [src/ruby](src/ruby)                | 1.6     |
-| Python                  | [src/python](src/python)            | 1.6     |
-| PHP                     | [src/php](src/php)                  | 1.6     |
-| C#                      | [src/csharp](src/csharp)            | 1.6     |
-| Objective-C             | [src/objective-c](src/objective-c)  | 1.6     |
+| Language                | Source                              |
+|-------------------------|-------------------------------------|
+| Shared C [core library] | [src/core](src/core)                |
+| C++                     | [src/cpp](src/cpp)                  |
+| Ruby                    | [src/ruby](src/ruby)                |
+| Python                  | [src/python](src/python)            |
+| PHP                     | [src/php](src/php)                  |
+| C#                      | [src/csharp](src/csharp)            |
+| Objective-C             | [src/objective-c](src/objective-c)  |
 
 Java source code is in the [grpc-java](http://github.com/grpc/grpc-java)
 repository. Go source code is in the

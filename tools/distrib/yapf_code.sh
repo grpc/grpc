@@ -19,14 +19,13 @@ set -ex
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
+    'examples/python'
     'src/python'
+    'tools'
 )
 EXCLUSIONS=(
-    'grpcio/grpc_*.py'
-    'grpcio_health_checking/grpc_*.py'
-    'grpcio_reflection/grpc_*.py'
-    'grpcio_testing/grpc_*.py'
-    'grpcio_tests/grpc_*.py'
+    '*protoc_lib_deps.py'  # this file is auto-generated
+    '*_pb2*.py'  # no need to format protoc generated files
 )
 
 VIRTUALENV=yapf_virtual_environment

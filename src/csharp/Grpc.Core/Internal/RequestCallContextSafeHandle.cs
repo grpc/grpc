@@ -30,14 +30,17 @@ namespace Grpc.Core.Internal
     {
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<RequestCallContextSafeHandle>();
+        IObjectPool<RequestCallContextSafeHandle> ownedByPool;
 
         private RequestCallContextSafeHandle()
         {
         }
 
-        public static RequestCallContextSafeHandle Create()
+        public static RequestCallContextSafeHandle Create(IObjectPool<RequestCallContextSafeHandle> ownedByPool = null)
         {
-            return Native.grpcsharp_request_call_context_create();
+            var ctx = Native.grpcsharp_request_call_context_create();
+            ctx.ownedByPool = ownedByPool;
+            return ctx;
         }
 
         public IntPtr Handle
@@ -71,6 +74,19 @@ namespace Grpc.Core.Internal
             return new ServerRpcNew(server, call, method, host, deadline, metadata);
         }
 
+        public void Recycle()
+        {
+            if (ownedByPool != null)
+            {
+                Native.grpcsharp_request_call_context_reset(this);
+                ownedByPool.Return(this);
+            }
+            else
+            {
+                Dispose();
+            }
+        }
+
         protected override bool ReleaseHandle()
         {
             Native.grpcsharp_request_call_context_destroy(handle);
@@ -90,7 +106,7 @@ namespace Grpc.Core.Internal
             finally
             {
                 CompletionCallback = null;
-                Dispose();
+                Recycle();
             }
         }
     }

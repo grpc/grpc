@@ -118,7 +118,7 @@ void grpc_iomgr_shutdown() {
           abort();
         }
         gpr_timespec short_deadline =
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                          gpr_time_from_millis(100, GPR_TIMESPAN));
         if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline)) {
           if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) >

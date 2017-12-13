@@ -26,7 +26,7 @@ namespace Grpc.Testing {
             "DGdycGMudGVzdGluZyIyCglEZWJ1Z0luZm8SFQoNc3RhY2tfZW50cmllcxgB",
             "IAMoCRIOCgZkZXRhaWwYAiABKAkiUAoLRXJyb3JTdGF0dXMSDAoEY29kZRgB",
             "IAEoBRIVCg1lcnJvcl9tZXNzYWdlGAIgASgJEhwKFGJpbmFyeV9lcnJvcl9k",
-            "ZXRhaWxzGAMgASgJIskDCg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
+            "ZXRhaWxzGAMgASgJIuIDCg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
             "bmUYASABKAgSHgoWY2xpZW50X2NhbmNlbF9hZnRlcl91cxgCIAEoBRIeChZz",
             "ZXJ2ZXJfY2FuY2VsX2FmdGVyX3VzGAMgASgFEhUKDWVjaG9fbWV0YWRhdGEY",
             "BCABKAgSGgoSY2hlY2tfYXV0aF9jb250ZXh0GAUgASgIEh8KF3Jlc3BvbnNl",
@@ -36,18 +36,19 @@ namespace Grpc.Testing {
             "X3R5cGUYCiABKAkSKwoKZGVidWdfaW5mbxgLIAEoCzIXLmdycGMudGVzdGlu",
             "Zy5EZWJ1Z0luZm8SEgoKc2VydmVyX2RpZRgMIAEoCBIcChRiaW5hcnlfZXJy",
             "b3JfZGV0YWlscxgNIAEoCRIxCg5leHBlY3RlZF9lcnJvchgOIAEoCzIZLmdy",
-            "cGMudGVzdGluZy5FcnJvclN0YXR1cyJKCgtFY2hvUmVxdWVzdBIPCgdtZXNz",
-            "YWdlGAEgASgJEioKBXBhcmFtGAIgASgLMhsuZ3JwYy50ZXN0aW5nLlJlcXVl",
-            "c3RQYXJhbXMiRgoOUmVzcG9uc2VQYXJhbXMSGAoQcmVxdWVzdF9kZWFkbGlu",
-            "ZRgBIAEoAxIMCgRob3N0GAIgASgJEgwKBHBlZXIYAyABKAkiTAoMRWNob1Jl",
-            "c3BvbnNlEg8KB21lc3NhZ2UYASABKAkSKwoFcGFyYW0YAiABKAsyHC5ncnBj",
-            "LnRlc3RpbmcuUmVzcG9uc2VQYXJhbXNiBnByb3RvMw=="));
+            "cGMudGVzdGluZy5FcnJvclN0YXR1cxIXCg9zZXJ2ZXJfc2xlZXBfdXMYDyAB",
+            "KAUiSgoLRWNob1JlcXVlc3QSDwoHbWVzc2FnZRgBIAEoCRIqCgVwYXJhbRgC",
+            "IAEoCzIbLmdycGMudGVzdGluZy5SZXF1ZXN0UGFyYW1zIkYKDlJlc3BvbnNl",
+            "UGFyYW1zEhgKEHJlcXVlc3RfZGVhZGxpbmUYASABKAMSDAoEaG9zdBgCIAEo",
+            "CRIMCgRwZWVyGAMgASgJIkwKDEVjaG9SZXNwb25zZRIPCgdtZXNzYWdlGAEg",
+            "ASgJEisKBXBhcmFtGAIgASgLMhwuZ3JwYy50ZXN0aW5nLlJlc3BvbnNlUGFy",
+            "YW1zYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.DebugInfo), global::Grpc.Testing.DebugInfo.Parser, new[]{ "StackEntries", "Detail" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ErrorStatus), global::Grpc.Testing.ErrorStatus.Parser, new[]{ "Code", "ErrorMessage", "BinaryErrorDetails" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoRequest), global::Grpc.Testing.EchoRequest.Parser, new[]{ "Message", "Param" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParams), global::Grpc.Testing.ResponseParams.Parser, new[]{ "RequestDeadline", "Host", "Peer" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoResponse), global::Grpc.Testing.EchoResponse.Parser, new[]{ "Message", "Param" }, null, null, null)
@@ -411,6 +412,7 @@ namespace Grpc.Testing {
       serverDie_ = other.serverDie_;
       binaryErrorDetails_ = other.binaryErrorDetails_;
       ExpectedError = other.expectedError_ != null ? other.ExpectedError.Clone() : null;
+      serverSleepUs_ = other.serverSleepUs_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -578,6 +580,20 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "server_sleep_us" field.</summary>
+    public const int ServerSleepUsFieldNumber = 15;
+    private int serverSleepUs_;
+    /// <summary>
+    /// Amount to sleep when invoking server
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int ServerSleepUs {
+      get { return serverSleepUs_; }
+      set {
+        serverSleepUs_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as RequestParams);
@@ -605,6 +621,7 @@ namespace Grpc.Testing {
       if (ServerDie != other.ServerDie) return false;
       if (BinaryErrorDetails != other.BinaryErrorDetails) return false;
       if (!object.Equals(ExpectedError, other.ExpectedError)) return false;
+      if (ServerSleepUs != other.ServerSleepUs) return false;
       return true;
     }
 
@@ -625,6 +642,7 @@ namespace Grpc.Testing {
       if (ServerDie != false) hash ^= ServerDie.GetHashCode();
       if (BinaryErrorDetails.Length != 0) hash ^= BinaryErrorDetails.GetHashCode();
       if (expectedError_ != null) hash ^= ExpectedError.GetHashCode();
+      if (ServerSleepUs != 0) hash ^= ServerSleepUs.GetHashCode();
       return hash;
     }
 
@@ -691,6 +709,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(114);
         output.WriteMessage(ExpectedError);
       }
+      if (ServerSleepUs != 0) {
+        output.WriteRawTag(120);
+        output.WriteInt32(ServerSleepUs);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -737,6 +759,9 @@ namespace Grpc.Testing {
       }
       if (expectedError_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(ExpectedError);
+      }
+      if (ServerSleepUs != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(ServerSleepUs);
       }
       return size;
     }
@@ -793,6 +818,9 @@ namespace Grpc.Testing {
           expectedError_ = new global::Grpc.Testing.ErrorStatus();
         }
         ExpectedError.MergeFrom(other.ExpectedError);
+      }
+      if (other.ServerSleepUs != 0) {
+        ServerSleepUs = other.ServerSleepUs;
       }
     }
 
@@ -864,6 +892,10 @@ namespace Grpc.Testing {
               expectedError_ = new global::Grpc.Testing.ErrorStatus();
             }
             input.ReadMessage(expectedError_);
+            break;
+          }
+          case 120: {
+            ServerSleepUs = input.ReadInt32();
             break;
           }
         }

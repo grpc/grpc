@@ -16,7 +16,7 @@
  *
  */
 
-/* generates constant table for metadata.c */
+/* generates constant table for metadata.cc */
 
 #include <stdio.h>
 #include <string.h>

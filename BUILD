@@ -44,11 +44,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "generous"
+g_stands_for = "glossy"
 
 core_version = "5.0.0-dev"
 
-version = "1.8.0-dev"
+version = "1.9.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",

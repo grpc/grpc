@@ -155,7 +155,7 @@ static void executor_thread(void* arg) {
     ts->depth -= subtract_depth;
     while (grpc_closure_list_empty(ts->elems) && !ts->shutdown) {
       ts->queued_long_job = false;
-      gpr_cv_wait(&ts->cv, &ts->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+      gpr_cv_wait(&ts->cv, &ts->mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
     }
     if (ts->shutdown) {
       if (executor_trace.enabled()) {
