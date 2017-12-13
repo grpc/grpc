@@ -348,16 +348,12 @@ put_banner([H, C], """WARNING: Auto-generated code.
 To make changes to this file, change
 tools/codegen/core/gen_static_metadata.py, and then re-run it.
 
-See metadata.h for an explanation of the interface here, and metadata.c for
+See metadata.h for an explanation of the interface here, and metadata.cc for
 an explanation of what's going on.
 """.splitlines())
 
 print >> H, '#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
-print >> H
-print >> H, '#ifdef __cplusplus'
-print >> H, 'extern "C" {'
-print >> H, '#endif'
 print >> H
 print >> H, '#include "src/core/lib/transport/metadata.h"'
 print >> H
@@ -588,10 +584,6 @@ print >> C, '0,%s' % ','.join('%d' % md_idx(elem)
 print >> C, '};'
 
 print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
-
-print >> H, '#ifdef __cplusplus'
-print >> H, '}'
-print >> H, '#endif'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 
