@@ -37,6 +37,7 @@ TEST(BackOffTest, ConstantBackOff) {
   const double multiplier = 1.0;
   const double jitter = 0.0;
   const grpc_millis max_backoff = 1000;
+  grpc_core::ExecCtx exec_ctx;
   BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
@@ -44,16 +45,14 @@ TEST(BackOffTest, ConstantBackOff) {
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_millis next_attempt_start_time = backoff.Begin(&exec_ctx);
-  EXPECT_EQ(next_attempt_start_time - grpc_exec_ctx_now(&exec_ctx),
+  grpc_millis next_attempt_start_time = backoff.Begin();
+  EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(),
             initial_backoff);
   for (int i = 0; i < 10000; i++) {
-    next_attempt_start_time = backoff.Step(&exec_ctx);
-    EXPECT_EQ(next_attempt_start_time - grpc_exec_ctx_now(&exec_ctx),
+    next_attempt_start_time = backoff.Step();
+    EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(),
               initial_backoff);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 TEST(BackOffTest, MinConnect) {
@@ -61,16 +60,15 @@ TEST(BackOffTest, MinConnect) {
   const double multiplier = 1.0;
   const double jitter = 0.0;
   const grpc_millis max_backoff = 1000;
+  grpc_core::ExecCtx exec_ctx;
   BackOff::Options options;
   options.set_initial_backoff(initial_backoff)
       .set_multiplier(multiplier)
       .set_jitter(jitter)
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_millis next = backoff.Begin(&exec_ctx);
-  EXPECT_EQ(next - grpc_exec_ctx_now(&exec_ctx), initial_backoff);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_millis next = backoff.Begin();
+  EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
 }
 
 TEST(BackOffTest, NoJitterBackOff) {
@@ -86,47 +84,45 @@ TEST(BackOffTest, NoJitterBackOff) {
   BackOff backoff(options);
   // x_1 = 2
   // x_n = 2**i + x_{i-1} ( = 2**(n+1) - 2 )
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  exec_ctx.now = 0;
-  exec_ctx.now_is_valid = true;
-  grpc_millis next = backoff.Begin(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(0);
+  grpc_millis next = backoff.Begin();
   EXPECT_EQ(next, 2);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 6);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 14);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 30);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 62);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 126);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 254);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 510);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 1022);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   // Hit the maximum timeout. From this point onwards, retries will increase
   // only by max timeout.
   EXPECT_EQ(next, 1535);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 2048);
-  exec_ctx.now = next;
-  next = backoff.Step(&exec_ctx);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(next);
+  next = backoff.Step();
   EXPECT_EQ(next, 2561);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 TEST(BackOffTest, JitterBackOff) {
@@ -144,9 +140,9 @@ TEST(BackOffTest, JitterBackOff) {
 
   backoff.SetRandomSeed(0);  // force consistent PRNG
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_millis next = backoff.Begin(&exec_ctx);
-  EXPECT_EQ(next - grpc_exec_ctx_now(&exec_ctx), initial_backoff);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_millis next = backoff.Begin();
+  EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
 
   grpc_millis expected_next_lower_bound =
       (grpc_millis)((double)current_backoff * (1 - jitter));
@@ -154,10 +150,10 @@ TEST(BackOffTest, JitterBackOff) {
       (grpc_millis)((double)current_backoff * (1 + jitter));
 
   for (int i = 0; i < 10000; i++) {
-    next = backoff.Step(&exec_ctx);
+    next = backoff.Step();
     // next-now must be within (jitter*100)% of the current backoff (which
     // increases by * multiplier up to max_backoff).
-    const grpc_millis timeout_millis = next - grpc_exec_ctx_now(&exec_ctx);
+    const grpc_millis timeout_millis = next - grpc_core::ExecCtx::Get()->Now();
     EXPECT_GE(timeout_millis, expected_next_lower_bound);
     EXPECT_LE(timeout_millis, expected_next_upper_bound);
     current_backoff = std::min(
@@ -167,7 +163,6 @@ TEST(BackOffTest, JitterBackOff) {
     expected_next_upper_bound =
         (grpc_millis)((double)current_backoff * (1 + jitter));
   }
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 }  // namespace

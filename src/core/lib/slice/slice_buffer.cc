@@ -65,18 +65,16 @@ void grpc_slice_buffer_init(grpc_slice_buffer* sb) {
   sb->base_slices = sb->slices = sb->inlined;
 }
 
-void grpc_slice_buffer_destroy_internal(grpc_exec_ctx* exec_ctx,
-                                        grpc_slice_buffer* sb) {
-  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, sb);
+void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
+  grpc_slice_buffer_reset_and_unref_internal(sb);
   if (sb->base_slices != sb->inlined) {
     gpr_free(sb->base_slices);
   }
 }
 
 void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_buffer_destroy_internal(&exec_ctx, sb);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_buffer_destroy_internal(sb);
 }
 
 uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
@@ -163,11 +161,10 @@ void grpc_slice_buffer_pop(grpc_slice_buffer* sb) {
   }
 }
 
-void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx* exec_ctx,
-                                                grpc_slice_buffer* sb) {
+void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb) {
   size_t i;
   for (i = 0; i < sb->count; i++) {
-    grpc_slice_unref_internal(exec_ctx, sb->slices[i]);
+    grpc_slice_unref_internal(sb->slices[i]);
   }
 
   sb->count = 0;
@@ -175,9 +172,8 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx* exec_ctx,
 }
 
 void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, sb);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_buffer_reset_and_unref_internal(sb);
 }
 
 void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {
@@ -289,8 +285,7 @@ void grpc_slice_buffer_move_first_no_ref(grpc_slice_buffer* src, size_t n,
   slice_buffer_move_first_maybe_ref(src, n, dst, false);
 }
 
-void grpc_slice_buffer_move_first_into_buffer(grpc_exec_ctx* exec_ctx,
-                                              grpc_slice_buffer* src, size_t n,
+void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
                                               void* dst) {
   char* dstp = (char*)dst;
   GPR_ASSERT(src->length >= n);
@@ -305,13 +300,13 @@ void grpc_slice_buffer_move_first_into_buffer(grpc_exec_ctx* exec_ctx,
       n = 0;
     } else if (slice_len == n) {
       memcpy(dstp, GRPC_SLICE_START_PTR(slice), n);
-      grpc_slice_unref_internal(exec_ctx, slice);
+      grpc_slice_unref_internal(slice);
       n = 0;
     } else {
       memcpy(dstp, GRPC_SLICE_START_PTR(slice), slice_len);
       dstp += slice_len;
       n -= slice_len;
-      grpc_slice_unref_internal(exec_ctx, slice);
+      grpc_slice_unref_internal(slice);
     }
   }
 }

@@ -137,13 +137,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   void SetNextResolution(const std::vector<int>& ports) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(ports.size(), nullptr);
     for (size_t i = 0; i < ports.size(); ++i) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", ports[i]);
-      grpc_uri* lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
+      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
       GPR_ASSERT(lb_uri != nullptr);
       grpc_lb_addresses_set_address_from_uri(addresses, i, lb_uri,
                                              false /* is balancer */,
@@ -155,11 +155,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
         grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args* fake_result =
         grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    grpc_fake_resolver_response_generator_set_response(
-        &exec_ctx, response_generator_, fake_result);
-    grpc_channel_args_destroy(&exec_ctx, fake_result);
-    grpc_lb_addresses_destroy(&exec_ctx, addresses);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_fake_resolver_response_generator_set_response(response_generator_,
+                                                       fake_result);
+    grpc_channel_args_destroy(fake_result);
+    grpc_lb_addresses_destroy(addresses);
   }
 
   std::vector<int> GetServersPorts() {
@@ -190,7 +189,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  Status SendRpc(EchoResponse* response = nullptr) {
+  bool SendRpc(EchoResponse* response = nullptr) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
@@ -198,19 +197,19 @@ class ClientLbEnd2endTest : public ::testing::Test {
     ClientContext context;
     Status status = stub_->Echo(&context, request, response);
     if (local_response) delete response;
-    return status;
+    return status.ok();
   }
 
   void CheckRpcSendOk() {
     EchoResponse response;
-    const Status status = SendRpc(&response);
-    EXPECT_TRUE(status.ok());
+    const bool success = SendRpc(&response);
+    EXPECT_TRUE(success);
     EXPECT_EQ(response.message(), kRequestMessage_);
   }
 
   void CheckRpcSendFailure() {
-    const Status status = SendRpc();
-    EXPECT_FALSE(status.ok());
+    const bool success = SendRpc();
+    EXPECT_FALSE(success);
   }
 
   struct ServerData {
@@ -669,15 +668,28 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
     CheckRpcSendOk();
   }
   // Kill all servers
+  gpr_log(GPR_INFO, "****** ABOUT TO KILL SERVERS *******");
   for (size_t i = 0; i < servers_.size(); ++i) {
     servers_[i]->Shutdown(false);
   }
-  // Client request should fail.
-  CheckRpcSendFailure();
+  gpr_log(GPR_INFO, "****** SERVERS KILLED *******");
+  gpr_log(GPR_INFO, "****** SENDING DOOMED REQUESTS *******");
+  // Client requests should fail. Send enough to tickle all subchannels.
+  for (size_t i = 0; i < servers_.size(); ++i) CheckRpcSendFailure();
+  gpr_log(GPR_INFO, "****** DOOMED REQUESTS SENT *******");
   // Bring servers back up on the same port (we aren't recreating the channel).
+  gpr_log(GPR_INFO, "****** RESTARTING SERVERS *******");
   StartServers(kNumServers, ports);
-  // Client request should succeed.
-  CheckRpcSendOk();
+  gpr_log(GPR_INFO, "****** SERVERS RESTARTED *******");
+  gpr_log(GPR_INFO, "****** SENDING REQUEST TO SUCCEED *******");
+  // Client request should eventually (but still fairly soon) succeed.
+  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  while (gpr_time_cmp(deadline, now) > 0) {
+    if (SendRpc()) break;
+    now = gpr_now(GPR_CLOCK_MONOTONIC);
+  }
+  GPR_ASSERT(gpr_time_cmp(deadline, now) > 0);
 }
 
 }  // namespace

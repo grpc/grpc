@@ -47,12 +47,12 @@ BackOff::BackOff(const Options& options) : options_(options) {
   rng_state_ = static_cast<uint32_t>(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
 }
 
-grpc_millis BackOff::Begin(grpc_exec_ctx* exec_ctx) {
+grpc_millis BackOff::Begin() {
   current_backoff_ = options_.initial_backoff();
-  return current_backoff_ + grpc_exec_ctx_now(exec_ctx);
+  return current_backoff_ + grpc_core::ExecCtx::Get()->Now();
 }
 
-grpc_millis BackOff::Step(grpc_exec_ctx* exec_ctx) {
+grpc_millis BackOff::Step() {
   current_backoff_ =
       (grpc_millis)(std::min(current_backoff_ * options_.multiplier(),
                              (double)options_.max_backoff()));
@@ -60,7 +60,7 @@ grpc_millis BackOff::Step(grpc_exec_ctx* exec_ctx) {
       &rng_state_, -options_.jitter() * current_backoff_,
       options_.jitter() * current_backoff_);
   const grpc_millis next_timeout = (grpc_millis)(current_backoff_ + jitter);
-  return next_timeout + grpc_exec_ctx_now(exec_ctx);
+  return next_timeout + grpc_core::ExecCtx::Get()->Now();
 }
 
 void BackOff::Reset() { current_backoff_ = options_.initial_backoff(); }

@@ -41,6 +41,7 @@ static int g_awaiting_threads;
 struct thd_arg {
   void (*body)(void* arg); /* body of a thread */
   void* arg;               /* argument to a thread */
+  const char* name;        /* name of thread. Can be nullptr. */
 };
 
 static void inc_thd_count();
@@ -50,12 +51,26 @@ static void dec_thd_count();
 static void* thread_body(void* v) {
   struct thd_arg a = *(struct thd_arg*)v;
   free(v);
+  if (a.name != nullptr) {
+#if GPR_APPLE_PTHREAD_NAME
+    /* Apple supports 64 characters, and will truncate if it's longer. */
+    pthread_setname_np(a.name);
+#elif GPR_LINUX_PTHREAD_NAME
+    /* Linux supports 16 characters max, and will error if it's longer. */
+    char buf[16];
+    size_t buf_len = GPR_ARRAY_SIZE(buf) - 1;
+    strncpy(buf, a.name, buf_len);
+    buf[buf_len] = '\0';
+    pthread_setname_np(pthread_self(), buf);
+#endif  // GPR_APPLE_PTHREAD_NAME
+  }
   (*a.body)(a.arg);
   dec_thd_count();
   return nullptr;
 }
 
-int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
+int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
+                void (*thd_body)(void* arg), void* arg,
                 const gpr_thd_options* options) {
   int thread_started;
   pthread_attr_t attr;
@@ -66,6 +81,7 @@ int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
   GPR_ASSERT(a != nullptr);
   a->body = thd_body;
   a->arg = arg;
+  a->name = thd_name;
   inc_thd_count();
 
   GPR_ASSERT(pthread_attr_init(&attr) == 0);

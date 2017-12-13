@@ -2110,28 +2110,6 @@ targets:
   - mac
   - linux
   - posix
-- name: gen_hpack_tables
-  build: tool
-  language: c
-  src:
-  - tools/codegen/core/gen_hpack_tables.c
-  deps:
-  - gpr
-  - grpc
-  uses_polling: false
-- name: gen_legal_metadata_characters
-  build: tool
-  language: c
-  src:
-  - tools/codegen/core/gen_legal_metadata_characters.c
-  deps: []
-- name: gen_percent_encoding_tables
-  build: tool
-  language: c
-  src:
-  - tools/codegen/core/gen_percent_encoding_tables.c
-  deps: []
-  uses_polling: false
 - name: goaway_server_test
   cpu_cost: 0.1
   build: test
@@ -4846,6 +4824,28 @@ targets:
   deps:
   - grpc
   - gpr
+- name: gen_hpack_tables
+  build: tool
+  language: cc
+  src:
+  - tools/codegen/core/gen_hpack_tables.cc
+  deps:
+  - gpr
+  - grpc
+  uses_polling: false
+- name: gen_legal_metadata_characters
+  build: tool
+  language: cc
+  src:
+  - tools/codegen/core/gen_legal_metadata_characters.cc
+  deps: []
+- name: gen_percent_encoding_tables
+  build: tool
+  language: cc
+  src:
+  - tools/codegen/core/gen_percent_encoding_tables.cc
+  deps: []
+  uses_polling: false
 vspackages:
 - linkage: static
   name: grpc.dependencies.zlib

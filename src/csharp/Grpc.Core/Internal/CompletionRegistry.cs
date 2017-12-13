@@ -37,14 +37,16 @@ namespace Grpc.Core.Internal
 
         readonly GrpcEnvironment environment;
         readonly Func<BatchContextSafeHandle> batchContextFactory;
+        readonly Func<RequestCallContextSafeHandle> requestCallContextFactory;
         readonly Dictionary<IntPtr, IOpCompletionCallback> dict = new Dictionary<IntPtr, IOpCompletionCallback>(new IntPtrComparer());
         SpinLock spinLock = new SpinLock(Debugger.IsAttached);
         IntPtr lastRegisteredKey;  // only for testing
 
-        public CompletionRegistry(GrpcEnvironment environment, Func<BatchContextSafeHandle> batchContextFactory)
+        public CompletionRegistry(GrpcEnvironment environment, Func<BatchContextSafeHandle> batchContextFactory, Func<RequestCallContextSafeHandle> requestCallContextFactory)
         {
             this.environment = GrpcPreconditions.CheckNotNull(environment);
             this.batchContextFactory = GrpcPreconditions.CheckNotNull(batchContextFactory);
+            this.requestCallContextFactory = GrpcPreconditions.CheckNotNull(requestCallContextFactory);
         }
 
         public void Register(IntPtr key, IOpCompletionCallback callback)
@@ -73,10 +75,12 @@ namespace Grpc.Core.Internal
             return ctx;
         }
 
-        public void RegisterRequestCallCompletion(RequestCallContextSafeHandle ctx, RequestCallCompletionDelegate callback)
+        public RequestCallContextSafeHandle RegisterRequestCallCompletion(RequestCallCompletionDelegate callback)
         {
+            var ctx = requestCallContextFactory();
             ctx.CompletionCallback = callback;
             Register(ctx.Handle, ctx);
+            return ctx;
         }
 
         public IOpCompletionCallback Extract(IntPtr key)

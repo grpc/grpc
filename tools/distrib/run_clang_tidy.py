@@ -20,51 +20,51 @@ import argparse
 import multiprocessing
 
 sys.path.append(
-  os.path.join(
-    os.path.dirname(sys.argv[0]), '..', 'run_tests', 'python_utils'))
+    os.path.join(
+        os.path.dirname(sys.argv[0]), '..', 'run_tests', 'python_utils'))
 import jobset
 
 GRPC_CHECKS = [
-  'modernize-use-nullptr',
+    'modernize-use-nullptr',
 ]
 
 extra_args = [
-  '-x',
-  'c++',
-  '-std=c++11',
+    '-x',
+    'c++',
+    '-std=c++11',
 ]
 with open('.clang_complete') as f:
-  for line in f:
-    line = line.strip()
-    if line.startswith('-I'):
-      extra_args.append(line)
+    for line in f:
+        line = line.strip()
+        if line.startswith('-I'):
+            extra_args.append(line)
 
 clang_tidy = os.environ.get('CLANG_TIDY', 'clang-tidy')
 
 argp = argparse.ArgumentParser(description='Run clang-tidy against core')
 argp.add_argument('files', nargs='+', help='Files to tidy')
 argp.add_argument('--fix', dest='fix', action='store_true')
-argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count(),
-                  help='Number of CPUs to use')
+argp.add_argument(
+    '-j',
+    '--jobs',
+    type=int,
+    default=multiprocessing.cpu_count(),
+    help='Number of CPUs to use')
 argp.set_defaults(fix=False)
 args = argp.parse_args()
 
 cmdline = [
-    clang_tidy,
-    '--checks=-*,%s' % ','.join(GRPC_CHECKS),
+    clang_tidy, '--checks=-*,%s' % ','.join(GRPC_CHECKS),
     '--warnings-as-errors=%s' % ','.join(GRPC_CHECKS)
-] + [
-    '--extra-arg-before=%s' % arg
-    for arg in extra_args
-]
+] + ['--extra-arg-before=%s' % arg for arg in extra_args]
 
 if args.fix:
-  cmdline.append('--fix')
+    cmdline.append('--fix')
 
 jobs = []
 for filename in args.files:
-  jobs.append(jobset.JobSpec(cmdline + [filename],
-                             shortname=filename,
-                             ))#verbose_success=True))
+    jobs.append(jobset.JobSpec(
+        cmdline + [filename],
+        shortname=filename,))  #verbose_success=True))
 
 jobset.run(jobs, maxjobs=args.jobs)

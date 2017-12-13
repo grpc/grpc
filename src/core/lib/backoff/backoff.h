@@ -34,10 +34,10 @@ class BackOff {
 
   /// Begin retry loop: returns the deadline to be used for the next attempt,
   /// following the backoff strategy.
-  grpc_millis Begin(grpc_exec_ctx* exec_ctx);
+  grpc_millis Begin();
   /// Step a retry loop: returns the deadline to be used for the next attempt,
   /// following the backoff strategy.
-  grpc_millis Step(grpc_exec_ctx* exec_ctx);
+  grpc_millis Step();
   /// Reset the backoff, so the next grpc_backoff_step will be a
   /// grpc_backoff_begin.
   void Reset();

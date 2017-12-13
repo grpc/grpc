@@ -29,7 +29,7 @@ char* grpc_get_well_known_google_credentials_file_path_impl(void) {
   char* result = nullptr;
   char* base = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR);
   if (base == nullptr) {
-    gpr_log(GPR_ERROR, "Could not get " GRPC_GOOGLE_CREDENTIALS_ENV_VAR
+    gpr_log(GPR_ERROR, "Could not get " GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR
                        " environment variable.");
     return nullptr;
   }

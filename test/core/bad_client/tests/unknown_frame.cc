@@ -33,6 +33,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 }
 
 int main(int argc, char** argv) {
+  grpc_init();
   grpc_test_init(argc, argv);
 
   /* test adding prioritization data */
@@ -40,5 +41,6 @@ int main(int argc, char** argv) {
                            PFX_STR "\x00\x00\x00\x88\x00\x00\x00\x00\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
 
+  grpc_shutdown();
   return 0;
 }

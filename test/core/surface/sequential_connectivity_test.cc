@@ -70,7 +70,7 @@ static void run_test(const test_fixture* fixture) {
   gpr_thd_id server_thread;
   gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&thdopt);
-  gpr_thd_new(&server_thread, server_thread_func, &sta, &thdopt);
+  gpr_thd_new(&server_thread, "grpc_server", server_thread_func, &sta, &thdopt);
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel* channels[NUM_CONNECTIONS];
@@ -156,9 +156,8 @@ static grpc_channel* secure_test_create_channel(const char* addr) {
   grpc_channel* channel =
       grpc_secure_channel_create(ssl_creds, addr, new_client_args, nullptr);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, new_client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(new_client_args);
   }
   grpc_channel_credentials_release(ssl_creds);
   return channel;

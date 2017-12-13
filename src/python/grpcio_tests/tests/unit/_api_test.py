@@ -33,18 +33,21 @@ class AllTest(unittest.TestCase):
             'AuthMetadataPlugin', 'ServerCertificateConfiguration',
             'ServerCredentials', 'UnaryUnaryMultiCallable',
             'UnaryStreamMultiCallable', 'StreamUnaryMultiCallable',
-            'StreamStreamMultiCallable', 'Channel', 'ServicerContext',
+            'StreamStreamMultiCallable', 'UnaryUnaryClientInterceptor',
+            'UnaryStreamClientInterceptor', 'StreamUnaryClientInterceptor',
+            'StreamStreamClientInterceptor', 'Channel', 'ServicerContext',
             'RpcMethodHandler', 'HandlerCallDetails', 'GenericRpcHandler',
-            'ServiceRpcHandler', 'Server', 'unary_unary_rpc_method_handler',
-            'unary_stream_rpc_method_handler',
-            'stream_unary_rpc_method_handler',
+            'ServiceRpcHandler', 'Server', 'ServerInterceptor',
+            'unary_unary_rpc_method_handler', 'unary_stream_rpc_method_handler',
+            'stream_unary_rpc_method_handler', 'ClientCallDetails',
             'stream_stream_rpc_method_handler',
             'method_handlers_generic_handler', 'ssl_channel_credentials',
             'metadata_call_credentials', 'access_token_call_credentials',
             'composite_call_credentials', 'composite_channel_credentials',
             'ssl_server_credentials', 'ssl_server_certificate_configuration',
             'dynamic_ssl_server_credentials', 'channel_ready_future',
-            'insecure_channel', 'secure_channel', 'server',)
+            'insecure_channel', 'secure_channel', 'intercept_channel',
+            'server',)
 
         six.assertCountEqual(self, expected_grpc_code_elements,
                              _from_grpc_import_star.GRPC_ELEMENTS)

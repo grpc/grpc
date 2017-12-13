@@ -558,7 +558,7 @@ extern grpc_slice_buffer_move_first_type grpc_slice_buffer_move_first_import;
 typedef void(*grpc_slice_buffer_move_first_no_ref_type)(grpc_slice_buffer* src, size_t n, grpc_slice_buffer* dst);
 extern grpc_slice_buffer_move_first_no_ref_type grpc_slice_buffer_move_first_no_ref_import;
 #define grpc_slice_buffer_move_first_no_ref grpc_slice_buffer_move_first_no_ref_import
-typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_exec_ctx* exec_ctx, grpc_slice_buffer* src, size_t n, void* dst);
+typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_slice_buffer* src, size_t n, void* dst);
 extern grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_buffer_import;
 #define grpc_slice_buffer_move_first_into_buffer grpc_slice_buffer_move_first_into_buffer_import
 typedef grpc_slice(*grpc_slice_buffer_take_first_type)(grpc_slice_buffer* src);
@@ -768,7 +768,7 @@ extern gpr_stats_inc_type gpr_stats_inc_import;
 typedef intptr_t(*gpr_stats_read_type)(const gpr_stats_counter* c);
 extern gpr_stats_read_type gpr_stats_read_import;
 #define gpr_stats_read gpr_stats_read_import
-typedef int(*gpr_thd_new_type)(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg, const gpr_thd_options* options);
+typedef int(*gpr_thd_new_type)(gpr_thd_id* t, const char* thd_name, void (*thd_body)(void* arg), void* arg, const gpr_thd_options* options);
 extern gpr_thd_new_type gpr_thd_new_import;
 #define gpr_thd_new gpr_thd_new_import
 typedef gpr_thd_options(*gpr_thd_options_default_type)(void);

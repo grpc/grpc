@@ -75,8 +75,7 @@ namespace Grpc.Core.Internal
         {
             using (completionQueue.NewScope())
             {
-                var ctx = RequestCallContextSafeHandle.Create();
-                completionQueue.CompletionRegistry.RegisterRequestCallCompletion(ctx, callback);
+                var ctx = completionQueue.CompletionRegistry.RegisterRequestCallCompletion(callback);
                 Native.grpcsharp_server_request_call(this, completionQueue, ctx).CheckOk();
             }
         }

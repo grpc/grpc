@@ -65,7 +65,8 @@ static DWORD WINAPI thread_body(void* v) {
   return 0;
 }
 
-int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
+int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
+                void (*thd_body)(void* arg), void* arg,
                 const gpr_thd_options* options) {
   HANDLE handle;
   struct thd_info* info = (struct thd_info*)gpr_malloc(sizeof(*info));

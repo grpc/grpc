@@ -92,23 +92,22 @@ static grpc_resolver_factory* lookup_factory_by_uri(grpc_uri* uri) {
   return lookup_factory(uri->scheme);
 }
 
-static grpc_resolver_factory* resolve_factory(grpc_exec_ctx* exec_ctx,
-                                              const char* target,
+static grpc_resolver_factory* resolve_factory(const char* target,
                                               grpc_uri** uri,
                                               char** canonical_target) {
   grpc_resolver_factory* factory = nullptr;
 
   GPR_ASSERT(uri != nullptr);
-  *uri = grpc_uri_parse(exec_ctx, target, 1);
+  *uri = grpc_uri_parse(target, 1);
   factory = lookup_factory_by_uri(*uri);
   if (factory == nullptr) {
     grpc_uri_destroy(*uri);
     gpr_asprintf(canonical_target, "%s%s", g_default_resolver_prefix, target);
-    *uri = grpc_uri_parse(exec_ctx, *canonical_target, 1);
+    *uri = grpc_uri_parse(*canonical_target, 1);
     factory = lookup_factory_by_uri(*uri);
     if (factory == nullptr) {
-      grpc_uri_destroy(grpc_uri_parse(exec_ctx, target, 0));
-      grpc_uri_destroy(grpc_uri_parse(exec_ctx, *canonical_target, 0));
+      grpc_uri_destroy(grpc_uri_parse(target, 0));
+      grpc_uri_destroy(grpc_uri_parse(*canonical_target, 0));
       gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target,
               *canonical_target);
     }
@@ -116,14 +115,14 @@ static grpc_resolver_factory* resolve_factory(grpc_exec_ctx* exec_ctx,
   return factory;
 }
 
-grpc_resolver* grpc_resolver_create(grpc_exec_ctx* exec_ctx, const char* target,
+grpc_resolver* grpc_resolver_create(const char* target,
                                     const grpc_channel_args* args,
                                     grpc_pollset_set* pollset_set,
                                     grpc_combiner* combiner) {
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
   grpc_resolver_factory* factory =
-      resolve_factory(exec_ctx, target, &uri, &canonical_target);
+      resolve_factory(target, &uri, &canonical_target);
   grpc_resolver* resolver;
   grpc_resolver_args resolver_args;
   memset(&resolver_args, 0, sizeof(resolver_args));
@@ -131,29 +130,27 @@ grpc_resolver* grpc_resolver_create(grpc_exec_ctx* exec_ctx, const char* target,
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
   resolver_args.combiner = combiner;
-  resolver =
-      grpc_resolver_factory_create_resolver(exec_ctx, factory, &resolver_args);
+  resolver = grpc_resolver_factory_create_resolver(factory, &resolver_args);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return resolver;
 }
 
-char* grpc_get_default_authority(grpc_exec_ctx* exec_ctx, const char* target) {
+char* grpc_get_default_authority(const char* target) {
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
   grpc_resolver_factory* factory =
-      resolve_factory(exec_ctx, target, &uri, &canonical_target);
+      resolve_factory(target, &uri, &canonical_target);
   char* authority = grpc_resolver_factory_get_default_authority(factory, uri);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return authority;
 }
 
-char* grpc_resolver_factory_add_default_prefix_if_needed(
-    grpc_exec_ctx* exec_ctx, const char* target) {
+char* grpc_resolver_factory_add_default_prefix_if_needed(const char* target) {
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
-  resolve_factory(exec_ctx, target, &uri, &canonical_target);
+  resolve_factory(target, &uri, &canonical_target);
   grpc_uri_destroy(uri);
   return canonical_target == nullptr ? gpr_strdup(target) : canonical_target;
 }

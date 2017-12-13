@@ -37,9 +37,14 @@ cdef class OperationTag:
   cdef Server shutting_down_server
   cdef Call operation_call
   cdef CallDetails request_call_details
-  cdef MetadataArray request_metadata
-  cdef Operations batch_operations
+  cdef grpc_metadata_array _c_request_metadata
+  cdef grpc_op *c_ops
+  cdef size_t c_nops
+  cdef readonly object _operations
   cdef bint is_new_request
+
+  cdef void store_ops(self)
+  cdef object release_ops(self)
 
 
 cdef class Event:
@@ -57,7 +62,7 @@ cdef class Event:
   cdef readonly Call operation_call
 
   # For Call.start_batch
-  cdef readonly Operations batch_operations
+  cdef readonly object batch_operations
 
 
 cdef class ByteBuffer:
@@ -84,40 +89,20 @@ cdef class ChannelArgs:
   cdef list args
 
 
-cdef class Metadatum:
-
-  cdef grpc_metadata c_metadata
-  cdef void _copy_metadatum(self, grpc_metadata *destination) nogil
-
-
-cdef class Metadata:
-
-  cdef grpc_metadata *c_metadata
-  cdef readonly size_t c_count
-
-
-cdef class MetadataArray:
-
-  cdef grpc_metadata_array c_metadata_array
-
-
 cdef class Operation:
 
   cdef grpc_op c_op
+  cdef bint _c_metadata_needs_release
+  cdef size_t _c_metadata_count
+  cdef grpc_metadata *_c_metadata
   cdef ByteBuffer _received_message
-  cdef MetadataArray _received_metadata
+  cdef bint _c_metadata_array_needs_destruction
+  cdef grpc_metadata_array _c_metadata_array
   cdef grpc_status_code _received_status_code
   cdef grpc_slice _status_details
   cdef int _received_cancelled
   cdef readonly bint is_valid
   cdef object references
-
-
-cdef class Operations:
-
-  cdef grpc_op *c_ops
-  cdef size_t c_nops
-  cdef list operations
 
 
 cdef class CompressionOptions:
