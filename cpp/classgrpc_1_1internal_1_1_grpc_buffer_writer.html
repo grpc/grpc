@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -91,9 +91,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="#friends">Friends</a>  </div>
   <div class="headertitle">
-<div class="title">grpc::internal::GrpcBufferWriter Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
+<div class="title">grpc::internal::GrpcBufferWriter Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -101,8 +102,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a55bd538d7344b7dbb410b0d5d91befa5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a55bd538d7344b7dbb410b0d5d91befa5">GrpcBufferWriter</a> (<a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> **bp, int block_size)</td></tr>
-<tr class="separator:a55bd538d7344b7dbb410b0d5d91befa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5528cbf91654e1353a744076b343110"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#ad5528cbf91654e1353a744076b343110">GrpcBufferWriter</a> (<a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> **bp, int block_size, int total_size)</td></tr>
+<tr class="separator:ad5528cbf91654e1353a744076b343110"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a3b11e59164a65779749ab920c7ec30"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a8a3b11e59164a65779749ab920c7ec30">~GrpcBufferWriter</a> () override</td></tr>
 <tr class="separator:a8a3b11e59164a65779749ab920c7ec30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6bb63037ac69748f83758bafdf150663"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a6bb63037ac69748f83758bafdf150663">Next</a> (void **data, int *size) override</td></tr>
@@ -112,13 +113,30 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af7b145efa2ac6b4a3a72a331af9d6466"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc_1_1protobuf.html#ad614bff24fe4674ca81af74c769a7b32">grpc::protobuf::int64</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#af7b145efa2ac6b4a3a72a331af9d6466">ByteCount</a> () const override</td></tr>
 <tr class="separator:af7b145efa2ac6b4a3a72a331af9d6466"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:aba847098b0e3f0f72abed7e66be4b04a"><td class="memItemLeft" align="right" valign="top">const int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#aba847098b0e3f0f72abed7e66be4b04a">block_size_</a></td></tr>
+<tr class="separator:aba847098b0e3f0f72abed7e66be4b04a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a86e7b15afcaeba3fdc3cfbf9292115f4"><td class="memItemLeft" align="right" valign="top">const int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a86e7b15afcaeba3fdc3cfbf9292115f4">total_size_</a></td></tr>
+<tr class="separator:a86e7b15afcaeba3fdc3cfbf9292115f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6c83780e775e99b9208302e76a820b1"><td class="memItemLeft" align="right" valign="top">int64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#af6c83780e775e99b9208302e76a820b1">byte_count_</a></td></tr>
+<tr class="separator:af6c83780e775e99b9208302e76a820b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fd914fec40a3dd722c9e53a94b214a0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a5fd914fec40a3dd722c9e53a94b214a0">slice_buffer_</a></td></tr>
+<tr class="separator:a5fd914fec40a3dd722c9e53a94b214a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a349050d8575a87cfd0979866f23f9649"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a349050d8575a87cfd0979866f23f9649">have_backup_</a></td></tr>
+<tr class="separator:a349050d8575a87cfd0979866f23f9649"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a235799e9806853f0f32e5a078d9eddd0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a235799e9806853f0f32e5a078d9eddd0">backup_slice_</a></td></tr>
+<tr class="separator:a235799e9806853f0f32e5a078d9eddd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d82c79ed1450a74b67448e6e1a32976"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a0d82c79ed1450a74b67448e6e1a32976">slice_</a></td></tr>
+<tr class="separator:a0d82c79ed1450a74b67448e6e1a32976"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:ad7d78d8afffe2e98007bd63036c19c42"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#ad7d78d8afffe2e98007bd63036c19c42">GrpcBufferWriterPeer</a></td></tr>
 <tr class="separator:ad7d78d8afffe2e98007bd63036c19c42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a55bd538d7344b7dbb410b0d5d91befa5"></a>
+<a class="anchor" id="ad5528cbf91654e1353a744076b343110"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -135,7 +153,13 @@ Friends</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>block_size</em>&#160;</td>
+          <td class="paramname"><em>block_size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>total_size</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -145,7 +169,7 @@ Friends</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -278,13 +302,154 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<h2 class="groupheader">Field Documentation</h2>
+<a class="anchor" id="a235799e9806853f0f32e5a078d9eddd0"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc::internal::GrpcBufferWriter::backup_slice_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aba847098b0e3f0f72abed7e66be4b04a"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const int grpc::internal::GrpcBufferWriter::block_size_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="af6c83780e775e99b9208302e76a820b1"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int64_t grpc::internal::GrpcBufferWriter::byte_count_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a349050d8575a87cfd0979866f23f9649"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc::internal::GrpcBufferWriter::have_backup_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a0d82c79ed1450a74b67448e6e1a32976"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc::internal::GrpcBufferWriter::slice_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a5fd914fec40a3dd722c9e53a94b214a0"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a>* grpc::internal::GrpcBufferWriter::slice_buffer_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a86e7b15afcaeba3fdc3cfbf9292115f4"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const int grpc::internal::GrpcBufferWriter::total_size_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc++/impl/codegen/<a class="el" href="proto__utils_8h_source.html">proto_utils.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

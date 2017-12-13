@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -170,15 +170,24 @@ Functions</h2></td></tr>
 <tr class="memitem:af77734d6350953db5d730f7213aac639"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#af77734d6350953db5d730f7213aac639">grpc_completion_queue_destroy</a> (<a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq)</td></tr>
 <tr class="memdesc:af77734d6350953db5d730f7213aac639"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy a completion queue.  <a href="#af77734d6350953db5d730f7213aac639">More...</a><br/></td></tr>
 <tr class="separator:af77734d6350953db5d730f7213aac639"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74505bb522ecd43c21cb51651788c621"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a74505bb522ecd43c21cb51651788c621">grpc_alarm_create</a> (<a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *tag)</td></tr>
-<tr class="memdesc:a74505bb522ecd43c21cb51651788c621"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a completion queue alarm instance associated to <em>cq</em>.  <a href="#a74505bb522ecd43c21cb51651788c621">More...</a><br/></td></tr>
-<tr class="separator:a74505bb522ecd43c21cb51651788c621"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaaf4d5c77eea32e58481b81d07561ba3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aaaf4d5c77eea32e58481b81d07561ba3">grpc_alarm_cancel</a> (<a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *alarm)</td></tr>
-<tr class="memdesc:aaaf4d5c77eea32e58481b81d07561ba3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel a completion queue alarm.  <a href="#aaaf4d5c77eea32e58481b81d07561ba3">More...</a><br/></td></tr>
-<tr class="separator:aaaf4d5c77eea32e58481b81d07561ba3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44294a352d5e6c2d23a213668e2a11cb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a44294a352d5e6c2d23a213668e2a11cb">grpc_alarm_destroy</a> (<a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *alarm)</td></tr>
-<tr class="memdesc:a44294a352d5e6c2d23a213668e2a11cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given completion queue alarm, cancelling it in the process.  <a href="#a44294a352d5e6c2d23a213668e2a11cb">More...</a><br/></td></tr>
-<tr class="separator:a44294a352d5e6c2d23a213668e2a11cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5a76150605c2ec42b9cfa71d488590e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ae5a76150605c2ec42b9cfa71d488590e">grpc_completion_queue_thread_local_cache_init</a> (<a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq)</td></tr>
+<tr class="memdesc:ae5a76150605c2ec42b9cfa71d488590e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes a thread local cache for <em>cq</em>.  <a href="#ae5a76150605c2ec42b9cfa71d488590e">More...</a><br/></td></tr>
+<tr class="separator:ae5a76150605c2ec42b9cfa71d488590e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa92bdf2570e9c0f63e2e76ad22291907"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aa92bdf2570e9c0f63e2e76ad22291907">grpc_completion_queue_thread_local_cache_flush</a> (<a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq, void **tag, int *ok)</td></tr>
+<tr class="memdesc:aa92bdf2570e9c0f63e2e76ad22291907"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flushes the thread local cache for <em>cq</em>.  <a href="#aa92bdf2570e9c0f63e2e76ad22291907">More...</a><br/></td></tr>
+<tr class="separator:aa92bdf2570e9c0f63e2e76ad22291907"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3bb07971bb2ae3e5b70acb0eb115e23b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a3bb07971bb2ae3e5b70acb0eb115e23b">grpc_alarm_create</a> (void *reserved)</td></tr>
+<tr class="memdesc:a3bb07971bb2ae3e5b70acb0eb115e23b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a completion queue alarm instance.  <a href="#a3bb07971bb2ae3e5b70acb0eb115e23b">More...</a><br/></td></tr>
+<tr class="separator:a3bb07971bb2ae3e5b70acb0eb115e23b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d757b447c7902573847378d376bd95b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a2d757b447c7902573847378d376bd95b">grpc_alarm_set</a> (<a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *alarm, <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *tag, void *reserved)</td></tr>
+<tr class="memdesc:a2d757b447c7902573847378d376bd95b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a completion queue alarm instance associated to <em>cq</em>.  <a href="#a2d757b447c7902573847378d376bd95b">More...</a><br/></td></tr>
+<tr class="separator:a2d757b447c7902573847378d376bd95b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a7df4d1c61a581ee125f160249644fd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a8a7df4d1c61a581ee125f160249644fd">grpc_alarm_cancel</a> (<a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *alarm, void *reserved)</td></tr>
+<tr class="memdesc:a8a7df4d1c61a581ee125f160249644fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel a completion queue alarm.  <a href="#a8a7df4d1c61a581ee125f160249644fd">More...</a><br/></td></tr>
+<tr class="separator:a8a7df4d1c61a581ee125f160249644fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4bcf958a8230547e3fff7604e634231f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a4bcf958a8230547e3fff7604e634231f">grpc_alarm_destroy</a> (<a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *alarm, void *reserved)</td></tr>
+<tr class="memdesc:a4bcf958a8230547e3fff7604e634231f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given completion queue alarm, cancelling it in the process.  <a href="#a4bcf958a8230547e3fff7604e634231f">More...</a><br/></td></tr>
+<tr class="separator:a4bcf958a8230547e3fff7604e634231f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a783c4ef542c9899f3c2e02c2a956fd6d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a783c4ef542c9899f3c2e02c2a956fd6d">grpc_channel_check_connectivity_state</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel, int try_to_connect)</td></tr>
 <tr class="memdesc:a783c4ef542c9899f3c2e02c2a956fd6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check the connectivity state of a channel.  <a href="#a783c4ef542c9899f3c2e02c2a956fd6d">More...</a><br/></td></tr>
 <tr class="separator:a783c4ef542c9899f3c2e02c2a956fd6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -188,6 +197,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a568bac9fe4004c1dd790e6569b918d2f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a568bac9fe4004c1dd790e6569b918d2f">grpc_channel_watch_connectivity_state</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel, <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed_state, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq, void *tag)</td></tr>
 <tr class="memdesc:a568bac9fe4004c1dd790e6569b918d2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Watch for a change in connectivity state.  <a href="#a568bac9fe4004c1dd790e6569b918d2f">More...</a><br/></td></tr>
 <tr class="separator:a568bac9fe4004c1dd790e6569b918d2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2fa5cfcbb0f87e4e71e1644f0305cf89"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a2fa5cfcbb0f87e4e71e1644f0305cf89">grpc_channel_support_connectivity_watcher</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel)</td></tr>
+<tr class="memdesc:a2fa5cfcbb0f87e4e71e1644f0305cf89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether a grpc channel supports connectivity watcher.  <a href="#a2fa5cfcbb0f87e4e71e1644f0305cf89">More...</a><br/></td></tr>
+<tr class="separator:a2fa5cfcbb0f87e4e71e1644f0305cf89"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9686ae95702f8d696c134d3a3e02fa97"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a9686ae95702f8d696c134d3a3e02fa97">grpc_channel_create_call</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel, <a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *parent_call, uint32_t propagation_mask, <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *completion_queue, <a class="el" href="structgrpc__slice.html">grpc_slice</a> method, const <a class="el" href="structgrpc__slice.html">grpc_slice</a> *host, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *reserved)</td></tr>
 <tr class="memdesc:a9686ae95702f8d696c134d3a3e02fa97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a call given a grpc_channel, in order to call 'method'.  <a href="#a9686ae95702f8d696c134d3a3e02fa97">More...</a><br/></td></tr>
 <tr class="separator:a9686ae95702f8d696c134d3a3e02fa97"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -343,7 +355,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="aaaf4d5c77eea32e58481b81d07561ba3"></a>
+<a class="anchor" id="a8a7df4d1c61a581ee125f160249644fd"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -351,8 +363,18 @@ Functions</h2></td></tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_alarm_cancel </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *&#160;</td>
-          <td class="paramname"><em>alarm</em></td><td>)</td>
+          <td class="paramname"><em>alarm</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -362,13 +384,65 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a74505bb522ecd43c21cb51651788c621"></a>
+<a class="anchor" id="a3bb07971bb2ae3e5b70acb0eb115e23b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a>* grpc_alarm_create </td>
           <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a completion queue alarm instance. </p>
+
+</div>
+</div>
+<a class="anchor" id="a4bcf958a8230547e3fff7604e634231f"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_alarm_destroy </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *&#160;</td>
+          <td class="paramname"><em>alarm</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Destroy the given completion queue alarm, cancelling it in the process. </p>
+
+</div>
+</div>
+<a class="anchor" id="a2d757b447c7902573847378d376bd95b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_alarm_set </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *&#160;</td>
+          <td class="paramname"><em>alarm</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype"><a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td>
           <td class="paramname"><em>cq</em>, </td>
         </tr>
@@ -382,7 +456,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>tag</em>&#160;</td>
+          <td class="paramname"><em>tag</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -392,26 +472,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Create a completion queue alarm instance associated to <em>cq</em>. </p>
+<p>Set a completion queue alarm instance associated to <em>cq</em>. </p>
 <p>Once the alarm expires (at <em>deadline</em>) or it's cancelled (see <em>grpc_alarm_cancel</em>), an event with tag <em>tag</em> will be added to <em>cq</em>. If the alarm expired, the event's success bit will be true, false otherwise (ie, upon cancellation). </p>
-
-</div>
-</div>
-<a class="anchor" id="a44294a352d5e6c2d23a213668e2a11cb"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_alarm_destroy </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *&#160;</td>
-          <td class="paramname"><em>alarm</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Destroy the given completion queue alarm, cancelling it in the process. </p>
 
 </div>
 </div>
@@ -598,7 +660,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Ref a call. </p>
-<p>THREAD SAFETY: grpc_call_unref is thread-compatible </p>
+<p>THREAD SAFETY: grpc_call_ref is thread-compatible </p>
 
 </div>
 </div>
@@ -1030,6 +1092,24 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a2fa5cfcbb0f87e4e71e1644f0305cf89"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_channel_support_connectivity_watcher </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td>
+          <td class="paramname"><em>channel</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check whether a grpc channel supports connectivity watcher. </p>
+
+</div>
+</div>
 <a class="anchor" id="a568bac9fe4004c1dd790e6569b918d2f"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1281,6 +1361,60 @@ Functions</h2></td></tr>
 <p>Begin destruction of a completion queue. </p>
 <p>Once all possible events are drained then grpc_completion_queue_next will start to produce GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call grpc_completion_queue_destroy.</p>
 <p>After calling this function applications should ensure that no NEW work is added to be published on this completion queue. </p>
+
+</div>
+</div>
+<a class="anchor" id="aa92bdf2570e9c0f63e2e76ad22291907"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_completion_queue_thread_local_cache_flush </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td>
+          <td class="paramname"><em>cq</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void **&#160;</td>
+          <td class="paramname"><em>tag</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int *&#160;</td>
+          <td class="paramname"><em>ok</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Flushes the thread local cache for <em>cq</em>. </p>
+<p>Returns 1 if there was contents in the cache. If there was an event in <em>cq</em> tls cache, its tag is placed in tag, and ok is set to the event success. </p>
+
+</div>
+</div>
+<a class="anchor" id="ae5a76150605c2ec42b9cfa71d488590e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_completion_queue_thread_local_cache_init </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td>
+          <td class="paramname"><em>cq</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Initializes a thread local cache for <em>cq</em>. </p>
+<p>grpc_flush_cq_tls_cache() MUST be called on the same thread, with the same cq. </p>
 
 </div>
 </div>
@@ -2036,7 +2170,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

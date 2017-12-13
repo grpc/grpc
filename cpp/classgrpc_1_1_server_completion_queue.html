@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -116,6 +116,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aac07e9da5148c779cac51e1bf948c282 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#aac07e9da5148c779cac51e1bf948c282">~CompletionQueue</a> ()</td></tr>
 <tr class="memdesc:aac07e9da5148c779cac51e1bf948c282 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor. Destroys the owned wrapped completion queue / instance.  <a href="#aac07e9da5148c779cac51e1bf948c282">More...</a><br/></td></tr>
 <tr class="separator:aac07e9da5148c779cac51e1bf948c282 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af935df99ccd14bcfb674e89f0c077a8c inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memTemplParams" colspan="2">template&lt;typename T , typename F &gt; </td></tr>
+<tr class="memitem:af935df99ccd14bcfb674e89f0c077a8c inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572">NextStatus</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#af935df99ccd14bcfb674e89f0c077a8c">DoThenAsyncNext</a> (F &amp;&amp;f, void **tag, bool *ok, const T &amp;deadline)</td></tr>
+<tr class="memdesc:af935df99ccd14bcfb674e89f0c077a8c inherit pub_methods_classgrpc_1_1_completion_queue"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL First executes <em>F</em>, then reads from the queue, blocking up to <em>deadline</em> (or the queue's shutdown).  <a href="#af935df99ccd14bcfb674e89f0c077a8c">More...</a><br/></td></tr>
+<tr class="separator:af935df99ccd14bcfb674e89f0c077a8c inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a290ddf3d96e6d1d5886580e60b0602b4 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a290ddf3d96e6d1d5886580e60b0602b4 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572">NextStatus</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a290ddf3d96e6d1d5886580e60b0602b4">AsyncNext</a> (void **tag, bool *ok, const T &amp;deadline)</td></tr>
 <tr class="memdesc:a290ddf3d96e6d1d5886580e60b0602b4 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read from the queue, blocking up to <em>deadline</em> (or the queue's shutdown).  <a href="#a290ddf3d96e6d1d5886580e60b0602b4">More...</a><br/></td></tr>
@@ -129,13 +133,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a999c317e716d1e74aca2eb050912302b inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a999c317e716d1e74aca2eb050912302b">cq</a> ()</td></tr>
 <tr class="memdesc:a999c317e716d1e74aca2eb050912302b inherit pub_methods_classgrpc_1_1_completion_queue"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a <em>raw</em> pointer to the underlying <em>grpc_completion_queue</em> instance.  <a href="#a999c317e716d1e74aca2eb050912302b">More...</a><br/></td></tr>
 <tr class="separator:a999c317e716d1e74aca2eb050912302b inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a169dd094e1347297a168750b4cb592b8 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a169dd094e1347297a168750b4cb592b8">InitialAvalanching</a> ()</td></tr>
-<tr class="memdesc:a169dd094e1347297a168750b4cb592b8 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="mdescLeft">&#160;</td><td class="mdescRight">Manage state of avalanching operations : completion queue tags that trigger other completion queue operations.  <a href="#a169dd094e1347297a168750b4cb592b8">More...</a><br/></td></tr>
-<tr class="separator:a169dd094e1347297a168750b4cb592b8 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43a587573c1575511cd0df4101e8f065 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a43a587573c1575511cd0df4101e8f065">RegisterAvalanching</a> ()</td></tr>
-<tr class="separator:a43a587573c1575511cd0df4101e8f065 inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab198302d64bdf815ece389a44fdd931f inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#ab198302d64bdf815ece389a44fdd931f">CompleteAvalanching</a> ()</td></tr>
-<tr class="separator:ab198302d64bdf815ece389a44fdd931f inherit pub_methods_classgrpc_1_1_completion_queue"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -210,7 +207,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

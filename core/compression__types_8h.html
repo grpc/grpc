@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">4.0.0</span>
+   &#160;<span id="projectnumber">5.0.0</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_a8e30387f66bf56f1146fa5d3496d838.html">include</a></li><li class="navelem"><a class="el" href="dir_f93e102bce67c94e5a77dcd42507568e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_659ae97ef5bbf397d65f88fc549b7461.html">impl</a></li><li class="navelem"><a class="el" href="dir_4c11e77fd81979dbb81b685ce26f5187.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_04ed5e7a0931afed58b44427831a7c00.html">include</a></li><li class="navelem"><a class="el" href="dir_70e6a53b947bcbad872060ddc188ca9d.html">grpc</a></li><li class="navelem"><a class="el" href="dir_32f37f9fc4aaaa68ca3d1d71f794f7c4.html">impl</a></li><li class="navelem"><a class="el" href="dir_5502caef0f6b800bde740a6356fce088.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -104,10 +104,16 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options.html">grpc_compression_options</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html">grpc_compression_options::grpc_compression_options_default_level</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default channel compression level.  <a href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html#details">More...</a><br/></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default message-wise compression level.  <a href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options_1_1grpc__stream__compression__options__default__level.html">grpc_compression_options::grpc_stream_compression_options_default_level</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default stream compression level.  <a href="structgrpc__compression__options_1_1grpc__stream__compression__options__default__level.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html">grpc_compression_options::grpc_compression_options_default_algorithm</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default channel compression algorithm.  <a href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html#details">More...</a><br/></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default message compression algorithm.  <a href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options_1_1grpc__stream__compression__options__default__algorithm.html">grpc_compression_options::grpc_stream_compression_options_default_algorithm</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default stream compression algorithm.  <a href="structgrpc__compression__options_1_1grpc__stream__compression__options__default__algorithm.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
@@ -115,15 +121,27 @@ Macros</h2></td></tr>
 <tr class="memitem:a862adef9b36180377a6db217dd5f52fe"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression__types_8h.html#a862adef9b36180377a6db217dd5f52fe">GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY</a>&#160;&#160;&#160;&quot;grpc-internal-encoding-request&quot;</td></tr>
 <tr class="memdesc:a862adef9b36180377a6db217dd5f52fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">To be used as initial metadata key for the request of a concrete compression algorithm.  <a href="#a862adef9b36180377a6db217dd5f52fe">More...</a><br/></td></tr>
 <tr class="separator:a862adef9b36180377a6db217dd5f52fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5c6aaa4113d464af2bba590fe18ef05"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression__types_8h.html#ab5c6aaa4113d464af2bba590fe18ef05">GRPC_STREAM_COMPRESSION_REQUEST_ALGORITHM_MD_KEY</a>&#160;&#160;&#160;&quot;grpc-internal-stream-encoding-request&quot;</td></tr>
+<tr class="memdesc:ab5c6aaa4113d464af2bba590fe18ef05"><td class="mdescLeft">&#160;</td><td class="mdescRight">To be used as initial metadata key for the request of a concrete stream compression algorithm.  <a href="#ab5c6aaa4113d464af2bba590fe18ef05">More...</a><br/></td></tr>
+<tr class="separator:ab5c6aaa4113d464af2bba590fe18ef05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga33cd5668b4ebacb59b657f4674cc1cf5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga33cd5668b4ebacb59b657f4674cc1cf5">GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM</a>&#160;&#160;&#160;&quot;grpc.default_compression_algorithm&quot;</td></tr>
 <tr class="memdesc:ga33cd5668b4ebacb59b657f4674cc1cf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default compression algorithm for the channel.  <a href="group__grpc__arg__keys.html#ga33cd5668b4ebacb59b657f4674cc1cf5">More...</a><br/></td></tr>
 <tr class="separator:ga33cd5668b4ebacb59b657f4674cc1cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga22053c6ad21d79ed31312ddd37722479"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga22053c6ad21d79ed31312ddd37722479">GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM</a>&#160;&#160;&#160;&quot;grpc.default_stream_compression_algorithm&quot;</td></tr>
+<tr class="memdesc:ga22053c6ad21d79ed31312ddd37722479"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default stream compression algorithm for the channel.  <a href="group__grpc__arg__keys.html#ga22053c6ad21d79ed31312ddd37722479">More...</a><br/></td></tr>
+<tr class="separator:ga22053c6ad21d79ed31312ddd37722479"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4ced90d07cc1e9a2c3f8a3d6b9171db3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga4ced90d07cc1e9a2c3f8a3d6b9171db3">GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL</a>&#160;&#160;&#160;&quot;grpc.default_compression_level&quot;</td></tr>
 <tr class="memdesc:ga4ced90d07cc1e9a2c3f8a3d6b9171db3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default compression level for the channel.  <a href="group__grpc__arg__keys.html#ga4ced90d07cc1e9a2c3f8a3d6b9171db3">More...</a><br/></td></tr>
 <tr class="separator:ga4ced90d07cc1e9a2c3f8a3d6b9171db3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga511155e077471e7fc1f8843025d956f9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga511155e077471e7fc1f8843025d956f9">GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_LEVEL</a>&#160;&#160;&#160;&quot;grpc.default_stream_compression_level&quot;</td></tr>
+<tr class="memdesc:ga511155e077471e7fc1f8843025d956f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default stream compression level for the channel.  <a href="group__grpc__arg__keys.html#ga511155e077471e7fc1f8843025d956f9">More...</a><br/></td></tr>
+<tr class="separator:ga511155e077471e7fc1f8843025d956f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaf8844eec49cd7281c77f4fb81deeffdc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf8844eec49cd7281c77f4fb81deeffdc">GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET</a>&#160;&#160;&#160;&quot;grpc.compression_enabled_algorithms_bitset&quot;</td></tr>
 <tr class="memdesc:gaf8844eec49cd7281c77f4fb81deeffdc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compression algorithms supported by the channel.  <a href="group__grpc__arg__keys.html#gaf8844eec49cd7281c77f4fb81deeffdc">More...</a><br/></td></tr>
 <tr class="separator:gaf8844eec49cd7281c77f4fb81deeffdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae465db59ec7e563e7730ab0a2331a53b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gae465db59ec7e563e7730ab0a2331a53b">GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET</a>&#160;&#160;&#160;&quot;grpc.stream_compression_enabled_algorithms_bitset&quot;</td></tr>
+<tr class="memdesc:gae465db59ec7e563e7730ab0a2331a53b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stream compression algorithms supported by the channel.  <a href="group__grpc__arg__keys.html#gae465db59ec7e563e7730ab0a2331a53b">More...</a><br/></td></tr>
+<tr class="separator:gae465db59ec7e563e7730ab0a2331a53b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -140,6 +158,12 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:ab9de0f68bfb1ef8ed09bd00643db14c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">The various compression algorithms supported by gRPC.  <a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">More...</a><br/></td></tr>
 <tr class="separator:ab9de0f68bfb1ef8ed09bd00643db14c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f02e953ca5bdabd545b3386ad242073"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073">grpc_stream_compression_algorithm</a> { <a class="el" href="compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073aefedc7a0e5d3f1011325d6be6fd3cbed">GRPC_STREAM_COMPRESS_NONE</a> = 0, 
+<a class="el" href="compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073a1c421fa9f6640f07fa9041e9ae10d254">GRPC_STREAM_COMPRESS_GZIP</a>, 
+<a class="el" href="compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073afa3f710b83a3a6e2055a88a52337af10">GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT</a>
+ }</td></tr>
+<tr class="memdesc:a5f02e953ca5bdabd545b3386ad242073"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stream compresssion algorithms supported by gRPC.  <a href="compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073">More...</a><br/></td></tr>
+<tr class="separator:a5f02e953ca5bdabd545b3386ad242073"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a14a79ed6b5ebd7e1dda7c2684f499cc7"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> { <br/>
 &#160;&#160;<a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7ab67efe04f58b0939b963e51a5b8f772c">GRPC_COMPRESS_LEVEL_NONE</a> = 0, 
 <a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7afd436e21be4f897ca939b3b4d9a44673">GRPC_COMPRESS_LEVEL_LOW</a>, 
@@ -151,6 +175,17 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:a14a79ed6b5ebd7e1dda7c2684f499cc7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compression levels allow a party with knowledge of its peer's accepted encodings to request compression in an abstract way.  <a href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">More...</a><br/></td></tr>
 <tr class="separator:a14a79ed6b5ebd7e1dda7c2684f499cc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80e5bae1e06466c4b0a9ff0c8469b266"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266">grpc_stream_compression_level</a> { <br/>
+&#160;&#160;<a class="el" href="compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266a91a5ffa728d1b59eb79b22c3c06f28a8">GRPC_STREAM_COMPRESS_LEVEL_NONE</a> = 0, 
+<a class="el" href="compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266a23a8ee63a9804df92d34cc185a90babd">GRPC_STREAM_COMPRESS_LEVEL_LOW</a>, 
+<a class="el" href="compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266a64966743ba306122eaf189c7d4668110">GRPC_STREAM_COMPRESS_LEVEL_MED</a>, 
+<a class="el" href="compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266af9322f09d46927104b8779931ec6a59b">GRPC_STREAM_COMPRESS_LEVEL_HIGH</a>, 
+<br/>
+&#160;&#160;<a class="el" href="compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266a22906945a38af67acd4d8ea90570717f">GRPC_STREAM_COMPRESS_LEVEL_COUNT</a>
+<br/>
+ }</td></tr>
+<tr class="memdesc:a80e5bae1e06466c4b0a9ff0c8469b266"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compression levels for stream compression algorithms.  <a href="compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266">More...</a><br/></td></tr>
+<tr class="separator:a80e5bae1e06466c4b0a9ff0c8469b266"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a class="anchor" id="a862adef9b36180377a6db217dd5f52fe"></a>
@@ -164,6 +199,20 @@ Enumerations</h2></td></tr>
 </div><div class="memdoc">
 
 <p>To be used as initial metadata key for the request of a concrete compression algorithm. </p>
+
+</div>
+</div>
+<a class="anchor" id="ab5c6aaa4113d464af2bba590fe18ef05"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_STREAM_COMPRESSION_REQUEST_ALGORITHM_MD_KEY&#160;&#160;&#160;&quot;grpc-internal-stream-encoding-request&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>To be used as initial metadata key for the request of a concrete stream compression algorithm. </p>
 
 </div>
 </div>
@@ -232,10 +281,58 @@ Enumerations</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a5f02e953ca5bdabd545b3386ad242073"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073">grpc_stream_compression_algorithm</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Stream compresssion algorithms supported by gRPC. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a5f02e953ca5bdabd545b3386ad242073aefedc7a0e5d3f1011325d6be6fd3cbed"></a>GRPC_STREAM_COMPRESS_NONE</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a5f02e953ca5bdabd545b3386ad242073a1c421fa9f6640f07fa9041e9ae10d254"></a>GRPC_STREAM_COMPRESS_GZIP</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a5f02e953ca5bdabd545b3386ad242073afa3f710b83a3a6e2055a88a52337af10"></a>GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT</em>&#160;</td><td class="fielddoc">
+</td></tr>
+</table>
+
+</div>
+</div>
+<a class="anchor" id="a80e5bae1e06466c4b0a9ff0c8469b266"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266">grpc_stream_compression_level</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Compression levels for stream compression algorithms. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a80e5bae1e06466c4b0a9ff0c8469b266a91a5ffa728d1b59eb79b22c3c06f28a8"></a>GRPC_STREAM_COMPRESS_LEVEL_NONE</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a80e5bae1e06466c4b0a9ff0c8469b266a23a8ee63a9804df92d34cc185a90babd"></a>GRPC_STREAM_COMPRESS_LEVEL_LOW</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a80e5bae1e06466c4b0a9ff0c8469b266a64966743ba306122eaf189c7d4668110"></a>GRPC_STREAM_COMPRESS_LEVEL_MED</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a80e5bae1e06466c4b0a9ff0c8469b266af9322f09d46927104b8779931ec6a59b"></a>GRPC_STREAM_COMPRESS_LEVEL_HIGH</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a80e5bae1e06466c4b0a9ff0c8469b266a22906945a38af67acd4d8ea90570717f"></a>GRPC_STREAM_COMPRESS_LEVEL_COUNT</em>&#160;</td><td class="fielddoc">
+</td></tr>
+</table>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

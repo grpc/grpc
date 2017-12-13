@@ -1,6 +1,7 @@
 var searchData=
 [
   ['genericclientasyncreaderwriter',['GenericClientAsyncReaderWriter',['../namespacegrpc.html#aba53fb6f2502caa167e9528e5c560539',1,'grpc']]],
+  ['genericclientasyncresponsereader',['GenericClientAsyncResponseReader',['../namespacegrpc.html#a7ee9bd108774bc00defacc5b4fb695df',1,'grpc']]],
   ['genericserverasyncreaderwriter',['GenericServerAsyncReaderWriter',['../namespacegrpc.html#a7b3db9e9e4d0c7faf701c9ebd455196a',1,'grpc']]],
   ['gpr_5fallocation_5ffunctions',['gpr_allocation_functions',['../alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7',1,'alloc.h']]],
   ['gpr_5fatm',['gpr_atm',['../impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_atomic.h'],['../impl_2codegen_2atm__gcc__sync_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_sync.h'],['../impl_2codegen_2atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_windows.h']]],
@@ -20,7 +21,7 @@ var searchData=
   ['grpc_5falarm',['grpc_alarm',['../grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13',1,'grpc_types.h']]],
   ['grpc_5farg_5fpointer_5fvtable',['grpc_arg_pointer_vtable',['../grpc__types_8h.html#a8499b89a510e8a3d4e76e011776a1548',1,'grpc_types.h']]],
   ['grpc_5fbyte_5fbuffer',['grpc_byte_buffer',['../grpc__types_8h.html#acf22f6b5ce464dd73df59c9c49f8871c',1,'grpc_types.h']]],
-  ['grpc_5fbyte_5fbuffer_5freader',['grpc_byte_buffer_reader',['../grpc_2byte__buffer_8h.html#a16143f22ea46cc7fa6b53e6cb30715f1',1,'byte_buffer.h']]],
+  ['grpc_5fbyte_5fbuffer_5freader',['grpc_byte_buffer_reader',['../grpc_2impl_2codegen_2byte__buffer_8h.html#a16143f22ea46cc7fa6b53e6cb30715f1',1,'byte_buffer.h']]],
   ['grpc_5fcall',['grpc_call',['../grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222',1,'grpc_types.h']]],
   ['grpc_5fcall_5ferror',['grpc_call_error',['../grpc__types_8h.html#abb51216cb5ac1cfd8ca4d096e060adbb',1,'grpc_types.h']]],
   ['grpc_5fchannel',['grpc_channel',['../grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e',1,'grpc_types.h']]],

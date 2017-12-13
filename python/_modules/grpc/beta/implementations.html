@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta.implementations &mdash; grpcio 1.6.0 documentation</title>
+  <title>grpc.beta.implementations &mdash; grpcio 1.8.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="grpcio 1.6.0 documentation" href="../../../index.html"/>
+    <link rel="top" title="grpcio 1.8.0 documentation" href="../../../index.html"/>
         <link rel="up" title="grpc" href="../../grpc.html"/> 
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.6.0
+                1.8.0
               </div>
             
           
@@ -146,6 +146,8 @@
     
       <li class="wy-breadcrumbs-aside">
         
+            
+        
       </li>
     
   </ul>
@@ -180,6 +182,7 @@
 <span class="kn">import</span> <span class="nn">grpc</span>
 <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_auth</span>
 <span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">_client_adaptations</span>
+<span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">_metadata</span>
 <span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">_server_adaptations</span>
 <span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">interfaces</span>  <span class="c1"># pylint: disable=unused-import</span>
 <span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="k">import</span> <span class="n">cardinality</span>  <span class="c1"># pylint: disable=unused-import</span>
@@ -190,7 +193,18 @@
 <span class="n">ChannelCredentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelCredentials</span>
 <span class="n">ssl_channel_credentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ssl_channel_credentials</span>
 <span class="n">CallCredentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span>
-<span class="n">metadata_call_credentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">metadata_call_credentials</span>
+
+
+<div class="viewcode-block" id="metadata_call_credentials"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.metadata_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">metadata_call_credentials</span><span class="p">(</span><span class="n">metadata_plugin</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">plugin</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">wrapped_callback</span><span class="p">(</span><span class="n">beta_metadata</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+            <span class="n">callback</span><span class="p">(</span><span class="n">_metadata</span><span class="o">.</span><span class="n">unbeta</span><span class="p">(</span><span class="n">beta_metadata</span><span class="p">),</span> <span class="n">error</span><span class="p">)</span>
+
+        <span class="n">metadata_plugin</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">wrapped_callback</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">grpc</span><span class="o">.</span><span class="n">metadata_call_credentials</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="google_call_credentials"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.google_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">google_call_credentials</span><span class="p">(</span><span class="n">credentials</span><span class="p">):</span>
@@ -491,8 +505,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'1.6.0',
-            LANGUAGE:'en',
+            VERSION:'1.8.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

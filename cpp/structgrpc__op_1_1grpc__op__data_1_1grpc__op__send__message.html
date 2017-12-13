@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -101,6 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:ac5710965e63672497b156855e096a759"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html#ac5710965e63672497b156855e096a759">send_message</a></td></tr>
+<tr class="memdesc:ac5710965e63672497b156855e096a759"><td class="mdescLeft">&#160;</td><td class="mdescRight">This op takes ownership of the slices in send_message.  <a href="#ac5710965e63672497b156855e096a759">More...</a><br/></td></tr>
 <tr class="separator:ac5710965e63672497b156855e096a759"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
@@ -114,6 +115,9 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>This op takes ownership of the slices in send_message. </p>
+<p>After a call completes, the contents of send_message are not guaranteed and likely empty. The original owner should still call <a class="el" href="grpc_2impl_2codegen_2byte__buffer_8h.html#a32c878db8b0a48035ce777844360a6f0" title="Destroys byte_buffer deallocating all its memory. ">grpc_byte_buffer_destroy()</a> on this object however. </p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
@@ -122,7 +126,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -103,8 +103,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 class grpc::SerializationTraits&lt; Message, UnusedButHereForPartialTemplateSpecialization &gt;</h3>
 
 <p>Defines how to serialize and deserialize some type. </p>
-<p>Used for hooking different message serialization API's into GRPC. Each <a class="el" href="classgrpc_1_1_serialization_traits.html" title="Defines how to serialize and deserialize some type. ">SerializationTraits</a> implementation must provide the following functions: static <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a> Serialize(const Message&amp; msg, grpc_byte_buffer** buffer, bool* own_buffer); static <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a> Deserialize(grpc_byte_buffer* buffer, Message* msg, int max_receive_message_size);</p>
-<p>Serialize is required to convert message to a <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a>, and to store a pointer to that byte buffer at *buffer. *own_buffer should be set to true if the caller owns said byte buffer, or false if ownership is retained elsewhere.</p>
+<p>Used for hooking different message serialization API's into GRPC. Each SerializationTraits&lt;Message&gt; implementation must provide the following functions:</p>
+<ol type="1">
+<li>static <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a> Serialize(const Message&amp; msg, ByteBuffer* buffer, bool* own_buffer); OR static <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a> Serialize(const Message&amp; msg, grpc_byte_buffer** buffer, bool* own_buffer); The former is preferred; the latter is deprecated</li>
+<li>static <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a> Deserialize(ByteBuffer* buffer, Message* msg); OR static <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a> Deserialize(grpc_byte_buffer* buffer, Message* msg); The former is preferred; the latter is deprecated</li>
+</ol>
+<p>Serialize is required to convert message to a <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes. ">ByteBuffer</a>, and return that byte buffer through *buffer. *own_buffer should be set to true if the caller owns said byte buffer, or false if ownership is retained elsewhere.</p>
 <p>Deserialize is required to convert buffer into the message stored at msg. max_receive_message_size is passed in as a bound on the maximum number of message bytes Deserialize should accept.</p>
 <p>Both functions return a <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a>, allowing them to explain what went wrong if required. </p>
 </div><hr/>The documentation for this class was generated from the following file:<ul>
@@ -113,7 +117,7 @@ class grpc::SerializationTraits&lt; Message, UnusedButHereForPartialTemplateSpec
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

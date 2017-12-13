@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -108,16 +108,17 @@ upon receiving a GOAWAY while there are no pending RPCs. </td><td>Shutdown trigg
 <th>SHUTDOWN </th><td></td><td></td><td></td><td></td><td></td></tr>
 </table>
 <h2>Channel State API </h2>
-<p>All gRPC libraries will expose a channel-level API method to poll the current state of a channel. In C++, this method is called GetCurrentState and returns an enum for one of the five legal states.</p>
+<p>All gRPC libraries will expose a channel-level API method to poll the current state of a channel. In C++, this method is called GetState and returns an enum for one of the five legal states. It also accepts a boolean <code>try_to_connect</code> to transition to CONNECTING if the channel is currently IDLE. The boolean should act as if an RPC occurred, so it should also reset IDLE_TIMEOUT.</p>
+<p>```cpp grpc_connectivity_state GetState(bool try_to_connect); ```</p>
 <p>All libraries should also expose an API that enables the application (user of the gRPC API) to be notified when the channel state changes. Since state changes can be rapid and race with any such notification, the notification should just inform the user that some state change has happened, leaving it to the user to poll the channel for the current state.</p>
 <p>The synchronous version of this API is:</p>
-<p>```cpp bool WaitForStateChange(gpr_timespec deadline, ChannelState source_state); ```</p>
-<p>which returns true when the state changes to something other than the source_state and false if the deadline expires. Asynchronous and futures based APIs should have a corresponding method that allows the application to be notified when the state of a channel changes.</p>
+<p>```cpp bool WaitForStateChange(grpc_connectivity_state source_state, gpr_timespec deadline); ```</p>
+<p>which returns <code>true</code> when the state is something other than the <code>source_state</code> and <code>false</code> if the deadline expires. Asynchronous- and futures-based APIs should have a corresponding method that allows the application to be notified when the state of a channel changes.</p>
 <p>Note that a notification is delivered every time there is a transition from any state to any <em>other</em> state. On the other hand the rules for legal state transition, require a transition from CONNECTING to TRANSIENT_FAILURE and back to CONNECTING for every recoverable failure, even if the corresponding exponential backoff requires no wait before retry. The combined effect is that the application may receive state change notifications that appear spurious. e.g., an application waiting for state changes on a channel that is CONNECTING may receive a state change notification but find the channel in the same CONNECTING state on polling for current state because the channel may have spent infinitesimally small amount of time in the TRANSIENT_FAILURE state. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

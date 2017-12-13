@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">4.0.0</span>
+   &#160;<span id="projectnumber">5.0.0</span>
    </div>
   </td>
  </tr>
@@ -97,6 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <ul>
 <li>api - traces api calls to the C core</li>
 <li>bdp_estimator - traces behavior of bdp estimation logic</li>
+<li>call_combiner - traces call combiner state</li>
 <li>call_error - traces the possible errors contributing to final call status</li>
 <li>channel - traces operations on the C core channel stack</li>
 <li>client_channel - traces client channel activity, including resolver and load balancing policy interaction</li>
@@ -104,15 +105,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>compression - traces compression operations</li>
 <li>connectivity_state - traces connectivity state changes to channels</li>
 <li>channel_stack_builder - traces information about channel stacks being built</li>
+<li>executor - traces grpc's internal thread pool ('the executor')</li>
+<li>glb - traces the grpclb load balancer</li>
 <li>http - traces state in the http2 transport engine</li>
+<li>http2_stream_state - traces all http2 stream state mutations.</li>
 <li>http1 - traces HTTP/1.x operations performed by gRPC</li>
 <li>inproc - traces the in-process transport</li>
 <li>flowctl - traces http2 flow control</li>
 <li>op_failure - traces error information when failure is pushed onto a completion queue</li>
-<li>round_robin - traces the round_robin load balancing policy</li>
 <li>pick_first - traces the pick first load balancing policy</li>
+<li>plugin_credentials - traces plugin credentials</li>
+<li>pollable_refcount - traces reference counting of 'pollable' objects (only in DEBUG)</li>
 <li>resource_quota - trace resource quota objects internals</li>
-<li>glb - traces the grpclb load balancer</li>
+<li>round_robin - traces the round_robin load balancing policy</li>
 <li>queue_pluck</li>
 <li>queue_timeout</li>
 <li>server_channel - lightweight trace of significant server channel events</li>
@@ -156,14 +161,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_TRACE_FUZZER if set, the fuzzers will output trace (it is usually supressed).</li>
 <li>GRPC_DNS_RESOLVER Declares which DNS resolver to use. The default is ares if gRPC is built with c-ares support. Otherwise, the value of this environment variable is ignored. Available DNS resolver include:<ul>
 <li>native (default)- a DNS resolver based around getaddrinfo(), creates a new thread to perform name resolution</li>
-<li>ares - a DNS resolver based around the c-ares library </li>
+<li>ares - a DNS resolver based around the c-ares library</li>
 </ul>
 </li>
+<li>GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS Default: 5000 Declares the interval between two backup polls on client channels. These polls are run in the timer thread so that gRPC can process connection failures while there is no active polling thread. They help reconnect disconnected client channels (mostly due to idleness), so that the next RPC on this channel won't fail. Set to 0 to turn off the backup polls. </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

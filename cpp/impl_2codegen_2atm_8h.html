@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -148,7 +148,7 @@ Functions</h2></td></tr>
 <p>The routines may be implemented as macros.</p>
 <p>Atomic operations act on an intergral_type gpr_atm that is guaranteed to be the same size as a pointer. typedef intptr_t gpr_atm;</p>
 <p>A memory barrier, providing both acquire and release semantics, but not otherwise acting on memory. void <a class="el" href="impl_2codegen_2atm__windows_8h.html#a8e58c94aff5c7161bc3cbfde878dd03d">gpr_atm_full_barrier(void)</a>;</p>
-<p>Atomically return *p, with acquire semantics. gpr_atm <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a44607f95f7ee40eba592c7fe10960a06">gpr_atm_acq_load(gpr_atm *p)</a>;</p>
+<p>Atomically return *p, with acquire semantics. gpr_atm <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a44607f95f7ee40eba592c7fe10960a06">gpr_atm_acq_load(gpr_atm *p)</a>; gpr_atm <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#aa647aa9c97294a6709bbf2ac401cd9a6">gpr_atm_no_barrier_load(gpr_atm *p)</a>;</p>
 <p>Atomically set *p = value, with release semantics. void <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a42e3982d45ae4cec439a12b8fcd618e9">gpr_atm_rel_store(gpr_atm *p, gpr_atm value)</a>;</p>
 <p>Atomically add delta to *p, and return the old value of *p, with the barriers specified. gpr_atm <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">gpr_atm_no_barrier_fetch_add(gpr_atm *p, gpr_atm delta)</a>; gpr_atm <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#abada8771b338845e4c6ef93c8392582c">gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta)</a>;</p>
 <p>Atomically, if *p==o, set *p=n and return non-zero otherwise return 0, with the barriers specified if the operation succeeds. int <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#ad39536b08912ac4a0770655ed334d260">gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n)</a>; int <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n)</a>; int <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#ae7c3b215cda868ee9ee778822000c3f2">gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n)</a>; int <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a9d29f224b49d4de8bb2b0d7feae64fcb">gpr_atm_full_cas(gpr_atm *p, gpr_atm o, gpr_atm n)</a>;</p>
@@ -159,7 +159,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

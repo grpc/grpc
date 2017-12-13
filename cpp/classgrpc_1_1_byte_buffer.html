@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -90,6 +90,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
   <div class="headertitle">
@@ -100,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>A sequence of bytes.  
  <a href="classgrpc_1_1_byte_buffer.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="grpc_09_09_2support_2byte__buffer_8h_source.html">byte_buffer.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="grpc_09_09_2impl_2codegen_2byte__buffer_8h_source.html">byte_buffer.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -123,17 +124,44 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a185b593e5c7d2b888fa377989a6bae80"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a185b593e5c7d2b888fa377989a6bae80">Clear</a> ()</td></tr>
 <tr class="memdesc:a185b593e5c7d2b888fa377989a6bae80"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove all data.  <a href="#a185b593e5c7d2b888fa377989a6bae80">More...</a><br/></td></tr>
 <tr class="separator:a185b593e5c7d2b888fa377989a6bae80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42889c8018ea3868db2f54d92d1609ab"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a42889c8018ea3868db2f54d92d1609ab">Duplicate</a> ()</td></tr>
+<tr class="memdesc:a42889c8018ea3868db2f54d92d1609ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Make a duplicate copy of the internals of this byte buffer so that we have our own owned version of it.  <a href="#a42889c8018ea3868db2f54d92d1609ab">More...</a><br/></td></tr>
+<tr class="separator:a42889c8018ea3868db2f54d92d1609ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae03627c8b3297965fa0cdd4f03a9af0f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#ae03627c8b3297965fa0cdd4f03a9af0f">Release</a> ()</td></tr>
+<tr class="memdesc:ae03627c8b3297965fa0cdd4f03a9af0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Forget underlying byte buffer without destroying Use this only for un-owned byte buffers.  <a href="#ae03627c8b3297965fa0cdd4f03a9af0f">More...</a><br/></td></tr>
+<tr class="separator:ae03627c8b3297965fa0cdd4f03a9af0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9429e928982f8d94ff93a1a91032ad59"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a9429e928982f8d94ff93a1a91032ad59">Length</a> () const </td></tr>
 <tr class="memdesc:a9429e928982f8d94ff93a1a91032ad59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Buffer size in bytes.  <a href="#a9429e928982f8d94ff93a1a91032ad59">More...</a><br/></td></tr>
 <tr class="separator:a9429e928982f8d94ff93a1a91032ad59"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a45b09ecb5a8529b286aba6264daade65"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a45b09ecb5a8529b286aba6264daade65">Swap</a> (<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> *other)</td></tr>
 <tr class="memdesc:a45b09ecb5a8529b286aba6264daade65"><td class="mdescLeft">&#160;</td><td class="mdescRight">Swap the state of *this and *other.  <a href="#a45b09ecb5a8529b286aba6264daade65">More...</a><br/></td></tr>
 <tr class="separator:a45b09ecb5a8529b286aba6264daade65"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab064eff99dc077bc95d6a55326bab3e9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#ab064eff99dc077bc95d6a55326bab3e9">Valid</a> () const </td></tr>
+<tr class="memdesc:ab064eff99dc077bc95d6a55326bab3e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is this <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes. ">ByteBuffer</a> valid?  <a href="#ab064eff99dc077bc95d6a55326bab3e9">More...</a><br/></td></tr>
+<tr class="separator:ab064eff99dc077bc95d6a55326bab3e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:ab90fe50537dd6fe009b7b913652420f0"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#ab90fe50537dd6fe009b7b913652420f0">SerializationTraits&lt; ByteBuffer, void &gt;</a></td></tr>
 <tr class="separator:ab90fe50537dd6fe009b7b913652420f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7fe1828bc120efad35f57929870dc5b"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#ad7fe1828bc120efad35f57929870dc5b">internal::CallOpSendMessage</a></td></tr>
+<tr class="separator:ad7fe1828bc120efad35f57929870dc5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a445caf03eec410ca4fab24e534181801"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
+<tr class="memitem:a445caf03eec410ca4fab24e534181801"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a445caf03eec410ca4fab24e534181801">internal::CallOpRecvMessage</a></td></tr>
+<tr class="separator:a445caf03eec410ca4fab24e534181801"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a291e55ec452333b2212c5d5a3fac160f"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a291e55ec452333b2212c5d5a3fac160f">internal::CallOpGenericRecvMessage</a></td></tr>
+<tr class="separator:a291e55ec452333b2212c5d5a3fac160f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a499997f007ce7afcc7ca7adb69a0bebf"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a499997f007ce7afcc7ca7adb69a0bebf">internal::MethodHandler</a></td></tr>
+<tr class="separator:a499997f007ce7afcc7ca7adb69a0bebf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a471b336e252edb7105b57058c8de7fff"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:a471b336e252edb7105b57058c8de7fff"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a471b336e252edb7105b57058c8de7fff">internal::RpcMethodHandler</a></td></tr>
+<tr class="separator:a471b336e252edb7105b57058c8de7fff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92a457fe95d4f1662f65ed9b47be0f84"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:a92a457fe95d4f1662f65ed9b47be0f84"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a92a457fe95d4f1662f65ed9b47be0f84">internal::ServerStreamingHandler</a></td></tr>
+<tr class="separator:a92a457fe95d4f1662f65ed9b47be0f84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8575cd74967bac70dad4afbf830db64c"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
+<tr class="memitem:a8575cd74967bac70dad4afbf830db64c"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a8575cd74967bac70dad4afbf830db64c">internal::DeserializeFuncType</a></td></tr>
+<tr class="separator:a8575cd74967bac70dad4afbf830db64c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A sequence of bytes. </p>
@@ -213,6 +241,9 @@ Friends</h2></td></tr>
 <a class="anchor" id="aeb5dd0045ed262de06481465326bd64a"></a>
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">grpc::ByteBuffer::~ByteBuffer </td>
@@ -221,6 +252,11 @@ Friends</h2></td></tr>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
@@ -229,6 +265,9 @@ Friends</h2></td></tr>
 <a class="anchor" id="a185b593e5c7d2b888fa377989a6bae80"></a>
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">void grpc::ByteBuffer::Clear </td>
@@ -237,6 +276,11 @@ Friends</h2></td></tr>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Remove all data. </p>
@@ -258,6 +302,32 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Dump (read) the buffer contents into <em>slices</em>. </p>
+
+</div>
+</div>
+<a class="anchor" id="a42889c8018ea3868db2f54d92d1609ab"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ByteBuffer::Duplicate </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Make a duplicate copy of the internals of this byte buffer so that we have our own owned version of it. </p>
+<p>bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable </p>
 
 </div>
 </div>
@@ -294,6 +364,31 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ae03627c8b3297965fa0cdd4f03a9af0f"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ByteBuffer::Release </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Forget underlying byte buffer without destroying Use this only for un-owned byte buffers. </p>
+
+</div>
+</div>
 <a class="anchor" id="a45b09ecb5a8529b286aba6264daade65"></a>
 <div class="memitem">
 <div class="memproto">
@@ -312,7 +407,180 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ab064eff99dc077bc95d6a55326bab3e9"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc::ByteBuffer::Valid </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Is this <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes. ">ByteBuffer</a> valid? </p>
+
+</div>
+</div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a class="anchor" id="a291e55ec452333b2212c5d5a3fac160f"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_call_op_generic_recv_message.html">internal::CallOpGenericRecvMessage</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a445caf03eec410ca4fab24e534181801"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class R &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_call_op_recv_message.html">internal::CallOpRecvMessage</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ad7fe1828bc120efad35f57929870dc5b"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html">internal::CallOpSendMessage</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a8575cd74967bac70dad4afbf830db64c"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class R &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_deserialize_func_type.html">internal::DeserializeFuncType</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a499997f007ce7afcc7ca7adb69a0bebf"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">internal::MethodHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a471b336e252edb7105b57058c8de7fff"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html">internal::RpcMethodHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a92a457fe95d4f1662f65ed9b47be0f84"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html">internal::ServerStreamingHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="ab90fe50537dd6fe009b7b913652420f0"></a>
 <div class="memitem">
 <div class="memproto">
@@ -334,12 +602,12 @@ Friends</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/support/<a class="el" href="grpc_09_09_2support_2byte__buffer_8h_source.html">byte_buffer.h</a></li>
+<li>include/grpc++/impl/codegen/<a class="el" href="grpc_09_09_2impl_2codegen_2byte__buffer_8h_source.html">byte_buffer.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

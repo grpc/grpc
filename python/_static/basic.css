@@ -445,8 +445,12 @@ dd {
     margin-left: 30px;
 }
 
-dt:target, .highlighted {
+dt:target, span.highlighted {
     background-color: #fbe54e;
+}
+
+rect.highlighted {
+    fill: #fbe54e;
 }
 
 dl.glossary dt {

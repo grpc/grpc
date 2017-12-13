@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">4.0.0</span>
+   &#160;<span id="projectnumber">5.0.0</span>
    </div>
   </td>
  </tr>
@@ -105,8 +105,26 @@ Data Fields</h2></td></tr>
 <tr class="separator:a2118d693bf827b6098f6963ffedc0758"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac91a0142a9f4a7dc2bc4a186b08d237f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#ac91a0142a9f4a7dc2bc4a186b08d237f">status_details</a></td></tr>
 <tr class="separator:ac91a0142a9f4a7dc2bc4a186b08d237f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d5471266248e60c09104ca5bf2e4b63"><td class="memItemLeft" align="right" valign="top">const char **&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a6d5471266248e60c09104ca5bf2e4b63">error_string</a></td></tr>
+<tr class="memdesc:a6d5471266248e60c09104ca5bf2e4b63"><td class="mdescLeft">&#160;</td><td class="mdescRight">If this is not nullptr, it will be populated with the full fidelity error string for debugging purposes.  <a href="#a6d5471266248e60c09104ca5bf2e4b63">More...</a><br/></td></tr>
+<tr class="separator:a6d5471266248e60c09104ca5bf2e4b63"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
+<a class="anchor" id="a6d5471266248e60c09104ca5bf2e4b63"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char** grpc_op::grpc_op_data::grpc_op_recv_status_on_client::error_string</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If this is not nullptr, it will be populated with the full fidelity error string for debugging purposes. </p>
+<p>The application is responsible for freeing the data by using <a class="el" href="alloc_8h.html#a7f8641de6e80a37dd003d3100cc94bd7" title="free ">gpr_free()</a>. </p>
+
+</div>
+</div>
 <a class="anchor" id="a2118d693bf827b6098f6963ffedc0758"></a>
 <div class="memitem">
 <div class="memproto">
@@ -152,7 +170,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

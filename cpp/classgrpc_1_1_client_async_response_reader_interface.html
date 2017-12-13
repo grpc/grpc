@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -96,7 +96,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>An interface relevant for async client side unary RPCS (which send one request message to a server and receive one response message).  
+<p>An interface relevant for async client side unary RPCs (which send one request message to a server and receive one response message).  
  <a href="classgrpc_1_1_client_async_response_reader_interface.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2async__unary__call_8h_source.html">async_unary_call.h</a>&gt;</code></p>
@@ -105,6 +105,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aa97dc1ab6a7160a489d2e555102bf5a0"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#aa97dc1ab6a7160a489d2e555102bf5a0">~ClientAsyncResponseReaderInterface</a> ()</td></tr>
 <tr class="separator:aa97dc1ab6a7160a489d2e555102bf5a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1f0a98a8d6e2ee06236a7ecb971a2ac5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a1f0a98a8d6e2ee06236a7ecb971a2ac5">StartCall</a> ()=0</td></tr>
+<tr class="memdesc:a1f0a98a8d6e2ee06236a7ecb971a2ac5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start the call that was set up by the constructor, but only if the constructor was invoked through the "Prepare" API which doesn't actually start the call.  <a href="#a1f0a98a8d6e2ee06236a7ecb971a2ac5">More...</a><br/></td></tr>
+<tr class="separator:a1f0a98a8d6e2ee06236a7ecb971a2ac5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a676e3a03a61c49a82b630d85bbfd366c"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a676e3a03a61c49a82b630d85bbfd366c">ReadInitialMetadata</a> (void *tag)=0</td></tr>
 <tr class="memdesc:a676e3a03a61c49a82b630d85bbfd366c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request notification of the reading of initial metadata.  <a href="#a676e3a03a61c49a82b630d85bbfd366c">More...</a><br/></td></tr>
 <tr class="separator:a676e3a03a61c49a82b630d85bbfd366c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -116,7 +119,7 @@ Public Member Functions</h2></td></tr>
 <div class="textblock"><h3>template&lt;class R&gt;<br/>
 class grpc::ClientAsyncResponseReaderInterface&lt; R &gt;</h3>
 
-<p>An interface relevant for async client side unary RPCS (which send one request message to a server and receive one response message). </p>
+<p>An interface relevant for async client side unary RPCs (which send one request message to a server and receive one response message). </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="aa97dc1ab6a7160a489d2e555102bf5a0"></a>
 <div class="memitem">
@@ -200,7 +203,7 @@ template&lt;class R &gt; </div>
   </dd>
 </dl>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_client_async_response_reader.html#a585dc15817999f82a72120a783800830">grpc::ClientAsyncResponseReader&lt; R &gt;</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc_1_1_client_async_response_reader.html#a48b0b4dabcbaf4b4a12e4f094ac79b59">grpc::ClientAsyncResponseReader&lt; R &gt;</a>.</p>
 
 </div>
 </div>
@@ -237,7 +240,36 @@ template&lt;class R &gt; </div>
   </dd>
 </dl>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_client_async_response_reader.html#a963aefc43f34c9182e265647bbcdb91b">grpc::ClientAsyncResponseReader&lt; R &gt;</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc_1_1_client_async_response_reader.html#ab45261c3dee4f7b34080593cc899b40d">grpc::ClientAsyncResponseReader&lt; R &gt;</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a1f0a98a8d6e2ee06236a7ecb971a2ac5"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class R &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html">grpc::ClientAsyncResponseReaderInterface</a>&lt; R &gt;::StartCall </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Start the call that was set up by the constructor, but only if the constructor was invoked through the "Prepare" API which doesn't actually start the call. </p>
+
+<p>Implemented in <a class="el" href="classgrpc_1_1_client_async_response_reader.html#aa6bb324b380b1389e38f89f7a0b85c64">grpc::ClientAsyncResponseReader&lt; R &gt;</a>.</p>
 
 </div>
 </div>
@@ -247,7 +279,7 @@ template&lt;class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">4.0.0</span>
+   &#160;<span id="projectnumber">5.0.0</span>
    </div>
   </td>
  </tr>
@@ -84,7 +84,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>The service config is a mechanism that allows service owners to publish parameters to be automatically used by all clients of their service.</p>
 <h1>Format</h1>
 <p>The service config is a JSON string of the following form:</p>
-<p>``` { // Load balancing policy name. // Currently, the only selectable client-side policy provided with gRPC // is 'round_robin', but third parties may add their own policies. // This field is optional; if unset, the default behavior is to pick // the first available backend. // If the policy name is set via the client API, that value overrides // the value specified here. // // Note that if the resolver returns at least one balancer address (as // opposed to backend addresses), gRPC will use grpclb (see // <a href="https://github.com/grpc/grpc/blob/master/doc/load-balancing.md">https://github.com/grpc/grpc/blob/master/doc/load-balancing.md</a>), // regardless of what LB policy is requested either here or via the // client API. However, if the resolver returns at least one backend // address in addition to the balancer address(es), the client may fall // back to the requested policy if it is unable to reach any of the // grpclb load balancers. 'loadBalancingPolicy': string,</p>
+<p>``` { // Load balancing policy name. // Currently, the only selectable client-side policy provided with gRPC // is 'round_robin', but third parties may add their own policies. // This field is optional; if unset, the default behavior is to pick // the first available backend. // If the policy name is set via the client API, that value overrides // the value specified here. // // Note that if the resolver returns at least one balancer address (as // opposed to backend addresses), gRPC will use grpclb (see // <a href="https://github.com/grpc/grpc/blob/master/doc/load-balancing.md">https://github.com/grpc/grpc/blob/master/doc/load-balancing.md</a>), // regardless of what LB policy is requested either here or via the // client API. 'loadBalancingPolicy': string,</p>
 <p>// Per-method configuration. Optional. 'methodConfig': [ { // The names of the methods to which this method config applies. There // must be at least one name. Each name entry must be unique across the // entire service config. If the 'method' field is empty, then this // method config specifies the defaults for all methods for the specified // service. // // For example, let's say that the service config contains the following // method config entries: // // 'methodConfig': [ // { 'name': [ { 'service': 'MyService' } ] ... }, // { 'name': [ { 'service': 'MyService', 'method': 'Foo' } ] ... } // ] // // For a request for MyService/Foo, we will use the second entry, because // it exactly matches the service and method name. // For a request for MyService/Bar, we will use the first entry, because // it provides the default for all methods of MyService. 'name': [ { // RPC service name. Required. // If using gRPC with protobuf as the IDL, then this will be of // the form "pkg.service_name", where "pkg" is the package name // defined in the proto file. 'service': string,</p>
 <p>// RPC method name. Optional (see above). 'method': string, } ],</p>
 <p>// Whether RPCs sent to this method should wait until the connection is // ready by default. If false, the RPC will abort immediately if there // is a transient failure connecting to the server. Otherwise, gRPC will // attempt to connect until the deadline is exceeded. // // The value specified via the gRPC client API will override the value // set here. However, note that setting the value in the client API will // also affect transient errors encountered during name resolution, // which cannot be caught by the value here, since the service config // is obtained by the gRPC client via name resolution. 'waitForReady': bool,</p>
@@ -105,7 +105,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
