@@ -87,7 +87,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     'linkopts': ["-pthread"],
   }
   if uses_polling:
-    native.cc_binary(testonly=True, **args)
+    native.cc_test(testonly=True, tags=['manual'], **args)
     for poller in POLLERS:
       native.sh_test(
         name = name + '@poller=' + poller,
