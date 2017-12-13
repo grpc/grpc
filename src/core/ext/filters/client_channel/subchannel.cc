@@ -398,10 +398,9 @@ grpc_subchannel* grpc_subchannel_create(grpc_exec_ctx* exec_ctx,
 static void continue_connect_locked(grpc_exec_ctx* exec_ctx,
                                     grpc_subchannel* c) {
   grpc_connect_in_args args;
-
   args.interested_parties = c->pollset_set;
   const grpc_millis min_deadline =
-      (c->min_connect_timeout_ms * 1000) + grpc_exec_ctx_now(exec_ctx);
+      c->min_connect_timeout_ms + grpc_exec_ctx_now(exec_ctx);
   args.deadline = std::max(c->next_attempt_deadline, min_deadline);
   args.channel_args = c->args;
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
