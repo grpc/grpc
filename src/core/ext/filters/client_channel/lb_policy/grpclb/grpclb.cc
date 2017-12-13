@@ -896,12 +896,12 @@ static void glb_rr_connectivity_changed_locked(void* arg, grpc_error* error) {
     return;
   }
   GPR_ASSERT(glb_policy->rr_state != GRPC_CHANNEL_SHUTDOWN);
-  maybe_start_reresolution_timer(glb_policy);
   if (glb_policy->rr_state == GRPC_CHANNEL_READY &&
       glb_policy->reresolution_timer_active) {
     gpr_log(GPR_INFO, "before cancelling re-re timer");
     grpc_timer_cancel(&glb_policy->reresolution_timer);
-    glb_policy->reresolution_timer_active = false;
+  } else {
+    maybe_start_reresolution_timer(glb_policy);
   }
   update_lb_connectivity_status_locked(glb_policy, GRPC_ERROR_REF(error));
   /* Resubscribe. Reuse the "glb_rr_connectivity_cb" weak ref. */
@@ -1043,7 +1043,6 @@ static void glb_shutdown_locked(grpc_lb_policy* pol) {
   if (glb_policy->reresolution_timer_active) {
     gpr_log(GPR_INFO, "before cancelling re-re timer");
     grpc_timer_cancel(&glb_policy->reresolution_timer);
-    glb_policy->reresolution_timer_active = false;
   }
   pending_pick* pp = glb_policy->pending_picks;
   glb_policy->pending_picks = nullptr;
@@ -1676,7 +1675,6 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
             if (glb_policy->reresolution_timer_active) {
               gpr_log(GPR_INFO, "before cancelling re-re timer");
               grpc_timer_cancel(&glb_policy->reresolution_timer);
-              glb_policy->reresolution_timer_active = false;
             }
           }
         } else {

@@ -1168,8 +1168,6 @@ TEST_F(UpdatesTest, Reresolve) {
   EXPECT_LE(balancer_servers_[1].service_->response_count(), 2U);
   EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
-  // Check LB policy name for the channel.
-  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_F(SingleBalancerTest, Drop) {
