@@ -888,12 +888,12 @@ describe 'ClientStub' do
     secure_credentials = GRPC::Core::ServerCredentials.new(
       nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
 
-    @server = GRPC::Core::Server.new(nil)
+    @server = new_core_server_for_testing(nil)
     @server.add_http2_port('0.0.0.0:0', secure_credentials)
   end
 
   def create_test_server
-    @server = GRPC::Core::Server.new(nil)
+    @server = new_core_server_for_testing(nil)
     @server.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
   end
 
