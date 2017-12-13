@@ -643,9 +643,6 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent two responses.
   EXPECT_EQ(2U, balancer_servers_[0].service_->response_count());
-
-  // Check LB policy name for the channel.
-  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_F(SingleBalancerTest, Fallback) {
@@ -854,8 +851,6 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   // machinery to either update the LB responses "on the fly" or instruct
   // backends which ports to restart on.
   CheckRpcSendFailure();
-  // Check LB policy name for the channel.
-  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
 class UpdatesTest : public GrpclbEnd2endTest {
@@ -919,8 +914,6 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   EXPECT_EQ(1U, balancer_servers_[1].service_->response_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
-  // Check LB policy name for the channel.
-  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
 // Send an update with the same set of LBs as the one in SetUp() in order to
@@ -992,9 +985,6 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   // doesn't assign the second backend.
   EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   balancers_[0]->NotifyDoneWithServerlists();
-
-  // Check LB policy name for the channel.
-  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
@@ -1077,8 +1067,6 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   EXPECT_LE(balancer_servers_[1].service_->response_count(), 2U);
   EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
-  // Check LB policy name for the channel.
-  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_F(UpdatesTest, Reresolve) {
