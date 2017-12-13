@@ -183,6 +183,21 @@ void grpc_fake_resolver_response_generator_set_response(
                      GRPC_ERROR_NONE);
 }
 
+void grpc_fake_resolver_response_generator_set_response_upon_error(
+    grpc_fake_resolver_response_generator* generator,
+    grpc_channel_args* response_upon_error) {
+  GPR_ASSERT(generator->resolver != nullptr);
+  if (generator->resolver->next_results != nullptr) {
+    grpc_channel_args_destroy(generator->resolver->next_results);
+  }
+  generator->resolver->next_results = nullptr;
+  if (generator->resolver->results_upon_error != nullptr) {
+    grpc_channel_args_destroy(generator->resolver->results_upon_error);
+  }
+  generator->resolver->results_upon_error =
+      grpc_channel_args_copy(response_upon_error);
+}
+
 static void* response_generator_arg_copy(void* p) {
   return grpc_fake_resolver_response_generator_ref(
       (grpc_fake_resolver_response_generator*)p);

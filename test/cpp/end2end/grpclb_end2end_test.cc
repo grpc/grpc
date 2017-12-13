@@ -442,7 +442,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   void WaitForBackend(size_t backend_idx) {
     do {
-      CheckRpcSendOk();
+      SendRpc();
     } while (backends_[backend_idx]->request_count() == 0);
     ResetBackendCounters();
   }
@@ -453,7 +453,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc::string balancer_name;
   };
 
-  void SetNextResolution(const std::vector<AddressData>& address_data) {
+  void SetNextResolution(const std::vector<AddressData>& address_data,
+                         bool reresolution = false) {
     grpc_core::ExecCtx exec_ctx;
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(address_data.size(), nullptr);
@@ -470,8 +471,13 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
-    grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                       &fake_result);
+    if (reresolution) {
+      grpc_fake_resolver_response_generator_set_response_upon_error(
+          response_generator_, &fake_result);
+    } else {
+      grpc_fake_resolver_response_generator_set_response(response_generator_,
+                                                         &fake_result);
+    }
     grpc_lb_addresses_destroy(addresses);
   }
 
@@ -1125,12 +1131,12 @@ TEST_F(UpdatesTest, Reresolve) {
 
   addresses.clear();
   addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
-  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
-  SetNextResolution(addresses);
-  gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
+  gpr_log(GPR_INFO, "========= ABOUT TO PREPARE RERESOLUTION  ==========");
+  SetNextResolution(addresses, true /* reresolution */);
+  gpr_log(GPR_INFO, "========= RERESOLUTION READY ==========");
 
-  // Wait until update has been processed, as signaled by the second backend
-  // receiving a request.
+  // Wait until reresolution has been triggered, as signaled by the second
+  // backend receiving a request.
   EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   WaitForBackend(1);
 
