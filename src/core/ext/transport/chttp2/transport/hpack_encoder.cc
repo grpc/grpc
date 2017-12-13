@@ -56,23 +56,141 @@ static const grpc_slice terminal_slice = {
     {{nullptr, 0}}            /* data.refcounted */
 };
 
-typedef struct {
-  int is_first_frame;
+namespace grpc_core {
+namespace chttp2 {
+class HpackEncoder::Framer {
+ public:
+  Framer(HpackEncoder* encoder, uint32_t stream_id, const FrameOptions& options,
+         grpc_slice_buffer* output)
+      : encoder_(encoder),
+        stream_id_(stream_id),
+        output_(output),
+        stats_(options.stats()),
+        max_frame_size_(options.max_frame_size()),
+        use_true_binary_metadata_(options.use_true_binary_metadata()) {
+    BeginFrame();
+  }
+
+  template <class TKeyValue, class TIndex>
+  void EncodeField(const TKeyValue& kv, TIndex* index) {
+    CheckRegularHeaderOrdering(kv.IsRegularHeader());
+
+    // if no compression possible, just send it literally
+    if (!kv.AllowCompression()) {
+      EmitLitKeyLitValueNoAdd(kv.KeySlice(), kv.ValueSlice());
+      return;
+    }
+
+    // is the value already in the hpack table?
+    IndexLookupResult lur_kv = index->LookupKeyValue(kv);
+    if (lur_kv.idx) {
+      EmitIndexed(lur_kv.idx);
+      return;
+    }
+
+    // if the value is too big we should never try to add it to the table
+    IndexLookupResult lur_key = index->LookupKeyOnly(kv);
+    if (lur_key.idx) {
+      if (lur_kv.add && kv.SizeInHpackTable() <= MAX_DECODER_SPACE_USAGE) {
+        EmitIdxKeyLitValueWithAdd(lur_key.idx, kv.ValueSlice());
+        index->Add(kv);
+      } else {
+        EmitIdxKeyLitValueNoAdd(lur_key.idx, kv.ValueSlice());
+      }
+      return;
+    }
+
+    // maybe we should add the whole value just to add the key?
+    if (lur_key.add && kv.SizeInHpackTable() <= MAX_DECODER_SPACE_USAGE) {
+      EmitLitKeyLitValueWithAdd(kv.KeySlice(), kv.ValueSlice());
+      index->Add(kv);
+      return;
+    }
+
+    // finally, just send it literally
+    EmitLitKeyLitValueNoAdd(kv.KeySlice(), kv.ValueSlice());
+  }
+
+  void EmitAdvertiseTableSizeChange();
+
+ private:
+  void CheckRegularHeaderOrdering(bool is_regular_header) {
+#ifndef NDEBUG
+    if (is_regular_header) {
+      seen_regular_header_ = true;
+    } else {
+      assert(!seen_regular_header_ &&
+             "Reserved header (colon-prefixed) happening after regular ones.");
+    }
+#endif
+  }
+
+  void BeginFrame();
+
+  void EmitLitKeyLitValueNoAdd(grpc_slice key, grpc_slice value);
+  void EmitLitKeyLitValueWithAdd(grpc_slice key, grpc_slice value);
+  void EmitIdxKeyLitValueNoAdd(TableIndex idx, grpc_slice value);
+  void EmitIdxKeyLitValueWithAdd(TableIndex idx, grpc_slice value);
+  void EmitIndexed(TableIndex idx);
+
+  HpackEncoder* const encoder_;
+  bool is_first_frame_ = true;
   /* number of bytes in 'output' when we started the frame - used to calculate
      frame length */
-  size_t output_length_at_start_of_frame;
+  size_t output_length_at_start_of_frame_;
   /* index (in output) of the header for the current frame */
-  size_t header_idx;
-  /* have we seen a regular (non-colon-prefixed) header yet? */
-  uint8_t seen_regular_header;
+  size_t header_idx_;
   /* output stream id */
-  uint32_t stream_id;
-  grpc_slice_buffer* output;
-  grpc_transport_one_way_stats* stats;
+  const uint32_t stream_id_;
+  grpc_slice_buffer* const output_;
+  grpc_transport_one_way_stats* const stats_;
   /* maximum size of a frame */
-  size_t max_frame_size;
-  bool use_true_binary_metadata;
-} framer_state;
+  const size_t max_frame_size_;
+  const bool use_true_binary_metadata_;
+#ifndef NDEBUG
+  /* have we seen a regular (non-colon-prefixed) header yet? */
+  bool seen_regular_header_ = false;
+#endif
+};
+
+void HpackEncoder::EncodeHeader(uint32_t stream_id,
+                                const metadata::Collection* md,
+                                const FrameOptions& options,
+                                grpc_slice_buffer* outbuf) {
+  GPR_ASSERT(stream_id != 0);
+
+  Framer framer(this, stream_id, options, outbuf);
+
+  if (advertise_table_size_change_) {
+    framer.EmitAdvertiseTableSizeChange();
+    advertise_table_size_change_ = false;
+  }
+
+  /* Encode a metadata batch; store the returned values, representing
+     a metadata element that needs to be unreffed back into the metadata
+     slot. THIS MAY NOT BE THE SAME ELEMENT (if a decoder table slot got
+     updated). After this loop, we'll do a batch unref of elements. */
+
+  if (md->HasPath()) {
+    framer.EncodeField(PathKV(md->Path()), &path_index_);
+  }
+
+  for (size_t i = 0; i < extra_headers_size; ++i) {
+    hpack_enc(c, *extra_headers[i], &st);
+  }
+  grpc_metadata_batch_assert_ok(metadata);
+  for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
+    hpack_enc(c, l->md, &st);
+  }
+  grpc_millis deadline = metadata->deadline;
+  if (deadline != GRPC_MILLIS_INF_FUTURE) {
+    deadline_enc(c, deadline, &st);
+  }
+
+  finish_frame(&st, 1, options->is_eof);
+}
+}  // namespace chttp2
+}  // namespace grpc_core
 
 /* fills p (which is expected to be 9 bytes long) with a data frame header */
 static void fill_header(uint8_t* p, uint8_t type, uint32_t id, size_t len,
@@ -652,44 +770,4 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
   if (grpc_http_trace.enabled()) {
     gpr_log(GPR_DEBUG, "set max table size from encoder to %d", max_table_size);
   }
-}
-
-void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
-                               grpc_mdelem** extra_headers,
-                               size_t extra_headers_size,
-                               grpc_metadata_batch* metadata,
-                               const grpc_encode_header_options* options,
-                               grpc_slice_buffer* outbuf) {
-  GPR_ASSERT(options->stream_id != 0);
-
-  framer_state st;
-  st.seen_regular_header = 0;
-  st.stream_id = options->stream_id;
-  st.output = outbuf;
-  st.is_first_frame = 1;
-  st.stats = options->stats;
-  st.max_frame_size = options->max_frame_size;
-  st.use_true_binary_metadata = options->use_true_binary_metadata;
-
-  /* Encode a metadata batch; store the returned values, representing
-     a metadata element that needs to be unreffed back into the metadata
-     slot. THIS MAY NOT BE THE SAME ELEMENT (if a decoder table slot got
-     updated). After this loop, we'll do a batch unref of elements. */
-  begin_frame(&st);
-  if (c->advertise_table_size_change != 0) {
-    emit_advertise_table_size_change(c, &st);
-  }
-  for (size_t i = 0; i < extra_headers_size; ++i) {
-    hpack_enc(c, *extra_headers[i], &st);
-  }
-  grpc_metadata_batch_assert_ok(metadata);
-  for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    hpack_enc(c, l->md, &st);
-  }
-  grpc_millis deadline = metadata->deadline;
-  if (deadline != GRPC_MILLIS_INF_FUTURE) {
-    deadline_enc(c, deadline, &st);
-  }
-
-  finish_frame(&st, 1, options->is_eof);
 }

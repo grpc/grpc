@@ -35,59 +35,129 @@
 
 extern grpc_core::TraceFlag grpc_http_trace;
 
-typedef struct {
-  uint32_t filter_elems_sum;
-  uint32_t max_table_size;
-  uint32_t max_table_elems;
-  uint32_t cap_table_elems;
-  /** if non-zero, advertise to the decoder that we'll start using a table
+namespace grpc_core {
+namespace chttp2 {
+
+class HpackEncoder {
+ public:
+  HpackEncoder();
+  ~HpackEncoder();
+
+  void SetMaxTableSize(uint32_t max_table_size);
+  void SetMaxUsableSize(uint32_t max_table_size);
+
+  class FrameOptions {
+   public:
+    grpc_transport_one_way_stats* stats() const { return stats_; }
+    size_t max_frame_size() const { return max_frame_size_; }
+    bool use_true_binary_metadata() const { return use_true_binary_metadata_; }
+
+   private:
+    bool is_eof_;
+    bool use_true_binary_metadata_;
+    size_t max_frame_size_;
+    grpc_transport_one_way_stats* stats_;
+  };
+
+  void EncodeHeader(uint32_t stream_id, const metadata::Collection* md,
+                    const FrameOptions& options, grpc_slice_buffer* outbuf);
+
+ private:
+  class Framer;
+  class TableIndex {
+   public:
+    operator bool() const { return idx_ > 0; }
+
+   private:
+    int idx_;
+  };
+  struct IndexLookupResult {
+    TableIndex idx;
+    bool add;
+  };
+
+  template <size_t kTblSize>
+  class FilterTable {};
+
+  class NoFilter {};
+
+  template <size_t kTblSize>
+  class IndexTable {};
+
+  template <class KV, class TFilterElem, size_t kElemTblSize>
+  class SingleKeyIndex {
+   public:
+    IndexLookupResult LookupKeyValue(const KV& kv) {
+      if (!kv.HasFastValueHash()) {
+        return IndexLookupResult{TableIndex{}, false};
+      }
+      const uint32_t hash = kv.ValueHash();
+      filter_elem_.Increment(hash);
+      return index_elem_.Lookup(kv, hash);
+    }
+
+    IndexLookupResult LookupKeyOnly(const KV& kv) {
+      return IndexLookupResult{key_index_, true};
+    }
+
+    void Add(const KV& kv);
+
+   private:
+    TableIndex key_index_;
+    TFilterElem filter_elem_;
+    IndexTable<kElemTblSize> index_elem_;
+  };
+
+  class PathKV {
+   public:
+    PathKV(int path) : path_(path) {}
+    bool IsRegularHeader() const { return false; }
+    bool AllowCompression() const { return true; }
+    grpc_slice KeySlice() const { return GRPC_MDSTR_PATH; }
+    grpc_slice ValueSlice() const { return metadata::PathSlice(path_); }
+    size_t SizeInHpackTable() const {
+      return 32 + 5 + GRPC_SLICE_LENGTH(metadata::PathSlice(path_));
+    }
+
+   private:
+    const int path_;
+  };
+
+  SingleKeyIndex<PathKV, NoFilter, 8> path_index_;
+
+  uint32_t filter_elems_sum_;
+  uint32_t max_table_size_;
+  uint32_t max_table_elems_;
+  uint32_t cap_table_elems_;
+  /** if true, advertise to the decoder that we'll start using a table
       of this size */
-  uint8_t advertise_table_size_change;
+  bool advertise_table_size_change_;
   /** maximum number of bytes we'll use for the decode table (to guard against
       peers ooming us by setting decode table size high) */
-  uint32_t max_usable_size;
+  uint32_t max_usable_size_;
   /* one before the lowest usable table index */
-  uint32_t tail_remote_index;
-  uint32_t table_size;
-  uint32_t table_elems;
+  uint32_t tail_remote_index_;
+  uint32_t table_size_;
+  uint32_t table_elems_;
 
   /* filter tables for elems: this tables provides an approximate
      popularity count for particular hashes, and are used to determine whether
      a new literal should be added to the compression table or not.
      They track a single integer that counts how often a particular value has
      been seen. When that count reaches max (255), all values are halved. */
-  uint8_t filter_elems[GRPC_CHTTP2_HPACKC_NUM_FILTERS];
+  uint8_t filter_elems_[GRPC_CHTTP2_HPACKC_NUM_FILTERS];
 
   /* entry tables for keys & elems: these tables track values that have been
      seen and *may* be in the decompressor table */
-  grpc_slice entries_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  grpc_mdelem entries_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  uint32_t indices_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  uint32_t indices_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  grpc_slice entries_keys_[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  grpc_mdelem entries_elems_[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  uint32_t indices_keys_[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  uint32_t indices_elems_[GRPC_CHTTP2_HPACKC_NUM_VALUES];
 
-  uint16_t* table_elem_size;
-} grpc_chttp2_hpack_compressor;
+  uint16_t* table_elem_size_;
+};
 
-void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor* c);
-void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor* c);
-void grpc_chttp2_hpack_compressor_set_max_table_size(
-    grpc_chttp2_hpack_compressor* c, uint32_t max_table_size);
-void grpc_chttp2_hpack_compressor_set_max_usable_size(
-    grpc_chttp2_hpack_compressor* c, uint32_t max_table_size);
-
-typedef struct {
-  uint32_t stream_id;
-  bool is_eof;
-  bool use_true_binary_metadata;
-  size_t max_frame_size;
-  grpc_transport_one_way_stats* stats;
-} grpc_encode_header_options;
-
-void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
-                               grpc_mdelem** extra_headers,
-                               size_t extra_headers_size,
-                               grpc_metadata_batch* metadata,
-                               const grpc_encode_header_options* options,
-                               grpc_slice_buffer* outbuf);
+}  // namespace chttp2
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H */

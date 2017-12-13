@@ -154,8 +154,22 @@ class Collection {
     return SetFn(&path_, path, reset, kPathUnset);
   }
 
+  bool HasPath() const { return path_ != kPathUnset; }
+
+  int Path() const {
+    assert(path_ != kPathUnset);
+    return path_;
+  }
+
   bool SetStatus(uint16_t status, bool reset = true) {
     return SetFn(&status_, status, reset, kStatusUnset);
+  }
+
+  bool HasStatus() const { return status_ != kStatusUnset; }
+
+  uint16_t Status() const {
+    assert(status_ != kStatusUnset);
+    return status_;
   }
 
   bool SetGrpcStatus(grpc_status_code grpc_status, bool reset = true) {
@@ -224,6 +238,9 @@ const KeyType* RegisterKeyType(const char* key_name) {
 
 // given a key name, return a Key implementation
 const Key* LookupKey(grpc_slice key_name);
+
+int InternPath(const char* path);
+grpc_slice PathSlice(int idx);
 
 namespace impl {
 
