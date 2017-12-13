@@ -29,7 +29,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
@@ -53,6 +55,21 @@ static void drain_cq(grpc_completion_queue* cq) {
 }
 
 static void do_nothing(void* ignored) {}
+
+static void log_resolved_addrs(const char* label, const char* hostname) {
+  grpc_resolved_addresses* res = nullptr;
+  grpc_error* error = grpc_blocking_resolve_address(hostname, "80", &res);
+  if (error != GRPC_ERROR_NONE || res == nullptr) {
+    GRPC_LOG_IF_ERROR(hostname, error);
+    return;
+  }
+  for (size_t i = 0; i < res->naddrs; ++i) {
+    char* addr_str = grpc_sockaddr_to_uri(&res->addrs[i]);
+    gpr_log(GPR_INFO, "%s: %s", label, addr_str);
+    gpr_free(addr_str);
+  }
+  grpc_resolved_addresses_destroy(res);
+}
 
 void test_connect(const char* server_host, const char* client_host, int port,
                   int expect_ok) {
@@ -140,6 +157,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport, client_hostport, expect_ok ? "success" : "failure");
+  log_resolved_addrs("server resolved addr", server_host);
+  log_resolved_addrs("client resolved addr", client_host);
 
   gpr_free(client_hostport);
   gpr_free(server_hostport);
@@ -236,6 +255,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
     cq_verify(cqv);
 
+    gpr_log(GPR_INFO, "status: %d (expected: %d)", status,
+            GRPC_STATUS_UNAVAILABLE);
     GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   }
 

@@ -236,65 +236,68 @@ finish:
   GRPC_CLOSURE_SCHED(closure, error);
 }
 
-static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
-                                    grpc_pollset_set* interested_parties,
-                                    const grpc_channel_args* channel_args,
-                                    const grpc_resolved_address* addr,
-                                    grpc_millis deadline) {
-  int fd;
+grpc_error* grpc_tcp_client_prepare_fd(const grpc_channel_args* channel_args,
+                                       const grpc_resolved_address* addr,
+                                       grpc_resolved_address* mapped_addr,
+                                       grpc_fd** fdobj) {
   grpc_dualstack_mode dsmode;
-  int err;
-  async_connect* ac;
-  grpc_resolved_address addr6_v4mapped;
-  grpc_resolved_address addr4_copy;
-  grpc_fd* fdobj;
+  int fd;
+  grpc_error* error;
   char* name;
   char* addr_str;
-  grpc_error* error;
-
-  *ep = nullptr;
-
-  /* Use dualstack sockets where available. */
-  if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
-    addr = &addr6_v4mapped;
+  *fdobj = nullptr;
+  /* Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
+     v6. */
+  if (!grpc_sockaddr_to_v4mapped(addr, mapped_addr)) {
+    /* addr is v4 mapped to v6 or v6. */
+    memcpy(mapped_addr, addr, sizeof(*mapped_addr));
   }
-
-  error = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
+  error =
+      grpc_create_dualstack_socket(mapped_addr, SOCK_STREAM, 0, &dsmode, &fd);
   if (error != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(closure, error);
-    return;
+    return error;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
-    /* If we got an AF_INET socket, map the address back to IPv4. */
-    GPR_ASSERT(grpc_sockaddr_is_v4mapped(addr, &addr4_copy));
-    addr = &addr4_copy;
+    /* Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4. */
+    if (!grpc_sockaddr_is_v4mapped(addr, mapped_addr)) {
+      memcpy(mapped_addr, addr, sizeof(*mapped_addr));
+    }
   }
-  if ((error = prepare_socket(addr, fd, channel_args)) != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(closure, error);
-    return;
+  if ((error = prepare_socket(mapped_addr, fd, channel_args)) !=
+      GRPC_ERROR_NONE) {
+    return error;
   }
+  addr_str = grpc_sockaddr_to_uri(mapped_addr);
+  gpr_asprintf(&name, "tcp-client:%s", addr_str);
+  *fdobj = grpc_fd_create(fd, name);
+  gpr_free(name);
+  gpr_free(addr_str);
+  return GRPC_ERROR_NONE;
+}
 
+void grpc_tcp_client_create_from_prepared_fd(
+    grpc_pollset_set* interested_parties, grpc_closure* closure, grpc_fd* fdobj,
+    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
+    grpc_millis deadline, grpc_endpoint** ep) {
+  const int fd = grpc_fd_wrapped_fd(fdobj);
+  int err;
+  async_connect* ac;
   do {
     GPR_ASSERT(addr->len < ~(socklen_t)0);
     err = connect(fd, (const struct sockaddr*)addr->addr, (socklen_t)addr->len);
   } while (err < 0 && errno == EINTR);
-
-  addr_str = grpc_sockaddr_to_uri(addr);
-  gpr_asprintf(&name, "tcp-client:%s", addr_str);
-
-  fdobj = grpc_fd_create(fd, name);
-
   if (err >= 0) {
+    char* addr_str = grpc_sockaddr_to_uri(addr);
     *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_str);
+    gpr_free(addr_str);
     GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
-    goto done;
+    return;
   }
-
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_fd_orphan(fdobj, nullptr, nullptr, false /* already_closed */,
                    "tcp_client_connect_error");
     GRPC_CLOSURE_SCHED(closure, GRPC_OS_ERROR(errno, "connect"));
-    goto done;
+    return;
   }
 
   grpc_pollset_set_add_fd(interested_parties, fdobj);
@@ -304,8 +307,7 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
   ac->ep = ep;
   ac->fd = fdobj;
   ac->interested_parties = interested_parties;
-  ac->addr_str = addr_str;
-  addr_str = nullptr;
+  ac->addr_str = grpc_sockaddr_to_uri(addr);
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
@@ -322,10 +324,25 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
   grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
   grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
+}
 
-done:
-  gpr_free(name);
-  gpr_free(addr_str);
+static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
+                                    grpc_pollset_set* interested_parties,
+                                    const grpc_channel_args* channel_args,
+                                    const grpc_resolved_address* addr,
+                                    grpc_millis deadline) {
+  grpc_resolved_address mapped_addr;
+  grpc_fd* fdobj = nullptr;
+  grpc_error* error;
+  *ep = nullptr;
+  if ((error = grpc_tcp_client_prepare_fd(channel_args, addr, &mapped_addr,
+                                          &fdobj)) != GRPC_ERROR_NONE) {
+    GRPC_CLOSURE_SCHED(closure, error);
+    return;
+  }
+  grpc_tcp_client_create_from_prepared_fd(interested_parties, closure, fdobj,
+                                          channel_args, &mapped_addr, deadline,
+                                          ep);
 }
 
 // overridden by api_fuzzer.c
