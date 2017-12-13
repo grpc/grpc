@@ -81,6 +81,9 @@ def build_kokoro_url(job_name, build_id):
 def create_issues(new_flakes, always_create):
   for test_name, results_row in new_flakes.items():
     poll_strategy, job_name, build_id, timestamp = results_row
+    # TODO(dgq): the Kokoro URL has a limited lifetime. The permanent and ideal
+    # URL would be the sponge one, but there's currently no easy way to retrieve
+    # it.
     url = build_kokoro_url(job_name, build_id)
     title = 'New Failure: ' + test_name
     body = '- Test: {}\n- Poll Strategy: {}\n- URL: {}'.format(
