@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -90,7 +90,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a>  </div>
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::ServerReader&lt; R &gt; Class Template Reference</div>  </div>
 </div><!--header-->
@@ -103,10 +104,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a43e6b5258cfc623fa719884fce957521"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader.html#a43e6b5258cfc623fa719884fce957521">ServerReader</a> (<a class="el" href="classgrpc_1_1_call.html">Call</a> *call, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *ctx)</td></tr>
-<tr class="separator:a43e6b5258cfc623fa719884fce957521"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9485c2aa06bad8ca0650bfeafa35e2e4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader.html#a9485c2aa06bad8ca0650bfeafa35e2e4">SendInitialMetadata</a> () override</td></tr>
-<tr class="memdesc:a9485c2aa06bad8ca0650bfeafa35e2e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a" title="Block to send initial metadata to client. ">ServerStreamingInterface.SendInitialMetadata</a></em> method for semantics.  <a href="#a9485c2aa06bad8ca0650bfeafa35e2e4">More...</a><br/></td></tr>
+<tr class="memdesc:a9485c2aa06bad8ca0650bfeafa35e2e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em>ServerStreamingInterface.SendInitialMetadata</em> method for semantics.  <a href="#a9485c2aa06bad8ca0650bfeafa35e2e4">More...</a><br/></td></tr>
 <tr class="separator:a9485c2aa06bad8ca0650bfeafa35e2e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba6ffb98a646c122a4b5e8a53e969d7e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader.html#aba6ffb98a646c122a4b5e8a53e969d7e">NextMessageSize</a> (uint32_t *sz) override</td></tr>
 <tr class="memdesc:aba6ffb98a646c122a4b5e8a53e969d7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get an upper bound on the next message size available for reading on this stream.  <a href="#aba6ffb98a646c122a4b5e8a53e969d7e">More...</a><br/></td></tr>
@@ -114,56 +113,25 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aefba84a0fc0d5cef5be843e0fb08e1d5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader.html#aefba84a0fc0d5cef5be843e0fb08e1d5">Read</a> (R *msg) override</td></tr>
 <tr class="memdesc:aefba84a0fc0d5cef5be843e0fb08e1d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to read a message and parse to <em>msg</em>.  <a href="#aefba84a0fc0d5cef5be843e0fb08e1d5">More...</a><br/></td></tr>
 <tr class="separator:aefba84a0fc0d5cef5be843e0fb08e1d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classgrpc_1_1_server_streaming_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_server_streaming_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_server_streaming_interface.html">grpc::ServerStreamingInterface</a></td></tr>
-<tr class="memitem:a3c4c1bb05e9a92ca9095bcb63301d8a1 inherit pub_methods_classgrpc_1_1_server_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a3c4c1bb05e9a92ca9095bcb63301d8a1">~ServerStreamingInterface</a> ()</td></tr>
-<tr class="separator:a3c4c1bb05e9a92ca9095bcb63301d8a1 inherit pub_methods_classgrpc_1_1_server_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classgrpc_1_1_reader_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_reader_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_reader_interface.html">grpc::ReaderInterface&lt; R &gt;</a></td></tr>
-<tr class="memitem:a1fbd3d6e86e2f97e5444f29b0af0a9d5 inherit pub_methods_classgrpc_1_1_reader_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_reader_interface.html#a1fbd3d6e86e2f97e5444f29b0af0a9d5">~ReaderInterface</a> ()</td></tr>
-<tr class="separator:a1fbd3d6e86e2f97e5444f29b0af0a9d5 inherit pub_methods_classgrpc_1_1_reader_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_server_streaming_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_server_streaming_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_interface.html">grpc::internal::ServerStreamingInterface</a></td></tr>
+<tr class="memitem:a2eef7573013077505dd7e22b3672acc5 inherit pub_methods_classgrpc_1_1internal_1_1_server_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_streaming_interface.html#a2eef7573013077505dd7e22b3672acc5">~ServerStreamingInterface</a> ()</td></tr>
+<tr class="separator:a2eef7573013077505dd7e22b3672acc5 inherit pub_methods_classgrpc_1_1internal_1_1_server_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_reader_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_reader_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_reader_interface.html">grpc::internal::ReaderInterface&lt; R &gt;</a></td></tr>
+<tr class="memitem:ad1d28c0720937a61b0f7952d3add7bba inherit pub_methods_classgrpc_1_1internal_1_1_reader_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_reader_interface.html#ad1d28c0720937a61b0f7952d3add7bba">~ReaderInterface</a> ()</td></tr>
+<tr class="separator:ad1d28c0720937a61b0f7952d3add7bba inherit pub_methods_classgrpc_1_1internal_1_1_reader_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:a420e7af1f016c295b28389810b472ea5"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:a420e7af1f016c295b28389810b472ea5"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader.html#a420e7af1f016c295b28389810b472ea5">internal::ClientStreamingHandler</a></td></tr>
+<tr class="separator:a420e7af1f016c295b28389810b472ea5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;class R&gt;<br/>
 class grpc::ServerReader&lt; R &gt;</h3>
 
 <p>Synchronous (blocking) server-side API for doing client-streaming RPCs, where the incoming message stream coming from the client has messages of type <em>R</em>. </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a43e6b5258cfc623fa719884fce957521"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class R&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_server_reader.html">grpc::ServerReader</a>&lt; R &gt;::<a class="el" href="classgrpc_1_1_server_reader.html">ServerReader</a> </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_call.html">Call</a> *&#160;</td>
-          <td class="paramname"><em>call</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td>
-          <td class="paramname"><em>ctx</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
+</div><h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="aba6ffb98a646c122a4b5e8a53e969d7e"></a>
 <div class="memitem">
 <div class="memproto">
@@ -190,7 +158,7 @@ template&lt;class R&gt; </div>
 
 <p>Get an upper bound on the next message size available for reading on this stream. </p>
 
-<p>Implements <a class="el" href="classgrpc_1_1_reader_interface.html#a4ad823a3c32ec163fca5fc175dcb102f">grpc::ReaderInterface&lt; R &gt;</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_reader_interface.html#ad3216783fae57e614181e28df9435f33">grpc::internal::ReaderInterface&lt; R &gt;</a>.</p>
 
 </div>
 </div>
@@ -228,7 +196,7 @@ template&lt;class R&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><em>false</em> when there will be no more incoming messages, either because the other side has called <em>WritesDone()</em> or the stream has failed (or been cancelled). </dd></dl>
 
-<p>Implements <a class="el" href="classgrpc_1_1_reader_interface.html#a04a1da8610d790ea86ecd5a14fe892b8">grpc::ReaderInterface&lt; R &gt;</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_reader_interface.html#adfb50ace59b4b9666a46548d3f732ee8">grpc::internal::ReaderInterface&lt; R &gt;</a>.</p>
 
 </div>
 </div>
@@ -255,10 +223,35 @@ template&lt;class R&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See the <em><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a" title="Block to send initial metadata to client. ">ServerStreamingInterface.SendInitialMetadata</a></em> method for semantics. </p>
+<p>See the <em>ServerStreamingInterface.SendInitialMetadata</em> method for semantics. </p>
 <p>Note that initial metadata will be affected by the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with this call. </p>
 
-<p>Implements <a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a">grpc::ServerStreamingInterface</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_interface.html#a45ab1e968a08b6c905ffac9a41e894d4">grpc::internal::ServerStreamingInterface</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a class="anchor" id="a420e7af1f016c295b28389810b472ea5"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class R&gt; </div>
+<div class="memtemplate">
+template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_streaming_handler.html">internal::ClientStreamingHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -269,7 +262,7 @@ template&lt;class R&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

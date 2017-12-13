@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -146,6 +146,8 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initialaea3b3a42c7d59f33d8b29d9f8d06219.html">grpc_op::grpc_op_data::grpc_op_send_initial_metadata::grpc_op_send_initial_metadata_maybe_compression_level</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <em>is_set</em>, <em>compression_level</em> will be used for the call.  <a href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initialaea3b3a42c7d59f33d8b29d9f8d06219.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initial84a8b7c8eb97c0b2b7caa20e8cb5dcdf.html">grpc_op::grpc_op_data::grpc_op_send_initial_metadata::grpc_op_send_initial_metadata_maybe_stream_compression_level</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html">grpc_op::grpc_op_data::grpc_op_send_message</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html">grpc_op::grpc_op_data::grpc_op_send_status_from_server</a></td></tr>
@@ -221,9 +223,12 @@ Macros</h2></td></tr>
 <tr class="memitem:ga0958b21ee82acd9c77de30a978c59fb2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga0958b21ee82acd9c77de30a978c59fb2">GRPC_ARG_HTTP2_BDP_PROBE</a>&#160;&#160;&#160;&quot;grpc.http2.bdp_probe&quot;</td></tr>
 <tr class="memdesc:ga0958b21ee82acd9c77de30a978c59fb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Should BDP probing be performed?  <a href="group__grpc__arg__keys.html#ga0958b21ee82acd9c77de30a978c59fb2">More...</a><br/></td></tr>
 <tr class="separator:ga0958b21ee82acd9c77de30a978c59fb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gacc0d0f1d3d582d39fcfb7a835b730a6c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gacc0d0f1d3d582d39fcfb7a835b730a6c">GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS</a>&#160;&#160;&#160;&quot;grpc.http2.min_time_between_pings_ms&quot;</td></tr>
-<tr class="memdesc:gacc0d0f1d3d582d39fcfb7a835b730a6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum time (in milliseconds) between successive ping frames being sent.  <a href="group__grpc__arg__keys.html#gacc0d0f1d3d582d39fcfb7a835b730a6c">More...</a><br/></td></tr>
-<tr class="separator:gacc0d0f1d3d582d39fcfb7a835b730a6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga69583c8efdbdcb7cdf9055ee80a07014"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga69583c8efdbdcb7cdf9055ee80a07014">GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS</a>&#160;&#160;&#160;&quot;grpc.http2.min_time_between_pings_ms&quot;</td></tr>
+<tr class="memdesc:ga69583c8efdbdcb7cdf9055ee80a07014"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum time between sending successive ping frames without receiving any data frame, Int valued, milliseconds.  <a href="group__grpc__arg__keys.html#ga69583c8efdbdcb7cdf9055ee80a07014">More...</a><br/></td></tr>
+<tr class="separator:ga69583c8efdbdcb7cdf9055ee80a07014"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4494709dc5c7c899af4ed67ec7728549"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga4494709dc5c7c899af4ed67ec7728549">GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS</a>&#160;&#160;&#160;&quot;grpc.http2.min_ping_interval_without_data_ms&quot;</td></tr>
+<tr class="memdesc:ga4494709dc5c7c899af4ed67ec7728549"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum allowed time between receiving successive ping frames without sending any data frame.  <a href="group__grpc__arg__keys.html#ga4494709dc5c7c899af4ed67ec7728549">More...</a><br/></td></tr>
+<tr class="separator:ga4494709dc5c7c899af4ed67ec7728549"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">GRPC_ARG_HTTP2_SCHEME</a>&#160;&#160;&#160;&quot;grpc.http2_scheme&quot;</td></tr>
 <tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br/></td></tr>
 <tr class="separator:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -233,9 +238,6 @@ Macros</h2></td></tr>
 <tr class="memitem:gaf50a9992745183e14e8c660d954c1d82"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf50a9992745183e14e8c660d954c1d82">GRPC_ARG_HTTP2_MAX_PING_STRIKES</a>&#160;&#160;&#160;&quot;grpc.http2.max_ping_strikes&quot;</td></tr>
 <tr class="memdesc:gaf50a9992745183e14e8c660d954c1d82"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many misbehaving pings the server can bear before sending goaway and closing the transport? (0 indicates that the server can bear an infinite number of misbehaving pings)  <a href="group__grpc__arg__keys.html#gaf50a9992745183e14e8c660d954c1d82">More...</a><br/></td></tr>
 <tr class="separator:gaf50a9992745183e14e8c660d954c1d82"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac3470e2718001b173a7b8398ab60fe09"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gac3470e2718001b173a7b8398ab60fe09">GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS</a>&#160;&#160;&#160;&quot;grpc.http2.min_ping_interval_without_data_ms&quot;</td></tr>
-<tr class="memdesc:gac3470e2718001b173a7b8398ab60fe09"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum allowed time between two pings without sending any data frame.  <a href="group__grpc__arg__keys.html#gac3470e2718001b173a7b8398ab60fe09">More...</a><br/></td></tr>
-<tr class="separator:gac3470e2718001b173a7b8398ab60fe09"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8ee81850446e587a7410df5ab640c565"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga8ee81850446e587a7410df5ab640c565">GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE</a>&#160;&#160;&#160;&quot;grpc.http2.write_buffer_size&quot;</td></tr>
 <tr class="memdesc:ga8ee81850446e587a7410df5ab640c565"><td class="mdescLeft">&#160;</td><td class="mdescRight">How much data are we willing to queue up per stream if GRPC_WRITE_BUFFER_HINT is set? This is an upper bound.  <a href="group__grpc__arg__keys.html#ga8ee81850446e587a7410df5ab640c565">More...</a><br/></td></tr>
 <tr class="separator:ga8ee81850446e587a7410df5ab640c565"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -269,6 +271,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gaedb26c5ca7d3d279b81d12d9bf6dabc6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaedb26c5ca7d3d279b81d12d9bf6dabc6">GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS</a>&#160;&#160;&#160;&quot;grpc.initial_reconnect_backoff_ms&quot;</td></tr>
 <tr class="memdesc:gaedb26c5ca7d3d279b81d12d9bf6dabc6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The time between the first and second connection attempts, in ms.  <a href="group__grpc__arg__keys.html#gaedb26c5ca7d3d279b81d12d9bf6dabc6">More...</a><br/></td></tr>
 <tr class="separator:gaedb26c5ca7d3d279b81d12d9bf6dabc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabd95d2a6b1cd3b3ca8a1c9fb7eb4cdf1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gabd95d2a6b1cd3b3ca8a1c9fb7eb4cdf1">GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.server_handshake_timeout_ms&quot;</td></tr>
+<tr class="memdesc:gabd95d2a6b1cd3b3ca8a1c9fb7eb4cdf1"><td class="mdescLeft">&#160;</td><td class="mdescRight">The timeout used on servers for finishing handshaking on an incoming connection.  <a href="group__grpc__arg__keys.html#gabd95d2a6b1cd3b3ca8a1c9fb7eb4cdf1">More...</a><br/></td></tr>
+<tr class="separator:gabd95d2a6b1cd3b3ca8a1c9fb7eb4cdf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga218bf55b665134a11baf07ada5980825"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga218bf55b665134a11baf07ada5980825">GRPC_SSL_TARGET_NAME_OVERRIDE_ARG</a>&#160;&#160;&#160;&quot;grpc.ssl_target_name_override&quot;</td></tr>
 <tr class="memdesc:ga218bf55b665134a11baf07ada5980825"><td class="mdescLeft">&#160;</td><td class="mdescRight">This <em>should</em> be used for testing only.  <a href="group__grpc__arg__keys.html#ga218bf55b665134a11baf07ada5980825">More...</a><br/></td></tr>
 <tr class="separator:ga218bf55b665134a11baf07ada5980825"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -312,8 +317,10 @@ Macros</h2></td></tr>
 <tr class="separator:gae55b7bd57a5344e0083eac4d06c2d51b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gadeaad8ae5b50ee8d2fb44d289aeb223d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gadeaad8ae5b50ee8d2fb44d289aeb223d">GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE</a>&#160;&#160;&#160;&quot;grpc.experimental.tcp_max_read_chunk_size&quot;</td></tr>
 <tr class="separator:gadeaad8ae5b50ee8d2fb44d289aeb223d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga1768735fceeb8108a2f1eb12ea0a894e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga1768735fceeb8108a2f1eb12ea0a894e">GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.grpclb_timeout_ms&quot;</td></tr>
+<tr class="memitem:ga1768735fceeb8108a2f1eb12ea0a894e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga1768735fceeb8108a2f1eb12ea0a894e">GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.grpclb_call_timeout_ms&quot;</td></tr>
 <tr class="separator:ga1768735fceeb8108a2f1eb12ea0a894e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaaaf4ebe91111ede7ee09a2bc790caa21"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaaaf4ebe91111ede7ee09a2bc790caa21">GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.grpclb_fallback_timeout_ms&quot;</td></tr>
+<tr class="separator:gaaaf4ebe91111ede7ee09a2bc790caa21"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">GRPC_ARG_WORKAROUND_CRONET_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.workaround.cronet_compression&quot;</td></tr>
 <tr class="memdesc:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, grpc server's cronet compression workaround will be enabled.  <a href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">More...</a><br/></td></tr>
 <tr class="separator:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -331,7 +338,10 @@ Macros</h2></td></tr>
 <tr class="memitem:ae09000181671f031ed0e319ed557da4e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#ae09000181671f031ed0e319ed557da4e">GRPC_WRITE_NO_COMPRESS</a>&#160;&#160;&#160;(0x00000002u)</td></tr>
 <tr class="memdesc:ae09000181671f031ed0e319ed557da4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Force compression to be disabled for a particular write (start_write/add_metadata).  <a href="#ae09000181671f031ed0e319ed557da4e">More...</a><br/></td></tr>
 <tr class="separator:ae09000181671f031ed0e319ed557da4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3317259e1098b2b6f49982d6997bbf6a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a3317259e1098b2b6f49982d6997bbf6a">GRPC_WRITE_USED_MASK</a>&#160;&#160;&#160;(<a class="el" href="grpc__types_8h.html#adf29fd8b7df2ecc47d14a7f5a3a079c0">GRPC_WRITE_BUFFER_HINT</a> | <a class="el" href="grpc__types_8h.html#ae09000181671f031ed0e319ed557da4e">GRPC_WRITE_NO_COMPRESS</a>)</td></tr>
+<tr class="memitem:a5de65995b1101bba3652f9d2ae51cc23"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>&#160;&#160;&#160;(0x00000004u)</td></tr>
+<tr class="memdesc:a5de65995b1101bba3652f9d2ae51cc23"><td class="mdescLeft">&#160;</td><td class="mdescRight">Force this message to be written to the socket before completing it.  <a href="#a5de65995b1101bba3652f9d2ae51cc23">More...</a><br/></td></tr>
+<tr class="separator:a5de65995b1101bba3652f9d2ae51cc23"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3317259e1098b2b6f49982d6997bbf6a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a3317259e1098b2b6f49982d6997bbf6a">GRPC_WRITE_USED_MASK</a>&#160;&#160;&#160;(<a class="el" href="grpc__types_8h.html#adf29fd8b7df2ecc47d14a7f5a3a079c0">GRPC_WRITE_BUFFER_HINT</a> | <a class="el" href="grpc__types_8h.html#ae09000181671f031ed0e319ed557da4e">GRPC_WRITE_NO_COMPRESS</a> | <a class="el" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>)</td></tr>
 <tr class="memdesc:a3317259e1098b2b6f49982d6997bbf6a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mask of all valid flags.  <a href="#a3317259e1098b2b6f49982d6997bbf6a">More...</a><br/></td></tr>
 <tr class="separator:a3317259e1098b2b6f49982d6997bbf6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b9e262e1a797030f62bccfe7b42ce01"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a>&#160;&#160;&#160;(0x00000010u)</td></tr>
@@ -572,12 +582,13 @@ Enumerations</h2></td></tr>
 <div class="line"><a class="code" href="grpc__types_8h.html#a9606180fd0950a1514522fbe535edf49">   GRPC_INITIAL_METADATA_WAIT_FOR_READY</a> |                <a class="code" href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">\</a></div>
 <div class="line"><a class="code" href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</a> |             <a class="code" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">\</a></div>
 <div class="line"><a class="code" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a> | <a class="code" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">\</a></div>
-<div class="line"><a class="code" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">   GRPC_INITIAL_METADATA_CORKED</a>)</div>
-<div class="ttc" id="grpc__types_8h_html_afa71c451716eca6c8d38fb71d66c0bbb"><div class="ttname"><a href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</div><div class="ttdoc">Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set by the calling application...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:370</div></div>
-<div class="ttc" id="grpc__types_8h_html_a1175f30479912922d006387536d2c46c"><div class="ttname"><a href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">GRPC_INITIAL_METADATA_CORKED</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CORKED</div><div class="ttdoc">Signal that the initial metadata should be corked. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:372</div></div>
-<div class="ttc" id="grpc__types_8h_html_a7978c09a9933e7b858c65c1b03eb5b2b"><div class="ttname"><a href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</div><div class="ttdoc">Signal that the call is cacheable. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:367</div></div>
-<div class="ttc" id="grpc__types_8h_html_a9606180fd0950a1514522fbe535edf49"><div class="ttname"><a href="grpc__types_8h.html#a9606180fd0950a1514522fbe535edf49">GRPC_INITIAL_METADATA_WAIT_FOR_READY</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY</div><div class="ttdoc">Signal that the call should not return UNAVAILABLE before it has started. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:365</div></div>
-<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:363</div></div>
+<div class="line"><a class="code" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">   GRPC_INITIAL_METADATA_CORKED</a> | <a class="code" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>)</div>
+<div class="ttc" id="grpc__types_8h_html_a5de65995b1101bba3652f9d2ae51cc23"><div class="ttname"><a href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a></div><div class="ttdeci">#define GRPC_WRITE_THROUGH</div><div class="ttdoc">Force this message to be written to the socket before completing it. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:367</div></div>
+<div class="ttc" id="grpc__types_8h_html_afa71c451716eca6c8d38fb71d66c0bbb"><div class="ttname"><a href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</div><div class="ttdoc">Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set by the calling application...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:381</div></div>
+<div class="ttc" id="grpc__types_8h_html_a1175f30479912922d006387536d2c46c"><div class="ttname"><a href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">GRPC_INITIAL_METADATA_CORKED</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CORKED</div><div class="ttdoc">Signal that the initial metadata should be corked. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:383</div></div>
+<div class="ttc" id="grpc__types_8h_html_a7978c09a9933e7b858c65c1b03eb5b2b"><div class="ttname"><a href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</div><div class="ttdoc">Signal that the call is cacheable. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:378</div></div>
+<div class="ttc" id="grpc__types_8h_html_a9606180fd0950a1514522fbe535edf49"><div class="ttname"><a href="grpc__types_8h.html#a9606180fd0950a1514522fbe535edf49">GRPC_INITIAL_METADATA_WAIT_FOR_READY</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY</div><div class="ttdoc">Signal that the call should not return UNAVAILABLE before it has started. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:376</div></div>
+<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:374</div></div>
 </div><!-- fragment -->
 <p>Mask of all valid flags. </p>
 
@@ -641,12 +652,26 @@ Enumerations</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a5de65995b1101bba3652f9d2ae51cc23"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_WRITE_THROUGH&#160;&#160;&#160;(0x00000004u)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Force this message to be written to the socket before completing it. </p>
+
+</div>
+</div>
 <a class="anchor" id="a3317259e1098b2b6f49982d6997bbf6a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define GRPC_WRITE_USED_MASK&#160;&#160;&#160;(<a class="el" href="grpc__types_8h.html#adf29fd8b7df2ecc47d14a7f5a3a079c0">GRPC_WRITE_BUFFER_HINT</a> | <a class="el" href="grpc__types_8h.html#ae09000181671f031ed0e319ed557da4e">GRPC_WRITE_NO_COMPRESS</a>)</td>
+          <td class="memname">#define GRPC_WRITE_USED_MASK&#160;&#160;&#160;(<a class="el" href="grpc__types_8h.html#adf29fd8b7df2ecc47d14a7f5a3a079c0">GRPC_WRITE_BUFFER_HINT</a> | <a class="el" href="grpc__types_8h.html#ae09000181671f031ed0e319ed557da4e">GRPC_WRITE_NO_COMPRESS</a> | <a class="el" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1118,7 +1143,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -14,8 +14,11 @@ var searchData=
   ['grpc_5fop_5ftype',['grpc_op_type',['../grpc__types_8h.html#a41dc9abf9678decbfcef1a037e35939a',1,'grpc_types.h']]],
   ['grpc_5fserver_5fregister_5fmethod_5fpayload_5fhandling',['grpc_server_register_method_payload_handling',['../grpc_8h.html#aab04022748000f50c2590230f985acbc',1,'grpc.h']]],
   ['grpc_5fslice_5fref_5fwhom',['grpc_slice_ref_whom',['../grpc_2slice_8h.html#a4a42e5de5c07151adf96278ea466ef4d',1,'slice.h']]],
+  ['grpc_5fssl_5fcertificate_5fconfig_5freload_5fstatus',['grpc_ssl_certificate_config_reload_status',['../grpc__security__constants_8h.html#a4f19e93998bbda68d9c24f27673ff627',1,'grpc_security_constants.h']]],
   ['grpc_5fssl_5fclient_5fcertificate_5frequest_5ftype',['grpc_ssl_client_certificate_request_type',['../grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09',1,'grpc_security_constants.h']]],
   ['grpc_5fssl_5froots_5foverride_5fresult',['grpc_ssl_roots_override_result',['../grpc__security__constants_8h.html#a90c47ae1d8c33145342170fe615fa68c',1,'grpc_security_constants.h']]],
   ['grpc_5fstatus_5fcode',['grpc_status_code',['../grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb',1,'status.h']]],
+  ['grpc_5fstream_5fcompression_5falgorithm',['grpc_stream_compression_algorithm',['../compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073',1,'compression_types.h']]],
+  ['grpc_5fstream_5fcompression_5flevel',['grpc_stream_compression_level',['../compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266',1,'compression_types.h']]],
   ['grpc_5fworkaround_5flist',['grpc_workaround_list',['../workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2',1,'workaround_list.h']]]
 ];

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -104,10 +104,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a49ce7f2934d753389bd192574c509302"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a49ce7f2934d753389bd192574c509302">Alarm</a> ()</td></tr>
+<tr class="memdesc:a49ce7f2934d753389bd192574c509302"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an unset completion queue alarm.  <a href="#a49ce7f2934d753389bd192574c509302">More...</a><br/></td></tr>
+<tr class="separator:a49ce7f2934d753389bd192574c509302"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa6c0bc180d800973956b13c793bbac9a"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:aa6c0bc180d800973956b13c793bbac9a"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#aa6c0bc180d800973956b13c793bbac9a">Alarm</a> (<a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *cq, const T &amp;deadline, void *tag)</td></tr>
-<tr class="memdesc:aa6c0bc180d800973956b13c793bbac9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a completion queue alarm instance associated to <em>cq</em>.  <a href="#aa6c0bc180d800973956b13c793bbac9a">More...</a><br/></td></tr>
+<tr class="memdesc:aa6c0bc180d800973956b13c793bbac9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">DEPRECATED: Create and set a completion queue alarm instance associated to <em>cq</em>.  <a href="#aa6c0bc180d800973956b13c793bbac9a">More...</a><br/></td></tr>
 <tr class="separator:aa6c0bc180d800973956b13c793bbac9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cfc8a72d77c446e909c9747cd852cfa"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a2cfc8a72d77c446e909c9747cd852cfa"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a2cfc8a72d77c446e909c9747cd852cfa">Set</a> (<a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *cq, const T &amp;deadline, void *tag)</td></tr>
+<tr class="memdesc:a2cfc8a72d77c446e909c9747cd852cfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Trigger an alarm instance on completion queue <em>cq</em> at the specified time.  <a href="#a2cfc8a72d77c446e909c9747cd852cfa">More...</a><br/></td></tr>
+<tr class="separator:a2cfc8a72d77c446e909c9747cd852cfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea1258cecd23533bf292f17b71124f66"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#aea1258cecd23533bf292f17b71124f66">Alarm</a> (const <a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;)=delete</td></tr>
 <tr class="memdesc:aea1258cecd23533bf292f17b71124f66"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alarms aren't copyable.  <a href="#aea1258cecd23533bf292f17b71124f66">More...</a><br/></td></tr>
 <tr class="separator:aea1258cecd23533bf292f17b71124f66"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -128,6 +135,31 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A thin wrapper around <em>grpc_alarm</em> (see / <em>/</em> src/core/surface/alarm.h). </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a class="anchor" id="a49ce7f2934d753389bd192574c509302"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Alarm::Alarm </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create an unset completion queue alarm. </p>
+
+</div>
+</div>
 <a class="anchor" id="aa6c0bc180d800973956b13c793bbac9a"></a>
 <div class="memitem">
 <div class="memproto">
@@ -168,8 +200,8 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Create a completion queue alarm instance associated to <em>cq</em>. </p>
-<p>Once the alarm expires (at <em>deadline</em>) or it's cancelled (see <em>Cancel</em>), an event with tag <em>tag</em> will be added to <em>cq</em>. If the alarm expired, the event's success bit will be true, false otherwise (ie, upon cancellation).</p>
+<p>DEPRECATED: Create and set a completion queue alarm instance associated to <em>cq</em>. </p>
+<p>This form is deprecated because it is inherently racy.</p>
 <p>. </p>
 
 </div>
@@ -326,13 +358,58 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a2cfc8a72d77c446e909c9747cd852cfa"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::Alarm::Set </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *&#160;</td>
+          <td class="paramname"><em>cq</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramname"><em>deadline</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>tag</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Trigger an alarm instance on completion queue <em>cq</em> at the specified time. </p>
+<p>Once the alarm expires (at <em>deadline</em>) or it's cancelled (see <em>Cancel</em>), an event with tag <em>tag</em> will be added to <em>cq</em>. If the alarm expired, the event's success bit will be true, false otherwise (ie, upon cancellation). </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc++/<a class="el" href="alarm_8h_source.html">alarm.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

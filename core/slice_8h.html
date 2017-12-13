@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">4.0.0</span>
+   &#160;<span id="projectnumber">5.0.0</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_a8e30387f66bf56f1146fa5d3496d838.html">include</a></li><li class="navelem"><a class="el" href="dir_f93e102bce67c94e5a77dcd42507568e.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_04ed5e7a0931afed58b44427831a7c00.html">include</a></li><li class="navelem"><a class="el" href="dir_70e6a53b947bcbad872060ddc188ca9d.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -101,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:ae0799ad659c9438e0b2cc25e1aa99a52"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52">GRPC_SLICE_MALLOC</a>(len)</td></tr>
+<tr class="memitem:ae0799ad659c9438e0b2cc25e1aa99a52"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52">GRPC_SLICE_MALLOC</a>(len)&#160;&#160;&#160;<a class="el" href="slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">grpc_slice_malloc</a>(len)</td></tr>
 <tr class="separator:ae0799ad659c9438e0b2cc25e1aa99a52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
@@ -180,8 +180,6 @@ Functions</h2></td></tr>
 <tr class="separator:a8c2a57340b8ff85c5bc17ecffe941a8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aada74a5bebd5aad23cc4028e8cc98d4e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#aada74a5bebd5aad23cc4028e8cc98d4e">grpc_slice_str_cmp</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a, const char *b)</td></tr>
 <tr class="separator:aada74a5bebd5aad23cc4028e8cc98d4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab66e2a9f5f74e59001b5ec5fd40f0c03"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ab66e2a9f5f74e59001b5ec5fd40f0c03">grpc_slice_buf_cmp</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a, const void *b, size_t blen)</td></tr>
-<tr class="separator:ab66e2a9f5f74e59001b5ec5fd40f0c03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ea487d89fdecd0a19b7f16beb9c8c11"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a0ea487d89fdecd0a19b7f16beb9c8c11">grpc_slice_buf_start_eq</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> a, const void *b, size_t blen)</td></tr>
 <tr class="memdesc:a0ea487d89fdecd0a19b7f16beb9c8c11"><td class="mdescLeft">&#160;</td><td class="mdescRight">return non-zero if the first blen bytes of a are equal to b  <a href="#a0ea487d89fdecd0a19b7f16beb9c8c11">More...</a><br/></td></tr>
 <tr class="separator:a0ea487d89fdecd0a19b7f16beb9c8c11"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -215,18 +213,11 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">len</td><td>)</td>
-          <td></td>
+          <td>&#160;&#160;&#160;<a class="el" href="slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">grpc_slice_malloc</a>(len)</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">((len) &lt;= <a class="code" href="impl_2codegen_2slice_8h.html#ae65fc74cb3afbcd3299a1c93f90bae20">GRPC_SLICE_INLINED_SIZE</a>                               \</div>
-<div class="line">       ? (<a class="code" href="structgrpc__slice.html">grpc_slice</a>){.refcount = NULL,                           \</div>
-<div class="line">                      .data.inlined = {.length = (uint8_t)(len)}} \</div>
-<div class="line">       : <a class="code" href="slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">grpc_slice_malloc_large</a>((len)))</div>
-<div class="ttc" id="slice_8h_html_ab286ea0212352a75cfaf34c32eccff17"><div class="ttname"><a href="slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">grpc_slice_malloc_large</a></div><div class="ttdeci">GPRAPI grpc_slice grpc_slice_malloc_large(size_t length)</div></div>
-<div class="ttc" id="structgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...</div><div class="ttdef"><b>Definition:</b> slice.h:76</div></div>
-<div class="ttc" id="impl_2codegen_2slice_8h_html_ae65fc74cb3afbcd3299a1c93f90bae20"><div class="ttname"><a href="impl_2codegen_2slice_8h.html#ae65fc74cb3afbcd3299a1c93f90bae20">GRPC_SLICE_INLINED_SIZE</a></div><div class="ttdeci">#define GRPC_SLICE_INLINED_SIZE</div><div class="ttdef"><b>Definition:</b> slice.h:65</div></div>
-</div><!-- fragment -->
+
 </div>
 </div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
@@ -261,38 +252,6 @@ Functions</h2></td></tr>
           <td class="paramtype">void&#160;</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="ab66e2a9f5f74e59001b5ec5fd40f0c03"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int grpc_slice_buf_cmp </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td>
-          <td class="paramname"><em>a</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const void *&#160;</td>
-          <td class="paramname"><em>b</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>blen</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1096,7 +1055,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

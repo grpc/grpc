@@ -21,7 +21,7 @@ var searchData=
   ['grpc_5fauth_5fproperty',['grpc_auth_property',['../grpc__security_8h.html#a010fe7d27deaa2ea50b765b48dbad429',1,'grpc_security.h']]],
   ['grpc_5fauth_5fproperty_5fiterator',['grpc_auth_property_iterator',['../grpc__security_8h.html#a26981fdcb987d885b25d34c7dc66e4cf',1,'grpc_security.h']]],
   ['grpc_5fbyte_5fbuffer',['grpc_byte_buffer',['../grpc__types_8h.html#acf22f6b5ce464dd73df59c9c49f8871c',1,'grpc_types.h']]],
-  ['grpc_5fbyte_5fbuffer_5freader',['grpc_byte_buffer_reader',['../byte__buffer_8h.html#a16143f22ea46cc7fa6b53e6cb30715f1',1,'byte_buffer.h']]],
+  ['grpc_5fbyte_5fbuffer_5freader',['grpc_byte_buffer_reader',['../impl_2codegen_2byte__buffer_8h.html#a16143f22ea46cc7fa6b53e6cb30715f1',1,'byte_buffer.h']]],
   ['grpc_5fcall',['grpc_call',['../grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222',1,'grpc_types.h']]],
   ['grpc_5fcall_5fcredentials',['grpc_call_credentials',['../grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072',1,'grpc_security.h']]],
   ['grpc_5fcall_5ferror',['grpc_call_error',['../grpc__types_8h.html#abb51216cb5ac1cfd8ca4d096e060adbb',1,'grpc_types.h']]],
@@ -46,5 +46,8 @@ var searchData=
   ['grpc_5fslice_5frefcount_5fvtable',['grpc_slice_refcount_vtable',['../impl_2codegen_2slice_8h.html#a0ba9a84b74d6308678a2f53212b5b3fd',1,'slice.h']]],
   ['grpc_5fsocket_5ffactory',['grpc_socket_factory',['../grpc__types_8h.html#a6bb7fdad6ac88edb9468eb46c801ddb0',1,'grpc_types.h']]],
   ['grpc_5fsocket_5fmutator',['grpc_socket_mutator',['../grpc__types_8h.html#a72c4781284bb0c964d281e6e46cf4a90',1,'grpc_types.h']]],
-  ['grpc_5fssl_5froots_5foverride_5fcallback',['grpc_ssl_roots_override_callback',['../grpc__security_8h.html#a005f46357a959bbfbb7b1241a933ef43',1,'grpc_security.h']]]
+  ['grpc_5fssl_5froots_5foverride_5fcallback',['grpc_ssl_roots_override_callback',['../grpc__security_8h.html#a005f46357a959bbfbb7b1241a933ef43',1,'grpc_security.h']]],
+  ['grpc_5fssl_5fserver_5fcertificate_5fconfig',['grpc_ssl_server_certificate_config',['../grpc__security_8h.html#acb8bbd3a6006aee7f7b254d4a91d914f',1,'grpc_security.h']]],
+  ['grpc_5fssl_5fserver_5fcertificate_5fconfig_5fcallback',['grpc_ssl_server_certificate_config_callback',['../grpc__security_8h.html#a10aa18e9708aa3b13e9464d57ade0782',1,'grpc_security.h']]],
+  ['grpc_5fssl_5fserver_5fcredentials_5foptions',['grpc_ssl_server_credentials_options',['../grpc__security_8h.html#ade0da78380603c2e26c81695f09ea4c8',1,'grpc_security.h']]]
 ];

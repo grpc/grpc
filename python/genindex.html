@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; grpcio 1.6.0 documentation</title>
+  <title>Index &mdash; grpcio 1.8.0 documentation</title>
   
 
   
@@ -36,7 +36,7 @@
         <link rel="index" title="Index"
               href="#"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="grpcio 1.6.0 documentation" href="index.html"/> 
+    <link rel="top" title="grpcio 1.8.0 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.6.0
+                1.8.0
               </div>
             
           
@@ -214,6 +214,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.framework.foundation.html#grpc.framework.foundation.abandonment.Abandoned">Abandoned</a>
 </li>
+      <li><a href="grpc.html#grpc.ServicerContext.abort">abort() (grpc.ServicerContext method)</a>
+</li>
       <li><a href="grpc.html#grpc.StatusCode.ABORTED">ABORTED (grpc.StatusCode attribute)</a>
 </li>
       <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.Abortion">Abortion (class in grpc.framework.interfaces.face.face)</a>
@@ -236,10 +238,10 @@
       </ul></li>
       <li><a href="grpc.html#grpc.Server.add_generic_rpc_handlers">add_generic_rpc_handlers() (grpc.Server method)</a>
 </li>
-      <li><a href="grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.add_idle_action">add_idle_action() (grpc.framework.interfaces.base.base.End method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.add_idle_action">add_idle_action() (grpc.framework.interfaces.base.base.End method)</a>
+</li>
       <li><a href="grpc.beta.html#grpc.beta.interfaces.Server.add_insecure_port">add_insecure_port() (grpc.beta.interfaces.Server method)</a>
 
       <ul>
@@ -346,6 +348,8 @@
 </li>
       <li><a href="grpc.html#grpc.ChannelCredentials">ChannelCredentials (class in grpc)</a>
 </li>
+      <li><a href="grpc.html#grpc.ClientCallDetails">ClientCallDetails (class in grpc)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Completion.code">code (grpc.framework.interfaces.base.base.Completion attribute)</a>
@@ -404,6 +408,8 @@
 </li>
       <li><a href="grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.ProtocolReceiver.context">context() (grpc.framework.interfaces.base.base.ProtocolReceiver method)</a>
 </li>
+      <li><a href="grpc.html#grpc.ClientCallDetails.credentials">credentials (grpc.ClientCallDetails attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -442,6 +448,8 @@
         <li><a href="grpc.html#grpc.Future.done">(grpc.Future method)</a>
 </li>
       </ul></li>
+      <li><a href="grpc.html#grpc.dynamic_ssl_server_credentials">dynamic_ssl_server_credentials() (in module grpc)</a>
+</li>
       <li><a href="grpc.beta.html#grpc.beta.implementations.dynamic_stub">dynamic_stub() (in module grpc.beta.implementations)</a>
 </li>
       <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.DynamicStub">DynamicStub (class in grpc.framework.interfaces.face.face)</a>
@@ -638,14 +646,26 @@
 </li>
       <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.GenericStub.inline_unary_stream">inline_unary_stream() (grpc.framework.interfaces.face.face.GenericStub method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.html#grpc.insecure_channel">insecure_channel() (in module grpc)</a>
 
       <ul>
         <li><a href="grpc.beta.html#grpc.beta.implementations.insecure_channel">(in module grpc.beta.implementations)</a>
 </li>
       </ul></li>
+      <li><a href="grpc.html#grpc.intercept_channel">intercept_channel() (in module grpc)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grpc.html#grpc.ServerInterceptor.intercept_service">intercept_service() (grpc.ServerInterceptor method)</a>
+</li>
+      <li><a href="grpc.html#grpc.StreamStreamClientInterceptor.intercept_stream_stream">intercept_stream_stream() (grpc.StreamStreamClientInterceptor method)</a>
+</li>
+      <li><a href="grpc.html#grpc.StreamUnaryClientInterceptor.intercept_stream_unary">intercept_stream_unary() (grpc.StreamUnaryClientInterceptor method)</a>
+</li>
+      <li><a href="grpc.html#grpc.UnaryStreamClientInterceptor.intercept_unary_stream">intercept_unary_stream() (grpc.UnaryStreamClientInterceptor method)</a>
+</li>
+      <li><a href="grpc.html#grpc.UnaryUnaryClientInterceptor.intercept_unary_unary">intercept_unary_unary() (grpc.UnaryUnaryClientInterceptor method)</a>
+</li>
       <li><a href="grpc.html#grpc.StatusCode.INTERNAL">INTERNAL (grpc.StatusCode attribute)</a>
 </li>
       <li><a href="grpc.html#grpc.StatusCode.INVALID_ARGUMENT">INVALID_ARGUMENT (grpc.StatusCode attribute)</a>
@@ -715,13 +735,23 @@
       <li><a href="grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Completion.message">message (grpc.framework.interfaces.base.base.Completion attribute)</a>
 </li>
       <li><a href="grpc.html#term-metadata"><strong>metadata</strong></a>
+
+      <ul>
+        <li><a href="grpc.html#grpc.ClientCallDetails.metadata">(grpc.ClientCallDetails attribute)</a>
 </li>
+      </ul></li>
       <li><a href="grpc.html#grpc.metadata_call_credentials">metadata_call_credentials() (in module grpc)</a>
+
+      <ul>
+        <li><a href="grpc.beta.html#grpc.beta.implementations.metadata_call_credentials">(in module grpc.beta.implementations)</a>
 </li>
-      <li><a href="grpc.html#term-metadatum"><strong>metadatum</strong></a>
-</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grpc.html#term-metadatum"><strong>metadatum</strong></a>
+</li>
+      <li><a href="grpc.html#grpc.ClientCallDetails.method">method (grpc.ClientCallDetails attribute)</a>
+</li>
       <li><a href="grpc.html#grpc.method_handlers_generic_handler">method_handlers_generic_handler() (in module grpc)</a>
 </li>
       <li><a href="grpc.html#grpc.AuthMetadataContext.method_name">method_name (grpc.AuthMetadataContext attribute)</a>
@@ -914,7 +944,11 @@
       </ul></li>
       <li><a href="grpc.beta.html#grpc.beta.implementations.server_options">server_options() (in module grpc.beta.implementations)</a>
 </li>
+      <li><a href="grpc.html#grpc.ServerCertificateConfiguration">ServerCertificateConfiguration (class in grpc)</a>
+</li>
       <li><a href="grpc.html#grpc.ServerCredentials">ServerCredentials (class in grpc)</a>
+</li>
+      <li><a href="grpc.html#grpc.ServerInterceptor">ServerInterceptor (class in grpc)</a>
 </li>
       <li><a href="grpc.beta.html#grpc.beta.implementations.ServerOptions">ServerOptions (class in grpc.beta.implementations)</a>
 </li>
@@ -952,6 +986,8 @@
 </li>
       <li><a href="grpc.html#grpc.ssl_channel_credentials">ssl_channel_credentials() (in module grpc)</a>
 </li>
+      <li><a href="grpc.html#grpc.ssl_server_certificate_configuration">ssl_server_certificate_configuration() (in module grpc)</a>
+</li>
       <li><a href="grpc.html#grpc.ssl_server_credentials">ssl_server_credentials() (in module grpc)</a>
 </li>
       <li><a href="grpc.beta.html#grpc.beta.interfaces.Server.start">start() (grpc.beta.interfaces.Server method)</a>
@@ -964,6 +1000,8 @@
       </ul></li>
       <li><a href="grpc.html#grpc.StatusCode">StatusCode (class in grpc)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.beta.html#grpc.beta.interfaces.Server.stop">stop() (grpc.beta.interfaces.Server method)</a>
 
       <ul>
@@ -972,8 +1010,6 @@
         <li><a href="grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.End.stop">(grpc.framework.interfaces.base.base.End method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.framework.common.html#grpc.framework.common.cardinality.Cardinality.STREAM_STREAM">STREAM_STREAM (grpc.framework.common.cardinality.Cardinality attribute)</a>
 </li>
       <li><a href="grpc.html#grpc.RpcMethodHandler.stream_stream">stream_stream (grpc.RpcMethodHandler attribute)</a>
@@ -1014,12 +1050,16 @@
 </li>
       <li><a href="grpc.html#grpc.stream_unary_rpc_method_handler">stream_unary_rpc_method_handler() (in module grpc)</a>
 </li>
+      <li><a href="grpc.html#grpc.StreamStreamClientInterceptor">StreamStreamClientInterceptor (class in grpc)</a>
+</li>
       <li><a href="grpc.html#grpc.StreamStreamMultiCallable">StreamStreamMultiCallable (class in grpc)</a>
 
       <ul>
         <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.StreamStreamMultiCallable">(class in grpc.framework.interfaces.face.face)</a>
 </li>
       </ul></li>
+      <li><a href="grpc.html#grpc.StreamUnaryClientInterceptor">StreamUnaryClientInterceptor (class in grpc)</a>
+</li>
       <li><a href="grpc.html#grpc.StreamUnaryMultiCallable">StreamUnaryMultiCallable (class in grpc)</a>
 
       <ul>
@@ -1074,10 +1114,10 @@
 </li>
       <li><a href="grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.Subscription.Kind.TERMINATION_ONLY">TERMINATION_ONLY (grpc.framework.interfaces.base.base.Subscription.Kind attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.framework.foundation.html#grpc.framework.foundation.stream_util.ThreadSwitchingConsumer">ThreadSwitchingConsumer (class in grpc.framework.foundation.stream_util)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.base.OperationContext.time_remaining">time_remaining() (grpc.framework.interfaces.base.base.OperationContext method)</a>
 
       <ul>
@@ -1086,6 +1126,8 @@
         <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.RpcContext.time_remaining">(grpc.framework.interfaces.face.face.RpcContext method)</a>
 </li>
       </ul></li>
+      <li><a href="grpc.html#grpc.ClientCallDetails.timeout">timeout (grpc.ClientCallDetails attribute)</a>
+</li>
       <li><a href="grpc.framework.foundation.html#grpc.framework.foundation.future.TimeoutError">TimeoutError</a>
 </li>
       <li><a href="grpc.framework.foundation.html#grpc.framework.foundation.future.Future.traceback">traceback() (grpc.framework.foundation.future.Future method)</a>
@@ -1140,15 +1182,17 @@
       </ul></li>
       <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.MethodImplementation.unary_unary_event">unary_unary_event (grpc.framework.interfaces.face.face.MethodImplementation attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.unary_unary_event">unary_unary_event() (in module grpc.framework.interfaces.face.utilities)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.MethodImplementation.unary_unary_inline">unary_unary_inline (grpc.framework.interfaces.face.face.MethodImplementation attribute)</a>
 </li>
       <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.utilities.unary_unary_inline">unary_unary_inline() (in module grpc.framework.interfaces.face.utilities)</a>
 </li>
       <li><a href="grpc.html#grpc.unary_unary_rpc_method_handler">unary_unary_rpc_method_handler() (in module grpc)</a>
+</li>
+      <li><a href="grpc.html#grpc.UnaryStreamClientInterceptor">UnaryStreamClientInterceptor (class in grpc)</a>
 </li>
       <li><a href="grpc.html#grpc.UnaryStreamMultiCallable">UnaryStreamMultiCallable (class in grpc)</a>
 
@@ -1156,6 +1200,8 @@
         <li><a href="grpc.framework.interfaces.face.html#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable">(class in grpc.framework.interfaces.face.face)</a>
 </li>
       </ul></li>
+      <li><a href="grpc.html#grpc.UnaryUnaryClientInterceptor">UnaryUnaryClientInterceptor (class in grpc)</a>
+</li>
       <li><a href="grpc.html#grpc.UnaryUnaryMultiCallable">UnaryUnaryMultiCallable (class in grpc)</a>
 
       <ul>
@@ -1231,8 +1277,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.6.0',
-            LANGUAGE:'en',
+            VERSION:'1.8.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

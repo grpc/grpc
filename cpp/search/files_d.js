@@ -40,12 +40,14 @@ var searchData=
   ['subprocess_2eh',['subprocess.h',['../subprocess_8h.html',1,'']]],
   ['sync_2eh',['sync.h',['../support_2sync_8h.html',1,'']]],
   ['sync_2eh',['sync.h',['../impl_2codegen_2sync_8h.html',1,'']]],
-  ['sync_5fgeneric_2eh',['sync_generic.h',['../support_2sync__generic_8h.html',1,'']]],
+  ['sync_5fcustom_2eh',['sync_custom.h',['../impl_2codegen_2sync__custom_8h.html',1,'']]],
+  ['sync_5fcustom_2eh',['sync_custom.h',['../support_2sync__custom_8h.html',1,'']]],
   ['sync_5fgeneric_2eh',['sync_generic.h',['../impl_2codegen_2sync__generic_8h.html',1,'']]],
+  ['sync_5fgeneric_2eh',['sync_generic.h',['../support_2sync__generic_8h.html',1,'']]],
   ['sync_5fposix_2eh',['sync_posix.h',['../support_2sync__posix_8h.html',1,'']]],
   ['sync_5fposix_2eh',['sync_posix.h',['../impl_2codegen_2sync__posix_8h.html',1,'']]],
   ['sync_5fstream_2eh',['sync_stream.h',['../support_2sync__stream_8h.html',1,'']]],
   ['sync_5fstream_2eh',['sync_stream.h',['../impl_2codegen_2sync__stream_8h.html',1,'']]],
-  ['sync_5fwindows_2eh',['sync_windows.h',['../support_2sync__windows_8h.html',1,'']]],
-  ['sync_5fwindows_2eh',['sync_windows.h',['../impl_2codegen_2sync__windows_8h.html',1,'']]]
+  ['sync_5fwindows_2eh',['sync_windows.h',['../impl_2codegen_2sync__windows_8h.html',1,'']]],
+  ['sync_5fwindows_2eh',['sync_windows.h',['../support_2sync__windows_8h.html',1,'']]]
 ];

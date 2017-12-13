@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -141,9 +141,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad930c28f5c32832e1d48ee30bf0858e3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#ad930c28f5c32832e1d48ee30bf0858e3">set_last_message</a> ()</td></tr>
 <tr class="memdesc:ad930c28f5c32832e1d48ee30bf0858e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">last-message bit: indicates this is the last message in a stream client-side: makes Write the equivalent of performing Write, WritesDone in a single step server-side: hold the Write until the service handler returns (sync api) or until Finish is called (async api)  <a href="#ad930c28f5c32832e1d48ee30bf0858e3">More...</a><br/></td></tr>
 <tr class="separator:ad930c28f5c32832e1d48ee30bf0858e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a279b18ed840b64f145572ab5b34df9a7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a279b18ed840b64f145572ab5b34df9a7">clear_last_messsage</a> ()</td></tr>
-<tr class="memdesc:a279b18ed840b64f145572ab5b34df9a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears flag indicating that this is the last message in a stream, disabling coalescing.  <a href="#a279b18ed840b64f145572ab5b34df9a7">More...</a><br/></td></tr>
-<tr class="separator:a279b18ed840b64f145572ab5b34df9a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa96dfc3eceb841fb2b5416222561684c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#aa96dfc3eceb841fb2b5416222561684c">clear_last_message</a> ()</td></tr>
+<tr class="memdesc:aa96dfc3eceb841fb2b5416222561684c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears flag indicating that this is the last message in a stream, disabling coalescing.  <a href="#aa96dfc3eceb841fb2b5416222561684c">More...</a><br/></td></tr>
+<tr class="separator:aa96dfc3eceb841fb2b5416222561684c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa5f7fcba7816c5d6b41b3e62b2b9b58"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#aaa5f7fcba7816c5d6b41b3e62b2b9b58">set_write_through</a> ()</td></tr>
+<tr class="memdesc:aaa5f7fcba7816c5d6b41b3e62b2b9b58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Guarantee that all bytes have been written to the wire before completing this write (usually writes are completed when they pass flow control)  <a href="#aaa5f7fcba7816c5d6b41b3e62b2b9b58">More...</a><br/></td></tr>
+<tr class="separator:aaa5f7fcba7816c5d6b41b3e62b2b9b58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5aa00dfe73c2d20e15cd0be8a608c0db"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a5aa00dfe73c2d20e15cd0be8a608c0db">is_write_through</a> () const </td></tr>
+<tr class="separator:a5aa00dfe73c2d20e15cd0be8a608c0db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a196c8fe4ed181e95efacf74be931bb79"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a196c8fe4ed181e95efacf74be931bb79">is_last_message</a> () const </td></tr>
 <tr class="memdesc:a196c8fe4ed181e95efacf74be931bb79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get value for the flag indicating that this is the last message, and should be coalesced with trailing metadata.  <a href="#a196c8fe4ed181e95efacf74be931bb79">More...</a><br/></td></tr>
 <tr class="separator:a196c8fe4ed181e95efacf74be931bb79"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -275,7 +280,7 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a279b18ed840b64f145572ab5b34df9a7"></a>
+<a class="anchor" id="aa96dfc3eceb841fb2b5416222561684c"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -283,7 +288,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&amp; grpc::WriteOptions::clear_last_messsage </td>
+          <td class="memname"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&amp; grpc::WriteOptions::clear_last_message </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -452,6 +457,29 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a5aa00dfe73c2d20e15cd0be8a608c0db"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc::WriteOptions::is_write_through </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="abe3d32a3e5879022e7b8f1c6a7533841"></a>
 <div class="memitem">
 <div class="memproto">
@@ -578,13 +606,38 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="aaa5f7fcba7816c5d6b41b3e62b2b9b58"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&amp; grpc::WriteOptions::set_write_through </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Guarantee that all bytes have been written to the wire before completing this write (usually writes are completed when they pass flow control) </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc++/impl/codegen/<a class="el" href="codegen_2call_8h_source.html">call.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

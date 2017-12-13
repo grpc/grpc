@@ -540,6 +540,9 @@ var Search = {
           });
         } else if (DOCUMENTATION_OPTIONS.HAS_SOURCE) {
           var suffix = DOCUMENTATION_OPTIONS.SOURCELINK_SUFFIX;
+          if (suffix === undefined) {
+            suffix = '.txt';
+          }
           $.ajax({url: DOCUMENTATION_OPTIONS.URL_ROOT + '_sources/' + item[5] + (item[5].slice(-suffix.length) === suffix ? '' : suffix),
                   dataType: "text",
                   complete: function(jqxhr, textstatus) {

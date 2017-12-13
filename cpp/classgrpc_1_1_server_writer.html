@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -90,7 +90,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a>  </div>
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::ServerWriter&lt; W &gt; Class Template Reference</div>  </div>
 </div><!--header-->
@@ -103,70 +104,37 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a119c720c14d6835a8bc40a4ed615f0f2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_writer.html#a119c720c14d6835a8bc40a4ed615f0f2">ServerWriter</a> (<a class="el" href="classgrpc_1_1_call.html">Call</a> *call, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *ctx)</td></tr>
-<tr class="separator:a119c720c14d6835a8bc40a4ed615f0f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a29dfe2774aa23975c5372031ce4bcda1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_writer.html#a29dfe2774aa23975c5372031ce4bcda1">SendInitialMetadata</a> () override</td></tr>
-<tr class="memdesc:a29dfe2774aa23975c5372031ce4bcda1"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a" title="Block to send initial metadata to client. ">ServerStreamingInterface.SendInitialMetadata</a></em> method for semantics.  <a href="#a29dfe2774aa23975c5372031ce4bcda1">More...</a><br/></td></tr>
+<tr class="memdesc:a29dfe2774aa23975c5372031ce4bcda1"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em>ServerStreamingInterface.SendInitialMetadata</em> method for semantics.  <a href="#a29dfe2774aa23975c5372031ce4bcda1">More...</a><br/></td></tr>
 <tr class="separator:a29dfe2774aa23975c5372031ce4bcda1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a877af2459a53cf8cdbff0952748594f8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_writer.html#a877af2459a53cf8cdbff0952748594f8">Write</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options) override</td></tr>
 <tr class="memdesc:a877af2459a53cf8cdbff0952748594f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to write <em>msg</em> to the stream with <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em>.  <a href="#a877af2459a53cf8cdbff0952748594f8">More...</a><br/></td></tr>
 <tr class="separator:a877af2459a53cf8cdbff0952748594f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classgrpc_1_1_server_streaming_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_server_streaming_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_server_streaming_interface.html">grpc::ServerStreamingInterface</a></td></tr>
-<tr class="memitem:a3c4c1bb05e9a92ca9095bcb63301d8a1 inherit pub_methods_classgrpc_1_1_server_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a3c4c1bb05e9a92ca9095bcb63301d8a1">~ServerStreamingInterface</a> ()</td></tr>
-<tr class="separator:a3c4c1bb05e9a92ca9095bcb63301d8a1 inherit pub_methods_classgrpc_1_1_server_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classgrpc_1_1_writer_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_writer_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_writer_interface.html">grpc::WriterInterface&lt; W &gt;</a></td></tr>
-<tr class="memitem:a447d71736fb6e8c6bd21287ecc3a9f75 inherit pub_methods_classgrpc_1_1_writer_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_writer_interface.html#a447d71736fb6e8c6bd21287ecc3a9f75">~WriterInterface</a> ()</td></tr>
-<tr class="separator:a447d71736fb6e8c6bd21287ecc3a9f75 inherit pub_methods_classgrpc_1_1_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5ddbce2a74455afea61fc21e16b01c6a inherit pub_methods_classgrpc_1_1_writer_interface"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_writer_interface.html#a5ddbce2a74455afea61fc21e16b01c6a">Write</a> (const W &amp;msg)</td></tr>
-<tr class="memdesc:a5ddbce2a74455afea61fc21e16b01c6a inherit pub_methods_classgrpc_1_1_writer_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to write <em>msg</em> to the stream with default write options.  <a href="#a5ddbce2a74455afea61fc21e16b01c6a">More...</a><br/></td></tr>
-<tr class="separator:a5ddbce2a74455afea61fc21e16b01c6a inherit pub_methods_classgrpc_1_1_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8a4180c8928156e9daffa18465866ad2 inherit pub_methods_classgrpc_1_1_writer_interface"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_writer_interface.html#a8a4180c8928156e9daffa18465866ad2">WriteLast</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
-<tr class="memdesc:a8a4180c8928156e9daffa18465866ad2 inherit pub_methods_classgrpc_1_1_writer_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em>.  <a href="#a8a4180c8928156e9daffa18465866ad2">More...</a><br/></td></tr>
-<tr class="separator:a8a4180c8928156e9daffa18465866ad2 inherit pub_methods_classgrpc_1_1_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_server_streaming_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_server_streaming_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_interface.html">grpc::internal::ServerStreamingInterface</a></td></tr>
+<tr class="memitem:a2eef7573013077505dd7e22b3672acc5 inherit pub_methods_classgrpc_1_1internal_1_1_server_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_streaming_interface.html#a2eef7573013077505dd7e22b3672acc5">~ServerStreamingInterface</a> ()</td></tr>
+<tr class="separator:a2eef7573013077505dd7e22b3672acc5 inherit pub_methods_classgrpc_1_1internal_1_1_server_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_writer_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_writer_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html">grpc::internal::WriterInterface&lt; W &gt;</a></td></tr>
+<tr class="memitem:a0f3bb9c5625b43d600d33d2bf8c17b60 inherit pub_methods_classgrpc_1_1internal_1_1_writer_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a0f3bb9c5625b43d600d33d2bf8c17b60">~WriterInterface</a> ()</td></tr>
+<tr class="separator:a0f3bb9c5625b43d600d33d2bf8c17b60 inherit pub_methods_classgrpc_1_1internal_1_1_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89d051f5c00ede4469cfb216bd05b594 inherit pub_methods_classgrpc_1_1internal_1_1_writer_interface"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a89d051f5c00ede4469cfb216bd05b594">Write</a> (const W &amp;msg)</td></tr>
+<tr class="memdesc:a89d051f5c00ede4469cfb216bd05b594 inherit pub_methods_classgrpc_1_1internal_1_1_writer_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to write <em>msg</em> to the stream with default write options.  <a href="#a89d051f5c00ede4469cfb216bd05b594">More...</a><br/></td></tr>
+<tr class="separator:a89d051f5c00ede4469cfb216bd05b594 inherit pub_methods_classgrpc_1_1internal_1_1_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3308bfe1558e317e5fa3530f74c63ce6 inherit pub_methods_classgrpc_1_1internal_1_1_writer_interface"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a3308bfe1558e317e5fa3530f74c63ce6">WriteLast</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
+<tr class="memdesc:a3308bfe1558e317e5fa3530f74c63ce6 inherit pub_methods_classgrpc_1_1internal_1_1_writer_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em>.  <a href="#a3308bfe1558e317e5fa3530f74c63ce6">More...</a><br/></td></tr>
+<tr class="separator:a3308bfe1558e317e5fa3530f74c63ce6 inherit pub_methods_classgrpc_1_1internal_1_1_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:a92a457fe95d4f1662f65ed9b47be0f84"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:a92a457fe95d4f1662f65ed9b47be0f84"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_writer.html#a92a457fe95d4f1662f65ed9b47be0f84">internal::ServerStreamingHandler</a></td></tr>
+<tr class="separator:a92a457fe95d4f1662f65ed9b47be0f84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;class W&gt;<br/>
 class grpc::ServerWriter&lt; W &gt;</h3>
 
 <p>Synchronous (blocking) server-side API for doing for doing a server-streaming RPCs, where the outgoing message stream coming from the server has messages of type <em>W</em>. </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a119c720c14d6835a8bc40a4ed615f0f2"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class W&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_server_writer.html">grpc::ServerWriter</a>&lt; W &gt;::<a class="el" href="classgrpc_1_1_server_writer.html">ServerWriter</a> </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_call.html">Call</a> *&#160;</td>
-          <td class="paramname"><em>call</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td>
-          <td class="paramname"><em>ctx</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
+</div><h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a29dfe2774aa23975c5372031ce4bcda1"></a>
 <div class="memitem">
 <div class="memproto">
@@ -190,10 +158,10 @@ template&lt;class W&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See the <em><a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a" title="Block to send initial metadata to client. ">ServerStreamingInterface.SendInitialMetadata</a></em> method for semantics. </p>
+<p>See the <em>ServerStreamingInterface.SendInitialMetadata</em> method for semantics. </p>
 <p>Note that initial metadata will be affected by the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with this call. </p>
 
-<p>Implements <a class="el" href="classgrpc_1_1_server_streaming_interface.html#a1a73c0e46258c0ef9a5c1ecd3cbe429a">grpc::ServerStreamingInterface</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_interface.html#a45ab1e968a08b6c905ffac9a41e894d4">grpc::internal::ServerStreamingInterface</a>.</p>
 
 </div>
 </div>
@@ -232,7 +200,7 @@ template&lt;class W&gt; </div>
 </div><div class="memdoc">
 
 <p>Block to write <em>msg</em> to the stream with <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em>. </p>
-<p>This is thread-safe with respect to <em><a class="el" href="classgrpc_1_1_reader_interface.html#a04a1da8610d790ea86ecd5a14fe892b8" title="Block to read a message and parse to msg. ">ReaderInterface::Read</a></em> </p>
+<p>This is thread-safe with respect to <em>ReaderInterface::Read</em> </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">msg</td><td>The message to be written to the stream. </td></tr>
@@ -242,7 +210,32 @@ template&lt;class W&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><em>true</em> on success, <em>false</em> when the stream has been closed. </dd></dl>
 
-<p>Implements <a class="el" href="classgrpc_1_1_writer_interface.html#ae2ddda78f4e1deadf858a68b955e787d">grpc::WriterInterface&lt; W &gt;</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#add3e3940ba338ab08705ea69d017a80b">grpc::internal::WriterInterface&lt; W &gt;</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a class="anchor" id="a92a457fe95d4f1662f65ed9b47be0f84"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class W&gt; </div>
+<div class="memtemplate">
+template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html">internal::ServerStreamingHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -253,7 +246,7 @@ template&lt;class W&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

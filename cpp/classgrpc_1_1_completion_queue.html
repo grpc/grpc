@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -90,6 +90,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
@@ -124,6 +125,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aac07e9da5148c779cac51e1bf948c282"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#aac07e9da5148c779cac51e1bf948c282">~CompletionQueue</a> ()</td></tr>
 <tr class="memdesc:aac07e9da5148c779cac51e1bf948c282"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor. Destroys the owned wrapped completion queue / instance.  <a href="#aac07e9da5148c779cac51e1bf948c282">More...</a><br/></td></tr>
 <tr class="separator:aac07e9da5148c779cac51e1bf948c282"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af935df99ccd14bcfb674e89f0c077a8c"><td class="memTemplParams" colspan="2">template&lt;typename T , typename F &gt; </td></tr>
+<tr class="memitem:af935df99ccd14bcfb674e89f0c077a8c"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572">NextStatus</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#af935df99ccd14bcfb674e89f0c077a8c">DoThenAsyncNext</a> (F &amp;&amp;f, void **tag, bool *ok, const T &amp;deadline)</td></tr>
+<tr class="memdesc:af935df99ccd14bcfb674e89f0c077a8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL First executes <em>F</em>, then reads from the queue, blocking up to <em>deadline</em> (or the queue's shutdown).  <a href="#af935df99ccd14bcfb674e89f0c077a8c">More...</a><br/></td></tr>
+<tr class="separator:af935df99ccd14bcfb674e89f0c077a8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a290ddf3d96e6d1d5886580e60b0602b4"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a290ddf3d96e6d1d5886580e60b0602b4"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572">NextStatus</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a290ddf3d96e6d1d5886580e60b0602b4">AsyncNext</a> (void **tag, bool *ok, const T &amp;deadline)</td></tr>
 <tr class="memdesc:a290ddf3d96e6d1d5886580e60b0602b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read from the queue, blocking up to <em>deadline</em> (or the queue's shutdown).  <a href="#a290ddf3d96e6d1d5886580e60b0602b4">More...</a><br/></td></tr>
@@ -137,13 +142,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a999c317e716d1e74aca2eb050912302b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a999c317e716d1e74aca2eb050912302b">cq</a> ()</td></tr>
 <tr class="memdesc:a999c317e716d1e74aca2eb050912302b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a <em>raw</em> pointer to the underlying <em>grpc_completion_queue</em> instance.  <a href="#a999c317e716d1e74aca2eb050912302b">More...</a><br/></td></tr>
 <tr class="separator:a999c317e716d1e74aca2eb050912302b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a169dd094e1347297a168750b4cb592b8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a169dd094e1347297a168750b4cb592b8">InitialAvalanching</a> ()</td></tr>
-<tr class="memdesc:a169dd094e1347297a168750b4cb592b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Manage state of avalanching operations : completion queue tags that trigger other completion queue operations.  <a href="#a169dd094e1347297a168750b4cb592b8">More...</a><br/></td></tr>
-<tr class="separator:a169dd094e1347297a168750b4cb592b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43a587573c1575511cd0df4101e8f065"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a43a587573c1575511cd0df4101e8f065">RegisterAvalanching</a> ()</td></tr>
-<tr class="separator:a43a587573c1575511cd0df4101e8f065"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab198302d64bdf815ece389a44fdd931f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#ab198302d64bdf815ece389a44fdd931f">CompleteAvalanching</a> ()</td></tr>
-<tr class="separator:ab198302d64bdf815ece389a44fdd931f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -171,28 +169,29 @@ Friends</h2></td></tr>
 <tr class="memitem:a81fd5fb92dd22dced55726c389f3ea29"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
 <tr class="memitem:a81fd5fb92dd22dced55726c389f3ea29"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a81fd5fb92dd22dced55726c389f3ea29">::grpc::internal::ServerReaderWriterBody</a></td></tr>
 <tr class="separator:a81fd5fb92dd22dced55726c389f3ea29"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a76b9bb18b02084e9eaa8c9b99c668676"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
-<tr class="memitem:a76b9bb18b02084e9eaa8c9b99c668676"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a76b9bb18b02084e9eaa8c9b99c668676">RpcMethodHandler</a></td></tr>
-<tr class="separator:a76b9bb18b02084e9eaa8c9b99c668676"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae11583f8aab976055b1feae895d7e12a"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
-<tr class="memitem:ae11583f8aab976055b1feae895d7e12a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#ae11583f8aab976055b1feae895d7e12a">ClientStreamingHandler</a></td></tr>
-<tr class="separator:ae11583f8aab976055b1feae895d7e12a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac2a23a31e1f8f09e2e51f09e7f50ba0c"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
-<tr class="memitem:ac2a23a31e1f8f09e2e51f09e7f50ba0c"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#ac2a23a31e1f8f09e2e51f09e7f50ba0c">ServerStreamingHandler</a></td></tr>
-<tr class="separator:ac2a23a31e1f8f09e2e51f09e7f50ba0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1c8a1d8a93da1dda2eb939d947694a24"><td class="memTemplParams" colspan="2">template&lt;class Streamer , bool WriteNeeded&gt; </td></tr>
-<tr class="memitem:a1c8a1d8a93da1dda2eb939d947694a24"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a1c8a1d8a93da1dda2eb939d947694a24">TemplatedBidiStreamingHandler</a></td></tr>
-<tr class="separator:a1c8a1d8a93da1dda2eb939d947694a24"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb2b23ecdb6db8b8d7e194a8e0ef5d6f"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#aeb2b23ecdb6db8b8d7e194a8e0ef5d6f">UnknownMethodHandler</a></td></tr>
-<tr class="separator:aeb2b23ecdb6db8b8d7e194a8e0ef5d6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4e0fda6a3be8543f0d9f79f297533e9"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:ab4e0fda6a3be8543f0d9f79f297533e9"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#ab4e0fda6a3be8543f0d9f79f297533e9">::grpc::internal::RpcMethodHandler</a></td></tr>
+<tr class="separator:ab4e0fda6a3be8543f0d9f79f297533e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee2bfad715a7c61f2839cdc9b5be6ef5"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:aee2bfad715a7c61f2839cdc9b5be6ef5"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#aee2bfad715a7c61f2839cdc9b5be6ef5">::grpc::internal::ClientStreamingHandler</a></td></tr>
+<tr class="separator:aee2bfad715a7c61f2839cdc9b5be6ef5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abba72ec6d1dbf06ecb1bf48e1c916c48"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:abba72ec6d1dbf06ecb1bf48e1c916c48"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#abba72ec6d1dbf06ecb1bf48e1c916c48">::grpc::internal::ServerStreamingHandler</a></td></tr>
+<tr class="separator:abba72ec6d1dbf06ecb1bf48e1c916c48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65ae6d263727d1e67e811969f909212b"><td class="memTemplParams" colspan="2">template&lt;class Streamer , bool WriteNeeded&gt; </td></tr>
+<tr class="memitem:a65ae6d263727d1e67e811969f909212b"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a65ae6d263727d1e67e811969f909212b">::grpc::internal::TemplatedBidiStreamingHandler</a></td></tr>
+<tr class="separator:a65ae6d263727d1e67e811969f909212b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a445fc31dd2f75f5686fd6bd1c6be5c"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a7a445fc31dd2f75f5686fd6bd1c6be5c">::grpc::internal::UnknownMethodHandler</a></td></tr>
+<tr class="separator:a7a445fc31dd2f75f5686fd6bd1c6be5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c3fa4c066981aae114e41c3f9340144"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a8c3fa4c066981aae114e41c3f9340144">::grpc::Server</a></td></tr>
 <tr class="separator:a8c3fa4c066981aae114e41c3f9340144"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c5b4f4c66d254f341915982a17aac95"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a6c5b4f4c66d254f341915982a17aac95">::grpc::ServerContext</a></td></tr>
 <tr class="separator:a6c5b4f4c66d254f341915982a17aac95"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a4aac0a120f3498d1151460ef89ce8446">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
-<tr class="memdesc:a4aac0a120f3498d1151460ef89ce8446"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper that performs a blocking unary call.  <a href="#a4aac0a120f3498d1151460ef89ce8446">More...</a><br/></td></tr>
-<tr class="separator:a4aac0a120f3498d1151460ef89ce8446"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8edbec79fc5ad7456e57c0f513451e2f"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a8edbec79fc5ad7456e57c0f513451e2f">::grpc::ServerInterface</a></td></tr>
+<tr class="separator:a8edbec79fc5ad7456e57c0f513451e2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
+<tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#ad26a823fee699f97244d581f400fe39a">::grpc::internal::BlockingUnaryCallImpl</a></td></tr>
+<tr class="separator:ad26a823fee699f97244d581f400fe39a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A thin wrapper around <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> (see src/core/lib/surface/completion_queue.h). </p>
@@ -388,21 +387,6 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="ab198302d64bdf815ece389a44fdd931f"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc::CompletionQueue::CompleteAvalanching </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a class="anchor" id="a999c317e716d1e74aca2eb050912302b"></a>
 <div class="memitem">
 <div class="memproto">
@@ -429,18 +413,43 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a169dd094e1347297a168750b4cb592b8"></a>
+<a class="anchor" id="af935df99ccd14bcfb674e89f0c077a8c"></a>
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , typename F &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::CompletionQueue::InitialAvalanching </td>
+          <td class="memname"><a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572">NextStatus</a> grpc::CompletionQueue::DoThenAsyncNext </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">F &amp;&amp;&#160;</td>
+          <td class="paramname"><em>f</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">void **&#160;</td>
+          <td class="paramname"><em>tag</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool *&#160;</td>
+          <td class="paramname"><em>ok</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramname"><em>deadline</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -450,8 +459,18 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Manage state of avalanching operations : completion queue tags that trigger other completion queue operations. </p>
-<p>The underlying core completion queue should not really shutdown until all avalanching operations have been finalized. Note that we maintain the requirement that an avalanche registration must take place before CQ shutdown (which must be maintained elsehwere) </p>
+<p>EXPERIMENTAL First executes <em>F</em>, then reads from the queue, blocking up to <em>deadline</em> (or the queue's shutdown). </p>
+<p>Both <em>tag</em> and <em>ok</em> are updated upon success (if an event is available within the <em>deadline</em>). A <em>tag</em> points to an arbitrary location usually employed to uniquely identify an event.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">F[in]</td><td>Function to execute before calling AsyncNext on this queue. </td></tr>
+    <tr><td class="paramname">tag[out]</td><td>Upon sucess, updated to point to the event's tag. </td></tr>
+    <tr><td class="paramname">ok[out]</td><td>Upon sucess, true if read a regular event, false otherwise. </td></tr>
+    <tr><td class="paramname">deadline[in]</td><td>How long to block in wait for an event.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The type of event read. </dd></dl>
 
 </div>
 </div>
@@ -496,29 +515,6 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if read a regular event, false if the queue is shutting down. </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a43a587573c1575511cd0df4101e8f065"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc::CompletionQueue::RegisterAvalanching </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
 
 </div>
 </div>
@@ -607,6 +603,72 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="ad26a823fee699f97244d581f400fe39a"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class InputMessage , class OutputMessage &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_blocking_unary_call_impl.html">grpc::internal::BlockingUnaryCallImpl</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aee2bfad715a7c61f2839cdc9b5be6ef5"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_client_streaming_handler.html">grpc::internal::ClientStreamingHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ab4e0fda6a3be8543f0d9f79f297533e9"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html">grpc::internal::RpcMethodHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a81fd5fb92dd22dced55726c389f3ea29"></a>
 <div class="memitem">
 <div class="memproto">
@@ -618,6 +680,70 @@ template&lt;class W , class R &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_server_reader_writer_body.html">grpc::internal::ServerReaderWriterBody</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="abba72ec6d1dbf06ecb1bf48e1c916c48"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html">grpc::internal::ServerStreamingHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a65ae6d263727d1e67e811969f909212b"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Streamer , bool WriteNeeded&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html">grpc::internal::TemplatedBidiStreamingHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a7a445fc31dd2f75f5686fd6bd1c6be5c"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_unknown_method_handler.html">grpc::internal::UnknownMethodHandler</a></td>
         </tr>
       </table>
   </td>
@@ -658,6 +784,26 @@ template&lt;class W , class R &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">friend class ::<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a8edbec79fc5ad7456e57c0f513451e2f"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1_server_interface.html">grpc::ServerInterface</a></td>
         </tr>
       </table>
   </td>
@@ -713,177 +859,13 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a4aac0a120f3498d1151460ef89ce8446"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class InputMessage , class OutputMessage &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> BlockingUnaryCall </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *&#160;</td>
-          <td class="paramname"><em>channel</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;&#160;</td>
-          <td class="paramname"><em>method</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *&#160;</td>
-          <td class="paramname"><em>context</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const InputMessage &amp;&#160;</td>
-          <td class="paramname"><em>request</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">OutputMessage *&#160;</td>
-          <td class="paramname"><em>result</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Wrapper that performs a blocking unary call. </p>
-
-</div>
-</div>
-<a class="anchor" id="ae11583f8aab976055b1feae895d7e12a"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class <a class="el" href="classgrpc_1_1_client_streaming_handler.html">ClientStreamingHandler</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a76b9bb18b02084e9eaa8c9b99c668676"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class <a class="el" href="classgrpc_1_1_rpc_method_handler.html">RpcMethodHandler</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="ac2a23a31e1f8f09e2e51f09e7f50ba0c"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class <a class="el" href="classgrpc_1_1_server_streaming_handler.html">ServerStreamingHandler</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a1c8a1d8a93da1dda2eb939d947694a24"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class Streamer , bool WriteNeeded&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class <a class="el" href="classgrpc_1_1_templated_bidi_streaming_handler.html">TemplatedBidiStreamingHandler</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="aeb2b23ecdb6db8b8d7e194a8e0ef5d6f"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class <a class="el" href="classgrpc_1_1_unknown_method_handler.html">UnknownMethodHandler</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc++/impl/codegen/<a class="el" href="impl_2codegen_2completion__queue_8h_source.html">completion_queue.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

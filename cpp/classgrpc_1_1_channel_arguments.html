@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -124,6 +124,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aaf332071bbdff5e4a7f3352f4ad564d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#aaf332071bbdff5e4a7f3352f4ad564d5">SetCompressionAlgorithm</a> (<a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm)</td></tr>
 <tr class="memdesc:aaf332071bbdff5e4a7f3352f4ad564d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the compression algorithm for the channel.  <a href="#aaf332071bbdff5e4a7f3352f4ad564d5">More...</a><br/></td></tr>
 <tr class="separator:aaf332071bbdff5e4a7f3352f4ad564d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34014343bd52a0ed7289a9f8b203d9d1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a34014343bd52a0ed7289a9f8b203d9d1">SetGrpclbFallbackTimeout</a> (int fallback_timeout)</td></tr>
+<tr class="memdesc:a34014343bd52a0ed7289a9f8b203d9d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the grpclb fallback timeout (in ms) for the channel.  <a href="#a34014343bd52a0ed7289a9f8b203d9d1">More...</a><br/></td></tr>
+<tr class="separator:a34014343bd52a0ed7289a9f8b203d9d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a520690f499be85159a20200ddb986a96"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a520690f499be85159a20200ddb986a96">SetSocketMutator</a> (<a class="el" href="grpc__types_8h.html#a72c4781284bb0c964d281e6e46cf4a90">grpc_socket_mutator</a> *mutator)</td></tr>
 <tr class="memdesc:a520690f499be85159a20200ddb986a96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the socket mutator for the channel.  <a href="#a520690f499be85159a20200ddb986a96">More...</a><br/></td></tr>
 <tr class="separator:a520690f499be85159a20200ddb986a96"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -301,6 +304,25 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Set the compression algorithm for the channel. </p>
+
+</div>
+</div>
+<a class="anchor" id="a34014343bd52a0ed7289a9f8b203d9d1"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ChannelArguments::SetGrpclbFallbackTimeout </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>fallback_timeout</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the grpclb fallback timeout (in ms) for the channel. </p>
+<p>If this amount of time has passed but we have not gotten any non-empty <em>serverlist</em> from the balancer, we will fall back to use the backend address(es) returned by the resolver. </p>
 
 </div>
 </div>
@@ -628,7 +650,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

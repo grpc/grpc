@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">4.0.0</span>
+   &#160;<span id="projectnumber">5.0.0</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_a8e30387f66bf56f1146fa5d3496d838.html">include</a></li><li class="navelem"><a class="el" href="dir_f93e102bce67c94e5a77dcd42507568e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_659ae97ef5bbf397d65f88fc549b7461.html">impl</a></li><li class="navelem"><a class="el" href="dir_4c11e77fd81979dbb81b685ce26f5187.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_04ed5e7a0931afed58b44427831a7c00.html">include</a></li><li class="navelem"><a class="el" href="dir_70e6a53b947bcbad872060ddc188ca9d.html">grpc</a></li><li class="navelem"><a class="el" href="dir_32f37f9fc4aaaa68ca3d1d71f794f7c4.html">impl</a></li><li class="navelem"><a class="el" href="dir_5502caef0f6b800bde740a6356fce088.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -116,30 +116,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00027"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">   27</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">enum</span> {</div>
-<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2ab12cc86bc5568c64ebbdebc9032e4d46">   29</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2ab12cc86bc5568c64ebbdebc9032e4d46">GRPC_CHANNEL_INIT</a> = -1,</div>
-<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a304d1b81cec4357a9a6acbcb18248e77">   31</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a304d1b81cec4357a9a6acbcb18248e77">GRPC_CHANNEL_IDLE</a>,</div>
-<div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a3ac13f6c7627f15186760bfd6b7d9299">   33</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a3ac13f6c7627f15186760bfd6b7d9299">GRPC_CHANNEL_CONNECTING</a>,</div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea">   35</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea">GRPC_CHANNEL_READY</a>,</div>
-<div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2af5bffd3ffb03795f551b0fa78e44b9b6">   37</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2af5bffd3ffb03795f551b0fa78e44b9b6">GRPC_CHANNEL_TRANSIENT_FAILURE</a>,</div>
-<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2afbab6ba9d3b0986cec9184a1c4c8bb6c">   39</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2afbab6ba9d3b0986cec9184a1c4c8bb6c">GRPC_CHANNEL_SHUTDOWN</a></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;} <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a>;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2af5bffd3ffb03795f551b0fa78e44b9b6"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2af5bffd3ffb03795f551b0fa78e44b9b6">GRPC_CHANNEL_TRANSIENT_FAILURE</a></div><div class="ttdoc">channel has seen a failure but expects to recover </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:37</div></div>
-<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2a304d1b81cec4357a9a6acbcb18248e77"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a304d1b81cec4357a9a6acbcb18248e77">GRPC_CHANNEL_IDLE</a></div><div class="ttdoc">channel is idle </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:31</div></div>
+<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a304d1b81cec4357a9a6acbcb18248e77">   29</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a304d1b81cec4357a9a6acbcb18248e77">GRPC_CHANNEL_IDLE</a>,</div>
+<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a3ac13f6c7627f15186760bfd6b7d9299">   31</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a3ac13f6c7627f15186760bfd6b7d9299">GRPC_CHANNEL_CONNECTING</a>,</div>
+<div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea">   33</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea">GRPC_CHANNEL_READY</a>,</div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2af5bffd3ffb03795f551b0fa78e44b9b6">   35</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2af5bffd3ffb03795f551b0fa78e44b9b6">GRPC_CHANNEL_TRANSIENT_FAILURE</a>,</div>
+<div class="line"><a name="l00037"></a><span class="lineno"><a class="line" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2afbab6ba9d3b0986cec9184a1c4c8bb6c">   37</a></span>&#160;  <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2afbab6ba9d3b0986cec9184a1c4c8bb6c">GRPC_CHANNEL_SHUTDOWN</a></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;} <a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a>;</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2af5bffd3ffb03795f551b0fa78e44b9b6"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2af5bffd3ffb03795f551b0fa78e44b9b6">GRPC_CHANNEL_TRANSIENT_FAILURE</a></div><div class="ttdoc">channel has seen a failure but expects to recover </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:35</div></div>
+<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2a304d1b81cec4357a9a6acbcb18248e77"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a304d1b81cec4357a9a6acbcb18248e77">GRPC_CHANNEL_IDLE</a></div><div class="ttdoc">channel is idle </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:29</div></div>
 <div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel. </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:27</div></div>
-<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea">GRPC_CHANNEL_READY</a></div><div class="ttdoc">channel is ready for work </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:35</div></div>
-<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2afbab6ba9d3b0986cec9184a1c4c8bb6c"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2afbab6ba9d3b0986cec9184a1c4c8bb6c">GRPC_CHANNEL_SHUTDOWN</a></div><div class="ttdoc">channel has seen a failure that it cannot recover from </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:39</div></div>
-<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2a3ac13f6c7627f15186760bfd6b7d9299"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a3ac13f6c7627f15186760bfd6b7d9299">GRPC_CHANNEL_CONNECTING</a></div><div class="ttdoc">channel is connecting </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:33</div></div>
-<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2ab12cc86bc5568c64ebbdebc9032e4d46"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2ab12cc86bc5568c64ebbdebc9032e4d46">GRPC_CHANNEL_INIT</a></div><div class="ttdoc">channel has just been initialized </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:29</div></div>
+<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea">GRPC_CHANNEL_READY</a></div><div class="ttdoc">channel is ready for work </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:33</div></div>
+<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2afbab6ba9d3b0986cec9184a1c4c8bb6c"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2afbab6ba9d3b0986cec9184a1c4c8bb6c">GRPC_CHANNEL_SHUTDOWN</a></div><div class="ttdoc">channel has seen a failure that it cannot recover from </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:37</div></div>
+<div class="ttc" id="connectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2a3ac13f6c7627f15186760bfd6b7d9299"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2a3ac13f6c7627f15186760bfd6b7d9299">GRPC_CHANNEL_CONNECTING</a></div><div class="ttdoc">channel is connecting </div><div class="ttdef"><b>Definition:</b> connectivity_state.h:31</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

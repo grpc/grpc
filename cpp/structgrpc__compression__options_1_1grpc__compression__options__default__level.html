@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -96,7 +96,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>The default channel compression level.  
+<p>The default message-wise compression level.  
  <a href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="compression__types_8h_source.html">compression_types.h</a>&gt;</code></p>
@@ -109,8 +109,8 @@ Data Fields</h2></td></tr>
 <tr class="separator:a9ea42c67ca5ad8d21f477370ec370b64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>The default channel compression level. </p>
-<p>It'll be used in the absence of call specific settings. This option corresponds to the channel argument key behind <em>GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL</em>. If present, takes precedence over <em>default_algorithm</em>. TODO(dgq): currently only available for server channels. </p>
+<div class="textblock"><p>The default message-wise compression level. </p>
+<p>It'll be used in the absence of * call specific settings. This option corresponds to the channel argument key behind <em>GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL</em>. If present, takes precedence over <em>default_algorithm</em> and <em>default_stream_compression_algorithm</em>. TODO(dgq): currently only available for server channels. </p>
 </div><h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="ac870ba7683a8da44a3bfb3086553fc60"></a>
 <div class="memitem">
@@ -142,7 +142,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -8,7 +8,6 @@ var searchData=
   ['cmp',['cmp',['../structgrpc__arg__pointer__vtable.html#a1037c7866bb3f070f4689b4a8ad04c09',1,'grpc_arg_pointer_vtable']]],
   ['compare_5fkeys',['compare_keys',['../structgpr__avl__vtable.html#a301cd22fe0ac08797b9ae86318cae798',1,'gpr_avl_vtable']]],
   ['compression',['compression',['../structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html#a110cdc07225f77ae580e50a8944bcb7c',1,'grpc_byte_buffer::grpc_byte_buffer_data::grpc_compressed_buffer']]],
-  ['context',['context',['../structcensus__context__iterator.html#a729daa66104d74f11aa6c5b25c27f563',1,'census_context_iterator']]],
   ['copy',['copy',['../structgrpc__arg__pointer__vtable.html#a4b937861a8c7c8165fcb3bfc831dd95e',1,'grpc_arg_pointer_vtable']]],
   ['copy_5fkey',['copy_key',['../structgpr__avl__vtable.html#a56276298eae1bf8af62ab1c2c6e32d9b',1,'gpr_avl_vtable']]],
   ['copy_5fvalue',['copy_value',['../structgpr__avl__vtable.html#a1e377245680d18ef2fd8e25db3d7a38d',1,'gpr_avl_vtable']]],

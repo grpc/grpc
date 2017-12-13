@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -112,24 +112,32 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPC_IMPL_CODEGEN_ATM_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_IMPL_CODEGEN_ATM_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">#if defined(GPR_GCC_ATOMIC)</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html">grpc/impl/codegen/atm_gcc_atomic.h</a>&gt;</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor">#elif defined(GPR_GCC_SYNC)</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2atm__gcc__sync_8h.html">grpc/impl/codegen/atm_gcc_sync.h</a>&gt;</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor">#elif defined(GPR_WINDOWS_ATOMIC)</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2atm__windows_8h.html">grpc/impl/codegen/atm_windows.h</a>&gt;</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error could not determine platform for atm</span></div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="impl_2codegen_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">gpr_atm_no_barrier_clamped_add</a>(<a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> *value, <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> delta,</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                                       <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> min, <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> max);</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_ATM_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor">#if defined(GPR_GCC_ATOMIC)</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html">grpc/impl/codegen/atm_gcc_atomic.h</a>&gt;</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor">#elif defined(GPR_GCC_SYNC)</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2atm__gcc__sync_8h.html">grpc/impl/codegen/atm_gcc_sync.h</a>&gt;</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="preprocessor">#elif defined(GPR_WINDOWS_ATOMIC)</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2atm__windows_8h.html">grpc/impl/codegen/atm_windows.h</a>&gt;</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#error could not determine platform for atm</span></div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> <a class="code" href="impl_2codegen_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">gpr_atm_no_barrier_clamped_add</a>(<a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a>* value, <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> delta,</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                                       <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> min, <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a> max);</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_ATM_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="impl_2codegen_2atm_8h_html_acd924aafc13347097cc06c74c8b5a68d"><div class="ttname"><a href="impl_2codegen_2atm_8h.html#acd924aafc13347097cc06c74c8b5a68d">gpr_atm_no_barrier_clamped_add</a></div><div class="ttdeci">gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta, gpr_atm min, gpr_atm max)</div><div class="ttdoc">This interface provides atomic operations and barriers. </div></div>
-<div class="ttc" id="impl_2codegen_2atm__gcc__atomic_8h_html_a0a6314f31fcae0666a93961bed98af51"><div class="ttname"><a href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a></div><div class="ttdeci">intptr_t gpr_atm</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:26</div></div>
+<div class="ttc" id="impl_2codegen_2atm__gcc__atomic_8h_html_a0a6314f31fcae0666a93961bed98af51"><div class="ttname"><a href="impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">gpr_atm</a></div><div class="ttdeci">intptr_t gpr_atm</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:30</div></div>
 <div class="ttc" id="impl_2codegen_2atm__gcc__atomic_8h_html"><div class="ttname"><a href="impl_2codegen_2atm__gcc__atomic_8h.html">atm_gcc_atomic.h</a></div></div>
 <div class="ttc" id="impl_2codegen_2atm__gcc__sync_8h_html"><div class="ttname"><a href="impl_2codegen_2atm__gcc__sync_8h.html">atm_gcc_sync.h</a></div></div>
 <div class="ttc" id="impl_2codegen_2port__platform_8h_html"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html">port_platform.h</a></div></div>
@@ -137,7 +145,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

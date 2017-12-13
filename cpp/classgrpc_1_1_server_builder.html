@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.6.0</span>
+   &#160;<span id="projectnumber">1.8.0</span>
    </div>
   </td>
  </tr>
@@ -121,15 +121,25 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a208346e343cd01351492f0cace59b242"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a870c0bbcc61393e13fa04a82f96328f6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a870c0bbcc61393e13fa04a82f96328f6">~ServerBuilder</a> ()</td></tr>
 <tr class="separator:a870c0bbcc61393e13fa04a82f96328f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af284cd39b185043e8e92405c1ae0f310"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server.html">Server</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310">BuildAndStart</a> ()</td></tr>
+<tr class="memdesc:af284cd39b185043e8e92405c1ae0f310"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a running server which is ready for processing calls.  <a href="#af284cd39b185043e8e92405c1ae0f310">More...</a><br/></td></tr>
+<tr class="separator:af284cd39b185043e8e92405c1ae0f310"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5300484238239412a11e0a9c49435d7e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a5300484238239412a11e0a9c49435d7e">RegisterService</a> (<a class="el" href="classgrpc_1_1_service.html">Service</a> *service)</td></tr>
 <tr class="memdesc:a5300484238239412a11e0a9c49435d7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a service.  <a href="#a5300484238239412a11e0a9c49435d7e">More...</a><br/></td></tr>
 <tr class="separator:a5300484238239412a11e0a9c49435d7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a06468091b05b8bba676a0b94ca8e1281"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a06468091b05b8bba676a0b94ca8e1281">RegisterAsyncGenericService</a> (<a class="el" href="classgrpc_1_1_async_generic_service.html">AsyncGenericService</a> *service)</td></tr>
-<tr class="memdesc:a06468091b05b8bba676a0b94ca8e1281"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a generic service.  <a href="#a06468091b05b8bba676a0b94ca8e1281">More...</a><br/></td></tr>
-<tr class="separator:a06468091b05b8bba676a0b94ca8e1281"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bf2d8c40e6b4ca170b9ee927d4db326"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a5bf2d8c40e6b4ca170b9ee927d4db326">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr_uri, std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt; creds, int *selected_port=nullptr)</td></tr>
+<tr class="memdesc:a5bf2d8c40e6b4ca170b9ee927d4db326"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enlists an endpoint <em>addr</em> (port with an optional IP address) to bind the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> object to be created to.  <a href="#a5bf2d8c40e6b4ca170b9ee927d4db326">More...</a><br/></td></tr>
+<tr class="separator:a5bf2d8c40e6b4ca170b9ee927d4db326"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a960d55977e1aef56fd7b582037a01bbd"><td class="memItemLeft" align="right" valign="top">std::unique_ptr<br class="typebreak"/>
+&lt; <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd">AddCompletionQueue</a> (bool is_frequently_polled=true)</td></tr>
+<tr class="memdesc:a960d55977e1aef56fd7b582037a01bbd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a completion queue for handling asynchronous services.  <a href="#a960d55977e1aef56fd7b582037a01bbd">More...</a><br/></td></tr>
+<tr class="separator:a960d55977e1aef56fd7b582037a01bbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b06b5828b892feeb6541c8eeae2d542"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a0b06b5828b892feeb6541c8eeae2d542">RegisterService</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;host, <a class="el" href="classgrpc_1_1_service.html">Service</a> *service)</td></tr>
 <tr class="memdesc:a0b06b5828b892feeb6541c8eeae2d542"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a service.  <a href="#a0b06b5828b892feeb6541c8eeae2d542">More...</a><br/></td></tr>
 <tr class="separator:a0b06b5828b892feeb6541c8eeae2d542"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06468091b05b8bba676a0b94ca8e1281"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a06468091b05b8bba676a0b94ca8e1281">RegisterAsyncGenericService</a> (<a class="el" href="classgrpc_1_1_async_generic_service.html">AsyncGenericService</a> *service)</td></tr>
+<tr class="memdesc:a06468091b05b8bba676a0b94ca8e1281"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a generic service.  <a href="#a06468091b05b8bba676a0b94ca8e1281">More...</a><br/></td></tr>
+<tr class="separator:a06468091b05b8bba676a0b94ca8e1281"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab5c8a420f2acfc6fcea2f2210e9d426e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#ab5c8a420f2acfc6fcea2f2210e9d426e">SetMaxReceiveMessageSize</a> (int max_receive_message_size)</td></tr>
 <tr class="memdesc:ab5c8a420f2acfc6fcea2f2210e9d426e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set max receive message size in bytes.  <a href="#ab5c8a420f2acfc6fcea2f2210e9d426e">More...</a><br/></td></tr>
 <tr class="separator:ab5c8a420f2acfc6fcea2f2210e9d426e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -159,16 +169,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aefdac3407920a99d119c946d255b100c"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#aefdac3407920a99d119c946d255b100c">AddChannelArgument</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;arg, const T &amp;value)</td></tr>
 <tr class="memdesc:aefdac3407920a99d119c946d255b100c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a channel argument (an escape hatch to tuning core library parameters directly)  <a href="#aefdac3407920a99d119c946d255b100c">More...</a><br/></td></tr>
 <tr class="separator:aefdac3407920a99d119c946d255b100c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5bf2d8c40e6b4ca170b9ee927d4db326"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a5bf2d8c40e6b4ca170b9ee927d4db326">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr_uri, std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt; creds, int *selected_port=nullptr)</td></tr>
-<tr class="memdesc:a5bf2d8c40e6b4ca170b9ee927d4db326"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enlists an endpoint <em>addr</em> (port with an optional IP address) to bind the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> object to be created to.  <a href="#a5bf2d8c40e6b4ca170b9ee927d4db326">More...</a><br/></td></tr>
-<tr class="separator:a5bf2d8c40e6b4ca170b9ee927d4db326"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a960d55977e1aef56fd7b582037a01bbd"><td class="memItemLeft" align="right" valign="top">std::unique_ptr<br class="typebreak"/>
-&lt; <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd">AddCompletionQueue</a> (bool is_frequently_polled=true)</td></tr>
-<tr class="memdesc:a960d55977e1aef56fd7b582037a01bbd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a completion queue for handling asynchronous services.  <a href="#a960d55977e1aef56fd7b582037a01bbd">More...</a><br/></td></tr>
-<tr class="separator:a960d55977e1aef56fd7b582037a01bbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af284cd39b185043e8e92405c1ae0f310"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server.html">Server</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310">BuildAndStart</a> ()</td></tr>
-<tr class="memdesc:af284cd39b185043e8e92405c1ae0f310"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a running server which is ready for processing calls.  <a href="#af284cd39b185043e8e92405c1ae0f310">More...</a><br/></td></tr>
-<tr class="separator:af284cd39b185043e8e92405c1ae0f310"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01715acec890fe4ddc91340bae5ead8c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a01715acec890fe4ddc91340bae5ead8c">EnableWorkaround</a> (<a class="el" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2">grpc_workaround_list</a> id)</td></tr>
 <tr class="memdesc:a01715acec890fe4ddc91340bae5ead8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable a server workaround.  <a href="#a01715acec890fe4ddc91340bae5ead8c">More...</a><br/></td></tr>
 <tr class="separator:a01715acec890fe4ddc91340bae5ead8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -300,9 +300,10 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Add a completion queue for handling asynchronous services. </p>
-<p>Caller is required to shutdown the server prior to shutting down the returned completion queue. A typical usage scenario:</p>
+<p>Best performance is typically obtained by using one thread per polling completion queue.</p>
+<p>Caller is required to shutdown the server prior to shutting down the returned completion queue. Caller is also required to drain the completion queue after shutting it down. A typical usage scenario:</p>
 <p>// While building the server: <a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a> builder; ... cq_ = builder.AddCompletionQueue(); server_ = builder.BuildAndStart();</p>
-<p>// While shutting down the server; server_-&gt;Shutdown(); cq_-&gt;Shutdown(); // Always <em>after</em> the associated server's Shutdown()!</p>
+<p>// While shutting down the server; server_-&gt;Shutdown(); cq_-&gt;Shutdown(); // Always <em>after</em> the associated server's Shutdown()! // Drain the cq_ that was created void* ignored_tag; bool ignored_ok; while (cq_-&gt;Next(&amp;ignored_tag, &amp;ignored_ok)) { }</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">is_frequently_polled</td><td>This is an optional parameter to inform gRPC library about whether this completion queue would be frequently polled (i.e. by calling <em>Next()</em> or <em>AsyncNext()</em>). The default value is 'true' and is the recommended setting. Setting this to 'false' (i.e. not polling the completion queue frequently) will have a significantly negative performance impact and hence should not be used in production use cases. </td></tr>
@@ -346,7 +347,8 @@ template&lt;class T &gt; </div>
 <p>It can be invoked multiple times.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">addr_uri</td><td>The address to try to bind to the server in URI form. If the scheme name is omitted, "dns:///" is assumed. Valid values include dns:///localhost:1234, / 192.168.1.1:31416, dns:///[::1]:27182, etc.).  creds The credentials associated with the server. </td></tr>
+    <tr><td class="paramname">addr_uri</td><td>The address to try to bind to the server in URI form. If the scheme name is omitted, "dns:///" is assumed. To bind to any address, please use IPv6 any, i.e., [::]:&lt;port&gt;, which also accepts IPv4 connections. Valid values include dns:///localhost:1234, / 192.168.1.1:31416, dns:///[::1]:27182, etc.). </td></tr>
+    <tr><td class="paramname">creds</td><td>The credentials associated with the server. </td></tr>
     <tr><td class="paramname">selected_port[out]</td><td>If not <code>nullptr</code>, gets populated with the port number bound to the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> for the corresponding endpoint after it is successfully bound, 0 otherwise. </td></tr>
   </table>
   </dd>
@@ -368,6 +370,12 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Return a running server which is ready for processing calls. </p>
+<p>Before calling, one typically needs to ensure that:</p>
+<ol type="1">
+<li>a service is registered - so that the server knows what to serve (via RegisterService, or RegisterAsyncGenericService)</li>
+<li>a listening port has been added - so the server knows where to receive traffic (via AddListeningPort)</li>
+<li>[for async api only] completion queues have been added via AddCompletionQueue </li>
+</ol>
 
 </div>
 </div>
@@ -431,7 +439,7 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Register a generic service. </p>
-<p>Matches requests with any :authority </p>
+<p>Matches requests with any :authority This is mostly useful for writing generic gRPC Proxies where the exact serialization format is unknown </p>
 
 </div>
 </div>
@@ -753,7 +761,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

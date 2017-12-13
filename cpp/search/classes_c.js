@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['unknownmethodhandler',['UnknownMethodHandler',['../classgrpc_1_1_unknown_method_handler.html',1,'grpc']]]
+  ['unknownmethodhandler',['UnknownMethodHandler',['../classgrpc_1_1internal_1_1_unknown_method_handler.html',1,'grpc::internal']]]
 ];

@@ -1,25 +1,9 @@
 var searchData=
 [
-  ['server_2dreflection_2emd',['server-reflection.md',['../server-reflection_8md.html',1,'']]],
-  ['server_5freflection_5ftutorial_2emd',['server_reflection_tutorial.md',['../server__reflection__tutorial_8md.html',1,'']]],
-  ['server_5fside_5fauth_2emd',['server_side_auth.md',['../server__side__auth_8md.html',1,'']]],
-  ['service_5fconfig_2emd',['service_config.md',['../service__config_8md.html',1,'']]],
-  ['slice_2eh',['slice.h',['../impl_2codegen_2slice_8h.html',1,'']]],
-  ['slice_2eh',['slice.h',['../slice_8h.html',1,'']]],
-  ['slice_5fbuffer_2eh',['slice_buffer.h',['../slice__buffer_8h.html',1,'']]],
-  ['status_2eh',['status.h',['../impl_2codegen_2status_8h.html',1,'']]],
-  ['status_2eh',['status.h',['../status_8h.html',1,'']]],
-  ['status_5fordering_2emd',['status_ordering.md',['../status__ordering_8md.html',1,'']]],
-  ['statuscodes_2emd',['statuscodes.md',['../statuscodes_8md.html',1,'']]],
-  ['stress_5ftest_5fframework_2emd',['stress_test_framework.md',['../stress__test__framework_8md.html',1,'']]],
-  ['string_5futil_2eh',['string_util.h',['../string__util_8h.html',1,'']]],
-  ['subprocess_2eh',['subprocess.h',['../subprocess_8h.html',1,'']]],
-  ['sync_2eh',['sync.h',['../impl_2codegen_2sync_8h.html',1,'']]],
-  ['sync_2eh',['sync.h',['../support_2sync_8h.html',1,'']]],
-  ['sync_5fgeneric_2eh',['sync_generic.h',['../impl_2codegen_2sync__generic_8h.html',1,'']]],
-  ['sync_5fgeneric_2eh',['sync_generic.h',['../support_2sync__generic_8h.html',1,'']]],
-  ['sync_5fposix_2eh',['sync_posix.h',['../impl_2codegen_2sync__posix_8h.html',1,'']]],
-  ['sync_5fposix_2eh',['sync_posix.h',['../support_2sync__posix_8h.html',1,'']]],
-  ['sync_5fwindows_2eh',['sync_windows.h',['../support_2sync__windows_8h.html',1,'']]],
-  ['sync_5fwindows_2eh',['sync_windows.h',['../impl_2codegen_2sync__windows_8h.html',1,'']]]
+  ['pending_5fapi_5fcleanups_2emd',['pending_api_cleanups.md',['../pending__api__cleanups_8md.html',1,'']]],
+  ['port_5fplatform_2eh',['port_platform.h',['../impl_2codegen_2port__platform_8h.html',1,'']]],
+  ['port_5fplatform_2eh',['port_platform.h',['../support_2port__platform_8h.html',1,'']]],
+  ['propagation_5fbits_2eh',['propagation_bits.h',['../propagation__bits_8h.html',1,'']]],
+  ['protocol_2dhttp2_2emd',['PROTOCOL-HTTP2.md',['../_p_r_o_t_o_c_o_l-_h_t_t_p2_8md.html',1,'']]],
+  ['protocol_2dweb_2emd',['PROTOCOL-WEB.md',['../_p_r_o_t_o_c_o_l-_w_e_b_8md.html',1,'']]]
 ];

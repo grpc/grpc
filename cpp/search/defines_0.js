@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['censusapi',['CENSUSAPI',['../impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7',1,'port_platform.h']]]
+  ['_5f_5fstdc_5fformat_5fmacros',['__STDC_FORMAT_MACROS',['../impl_2codegen_2port__platform_8h.html#aacbb9e1f38be71e22df1584a37c56693',1,'port_platform.h']]]
 ];
