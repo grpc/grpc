@@ -101,7 +101,7 @@ LANG_RELEASE_MATRIX = {
             'v1.7.4': None
         },
         {
-            'v1.8.1': None
+            'v1.8.2': None
         },
     ],
     'java': [
