@@ -1033,11 +1033,9 @@ static void glb_shutdown_locked(grpc_lb_policy* pol) {
   }
   if (glb_policy->retry_timer_active) {
     grpc_timer_cancel(&glb_policy->lb_call_retry_timer);
-    glb_policy->retry_timer_active = false;
   }
   if (glb_policy->fallback_timer_active) {
     grpc_timer_cancel(&glb_policy->lb_fallback_timer);
-    glb_policy->fallback_timer_active = false;
   }
   gpr_log(GPR_INFO, "before cheking cancelling re-re timer");
   if (glb_policy->reresolution_timer_active) {
@@ -1662,7 +1660,6 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
               glb_policy->fallback_backend_addresses = nullptr;
               if (glb_policy->fallback_timer_active) {
                 grpc_timer_cancel(&glb_policy->lb_fallback_timer);
-                glb_policy->fallback_timer_active = false;
               }
             }
             /* and update the copy in the glb_lb_policy instance. This
@@ -1883,7 +1880,6 @@ static void glb_lb_channel_on_connectivity_changed_cb(void* arg,
       } else if (glb_policy->started_picking) {
         if (glb_policy->retry_timer_active) {
           grpc_timer_cancel(&glb_policy->lb_call_retry_timer);
-          glb_policy->retry_timer_active = false;
         }
         start_picking_locked(glb_policy);
       }
