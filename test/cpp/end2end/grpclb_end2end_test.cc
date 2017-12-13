@@ -472,11 +472,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
     if (reresolution) {
-      grpc_fake_resolver_response_generator_set_response_upon_error(
-          response_generator_, &fake_result);
+      grpc_fake_resolver_response_generator_set_response(response_generator_,
+                                                         &fake_result, true);
     } else {
       grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                         &fake_result);
+                                                         &fake_result, false);
     }
     grpc_lb_addresses_destroy(addresses);
   }

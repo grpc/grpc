@@ -592,7 +592,7 @@ static void setup_client(const server_fixture* lb_server,
   cf->client =
       grpc_secure_channel_create(fake_creds, cf->server_uri, args, nullptr);
   grpc_fake_resolver_response_generator_set_response(response_generator,
-                                                     fake_result);
+                                                     fake_result, fake_result);
   grpc_channel_args_destroy(fake_result);
   grpc_channel_credentials_unref(fake_creds);
   grpc_channel_args_destroy(args);

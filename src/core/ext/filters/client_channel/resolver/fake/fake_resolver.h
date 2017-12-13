@@ -36,18 +36,13 @@ typedef struct grpc_fake_resolver_response_generator
 grpc_fake_resolver_response_generator*
 grpc_fake_resolver_response_generator_create();
 
-// Instruct the fake resolver associated with the \a response_generator instance
-// to trigger a new resolution for \a uri and \a args.
+// Set the resolution response of the fake resolver associated with the \a
+// response_generator instance. If \a upon_error is true, remove any existing \a
+// next_results from the resolver and only set its \a results_upon_error.
+// Otherwise, set both fields and trigger a new resolution.
 void grpc_fake_resolver_response_generator_set_response(
     grpc_fake_resolver_response_generator* generator,
-    grpc_channel_args* next_response);
-
-// Set \a results_upon_error of the fake resolver associated with the \a
-// response_generator instance, and remove any existing resolution data in its
-// \a next_results.
-void grpc_fake_resolver_response_generator_set_response_upon_error(
-    grpc_fake_resolver_response_generator* generator,
-    grpc_channel_args* response_upon_error);
+    grpc_channel_args* response, bool upon_error);
 
 // Return a \a grpc_arg for a \a grpc_fake_resolver_response_generator instance.
 grpc_arg grpc_fake_resolver_response_generator_arg(
