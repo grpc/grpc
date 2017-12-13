@@ -70,4 +70,8 @@ sudo xcode-select -switch /Applications/Xcode_8.2.1.app/Contents/Developer
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
 date
 
+# Fixes an issue with PHP on Sierra
+brew update
+brew reinstall php56-imagick --build-from-source
+
 git submodule update --init
