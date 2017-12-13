@@ -106,7 +106,7 @@ static void test_fake_resolver() {
   // Set resolver results and trigger first resolution. on_resolution_cb
   // performs the checks.
   grpc_fake_resolver_response_generator_set_response(response_generator,
-                                                     results);
+                                                     results, false);
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
   grpc_core::ExecCtx::Get()->Flush();
@@ -141,7 +141,7 @@ static void test_fake_resolver() {
 
   // Set updated resolver results and trigger a second resolution.
   grpc_fake_resolver_response_generator_set_response(response_generator,
-                                                     results_update);
+                                                     results_update, false);
   grpc_resolver_next_locked(resolver, &on_res_arg_update.resolver_result,
                             on_resolution);
   grpc_core::ExecCtx::Get()->Flush();
