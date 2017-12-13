@@ -471,13 +471,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
-    if (reresolution) {
-      grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                         &fake_result, true);
-    } else {
-      grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                         &fake_result, false);
-    }
+    grpc_fake_resolver_response_generator_set_response(
+        response_generator_, &fake_result, reresolution);
     grpc_lb_addresses_destroy(addresses);
   }
 
@@ -1126,8 +1121,6 @@ TEST_F(UpdatesTest, Reresolve) {
   EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
-
-  //  sleep(1);
 
   addresses.clear();
   addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
