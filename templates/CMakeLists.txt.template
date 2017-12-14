@@ -445,7 +445,7 @@
   % for lib in libs:
   % if lib.build in ["all", "protoc", "tool", "test", "private"] and not lib.boringssl:
   % if not lib.get('build_system', []) or 'cmake' in lib.get('build_system', []):
-  % if not lib.name in ['benchmark', 'z']:  # we build these using CMake instead
+  % if not lib.name in ['ares', 'benchmark', 'z']:  # we build these using CMake instead
   % if lib.build in ["test", "private"]:
   if (gRPC_BUILD_TESTS)
   ${cc_library(lib)}
