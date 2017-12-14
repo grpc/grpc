@@ -37,12 +37,12 @@ grpc_fake_resolver_response_generator*
 grpc_fake_resolver_response_generator_create();
 
 // Set the resolution response of the fake resolver associated with the \a
-// response_generator instance. If \a upon_error is true, remove any existing \a
-// next_results from the resolver and only set its \a results_upon_error.
-// Otherwise, set both fields and trigger a new resolution.
+// response_generator instance. If \a only_upon_error is true, only set \a
+// results_upon_error of the resolver. Otherwise, set both \a only_upon_error
+// and \a next_results and trigger a new resolution.
 void grpc_fake_resolver_response_generator_set_response(
     grpc_fake_resolver_response_generator* generator,
-    grpc_channel_args* response, bool upon_error);
+    grpc_channel_args* response, bool only_upon_error);
 
 // Return a \a grpc_arg for a \a grpc_fake_resolver_response_generator instance.
 grpc_arg grpc_fake_resolver_response_generator_arg(
