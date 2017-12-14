@@ -26,15 +26,20 @@ cdef bytes str_to_bytes(object s):
     raise TypeError('Expected bytes, str, or unicode, not {}'.format(type(s)))
 
 
-cdef bytes _encode(str native_string_or_none):
-  if native_string_or_none is None:
+# TODO(https://github.com/grpc/grpc/issues/13782): It would be nice for us if
+# the type of metadata that we accept were exactly the same as the type of
+# metadata that we deliver to our users (so "str" for this function's
+# parameter rather than "object"), but would it be nice for our users? Right
+# now we haven't yet heard from enough users to know one way or another.
+cdef bytes _encode(object string_or_none):
+  if string_or_none is None:
     return b''
-  elif isinstance(native_string_or_none, (bytes,)):
-    return <bytes>native_string_or_none
-  elif isinstance(native_string_or_none, (unicode,)):
-    return native_string_or_none.encode('ascii')
+  elif isinstance(string_or_none, (bytes,)):
+    return <bytes>string_or_none
+  elif isinstance(string_or_none, (unicode,)):
+    return string_or_none.encode('ascii')
   else:
-    raise TypeError('Expected str, not {}'.format(type(native_string_or_none)))
+    raise TypeError('Expected str, not {}'.format(type(string_or_none)))
 
 
 cdef str _decode(bytes bytestring):
