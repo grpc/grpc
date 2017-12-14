@@ -206,8 +206,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
   static const int kSetupAndTeardownGraceTime = 30;
   gpr_timespec deadline_start = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec driver_deadline = gpr_time_add(
-      deadline_start,
-      gpr_time_from_seconds(warmup_seconds + benchmark_seconds + kSetupAndTeardownGraceTime, GPR_TIMESPAN));
+      deadline_start, gpr_time_from_seconds(warmup_seconds + benchmark_seconds +
+                                                kSetupAndTeardownGraceTime,
+                                            GPR_TIMESPAN));
   auto alloc_context = [driver_deadline, &contexts]() {
     contexts.emplace_back();
     auto context = &contexts.back();
@@ -219,7 +220,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec time_from_start = gpr_time_sub(now, deadline_start);
     gpr_timespec time_to_end = gpr_time_sub(driver_deadline, now);
-    gpr_log(GPR_INFO, "%" PRIdPTR ".%09d seconds from deadline start; %" PRIdPTR ".%09d seconds to end", time_from_start.tv_sec, time_from_start.tv_nsec, time_to_end.tv_sec, time_to_end.tv_nsec);
+    gpr_log(GPR_INFO,
+            "%" PRIdPTR ".%09d seconds from deadline start; %" PRIdPTR
+            ".%09d seconds to end",
+            time_from_start.tv_sec, time_from_start.tv_nsec, time_to_end.tv_sec,
+            time_to_end.tv_nsec);
   };
 
   std::vector<std::thread> threads;
@@ -473,7 +478,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   log_deadline_stuff();
   std::mutex merge_mu;
   for (size_t i = 0; i < num_clients; i++) {
-    add_job([&merge_mu, &result, &merged_statuses, &merged_latencies, &clients, i]() {
+    add_job([&merge_mu, &result, &merged_statuses, &merged_latencies, &clients,
+             i]() {
       auto client = &clients[i];
       ClientArgs client_mark;
       client_mark.mutable_mark()->set_reset(true);
@@ -487,16 +493,17 @@ std::unique_ptr<ScenarioResult> RunScenario(
       ClientStatus client_status;
       if (client->stream->Read(&client_status)) {
         gpr_log(GPR_INFO, "Received final status from client %zu", i);
-        {std::lock_guard<std::mutex> lock(merge_mu);
-        const auto& stats = client_status.stats();
-        merged_latencies.MergeProto(stats.latencies());
-        for (int i = 0; i < stats.request_results_size(); i++) {
-          merged_statuses[stats.request_results(i).status_code()] +=
-              stats.request_results(i).count();
+        {
+          std::lock_guard<std::mutex> lock(merge_mu);
+          const auto& stats = client_status.stats();
+          merged_latencies.MergeProto(stats.latencies());
+          for (int i = 0; i < stats.request_results_size(); i++) {
+            merged_statuses[stats.request_results(i).status_code()] +=
+                stats.request_results(i).count();
+          }
+          result->add_client_stats()->CopyFrom(stats);
         }
-        result->add_client_stats()->CopyFrom(stats);
-        }
-// That final status should be the last message on the client stream
+        // That final status should be the last message on the client stream
         GPR_ASSERT(!client->stream->Read(&client_status));
       } else {
         gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
@@ -525,9 +532,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
       ServerStatus server_status;
       if (server->stream->Read(&server_status)) {
         gpr_log(GPR_INFO, "Received final status from server %zu", i);
-        {std::lock_guard<std::mutex> lock(merge_mu);
-        result->add_server_stats()->CopyFrom(server_status.stats());
-        result->add_server_cores(server_status.cores());
+        {
+          std::lock_guard<std::mutex> lock(merge_mu);
+          result->add_server_stats()->CopyFrom(server_status.stats());
+          result->add_server_cores(server_status.cores());
         }
         // That final status should be the last message on the server stream
         GPR_ASSERT(!server->stream->Read(&server_status));
