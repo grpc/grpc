@@ -185,6 +185,10 @@ class RubyDistribTest(object):
         return []
 
     def build_jobspec(self):
+        arch_to_gem_arch = {
+            'x64': 'x86_64',
+            'x86': 'x86',
+        }
         if not self.platform == 'linux':
             raise Exception("Not supported yet.")
 
@@ -192,7 +196,8 @@ class RubyDistribTest(object):
             self.name,
             'tools/dockerfile/distribtest/ruby_%s_%s' % (self.docker_suffix,
                                                          self.arch),
-            'test/distrib/ruby/run_distrib_test.sh',
+            'test/distrib/ruby/run_distrib_test.sh %s %s' %
+            (arch_to_gem_arch[self.arch], self.platform),
             copy_rel_path='test/distrib')
 
     def __str__(self):

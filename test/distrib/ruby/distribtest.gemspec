@@ -14,6 +14,8 @@ Gem::Specification.new do |s|
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'grpc', '>=0'
+  s.add_dependency 'public_suffix', '< 3.0'
+  s.add_dependency 'jwt', '< 2.0'
 
   s.add_development_dependency 'bundler', '~> 1.7'
 end
