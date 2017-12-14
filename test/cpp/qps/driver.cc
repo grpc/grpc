@@ -469,7 +469,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   Histogram merged_latencies;
   std::unordered_map<int, int64_t> merged_statuses;
 
-  gpr_log(GPR_INFO, "Finishing clients");
+  gpr_log(GPR_INFO, "Finishing clients & servers");
   log_deadline_stuff();
   std::mutex merge_mu;
   for (size_t i = 0; i < num_clients; i++) {
@@ -487,7 +487,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       ClientStatus client_status;
       if (client->stream->Read(&client_status)) {
         gpr_log(GPR_INFO, "Received final status from client %zu", i);
-        std::lock_guard<std::mutex> lock(merge_mu);
+        {std::lock_guard<std::mutex> lock(merge_mu);
         const auto& stats = client_status.stats();
         merged_latencies.MergeProto(stats.latencies());
         for (int i = 0; i < stats.request_results_size(); i++) {
@@ -495,7 +495,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
               stats.request_results(i).count();
         }
         result->add_client_stats()->CopyFrom(stats);
-        // That final status should be the last message on the client stream
+        }
+// That final status should be the last message on the client stream
         GPR_ASSERT(!client->stream->Read(&client_status));
       } else {
         gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
@@ -509,6 +510,39 @@ std::unique_ptr<ScenarioResult> RunScenario(
       }
     });
   }
+  for (size_t i = 0; i < num_servers; i++) {
+    add_job([&servers, i, &result, &merge_mu] {
+      auto server = &servers[i];
+      ServerArgs server_mark;
+      server_mark.mutable_mark()->set_reset(true);
+      if (!server->stream->Write(server_mark)) {
+        gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+      }
+      if (!server->stream->WritesDone()) {
+        gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+      }
+      // Read the server final status
+      ServerStatus server_status;
+      if (server->stream->Read(&server_status)) {
+        gpr_log(GPR_INFO, "Received final status from server %zu", i);
+        {std::lock_guard<std::mutex> lock(merge_mu);
+        result->add_server_stats()->CopyFrom(server_status.stats());
+        result->add_server_cores(server_status.cores());
+        }
+        // That final status should be the last message on the server stream
+        GPR_ASSERT(!server->stream->Read(&server_status));
+      } else {
+        gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
+      }
+      Status s = server->stream->Finish();
+      std::lock_guard<std::mutex> lock(merge_mu);
+      result->add_server_success(s.ok());
+      if (!s.ok()) {
+        gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
+                s.error_message().c_str());
+      }
+    });
+  }
   finish_jobs();
 
   merged_latencies.FillProto(result->mutable_latencies());
@@ -517,43 +551,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
     RequestResultCount* rrc = result->add_request_results();
     rrc->set_status_code(it->first);
     rrc->set_count(it->second);
-  }
-
-  gpr_log(GPR_INFO, "Finishing servers");
-  log_deadline_stuff();
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    ServerArgs server_mark;
-    server_mark.mutable_mark()->set_reset(true);
-    if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
-    }
-    if (!server->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
-    }
-  }
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    // Read the server final status
-    ServerStatus server_status;
-    if (server->stream->Read(&server_status)) {
-      gpr_log(GPR_INFO, "Received final status from server %zu", i);
-      result->add_server_stats()->CopyFrom(server_status.stats());
-      result->add_server_cores(server_status.cores());
-      // That final status should be the last message on the server stream
-      GPR_ASSERT(!server->stream->Read(&server_status));
-    } else {
-      gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
-    }
-  }
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    Status s = server->stream->Finish();
-    result->add_server_success(s.ok());
-    if (!s.ok()) {
-      gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
-              s.error_message().c_str());
-    }
   }
 
   if (g_inproc_servers != nullptr) {
