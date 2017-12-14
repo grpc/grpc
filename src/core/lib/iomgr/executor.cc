@@ -242,7 +242,7 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
         }
         continue;
       }
-      if (grpc_closure_list_empty(ts->elems)) {
+      if (grpc_closure_list_empty(ts->elems) && !ts->shutdown) {
         GRPC_STATS_INC_EXECUTOR_WAKEUP_INITIATED();
         gpr_cv_signal(&ts->cv);
       }
