@@ -22,8 +22,9 @@
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
-DEFINE_string(access_token, "",
-              "The access token in metadata \"authorization\".");
+DEFINE_string(
+    access_token, "",
+    "The access token that will be sent to the server to authenticate RPCs.");
 
 namespace grpc {
 namespace testing {
@@ -32,9 +33,8 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
     const {
   if (!FLAGS_access_token.empty()) {
     if (FLAGS_use_auth) {
-      fprintf(
-          stderr,
-          "warning: use_auth is set to false when access_token is provided.");
+      fprintf(stderr,
+              "warning: use_auth is ignored when access_token is provided.");
     }
 
     return grpc::CompositeChannelCredentials(
