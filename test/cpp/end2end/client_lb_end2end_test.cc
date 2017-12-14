@@ -163,10 +163,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   std::vector<int> GetServersPorts() {
     std::vector<int> ports;
-    std::transform(servers_.begin(), servers_.end(), std::back_inserter(ports),
-                   [](const std::unique_ptr<ServerData>& server) {
-                     return server->port_;
-                   });
+    for (const auto& server : servers_) ports.push_back(server->port_);
     return ports;
   }
 
@@ -180,10 +177,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
                     response_generator_);
     std::ostringstream uri;
     uri << "fake:///";
-    for (size_t i = 0; i < ports.size() - 1; ++i) {
-      uri << "127.0.0.1:" << ports[i] << ",";
-    }
-    uri << "127.0.0.1:" << ports.back();
     channel_ =
         CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
@@ -300,7 +293,7 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub(GetServersPorts(), "pick_first");
+  ResetStub(GetServersPorts(), "");  // test that pick first is the default.
   std::vector<int> ports;
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
@@ -327,7 +320,7 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
 TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 100;
-  args.SetInt("grpc.initial_reconnect_backoff_ms", kInitialBackOffMs);
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
   // Start a server just to capture an available port number.
   const int kNumServers = 1;
   StartServers(kNumServers);
@@ -362,7 +355,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
 TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   ChannelArguments args;
   constexpr int kMinReconnectBackOffMs = 1000;
-  args.SetInt("grpc.min_reconnect_backoff_ms", kMinReconnectBackOffMs);
+  args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, kMinReconnectBackOffMs);
   // Start a server just to capture an available port number.
   const int kNumServers = 1;
   StartServers(kNumServers);
