@@ -634,7 +634,7 @@ class _ServerState(object):
     # pylint: disable=too-many-arguments
     def __init__(self, completion_queue, server, generic_handlers,
                  interceptor_pipeline, thread_pool, maximum_concurrent_rpcs):
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.completion_queue = completion_queue
         self.server = server
         self.generic_handlers = list(generic_handlers)
@@ -747,22 +747,12 @@ def _stop(state, grace):
             state.shutdown_events.append(shutdown_event)
             if grace is None:
                 state.server.cancel_all_calls()
-                # TODO(https://github.com/grpc/grpc/issues/6597): delete this loop.
-                for rpc_state in state.rpc_states:
-                    with rpc_state.condition:
-                        rpc_state.client = _CANCELLED
-                        rpc_state.condition.notify_all()
             else:
 
                 def cancel_all_calls_after_grace():
                     shutdown_event.wait(timeout=grace)
                     with state.lock:
                         state.server.cancel_all_calls()
-                        # TODO(https://github.com/grpc/grpc/issues/6597): delete this loop.
-                        for rpc_state in state.rpc_states:
-                            with rpc_state.condition:
-                                rpc_state.client = _CANCELLED
-                                rpc_state.condition.notify_all()
 
                 thread = threading.Thread(target=cancel_all_calls_after_grace)
                 thread.start()
