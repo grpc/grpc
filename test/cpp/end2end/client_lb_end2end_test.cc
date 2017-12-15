@@ -175,10 +175,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_);
-    std::ostringstream uri;
-    uri << "fake:///";
     channel_ =
-        CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
+        CreateCustomChannel("fake:///", InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -321,29 +319,23 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 100;
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
-  // Start a server just to capture an available port number.
-  const int kNumServers = 1;
-  StartServers(kNumServers);
-  const auto ports = GetServersPorts();
-  // And immediate kill it so that requests would fail to initially connect.
-  servers_[0]->Shutdown(false);
+  const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   ResetStub(ports, "pick_first", args);
   SetNextResolution(ports);
-  // Client request should fail.
-  CheckRpcSendFailure();
-  // Bring servers back up on the same port (we aren't recreating the channel).
-  StartServers(kNumServers, ports);
-  // We simply send an RPC without paying attention to the result, even though
-  // in the vast majority of cases, the request would succeed. However, under
-  // high load, it may not. Waiting for the server here would however distort
-  // the backoff measurements.
-  SendRpc();
+  // The channel won't become connected (there's no server).
+  ASSERT_FALSE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs * 2)));
+  // Bring up a server on the chosen port.
+  StartServers(1, ports);
+  // Now it will.
+  ASSERT_TRUE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs * 2)));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
   const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %ld milliseconds", waited_ms);
-  // We should have waited at least kInitialBackOffMs. We substract one because
-  // gRPC works with millisecond accuracy.
+  // We should have waited at least kInitialBackOffMs. We substract one to
+  // account for test and precision accuracy drift.
   EXPECT_GE(waited_ms, kInitialBackOffMs - 1);
   // But not much more.
   EXPECT_GT(
@@ -356,10 +348,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   ChannelArguments args;
   constexpr int kMinReconnectBackOffMs = 1000;
   args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, kMinReconnectBackOffMs);
-  // Start a server just to capture an available port number.
-  const int kNumServers = 1;
-  StartServers(kNumServers);
-  const auto ports = GetServersPorts();
+  const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   ResetStub(ports, "pick_first", args);
   SetNextResolution(ports);
   // Make connection delay a 10% longer than it's willing to in order to make
@@ -367,14 +356,13 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   g_connection_delay_ms = kMinReconnectBackOffMs * 1.10;
   grpc_tcp_client_connect_impl = tcp_client_connect_with_delay;
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
-  // We simply send an RPC without paying attention to the result: we only care
-  // about how long the subchannel waited for the connection.
-  SendRpc();
+  channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
   const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %ld ms", waited_ms);
-  // We should have waited at least kMinReconnectBackOffMs. We substract one
-  // because gRPC works with millisecond accuracy.
+  // We should have waited at least kMinReconnectBackOffMs. We substract one to
+  // account for test and precision accuracy drift.
   EXPECT_GE(waited_ms, kMinReconnectBackOffMs - 1);
   grpc_tcp_client_connect_impl = original_tcp_connect_fn;
 }
