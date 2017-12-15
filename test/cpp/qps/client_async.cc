@@ -178,7 +178,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       shutdown_state_.emplace_back(new PerThreadShutdownState());
     }
 
-    thread_startup_code_.resize(cli_cqs_.size());
+    thread_startup_code_.resize(num_async_threads_);
 
     int t = 0;
     for (int ch = 0; ch < config.client_channels(); ch++) {
@@ -261,9 +261,16 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     void* got_tag;
     bool ok;
 
+    std::mutex* shutdown_mu = &shutdown_state_[thread_idx]->mutex;
+    shutdown_mu->lock();
+    if (shutdown_state_[thread_idx]->shutdown) {
+      shutdown_mu->unlock();
+      return;
+    }
     for (auto& f : thread_startup_code_[thread_idx]) {
       f();
     }
+    shutdown_mu->unlock();
     thread_startup_code_[thread_idx].clear();
 
     HistogramEntry entry;
@@ -271,7 +278,6 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     if (!cli_cqs_[cq_[thread_idx]]->Next(&got_tag, &ok)) {
       return;
     }
-    std::mutex* shutdown_mu = &shutdown_state_[thread_idx]->mutex;
     shutdown_mu->lock();
     ClientRpcContext* ctx = ProcessTag(thread_idx, got_tag);
     if (ctx == nullptr) {
