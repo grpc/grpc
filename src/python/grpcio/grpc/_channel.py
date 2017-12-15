@@ -58,6 +58,17 @@ _STREAM_STREAM_INITIAL_DUE = (
 _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE = (
     'Exception calling channel subscription callback!')
 
+_OK_RENDEZVOUS_REPR_FORMAT = ('<_Rendezvous of RPC that terminated with:\n'
+                              '\tstatus = {}\n'
+                              '\tdetails = "{}"\n'
+                              '>')
+
+_NON_OK_RENDEZVOUS_REPR_FORMAT = ('<_Rendezvous of RPC that terminated with:\n'
+                                  '\tstatus = {}\n'
+                                  '\tdetails = "{}"\n'
+                                  '\tdebug_error_string = "{}"\n'
+                                  '>')
+
 
 def _deadline(timeout):
     return None if timeout is None else time.time() + timeout
@@ -91,6 +102,7 @@ class _RPCState(object):
         self.trailing_metadata = trailing_metadata
         self.code = code
         self.details = details
+        self.debug_error_string = None
         # The semantics of grpc.Future.cancel and grpc.Future.cancelled are
         # slightly wonky, so they have to be tracked separately from the rest of the
         # result of the RPC. This field tracks whether cancellation was requested
@@ -137,6 +149,7 @@ def _handle_event(event, state, response_deserializer):
                 else:
                     state.code = code
                     state.details = batch_operation.details()
+                    state.debug_error_string = batch_operation.error_string()
             callbacks.extend(state.callbacks)
             state.callbacks = None
     return callbacks
@@ -374,13 +387,23 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
                 self._state.condition.wait()
             return _common.decode(self._state.details)
 
+    def debug_error_string(self):
+        with self._state.condition:
+            while self._state.debug_error_string is None:
+                self._state.condition.wait()
+            return _common.decode(self._state.debug_error_string)
+
     def _repr(self):
         with self._state.condition:
             if self._state.code is None:
                 return '<_Rendezvous object of in-flight RPC>'
+            elif self._state.code is grpc.StatusCode.OK:
+                return _OK_RENDEZVOUS_REPR_FORMAT.format(
+                    self._state.code, self._state.details)
             else:
-                return '<_Rendezvous of RPC that terminated with ({}, {})>'.format(
-                    self._state.code, _common.decode(self._state.details))
+                return _NON_OK_RENDEZVOUS_REPR_FORMAT.format(
+                    self._state.code, self._state.details,
+                    self._state.debug_error_string)
 
     def __repr__(self):
         return self._repr()
