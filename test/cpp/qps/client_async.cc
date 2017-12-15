@@ -183,8 +183,10 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     int t = 0;
     for (int ch = 0; ch < config.client_channels(); ch++) {
       for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
-          // this is sufficiently gnarly that we capture what's needed for setup here, and run the code once we get into ThreadFunc
-        thread_startup_code_[t].push_back([t, ch, i, setup_ctx, config, this]() {
+        // this is sufficiently gnarly that we capture what's needed for setup
+        // here, and run the code once we get into ThreadFunc
+        thread_startup_code_[t].push_back([t, ch, i, setup_ctx, config,
+                                           this]() {
           auto* cq = cli_cqs_[t].get();
           auto ctx =
               setup_ctx(channels_[ch].get_stub(), next_issuers_[t], request_);

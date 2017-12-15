@@ -2106,7 +2106,8 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     grpc_error* overall_error =
         removal_error(GRPC_ERROR_REF(error), s, "Stream removed");
     if (grpc_http_error_trace.enabled() && overall_error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "%s remove due to error %d: %s", t->peer_string, s->id, grpc_error_string(overall_error));
+      gpr_log(GPR_ERROR, "%s remove due to error %d: %s", t->peer_string, s->id,
+              grpc_error_string(overall_error));
     }
     if (s->id != 0) {
       remove_stream(t, s->id, GRPC_ERROR_REF(overall_error));
