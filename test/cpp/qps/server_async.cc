@@ -114,7 +114,12 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     std::vector<std::thread> init_threads;
     std::mutex init_mu;
     for (int j = 0; j < num_cqs; j++) {
-      init_threads.emplace_back([j, this, &init_mu, process_rpc_bound, request_unary_function, request_streaming_function, request_streaming_from_client_function, request_streaming_from_server_function, request_streaming_both_ways_function]() {
+      init_threads.emplace_back([j, this, &init_mu, process_rpc_bound,
+                                 request_unary_function,
+                                 request_streaming_function,
+                                 request_streaming_from_client_function,
+                                 request_streaming_from_server_function,
+                                 request_streaming_both_ways_function]() {
         std::vector<std::unique_ptr<ServerRpcContext>> local_contexts;
         for (int i = 0; i < 2000; i++) {
           if (request_unary_function) {
@@ -122,8 +127,8 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
                 request_unary_function, &async_service_, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3, srv_cqs_[j].get(),
                 srv_cqs_[j].get(), std::placeholders::_4);
-            local_contexts.emplace_back(
-                new ServerRpcContextUnaryImpl(request_unary, process_rpc_bound));
+            local_contexts.emplace_back(new ServerRpcContextUnaryImpl(
+                request_unary, process_rpc_bound));
           }
           if (request_streaming_function) {
             auto request_streaming = std::bind(
@@ -138,26 +143,28 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
                 request_streaming_from_client_function, &async_service_,
                 std::placeholders::_1, std::placeholders::_2, srv_cqs_[j].get(),
                 srv_cqs_[j].get(), std::placeholders::_3);
-            local_contexts.emplace_back(new ServerRpcContextStreamingFromClientImpl(
-                request_streaming_from_client, process_rpc_bound));
+            local_contexts.emplace_back(
+                new ServerRpcContextStreamingFromClientImpl(
+                    request_streaming_from_client, process_rpc_bound));
           }
           if (request_streaming_from_server_function) {
-            auto request_streaming_from_server =
-                std::bind(request_streaming_from_server_function, &async_service_,
-                          std::placeholders::_1, std::placeholders::_2,
-                          std::placeholders::_3, srv_cqs_[j].get(),
-                          srv_cqs_[j].get(), std::placeholders::_4);
-            local_contexts.emplace_back(new ServerRpcContextStreamingFromServerImpl(
-                request_streaming_from_server, process_rpc_bound));
+            auto request_streaming_from_server = std::bind(
+                request_streaming_from_server_function, &async_service_,
+                std::placeholders::_1, std::placeholders::_2,
+                std::placeholders::_3, srv_cqs_[j].get(), srv_cqs_[j].get(),
+                std::placeholders::_4);
+            local_contexts.emplace_back(
+                new ServerRpcContextStreamingFromServerImpl(
+                    request_streaming_from_server, process_rpc_bound));
           }
           if (request_streaming_both_ways_function) {
             // TODO(vjpai): Add this code
           }
         }
-	std::lock_guard<std::mutex> lock(init_mu);
-	for (auto& ctx : local_contexts) {
-		contexts_.emplace_back(std::move(ctx));
-	}
+        std::lock_guard<std::mutex> lock(init_mu);
+        for (auto& ctx : local_contexts) {
+          contexts_.emplace_back(std::move(ctx));
+        }
       });
     }
     for (auto& t : init_threads) {
