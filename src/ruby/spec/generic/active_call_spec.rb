@@ -40,7 +40,7 @@ describe GRPC::ActiveCall do
   before(:each) do
     @pass_through = proc { |x| x }
     host = '0.0.0.0:0'
-    @server = GRPC::Core::Server.new(nil)
+    @server = new_core_server_for_testing(nil)
     server_port = @server.add_http2_port(host, :this_port_is_insecure)
     @server.start
     @ch = GRPC::Core::Channel.new("0.0.0.0:#{server_port}", nil,
