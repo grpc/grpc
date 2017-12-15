@@ -76,6 +76,7 @@ grpc_cc_test(
 
 grpc_cc_binary(
     name = "client_crash_test_server",
+    testonly = True,
     srcs = ["client_crash_test_server.cc"],
     deps = [
         "//:gpr",
@@ -311,6 +312,7 @@ grpc_cc_test(
 
 grpc_cc_binary(
     name = "server_crash_test_client",
+    testonly = True,
     srcs = ["server_crash_test_client.cc"],
     deps = [
         "//:gpr",
