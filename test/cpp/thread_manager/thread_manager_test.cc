@@ -29,15 +29,15 @@
 #include "test/cpp/util/test_config.h"
 
 namespace grpc {
-class ThreadManagerTest final : public grpc::ThreadManager {
+class MockThreadManager final : public grpc::ThreadManager {
  public:
-  ThreadManagerTest(int min_pollers, int max_pollers)
+  MockThreadManager(int min_pollers, int max_pollers)
       : ThreadManager(min_pollers, max_pollers),
         num_do_work_(0),
         num_poll_for_work_(0),
         num_work_found_(0) {}
 
-  ThreadManagerTest(int min_pollers, int max_pollers, int max_threads)
+  MockThreadManager(int min_pollers, int max_pollers, int max_threads)
       : ThreadManager(min_pollers, max_pollers, max_threads),
         num_do_work_(0),
         num_poll_for_work_(0),
@@ -45,7 +45,12 @@ class ThreadManagerTest final : public grpc::ThreadManager {
 
   grpc::ThreadManager::WorkStatus PollForWork(void** tag, bool* ok) override;
   void DoWork(void* tag, bool ok) override;
-  void PerformTest();
+
+  // Number of times DoWork() was called
+  long NumDoWork() { return gpr_atm_no_barrier_load(&num_do_work_); }
+
+  // Number of times work was found
+  long NumWorkFound() { return gpr_atm_no_barrier_load(&num_work_found_); }
 
  private:
   void SleepForMs(int sleep_time_ms);
@@ -61,14 +66,14 @@ class ThreadManagerTest final : public grpc::ThreadManager {
   gpr_atm num_work_found_;     // Number of times WORK_FOUND was returned
 };
 
-void ThreadManagerTest::SleepForMs(int duration_ms) {
+void MockThreadManager::SleepForMs(int duration_ms) {
   gpr_timespec sleep_time =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                    gpr_time_from_millis(duration_ms, GPR_TIMESPAN));
   gpr_sleep_until(sleep_time);
 }
 
-grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void** tag,
+grpc::ThreadManager::WorkStatus MockThreadManager::PollForWork(void** tag,
                                                                bool* ok) {
   int call_num = gpr_atm_no_barrier_fetch_add(&num_poll_for_work_, 1);
 
@@ -92,45 +97,47 @@ grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void** tag,
   }
 }
 
-void ThreadManagerTest::DoWork(void* tag, bool ok) {
+void MockThreadManager::DoWork(void* tag, bool ok) {
   gpr_atm_no_barrier_fetch_add(&num_do_work_, 1);
   SleepForMs(kDoWorkDurationMsec);  // Simulate doing work by sleeping
 }
 
-void ThreadManagerTest::PerformTest() {
+}  // namespace grpc
+
+static void PerformTest(int min_pollers, int max_pollers, int max_threads = 0) {
+  std::unique_ptr<grpc::MockThreadManager> mock_tm;
+
+  if (max_threads == 0) {
+    // We could instead call MockThreadManager's constrcutor with max_threads =
+    // INT_MAX but the idea here is to test both the constrctors of
+    // ThreadManager
+    mock_tm.reset(new grpc::MockThreadManager(min_pollers, max_pollers));
+  } else {
+    mock_tm.reset(
+        new grpc::MockThreadManager(min_pollers, max_pollers, max_threads));
+  }
+
   // Initialize() starts the ThreadManager
-  Initialize();
+  mock_tm->Initialize();
 
   // Wait for all the threads to gracefully terminate
-  Wait();
+  mock_tm->Wait();
 
   // The number of times DoWork() was called is equal to the number of times
   // WORK_FOUND was returned
-  gpr_log(GPR_DEBUG, "DoWork() called %" PRIdPTR " times",
-          gpr_atm_no_barrier_load(&num_do_work_));
-  GPR_ASSERT(gpr_atm_no_barrier_load(&num_do_work_) ==
-             gpr_atm_no_barrier_load(&num_work_found_));
+  gpr_log(GPR_DEBUG, "DoWork() called %ld times", mock_tm->NumDoWork());
+  GPR_ASSERT(mock_tm->NumDoWork() == mock_tm->NumWorkFound());
 }
-}  // namespace grpc
 
 int main(int argc, char** argv) {
   std::srand(std::time(nullptr));
 
   grpc::testing::InitTest(&argc, &argv, true);
-  {
-    grpc::ThreadManagerTest test_thd_manager(2, 10);
-    test_thd_manager.PerformTest();
-  }
-
-  {
-    grpc::ThreadManagerTest test_thd_manager(1, 1, 1);
-    test_thd_manager.PerformTest();
-  }
-
-  {
-    grpc::ThreadManagerTest test_thd_manager(2, 3, 4);
-    test_thd_manager.PerformTest();
-  }
+  PerformTest(2, 10);
+  PerformTest(2, 10, -1);  // Same as PerformTest(2, 10). Just tests the case
+                           // where max_threads = -1
+  PerformTest(1, 1, 1);
+  PerformTest(2, 3, 4);
 
   return 0;
 }

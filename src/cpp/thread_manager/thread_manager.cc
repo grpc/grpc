@@ -55,7 +55,7 @@ ThreadManager::ThreadManager(int min_pollers, int max_pollers, int max_threads)
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),
       num_threads_(0),
       max_threads_(max_threads == -1 ? INT_MAX : max_threads) {
-  GPR_ASSERT(min_pollers <= max_pollers && max_pollers <= max_threads);
+  GPR_ASSERT(min_pollers_ <= max_pollers_ && max_pollers_ <= max_threads_);
 }
 
 ThreadManager::~ThreadManager() {
