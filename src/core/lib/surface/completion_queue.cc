@@ -44,6 +44,9 @@ grpc_core::TraceFlag grpc_trace_operation_failures(false, "op_failure");
 grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags(false, "pending_tags");
 grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount(false, "cq_refcount");
 
+// enable to ensure all end_ops match begin_ops
+//#define GRPC_CQ_TRACK_OUTSTANDING_CALLS
+
 // Specifies a cq thread local cache.
 // The first event that occurs on a thread
 // with a cq cache will go into that cache, and
@@ -262,7 +265,7 @@ struct grpc_completion_queue {
   const cq_vtable* vtable;
   const cq_poller_vtable* poller_vtable;
 
-#ifndef NDEBUG
+#ifdef GRPC_CQ_TRACK_OUTSTANDING_CALLS
   void** outstanding_tags;
   size_t outstanding_tag_count;
   size_t outstanding_tag_capacity;
@@ -537,14 +540,14 @@ void grpc_cq_internal_unref(grpc_completion_queue* cq) {
   if (gpr_unref(&cq->owning_refs)) {
     cq->vtable->destroy(DATA_FROM_CQ(cq));
     cq->poller_vtable->destroy(POLLSET_FROM_CQ(cq));
-#ifndef NDEBUG
+#ifdef GRPC_CQ_TRACK_OUTSTANDING_CALLS
     gpr_free(cq->outstanding_tags);
 #endif
     gpr_free(cq);
   }
 }
 
-#ifndef NDEBUG
+#ifdef GRPC_CQ_TRACK_OUTSTANDING_CALLS
 static void cq_check_tag(grpc_completion_queue* cq, void* tag, bool lock_cq) {
   int found = 0;
   if (lock_cq) {
@@ -600,7 +603,7 @@ static bool cq_begin_op_for_pluck(grpc_completion_queue* cq, void* tag) {
 }
 
 bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag) {
-#ifndef NDEBUG
+#ifdef GRPC_CQ_TRACK_OUTSTANDING_CALLS
   gpr_mu_lock(cq->mu);
   if (cq->outstanding_tag_count == cq->outstanding_tag_capacity) {
     cq->outstanding_tag_capacity = GPR_MAX(4, 2 * cq->outstanding_tag_capacity);
@@ -815,7 +818,7 @@ class ExecCtxNext : public grpc_core::ExecCtx {
   void* check_ready_to_finish_arg_;
 };
 
-#ifndef NDEBUG
+#ifdef GRPC_CQ_TRACK_OUTSTANDING_CALLS
 static void dump_pending_tags(grpc_completion_queue* cq) {
   if (!grpc_trace_pending_tags.enabled()) return;
 

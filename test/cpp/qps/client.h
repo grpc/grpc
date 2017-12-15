@@ -42,6 +42,7 @@
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/core/util/test_config.h"
 
 #define INPROC_NAME_PREFIX "qpsinproc:"
 
@@ -442,9 +443,8 @@ class ClientImpl : public Client {
       return std::unique_ptr<std::thread>(new std::thread([this]() {
         if (!is_inproc_) {
           GPR_ASSERT(channel_->WaitForConnected(
-              gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                           gpr_time_from_seconds(10, GPR_TIMESPAN))));
-        }
+				  grpc_timeout_seconds_to_deadline(10)));
+	}
       }));
     }
 

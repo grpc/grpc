@@ -178,13 +178,18 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       shutdown_state_.emplace_back(new PerThreadShutdownState());
     }
 
+    thread_startup_code_.resize(cli_cqs_.size());
+
     int t = 0;
     for (int ch = 0; ch < config.client_channels(); ch++) {
       for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
-        auto* cq = cli_cqs_[t].get();
-        auto ctx =
-            setup_ctx(channels_[ch].get_stub(), next_issuers_[t], request_);
-        ctx->Start(cq, config);
+          // this is sufficiently gnarly that we capture what's needed for setup here, and run the code once we get into ThreadFunc
+        thread_startup_code_[t].push_back([t, ch, i, setup_ctx, config, this]() {
+          auto* cq = cli_cqs_[t].get();
+          auto ctx =
+              setup_ctx(channels_[ch].get_stub(), next_issuers_[t], request_);
+          ctx->Start(cq, config);
+        });
       }
       t = (t + 1) % cli_cqs_.size();
     }
@@ -256,6 +261,11 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     void* got_tag;
     bool ok;
 
+    for (auto& f : thread_startup_code_[thread_idx]) {
+      f();
+    }
+    thread_startup_code_[thread_idx].clear();
+
     HistogramEntry entry;
     HistogramEntry* entry_ptr = &entry;
     if (!cli_cqs_[cq_[thread_idx]]->Next(&got_tag, &ok)) {
@@ -294,6 +304,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   std::vector<int> cq_;
   std::vector<std::function<gpr_timespec()>> next_issuers_;
   std::vector<std::unique_ptr<PerThreadShutdownState>> shutdown_state_;
+  std::vector<std::vector<std::function<void()>>> thread_startup_code_;
 };
 
 static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(

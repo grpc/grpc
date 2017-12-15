@@ -93,6 +93,7 @@ static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 grpc_core::TraceFlag grpc_http_trace(false, "http");
 grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
                                                          "chttp2_refcount");
+grpc_core::TraceFlag grpc_http_error_trace(false, "http_error");
 
 /* forward declarations of various callbacks that we'll build closures around */
 static void write_action_begin_locked(void* t, grpc_error* error);
@@ -2104,6 +2105,9 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     became_closed = true;
     grpc_error* overall_error =
         removal_error(GRPC_ERROR_REF(error), s, "Stream removed");
+    if (grpc_http_error_trace.enabled() && overall_error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "%s remove due to error %d: %s", t->peer_string, s->id, grpc_error_string(overall_error));
+    }
     if (s->id != 0) {
       remove_stream(t, s->id, GRPC_ERROR_REF(overall_error));
     } else {

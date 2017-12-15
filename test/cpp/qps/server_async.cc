@@ -111,45 +111,57 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
         std::bind(process_rpc, config.payload_config(), std::placeholders::_1,
                   std::placeholders::_2);
 
-    for (int i = 0; i < 5000; i++) {
-      for (int j = 0; j < num_cqs; j++) {
-        if (request_unary_function) {
-          auto request_unary = std::bind(
-              request_unary_function, &async_service_, std::placeholders::_1,
-              std::placeholders::_2, std::placeholders::_3, srv_cqs_[j].get(),
-              srv_cqs_[j].get(), std::placeholders::_4);
-          contexts_.emplace_back(
-              new ServerRpcContextUnaryImpl(request_unary, process_rpc_bound));
+    std::vector<std::thread> init_threads;
+    std::mutex init_mu;
+    for (int j = 0; j < num_cqs; j++) {
+      init_threads.emplace_back([j, this, &init_mu, process_rpc_bound, request_unary_function, request_streaming_function, request_streaming_from_client_function, request_streaming_from_server_function, request_streaming_both_ways_function]() {
+        std::vector<std::unique_ptr<ServerRpcContext>> local_contexts;
+        for (int i = 0; i < 2000; i++) {
+          if (request_unary_function) {
+            auto request_unary = std::bind(
+                request_unary_function, &async_service_, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3, srv_cqs_[j].get(),
+                srv_cqs_[j].get(), std::placeholders::_4);
+            local_contexts.emplace_back(
+                new ServerRpcContextUnaryImpl(request_unary, process_rpc_bound));
+          }
+          if (request_streaming_function) {
+            auto request_streaming = std::bind(
+                request_streaming_function, &async_service_,
+                std::placeholders::_1, std::placeholders::_2, srv_cqs_[j].get(),
+                srv_cqs_[j].get(), std::placeholders::_3);
+            local_contexts.emplace_back(new ServerRpcContextStreamingImpl(
+                request_streaming, process_rpc_bound));
+          }
+          if (request_streaming_from_client_function) {
+            auto request_streaming_from_client = std::bind(
+                request_streaming_from_client_function, &async_service_,
+                std::placeholders::_1, std::placeholders::_2, srv_cqs_[j].get(),
+                srv_cqs_[j].get(), std::placeholders::_3);
+            local_contexts.emplace_back(new ServerRpcContextStreamingFromClientImpl(
+                request_streaming_from_client, process_rpc_bound));
+          }
+          if (request_streaming_from_server_function) {
+            auto request_streaming_from_server =
+                std::bind(request_streaming_from_server_function, &async_service_,
+                          std::placeholders::_1, std::placeholders::_2,
+                          std::placeholders::_3, srv_cqs_[j].get(),
+                          srv_cqs_[j].get(), std::placeholders::_4);
+            local_contexts.emplace_back(new ServerRpcContextStreamingFromServerImpl(
+                request_streaming_from_server, process_rpc_bound));
+          }
+          if (request_streaming_both_ways_function) {
+            // TODO(vjpai): Add this code
+          }
         }
-        if (request_streaming_function) {
-          auto request_streaming = std::bind(
-              request_streaming_function, &async_service_,
-              std::placeholders::_1, std::placeholders::_2, srv_cqs_[j].get(),
-              srv_cqs_[j].get(), std::placeholders::_3);
-          contexts_.emplace_back(new ServerRpcContextStreamingImpl(
-              request_streaming, process_rpc_bound));
-        }
-        if (request_streaming_from_client_function) {
-          auto request_streaming_from_client = std::bind(
-              request_streaming_from_client_function, &async_service_,
-              std::placeholders::_1, std::placeholders::_2, srv_cqs_[j].get(),
-              srv_cqs_[j].get(), std::placeholders::_3);
-          contexts_.emplace_back(new ServerRpcContextStreamingFromClientImpl(
-              request_streaming_from_client, process_rpc_bound));
-        }
-        if (request_streaming_from_server_function) {
-          auto request_streaming_from_server =
-              std::bind(request_streaming_from_server_function, &async_service_,
-                        std::placeholders::_1, std::placeholders::_2,
-                        std::placeholders::_3, srv_cqs_[j].get(),
-                        srv_cqs_[j].get(), std::placeholders::_4);
-          contexts_.emplace_back(new ServerRpcContextStreamingFromServerImpl(
-              request_streaming_from_server, process_rpc_bound));
-        }
-        if (request_streaming_both_ways_function) {
-          // TODO(vjpai): Add this code
-        }
-      }
+	std::lock_guard<std::mutex> lock(init_mu);
+	for (auto& ctx : local_contexts) {
+		contexts_.emplace_back(std::move(ctx));
+	}
+      });
+    }
+    for (auto& t : init_threads) {
+      t.join();
     }
 
     for (int i = 0; i < num_threads; i++) {
@@ -268,6 +280,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     void Reset() override {
       srv_ctx_.reset(new ServerContextType);
       req_ = RequestType();
+      response_ = ResponseType();
       response_writer_ =
           grpc::ServerAsyncResponseWriter<ResponseType>(srv_ctx_.get());
 
@@ -323,6 +336,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     void Reset() override {
       srv_ctx_.reset(new ServerContextType);
       req_ = RequestType();
+      response_ = ResponseType();
       stream_ = grpc::ServerAsyncReaderWriter<ResponseType, RequestType>(
           srv_ctx_.get());
 
@@ -402,6 +416,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     void Reset() override {
       srv_ctx_.reset(new ServerContextType);
       req_ = RequestType();
+      response_ = ResponseType();
       stream_ =
           grpc::ServerAsyncReader<ResponseType, RequestType>(srv_ctx_.get());
 
@@ -471,6 +486,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     void Reset() override {
       srv_ctx_.reset(new ServerContextType);
       req_ = RequestType();
+      response_ = ResponseType();
       stream_ = grpc::ServerAsyncWriter<ResponseType>(srv_ctx_.get());
 
       // Then request the method
@@ -547,6 +563,8 @@ static Status ProcessSimpleRPC(const PayloadConfig&, SimpleRequest* request,
   if (request->response_size() > 0) {
     if (!Server::SetPayload(request->response_type(), request->response_size(),
                             response->mutable_payload())) {
+      // We are done using the request. Clear it to reduce working memory.
+      request->Clear();
       return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
     }
   }

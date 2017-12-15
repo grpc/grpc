@@ -324,6 +324,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
     ServerStatus init_status;
     if (!servers[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
+      Status s = servers[i].stream->Finish();
+      if (!s.ok()) {
+        gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
+                s.error_message().c_str());
+      }
+      abort();
     }
     if (qps_server_target_override.length() > 0) {
       // overriding the qps server target only works if there is 1 server
