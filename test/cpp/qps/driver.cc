@@ -203,12 +203,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;
-  static const int kSetupAndTeardownGraceTime = 30;
+  static const int kSetupAndTeardownGraceTime = 120;
   gpr_timespec deadline_start = gpr_now(GPR_CLOCK_MONOTONIC);
-  gpr_timespec driver_deadline = gpr_time_add(
-      deadline_start, gpr_time_from_seconds(warmup_seconds + benchmark_seconds +
-                                                kSetupAndTeardownGraceTime,
-                                            GPR_TIMESPAN));
+  gpr_timespec driver_deadline = gpr_time_add(gpr_time_add(
+      deadline_start,
+      gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)), 
+      gpr_time_from_seconds(kSetupAndTeardownGraceTime * grpc_test_slowdown_factor(), GPR_TIMESPAN));
   auto alloc_context = [driver_deadline, &contexts]() {
     contexts.emplace_back();
     auto context = &contexts.back();
