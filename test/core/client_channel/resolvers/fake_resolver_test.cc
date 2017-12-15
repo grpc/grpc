@@ -107,6 +107,8 @@ static void test_fake_resolver() {
   // performs the checks.
   grpc_fake_resolver_response_generator_set_response(response_generator,
                                                      results, false);
+  // Flush here to guarantee that the response has been set.
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
   grpc_core::ExecCtx::Get()->Flush();
@@ -142,10 +144,58 @@ static void test_fake_resolver() {
   // Set updated resolver results and trigger a second resolution.
   grpc_fake_resolver_response_generator_set_response(response_generator,
                                                      results_update, false);
+  // Flush here to guarantee that the response has been set.
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_resolver_next_locked(resolver, &on_res_arg_update.resolver_result,
                             on_resolution);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg_update.ev,
+                            grpc_timeout_seconds_to_deadline(5)) != nullptr);
+
+  // Setup update to use upon error.
+  grpc_uri* uris_update_upon_error[] = {
+      grpc_uri_parse("ipv4:127.0.0.1:2333", true)};
+  const char* balancer_names_update_upon_error[] = {"name4"};
+  const bool is_balancer_update_upon_error[] = {false};
+  grpc_lb_addresses* addresses_update_upon_error =
+      grpc_lb_addresses_create(1, nullptr);
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(uris_update_upon_error); ++i) {
+    grpc_lb_addresses_set_address_from_uri(
+        addresses_update_upon_error, i, uris_update_upon_error[i],
+        is_balancer_update_upon_error[i], balancer_names_update_upon_error[i],
+        nullptr);
+    grpc_uri_destroy(uris_update_upon_error[i]);
+  }
+
+  grpc_arg addresses_update_upon_error_arg =
+      grpc_lb_addresses_create_channel_arg(addresses_update_upon_error);
+  grpc_channel_args* results_update_upon_error = grpc_channel_args_copy_and_add(
+      nullptr, &addresses_update_upon_error_arg, 1);
+  grpc_lb_addresses_destroy(addresses_update_upon_error);
+
+  // Setup expectations for the update.
+  on_resolution_arg on_res_arg_update_upon_error;
+  memset(&on_res_arg_update_upon_error, 0,
+         sizeof(on_res_arg_update_upon_error));
+  on_res_arg_update_upon_error.expected_resolver_result =
+      results_update_upon_error;
+  gpr_event_init(&on_res_arg_update_upon_error.ev);
+  on_resolution =
+      GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg_update_upon_error,
+                          grpc_combiner_scheduler(combiner));
+
+  // Set resolver results upon error and trigger a third resolution.
+  grpc_fake_resolver_response_generator_set_response(
+      response_generator, results_update_upon_error, true);
+  // Flush here to guarantee that the response has been set.
+  grpc_core::ExecCtx::Get()->Flush();
+  fake_resolver* r = (fake_resolver*)resolver;
+  GPR_ASSERT(!r->next_completion);
+  r->next_completion = on_resolution;
+  r->target_result = &on_res_arg_update_upon_error.resolver_result;
+  grpc_resolver_channel_saw_error_locked(resolver);
+  grpc_core::ExecCtx::Get()->Flush();
+  GPR_ASSERT(gpr_event_wait(&on_res_arg_update_upon_error.ev,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);
 
   // Requesting a new resolution without re-senting the response shouldn't
