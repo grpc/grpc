@@ -424,7 +424,7 @@ typedef struct glb_lb_policy {
   /* Interval and timer for next client load report. */
   grpc_millis client_stats_report_interval;
   grpc_timer client_load_report_timer;
-  bool client_load_report_timer_pending;
+  bool client_load_report_timer_active;
   bool last_client_load_report_counters_were_zero;
   /* Closure used for either the load report timer or the callback for
    * completion of sending the load report. */
@@ -1348,7 +1348,7 @@ static void client_load_report_done_locked(void* arg, grpc_error* error) {
   grpc_byte_buffer_destroy(glb_policy->client_load_report_payload);
   glb_policy->client_load_report_payload = nullptr;
   if (error != GRPC_ERROR_NONE || glb_policy->lb_call == nullptr) {
-    glb_policy->client_load_report_timer_pending = false;
+    glb_policy->client_load_report_timer_active = false;
     GRPC_LB_POLICY_WEAK_UNREF(&glb_policy->base, "client_load_report");
     if (glb_policy->lb_call == nullptr) {
       maybe_restart_lb_call(glb_policy);
@@ -1373,7 +1373,7 @@ static bool load_report_counters_are_zero(grpc_grpclb_request* request) {
 static void send_client_load_report_locked(void* arg, grpc_error* error) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
   if (error == GRPC_ERROR_CANCELLED || glb_policy->lb_call == nullptr) {
-    glb_policy->client_load_report_timer_pending = false;
+    glb_policy->client_load_report_timer_active = false;
     GRPC_LB_POLICY_WEAK_UNREF(&glb_policy->base, "client_load_report");
     if (glb_policy->lb_call == nullptr) {
       maybe_restart_lb_call(glb_policy);
@@ -1485,7 +1485,7 @@ static void lb_call_destroy_locked(glb_lb_policy* glb_policy) {
   grpc_byte_buffer_destroy(glb_policy->lb_request_payload);
   grpc_slice_unref_internal(glb_policy->lb_call_status_details);
 
-  if (glb_policy->client_load_report_timer_pending) {
+  if (glb_policy->client_load_report_timer_active) {
     grpc_timer_cancel(&glb_policy->client_load_report_timer);
   }
 }
@@ -1598,7 +1598,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
         /* take a weak ref (won't prevent calling of \a glb_shutdown() if the
          * strong ref count goes to zero) to be unref'd in
          * send_client_load_report_locked() */
-        glb_policy->client_load_report_timer_pending = true;
+        glb_policy->client_load_report_timer_active = true;
         GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "client_load_report");
         schedule_next_client_load_report(glb_policy);
       } else if (grpc_lb_glb_trace.enabled()) {
@@ -1737,7 +1737,7 @@ static void lb_on_server_status_received_locked(void* arg, grpc_error* error) {
   // If the load report timer is still pending, we wait for it to be
   // called before restarting the call.  Otherwise, we restart the call
   // here.
-  if (!glb_policy->client_load_report_timer_pending) {
+  if (!glb_policy->client_load_report_timer_active) {
     maybe_restart_lb_call(glb_policy);
   }
 }
