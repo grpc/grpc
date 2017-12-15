@@ -453,6 +453,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc::string balancer_name;
   };
 
+  //  If reresolution is true, only set the resolution results which will be
+  //  returned by the resolver later when it sees an error. Otherwise, trigger a
+  //  normal resolution immediately.
   void SetNextResolution(const std::vector<AddressData>& address_data,
                          bool reresolution = false) {
     grpc_core::ExecCtx exec_ctx;
