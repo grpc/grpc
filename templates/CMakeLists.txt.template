@@ -269,6 +269,7 @@
       add_subdirectory(<%text>${BORINGSSL_ROOT_DIR}</%text> third_party/boringssl)
       if(TARGET ssl)
         set(_gRPC_SSL_LIBRARIES ssl)
+        set(_gRPC_SSL_INCLUDE_DIR <%text>${BORINGSSL_ROOT_DIR}</%text>/include)
       endif()
     else()
         message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
@@ -280,7 +281,7 @@
   elseif("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "package")
     find_package(OpenSSL REQUIRED)
     set(_gRPC_SSL_LIBRARIES <%text>${OPENSSL_LIBRARIES}</%text>)
-    include_directories(<%text>${OPENSSL_INCLUDE_DIR}</%text>)
+    set(_gRPC_SSL_INCLUDE_DIR <%text>${OPENSSL_INCLUDE_DIR}</%text>)
     set(_gRPC_FIND_SSL "if(NOT OPENSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
   endif()
 
@@ -445,7 +446,7 @@
   % for lib in libs:
   % if lib.build in ["all", "protoc", "tool", "test", "private"] and not lib.boringssl:
   % if not lib.get('build_system', []) or 'cmake' in lib.get('build_system', []):
-  % if not lib.name in ['benchmark', 'z']:  # we build these using CMake instead
+  % if not lib.name in ['ares', 'benchmark', 'z']:  # we build these using CMake instead
   % if lib.build in ["test", "private"]:
   if (gRPC_BUILD_TESTS)
   ${cc_library(lib)}
@@ -515,7 +516,7 @@
   target_include_directories(${lib.name}
     PUBLIC <%text>$<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
-    PRIVATE <%text>${BORINGSSL_ROOT_DIR}</%text>/include
+    PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
     PRIVATE <%text>${ZLIB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${BENCHMARK}</%text>/include
@@ -586,7 +587,7 @@
   target_include_directories(${tgt.name}
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
-    PRIVATE <%text>${BORINGSSL_ROOT_DIR}</%text>/include
+    PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
     PRIVATE <%text>${BENCHMARK_ROOT_DIR}</%text>/include
     PRIVATE <%text>${ZLIB_ROOT_DIR}</%text>

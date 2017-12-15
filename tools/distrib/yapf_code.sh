@@ -54,7 +54,7 @@ else
 	tempdir=$(mktemp -d)
 	cp -RT "${dir}" "${tempdir}"
 	yapf "${tempdir}"
-	diff -ru "${dir}" "${tempdir}" || ok=no
+	diff -x '*.pyc' -ru "${dir}" "${tempdir}" || ok=no
 	rm -rf "${tempdir}"
     done
     if [[ ${ok} == no ]]; then

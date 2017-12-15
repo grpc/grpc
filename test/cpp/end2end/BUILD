@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_cc_binary")
 
 grpc_package(name = "test/cpp/end2end", visibility = "public") # Allows external users to implement end2end tests.
 
@@ -66,12 +66,15 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    data = [
+        ":client_crash_test_server",
+    ],
     external_deps = [
         "gtest",
     ],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "client_crash_test_server",
     srcs = ["client_crash_test_server.cc"],
     deps = [
@@ -301,9 +304,12 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    data = [
+        ":server_crash_test_client",
+    ],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "server_crash_test_client",
     srcs = ["server_crash_test_client.cc"],
     deps = [
