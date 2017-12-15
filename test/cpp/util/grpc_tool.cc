@@ -493,7 +493,6 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     }
   }
 
-
   if (argc == 3) {
     request_text = argv[2];
   }
