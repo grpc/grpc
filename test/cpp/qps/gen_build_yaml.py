@@ -42,6 +42,7 @@ def mutate_scenario(scenario_json, is_tsan):
     outstanding_rpcs_divisor = 10
   scenario_json['client_config']['outstanding_rpcs_per_channel'] = max(1,
       int(scenario_json['client_config']['outstanding_rpcs_per_channel'] / outstanding_rpcs_divisor))
+  scenario_json['spawn_local_worker_count'] = -2
   return scenario_json
 
 def _scenario_json_string(scenario_json, is_tsan):
@@ -66,7 +67,7 @@ def guess_cpu(scenario_json, is_tsan):
 print yaml.dump({
   'tests': [
     {
-      'name': 'json_run_localhost',
+      'name': 'qps_json_driver',
       'shortname': 'json_run_localhost:%s' % scenario_json['name'],
       'args': ['--scenarios_json', _scenario_json_string(scenario_json, False)],
       'ci_platforms': ['linux'],
@@ -103,7 +104,7 @@ print yaml.dump({
     if 'inproc' in scenario_json.get('CATEGORIES', [])
   ] + [
     {
-      'name': 'json_run_localhost',
+      'name': 'qps_json_driver',
       'shortname': 'json_run_localhost:%s_low_thread_count' % scenario_json['name'],
       'args': ['--scenarios_json', _scenario_json_string(scenario_json, True)],
       'ci_platforms': ['linux'],

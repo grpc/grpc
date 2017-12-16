@@ -173,6 +173,11 @@ class SynchronousServer final : public grpc::testing::Server {
     impl_ = builder.BuildAndStart();
   }
 
+  ~SynchronousServer() {
+    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(3);
+    impl_->Shutdown(deadline);
+  }
+
   std::shared_ptr<Channel> InProcessChannel(
       const ChannelArguments& args) override {
     return impl_->InProcessChannel(args);

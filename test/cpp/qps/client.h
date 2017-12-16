@@ -35,6 +35,7 @@
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
 #include "src/cpp/util/core_stats.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/qps_worker.h"
@@ -441,9 +442,8 @@ class ClientImpl : public Client {
     std::unique_ptr<std::thread> WaitForReady() {
       return std::unique_ptr<std::thread>(new std::thread([this]() {
         if (!is_inproc_) {
-          GPR_ASSERT(channel_->WaitForConnected(
-              gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                           gpr_time_from_seconds(10, GPR_TIMESPAN))));
+          GPR_ASSERT(
+              channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(10)));
         }
       }));
     }

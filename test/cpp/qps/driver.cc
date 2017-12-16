@@ -203,11 +203,40 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;
-  auto alloc_context = [](list<ClientContext>* contexts) {
-    contexts->emplace_back();
-    auto context = &contexts->back();
+  static const int kSetupAndTeardownGraceTime = 120;
+  gpr_timespec deadline_start = gpr_now(GPR_CLOCK_MONOTONIC);
+  gpr_timespec driver_deadline = gpr_time_add(
+      gpr_time_add(deadline_start,
+                   gpr_time_from_seconds(warmup_seconds + benchmark_seconds,
+                                         GPR_TIMESPAN)),
+      gpr_time_from_seconds(
+          kSetupAndTeardownGraceTime * grpc_test_slowdown_factor(),
+          GPR_TIMESPAN));
+  auto alloc_context = [driver_deadline, &contexts]() {
+    contexts.emplace_back();
+    auto context = &contexts.back();
     context->set_wait_for_ready(true);
+    context->set_deadline(driver_deadline);
     return context;
+  };
+  auto log_deadline_stuff = [deadline_start, driver_deadline]() {
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    gpr_timespec time_from_start = gpr_time_sub(now, deadline_start);
+    gpr_timespec time_to_end = gpr_time_sub(driver_deadline, now);
+    gpr_log(GPR_INFO,
+            "%" PRIdPTR ".%09d seconds from deadline start; %" PRIdPTR
+            ".%09d seconds to end",
+            time_from_start.tv_sec, time_from_start.tv_nsec, time_to_end.tv_sec,
+            time_to_end.tv_nsec);
+  };
+
+  std::vector<std::thread> threads;
+  auto add_job = [&threads](std::function<void()> job) {
+    threads.emplace_back(job);
+  };
+  auto finish_jobs = [&threads]() {
+    for (auto& t : threads) t.join();
+    threads.clear();
   };
 
   // To be added to the result, containing the final configuration used for
@@ -288,13 +317,19 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
     ServerArgs args;
     *args.mutable_setup() = server_config;
-    servers[i].stream = servers[i].stub->RunServer(alloc_context(&contexts));
+    servers[i].stream = servers[i].stub->RunServer(alloc_context());
     if (!servers[i].stream->Write(args)) {
       gpr_log(GPR_ERROR, "Could not write args to server %zu", i);
     }
     ServerStatus init_status;
     if (!servers[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
+      Status s = servers[i].stream->Finish();
+      if (!s.ok()) {
+        gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
+                s.error_message().c_str());
+      }
+      abort();
     }
     if (qps_server_target_override.length() > 0) {
       // overriding the qps server target only works if there is 1 server
@@ -351,78 +386,90 @@ std::unique_ptr<ScenarioResult> RunScenario(
             num_channels);
     per_client_config.set_client_channels(num_channels);
 
-    ClientArgs args;
-    *args.mutable_setup() = per_client_config;
-    clients[i].stream = clients[i].stub->RunClient(alloc_context(&contexts));
-    if (!clients[i].stream->Write(args)) {
-      gpr_log(GPR_ERROR, "Could not write args to client %zu", i);
-    }
+    add_job([per_client_config, i, &clients, &alloc_context]() {
+      ClientArgs args;
+      *args.mutable_setup() = per_client_config;
+      clients[i].stream = clients[i].stub->RunClient(alloc_context());
+      if (!clients[i].stream->Write(args)) {
+        gpr_log(GPR_ERROR, "Could not write args to client %zu", i);
+      }
+    });
   }
+  finish_jobs();
 
   for (size_t i = 0; i < num_clients; i++) {
-    ClientStatus init_status;
-    if (!clients[i].stream->Read(&init_status)) {
-      gpr_log(GPR_ERROR, "Client %zu did not yield initial status", i);
-    }
+    add_job([&clients, i]() {
+      ClientStatus init_status;
+      if (!clients[i].stream->Read(&init_status)) {
+        gpr_log(GPR_ERROR, "Client %zu did not yield initial status", i);
+      }
+    });
   }
+  finish_jobs();
 
   // Send an initial mark: clients can use this to know that everything is ready
   // to start
   gpr_log(GPR_INFO, "Initiating");
-  ServerArgs server_mark;
-  server_mark.mutable_mark()->set_reset(true);
-  ClientArgs client_mark;
-  client_mark.mutable_mark()->set_reset(true);
-  ServerStatus server_status;
-  ClientStatus client_status;
+  log_deadline_stuff();
   for (size_t i = 0; i < num_clients; i++) {
-    auto client = &clients[i];
-    if (!client->stream->Write(client_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
-    }
+    add_job([&clients, i]() {
+      auto client = &clients[i];
+      ClientArgs client_mark;
+      client_mark.mutable_mark()->set_reset(true);
+      if (!client->stream->Write(client_mark)) {
+        gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+      }
+      ClientStatus client_status;
+      if (!client->stream->Read(&client_status)) {
+        gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
+      }
+    });
   }
-  for (size_t i = 0; i < num_clients; i++) {
-    auto client = &clients[i];
-    if (!client->stream->Read(&client_status)) {
-      gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
-    }
-  }
+  finish_jobs();
 
   // Let everything warmup
   gpr_log(GPR_INFO, "Warming up");
+  log_deadline_stuff();
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_sleep_until(
       gpr_time_add(start, gpr_time_from_seconds(warmup_seconds, GPR_TIMESPAN)));
 
   // Start a run
   gpr_log(GPR_INFO, "Starting");
+  log_deadline_stuff();
   for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
-    }
+    add_job([&servers, i]() {
+      auto server = &servers[i];
+      ServerArgs server_mark;
+      server_mark.mutable_mark()->set_reset(true);
+      if (!server->stream->Write(server_mark)) {
+        gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+      }
+      ServerStatus server_status;
+      if (!server->stream->Read(&server_status)) {
+        gpr_log(GPR_ERROR, "Couldn't get status from server %zu", i);
+      }
+    });
   }
   for (size_t i = 0; i < num_clients; i++) {
-    auto client = &clients[i];
-    if (!client->stream->Write(client_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
-    }
+    add_job([&clients, i]() {
+      auto client = &clients[i];
+      ClientArgs client_mark;
+      client_mark.mutable_mark()->set_reset(true);
+      if (!client->stream->Write(client_mark)) {
+        gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
+      }
+      ClientStatus client_status;
+      if (!client->stream->Read(&client_status)) {
+        gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
+      }
+    });
   }
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    if (!server->stream->Read(&server_status)) {
-      gpr_log(GPR_ERROR, "Couldn't get status from server %zu", i);
-    }
-  }
-  for (size_t i = 0; i < num_clients; i++) {
-    auto client = &clients[i];
-    if (!client->stream->Read(&client_status)) {
-      gpr_log(GPR_ERROR, "Couldn't get status from client %zu", i);
-    }
-  }
+  finish_jobs();
 
   // Wait some time
   gpr_log(GPR_INFO, "Running");
+  log_deadline_stuff();
   // Use gpr_sleep_until rather than this_thread::sleep_until to support
   // compilers that don't work with this_thread
   gpr_sleep_until(gpr_time_add(
@@ -436,43 +483,84 @@ std::unique_ptr<ScenarioResult> RunScenario(
   Histogram merged_latencies;
   std::unordered_map<int, int64_t> merged_statuses;
 
-  gpr_log(GPR_INFO, "Finishing clients");
+  gpr_log(GPR_INFO, "Finishing clients & servers");
+  log_deadline_stuff();
+  std::mutex merge_mu;
   for (size_t i = 0; i < num_clients; i++) {
-    auto client = &clients[i];
-    if (!client->stream->Write(client_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
-    }
-    if (!client->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for client %zu", i);
-    }
-  }
-  for (size_t i = 0; i < num_clients; i++) {
-    auto client = &clients[i];
-    // Read the client final status
-    if (client->stream->Read(&client_status)) {
-      gpr_log(GPR_INFO, "Received final status from client %zu", i);
-      const auto& stats = client_status.stats();
-      merged_latencies.MergeProto(stats.latencies());
-      for (int i = 0; i < stats.request_results_size(); i++) {
-        merged_statuses[stats.request_results(i).status_code()] +=
-            stats.request_results(i).count();
+    add_job([&merge_mu, &result, &merged_statuses, &merged_latencies, &clients,
+             i]() {
+      auto client = &clients[i];
+      ClientArgs client_mark;
+      client_mark.mutable_mark()->set_reset(true);
+      if (!client->stream->Write(client_mark)) {
+        gpr_log(GPR_ERROR, "Couldn't write mark to client %zu", i);
       }
-      result->add_client_stats()->CopyFrom(stats);
-      // That final status should be the last message on the client stream
-      GPR_ASSERT(!client->stream->Read(&client_status));
-    } else {
-      gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
-    }
+      if (!client->stream->WritesDone()) {
+        gpr_log(GPR_ERROR, "Failed WritesDone for client %zu", i);
+      }
+      // Read the client final status
+      ClientStatus client_status;
+      if (client->stream->Read(&client_status)) {
+        gpr_log(GPR_INFO, "Received final status from client %zu", i);
+        {
+          std::lock_guard<std::mutex> lock(merge_mu);
+          const auto& stats = client_status.stats();
+          merged_latencies.MergeProto(stats.latencies());
+          for (int i = 0; i < stats.request_results_size(); i++) {
+            merged_statuses[stats.request_results(i).status_code()] +=
+                stats.request_results(i).count();
+          }
+          result->add_client_stats()->CopyFrom(stats);
+        }
+        // That final status should be the last message on the client stream
+        GPR_ASSERT(!client->stream->Read(&client_status));
+      } else {
+        gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
+      }
+      Status s = client->stream->Finish();
+      std::lock_guard<std::mutex> lock(merge_mu);
+      result->add_client_success(s.ok());
+      if (!s.ok()) {
+        gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
+                s.error_message().c_str());
+      }
+    });
   }
-  for (size_t i = 0; i < num_clients; i++) {
-    auto client = &clients[i];
-    Status s = client->stream->Finish();
-    result->add_client_success(s.ok());
-    if (!s.ok()) {
-      gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
-              s.error_message().c_str());
-    }
+  for (size_t i = 0; i < num_servers; i++) {
+    add_job([&servers, i, &result, &merge_mu] {
+      auto server = &servers[i];
+      ServerArgs server_mark;
+      server_mark.mutable_mark()->set_reset(true);
+      if (!server->stream->Write(server_mark)) {
+        gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+      }
+      if (!server->stream->WritesDone()) {
+        gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+      }
+      // Read the server final status
+      ServerStatus server_status;
+      if (server->stream->Read(&server_status)) {
+        gpr_log(GPR_INFO, "Received final status from server %zu", i);
+        {
+          std::lock_guard<std::mutex> lock(merge_mu);
+          result->add_server_stats()->CopyFrom(server_status.stats());
+          result->add_server_cores(server_status.cores());
+        }
+        // That final status should be the last message on the server stream
+        GPR_ASSERT(!server->stream->Read(&server_status));
+      } else {
+        gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
+      }
+      Status s = server->stream->Finish();
+      std::lock_guard<std::mutex> lock(merge_mu);
+      result->add_server_success(s.ok());
+      if (!s.ok()) {
+        gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
+                s.error_message().c_str());
+      }
+    });
   }
+  finish_jobs();
 
   merged_latencies.FillProto(result->mutable_latencies());
   for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
@@ -480,39 +568,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
     RequestResultCount* rrc = result->add_request_results();
     rrc->set_status_code(it->first);
     rrc->set_count(it->second);
-  }
-
-  gpr_log(GPR_INFO, "Finishing servers");
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
-    }
-    if (!server->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
-    }
-  }
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    // Read the server final status
-    if (server->stream->Read(&server_status)) {
-      gpr_log(GPR_INFO, "Received final status from server %zu", i);
-      result->add_server_stats()->CopyFrom(server_status.stats());
-      result->add_server_cores(server_status.cores());
-      // That final status should be the last message on the server stream
-      GPR_ASSERT(!server->stream->Read(&server_status));
-    } else {
-      gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
-    }
-  }
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    Status s = server->stream->Finish();
-    result->add_server_success(s.ok());
-    if (!s.ok()) {
-      gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
-              s.error_message().c_str());
-    }
   }
 
   if (g_inproc_servers != nullptr) {
