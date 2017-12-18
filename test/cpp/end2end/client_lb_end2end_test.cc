@@ -51,7 +51,7 @@ using std::chrono::system_clock;
 
 // defined in tcp_client_posix.c
 extern void (*grpc_tcp_client_connect_impl)(
-    grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
+    grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr, grpc_millis deadline);
 
@@ -63,8 +63,7 @@ namespace {
 
 int g_connection_delay_ms;
 
-void tcp_client_connect_with_delay(grpc_exec_ctx* exec_ctx,
-                                   grpc_closure* closure, grpc_endpoint** ep,
+void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
                                    grpc_pollset_set* interested_parties,
                                    const grpc_channel_args* channel_args,
                                    const grpc_resolved_address* addr,
@@ -73,8 +72,8 @@ void tcp_client_connect_with_delay(grpc_exec_ctx* exec_ctx,
     gpr_sleep_until(
         grpc_timeout_milliseconds_to_deadline(g_connection_delay_ms));
   }
-  original_tcp_connect_fn(exec_ctx, closure, ep, interested_parties,
-                          channel_args, addr, deadline);
+  original_tcp_connect_fn(closure, ep, interested_parties, channel_args, addr,
+                          deadline);
 }
 
 // Subclass of TestServiceImpl that increments a request counter for
