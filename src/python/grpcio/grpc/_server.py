@@ -408,7 +408,10 @@ def _take_response_from_response_iterator(rpc_event, state, response_iterator):
 
 
 def _serialize_response(rpc_event, state, response, response_serializer):
-    serialized_response = _common.serialize(response, response_serializer)
+    if state.code is None or state.code is grpc.StatusCode.OK:
+        serialized_response = _common.serialize(response, response_serializer)
+    else:
+        serialized_response = ''
     if serialized_response is None:
         with state.condition:
             _abort(state, rpc_event.operation_call, cygrpc.StatusCode.internal,
