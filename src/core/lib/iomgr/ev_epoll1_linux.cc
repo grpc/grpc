@@ -1233,7 +1233,7 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
  * NULL */
 const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
   gpr_log(GPR_ERROR,
-          "Skipping epoll1 becuase GRPC_LINUX_EPOLL is not defined.");
+          "Skipping epoll1 because GRPC_LINUX_EPOLL is not defined.");
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
