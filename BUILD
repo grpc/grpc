@@ -1468,13 +1468,13 @@ grpc_cc_library(
     name = "tsi",
     srcs = [
         "src/core/tsi/fake_transport_security.cc",
-        "src/core/tsi/gts_transport_security.cc",
+        "src/core/tsi/alts_transport_security.cc",
         "src/core/tsi/ssl_transport_security.cc",
         "src/core/tsi/transport_security_grpc.cc",
     ],
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
-        "src/core/tsi/gts_transport_security.h",
+        "src/core/tsi/alts_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
         "src/core/tsi/transport_security_grpc.h",
