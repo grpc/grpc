@@ -108,7 +108,7 @@ TEST_F(ExceptionTest, RequestStream) {
   EXPECT_EQ(s.error_message(), kErrorMessage);
 }
 
-#endif
+#endif  // GRPC_ALLOW_EXCEPTIONS
 
 }  // namespace testing
 }  // namespace grpc
