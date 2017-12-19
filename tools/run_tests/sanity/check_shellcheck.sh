@@ -20,6 +20,7 @@ ROOT="$(dirname "$0")/../../.."
 
 DIRS=(
     'tools/run_tests/helper_scripts'
+    'tools/run_tests/sanity'
 )
 
 for dir in "${DIRS[@]}"; do
