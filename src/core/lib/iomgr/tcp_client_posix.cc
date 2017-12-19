@@ -212,7 +212,6 @@ finish:
     fd = nullptr;
   }
   done = (--ac->refs == 0);
-  gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     char* error_descr;
     grpc_slice str;
@@ -227,6 +226,7 @@ finish:
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
                                grpc_slice_from_copied_string(ac->addr_str));
   }
+  gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
