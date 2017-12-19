@@ -113,13 +113,13 @@
 #include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-#define GRPC_GRPCLB_MIN_CONNECT_TIMEOUT_SECONDS 20
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6
 #define GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS 120
@@ -408,7 +408,7 @@ typedef struct glb_lb_policy {
   grpc_slice lb_call_status_details;
 
   /** LB call retry backoff state */
-  grpc_backoff lb_call_backoff_state;
+  grpc_core::ManualConstructor<grpc_core::BackOff> lb_call_backoff;
 
   /** LB call retry timer */
   grpc_timer lb_call_retry_timer;
@@ -1167,7 +1167,7 @@ static void start_picking_locked(glb_lb_policy* glb_policy) {
   }
 
   glb_policy->started_picking = true;
-  grpc_backoff_reset(&glb_policy->lb_call_backoff_state);
+  glb_policy->lb_call_backoff->Reset();
   query_for_backends_locked(glb_policy);
 }
 
@@ -1302,8 +1302,7 @@ static void maybe_restart_lb_call(glb_lb_policy* glb_policy) {
     glb_policy->updating_lb_call = false;
   } else if (!glb_policy->shutting_down) {
     /* if we aren't shutting down, restart the LB client call after some time */
-    grpc_millis next_try = grpc_backoff_step(&glb_policy->lb_call_backoff_state)
-                               .next_attempt_start_time;
+    grpc_millis next_try = glb_policy->lb_call_backoff->Step();
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
               glb_policy);
@@ -1463,12 +1462,14 @@ static void lb_call_init_locked(glb_lb_policy* glb_policy) {
                     lb_on_response_received_locked, glb_policy,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
 
-  grpc_backoff_init(&glb_policy->lb_call_backoff_state,
-                    GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS * 1000,
-                    GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER,
-                    GRPC_GRPCLB_RECONNECT_JITTER,
-                    GRPC_GRPCLB_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
-                    GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
+  grpc_core::BackOff::Options backoff_options;
+  backoff_options
+      .set_initial_backoff(GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS * 1000)
+      .set_multiplier(GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER)
+      .set_jitter(GRPC_GRPCLB_RECONNECT_JITTER)
+      .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
+
+  glb_policy->lb_call_backoff.Init(backoff_options);
 
   glb_policy->seen_initial_response = false;
   glb_policy->last_client_load_report_counters_were_zero = false;
@@ -1572,7 +1573,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
   memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;
   if (glb_policy->lb_response_payload != nullptr) {
-    grpc_backoff_reset(&glb_policy->lb_call_backoff_state);
+    glb_policy->lb_call_backoff->Reset();
     /* Received data from the LB server. Look inside
      * glb_policy->lb_response_payload, for a serverlist. */
     grpc_byte_buffer_reader bbr;

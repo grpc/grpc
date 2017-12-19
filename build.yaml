@@ -1769,17 +1769,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: backoff_test
-  build: test
-  language: c
-  src:
-  - test/core/backoff/backoff_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: bad_server_response_test
   build: test
   language: c
@@ -3453,6 +3442,17 @@ targets:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
+- name: backoff_test
+  build: test
+  language: c++
+  src:
+  - test/core/backoff/backoff_test.cc
+  deps:
+  - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
