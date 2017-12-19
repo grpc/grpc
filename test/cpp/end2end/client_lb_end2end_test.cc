@@ -28,6 +28,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
@@ -61,19 +62,19 @@ namespace grpc {
 namespace testing {
 namespace {
 
-int g_connection_delay_ms;
+gpr_atm g_connection_delay_ms;
 
 void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
                                    grpc_pollset_set* interested_parties,
                                    const grpc_channel_args* channel_args,
                                    const grpc_resolved_address* addr,
                                    grpc_millis deadline) {
-  if (g_connection_delay_ms > 0) {
-    gpr_sleep_until(
-        grpc_timeout_milliseconds_to_deadline(g_connection_delay_ms));
+  const int delay_ms = gpr_atm_acq_load(&g_connection_delay_ms);
+  if (delay_ms > 0) {
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
   }
   original_tcp_connect_fn(closure, ep, interested_parties, channel_args, addr,
-                          deadline);
+                          deadline + delay_ms);
 }
 
 // Subclass of TestServiceImpl that increments a request counter for
@@ -352,7 +353,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   SetNextResolution(ports);
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
-  g_connection_delay_ms = kMinReconnectBackOffMs * 1.10;
+  gpr_atm_rel_store(&g_connection_delay_ms, kMinReconnectBackOffMs * 1.10);
   grpc_tcp_client_connect_impl = tcp_client_connect_with_delay;
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   channel_->WaitForConnected(
@@ -363,7 +364,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   // We should have waited at least kMinReconnectBackOffMs. We substract one to
   // account for test and precision accuracy drift.
   EXPECT_GE(waited_ms, kMinReconnectBackOffMs - 1);
-  g_connection_delay_ms = 0;
+  gpr_atm_rel_store(&g_connection_delay_ms, 0);
 }
 
 TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
