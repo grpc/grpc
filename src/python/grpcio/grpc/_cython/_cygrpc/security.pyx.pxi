@@ -14,12 +14,11 @@
 
 from libc.string cimport memcpy
 
-import pkg_resources
-
 
 cdef grpc_ssl_roots_override_result ssl_roots_override_callback(
     char **pem_root_certs) nogil:
   with gil:
+    import pkg_resources
     temporary_pem_root_certs = pkg_resources.resource_string(
         __name__.rstrip('.cygrpc'), '_credentials/roots.pem')
     pem_root_certs[0] = <char *>gpr_malloc(len(temporary_pem_root_certs) + 1)
@@ -86,4 +85,3 @@ def auth_context(Call call):
         py_auth_context[key] = [<bytes> property.value]
   grpc_auth_context_release(auth_context)
   return py_auth_context
-  
