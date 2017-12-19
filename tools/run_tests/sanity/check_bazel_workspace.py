@@ -30,8 +30,6 @@ git_hash_pattern = re.compile('[0-9a-f]{40}')
 git_submodules = subprocess.check_output('git submodule', shell=True).strip().split('\n')
 git_submodule_hashes = {re.search(git_hash_pattern, s).group() for s in git_submodules}
 
-_BAZEL_TOOLCHAINS_DEP_NAME = 'com_github_bazelbuild_bazeltoolchains'
-
 _GRPC_DEP_NAMES = [
     'boringssl',
     'com_github_madler_zlib',
@@ -41,7 +39,6 @@ _GRPC_DEP_NAMES = [
     'com_github_google_benchmark',
     'com_github_cares_cares',
     'com_google_absl',
-    _BAZEL_TOOLCHAINS_DEP_NAME,
 ]
 
 
@@ -66,9 +63,6 @@ class BazelEvalState(object):
         return []
 
     def archive(self, **args):
-        if args['name'] == _BAZEL_TOOLCHAINS_DEP_NAME:
-            self.names_and_urls[args['name']] = 'dont care'
-            return
         self.names_and_urls[args['name']] = args['url']
 
 
@@ -88,11 +82,7 @@ for name in _GRPC_DEP_NAMES:
     assert name in names_and_urls.keys()
 assert len(_GRPC_DEP_NAMES) == len(names_and_urls.keys())
 
-# bazeltoolschains is an exception to this sanity check,
-# we don't require that there is a corresponding git module.
-names_without_bazeltoolchains = names_and_urls.keys()
-names_without_bazeltoolchains.remove(_BAZEL_TOOLCHAINS_DEP_NAME)
-archive_urls = [names_and_urls[name] for name in names_without_bazeltoolchains]
+archive_urls = [names_and_urls[name] for name in names_and_urls.keys()]
 workspace_git_hashes = {
     re.search(git_hash_pattern, url).group()
     for url in archive_urls

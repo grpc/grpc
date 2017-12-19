@@ -55,8 +55,6 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     name = name,
     srcs = srcs,
     defines = select({"//:grpc_no_ares": ["GRPC_ARES=0"],
-                      "//conditions:default": [],}) +
-              select({"//:remote_execution":  ["GRPC_PORT_ISOLATED_RUNTIME=1"],
                       "//conditions:default": [],}),
     hdrs = _maybe_update_cc_library_hdrs(hdrs + public_hdrs),
     deps = deps + _get_external_deps(external_deps),
