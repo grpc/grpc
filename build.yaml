@@ -4020,7 +4020,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  uses_polling: false
 - name: filter_end2end_test
   gtest: true
   build: test
