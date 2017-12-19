@@ -34,16 +34,19 @@ _UNARY_STREAM = '/test/UnaryStream'
 _STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
 
-_CLIENT_METADATA = (('client-md-key', 'client-md-key'),
-                    ('client-md-key-bin', b'\x00\x01'))
+_INVOCATION_METADATA = ((b'invocation-md-key', u'invocation-md-value',),
+                        (u'invocation-md-key-bin', b'\x00\x01',),)
+_EXPECTED_INVOCATION_METADATA = (('invocation-md-key', 'invocation-md-value',),
+                                 ('invocation-md-key-bin', b'\x00\x01',),)
 
-_SERVER_INITIAL_METADATA = (
-    ('server-initial-md-key', 'server-initial-md-value'),
-    ('server-initial-md-key-bin', b'\x00\x02'))
+_INITIAL_METADATA = ((b'initial-md-key', u'initial-md-value'),
+                     (u'initial-md-key-bin', b'\x00\x02'))
+_EXPECTED_INITIAL_METADATA = (('initial-md-key', 'initial-md-value',),
+                              ('initial-md-key-bin', b'\x00\x02',),)
 
-_SERVER_TRAILING_METADATA = (
-    ('server-trailing-md-key', 'server-trailing-md-value'),
-    ('server-trailing-md-key-bin', b'\x00\x03'))
+_TRAILING_METADATA = (('server-trailing-md-key', 'server-trailing-md-value',),
+                      ('server-trailing-md-key-bin', b'\x00\x03',),)
+_EXPECTED_TRAILING_METADATA = _TRAILING_METADATA
 
 
 def user_agent(metadata):
@@ -56,7 +59,8 @@ def user_agent(metadata):
 def validate_client_metadata(test, servicer_context):
     test.assertTrue(
         test_common.metadata_transmitted(
-            _CLIENT_METADATA, servicer_context.invocation_metadata()))
+            _EXPECTED_INVOCATION_METADATA,
+            servicer_context.invocation_metadata()))
     test.assertTrue(
         user_agent(servicer_context.invocation_metadata())
         .startswith('primary-agent ' + _channel._USER_AGENT))
@@ -67,23 +71,23 @@ def validate_client_metadata(test, servicer_context):
 
 def handle_unary_unary(test, request, servicer_context):
     validate_client_metadata(test, servicer_context)
-    servicer_context.send_initial_metadata(_SERVER_INITIAL_METADATA)
-    servicer_context.set_trailing_metadata(_SERVER_TRAILING_METADATA)
+    servicer_context.send_initial_metadata(_INITIAL_METADATA)
+    servicer_context.set_trailing_metadata(_TRAILING_METADATA)
     return _RESPONSE
 
 
 def handle_unary_stream(test, request, servicer_context):
     validate_client_metadata(test, servicer_context)
-    servicer_context.send_initial_metadata(_SERVER_INITIAL_METADATA)
-    servicer_context.set_trailing_metadata(_SERVER_TRAILING_METADATA)
+    servicer_context.send_initial_metadata(_INITIAL_METADATA)
+    servicer_context.set_trailing_metadata(_TRAILING_METADATA)
     for _ in range(test_constants.STREAM_LENGTH):
         yield _RESPONSE
 
 
 def handle_stream_unary(test, request_iterator, servicer_context):
     validate_client_metadata(test, servicer_context)
-    servicer_context.send_initial_metadata(_SERVER_INITIAL_METADATA)
-    servicer_context.set_trailing_metadata(_SERVER_TRAILING_METADATA)
+    servicer_context.send_initial_metadata(_INITIAL_METADATA)
+    servicer_context.set_trailing_metadata(_TRAILING_METADATA)
     # TODO(issue:#6891) We should be able to remove this loop
     for request in request_iterator:
         pass
@@ -92,8 +96,8 @@ def handle_stream_unary(test, request_iterator, servicer_context):
 
 def handle_stream_stream(test, request_iterator, servicer_context):
     validate_client_metadata(test, servicer_context)
-    servicer_context.send_initial_metadata(_SERVER_INITIAL_METADATA)
-    servicer_context.set_trailing_metadata(_SERVER_TRAILING_METADATA)
+    servicer_context.send_initial_metadata(_INITIAL_METADATA)
+    servicer_context.set_trailing_metadata(_TRAILING_METADATA)
     # TODO(issue:#6891) We should be able to remove this loop,
     # and replace with return; yield
     for request in request_iterator:
@@ -156,50 +160,50 @@ class MetadataTest(unittest.TestCase):
     def testUnaryUnary(self):
         multi_callable = self._channel.unary_unary(_UNARY_UNARY)
         unused_response, call = multi_callable.with_call(
-            _REQUEST, metadata=_CLIENT_METADATA)
+            _REQUEST, metadata=_INVOCATION_METADATA)
         self.assertTrue(
-            test_common.metadata_transmitted(_SERVER_INITIAL_METADATA,
+            test_common.metadata_transmitted(_EXPECTED_INITIAL_METADATA,
                                              call.initial_metadata()))
         self.assertTrue(
-            test_common.metadata_transmitted(_SERVER_TRAILING_METADATA,
+            test_common.metadata_transmitted(_EXPECTED_TRAILING_METADATA,
                                              call.trailing_metadata()))
 
     def testUnaryStream(self):
         multi_callable = self._channel.unary_stream(_UNARY_STREAM)
-        call = multi_callable(_REQUEST, metadata=_CLIENT_METADATA)
+        call = multi_callable(_REQUEST, metadata=_INVOCATION_METADATA)
         self.assertTrue(
-            test_common.metadata_transmitted(_SERVER_INITIAL_METADATA,
+            test_common.metadata_transmitted(_EXPECTED_INITIAL_METADATA,
                                              call.initial_metadata()))
         for _ in call:
             pass
         self.assertTrue(
-            test_common.metadata_transmitted(_SERVER_TRAILING_METADATA,
+            test_common.metadata_transmitted(_EXPECTED_TRAILING_METADATA,
                                              call.trailing_metadata()))
 
     def testStreamUnary(self):
         multi_callable = self._channel.stream_unary(_STREAM_UNARY)
         unused_response, call = multi_callable.with_call(
             iter([_REQUEST] * test_constants.STREAM_LENGTH),
-            metadata=_CLIENT_METADATA)
+            metadata=_INVOCATION_METADATA)
         self.assertTrue(
-            test_common.metadata_transmitted(_SERVER_INITIAL_METADATA,
+            test_common.metadata_transmitted(_EXPECTED_INITIAL_METADATA,
                                              call.initial_metadata()))
         self.assertTrue(
-            test_common.metadata_transmitted(_SERVER_TRAILING_METADATA,
+            test_common.metadata_transmitted(_EXPECTED_TRAILING_METADATA,
                                              call.trailing_metadata()))
 
     def testStreamStream(self):
         multi_callable = self._channel.stream_stream(_STREAM_STREAM)
         call = multi_callable(
             iter([_REQUEST] * test_constants.STREAM_LENGTH),
-            metadata=_CLIENT_METADATA)
+            metadata=_INVOCATION_METADATA)
         self.assertTrue(
-            test_common.metadata_transmitted(_SERVER_INITIAL_METADATA,
+            test_common.metadata_transmitted(_EXPECTED_INITIAL_METADATA,
                                              call.initial_metadata()))
         for _ in call:
             pass
         self.assertTrue(
-            test_common.metadata_transmitted(_SERVER_TRAILING_METADATA,
+            test_common.metadata_transmitted(_EXPECTED_TRAILING_METADATA,
                                              call.trailing_metadata()))
 
 

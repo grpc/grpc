@@ -124,13 +124,32 @@ void ParseMetadataFlag(
     return;
   }
   std::vector<grpc::string> fields;
-  const char* delim = ":";
-  size_t cur, next = -1;
-  do {
-    cur = next + 1;
-    next = FLAGS_metadata.find_first_of(delim, cur);
-    fields.push_back(FLAGS_metadata.substr(cur, next - cur));
-  } while (next != grpc::string::npos);
+  const char delim = ':';
+  const char escape = '\\';
+  size_t cur = -1;
+  std::stringstream ss;
+  while (++cur < FLAGS_metadata.length()) {
+    switch (FLAGS_metadata.at(cur)) {
+      case escape:
+        if (cur < FLAGS_metadata.length() - 1) {
+          char c = FLAGS_metadata.at(++cur);
+          if (c == delim || c == escape) {
+            ss << c;
+            continue;
+          }
+        }
+        fprintf(stderr, "Failed to parse metadata flag.\n");
+        exit(1);
+      case delim:
+        fields.push_back(ss.str());
+        ss.str("");
+        ss.clear();
+        break;
+      default:
+        ss << FLAGS_metadata.at(cur);
+    }
+  }
+  fields.push_back(ss.str());
   if (fields.size() % 2) {
     fprintf(stderr, "Failed to parse metadata flag.\n");
     exit(1);

@@ -70,7 +70,8 @@ class ReflectionServicer(reflection_pb2_grpc.ServerReflectionServicer):
 
     def _file_containing_extension(self, containing_type, extension_number):
         try:
-            message_descriptor = self._pool.FindMessageTypeByName(containing_type)
+            message_descriptor = self._pool.FindMessageTypeByName(
+                containing_type)
             extension_descriptor = self._pool.FindExtensionByNumber(
                 message_descriptor, extension_number)
             descriptor = self._pool.FindFileContainingSymbol(
@@ -82,10 +83,13 @@ class ReflectionServicer(reflection_pb2_grpc.ServerReflectionServicer):
 
     def _all_extension_numbers_of_type(self, containing_type):
         try:
-            message_descriptor = self._pool.FindMessageTypeByName(containing_type)
-            extension_numbers = tuple(sorted(
-                extension.number
-                for extension in self._pool.FindAllExtensions(message_descriptor)))
+            message_descriptor = self._pool.FindMessageTypeByName(
+                containing_type)
+            extension_numbers = tuple(
+                sorted(
+                    extension.number
+                    for extension in self._pool.FindAllExtensions(
+                        message_descriptor)))
         except KeyError:
             return _not_found_error()
         else:

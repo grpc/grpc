@@ -270,7 +270,11 @@ static size_t get_target_read_size(grpc_tcp* tcp) {
 
 static grpc_error* tcp_annotate_error(grpc_error* src_error, grpc_tcp* tcp) {
   return grpc_error_set_str(
-      grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+      grpc_error_set_int(
+          grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+          /* All tcp errors are marked with UNAVAILABLE so that application may
+           * choose to retry. */
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
       GRPC_ERROR_STR_TARGET_ADDRESS,
       grpc_slice_from_copied_string(tcp->peer_string));
 }
@@ -565,9 +569,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
         }
         return false;
       } else if (errno == EPIPE) {
-        *error = grpc_error_set_int(GRPC_OS_ERROR(errno, "sendmsg"),
-                                    GRPC_ERROR_INT_GRPC_STATUS,
-                                    GRPC_STATUS_UNAVAILABLE);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
         return true;
       } else {

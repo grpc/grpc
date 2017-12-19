@@ -122,8 +122,8 @@ def _abort(state, code, details):
         state.code = code
         state.details = details
         if state.initial_metadata is None:
-            state.initial_metadata = _common.EMPTY_METADATA
-        state.trailing_metadata = _common.EMPTY_METADATA
+            state.initial_metadata = ()
+        state.trailing_metadata = ()
 
 
 def _handle_event(event, state, response_deserializer):
@@ -202,8 +202,7 @@ def _consume_request_iterator(request_iterator, state, call,
                     else:
                         operations = (cygrpc.operation_send_message(
                             serialized_request, _EMPTY_FLAGS),)
-                        call.start_client_batch(
-                            cygrpc.Operations(operations), event_handler)
+                        call.start_client_batch(operations, event_handler)
                         state.due.add(cygrpc.OperationType.send_message)
                         while True:
                             state.condition.wait()
@@ -218,8 +217,7 @@ def _consume_request_iterator(request_iterator, state, call,
             if state.code is None:
                 operations = (
                     cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),)
-                call.start_client_batch(
-                    cygrpc.Operations(operations), event_handler)
+                call.start_client_batch(operations, event_handler)
                 state.due.add(cygrpc.OperationType.send_close_from_client)
 
     def stop_consumption_thread(timeout):  # pylint: disable=unused-argument
@@ -321,8 +319,7 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
                 event_handler = _event_handler(self._state, self._call,
                                                self._response_deserializer)
                 self._call.start_client_batch(
-                    cygrpc.Operations(
-                        (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
+                    (cygrpc.operation_receive_message(_EMPTY_FLAGS),),
                     event_handler)
                 self._state.due.add(cygrpc.OperationType.receive_message)
             elif self._state.code is grpc.StatusCode.OK:
@@ -372,14 +369,13 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
         with self._state.condition:
             while self._state.initial_metadata is None:
                 self._state.condition.wait()
-            return _common.to_application_metadata(self._state.initial_metadata)
+            return self._state.initial_metadata
 
     def trailing_metadata(self):
         with self._state.condition:
             while self._state.trailing_metadata is None:
                 self._state.condition.wait()
-            return _common.to_application_metadata(
-                self._state.trailing_metadata)
+            return self._state.trailing_metadata
 
     def code(self):
         with self._state.condition:
@@ -420,8 +416,7 @@ def _start_unary_request(request, timeout, request_serializer):
     deadline, deadline_timespec = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
     if serialized_request is None:
-        state = _RPCState((), _common.EMPTY_METADATA, _common.EMPTY_METADATA,
-                          grpc.StatusCode.INTERNAL,
+        state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                           'Exception serializing request!')
         rendezvous = _Rendezvous(state, None, None, deadline)
         return deadline, deadline_timespec, None, rendezvous
@@ -458,8 +453,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         else:
             state = _RPCState(_UNARY_UNARY_INITIAL_DUE, None, None, None, None)
             operations = (
-                cygrpc.operation_send_initial_metadata(
-                    _common.to_cygrpc_metadata(metadata), _EMPTY_FLAGS),
+                cygrpc.operation_send_initial_metadata(metadata, _EMPTY_FLAGS),
                 cygrpc.operation_send_message(serialized_request, _EMPTY_FLAGS),
                 cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
                 cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),
@@ -479,8 +473,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                                              deadline_timespec)
             if credentials is not None:
                 call.set_credentials(credentials._credentials)
-            call_error = call.start_client_batch(
-                cygrpc.Operations(operations), None)
+            call_error = call.start_client_batch(operations, None)
             _check_call_error(call_error, metadata)
             _handle_event(completion_queue.poll(), state,
                           self._response_deserializer)
@@ -509,8 +502,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             event_handler = _event_handler(state, call,
                                            self._response_deserializer)
             with state.condition:
-                call_error = call.start_client_batch(
-                    cygrpc.Operations(operations), event_handler)
+                call_error = call.start_client_batch(operations, event_handler)
                 if call_error != cygrpc.CallError.ok:
                     _call_error_set_RPCstate(state, call_error, metadata)
                     return _Rendezvous(state, None, None, deadline)
@@ -544,18 +536,15 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                                            self._response_deserializer)
             with state.condition:
                 call.start_client_batch(
-                    cygrpc.Operations((
-                        cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),
-                    )), event_handler)
+                    (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),),
+                    event_handler)
                 operations = (
                     cygrpc.operation_send_initial_metadata(
-                        _common.to_cygrpc_metadata(metadata),
-                        _EMPTY_FLAGS), cygrpc.operation_send_message(
+                        metadata, _EMPTY_FLAGS), cygrpc.operation_send_message(
                             serialized_request, _EMPTY_FLAGS),
                     cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
                     cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
-                call_error = call.start_client_batch(
-                    cygrpc.Operations(operations), event_handler)
+                call_error = call.start_client_batch(operations, event_handler)
                 if call_error != cygrpc.CallError.ok:
                     _call_error_set_RPCstate(state, call_error, metadata)
                     return _Rendezvous(state, None, None, deadline)
@@ -584,16 +573,13 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             call.set_credentials(credentials._credentials)
         with state.condition:
             call.start_client_batch(
-                cygrpc.Operations(
-                    (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),)),
+                (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),),
                 None)
             operations = (
-                cygrpc.operation_send_initial_metadata(
-                    _common.to_cygrpc_metadata(metadata), _EMPTY_FLAGS),
+                cygrpc.operation_send_initial_metadata(metadata, _EMPTY_FLAGS),
                 cygrpc.operation_receive_message(_EMPTY_FLAGS),
                 cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
-            call_error = call.start_client_batch(
-                cygrpc.Operations(operations), None)
+            call_error = call.start_client_batch(operations, None)
             _check_call_error(call_error, metadata)
             _consume_request_iterator(request_iterator, state, call,
                                       self._request_serializer)
@@ -638,16 +624,13 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         event_handler = _event_handler(state, call, self._response_deserializer)
         with state.condition:
             call.start_client_batch(
-                cygrpc.Operations(
-                    (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),)),
+                (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),),
                 event_handler)
             operations = (
-                cygrpc.operation_send_initial_metadata(
-                    _common.to_cygrpc_metadata(metadata), _EMPTY_FLAGS),
+                cygrpc.operation_send_initial_metadata(metadata, _EMPTY_FLAGS),
                 cygrpc.operation_receive_message(_EMPTY_FLAGS),
                 cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
-            call_error = call.start_client_batch(
-                cygrpc.Operations(operations), event_handler)
+            call_error = call.start_client_batch(operations, event_handler)
             if call_error != cygrpc.CallError.ok:
                 _call_error_set_RPCstate(state, call_error, metadata)
                 return _Rendezvous(state, None, None, deadline)
@@ -681,15 +664,12 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         event_handler = _event_handler(state, call, self._response_deserializer)
         with state.condition:
             call.start_client_batch(
-                cygrpc.Operations(
-                    (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),)),
+                (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),),
                 event_handler)
             operations = (
-                cygrpc.operation_send_initial_metadata(
-                    _common.to_cygrpc_metadata(metadata), _EMPTY_FLAGS),
+                cygrpc.operation_send_initial_metadata(metadata, _EMPTY_FLAGS),
                 cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
-            call_error = call.start_client_batch(
-                cygrpc.Operations(operations), event_handler)
+            call_error = call.start_client_batch(operations, event_handler)
             if call_error != cygrpc.CallError.ok:
                 _call_error_set_RPCstate(state, call_error, metadata)
                 return _Rendezvous(state, None, None, deadline)

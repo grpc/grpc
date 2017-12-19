@@ -192,7 +192,7 @@ static bool wait_until(grpc_millis next) {
     }
 
     gpr_cv_wait(&g_cv_wait, &g_mu,
-                grpc_millis_to_timespec(next, GPR_CLOCK_REALTIME));
+                grpc_millis_to_timespec(next, GPR_CLOCK_MONOTONIC));
 
     if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG, "wait ended: was_timed:%d kicked:%d",
@@ -317,7 +317,7 @@ static void stop_threads(void) {
       gpr_log(GPR_DEBUG, "num timer threads: %d", g_thread_count);
     }
     while (g_thread_count > 0) {
-      gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+      gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
       if (grpc_timer_check_trace.enabled()) {
         gpr_log(GPR_DEBUG, "num timer threads: %d", g_thread_count);
       }
