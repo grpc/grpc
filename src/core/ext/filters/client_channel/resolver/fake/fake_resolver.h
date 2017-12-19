@@ -18,33 +18,11 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"
-
-typedef struct {
-  // base class -- must be first
-  grpc_resolver base;
-
-  // passed-in parameters
-  grpc_channel_args* channel_args;
-
-  // If not NULL, the next set of resolution results to be returned to
-  // grpc_resolver_next_locked()'s closure.
-  grpc_channel_args* next_results;
-
-  // Results to use for the pretended re-resolution in
-  // fake_resolver_channel_saw_error_locked().
-  grpc_channel_args* results_upon_error;
-
-  // pending next completion, or NULL
-  grpc_closure* next_completion;
-  // target result address for next completion
-  grpc_channel_args** target_result;
-} fake_resolver;
 
 void grpc_resolver_fake_init();
 

@@ -46,6 +46,27 @@
 // fake_resolver
 //
 
+typedef struct {
+  // base class -- must be first
+  grpc_resolver base;
+
+  // passed-in parameters
+  grpc_channel_args* channel_args;
+
+  // If not NULL, the next set of resolution results to be returned to
+  // grpc_resolver_next_locked()'s closure.
+  grpc_channel_args* next_results;
+
+  // Results to use for the pretended re-resolution in
+  // fake_resolver_channel_saw_error_locked().
+  grpc_channel_args* results_upon_error;
+
+  // pending next completion, or NULL
+  grpc_closure* next_completion;
+  // target result address for next completion
+  grpc_channel_args** target_result;
+} fake_resolver;
+
 static void fake_resolver_destroy(grpc_resolver* gr) {
   fake_resolver* r = (fake_resolver*)gr;
   grpc_channel_args_destroy(r->next_results);
