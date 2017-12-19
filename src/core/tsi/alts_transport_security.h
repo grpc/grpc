@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
 
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
@@ -34,4 +34,4 @@ typedef struct alts_shared_resource {
  *    TSI handshakes. */
 alts_shared_resource* alts_get_shared_resource(void);
 
-#endif /* GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H */
+#endif /* GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H */
