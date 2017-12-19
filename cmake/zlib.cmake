@@ -13,26 +13,33 @@
 # limitations under the License.
 
 if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
-  if(NOT ZLIB_ROOT_DIR)
-    set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
-  endif()
-  if(EXISTS "${ZLIB_ROOT_DIR}/CMakeLists.txt")
-    # TODO(jtattermusch): workaround for https://github.com/madler/zlib/issues/218
-    include_directories("${ZLIB_ROOT_DIR}")
-    add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
+  # Build dependency as external project from git submodule
 
-    if(TARGET zlibstatic)
-      set(_gRPC_ZLIB_LIBRARIES zlibstatic)
-      set(_gRPC_ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib")
-    endif()
+  include(ExternalProject)
+
+  ExternalProject_Add(zlib
+    PREFIX zlib
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib"
+    CMAKE_CACHE_ARGS
+          ${_gRPC_EP_COMMON_ARGS}
+          -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/zlib
+  )
+
+  add_library(zlib::zlibstatic STATIC IMPORTED)
+  add_dependencies(zlib::zlibstatic zlib)  # add dependency on the external project
+  if(WIN32)
+    set_property(TARGET zlib::zlibstatic PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/zlib/lib/zlibstatic.lib)
+    set_property(TARGET zlib::zlibstatic PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/zlib/lib/zlibstaticd.lib)
   else()
-      message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
+    set_property(TARGET zlib::zlibstatic PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/zlib/lib/libz.a)
   endif()
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ZLIB_PROVIDER is \"module\"")
-    set(gRPC_INSTALL FALSE)
-  endif()
+
+  set(_gRPC_ZLIB_LIBRARIES zlib::zlibstatic)
+  set(_gRPC_ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/zlib/include)
+
 elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
+  # Find pre-installed dependency
+
   find_package(ZLIB REQUIRED)
 
   if(TARGET ZLIB::ZLIB)
@@ -41,5 +48,7 @@ elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
     set(_gRPC_ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
   endif()
   set(_gRPC_ZLIB_INCLUDE_DIR ${ZLIB_INCLUDE_DIRS})
+
   set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
+
 endif()

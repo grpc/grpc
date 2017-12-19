@@ -13,24 +13,41 @@
 # limitations under the License.
 
 if("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "module")
-  if(NOT BENCHMARK_ROOT_DIR)
-    set(BENCHMARK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/benchmark)
-  endif()
-  if(EXISTS "${BENCHMARK_ROOT_DIR}/CMakeLists.txt")
-      add_subdirectory(${BENCHMARK_ROOT_DIR} third_party/benchmark)
-      if(TARGET benchmark)
-          set(_gRPC_BENCHMARK_LIBRARIES benchmark)
-          set(_gRPC_BENCHMARK_INCLUDE_DIR "${BENCHMARK_ROOT_DIR}/include")
-      endif()
+  # Build dependency as external project from git submodule
+
+  include(ExternalProject)
+
+  ExternalProject_Add(benchmark
+    PREFIX benchmark
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/benchmark"
+    CMAKE_CACHE_ARGS
+          ${_gRPC_EP_COMMON_ARGS}
+          -DBENCHMARK_ENABLE_TESTING:BOOL=OFF
+          -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/benchmark
+  )
+
+  add_library(benchmark::benchmark STATIC IMPORTED)
+  add_dependencies(benchmark::benchmark benchmark)  # add dependency on the external project
+  if(WIN32)
+    set_property(TARGET benchmark::benchmark PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/benchmark/lib/benchmark.lib)
   else()
-      message(WARNING "gRPC_BENCHMARK_PROVIDER is \"module\" but BENCHMARK_ROOT_DIR is wrong")
+    set_property(TARGET benchmark::benchmark PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/benchmark/lib/libbenchmark.a)
   endif()
+
+  set(_gRPC_BENCHMARK_LIBRARIES benchmark::benchmark)
+  set(_gRPC_BENCHMARK_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/benchmark/include)
+
 elseif("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "package")
+  # Find pre-installed dependency
+
   find_package(benchmark REQUIRED)
-  if(TARGET benchmark::benchmark)
-    set(_gRPC_BENCHMARK_LIBRARIES benchmark::benchmark)
-    # extract the include dir from target's properties
-    get_target_property(_gRPC_BENCHMARK_INCLUDE_DIR benchmark::benchmark INTERFACE_INCLUDE_DIRECTORIES)
+
+  if(NOT TARGET benchmark::benchmark)
+     message(WARNING "Target benchmark::benchmark not found by find_package")
   endif()
+  set(_gRPC_BENCHMARK_LIBRARIES benchmark::benchmark)
+  # extract the include dir from target's properties
+  get_target_property(_gRPC_BENCHMARK_INCLUDE_DIR benchmark::benchmark INTERFACE_INCLUDE_DIRECTORIES)
+
   set(_gRPC_FIND_BENCHMARK "if(NOT benchmark_FOUND)\n  find_package(benchmark)\nendif()")
 endif()

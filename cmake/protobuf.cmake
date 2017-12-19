@@ -12,46 +12,83 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if (gRPC_USE_PROTO_LITE)
+  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
+  add_definitions("-DGRPC_USE_PROTO_LITE")
+else()
+  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
+endif()
+
 if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
-  # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
-  # Disable them unless they are explicitly requested from the cmake command line (when we assume
-  # gmock is downloaded to the right location inside protobuf).
-  if(NOT protobuf_BUILD_TESTS)
-    set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
-  endif()
-  # Disable building protobuf with zlib. Building protobuf with zlib breaks
-  # the build if zlib is not installed on the system.
-  if(NOT protobuf_WITH_ZLIB)
-    set(protobuf_WITH_ZLIB OFF CACHE BOOL "Build protobuf with zlib.")
-  endif()
-  if(NOT PROTOBUF_ROOT_DIR)
-    set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
+  # Build dependency as external project from git submodule
+
+  include(ExternalProject)
+
+  ExternalProject_Add(protobuf
+    PREFIX protobuf
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf/cmake"
+    CMAKE_CACHE_ARGS
+          ${_gRPC_EP_COMMON_ARGS}
+          -Dprotobuf_BUILD_TESTS:BOOL=OFF
+          -Dprotobuf_WITH_ZLIB:BOOL=OFF
+          -Dprotobuf_MSVC_STATIC_RUNTIME:BOOL=${gRPC_MSVC_STATIC_RUNTIME}
+          -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/protobuf
+  )
+
+  add_library(protobuf::libprotobuf STATIC IMPORTED)
+  add_dependencies(protobuf::libprotobuf protobuf)  # add dependency on the external project
+
+  # protobuf uses GNUInstallDirs for its installation path, which makes it
+  # hard to determine the location of the installed libraries. Instead,
+  # we rely on identical libraries from protobuf's build tree.
+  if(WIN32)
+    set_property(TARGET protobuf::libprotobuf PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/Release/libprotobuf.lib)
+    set_property(TARGET protobuf::libprotobuf PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/Debug/libprotobufd.lib)
+  else()
+    set_property(TARGET protobuf::libprotobuf PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/libprotobuf.a)
+    set_property(TARGET protobuf::libprotobuf PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/libprotobufd.a)
   endif()
 
-  if(EXISTS "${PROTOBUF_ROOT_DIR}/cmake/CMakeLists.txt")
-    set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
-    add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
-    if(TARGET ${_gRPC_PROTOBUF_LIBRARY_NAME})
-      set(_gRPC_PROTOBUF_LIBRARIES ${_gRPC_PROTOBUF_LIBRARY_NAME})
-    endif()
-    if(TARGET libprotoc)
-      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
-    endif()
-    if(TARGET protoc)
-      set(_gRPC_PROTOBUF_PROTOC protoc)
-      set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protoc>)
-    endif()
-    set(_gRPC_PROTOBUF_INCLUDE_DIR "${PROTOBUF_ROOT_DIR}")
-    # For well-known .proto files distributed with protobuf
-    set(_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR "${PROTOBUF_ROOT_DIR}/src")
+  add_library(protobuf::libprotobuf-lite STATIC IMPORTED)
+  add_dependencies(protobuf::libprotobuf-lite protobuf)  # add dependency on the external project
+  if(WIN32)
+    set_property(TARGET protobuf::libprotobuf-lite PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/Release/libprotobuf-lite.lib)
+    set_property(TARGET protobuf::libprotobuf-lite PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/Debug/libprotobuf-lited.lib)
   else()
-      message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
+    set_property(TARGET protobuf::libprotobuf-lite PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/libprotobuf-lite.a)
+    set_property(TARGET protobuf::libprotobuf-lite PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/libprotobuf-lited.a)
   endif()
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_PROTOBUF_PROVIDER is \"module\"")
-    set(gRPC_INSTALL FALSE)
+
+  add_library(protobuf::libprotoc STATIC IMPORTED)
+  add_dependencies(protobuf::libprotoc protobuf)  # add dependency on the external project
+  if(WIN32)
+    set_property(TARGET protobuf::libprotoc PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/Release/libprotoc.lib)
+    set_property(TARGET protobuf::libprotoc PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/Debug/libprotocd.lib)
+  else()
+    set_property(TARGET protobuf::libprotoc PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/libprotoc.a)
+    set_property(TARGET protobuf::libprotoc PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/libprotocd.a)
   endif()
+
+  add_executable(protobuf::protoc IMPORTED)
+  add_dependencies(protobuf::protoc protobuf)  # add dependency on the external project
+  if(WIN32)
+    set_property(TARGET protobuf::protoc PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/Release/protoc.exe)
+    set_property(TARGET protobuf::protoc PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/Debug/protoc.exe)
+  else()
+    set_property(TARGET protobuf::protoc PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf-build/protoc)
+  endif()
+
+  set(_gRPC_PROTOBUF_LIBRARIES protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
+  set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
+  set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
+  set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protobuf::protoc>)
+  set(_gRPC_PROTOBUF_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/protobuf/include)
+  # For well-known .proto files distributed with protobuf
+  set(_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/protobuf/include)
+
 elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
+  # Find pre-installed dependency
+
   find_package(Protobuf REQUIRED ${gRPC_PROTOBUF_PACKAGE_TYPE})
 
   # {Protobuf,PROTOBUF}_FOUND is defined based on find_package type ("MODULE" vs "CONFIG").
@@ -66,11 +103,8 @@ elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
     endif()
     if(TARGET protobuf::libprotoc)
       set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
-      # extract the include dir from target's properties
-      get_target_property(_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR protobuf::libprotoc INTERFACE_INCLUDE_DIRECTORIES)
     else()
       set(_gRPC_PROTOBUF_PROTOC_LIBRARIES ${PROTOBUF_PROTOC_LIBRARIES})
-      set(_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR ${PROTOBUF_INCLUDE_DIRS})
     endif()
     if(TARGET protobuf::protoc)
       set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
@@ -79,7 +113,14 @@ elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
       set(_gRPC_PROTOBUF_PROTOC ${PROTOBUF_PROTOC_EXECUTABLE})
       set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE ${PROTOBUF_PROTOC_EXECUTABLE})
     endif()
-    set(_gRPC_PROTOBUF_INCLUDE_DIR ${PROTOBUF_INCLUDE_DIRS})
     set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND AND NOT PROTOBUF_FOUND)\n  find_package(Protobuf ${gRPC_PROTOBUF_PACKAGE_TYPE})\nendif()")
+  endif()
+  if(PROTOBUF_FOUND)
+    set(_gRPC_PROTOBUF_INCLUDE_DIR ${PROTOBUF_INCLUDE_DIRS})
+    set(_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR ${PROTOBUF_INCLUDE_DIRS})
+  endif()
+  if(Protobuf_FOUND)
+    set(_gRPC_PROTOBUF_INCLUDE_DIR ${Protobuf_INCLUDE_DIRS})
+    set(_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR ${Protobuf_INCLUDE_DIRS})
   endif()
 endif()

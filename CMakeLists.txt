@@ -44,7 +44,11 @@ if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(gRPC_INSTALL_default OFF)
 endif()
 set(gRPC_INSTALL ${gRPC_INSTALL_default} CACHE BOOL
-    "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
+    "Generate 'install' target")
+
+# Providers for third-party dependencies (gRPC_*_PROVIDER properties):
+# "module": build the dependency using sources from git submodule (under third_party)
+# "package": use cmake's find_package functionality to locate a pre-installed dependency
 
 # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
 # "module": build the dependency using sources from git submodule (under third_party)
@@ -86,10 +90,23 @@ if(WIN32)
   set(_gRPC_PLATFORM_WINDOWS ON)
 endif()
 
-set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+# IMPORTANT: These settings will be propagated to external projects' configuration
+# so they need to be set before defining the external projects.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+include(cmake/msvc_static_runtime.cmake)
+
+# Common settings for external projects
+include(cmake/external_common.cmake)
+
+# External projects
+include(cmake/zlib.cmake)
+include(cmake/cares.cmake)
+include(cmake/protobuf.cmake)
+include(cmake/ssl.cmake)
+include(cmake/gflags.cmake)
+include(cmake/benchmark.cmake)
 
 if (MSVC)
-  include(cmake/msvc_static_runtime.cmake)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
   # needed to compile protobuf
   add_definitions(/wd4065 /wd4506)
@@ -98,20 +115,6 @@ if (MSVC)
   # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
   add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
 endif()
-
-if (gRPC_USE_PROTO_LITE)
-  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
-  add_definitions("-DGRPC_USE_PROTO_LITE")
-else()
-  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
-endif()
-
-include(cmake/zlib.cmake)
-include(cmake/cares.cmake)
-include(cmake/protobuf.cmake)
-include(cmake/ssl.cmake)
-include(cmake/gflags.cmake)
-include(cmake/benchmark.cmake)
 
 if(NOT MSVC)
   set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")

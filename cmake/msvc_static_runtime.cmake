@@ -14,7 +14,7 @@
 
 option(gRPC_MSVC_STATIC_RUNTIME "Link with static msvc runtime libraries" OFF)
 
-if(gRPC_MSVC_STATIC_RUNTIME)
+if(MSVC AND gRPC_MSVC_STATIC_RUNTIME)
   # switch from dynamic to static linking of msvcrt
   foreach(flag_var
     CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE

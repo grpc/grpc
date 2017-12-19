@@ -13,24 +13,45 @@
 # limitations under the License.
 
 if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
-  if(NOT BORINGSSL_ROOT_DIR)
-    set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
-  endif()
-  if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
-    set(OPENSSL_NO_ASM ON)  # make boringssl buildable with Visual Studio
-    add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
-    if(TARGET ssl)
-      set(_gRPC_SSL_LIBRARIES ssl)
-      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/include)
-    endif()
+  # Build dependency as external project from git submodule
+
+  include(ExternalProject)
+
+  ExternalProject_Add(boringssl
+    PREFIX boringssl
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl"
+    INSTALL_COMMAND ""
+    CMAKE_CACHE_ARGS
+          ${_gRPC_EP_COMMON_ARGS}
+          # make boringssl buildable with Visual Studio
+          -DOPENSSL_NO_ASM:BOOL=ON
+          ${_gRPC_EXTRA_BORINGSSL_ARGS}
+  )
+
+  add_library(ssl::ssl STATIC IMPORTED)
+  add_dependencies(ssl::ssl boringssl)  # add dependency on the external project
+  if(WIN32)
+    set_property(TARGET ssl::ssl PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/boringssl/src/boringssl-build/ssl/Release/ssl.lib)
+    set_property(TARGET ssl::ssl PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/boringssl/src/boringssl-build/ssl/Debug/ssl.lib)
   else()
-      message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
+    set_property(TARGET ssl::ssl PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/boringssl/src/boringssl-build/ssl/libssl.a)
   endif()
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_SSL_PROVIDER is \"module\"")
-    set(gRPC_INSTALL FALSE)
+
+  add_library(ssl::crypto STATIC IMPORTED)
+  add_dependencies(ssl::crypto boringssl)  # add dependency on the external project
+  if(WIN32)
+    set_property(TARGET ssl::crypto PROPERTY IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/boringssl/src/boringssl-build/crypto/Release/crypto.lib)
+    set_property(TARGET ssl::crypto PROPERTY IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/boringssl/src/boringssl-build/crypto/Debug/crypto.lib)
+  else()
+    set_property(TARGET ssl::crypto PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/boringssl/src/boringssl-build/crypto/libcrypto.a)
   endif()
+
+  set(_gRPC_SSL_LIBRARIES ssl::ssl ssl::crypto)
+  set(_gRPC_SSL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl/include)
+
 elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
+  # Find pre-installed dependency
+
   find_package(OpenSSL REQUIRED)
   
   if(TARGET OpenSSL::SSL)
@@ -41,4 +62,5 @@ elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
   set(_gRPC_SSL_INCLUDE_DIR ${OPENSSL_INCLUDE_DIR})
   
   set(_gRPC_FIND_SSL "if(NOT OPENSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
+
 endif()
