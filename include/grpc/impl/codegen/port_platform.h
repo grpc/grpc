@@ -483,14 +483,14 @@ typedef unsigned __int64 uint64_t;
  * 0 on non-Windows platforms unless the compiler defines __EXCEPTIONS */
 #ifdef GPR_WINDOWS
 #define GRPC_ALLOW_EXCEPTIONS 1
-#else
+#else /* GPR_WINDOWS */
 #ifdef __EXCEPTIONS
 #define GRPC_ALLOW_EXCEPTIONS 1
-#else
+#else /* __EXCEPTIONS */
 #define GRPC_ALLOW_EXCEPTIONS 0
-#endif
-#endif
-#endif
+#endif /* __EXCEPTIONS */
+#endif /* __GPR_WINDOWS */
+#endif /* GRPC_ALLOW_EXCEPTIONS */
 
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS

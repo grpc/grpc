@@ -45,9 +45,9 @@ Status CatchingFunctionHandler(Callable&& handler) {
   } catch (...) {
     return Status(StatusCode::UNKNOWN, "Exception in method handler");
   }
-#else
+#else   // GRPC_ALLOW_EXCEPTIONS
   return handler();
-#endif
+#endif  // GRPC_ALLOW_EXCEPTIONS
 }
 
 /// A wrapper class of an application provided rpc method handler.
