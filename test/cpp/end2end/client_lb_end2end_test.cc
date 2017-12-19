@@ -363,7 +363,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   // We should have waited at least kMinReconnectBackOffMs. We substract one to
   // account for test and precision accuracy drift.
   EXPECT_GE(waited_ms, kMinReconnectBackOffMs - 1);
-  grpc_tcp_client_connect_impl = original_tcp_connect_fn;
+  g_connection_delay_ms = 0;
 }
 
 TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
