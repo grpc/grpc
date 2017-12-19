@@ -35,15 +35,19 @@ namespace internal {
 // so this process doesn't require additional overhead in the common case.
 // Additionally, we don't need to return if we caught an exception or not;
 // the handling is the same in either case.
-template <class F>
-Status CatchingFunctionHandler(F&& callable) {
+template <class Callable>
+Status CatchingFunctionHandler(Callable&& handler) {
+#if GRPC_ALLOW_EXCEPTIONS
   try {
-    return callable();
+    return handler();
   } catch (const std::exception& e) {
     return Status(StatusCode::UNKNOWN, e.what());
   } catch (...) {
     return Status(StatusCode::UNKNOWN, "Exception in method handler");
   }
+#else
+  return handler();
+#endif
 }
 
 /// A wrapper class of an application provided rpc method handler.

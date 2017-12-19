@@ -24,6 +24,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/impl/codegen/port_platform.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -35,6 +36,7 @@ namespace testing {
 
 const char* kErrorMessage = "This service caused an exception";
 
+#if GRPC_ALLOW_EXCEPTIONS
 class ExceptingServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* server_context, const EchoRequest* request,
@@ -105,6 +107,8 @@ TEST_F(ExceptionTest, RequestStream) {
   EXPECT_EQ(s.error_code(), StatusCode::UNKNOWN);
   EXPECT_EQ(s.error_message(), kErrorMessage);
 }
+
+#endif
 
 }  // namespace testing
 }  // namespace grpc

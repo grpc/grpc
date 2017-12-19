@@ -477,6 +477,21 @@ typedef unsigned __int64 uint64_t;
 #endif /* GPR_ATTRIBUTE_NO_TSAN (2) */
 #endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
 
+/* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */
+#ifndef GRPC_ALLOW_EXCEPTIONS
+/* If not already set, set to 1 on Windows (style guide standard) but to
+ * 0 on non-Windows platforms unless the compiler defines __EXCEPTIONS */
+#ifdef GPR_WINDOWS
+#define GRPC_ALLOW_EXCEPTIONS 1
+#else
+#ifdef __EXCEPTIONS
+#define GRPC_ALLOW_EXCEPTIONS 1
+#else
+#define GRPC_ALLOW_EXCEPTIONS 0
+#endif
+#endif
+#endif
+
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
