@@ -98,10 +98,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
 static void test_request(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_end2end_test_fixture f =
       begin_test(config, "filter_status_code", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
@@ -110,7 +106,6 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
@@ -139,11 +134,6 @@ static void test_request(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->data.send_initial_metadata.metadata = nullptr;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -214,9 +204,6 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_call_unref(c);
 
   cq_verifier_destroy(cqv);
-
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -297,8 +284,9 @@ static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
-    // can't add it at the very end, because the connected channel filter
-    // must be the last one.  So we add it right before the last one.
+    // can't add it at the very end, because the
+    // connected_channel/client_channel filter must be the last one.
+    // So we add it right before the last one.
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
@@ -314,9 +302,6 @@ static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
 static void init_plugin(void) {
   gpr_mu_init(&g_mu);
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_client_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
                                    maybe_add_filter,
                                    (void*)&test_client_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
