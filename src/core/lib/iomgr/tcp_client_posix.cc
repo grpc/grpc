@@ -228,7 +228,8 @@ finish:
     gpr_free(error_descr);
     gpr_free(desc);
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                               addr_str_slice);
+                               addr_str_slice /* takes ownership */);
+  } else {
     grpc_slice_unref(addr_str_slice);
   }
   if (done) {
