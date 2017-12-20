@@ -57,6 +57,7 @@ grpc_cc_test(
 
 grpc_cc_binary(
     name = "golden_file_test",
+    testonly = True,
     srcs = ["golden_file_test.cc"],
     deps = [
         "//:grpc++",
