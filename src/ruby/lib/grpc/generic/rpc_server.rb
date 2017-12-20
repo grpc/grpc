@@ -224,7 +224,7 @@ module GRPC
       @connect_md_proc = RpcServer.setup_connect_md_proc(connect_md_proc)
       @max_waiting_requests = max_waiting_requests
       @poll_period = poll_period
-      @pool_size = pool_size
+      @pool_size = pool_size.to_i
       @pool = Pool.new(@pool_size, keep_alive: pool_keep_alive)
       @run_cond = ConditionVariable.new
       @run_mutex = Mutex.new
