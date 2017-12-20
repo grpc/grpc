@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests that a channel will reconnect if a connection is dropped"""
 
+import socket
 import unittest
 
 import grpc
@@ -38,8 +39,21 @@ class ReconnectTest(unittest.TestCase):
             'UnaryUnary':
             grpc.unary_unary_rpc_method_handler(_handle_unary_unary)
         })
+        # Reserve a port, when we restart the server we want
+        # to hold onto the port
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            opt = socket.SO_REUSEPORT
+        except AttributeError:
+            # SO_REUSEPORT is unavailable on Windows, but SO_REUSEADDR
+            # allows forcibly re-binding to a port
+            opt = socket.SO_REUSEADDR
+        s.setsockopt(socket.SOL_SOCKET, opt, 1)
+        s.bind(('localhost', 0))
+        port = s.getsockname()[1]
+
         server = grpc.server(server_pool, (handler,))
-        port = server.add_insecure_port('[::]:0')
+        server.add_insecure_port('[::]:{}'.format(port))
         server.start()
         channel = grpc.insecure_channel('localhost:%d' % port)
         multi_callable = channel.unary_unary(_UNARY_UNARY)

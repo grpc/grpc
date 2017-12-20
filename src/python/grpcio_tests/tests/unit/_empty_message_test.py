@@ -15,8 +15,8 @@
 import unittest
 
 import grpc
-from grpc.framework.foundation import logging_pool
 
+from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
 _REQUEST = b''
@@ -87,9 +87,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
 class EmptyMessageTest(unittest.TestCase):
 
     def setUp(self):
-        self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        self._server = grpc.server(
-            self._server_pool, handlers=(_GenericHandler(),))
+        self._server = test_common.test_server()
+        self._server.add_generic_rpc_handlers((_GenericHandler(),))
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()
         self._channel = grpc.insecure_channel('localhost:%d' % port)

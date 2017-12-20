@@ -28,6 +28,7 @@ from tests.qps import benchmark_server
 from tests.qps import client_runner
 from tests.qps import histogram
 from tests.unit import resources
+from tests.unit import test_common
 
 
 class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
@@ -68,8 +69,7 @@ class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
             server_threads = multiprocessing.cpu_count() * 5
         else:
             server_threads = config.async_server_threads
-        server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=server_threads))
+        server = test_common.test_server(max_workers=server_threads)
         if config.server_type == control_pb2.ASYNC_SERVER:
             servicer = benchmark_server.BenchmarkServer()
             services_pb2_grpc.add_BenchmarkServiceServicer_to_server(servicer,

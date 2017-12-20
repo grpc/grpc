@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import abc
-from concurrent import futures
 import contextlib
 import importlib
 import os
@@ -29,7 +28,7 @@ import six
 
 import grpc
 from grpc_tools import protoc
-from tests.unit.framework.common import test_constants
+from tests.unit import test_common
 
 _MESSAGES_IMPORT = b'import "messages.proto";'
 _SPLIT_NAMESPACE = b'package grpc_protoc_plugin.invocation_testing.split;'
@@ -256,9 +255,7 @@ class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
         self._protoc()
 
         for services_module in self._services_modules():
-            server = grpc.server(
-                futures.ThreadPoolExecutor(
-                    max_workers=test_constants.POOL_SIZE))
+            server = test_common.test_server()
             services_module.add_TestServiceServicer_to_server(
                 _Servicer(self._messages_pb2.Response), server)
             port = server.add_insecure_port('[::]:0')

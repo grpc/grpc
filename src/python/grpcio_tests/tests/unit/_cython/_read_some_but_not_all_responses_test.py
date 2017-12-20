@@ -112,7 +112,8 @@ class ReadSomeButNotAllResponsesTest(unittest.TestCase):
 
     def testReadSomeButNotAllResponses(self):
         server_completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server(cygrpc.ChannelArgs([]))
+        server = cygrpc.Server(
+            cygrpc.ChannelArgs([cygrpc.ChannelArg(b'grpc.so_reuseport', 0)]))
         server.register_completion_queue(server_completion_queue)
         port = server.add_http2_port(b'[::]:0')
         server.start()

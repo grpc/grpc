@@ -17,7 +17,6 @@ import threading
 import unittest
 
 import grpc
-from grpc.framework.foundation import logging_pool
 
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
@@ -186,9 +185,9 @@ class MetadataCodeDetailsTest(unittest.TestCase):
 
     def setUp(self):
         self._servicer = _Servicer()
-        self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        self._server = grpc.server(
-            self._server_pool, handlers=(_generic_handler(self._servicer),))
+        self._server = test_common.test_server()
+        self._server.add_generic_rpc_handlers(
+            (_generic_handler(self._servicer),))
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()
 
