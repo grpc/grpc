@@ -51,9 +51,7 @@ static int g_number_of_bytes_read = 0;
 static int g_number_of_orphan_calls = 0;
 static int g_number_of_starts = 0;
 
-static void on_start(grpc_fd* emfd, void* user_data) {
-  g_number_of_starts++;
-}
+static void on_start(grpc_fd* emfd, void* user_data) { g_number_of_starts++; }
 
 static bool on_read(grpc_fd* emfd) {
   char read_buffer[512];
