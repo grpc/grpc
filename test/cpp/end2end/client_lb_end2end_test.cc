@@ -131,7 +131,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     grpc_channel_args* fake_result =
         grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
     grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                       fake_result, false);
+                                                       fake_result, true);
     grpc_channel_args_destroy(fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
