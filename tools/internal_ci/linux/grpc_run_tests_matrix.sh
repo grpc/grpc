@@ -27,9 +27,6 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; the
   export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
 fi
 
-echo $KOKORO_BUILD_ID
-# export KOKORO_BUILD_ID=$KOKORO_BUILD_ID
-
 tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
 
 # Reveal leftover processes that might be left behind by the build
