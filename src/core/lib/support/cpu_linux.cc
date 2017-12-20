@@ -71,7 +71,7 @@ unsigned gpr_cpu_current_cpu(void) {
     gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
     return 0;
   }
-  return (unsigned)cpu;
+  return cpu < ncpus ? (unsigned)cpu : 0;
 #endif
 }
 
