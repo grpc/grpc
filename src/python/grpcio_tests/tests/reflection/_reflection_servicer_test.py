@@ -16,7 +16,6 @@
 import unittest
 
 import grpc
-from grpc.framework.foundation import logging_pool
 from grpc_reflection.v1alpha import reflection
 from grpc_reflection.v1alpha import reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc
@@ -27,7 +26,7 @@ from google.protobuf import descriptor_pb2
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
 
-from tests.unit.framework.common import test_constants
+from tests.unit import test_common
 
 _EMPTY_PROTO_FILE_NAME = 'src/proto/grpc/testing/empty.proto'
 _EMPTY_PROTO_SYMBOL_NAME = 'grpc.testing.Empty'
@@ -46,8 +45,7 @@ def _file_descriptor_to_proto(descriptor):
 class ReflectionServicerTest(unittest.TestCase):
 
     def setUp(self):
-        server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        self._server = grpc.server(server_pool)
+        self._server = test_common.test_server()
         reflection.enable_server_reflection(_SERVICE_NAMES, self._server)
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()

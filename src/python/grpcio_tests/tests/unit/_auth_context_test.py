@@ -18,11 +18,9 @@ import unittest
 
 import grpc
 from grpc import _channel
-from grpc.framework.foundation import logging_pool
 import six
 
 from tests.unit import test_common
-from tests.unit.framework.common import test_constants
 from tests.unit import resources
 
 _REQUEST = b'\x00\x00\x00'
@@ -55,12 +53,12 @@ def handle_unary_unary(request, servicer_context):
 class AuthContextTest(unittest.TestCase):
 
     def testInsecure(self):
-        server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
         handler = grpc.method_handlers_generic_handler('test', {
             'UnaryUnary':
             grpc.unary_unary_rpc_method_handler(handle_unary_unary)
         })
-        server = grpc.server(server_pool, (handler,))
+        server = test_common.test_server()
+        server.add_generic_rpc_handlers((handler,))
         port = server.add_insecure_port('[::]:0')
         server.start()
 
@@ -74,12 +72,12 @@ class AuthContextTest(unittest.TestCase):
         self.assertDictEqual({}, auth_data[_AUTH_CTX])
 
     def testSecureNoCert(self):
-        server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
         handler = grpc.method_handlers_generic_handler('test', {
             'UnaryUnary':
             grpc.unary_unary_rpc_method_handler(handle_unary_unary)
         })
-        server = grpc.server(server_pool, (handler,))
+        server = test_common.test_server()
+        server.add_generic_rpc_handlers((handler,))
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
         port = server.add_secure_port('[::]:0', server_cred)
         server.start()
@@ -101,12 +99,12 @@ class AuthContextTest(unittest.TestCase):
         }, auth_data[_AUTH_CTX])
 
     def testSecureClientCert(self):
-        server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
         handler = grpc.method_handlers_generic_handler('test', {
             'UnaryUnary':
             grpc.unary_unary_rpc_method_handler(handle_unary_unary)
         })
-        server = grpc.server(server_pool, (handler,))
+        server = test_common.test_server()
+        server.add_generic_rpc_handlers((handler,))
         server_cred = grpc.ssl_server_credentials(
             _SERVER_CERTS,
             root_certificates=_TEST_ROOT_CERTIFICATES,
