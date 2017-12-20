@@ -47,25 +47,24 @@ grpc_credentials_metadata_request* grpc_credentials_metadata_request_create(
 }
 
 void grpc_credentials_metadata_request_destroy(
-    grpc_exec_ctx* exec_ctx, grpc_credentials_metadata_request* r) {
-  grpc_call_credentials_unref(exec_ctx, r->creds);
+    grpc_credentials_metadata_request* r) {
+  grpc_call_credentials_unref(r->creds);
   grpc_http_response_destroy(&r->response);
   gpr_free(r);
 }
 
 grpc_channel_credentials* grpc_channel_credentials_ref(
     grpc_channel_credentials* creds) {
-  if (creds == NULL) return NULL;
+  if (creds == nullptr) return nullptr;
   gpr_ref(&creds->refcount);
   return creds;
 }
 
-void grpc_channel_credentials_unref(grpc_exec_ctx* exec_ctx,
-                                    grpc_channel_credentials* creds) {
-  if (creds == NULL) return;
+void grpc_channel_credentials_unref(grpc_channel_credentials* creds) {
+  if (creds == nullptr) return;
   if (gpr_unref(&creds->refcount)) {
-    if (creds->vtable->destruct != NULL) {
-      creds->vtable->destruct(exec_ctx, creds);
+    if (creds->vtable->destruct != nullptr) {
+      creds->vtable->destruct(creds);
     }
     gpr_free(creds);
   }
@@ -73,23 +72,21 @@ void grpc_channel_credentials_unref(grpc_exec_ctx* exec_ctx,
 
 void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
   GRPC_API_TRACE("grpc_channel_credentials_release(creds=%p)", 1, (creds));
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_channel_credentials_unref(&exec_ctx, creds);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_channel_credentials_unref(creds);
 }
 
 grpc_call_credentials* grpc_call_credentials_ref(grpc_call_credentials* creds) {
-  if (creds == NULL) return NULL;
+  if (creds == nullptr) return nullptr;
   gpr_ref(&creds->refcount);
   return creds;
 }
 
-void grpc_call_credentials_unref(grpc_exec_ctx* exec_ctx,
-                                 grpc_call_credentials* creds) {
-  if (creds == NULL) return;
+void grpc_call_credentials_unref(grpc_call_credentials* creds) {
+  if (creds == nullptr) return;
   if (gpr_unref(&creds->refcount)) {
-    if (creds->vtable->destruct != NULL) {
-      creds->vtable->destruct(exec_ctx, creds);
+    if (creds->vtable->destruct != nullptr) {
+      creds->vtable->destruct(creds);
     }
     gpr_free(creds);
   }
@@ -97,50 +94,49 @@ void grpc_call_credentials_unref(grpc_exec_ctx* exec_ctx,
 
 void grpc_call_credentials_release(grpc_call_credentials* creds) {
   GRPC_API_TRACE("grpc_call_credentials_release(creds=%p)", 1, (creds));
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_call_credentials_unref(&exec_ctx, creds);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_call_credentials_unref(creds);
 }
 
 bool grpc_call_credentials_get_request_metadata(
-    grpc_exec_ctx* exec_ctx, grpc_call_credentials* creds,
-    grpc_polling_entity* pollent, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error** error) {
-  if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
+    grpc_call_credentials* creds, grpc_polling_entity* pollent,
+    grpc_auth_metadata_context context, grpc_credentials_mdelem_array* md_array,
+    grpc_closure* on_request_metadata, grpc_error** error) {
+  if (creds == nullptr || creds->vtable->get_request_metadata == nullptr) {
     return true;
   }
-  return creds->vtable->get_request_metadata(
-      exec_ctx, creds, pollent, context, md_array, on_request_metadata, error);
+  return creds->vtable->get_request_metadata(creds, pollent, context, md_array,
+                                             on_request_metadata, error);
 }
 
 void grpc_call_credentials_cancel_get_request_metadata(
-    grpc_exec_ctx* exec_ctx, grpc_call_credentials* creds,
-    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
-  if (creds == NULL || creds->vtable->cancel_get_request_metadata == NULL) {
+    grpc_call_credentials* creds, grpc_credentials_mdelem_array* md_array,
+    grpc_error* error) {
+  if (creds == nullptr ||
+      creds->vtable->cancel_get_request_metadata == nullptr) {
     return;
   }
-  creds->vtable->cancel_get_request_metadata(exec_ctx, creds, md_array, error);
+  creds->vtable->cancel_get_request_metadata(creds, md_array, error);
 }
 
 grpc_security_status grpc_channel_credentials_create_security_connector(
-    grpc_exec_ctx* exec_ctx, grpc_channel_credentials* channel_creds,
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_security_connector** sc, grpc_channel_args** new_args) {
-  *new_args = NULL;
-  if (channel_creds == NULL) {
+    grpc_channel_credentials* channel_creds, const char* target,
+    const grpc_channel_args* args, grpc_channel_security_connector** sc,
+    grpc_channel_args** new_args) {
+  *new_args = nullptr;
+  if (channel_creds == nullptr) {
     return GRPC_SECURITY_ERROR;
   }
-  GPR_ASSERT(channel_creds->vtable->create_security_connector != NULL);
+  GPR_ASSERT(channel_creds->vtable->create_security_connector != nullptr);
   return channel_creds->vtable->create_security_connector(
-      exec_ctx, channel_creds, NULL, target, args, sc, new_args);
+      channel_creds, nullptr, target, args, sc, new_args);
 }
 
 grpc_channel_credentials*
 grpc_channel_credentials_duplicate_without_call_credentials(
     grpc_channel_credentials* channel_creds) {
-  if (channel_creds != NULL && channel_creds->vtable != NULL &&
-      channel_creds->vtable->duplicate_without_call_credentials != NULL) {
+  if (channel_creds != nullptr && channel_creds->vtable != nullptr &&
+      channel_creds->vtable->duplicate_without_call_credentials != nullptr) {
     return channel_creds->vtable->duplicate_without_call_credentials(
         channel_creds);
   } else {
@@ -148,8 +144,8 @@ grpc_channel_credentials_duplicate_without_call_credentials(
   }
 }
 
-static void credentials_pointer_arg_destroy(grpc_exec_ctx* exec_ctx, void* p) {
-  grpc_channel_credentials_unref(exec_ctx, (grpc_channel_credentials*)p);
+static void credentials_pointer_arg_destroy(void* p) {
+  grpc_channel_credentials_unref((grpc_channel_credentials*)p);
 }
 
 static void* credentials_pointer_arg_copy(void* p) {
@@ -171,11 +167,11 @@ grpc_arg grpc_channel_credentials_to_arg(
 
 grpc_channel_credentials* grpc_channel_credentials_from_arg(
     const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS)) return NULL;
+  if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS)) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
             GRPC_ARG_CHANNEL_CREDENTIALS);
-    return NULL;
+    return nullptr;
   }
   return (grpc_channel_credentials*)arg->value.pointer.p;
 }
@@ -183,30 +179,30 @@ grpc_channel_credentials* grpc_channel_credentials_from_arg(
 grpc_channel_credentials* grpc_channel_credentials_find_in_args(
     const grpc_channel_args* args) {
   size_t i;
-  if (args == NULL) return NULL;
+  if (args == nullptr) return nullptr;
   for (i = 0; i < args->num_args; i++) {
     grpc_channel_credentials* credentials =
         grpc_channel_credentials_from_arg(&args->args[i]);
-    if (credentials != NULL) return credentials;
+    if (credentials != nullptr) return credentials;
   }
-  return NULL;
+  return nullptr;
 }
 
 grpc_server_credentials* grpc_server_credentials_ref(
     grpc_server_credentials* creds) {
-  if (creds == NULL) return NULL;
+  if (creds == nullptr) return nullptr;
   gpr_ref(&creds->refcount);
   return creds;
 }
 
-void grpc_server_credentials_unref(grpc_exec_ctx* exec_ctx,
-                                   grpc_server_credentials* creds) {
-  if (creds == NULL) return;
+void grpc_server_credentials_unref(grpc_server_credentials* creds) {
+  if (creds == nullptr) return;
   if (gpr_unref(&creds->refcount)) {
-    if (creds->vtable->destruct != NULL) {
-      creds->vtable->destruct(exec_ctx, creds);
+    if (creds->vtable->destruct != nullptr) {
+      creds->vtable->destruct(creds);
     }
-    if (creds->processor.destroy != NULL && creds->processor.state != NULL) {
+    if (creds->processor.destroy != nullptr &&
+        creds->processor.state != nullptr) {
       creds->processor.destroy(creds->processor.state);
     }
     gpr_free(creds);
@@ -215,19 +211,17 @@ void grpc_server_credentials_unref(grpc_exec_ctx* exec_ctx,
 
 void grpc_server_credentials_release(grpc_server_credentials* creds) {
   GRPC_API_TRACE("grpc_server_credentials_release(creds=%p)", 1, (creds));
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_credentials_unref(&exec_ctx, creds);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_server_credentials_unref(creds);
 }
 
 grpc_security_status grpc_server_credentials_create_security_connector(
-    grpc_exec_ctx* exec_ctx, grpc_server_credentials* creds,
-    grpc_server_security_connector** sc) {
-  if (creds == NULL || creds->vtable->create_security_connector == NULL) {
+    grpc_server_credentials* creds, grpc_server_security_connector** sc) {
+  if (creds == nullptr || creds->vtable->create_security_connector == nullptr) {
     gpr_log(GPR_ERROR, "Server credentials cannot create security context.");
     return GRPC_SECURITY_ERROR;
   }
-  return creds->vtable->create_security_connector(exec_ctx, creds, sc);
+  return creds->vtable->create_security_connector(creds, sc);
 }
 
 void grpc_server_credentials_set_auth_metadata_processor(
@@ -237,16 +231,16 @@ void grpc_server_credentials_set_auth_metadata_processor(
       "creds=%p, "
       "processor=grpc_auth_metadata_processor { process: %p, state: %p })",
       3, (creds, (void*)(intptr_t)processor.process, processor.state));
-  if (creds == NULL) return;
-  if (creds->processor.destroy != NULL && creds->processor.state != NULL) {
+  if (creds == nullptr) return;
+  if (creds->processor.destroy != nullptr &&
+      creds->processor.state != nullptr) {
     creds->processor.destroy(creds->processor.state);
   }
   creds->processor = processor;
 }
 
-static void server_credentials_pointer_arg_destroy(grpc_exec_ctx* exec_ctx,
-                                                   void* p) {
-  grpc_server_credentials_unref(exec_ctx, (grpc_server_credentials*)p);
+static void server_credentials_pointer_arg_destroy(void* p) {
+  grpc_server_credentials_unref((grpc_server_credentials*)p);
 }
 
 static void* server_credentials_pointer_arg_copy(void* p) {
@@ -267,11 +261,11 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* p) {
 }
 
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_SERVER_CREDENTIALS_ARG) != 0) return NULL;
+  if (strcmp(arg->key, GRPC_SERVER_CREDENTIALS_ARG) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
             GRPC_SERVER_CREDENTIALS_ARG);
-    return NULL;
+    return nullptr;
   }
   return (grpc_server_credentials*)arg->value.pointer.p;
 }
@@ -279,11 +273,11 @@ grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg) {
 grpc_server_credentials* grpc_find_server_credentials_in_args(
     const grpc_channel_args* args) {
   size_t i;
-  if (args == NULL) return NULL;
+  if (args == nullptr) return nullptr;
   for (i = 0; i < args->num_args; i++) {
     grpc_server_credentials* p =
         grpc_server_credentials_from_arg(&args->args[i]);
-    if (p != NULL) return p;
+    if (p != nullptr) return p;
   }
-  return NULL;
+  return nullptr;
 }

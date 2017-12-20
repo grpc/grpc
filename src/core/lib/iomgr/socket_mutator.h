@@ -24,10 +24,6 @@
 
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** The virtual table of grpc_socket_mutator */
 typedef struct {
   /** Mutates the socket opitons of \a fd */
@@ -59,9 +55,5 @@ int grpc_socket_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b);
 
 grpc_socket_mutator* grpc_socket_mutator_ref(grpc_socket_mutator* mutator);
 void grpc_socket_mutator_unref(grpc_socket_mutator* mutator);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H */

@@ -52,7 +52,7 @@ static bool grpc_stream_compress_identity(grpc_stream_compression_context* ctx,
                                           size_t* output_size,
                                           size_t max_output_size,
                                           grpc_stream_compression_flush flush) {
-  if (ctx == NULL) {
+  if (ctx == nullptr) {
     return false;
   }
   grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
@@ -63,7 +63,7 @@ static bool grpc_stream_decompress_identity(
     grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
     grpc_slice_buffer* out, size_t* output_size, size_t max_output_size,
     bool* end_of_context) {
-  if (ctx == NULL) {
+  if (ctx == nullptr) {
     return false;
   }
   grpc_stream_compression_pass_through(in, out, output_size, max_output_size);

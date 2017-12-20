@@ -32,7 +32,6 @@
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
-extern "C" {
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -47,7 +46,6 @@ extern "C" {
 #include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-}
 
 using grpc::SubProcess;
 using std::vector;
@@ -151,32 +149,33 @@ struct ArgsStruct {
   std::string expected_lb_policy;
 };
 
-void ArgsInit(grpc_exec_ctx* exec_ctx, ArgsStruct* args) {
+void ArgsInit(ArgsStruct* args) {
   gpr_event_init(&args->ev);
   args->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
-  grpc_pollset_set_add_pollset(exec_ctx, args->pollset_set, args->pollset);
+  grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
   args->lock = grpc_combiner_create();
   gpr_atm_rel_store(&args->done_atm, 0);
-  args->channel_args = NULL;
+  args->channel_args = nullptr;
 }
 
-void DoNothing(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {}
+void DoNothing(void* arg, grpc_error* error) {}
 
-void ArgsFinish(grpc_exec_ctx* exec_ctx, ArgsStruct* args) {
+void ArgsFinish(ArgsStruct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, TestDeadline()));
-  grpc_pollset_set_del_pollset(exec_ctx, args->pollset_set, args->pollset);
-  grpc_pollset_set_destroy(exec_ctx, args->pollset_set);
+  grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
+  grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure DoNothing_cb;
-  GRPC_CLOSURE_INIT(&DoNothing_cb, DoNothing, NULL, grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(exec_ctx, args->pollset, &DoNothing_cb);
+  GRPC_CLOSURE_INIT(&DoNothing_cb, DoNothing, nullptr,
+                    grpc_schedule_on_exec_ctx);
+  grpc_pollset_shutdown(args->pollset, &DoNothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
-  grpc_channel_args_destroy(exec_ctx, args->channel_args);
-  grpc_exec_ctx_flush(exec_ctx);
-  grpc_pollset_destroy(exec_ctx, args->pollset);
+  grpc_channel_args_destroy(args->channel_args);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
-  GRPC_COMBINER_UNREF(exec_ctx, args->lock, NULL);
+  GRPC_COMBINER_UNREF(args->lock, nullptr);
 }
 
 gpr_timespec NSecondDeadline(int seconds) {
@@ -196,15 +195,14 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
-    grpc_pollset_worker* worker = NULL;
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_pollset_worker* worker = nullptr;
+    grpc_core::ExecCtx exec_ctx;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
-                      grpc_pollset_work(&exec_ctx, args->pollset, &worker,
+                      grpc_pollset_work(args->pollset, &worker,
                                         grpc_timespec_to_millis_round_up(
                                             NSecondDeadline(1))));
     gpr_mu_unlock(args->mu);
-    grpc_exec_ctx_finish(&exec_ctx);
   }
   gpr_event_set(&args->ev, (void*)1);
 }
@@ -214,12 +212,12 @@ void CheckServiceConfigResultLocked(grpc_channel_args* channel_args,
   const grpc_arg* service_config_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (args->expected_service_config_string != "") {
-    GPR_ASSERT(service_config_arg != NULL);
+    GPR_ASSERT(service_config_arg != nullptr);
     GPR_ASSERT(service_config_arg->type == GRPC_ARG_STRING);
     EXPECT_EQ(service_config_arg->value.string,
               args->expected_service_config_string);
   } else {
-    GPR_ASSERT(service_config_arg == NULL);
+    GPR_ASSERT(service_config_arg == nullptr);
   }
 }
 
@@ -228,21 +226,20 @@ void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
   const grpc_arg* lb_policy_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_POLICY_NAME);
   if (args->expected_lb_policy != "") {
-    GPR_ASSERT(lb_policy_arg != NULL);
+    GPR_ASSERT(lb_policy_arg != nullptr);
     GPR_ASSERT(lb_policy_arg->type == GRPC_ARG_STRING);
     EXPECT_EQ(lb_policy_arg->value.string, args->expected_lb_policy);
   } else {
-    GPR_ASSERT(lb_policy_arg == NULL);
+    GPR_ASSERT(lb_policy_arg == nullptr);
   }
 }
 
-void CheckResolverResultLocked(grpc_exec_ctx* exec_ctx, void* argsp,
-                               grpc_error* err) {
+void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   ArgsStruct* args = (ArgsStruct*)argsp;
   grpc_channel_args* channel_args = args->channel_args;
   const grpc_arg* channel_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(channel_arg != NULL);
+  GPR_ASSERT(channel_arg != nullptr);
   GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
   grpc_lb_addresses* addresses =
       (grpc_lb_addresses*)channel_arg->value.pointer.p;
@@ -273,37 +270,35 @@ void CheckResolverResultLocked(grpc_exec_ctx* exec_ctx, void* argsp,
   }
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
   gpr_mu_unlock(args->mu);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
-  ArgsInit(&exec_ctx, &args);
+  ArgsInit(&args);
   args.expected_addrs = ParseExpectedAddrs(FLAGS_expected_addrs);
   args.expected_service_config_string = FLAGS_expected_chosen_service_config;
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
-  char* whole_uri = NULL;
+  char* whole_uri = nullptr;
   GPR_ASSERT(asprintf(&whole_uri, "dns://%s/%s",
                       FLAGS_local_dns_server_address.c_str(),
                       FLAGS_target_name.c_str()));
   // create resolver and resolve
-  grpc_resolver* resolver = grpc_resolver_create(&exec_ctx, whole_uri, NULL,
-                                                 args.pollset_set, args.lock);
+  grpc_resolver* resolver =
+      grpc_resolver_create(whole_uri, nullptr, args.pollset_set, args.lock);
   gpr_free(whole_uri);
   grpc_closure on_resolver_result_changed;
   GRPC_CLOSURE_INIT(&on_resolver_result_changed, CheckResolverResultLocked,
                     (void*)&args, grpc_combiner_scheduler(args.lock));
-  grpc_resolver_next_locked(&exec_ctx, resolver, &args.channel_args,
+  grpc_resolver_next_locked(resolver, &args.channel_args,
                             &on_resolver_result_changed);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
-  GRPC_RESOLVER_UNREF(&exec_ctx, resolver, NULL);
-  ArgsFinish(&exec_ctx, &args);
-  grpc_exec_ctx_finish(&exec_ctx);
+  GRPC_RESOLVER_UNREF(resolver, nullptr);
+  ArgsFinish(&args);
 }
 
 }  // namespace

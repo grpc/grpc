@@ -32,10 +32,8 @@
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
-extern "C" {
 #include "src/core/lib/support/env.h"
 #include "test/core/util/port.h"
-}
 
 DEFINE_bool(
     running_under_bazel, false,
@@ -62,8 +60,8 @@ static void register_sighandler() {
   struct sigaction act;
   memset(&act, 0, sizeof(act));
   act.sa_handler = sighandler;
-  sigaction(SIGINT, &act, NULL);
-  sigaction(SIGTERM, &act, NULL);
+  sigaction(SIGINT, &act, nullptr);
+  sigaction(SIGTERM, &act, nullptr);
 }
 
 namespace {

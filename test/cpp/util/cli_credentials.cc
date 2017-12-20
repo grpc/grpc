@@ -22,27 +22,43 @@
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
+DEFINE_string(
+    access_token, "",
+    "The access token that will be sent to the server to authenticate RPCs.");
 
 namespace grpc {
 namespace testing {
 
 std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
     const {
-  if (!FLAGS_enable_ssl) {
-    return grpc::InsecureChannelCredentials();
-  } else {
+  if (!FLAGS_access_token.empty()) {
     if (FLAGS_use_auth) {
-      return grpc::GoogleDefaultCredentials();
-    } else {
-      return grpc::SslCredentials(grpc::SslCredentialsOptions());
+      fprintf(stderr,
+              "warning: use_auth is ignored when access_token is provided.");
     }
+
+    return grpc::CompositeChannelCredentials(
+        grpc::SslCredentials(grpc::SslCredentialsOptions()),
+        grpc::AccessTokenCredentials(FLAGS_access_token));
   }
+
+  if (FLAGS_use_auth) {
+    return grpc::GoogleDefaultCredentials();
+  }
+
+  if (FLAGS_enable_ssl) {
+    return grpc::SslCredentials(grpc::SslCredentialsOptions());
+  }
+
+  return grpc::InsecureChannelCredentials();
 }
 
 const grpc::string CliCredentials::GetCredentialUsage() const {
   return "    --enable_ssl             ; Set whether to use tls\n"
          "    --use_auth               ; Set whether to create default google"
-         " credentials\n";
+         " credentials\n"
+         "    --access_token           ; Set the access token in metadata,"
+         " overrides --use_auth\n";
 }
 }  // namespace testing
 }  // namespace grpc

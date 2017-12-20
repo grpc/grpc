@@ -42,9 +42,12 @@ typedef struct {
 
 /** Create a new thread running (*thd_body)(arg) and place its thread identifier
    in *t, and return true.  If there are insufficient resources, return false.
+   thd_name is the name of the thread for identification purposes on platforms
+   that support thread naming.
    If options==NULL, default options are used.
    The thread is immediately runnable, and exits when (*thd_body)() returns.  */
-GPRAPI int gpr_thd_new(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg,
+GPRAPI int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
+                       void (*thd_body)(void* arg), void* arg,
                        const gpr_thd_options* options);
 
 /** Return a gpr_thd_options struct with all fields set to defaults. */

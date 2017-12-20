@@ -19,6 +19,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <grpc/support/useful.h>
@@ -30,7 +31,7 @@
 struct grpc_chttp2_transport;
 struct grpc_chttp2_stream;
 
-extern "C" grpc_tracer_flag grpc_flowctl_trace;
+extern grpc_core::TraceFlag grpc_flowctl_trace;
 
 namespace grpc {
 namespace testing {
@@ -118,7 +119,7 @@ class FlowControlTrace {
             StreamFlowControl* sfc);
   void Finish();
 
-  const bool enabled_ = GRPC_TRACER_ON(grpc_flowctl_trace);
+  const bool enabled_ = grpc_flowctl_trace.enabled();
 
   TransportFlowControl* tfc_;
   StreamFlowControl* sfc_;
@@ -133,8 +134,7 @@ class FlowControlTrace {
 
 class TransportFlowControl {
  public:
-  TransportFlowControl(grpc_exec_ctx* exec_ctx, const grpc_chttp2_transport* t,
-                       bool enable_bdp_probe);
+  TransportFlowControl(const grpc_chttp2_transport* t, bool enable_bdp_probe);
   ~TransportFlowControl() {}
 
   bool bdp_probe() const { return enable_bdp_probe_; }
@@ -152,7 +152,7 @@ class TransportFlowControl {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let chttp2 change its parameters
-  FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx);
+  FlowControlAction PeriodicUpdate();
 
   void StreamSentData(int64_t size) { remote_window_ -= size; }
 
@@ -211,7 +211,7 @@ class TransportFlowControl {
  private:
   friend class ::grpc::testing::TrickledCHTTP2;
   double TargetLogBdp();
-  double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
+  double SmoothLogBdp(double value);
   FlowControlAction::Urgency DeltaUrgency(int32_t value,
                                           grpc_chttp2_setting_id setting_id);
 

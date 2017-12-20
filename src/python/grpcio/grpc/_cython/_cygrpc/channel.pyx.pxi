@@ -33,10 +33,10 @@ cdef class Channel:
         self.c_channel = grpc_insecure_channel_create(c_target, c_arguments,
                                                       NULL)
     else:
-      with nogil:
-        self.c_channel = grpc_secure_channel_create(
-            channel_credentials.c_credentials, c_target, c_arguments, NULL)
-      self.references.append(channel_credentials)
+      c_channel_credentials = channel_credentials.c()
+      self.c_channel = grpc_secure_channel_create(
+          c_channel_credentials, c_target, c_arguments, NULL)
+      grpc_channel_credentials_release(c_channel_credentials)
     self.references.append(target)
     self.references.append(arguments)
 
@@ -76,7 +76,7 @@ cdef class Channel:
   def watch_connectivity_state(
       self, grpc_connectivity_state last_observed_state,
       Timespec deadline not None, CompletionQueue queue not None, tag):
-    cdef OperationTag operation_tag = OperationTag(tag)
+    cdef OperationTag operation_tag = OperationTag(tag, None)
     cpython.Py_INCREF(operation_tag)
     with nogil:
       grpc_channel_watch_connectivity_state(

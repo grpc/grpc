@@ -37,10 +37,9 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_error_refcount =
-    GRPC_TRACER_INITIALIZER(false, "error_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
+                                                        "error_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_trace_closure(false, "closure");
 
 static const char* error_int_name(grpc_error_ints key) {
   switch (key) {
@@ -130,7 +129,7 @@ bool grpc_error_is_special(grpc_error* err) {
 #ifndef NDEBUG
 grpc_error* grpc_error_ref(grpc_error* err, const char* file, int line) {
   if (grpc_error_is_special(err)) return err;
-  if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+  if (grpc_trace_error_refcount.enabled()) {
     gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
             gpr_atm_no_barrier_load(&err->atomics.refs.count),
             gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line);
@@ -157,11 +156,7 @@ static void unref_errs(grpc_error* err) {
   }
 }
 
-static void unref_slice(grpc_slice slice) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_unref_internal(&exec_ctx, slice);
-  grpc_exec_ctx_finish(&exec_ctx);
-}
+static void unref_slice(grpc_slice slice) { grpc_slice_unref_internal(slice); }
 
 static void unref_strs(grpc_error* err) {
   for (size_t which = 0; which < GRPC_ERROR_STR_MAX; ++which) {
@@ -183,7 +178,7 @@ static void error_destroy(grpc_error* err) {
 #ifndef NDEBUG
 void grpc_error_unref(grpc_error* err, const char* file, int line) {
   if (grpc_error_is_special(err)) return;
-  if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+  if (grpc_trace_error_refcount.enabled()) {
     gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
             gpr_atm_no_barrier_load(&err->atomics.refs.count),
             gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line);
@@ -216,7 +211,7 @@ static uint8_t get_placement(grpc_error** err, size_t size) {
     *err = (grpc_error*)gpr_realloc(
         *err, sizeof(grpc_error) + (*err)->arena_capacity * sizeof(intptr_t));
 #ifndef NDEBUG
-    if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+    if (grpc_trace_error_refcount.enabled()) {
       if (*err != orig) {
         gpr_log(GPR_DEBUG, "realloc %p -> %p", orig, *err);
       }
@@ -325,11 +320,11 @@ grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
       (uint8_t)(num_referencing * SLOTS_PER_LINKED_ERROR) + SURPLUS_CAPACITY);
   grpc_error* err = (grpc_error*)gpr_malloc(
       sizeof(*err) + initial_arena_capacity * sizeof(intptr_t));
-  if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
+  if (err == nullptr) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
   }
 #ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+  if (grpc_trace_error_refcount.enabled()) {
     gpr_log(GPR_DEBUG, "%p create [%s:%d]", err, file, line);
   }
 #endif
@@ -411,7 +406,7 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
     out = (grpc_error*)gpr_malloc(sizeof(*in) +
                                   new_arena_capacity * sizeof(intptr_t));
 #ifndef NDEBUG
-    if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
+    if (grpc_trace_error_refcount.enabled()) {
       gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
     }
 #endif
@@ -457,7 +452,7 @@ bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
     if (which == GRPC_ERROR_INT_GRPC_STATUS) {
       for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
         if (error_status_map[i].error == err) {
-          if (p != NULL) *p = error_status_map[i].code;
+          if (p != nullptr) *p = error_status_map[i].code;
           GPR_TIMER_END("grpc_error_get_int", 0);
           return true;
         }
@@ -468,7 +463,7 @@ bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
   }
   uint8_t slot = err->ints[which];
   if (slot != UINT8_MAX) {
-    if (p != NULL) *p = err->arena[slot];
+    if (p != nullptr) *p = err->arena[slot];
     GPR_TIMER_END("grpc_error_get_int", 0);
     return true;
   }
@@ -618,7 +613,7 @@ static char* key_str(grpc_error_strs which) {
 }
 
 static char* fmt_str(grpc_slice slice) {
-  char* s = NULL;
+  char* s = nullptr;
   size_t sz = 0;
   size_t cap = 0;
   append_esc_str((const uint8_t*)GRPC_SLICE_START_PTR(slice),
@@ -688,7 +683,7 @@ static void add_errs(grpc_error* err, char** s, size_t* sz, size_t* cap) {
 }
 
 static char* errs_string(grpc_error* err) {
-  char* s = NULL;
+  char* s = nullptr;
   size_t sz = 0;
   size_t cap = 0;
   append_chr('[', &s, &sz, &cap);
@@ -705,7 +700,7 @@ static int cmp_kvs(const void* a, const void* b) {
 }
 
 static char* finish_kvs(kv_pairs* kvs) {
-  char* s = NULL;
+  char* s = nullptr;
   size_t sz = 0;
   size_t cap = 0;
 
@@ -733,7 +728,7 @@ const char* grpc_error_string(grpc_error* err) {
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
 
   void* p = (void*)gpr_atm_acq_load(&err->atomics.error_string);
-  if (p != NULL) {
+  if (p != nullptr) {
     GPR_TIMER_END("grpc_error_string", 0);
     return (const char*)p;
   }
@@ -754,7 +749,7 @@ const char* grpc_error_string(grpc_error* err) {
 
   if (!gpr_atm_rel_cas(&err->atomics.error_string, 0, (gpr_atm)out)) {
     gpr_free(out);
-    out = (char*)gpr_atm_no_barrier_load(&err->atomics.error_string);
+    out = (char*)gpr_atm_acq_load(&err->atomics.error_string);
   }
 
   GPR_TIMER_END("grpc_error_string", 0);
@@ -767,8 +762,8 @@ grpc_error* grpc_os_error(const char* file, int line, int err,
       grpc_error_set_str(
           grpc_error_set_int(
               grpc_error_create(file, line,
-                                grpc_slice_from_static_string("OS Error"), NULL,
-                                0),
+                                grpc_slice_from_static_string("OS Error"),
+                                nullptr, 0),
               GRPC_ERROR_INT_ERRNO, err),
           GRPC_ERROR_STR_OS_ERROR,
           grpc_slice_from_static_string(strerror(err))),

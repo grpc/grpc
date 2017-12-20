@@ -27,7 +27,7 @@
 
 struct grpc_slice_hash_table {
   gpr_refcount refs;
-  void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value);
+  void (*destroy_value)(void* value);
   int (*value_cmp)(void* a, void* b);
   size_t size;
   size_t max_num_probes;
@@ -35,12 +35,12 @@ struct grpc_slice_hash_table {
 };
 
 static bool is_empty(grpc_slice_hash_table_entry* entry) {
-  return entry->value == NULL;
+  return entry->value == nullptr;
 }
 
 static void grpc_slice_hash_table_add(grpc_slice_hash_table* table,
                                       grpc_slice key, void* value) {
-  GPR_ASSERT(value != NULL);
+  GPR_ASSERT(value != nullptr);
   const size_t hash = grpc_slice_hash(key);
   for (size_t offset = 0; offset < table->size; ++offset) {
     const size_t idx = (hash + offset) % table->size;
@@ -58,8 +58,7 @@ static void grpc_slice_hash_table_add(grpc_slice_hash_table* table,
 
 grpc_slice_hash_table* grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry* entries,
-    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value),
-    int (*value_cmp)(void* a, void* b)) {
+    void (*destroy_value)(void* value), int (*value_cmp)(void* a, void* b)) {
   grpc_slice_hash_table* table =
       (grpc_slice_hash_table*)gpr_zalloc(sizeof(*table));
   gpr_ref_init(&table->refs, 1);
@@ -77,18 +76,17 @@ grpc_slice_hash_table* grpc_slice_hash_table_create(
 }
 
 grpc_slice_hash_table* grpc_slice_hash_table_ref(grpc_slice_hash_table* table) {
-  if (table != NULL) gpr_ref(&table->refs);
+  if (table != nullptr) gpr_ref(&table->refs);
   return table;
 }
 
-void grpc_slice_hash_table_unref(grpc_exec_ctx* exec_ctx,
-                                 grpc_slice_hash_table* table) {
-  if (table != NULL && gpr_unref(&table->refs)) {
+void grpc_slice_hash_table_unref(grpc_slice_hash_table* table) {
+  if (table != nullptr && gpr_unref(&table->refs)) {
     for (size_t i = 0; i < table->size; ++i) {
       grpc_slice_hash_table_entry* entry = &table->entries[i];
       if (!is_empty(entry)) {
-        grpc_slice_unref_internal(exec_ctx, entry->key);
-        table->destroy_value(exec_ctx, entry->value);
+        grpc_slice_unref_internal(entry->key);
+        table->destroy_value(entry->value);
       }
     }
     gpr_free(table->entries);
@@ -108,16 +106,16 @@ void* grpc_slice_hash_table_get(const grpc_slice_hash_table* table,
       return table->entries[idx].value;
     }
   }
-  return NULL;  // Not found.
+  return nullptr;  // Not found.
 }
 
 static int pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
 int grpc_slice_hash_table_cmp(const grpc_slice_hash_table* a,
                               const grpc_slice_hash_table* b) {
   int (*const value_cmp_fn_a)(void* a, void* b) =
-      a->value_cmp != NULL ? a->value_cmp : pointer_cmp;
+      a->value_cmp != nullptr ? a->value_cmp : pointer_cmp;
   int (*const value_cmp_fn_b)(void* a, void* b) =
-      b->value_cmp != NULL ? b->value_cmp : pointer_cmp;
+      b->value_cmp != nullptr ? b->value_cmp : pointer_cmp;
   // Compare value_fns
   const int value_fns_cmp =
       GPR_ICMP((void*)value_cmp_fn_a, (void*)value_cmp_fn_b);

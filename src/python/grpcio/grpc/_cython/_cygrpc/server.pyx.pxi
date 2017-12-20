@@ -14,8 +14,46 @@
 
 cimport cpython
 
+import logging
 import time
+import grpc
 
+cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapper(
+        void* user_data, grpc_ssl_server_certificate_config **config) with gil:
+  # This is a credentials.ServerCertificateConfig
+  cdef ServerCertificateConfig cert_config = None
+  if not user_data:
+    raise ValueError('internal error: user_data must be specified')
+  credentials = <ServerCredentials>user_data
+  if not credentials.initial_cert_config_fetched:
+    # C-core is asking for the initial cert config
+    credentials.initial_cert_config_fetched = True
+    cert_config = credentials.initial_cert_config._certificate_configuration
+  else:
+    user_cb = credentials.cert_config_fetcher
+    try:
+      cert_config_wrapper = user_cb()
+    except Exception:
+      logging.exception('Error fetching certificate config')
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    if cert_config_wrapper is None:
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+    elif not isinstance(
+        cert_config_wrapper, grpc.ServerCertificateConfiguration):
+      logging.error(
+          'Error fetching certificate configuration: certificate '
+          'configuration must be of type grpc.ServerCertificateConfiguration, '
+          'not %s' % type(cert_config_wrapper).__name__)
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    else:
+      cert_config = cert_config_wrapper._certificate_configuration
+  config[0] = <grpc_ssl_server_certificate_config*>cert_config.c_cert_config
+  # our caller will assume ownership of memory, so we have to recreate
+  # a copy of c_cert_config here
+  cert_config.c_cert_config = grpc_ssl_server_certificate_config_create(
+      cert_config.c_pem_root_certs, cert_config.c_ssl_pem_key_cert_pairs,
+      cert_config.c_ssl_pem_key_cert_pairs_count)
+  return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
 
 cdef class Server:
 
@@ -40,23 +78,19 @@ cdef class Server:
       raise ValueError("server must be started and not shutting down")
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
-    cdef grpc_call_error result
-    cdef OperationTag operation_tag = OperationTag(tag)
+    cdef OperationTag operation_tag = OperationTag(tag, None)
     operation_tag.operation_call = Call()
     operation_tag.request_call_details = CallDetails()
-    operation_tag.request_metadata = MetadataArray()
+    grpc_metadata_array_init(&operation_tag._c_request_metadata)
     operation_tag.references.extend([self, call_queue, server_queue])
     operation_tag.is_new_request = True
-    operation_tag.batch_operations = Operations([])
     cpython.Py_INCREF(operation_tag)
-    with nogil:
-      result = grpc_server_request_call(
-          self.c_server, &operation_tag.operation_call.c_call,
-          &operation_tag.request_call_details.c_details,
-          &operation_tag.request_metadata.c_metadata_array,
-          call_queue.c_completion_queue, server_queue.c_completion_queue,
-          <cpython.PyObject *>operation_tag)
-    return result
+    return grpc_server_request_call(
+        self.c_server, &operation_tag.operation_call.c_call,
+        &operation_tag.request_call_details.c_details,
+        &operation_tag._c_request_metadata,
+        call_queue.c_completion_queue, server_queue.c_completion_queue,
+        <cpython.PyObject *>operation_tag)
 
   def register_completion_queue(
       self, CompletionQueue queue not None):
@@ -97,7 +131,7 @@ cdef class Server:
 
   cdef _c_shutdown(self, CompletionQueue queue, tag):
     self.is_shutting_down = True
-    operation_tag = OperationTag(tag)
+    operation_tag = OperationTag(tag, None)
     operation_tag.shutting_down_server = self
     cpython.Py_INCREF(operation_tag)
     with nogil:

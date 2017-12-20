@@ -26,12 +26,12 @@
 #include "src/core/lib/support/string.h"
 
 char* grpc_get_well_known_google_credentials_file_path_impl(void) {
-  char* result = NULL;
+  char* result = nullptr;
   char* base = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR);
-  if (base == NULL) {
-    gpr_log(GPR_ERROR, "Could not get " GRPC_GOOGLE_CREDENTIALS_ENV_VAR
+  if (base == nullptr) {
+    gpr_log(GPR_ERROR, "Could not get " GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR
                        " environment variable.");
-    return NULL;
+    return nullptr;
   }
   gpr_asprintf(&result, "%s/%s", base, GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX);
   gpr_free(base);

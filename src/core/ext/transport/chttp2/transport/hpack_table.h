@@ -24,10 +24,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* HPACK header table */
 
 /* last index in the static table */
@@ -73,21 +69,18 @@ typedef struct {
 } grpc_chttp2_hptbl;
 
 /* initialize a hpack table */
-void grpc_chttp2_hptbl_init(grpc_exec_ctx* exec_ctx, grpc_chttp2_hptbl* tbl);
-void grpc_chttp2_hptbl_destroy(grpc_exec_ctx* exec_ctx, grpc_chttp2_hptbl* tbl);
-void grpc_chttp2_hptbl_set_max_bytes(grpc_exec_ctx* exec_ctx,
-                                     grpc_chttp2_hptbl* tbl,
+void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl* tbl);
+void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl* tbl);
+void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
                                      uint32_t max_bytes);
-grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx* exec_ctx,
-                                                     grpc_chttp2_hptbl* tbl,
+grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
                                                      uint32_t bytes);
 
 /* lookup a table entry based on its hpack index */
 grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
                                      uint32_t index);
 /* add a table entry to the index */
-grpc_error* grpc_chttp2_hptbl_add(grpc_exec_ctx* exec_ctx,
-                                  grpc_chttp2_hptbl* tbl,
+grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
                                   grpc_mdelem md) GRPC_MUST_USE_RESULT;
 /* Find a key/value pair in the table... returns the index in the table of the
    most similar entry, or 0 if the value was not found */
@@ -97,9 +90,5 @@ typedef struct {
 } grpc_chttp2_hptbl_find_result;
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     const grpc_chttp2_hptbl* tbl, grpc_mdelem md);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_TABLE_H */

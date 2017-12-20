@@ -52,13 +52,12 @@ typedef struct {
   grpc_channel_args* channel_args;
 } async_connect;
 
-static void async_connect_unlock_and_cleanup(grpc_exec_ctx* exec_ctx,
-                                             async_connect* ac,
+static void async_connect_unlock_and_cleanup(async_connect* ac,
                                              grpc_winsocket* socket) {
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
-    grpc_channel_args_destroy(exec_ctx, ac->channel_args);
+    grpc_channel_args_destroy(ac->channel_args);
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_name);
     gpr_free(ac);
@@ -66,7 +65,7 @@ static void async_connect_unlock_and_cleanup(grpc_exec_ctx* exec_ctx,
   if (socket != NULL) grpc_winsocket_destroy(socket);
 }
 
-static void on_alarm(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
+static void on_alarm(void* acp, grpc_error* error) {
   async_connect* ac = (async_connect*)acp;
   gpr_mu_lock(&ac->mu);
   grpc_winsocket* socket = ac->socket;
@@ -74,10 +73,10 @@ static void on_alarm(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
   if (socket != NULL) {
     grpc_winsocket_shutdown(socket);
   }
-  async_connect_unlock_and_cleanup(exec_ctx, ac, socket);
+  async_connect_unlock_and_cleanup(ac, socket);
 }
 
-static void on_connect(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
+static void on_connect(void* acp, grpc_error* error) {
   async_connect* ac = (async_connect*)acp;
   grpc_endpoint** ep = ac->endpoint;
   GPR_ASSERT(*ep == NULL);
@@ -90,7 +89,7 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
   ac->socket = NULL;
   gpr_mu_unlock(&ac->mu);
 
-  grpc_timer_cancel(exec_ctx, &ac->alarm);
+  grpc_timer_cancel(&ac->alarm);
 
   gpr_mu_lock(&ac->mu);
 
@@ -104,9 +103,9 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
       GPR_ASSERT(transfered_bytes == 0);
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
+        closesocket(socket->socket);
       } else {
-        *ep =
-            grpc_tcp_create(exec_ctx, socket, ac->channel_args, ac->addr_name);
+        *ep = grpc_tcp_create(socket, ac->channel_args, ac->addr_name);
         socket = NULL;
       }
     } else {
@@ -114,18 +113,20 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* acp, grpc_error* error) {
     }
   }
 
-  async_connect_unlock_and_cleanup(exec_ctx, ac, socket);
+  async_connect_unlock_and_cleanup(ac, socket);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
-  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(on_done, error);
 }
 
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
-static void tcp_client_connect_impl(
-    grpc_exec_ctx* exec_ctx, grpc_closure* on_done, grpc_endpoint** endpoint,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
-    const grpc_resolved_address* addr, grpc_millis deadline) {
+static void tcp_client_connect_impl(grpc_closure* on_done,
+                                    grpc_endpoint** endpoint,
+                                    grpc_pollset_set* interested_parties,
+                                    const grpc_channel_args* channel_args,
+                                    const grpc_resolved_address* addr,
+                                    grpc_millis deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -205,8 +206,8 @@ static void tcp_client_connect_impl(
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
-  grpc_timer_init(exec_ctx, &ac->alarm, deadline, &ac->on_alarm);
-  grpc_socket_notify_on_write(exec_ctx, socket, &ac->on_connect);
+  grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
+  grpc_socket_notify_on_write(socket, &ac->on_connect);
   return;
 
 failure:
@@ -222,26 +223,23 @@ failure:
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }
-  GRPC_CLOSURE_SCHED(exec_ctx, on_done, final_error);
+  GRPC_CLOSURE_SCHED(on_done, final_error);
 }
 
 // overridden by api_fuzzer.c
-extern "C" {
 void (*grpc_tcp_client_connect_impl)(
-    grpc_exec_ctx* exec_ctx, grpc_closure* closure, grpc_endpoint** ep,
+    grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr,
     grpc_millis deadline) = tcp_client_connect_impl;
-}
 
-void grpc_tcp_client_connect(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
-                             grpc_endpoint** ep,
+void grpc_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
                              grpc_pollset_set* interested_parties,
                              const grpc_channel_args* channel_args,
                              const grpc_resolved_address* addr,
                              grpc_millis deadline) {
-  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties,
-                               channel_args, addr, deadline);
+  grpc_tcp_client_connect_impl(closure, ep, interested_parties, channel_args,
+                               addr, deadline);
 }
 
 #endif /* GRPC_WINSOCK_SOCKET */

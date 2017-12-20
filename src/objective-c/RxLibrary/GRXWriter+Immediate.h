@@ -30,7 +30,7 @@
  * Returns a writer that pushes to its writeable the successive values returned by the passed
  * block. When the block first returns nil, it is released.
  */
-+ (instancetype)writerWithValueSupplier:(id (^)())block;
++ (instancetype)writerWithValueSupplier:(id (^)(void))block;
 
 /**
  * Returns a writer that iterates over the values of the passed container and pushes them to

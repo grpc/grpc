@@ -300,6 +300,7 @@ namespace Grpc.Core
         {
             if (!shutdownRequested)
             {
+                // TODO(jtattermusch): avoid unnecessary delegate allocation
                 handle.RequestCall((success, ctx) => HandleNewServerRpc(success, ctx, cq), cq);
             }
         }
@@ -387,7 +388,7 @@ namespace Grpc.Core
         /// <summary>
         /// Handles native callback.
         /// </summary>
-        private void HandleServerShutdown(bool success, BatchContextSafeHandle ctx)
+        private void HandleServerShutdown(bool success, BatchContextSafeHandle ctx, object state)
         {
             shutdownTcs.SetResult(null);
         }

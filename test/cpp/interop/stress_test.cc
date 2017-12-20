@@ -36,9 +36,7 @@
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
-extern "C" {
 extern void gpr_default_log(gpr_log_func_args* args);
-}
 
 DEFINE_int32(metrics_port, 8081, "The metrics server port.");
 
@@ -230,7 +228,7 @@ int main(int argc, char** argv) {
   log_level = FLAGS_log_level;
   gpr_set_log_function(TestLogFunction);
 
-  srand(time(NULL));
+  srand(time(nullptr));
 
   // Parse the server addresses
   std::vector<grpc::string> server_addresses;

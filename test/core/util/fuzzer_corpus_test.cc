@@ -29,8 +29,15 @@
 #include "test/core/util/test_config.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
-extern "C" bool squelch;
-extern "C" bool leak_check;
+extern bool squelch;
+extern bool leak_check;
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
 
 DEFINE_string(file, "", "Use this file as test data");
 DEFINE_string(directory, "", "Use this directory as test data");
@@ -65,7 +72,7 @@ class ExampleGenerator
         struct dirent* ep;
         dp = opendir(FLAGS_directory.c_str());
 
-        if (dp != NULL) {
+        if (dp != nullptr) {
           while ((ep = readdir(dp)) != nullptr) {
             if (ep->d_type == DT_REG) {
               examples_.push_back(FLAGS_directory + "/" + ep->d_name);
@@ -129,7 +136,7 @@ INSTANTIATE_TEST_CASE_P(
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  ::gflags::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
   ::testing::InitGoogleTest(&argc, argv);
 
   return RUN_ALL_TESTS();

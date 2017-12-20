@@ -273,74 +273,6 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public async Task ClientStreamingCall_CancelAfterBegin()
-        {
-            var barrier = new TaskCompletionSource<object>();
-
-            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
-            {
-                barrier.SetResult(null);
-                await requestStream.ToListAsync();
-                return "";
-            });
-
-            var cts = new CancellationTokenSource();
-            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
-
-            await barrier.Task;  // make sure the handler has started.
-            cts.Cancel();
-
-            try
-            {
-                // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
-                await call.ResponseAsync;
-                Assert.Fail();
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
-            }
-        }
-
-        [Test]
-        public async Task ClientStreamingCall_ServerSideReadAfterCancelNotificationReturnsNull()
-        {
-            var handlerStartedBarrier = new TaskCompletionSource<object>();
-            var cancelNotificationReceivedBarrier = new TaskCompletionSource<object>();
-            var successTcs = new TaskCompletionSource<string>();
-
-            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
-            {
-                handlerStartedBarrier.SetResult(null);
-
-                // wait for cancellation to be delivered.
-                context.CancellationToken.Register(() => cancelNotificationReceivedBarrier.SetResult(null));
-                await cancelNotificationReceivedBarrier.Task;
-
-                var moveNextResult = await requestStream.MoveNext();
-                successTcs.SetResult(!moveNextResult ? "SUCCESS" : "FAIL");
-                return "";
-            });
-
-            var cts = new CancellationTokenSource();
-            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
-
-            await handlerStartedBarrier.Task;
-            cts.Cancel();
-
-            try
-            {
-                await call.ResponseAsync;
-                Assert.Fail();
-            }
-            catch (RpcException ex)
-            {
-                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
-            }
-            Assert.AreEqual("SUCCESS", await successTcs.Task);
-        }
-
-        [Test]
         public async Task AsyncUnaryCall_EchoMetadata()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
@@ -440,35 +372,6 @@ namespace Grpc.Core.Tests
                 return Task.FromResult("PASS");
             });
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
-        }
-
-        [Test]
-        public async Task Channel_WaitForStateChangedAsync()
-        {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
-            {
-                return Task.FromResult(request);
-            });
-
-            Assert.ThrowsAsync(typeof(TaskCanceledException), 
-                async () => await channel.WaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(10)));
-
-            var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);
-
-            await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc");
-
-            await stateChangedTask;
-            Assert.AreEqual(ChannelState.Ready, channel.State);
-        }
-
-        [Test]
-        public async Task Channel_ConnectAsync()
-        {
-            await channel.ConnectAsync();
-            Assert.AreEqual(ChannelState.Ready, channel.State);
-
-            await channel.ConnectAsync(DateTime.UtcNow.AddMilliseconds(1000));
-            Assert.AreEqual(ChannelState.Ready, channel.State);
         }
     }
 }

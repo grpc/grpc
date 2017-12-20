@@ -16,9 +16,7 @@
  *
  */
 
-extern "C" {
 #include "src/core/lib/debug/stats.h"
-}
 
 #include <mutex>
 #include <thread>
@@ -51,9 +49,8 @@ TEST(StatsTest, IncCounters) {
   for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
     Snapshot snapshot;
 
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GRPC_STATS_INC_COUNTER(&exec_ctx, (grpc_stats_counters)i);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    GRPC_STATS_INC_COUNTER((grpc_stats_counters)i);
 
     EXPECT_EQ(snapshot.delta().counters[i], 1);
   }
@@ -62,9 +59,8 @@ TEST(StatsTest, IncCounters) {
 TEST(StatsTest, IncSpecificCounter) {
   Snapshot snapshot;
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GRPC_STATS_INC_SYSCALL_POLL(&exec_ctx);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_STATS_INC_SYSCALL_POLL();
 
   EXPECT_EQ(snapshot.delta().counters[GRPC_STATS_COUNTER_SYSCALL_POLL], 1);
 }
@@ -96,9 +92,8 @@ TEST_P(HistogramTest, IncHistogram) {
     for (auto j : test_values) {
       Snapshot snapshot;
 
-      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_stats_inc_histogram[kHistogram](&exec_ctx, j);
-      grpc_exec_ctx_finish(&exec_ctx);
+      grpc_core::ExecCtx exec_ctx;
+      grpc_stats_inc_histogram[kHistogram](j);
 
       auto delta = snapshot.delta();
 
@@ -111,11 +106,12 @@ TEST_P(HistogramTest, IncHistogram) {
     }
   };
   std::vector<int> test_values;
-  for (int j = -1000;
-       j < grpc_stats_histo_bucket_boundaries
-                   [kHistogram][grpc_stats_histo_buckets[kHistogram] - 1] +
-               1000;
-       j++) {
+  // largest bucket boundary for current histogram type.
+  int max_bucket_boundary =
+      grpc_stats_histo_bucket_boundaries[kHistogram]
+                                        [grpc_stats_histo_buckets[kHistogram] -
+                                         1];
+  for (int j = -1000; j < max_bucket_boundary + 1000;) {
     int expected_bucket = FindExpectedBucket(kHistogram, j);
     if (cur_bucket != expected_bucket) {
       threads.emplace_back(
@@ -124,6 +120,14 @@ TEST_P(HistogramTest, IncHistogram) {
       test_values.clear();
     }
     test_values.push_back(j);
+    if (j < max_bucket_boundary &&
+        FindExpectedBucket(kHistogram, j + 1000) == expected_bucket &&
+        FindExpectedBucket(kHistogram, j - 1000) == expected_bucket) {
+      // if we are far from bucket boundary, skip values to speed-up the tests
+      j += 500;
+    } else {
+      j++;
+    }
   }
   run(test_values, cur_bucket);
   for (auto& t : threads) {

@@ -22,10 +22,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // auth_refresh_token parsing.
 typedef struct {
   const char* type;
@@ -56,8 +52,7 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token);
 //  This object is a base for credentials that need to acquire an oauth2 token
 //  from an http service.
 
-typedef void (*grpc_fetch_oauth2_func)(grpc_exec_ctx* exec_ctx,
-                                       grpc_credentials_metadata_request* req,
+typedef void (*grpc_fetch_oauth2_func)(grpc_credentials_metadata_request* req,
                                        grpc_httpcli_context* http_context,
                                        grpc_polling_entity* pollent,
                                        grpc_iomgr_cb_func cb,
@@ -103,11 +98,7 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 // Exposed for testing only.
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    grpc_exec_ctx* exec_ctx, const struct grpc_http_response* response,
-    grpc_mdelem* token_md, grpc_millis* token_lifetime);
-
-#ifdef __cplusplus
-}
-#endif
+    const struct grpc_http_response* response, grpc_mdelem* token_md,
+    grpc_millis* token_lifetime);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

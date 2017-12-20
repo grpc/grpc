@@ -342,32 +342,195 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
         raise NotImplementedError()
 
 
+##############  Invocation-Side Interceptor Interfaces & Classes  ##############
+
+
+class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
+    """Describes an RPC to be invoked.
+
+    This is an EXPERIMENTAL API.
+
+    Attributes:
+      method: The method name of the RPC.
+      timeout: An optional duration of time in seconds to allow for the RPC.
+      metadata: Optional :term:`metadata` to be transmitted to
+        the service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
+    """
+
+
+class UnaryUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting unary-unary invocations.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        """Intercepts a unary-unary invocation asynchronously.
+
+        Args:
+          continuation: A function that proceeds with the invocation by
+            executing the next interceptor in chain or invoking the
+            actual RPC on the underlying Channel. It is the interceptor's
+            responsibility to call it if it decides to move the RPC forward.
+            The interceptor can use
+            `response_future = continuation(client_call_details, request)`
+            to continue with the RPC. `continuation` returns an object that is
+            both a Call for the RPC and a Future. In the event of RPC
+            completion, the return Call-Future's result value will be
+            the response message of the RPC. Should the event terminate
+            with non-OK status, the returned Call-Future's exception value
+            will be an RpcError.
+          client_call_details: A ClientCallDetails object describing the
+            outgoing RPC.
+          request: The request value for the RPC.
+
+        Returns:
+            An object that is both a Call for the RPC and a Future.
+            In the event of RPC completion, the return Call-Future's
+            result value will be the response message of the RPC.
+            Should the event terminate with non-OK status, the returned
+            Call-Future's exception value will be an RpcError.
+        """
+        raise NotImplementedError()
+
+
+class UnaryStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting unary-stream invocations.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_unary_stream(self, continuation, client_call_details,
+                               request):
+        """Intercepts a unary-stream invocation.
+
+        Args:
+          continuation: A function that proceeds with the invocation by
+            executing the next interceptor in chain or invoking the
+            actual RPC on the underlying Channel. It is the interceptor's
+            responsibility to call it if it decides to move the RPC forward.
+            The interceptor can use
+            `response_iterator = continuation(client_call_details, request)`
+            to continue with the RPC. `continuation` returns an object that is
+            both a Call for the RPC and an iterator for response values.
+            Drawing response values from the returned Call-iterator may
+            raise RpcError indicating termination of the RPC with non-OK
+            status.
+          client_call_details: A ClientCallDetails object describing the
+            outgoing RPC.
+          request: The request value for the RPC.
+
+        Returns:
+            An object that is both a Call for the RPC and an iterator of
+            response values. Drawing response values from the returned
+            Call-iterator may raise RpcError indicating termination of
+            the RPC with non-OK status.
+        """
+        raise NotImplementedError()
+
+
+class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting stream-unary invocations.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_stream_unary(self, continuation, client_call_details,
+                               request_iterator):
+        """Intercepts a stream-unary invocation asynchronously.
+
+        Args:
+          continuation: A function that proceeds with the invocation by
+            executing the next interceptor in chain or invoking the
+            actual RPC on the underlying Channel. It is the interceptor's
+            responsibility to call it if it decides to move the RPC forward.
+            The interceptor can use
+            `response_future = continuation(client_call_details,
+                                            request_iterator)`
+            to continue with the RPC. `continuation` returns an object that is
+            both a Call for the RPC and a Future. In the event of RPC completion,
+            the return Call-Future's result value will be the response message
+            of the RPC. Should the event terminate with non-OK status, the
+            returned Call-Future's exception value will be an RpcError.
+          client_call_details: A ClientCallDetails object describing the
+            outgoing RPC.
+          request_iterator: An iterator that yields request values for the RPC.
+
+        Returns:
+            An object that is both a Call for the RPC and a Future.
+            In the event of RPC completion, the return Call-Future's
+            result value will be the response message of the RPC.
+            Should the event terminate with non-OK status, the returned
+            Call-Future's exception value will be an RpcError.
+        """
+        raise NotImplementedError()
+
+
+class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting stream-stream invocations.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_stream_stream(self, continuation, client_call_details,
+                                request_iterator):
+        """Intercepts a stream-stream invocation.
+
+          continuation: A function that proceeds with the invocation by
+            executing the next interceptor in chain or invoking the
+            actual RPC on the underlying Channel. It is the interceptor's
+            responsibility to call it if it decides to move the RPC forward.
+            The interceptor can use
+            `response_iterator = continuation(client_call_details,
+                                              request_iterator)`
+            to continue with the RPC. `continuation` returns an object that is
+            both a Call for the RPC and an iterator for response values.
+            Drawing response values from the returned Call-iterator may
+            raise RpcError indicating termination of the RPC with non-OK
+            status.
+          client_call_details: A ClientCallDetails object describing the
+            outgoing RPC.
+          request_iterator: An iterator that yields request values for the RPC.
+
+        Returns:
+            An object that is both a Call for the RPC and an iterator of
+            response values. Drawing response values from the returned
+            Call-iterator may raise RpcError indicating termination of
+            the RPC with non-OK status.
+        """
+        raise NotImplementedError()
+
+
 ############  Authentication & Authorization Interfaces & Classes  #############
 
 
 class ChannelCredentials(object):
     """An encapsulation of the data required to create a secure Channel.
 
-  This class has no supported interface - it exists to define the type of its
-  instances and its instances exist to be passed to other functions. For
-  example, ssl_channel_credentials returns an instance, and secure_channel
-  consumes an instance of this class.
-  """
+    This class has no supported interface - it exists to define the type of its
+    instances and its instances exist to be passed to other functions. For
+    example, ssl_channel_credentials returns an instance of this class and
+    secure_channel requires an instance of this class.
+    """
 
     def __init__(self, credentials):
         self._credentials = credentials
 
 
 class CallCredentials(object):
-    """An encapsulation of the data required to assert an identity over a
-       channel.
+    """An encapsulation of the data required to assert an identity over a call.
 
-  A CallCredentials may be composed with ChannelCredentials to always assert
-  identity for every call over that Channel.
+    A CallCredentials may be composed with ChannelCredentials to always assert
+    identity for every call over that Channel.
 
-  This class has no supported interface - it exists to define the type of its
-  instances and its instances exist to be passed to other functions.
-  """
+    This class has no supported interface - it exists to define the type of its
+    instances and its instances exist to be passed to other functions.
+    """
 
     def __init__(self, credentials):
         self._credentials = credentials
@@ -376,23 +539,22 @@ class CallCredentials(object):
 class AuthMetadataContext(six.with_metaclass(abc.ABCMeta)):
     """Provides information to call credentials metadata plugins.
 
-  Attributes:
-    service_url: A string URL of the service being called into.
-    method_name: A string of the fully qualified method name being called.
-  """
+    Attributes:
+      service_url: A string URL of the service being called into.
+      method_name: A string of the fully qualified method name being called.
+    """
 
 
 class AuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
     """Callback object received by a metadata plugin."""
 
     def __call__(self, metadata, error):
-        """Inform the gRPC runtime of the metadata to construct a
-           CallCredentials.
+        """Passes to the gRPC runtime authentication metadata for an RPC.
 
-    Args:
-      metadata: The :term:`metadata` used to construct the CallCredentials.
-      error: An Exception to indicate error or None to indicate success.
-    """
+        Args:
+          metadata: The :term:`metadata` used to construct the CallCredentials.
+          error: An Exception to indicate error or None to indicate success.
+        """
         raise NotImplementedError()
 
 
@@ -402,14 +564,14 @@ class AuthMetadataPlugin(six.with_metaclass(abc.ABCMeta)):
     def __call__(self, context, callback):
         """Implements authentication by passing metadata to a callback.
 
-    Implementations of this method must not block.
+        Implementations of this method must not block.
 
-    Args:
-      context: An AuthMetadataContext providing information on the RPC that the
-        plugin is being called to authenticate.
-      callback: An AuthMetadataPluginCallback to be invoked either synchronously
-        or asynchronously.
-    """
+        Args:
+          context: An AuthMetadataContext providing information on the RPC that
+            the plugin is being called to authenticate.
+          callback: An AuthMetadataPluginCallback to be invoked either
+            synchronously or asynchronously.
+        """
         raise NotImplementedError()
 
 
@@ -422,6 +584,21 @@ class ServerCredentials(object):
 
     def __init__(self, credentials):
         self._credentials = credentials
+
+
+class ServerCertificateConfiguration(object):
+    """A certificate configuration for use with an SSL-enabled Server.
+
+    Instances of this class can be returned in the certificate configuration
+    fetching callback.
+
+    This class has no supported interface -- it exists to define the
+    type of its instances and its instances exist to be passed to
+    other functions.
+    """
+
+    def __init__(self, certificate_configuration):
+        self._certificate_configuration = certificate_configuration
 
 
 ########################  Multi-Callable Interfaces  ###########################
@@ -822,27 +999,47 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def abort(self, code, details):
+        """Raises an exception to terminate the RPC with a non-OK status.
+
+        The code and details passed as arguments will supercede any existing
+        ones.
+
+        Args:
+          code: A StatusCode object to be sent to the client.
+            It must not be StatusCode.OK.
+          details: An ASCII-encodable string to be sent to the client upon
+            termination of the RPC.
+
+        Raises:
+          Exception: An exception is always raised to signal the abortion the
+            RPC to the gRPC runtime.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def set_code(self, code):
         """Sets the value to be used as status code upon RPC completion.
 
-    This method need not be called by method implementations if they wish the
-    gRPC runtime to determine the status code of the RPC.
+        This method need not be called by method implementations if they wish
+        the gRPC runtime to determine the status code of the RPC.
 
-    Args:
-      code: A StatusCode object to be sent to the client.
-    """
+        Args:
+          code: A StatusCode object to be sent to the client.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def set_details(self, details):
         """Sets the value to be used as detail string upon RPC completion.
 
-    This method need not be called by method implementations if they have no
-    details to transmit.
+        This method need not be called by method implementations if they have
+        no details to transmit.
 
-    Args:
-      details: An arbitrary string to be sent to the client upon completion.
-    """
+        Args:
+          details: An ASCII-encodable string to be sent to the client upon
+            termination of the RPC.
+        """
         raise NotImplementedError()
 
 
@@ -926,6 +1123,34 @@ class ServiceRpcHandler(six.with_metaclass(abc.ABCMeta, GenericRpcHandler)):
     Returns:
       The service name.
     """
+        raise NotImplementedError()
+
+
+####################  Service-Side Interceptor Interfaces  #####################
+
+
+class ServerInterceptor(six.with_metaclass(abc.ABCMeta)):
+    """Affords intercepting incoming RPCs on the service-side.
+
+    This is an EXPERIMENTAL API.
+    """
+
+    @abc.abstractmethod
+    def intercept_service(self, continuation, handler_call_details):
+        """Intercepts incoming RPCs before handing them over to a handler.
+
+        Args:
+          continuation: A function that takes a HandlerCallDetails and
+            proceeds to invoke the next interceptor in the chain, if any,
+            or the RPC handler lookup logic, with the call details passed
+            as an argument, and returns an RpcMethodHandler instance if
+            the RPC is considered serviced, or None otherwise.
+          handler_call_details: A HandlerCallDetails describing the RPC.
+
+        Returns:
+          An RpcMethodHandler with which the RPC may be serviced if the
+          interceptor chooses to service this RPC, or None otherwise.
+        """
         raise NotImplementedError()
 
 
@@ -1123,99 +1348,86 @@ def ssl_channel_credentials(root_certificates=None,
                             certificate_chain=None):
     """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
-  Args:
-    root_certificates: The PEM-encoded root certificates as a byte string,
-    or None to retrieve them from a default location chosen by gRPC runtime.
-    private_key: The PEM-encoded private key as a byte string, or None if no
-    private key should be used.
-    certificate_chain: The PEM-encoded certificate chain as a byte string
-    to use or or None if no certificate chain should be used.
+    Args:
+      root_certificates: The PEM-encoded root certificates as a byte string,
+        or None to retrieve them from a default location chosen by gRPC
+        runtime.
+      private_key: The PEM-encoded private key as a byte string, or None if no
+        private key should be used.
+      certificate_chain: The PEM-encoded certificate chain as a byte string
+        to use or or None if no certificate chain should be used.
 
-  Returns:
-    A ChannelCredentials for use with an SSL-enabled Channel.
-  """
-    if private_key is not None or certificate_chain is not None:
-        pair = _cygrpc.SslPemKeyCertPair(private_key, certificate_chain)
-    else:
-        pair = None
+    Returns:
+      A ChannelCredentials for use with an SSL-enabled Channel.
+    """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_ssl(root_certificates, pair))
+        _cygrpc.SSLChannelCredentials(root_certificates, private_key,
+                                      certificate_chain))
 
 
 def metadata_call_credentials(metadata_plugin, name=None):
     """Construct CallCredentials from an AuthMetadataPlugin.
 
-  Args:
-    metadata_plugin: An AuthMetadataPlugin to use for authentication.
-    name: An optional name for the plugin.
+    Args:
+      metadata_plugin: An AuthMetadataPlugin to use for authentication.
+      name: An optional name for the plugin.
 
-  Returns:
-    A CallCredentials.
-  """
+    Returns:
+      A CallCredentials.
+    """
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
-    if name is None:
-        try:
-            effective_name = metadata_plugin.__name__
-        except AttributeError:
-            effective_name = metadata_plugin.__class__.__name__
-    else:
-        effective_name = name
-    return CallCredentials(
-        _plugin_wrapping.call_credentials_metadata_plugin(metadata_plugin,
-                                                          effective_name))
+    return _plugin_wrapping.metadata_plugin_call_credentials(metadata_plugin,
+                                                             name)
 
 
 def access_token_call_credentials(access_token):
     """Construct CallCredentials from an access token.
 
-  Args:
-    access_token: A string to place directly in the http request
-      authorization header, for example
-      "authorization: Bearer <access_token>".
+    Args:
+      access_token: A string to place directly in the http request
+        authorization header, for example
+        "authorization: Bearer <access_token>".
 
-  Returns:
-    A CallCredentials.
-  """
+    Returns:
+      A CallCredentials.
+    """
     from grpc import _auth  # pylint: disable=cyclic-import
-    return metadata_call_credentials(
-        _auth.AccessTokenCallCredentials(access_token))
+    from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
+    return _plugin_wrapping.metadata_plugin_call_credentials(
+        _auth.AccessTokenAuthMetadataPlugin(access_token), None)
 
 
 def composite_call_credentials(*call_credentials):
     """Compose multiple CallCredentials to make a new CallCredentials.
 
-  Args:
-    *call_credentials: At least two CallCredentials objects.
+    Args:
+      *call_credentials: At least two CallCredentials objects.
 
-  Returns:
-    A CallCredentials object composed of the given CallCredentials objects.
-  """
-    from grpc import _credential_composition  # pylint: disable=cyclic-import
-    cygrpc_call_credentials = tuple(
-        single_call_credentials._credentials
-        for single_call_credentials in call_credentials)
+    Returns:
+      A CallCredentials object composed of the given CallCredentials objects.
+    """
     return CallCredentials(
-        _credential_composition.call(cygrpc_call_credentials))
+        _cygrpc.CompositeCallCredentials(
+            tuple(single_call_credentials._credentials
+                  for single_call_credentials in call_credentials)))
 
 
 def composite_channel_credentials(channel_credentials, *call_credentials):
     """Compose a ChannelCredentials and one or more CallCredentials objects.
 
-  Args:
-    channel_credentials: A ChannelCredentials object.
-    *call_credentials: One or more CallCredentials objects.
+    Args:
+      channel_credentials: A ChannelCredentials object.
+      *call_credentials: One or more CallCredentials objects.
 
-  Returns:
-    A ChannelCredentials composed of the given ChannelCredentials and
-    CallCredentials objects.
-  """
-    from grpc import _credential_composition  # pylint: disable=cyclic-import
-    cygrpc_call_credentials = tuple(
-        single_call_credentials._credentials
-        for single_call_credentials in call_credentials)
+    Returns:
+      A ChannelCredentials composed of the given ChannelCredentials and
+        CallCredentials objects.
+    """
     return ChannelCredentials(
-        _credential_composition.channel(channel_credentials._credentials,
-                                        cygrpc_call_credentials))
+        _cygrpc.CompositeChannelCredentials(
+            tuple(single_call_credentials._credentials
+                  for single_call_credentials in call_credentials),
+            channel_credentials._credentials))
 
 
 def ssl_server_credentials(private_key_certificate_chain_pairs,
@@ -1250,6 +1462,61 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
             ], require_client_auth))
+
+
+def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,
+                                         root_certificates=None):
+    """Creates a ServerCertificateConfiguration for use with a Server.
+
+    Args:
+      private_key_certificate_chain_pairs: A collection of pairs of
+        the form [PEM-encoded private key, PEM-encoded certificate
+        chain].
+      root_certificates: An optional byte string of PEM-encoded client root
+        certificates that the server will use to verify client authentication.
+
+    Returns:
+      A ServerCertificateConfiguration that can be returned in the certificate
+        configuration fetching callback.
+    """
+    if len(private_key_certificate_chain_pairs) == 0:
+        raise ValueError(
+            'At least one private key-certificate chain pair is required!')
+    else:
+        return ServerCertificateConfiguration(
+            _cygrpc.server_certificate_config_ssl(root_certificates, [
+                _cygrpc.SslPemKeyCertPair(key, pem)
+                for key, pem in private_key_certificate_chain_pairs
+            ]))
+
+
+def dynamic_ssl_server_credentials(initial_certificate_configuration,
+                                   certificate_configuration_fetcher,
+                                   require_client_authentication=False):
+    """Creates a ServerCredentials for use with an SSL-enabled Server.
+
+    Args:
+      initial_certificate_configuration (ServerCertificateConfiguration): The
+        certificate configuration with which the server will be initialized.
+      certificate_configuration_fetcher (callable): A callable that takes no
+        arguments and should return a ServerCertificateConfiguration to
+        replace the server's current certificate, or None for no change
+        (i.e., the server will continue its current certificate
+        config). The library will call this callback on *every* new
+        client connection before starting the TLS handshake with the
+        client, thus allowing the user application to optionally
+        return a new ServerCertificateConfiguration that the server will then
+        use for the handshake.
+      require_client_authentication: A boolean indicating whether or not to
+        require clients to be authenticated.
+
+    Returns:
+      A ServerCredentials.
+    """
+    return ServerCredentials(
+        _cygrpc.server_credentials_ssl_dynamic_cert_config(
+            initial_certificate_configuration,
+            certificate_configuration_fetcher, require_client_authentication))
 
 
 def channel_ready_future(channel):
@@ -1301,51 +1568,88 @@ def secure_channel(target, credentials, options=None):
                             credentials._credentials)
 
 
+def intercept_channel(channel, *interceptors):
+    """Intercepts a channel through a set of interceptors.
+
+    This is an EXPERIMENTAL API.
+
+    Args:
+      channel: A Channel.
+      interceptors: Zero or more objects of type
+        UnaryUnaryClientInterceptor,
+        UnaryStreamClientInterceptor,
+        StreamUnaryClientInterceptor, or
+        StreamStreamClientInterceptor.
+        Interceptors are given control in the order they are listed.
+
+    Returns:
+      A Channel that intercepts each invocation via the provided interceptors.
+
+    Raises:
+      TypeError: If interceptor does not derive from any of
+        UnaryUnaryClientInterceptor,
+        UnaryStreamClientInterceptor,
+        StreamUnaryClientInterceptor, or
+        StreamStreamClientInterceptor.
+    """
+    from grpc import _interceptor  # pylint: disable=cyclic-import
+    return _interceptor.intercept_channel(channel, *interceptors)
+
+
 def server(thread_pool,
            handlers=None,
+           interceptors=None,
            options=None,
            maximum_concurrent_rpcs=None):
     """Creates a Server with which RPCs can be serviced.
 
-  Args:
-    thread_pool: A futures.ThreadPoolExecutor to be used by the Server
-      to execute RPC handlers.
-    handlers: An optional list of GenericRpcHandlers used for executing RPCs.
-      More handlers may be added by calling add_generic_rpc_handlers any time
-      before the server is started.
-    options: An optional list of key-value pairs (channel args in gRPC runtime)
-    to configure the channel.
-    maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
-      will service before returning RESOURCE_EXHAUSTED status, or None to
-      indicate no limit.
+    Args:
+      thread_pool: A futures.ThreadPoolExecutor to be used by the Server
+        to execute RPC handlers.
+      handlers: An optional list of GenericRpcHandlers used for executing RPCs.
+        More handlers may be added by calling add_generic_rpc_handlers any time
+        before the server is started.
+      interceptors: An optional list of ServerInterceptor objects that observe
+        and optionally manipulate the incoming RPCs before handing them over to
+        handlers. The interceptors are given control in the order they are
+        specified. This is an EXPERIMENTAL API.
+      options: An optional list of key-value pairs (channel args in gRPC runtime)
+      to configure the channel.
+      maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
+        will service before returning RESOURCE_EXHAUSTED status, or None to
+        indicate no limit.
 
-  Returns:
-    A Server object.
-  """
+    Returns:
+      A Server object.
+    """
     from grpc import _server  # pylint: disable=cyclic-import
     return _server.Server(thread_pool, () if handlers is None else handlers, ()
-                          if options is None else options,
-                          maximum_concurrent_rpcs)
+                          if interceptors is None else interceptors, () if
+                          options is None else options, maximum_concurrent_rpcs)
 
 
 ###################################  __all__  #################################
 
-__all__ = ('FutureTimeoutError', 'FutureCancelledError', 'Future',
-           'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext',
-           'Call', 'ChannelCredentials', 'CallCredentials',
-           'AuthMetadataContext', 'AuthMetadataPluginCallback',
-           'AuthMetadataPlugin', 'ServerCredentials', 'UnaryUnaryMultiCallable',
-           'UnaryStreamMultiCallable', 'StreamUnaryMultiCallable',
-           'StreamStreamMultiCallable', 'Channel', 'ServicerContext',
-           'RpcMethodHandler', 'HandlerCallDetails', 'GenericRpcHandler',
-           'ServiceRpcHandler', 'Server', 'unary_unary_rpc_method_handler',
-           'unary_stream_rpc_method_handler', 'stream_unary_rpc_method_handler',
-           'stream_stream_rpc_method_handler',
-           'method_handlers_generic_handler', 'ssl_channel_credentials',
-           'metadata_call_credentials', 'access_token_call_credentials',
-           'composite_call_credentials', 'composite_channel_credentials',
-           'ssl_server_credentials', 'channel_ready_future', 'insecure_channel',
-           'secure_channel', 'server',)
+__all__ = (
+    'FutureTimeoutError', 'FutureCancelledError', 'Future',
+    'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext', 'Call',
+    'ChannelCredentials', 'CallCredentials', 'AuthMetadataContext',
+    'AuthMetadataPluginCallback', 'AuthMetadataPlugin', 'ClientCallDetails',
+    'ServerCertificateConfiguration', 'ServerCredentials',
+    'UnaryUnaryMultiCallable', 'UnaryStreamMultiCallable',
+    'StreamUnaryMultiCallable', 'StreamStreamMultiCallable',
+    'UnaryUnaryClientInterceptor', 'UnaryStreamClientInterceptor',
+    'StreamUnaryClientInterceptor', 'StreamStreamClientInterceptor', 'Channel',
+    'ServicerContext', 'RpcMethodHandler', 'HandlerCallDetails',
+    'GenericRpcHandler', 'ServiceRpcHandler', 'Server', 'ServerInterceptor',
+    'unary_unary_rpc_method_handler', 'unary_stream_rpc_method_handler',
+    'stream_unary_rpc_method_handler', 'stream_stream_rpc_method_handler',
+    'method_handlers_generic_handler', 'ssl_channel_credentials',
+    'metadata_call_credentials', 'access_token_call_credentials',
+    'composite_call_credentials', 'composite_channel_credentials',
+    'ssl_server_credentials', 'ssl_server_certificate_configuration',
+    'dynamic_ssl_server_credentials', 'channel_ready_future',
+    'insecure_channel', 'secure_channel', 'intercept_channel', 'server',)
 
 ############################### Extension Shims ################################
 

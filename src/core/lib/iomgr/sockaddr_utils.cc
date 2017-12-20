@@ -41,14 +41,14 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
   GPR_ASSERT(resolved_addr != resolved_addr4_out);
   const struct sockaddr* addr = (const struct sockaddr*)resolved_addr->addr;
   struct sockaddr_in* addr4_out =
-      resolved_addr4_out == NULL
-          ? NULL
+      resolved_addr4_out == nullptr
+          ? nullptr
           : (struct sockaddr_in*)resolved_addr4_out->addr;
   if (addr->sa_family == AF_INET6) {
     const struct sockaddr_in6* addr6 = (const struct sockaddr_in6*)addr;
     if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,
                sizeof(kV4MappedPrefix)) == 0) {
-      if (resolved_addr4_out != NULL) {
+      if (resolved_addr4_out != nullptr) {
         /* Normalize ::ffff:0.0.0.0/96 to IPv4. */
         memset(resolved_addr4_out, 0, sizeof(*resolved_addr4_out));
         addr4_out->sin_family = AF_INET;
@@ -147,12 +147,12 @@ int grpc_sockaddr_to_string(char** out,
   const int save_errno = errno;
   grpc_resolved_address addr_normalized;
   char ntop_buf[INET6_ADDRSTRLEN];
-  const void* ip = NULL;
-  int port;
+  const void* ip = nullptr;
+  int port = 0;
   uint32_t sin6_scope_id = 0;
   int ret;
 
-  *out = NULL;
+  *out = nullptr;
   if (normalize && grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
     resolved_addr = &addr_normalized;
   }
@@ -167,8 +167,8 @@ int grpc_sockaddr_to_string(char** out,
     port = ntohs(addr6->sin6_port);
     sin6_scope_id = addr6->sin6_scope_id;
   }
-  if (ip != NULL &&
-      grpc_inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != NULL) {
+  if (ip != nullptr && grpc_inet_ntop(addr->sa_family, ip, ntop_buf,
+                                      sizeof(ntop_buf)) != nullptr) {
     if (sin6_scope_id != 0) {
       char* host_with_scope;
       /* Enclose sin6_scope_id with the format defined in RFC 6784 section 2. */
@@ -192,18 +192,18 @@ char* grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
     resolved_addr = &addr_normalized;
   }
   const char* scheme = grpc_sockaddr_get_uri_scheme(resolved_addr);
-  if (scheme == NULL || strcmp("unix", scheme) == 0) {
+  if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
   }
-  char* path = NULL;
-  char* uri_str = NULL;
+  char* path = nullptr;
+  char* uri_str = nullptr;
   if (grpc_sockaddr_to_string(&path, resolved_addr,
                               false /* suppress errors */) &&
-      scheme != NULL) {
+      scheme != nullptr) {
     gpr_asprintf(&uri_str, "%s:%s", scheme, path);
   }
   gpr_free(path);
-  return uri_str != NULL ? uri_str : NULL;
+  return uri_str != nullptr ? uri_str : nullptr;
 }
 
 const char* grpc_sockaddr_get_uri_scheme(
@@ -217,7 +217,7 @@ const char* grpc_sockaddr_get_uri_scheme(
     case AF_UNIX:
       return "unix";
   }
-  return NULL;
+  return nullptr;
 }
 
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr) {

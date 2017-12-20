@@ -23,6 +23,30 @@
 # each change must be ported from one to the other.
 #
 
+# The set of pollers to test against if a test exercises polling
+POLLERS = ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv']
+
+def _get_external_deps(external_deps):
+  ret = []
+  for dep in external_deps:
+    if dep == "nanopb":
+      ret.append("//third_party/nanopb")
+    else:
+      ret.append("//external:" + dep)
+  return ret
+
+def _maybe_update_cc_library_hdrs(hdrs):
+  ret = []
+  hdrs_to_update = {
+      "third_party/objective_c/Cronet/bidirectional_stream_c.h": "//third_party:objective_c/Cronet/bidirectional_stream_c.h",
+  }
+  for h in hdrs:
+    if h in hdrs_to_update.keys():
+      ret.append(hdrs_to_update[h])
+    else:
+      ret.append(h)
+  return ret
+
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
@@ -33,8 +57,12 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
   native.cc_library(
     name = name,
     srcs = srcs,
-    hdrs = hdrs + public_hdrs,
-    deps = deps + ["//external:" + dep for dep in external_deps],
+    defines = select({"//:grpc_no_ares": ["GRPC_ARES=0"],
+                      "//conditions:default": [],}) +
+              select({"//:remote_execution":  ["GRPC_PORT_ISOLATED_RUNTIME=1"],
+                      "//conditions:default": [],}),
+    hdrs = _maybe_update_cc_library_hdrs(hdrs + public_hdrs),
+    deps = deps + _get_external_deps(external_deps),
     copts = copts,
     visibility = visibility,
     testonly = testonly,
@@ -66,19 +94,35 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
     generate_mock = generate_mock,
   )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++"):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++"):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
-  native.cc_test(
-    name = name,
-    srcs = srcs,
-    args = args,
-    data = data,
-    deps = deps + ["//external:" + dep for dep in external_deps],
-    copts = copts,
-    linkopts = ["-pthread"],
-  )
+  args = {
+    'name': name,
+    'srcs': srcs,
+    'args': args,
+    'data': data,
+    'deps': deps + _get_external_deps(external_deps),
+    'copts': copts,
+    'linkopts': ["-pthread"],
+  }
+  if uses_polling:
+    native.cc_test(testonly=True, tags=['manual'], **args)
+    for poller in POLLERS:
+      native.sh_test(
+        name = name + '@poller=' + poller,
+        data = [name],
+        srcs = [
+          '//test/core/util:run_with_poller_sh',
+        ],
+        args = [
+          poller,
+          '$(location %s)' % name
+        ] + args['args'],
+      )
+  else:
+    native.cc_test(**args)
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = []):
   copts = []
@@ -91,7 +135,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     data = data,
     testonly = testonly,
     linkshared = linkshared,
-    deps = deps + ["//external:" + dep for dep in external_deps],
+    deps = deps + _get_external_deps(external_deps),
     copts = copts,
     linkopts = ["-pthread"] + linkopts,
   )

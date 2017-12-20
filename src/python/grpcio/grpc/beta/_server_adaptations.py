@@ -18,6 +18,7 @@ import threading
 
 import grpc
 from grpc import _common
+from grpc.beta import _metadata
 from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.common import style
@@ -65,14 +66,15 @@ class _FaceServicerContext(face.ServicerContext):
         return _ServerProtocolContext(self._servicer_context)
 
     def invocation_metadata(self):
-        return _common.to_cygrpc_metadata(
-            self._servicer_context.invocation_metadata())
+        return _metadata.beta(self._servicer_context.invocation_metadata())
 
     def initial_metadata(self, initial_metadata):
-        self._servicer_context.send_initial_metadata(initial_metadata)
+        self._servicer_context.send_initial_metadata(
+            _metadata.unbeta(initial_metadata))
 
     def terminal_metadata(self, terminal_metadata):
-        self._servicer_context.set_terminal_metadata(terminal_metadata)
+        self._servicer_context.set_terminal_metadata(
+            _metadata.unbeta(terminal_metadata))
 
     def code(self, code):
         self._servicer_context.set_code(code)

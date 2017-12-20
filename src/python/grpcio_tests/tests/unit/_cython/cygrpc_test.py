@@ -28,50 +28,12 @@ _CALL_CREDENTIALS_METADATA_VALUE = 'call-creds-value'
 _EMPTY_FLAGS = 0
 
 
-def _metadata_plugin_callback(context, callback):
-    callback(
-        cygrpc.Metadata([
-            cygrpc.Metadatum(_CALL_CREDENTIALS_METADATA_KEY,
-                             _CALL_CREDENTIALS_METADATA_VALUE)
-        ]), cygrpc.StatusCode.ok, b'')
+def _metadata_plugin(context, callback):
+    callback(((_CALL_CREDENTIALS_METADATA_KEY,
+               _CALL_CREDENTIALS_METADATA_VALUE,),), cygrpc.StatusCode.ok, b'')
 
 
 class TypeSmokeTest(unittest.TestCase):
-
-    def testStringsInUtilitiesUpDown(self):
-        self.assertEqual(0, cygrpc.StatusCode.ok)
-        metadatum = cygrpc.Metadatum(b'a', b'b')
-        self.assertEqual(b'a', metadatum.key)
-        self.assertEqual(b'b', metadatum.value)
-        metadata = cygrpc.Metadata([metadatum])
-        self.assertEqual(1, len(metadata))
-        self.assertEqual(metadatum.key, metadata[0].key)
-
-    def testMetadataIteration(self):
-        metadata = cygrpc.Metadata(
-            [cygrpc.Metadatum(b'a', b'b'), cygrpc.Metadatum(b'c', b'd')])
-        iterator = iter(metadata)
-        metadatum = next(iterator)
-        self.assertIsInstance(metadatum, cygrpc.Metadatum)
-        self.assertEqual(metadatum.key, b'a')
-        self.assertEqual(metadatum.value, b'b')
-        metadatum = next(iterator)
-        self.assertIsInstance(metadatum, cygrpc.Metadatum)
-        self.assertEqual(metadatum.key, b'c')
-        self.assertEqual(metadatum.value, b'd')
-        with self.assertRaises(StopIteration):
-            next(iterator)
-
-    def testOperationsIteration(self):
-        operations = cygrpc.Operations(
-            [cygrpc.operation_send_message(b'asdf', _EMPTY_FLAGS)])
-        iterator = iter(operations)
-        operation = next(iterator)
-        self.assertIsInstance(operation, cygrpc.Operation)
-        # `Operation`s are write-only structures; can't directly debug anything out
-        # of them. Just check that we stop iterating.
-        with self.assertRaises(StopIteration):
-            next(iterator)
 
     def testOperationFlags(self):
         operation = cygrpc.operation_send_message(b'asdf',
@@ -105,17 +67,9 @@ class TypeSmokeTest(unittest.TestCase):
         channel = cygrpc.Channel(b'[::]:0', cygrpc.ChannelArgs([]))
         del channel
 
-    def testCredentialsMetadataPluginUpDown(self):
-        plugin = cygrpc.CredentialsMetadataPlugin(
-            lambda ignored_a, ignored_b: None, b'')
-        del plugin
-
-    def testCallCredentialsFromPluginUpDown(self):
-        plugin = cygrpc.CredentialsMetadataPlugin(_metadata_plugin_callback,
-                                                  b'')
-        call_credentials = cygrpc.call_credentials_metadata_plugin(plugin)
-        del plugin
-        del call_credentials
+    def test_metadata_plugin_call_credentials_up_down(self):
+        cygrpc.MetadataPluginCallCredentials(_metadata_plugin,
+                                             b'test plugin name!')
 
     def testServerStartNoExplicitShutdown(self):
         server = cygrpc.Server(cygrpc.ChannelArgs([]))
@@ -190,8 +144,7 @@ class ServerClientMixin(object):
         def performer():
             tag = object()
             try:
-                call_result = call.start_client_batch(
-                    cygrpc.Operations(operations), tag)
+                call_result = call.start_client_batch(operations, tag)
                 self.assertEqual(cygrpc.CallError.ok, call_result)
                 event = queue.poll(deadline)
                 self.assertEqual(cygrpc.CompletionType.operation_complete,
@@ -205,17 +158,17 @@ class ServerClientMixin(object):
 
         return test_utilities.SimpleFuture(performer)
 
-    def testEcho(self):
+    def test_echo(self):
         DEADLINE = time.time() + 5
         DEADLINE_TOLERANCE = 0.25
-        CLIENT_METADATA_ASCII_KEY = b'key'
-        CLIENT_METADATA_ASCII_VALUE = b'val'
-        CLIENT_METADATA_BIN_KEY = b'key-bin'
+        CLIENT_METADATA_ASCII_KEY = 'key'
+        CLIENT_METADATA_ASCII_VALUE = 'val'
+        CLIENT_METADATA_BIN_KEY = 'key-bin'
         CLIENT_METADATA_BIN_VALUE = b'\0' * 1000
-        SERVER_INITIAL_METADATA_KEY = b'init_me_me_me'
-        SERVER_INITIAL_METADATA_VALUE = b'whodawha?'
-        SERVER_TRAILING_METADATA_KEY = b'california_is_in_a_drought'
-        SERVER_TRAILING_METADATA_VALUE = b'zomg it is'
+        SERVER_INITIAL_METADATA_KEY = 'init_me_me_me'
+        SERVER_INITIAL_METADATA_VALUE = 'whodawha?'
+        SERVER_TRAILING_METADATA_KEY = 'california_is_in_a_drought'
+        SERVER_TRAILING_METADATA_VALUE = 'zomg it is'
         SERVER_STATUS_CODE = cygrpc.StatusCode.ok
         SERVER_STATUS_DETAILS = b'our work is never over'
         REQUEST = b'in death a member of project mayhem has a name'
@@ -235,11 +188,9 @@ class ServerClientMixin(object):
         client_call = self.client_channel.create_call(
             None, 0, self.client_completion_queue, METHOD, self.host_argument,
             cygrpc_deadline)
-        client_initial_metadata = cygrpc.Metadata([
-            cygrpc.Metadatum(CLIENT_METADATA_ASCII_KEY,
-                             CLIENT_METADATA_ASCII_VALUE),
-            cygrpc.Metadatum(CLIENT_METADATA_BIN_KEY, CLIENT_METADATA_BIN_VALUE)
-        ])
+        client_initial_metadata = (
+            (CLIENT_METADATA_ASCII_KEY, CLIENT_METADATA_ASCII_VALUE,),
+            (CLIENT_METADATA_BIN_KEY, CLIENT_METADATA_BIN_VALUE,),)
         client_start_batch_result = client_call.start_client_batch([
             cygrpc.operation_send_initial_metadata(client_initial_metadata,
                                                    _EMPTY_FLAGS),
@@ -271,14 +222,10 @@ class ServerClientMixin(object):
 
         server_call_tag = object()
         server_call = request_event.operation_call
-        server_initial_metadata = cygrpc.Metadata([
-            cygrpc.Metadatum(SERVER_INITIAL_METADATA_KEY,
-                             SERVER_INITIAL_METADATA_VALUE)
-        ])
-        server_trailing_metadata = cygrpc.Metadata([
-            cygrpc.Metadatum(SERVER_TRAILING_METADATA_KEY,
-                             SERVER_TRAILING_METADATA_VALUE)
-        ])
+        server_initial_metadata = (
+            (SERVER_INITIAL_METADATA_KEY, SERVER_INITIAL_METADATA_VALUE,),)
+        server_trailing_metadata = (
+            (SERVER_TRAILING_METADATA_KEY, SERVER_TRAILING_METADATA_VALUE,),)
         server_start_batch_result = server_call.start_server_batch([
             cygrpc.operation_send_initial_metadata(
                 server_initial_metadata,
@@ -355,7 +302,7 @@ class ServerClientMixin(object):
         METHOD = b'twinkies'
 
         cygrpc_deadline = cygrpc.Timespec(DEADLINE)
-        empty_metadata = cygrpc.Metadata([])
+        empty_metadata = ()
 
         server_request_tag = object()
         self.server.request_call(self.server_completion_queue,
@@ -439,8 +386,8 @@ class SecureServerSecureClient(unittest.TestCase, ServerClientMixin):
             cygrpc.SslPemKeyCertPair(resources.private_key(),
                                      resources.certificate_chain())
         ], False)
-        client_credentials = cygrpc.channel_credentials_ssl(
-            resources.test_root_certificates(), None)
+        client_credentials = cygrpc.SSLChannelCredentials(
+            resources.test_root_certificates(), None, None)
         self.setUpMixin(server_credentials, client_credentials,
                         _SSL_HOST_OVERRIDE)
 

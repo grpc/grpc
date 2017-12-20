@@ -22,9 +22,9 @@ import sys
 import tempfile
 import time
 
-
 # must be synchronized with test/core/utils/port_server_client.h
 _PORT_SERVER_PORT = 32766
+
 
 def start_port_server():
     # check if a compatible port server is running
@@ -33,9 +33,8 @@ def start_port_server():
     # otherwise, leave it up
     try:
         version = int(
-            urllib.urlopen(
-                'http://localhost:%d/version_number' %
-                _PORT_SERVER_PORT).read())
+            urllib.urlopen('http://localhost:%d/version_number' %
+                           _PORT_SERVER_PORT).read())
         logging.info('detected port server running version %d', version)
         running = True
     except Exception as e:
@@ -92,8 +91,8 @@ def start_port_server():
                 # try one final time: maybe another build managed to start one
                 time.sleep(1)
                 try:
-                    urllib.urlopen(
-                        'http://localhost:%d/get' % _PORT_SERVER_PORT).read()
+                    urllib.urlopen('http://localhost:%d/get' %
+                                   _PORT_SERVER_PORT).read()
                     logging.info(
                         'last ditch attempt to contact port server succeeded')
                     break

@@ -26,8 +26,17 @@ struct gpr_msvc_thread_local {
   intptr_t value;
 };
 
+/** Use GPR_TLS_DECL to declare tls static variables outside a class */
 #define GPR_TLS_DECL(name) \
   static __declspec(thread) struct gpr_msvc_thread_local name = {0}
+
+/** Use GPR_TLS_CLASS_DECL to declare tls static variable members of a class.
+ *  GPR_TLS_CLASS_DEF needs to be called to define this member. */
+#define GPR_TLS_CLASS_DECL(name) \
+  static __declspec(thread) struct gpr_msvc_thread_local name
+
+#define GPR_TLS_CLASS_DEF(name) \
+  __declspec(thread) struct gpr_msvc_thread_local name = {0}
 
 #define gpr_tls_init(tls) \
   do {                    \

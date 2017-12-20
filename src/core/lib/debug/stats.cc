@@ -27,7 +27,7 @@
 
 #include "src/core/lib/support/string.h"
 
-grpc_stats_data* grpc_stats_per_cpu_storage = NULL;
+grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
 static size_t g_num_cores;
 
 void grpc_stats_init(void) {
@@ -62,9 +62,9 @@ void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
   }
 }
 
-int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx* exec_ctx, int value,
-                                      const int* table, int table_size) {
-  GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS(exec_ctx);
+int grpc_stats_histo_find_bucket_slow(int value, const int* table,
+                                      int table_size) {
+  GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS();
   const int* const start = table;
   while (table_size > 0) {
     int step = table_size / 2;
@@ -168,7 +168,7 @@ char* grpc_stats_data_as_json(const grpc_stats_data* data) {
     is_first = false;
   }
   gpr_strvec_add(&v, gpr_strdup("}"));
-  tmp = gpr_strvec_flatten(&v, NULL);
+  tmp = gpr_strvec_flatten(&v, nullptr);
   gpr_strvec_destroy(&v);
   return tmp;
 }

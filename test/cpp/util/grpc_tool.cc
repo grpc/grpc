@@ -124,13 +124,32 @@ void ParseMetadataFlag(
     return;
   }
   std::vector<grpc::string> fields;
-  const char* delim = ":";
-  size_t cur, next = -1;
-  do {
-    cur = next + 1;
-    next = FLAGS_metadata.find_first_of(delim, cur);
-    fields.push_back(FLAGS_metadata.substr(cur, next - cur));
-  } while (next != grpc::string::npos);
+  const char delim = ':';
+  const char escape = '\\';
+  size_t cur = -1;
+  std::stringstream ss;
+  while (++cur < FLAGS_metadata.length()) {
+    switch (FLAGS_metadata.at(cur)) {
+      case escape:
+        if (cur < FLAGS_metadata.length() - 1) {
+          char c = FLAGS_metadata.at(++cur);
+          if (c == delim || c == escape) {
+            ss << c;
+            continue;
+          }
+        }
+        fprintf(stderr, "Failed to parse metadata flag.\n");
+        exit(1);
+      case delim:
+        fields.push_back(ss.str());
+        ss.str("");
+        ss.clear();
+        break;
+      default:
+        ss << FLAGS_metadata.at(cur);
+    }
+  }
+  fields.push_back(ss.str());
   if (fields.size() % 2) {
     fprintf(stderr, "Failed to parse metadata flag.\n");
     exit(1);
@@ -230,7 +249,7 @@ const Command* FindCommand(const grpc::string& name) {
       return &ops[i];
     }
   }
-  return NULL;
+  return nullptr;
 }
 }  // namespace
 
@@ -245,13 +264,13 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
   argv += 2;
 
   const Command* cmd = FindCommand(command);
-  if (cmd != NULL) {
+  if (cmd != nullptr) {
     GrpcTool grpc_tool;
     if (argc < cmd->min_args || argc > cmd->max_args) {
       // Force the command to print its usage message
       fprintf(stderr, "\nWrong number of arguments for %s\n", command.c_str());
       grpc_tool.SetPrintCommandMode(1);
-      return cmd->function(&grpc_tool, -1, NULL, cred, callback);
+      return cmd->function(&grpc_tool, -1, nullptr, cred, callback);
     }
     const bool ok = cmd->function(&grpc_tool, argc, argv, cred, callback);
     return ok ? 0 : 1;
@@ -281,11 +300,11 @@ bool GrpcTool::Help(int argc, const char** argv, const CliCredentials& cred,
     Usage("");
   } else {
     const Command* cmd = FindCommand(argv[0]);
-    if (cmd == NULL) {
+    if (cmd == nullptr) {
       Usage("Unknown command '" + grpc::string(argv[0]) + "'");
     }
     SetPrintCommandMode(0);
-    cmd->function(this, -1, NULL, cred, callback);
+    cmd->function(this, -1, nullptr, cred, callback);
   }
   return true;
 }

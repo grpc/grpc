@@ -21,10 +21,6 @@
 
 #include <grpc/slice.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Encodes data using base64. It is the caller's responsability to free
    the returned char * using gpr_free. Returns NULL on NULL input.
    TODO(makdharma) : change the flags to bool from int */
@@ -44,15 +40,10 @@ void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
 
 /* Decodes data according to the base64 specification. Returns an empty
    slice in case of failure. */
-grpc_slice grpc_base64_decode(grpc_exec_ctx* exec_ctx, const char* b64,
-                              int url_safe);
+grpc_slice grpc_base64_decode(const char* b64, int url_safe);
 
 /* Same as above except that the length is provided by the caller. */
-grpc_slice grpc_base64_decode_with_len(grpc_exec_ctx* exec_ctx, const char* b64,
-                                       size_t b64_len, int url_safe);
-
-#ifdef __cplusplus
-}
-#endif
+grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len,
+                                       int url_safe);
 
 #endif /* GRPC_CORE_LIB_SLICE_B64_H */

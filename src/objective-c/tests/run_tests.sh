@@ -34,11 +34,24 @@ $BINDIR/interop_server --port=5051 --max_send_message_size=8388608 --use_tls &
 # Kill them when this script exits.
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
+# Boot Xcode first with several retries since Xcode might fail due to a bug:
+# http://www.openradar.me/29785686
+xcrun simctl list | egrep 'iPhone 6 \('
+udid=`xcrun simctl list | egrep 'iPhone 6 \(.*\) \(.*\)' | sed -E 's/ *iPhone 6 \(([^\)]*)\).*/\1/g' | head -n 1`
+retries=0
+while [ $retries -lt 3 ] && ! open -a Simulator --args -CurrentDeviceUDID $udid ; do
+retries=$(($retries+1))
+done
+if [ $retries == 3 ]; then
+  echo "Xcode simulator failed to start after 3 retries."
+  exit 1
+fi
+
 # xcodebuild is very verbose. We filter its output and tell Bash to fail if any
 # element of the pipe fails.
 # TODO(jcanizales): Use xctool instead? Issue #2540.
 set -o pipefail
-XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
+XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \

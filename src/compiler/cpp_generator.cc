@@ -104,7 +104,7 @@ grpc::string GetHeaderPrologue(grpc_generator::File* file,
     grpc::string leading_comments = file->GetLeadingComments("//");
     if (!leading_comments.empty()) {
       printer->Print(vars, "// Original file comments:\n");
-      printer->Print(leading_comments.c_str());
+      printer->PrintRaw(leading_comments.c_str());
     }
     printer->Print(vars, "#ifndef GRPC_$filename_identifier$__INCLUDED\n");
     printer->Print(vars, "#define GRPC_$filename_identifier$__INCLUDED\n");
@@ -1383,6 +1383,7 @@ void PrintSourceService(grpc_generator::Printer* printer,
                  "std::unique_ptr< $ns$$Service$::Stub> $ns$$Service$::NewStub("
                  "const std::shared_ptr< ::grpc::ChannelInterface>& channel, "
                  "const ::grpc::StubOptions& options) {\n"
+                 "  (void)options;\n"
                  "  std::unique_ptr< $ns$$Service$::Stub> stub(new "
                  "$ns$$Service$::Stub(channel));\n"
                  "  return stub;\n"

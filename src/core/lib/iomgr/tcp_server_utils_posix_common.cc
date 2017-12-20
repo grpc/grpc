@@ -47,7 +47,7 @@ static void init_max_accept_queue_size(void) {
   int n = SOMAXCONN;
   char buf[64];
   FILE* fp = fopen("/proc/sys/net/core/somaxconn", "r");
-  if (fp == NULL) {
+  if (fp == nullptr) {
     /* 2.4 kernel. */
     s_max_accept_queue_size = SOMAXCONN;
     return;
@@ -55,7 +55,7 @@ static void init_max_accept_queue_size(void) {
   if (fgets(buf, sizeof buf, fp)) {
     char* end;
     long i = strtol(buf, &end, 10);
-    if (i > 0 && i <= INT_MAX && end && *end == 0) {
+    if (i > 0 && i <= INT_MAX && end && *end == '\n') {
       n = (int)i;
     }
   }
@@ -79,7 +79,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
                                         const grpc_resolved_address* addr,
                                         unsigned port_index, unsigned fd_index,
                                         grpc_tcp_listener** listener) {
-  grpc_tcp_listener* sp = NULL;
+  grpc_tcp_listener* sp = nullptr;
   int port = -1;
   char* addr_str;
   char* name;
@@ -94,8 +94,8 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
     s->nports++;
     GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
     sp = (grpc_tcp_listener*)gpr_malloc(sizeof(grpc_tcp_listener));
-    sp->next = NULL;
-    if (s->head == NULL) {
+    sp->next = nullptr;
+    if (s->head == nullptr) {
       s->head = sp;
     } else {
       s->tail->next = sp;
@@ -109,7 +109,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
     sp->port_index = port_index;
     sp->fd_index = fd_index;
     sp->is_sibling = 0;
-    sp->sibling = NULL;
+    sp->sibling = nullptr;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
     gpr_free(addr_str);

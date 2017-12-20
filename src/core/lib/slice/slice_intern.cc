@@ -90,7 +90,7 @@ static void interned_slice_destroy(interned_slice_refcount* s) {
   gpr_mu_unlock(&shard->mu);
 }
 
-static void interned_slice_unref(grpc_exec_ctx* exec_ctx, void* p) {
+static void interned_slice_unref(void* p) {
   interned_slice_refcount* s = (interned_slice_refcount*)p;
   if (1 == gpr_atm_full_fetch_add(&s->refcnt, -1)) {
     interned_slice_destroy(s);
@@ -101,9 +101,8 @@ static void interned_slice_sub_ref(void* p) {
   interned_slice_ref(((char*)p) - offsetof(interned_slice_refcount, sub));
 }
 
-static void interned_slice_sub_unref(grpc_exec_ctx* exec_ctx, void* p) {
-  interned_slice_unref(exec_ctx,
-                       ((char*)p) - offsetof(interned_slice_refcount, sub));
+static void interned_slice_sub_unref(void* p) {
+  interned_slice_unref(((char*)p) - offsetof(interned_slice_refcount, sub));
 }
 
 static uint32_t interned_slice_hash(grpc_slice slice) {
@@ -171,8 +170,8 @@ int grpc_static_slice_eq(grpc_slice a, grpc_slice b) {
 }
 
 uint32_t grpc_slice_hash(grpc_slice s) {
-  return s.refcount == NULL ? grpc_slice_default_hash_impl(s)
-                            : s.refcount->vtable->hash(s);
+  return s.refcount == nullptr ? grpc_slice_default_hash_impl(s)
+                               : s.refcount->vtable->hash(s);
 }
 
 grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,

@@ -47,7 +47,7 @@ static void put_metadata(gpr_strvec* b, grpc_mdelem md) {
 
 static void put_metadata_list(gpr_strvec* b, grpc_metadata_batch md) {
   grpc_linked_mdelem* m;
-  for (m = md.list.head; m != NULL; m = m->next) {
+  for (m = md.list.head; m != nullptr; m = m->next) {
     if (m != md.list.head) gpr_strvec_add(b, gpr_strdup(", "));
     put_metadata(b, m->md);
   }
@@ -121,7 +121,7 @@ char* grpc_transport_stream_op_batch_string(
     gpr_strvec_add(&b, tmp);
   }
 
-  out = gpr_strvec_flatten(&b, NULL);
+  out = gpr_strvec_flatten(&b, nullptr);
   gpr_strvec_destroy(&b);
 
   return out;
@@ -135,10 +135,10 @@ char* grpc_transport_op_string(grpc_transport_op* op) {
   gpr_strvec b;
   gpr_strvec_init(&b);
 
-  if (op->on_connectivity_state_change != NULL) {
+  if (op->on_connectivity_state_change != nullptr) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = false;
-    if (op->connectivity_state != NULL) {
+    if (op->connectivity_state != nullptr) {
       gpr_asprintf(&tmp, "ON_CONNECTIVITY_STATE_CHANGE:p=%p:from=%s",
                    op->on_connectivity_state_change,
                    grpc_connectivity_state_name(*op->connectivity_state));
@@ -175,25 +175,25 @@ char* grpc_transport_op_string(grpc_transport_op* op) {
     gpr_strvec_add(&b, tmp);
   }
 
-  if (op->bind_pollset != NULL) {
+  if (op->bind_pollset != nullptr) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = false;
     gpr_strvec_add(&b, gpr_strdup("BIND_POLLSET"));
   }
 
-  if (op->bind_pollset_set != NULL) {
+  if (op->bind_pollset_set != nullptr) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = false;
     gpr_strvec_add(&b, gpr_strdup("BIND_POLLSET_SET"));
   }
 
-  if (op->send_ping != NULL) {
+  if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = false;
+    // first = false;
     gpr_strvec_add(&b, gpr_strdup("SEND_PING"));
   }
 
-  out = gpr_strvec_flatten(&b, NULL);
+  out = gpr_strvec_flatten(&b, nullptr);
   gpr_strvec_destroy(&b);
 
   return out;

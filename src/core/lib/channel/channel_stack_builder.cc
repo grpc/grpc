@@ -23,8 +23,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-grpc_tracer_flag grpc_trace_channel_stack_builder =
-    GRPC_TRACER_INITIALIZER(false, "channel_stack_builder");
+grpc_core::TraceFlag grpc_trace_channel_stack_builder(false,
+                                                      "channel_stack_builder");
 
 typedef struct filter_node {
   struct filter_node* next;
@@ -54,8 +54,8 @@ grpc_channel_stack_builder* grpc_channel_stack_builder_create(void) {
   grpc_channel_stack_builder* b =
       (grpc_channel_stack_builder*)gpr_zalloc(sizeof(*b));
 
-  b->begin.filter = NULL;
-  b->end.filter = NULL;
+  b->begin.filter = nullptr;
+  b->end.filter = nullptr;
   b->begin.next = &b->end;
   b->begin.prev = &b->end;
   b->end.next = &b->begin;
@@ -108,7 +108,7 @@ bool grpc_channel_stack_builder_iterator_is_end(
 
 const char* grpc_channel_stack_builder_iterator_filter_name(
     grpc_channel_stack_builder_iterator* iterator) {
-  if (iterator->node->filter == NULL) return NULL;
+  if (iterator->node->filter == nullptr) return nullptr;
   return iterator->node->filter->name;
 }
 
@@ -128,7 +128,7 @@ bool grpc_channel_stack_builder_move_prev(
 
 grpc_channel_stack_builder_iterator* grpc_channel_stack_builder_iterator_find(
     grpc_channel_stack_builder* builder, const char* filter_name) {
-  GPR_ASSERT(filter_name != NULL);
+  GPR_ASSERT(filter_name != nullptr);
   grpc_channel_stack_builder_iterator* it =
       grpc_channel_stack_builder_create_iterator_at_first(builder);
   while (grpc_channel_stack_builder_move_next(it)) {
@@ -145,22 +145,21 @@ bool grpc_channel_stack_builder_move_prev(
 
 void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder* builder,
                                          const char* name) {
-  GPR_ASSERT(builder->name == NULL);
+  GPR_ASSERT(builder->name == nullptr);
   builder->name = name;
 }
 
 void grpc_channel_stack_builder_set_channel_arguments(
-    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder,
-    const grpc_channel_args* args) {
-  if (builder->args != NULL) {
-    grpc_channel_args_destroy(exec_ctx, builder->args);
+    grpc_channel_stack_builder* builder, const grpc_channel_args* args) {
+  if (builder->args != nullptr) {
+    grpc_channel_args_destroy(builder->args);
   }
   builder->args = grpc_channel_args_copy(args);
 }
 
 void grpc_channel_stack_builder_set_transport(
     grpc_channel_stack_builder* builder, grpc_transport* transport) {
-  GPR_ASSERT(builder->transport == NULL);
+  GPR_ASSERT(builder->transport == nullptr);
   builder->transport = transport;
 }
 
@@ -241,25 +240,23 @@ bool grpc_channel_stack_builder_add_filter_after(
   return true;
 }
 
-void grpc_channel_stack_builder_destroy(grpc_exec_ctx* exec_ctx,
-                                        grpc_channel_stack_builder* builder) {
+void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder) {
   filter_node* p = builder->begin.next;
   while (p != &builder->end) {
     filter_node* next = p->next;
     gpr_free(p);
     p = next;
   }
-  if (builder->args != NULL) {
-    grpc_channel_args_destroy(exec_ctx, builder->args);
+  if (builder->args != nullptr) {
+    grpc_channel_args_destroy(builder->args);
   }
   gpr_free(builder->target);
   gpr_free(builder);
 }
 
 grpc_error* grpc_channel_stack_builder_finish(
-    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder,
-    size_t prefix_bytes, int initial_refs, grpc_iomgr_cb_func destroy,
-    void* destroy_arg, void** result) {
+    grpc_channel_stack_builder* builder, size_t prefix_bytes, int initial_refs,
+    grpc_iomgr_cb_func destroy, void* destroy_arg, void** result) {
   // count the number of filters
   size_t num_filters = 0;
   for (filter_node* p = builder->begin.next; p != &builder->end; p = p->next) {
@@ -284,20 +281,20 @@ grpc_error* grpc_channel_stack_builder_finish(
       (grpc_channel_stack*)((char*)(*result) + prefix_bytes);
   // and initialize it
   grpc_error* error = grpc_channel_stack_init(
-      exec_ctx, initial_refs, destroy,
-      destroy_arg == NULL ? *result : destroy_arg, filters, num_filters,
-      builder->args, builder->transport, builder->name, channel_stack);
+      initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg,
+      filters, num_filters, builder->args, builder->transport, builder->name,
+      channel_stack);
 
   if (error != GRPC_ERROR_NONE) {
-    grpc_channel_stack_destroy(exec_ctx, channel_stack);
+    grpc_channel_stack_destroy(channel_stack);
     gpr_free(*result);
-    *result = NULL;
+    *result = nullptr;
   } else {
     // run post-initialization functions
     i = 0;
     for (filter_node* p = builder->begin.next; p != &builder->end;
          p = p->next) {
-      if (p->init != NULL) {
+      if (p->init != nullptr) {
         p->init(channel_stack, grpc_channel_stack_element(channel_stack, i),
                 p->init_arg);
       }
@@ -305,7 +302,7 @@ grpc_error* grpc_channel_stack_builder_finish(
     }
   }
 
-  grpc_channel_stack_builder_destroy(exec_ctx, builder);
+  grpc_channel_stack_builder_destroy(builder);
   gpr_free((grpc_channel_filter**)filters);
 
   return error;

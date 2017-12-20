@@ -50,7 +50,7 @@ void grpc_register_lb_policy(grpc_lb_policy_factory* factory) {
 static grpc_lb_policy_factory* lookup_factory(const char* name) {
   int i;
 
-  if (name == NULL) return NULL;
+  if (name == nullptr) return nullptr;
 
   for (i = 0; i < g_number_of_lb_policies; i++) {
     if (0 == gpr_stricmp(name, g_all_of_the_lb_policies[i]->vtable->name)) {
@@ -58,13 +58,13 @@ static grpc_lb_policy_factory* lookup_factory(const char* name) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
-grpc_lb_policy* grpc_lb_policy_create(grpc_exec_ctx* exec_ctx, const char* name,
+grpc_lb_policy* grpc_lb_policy_create(const char* name,
                                       grpc_lb_policy_args* args) {
   grpc_lb_policy_factory* factory = lookup_factory(name);
   grpc_lb_policy* lb_policy =
-      grpc_lb_policy_factory_create_lb_policy(exec_ctx, factory, args);
+      grpc_lb_policy_factory_create_lb_policy(factory, args);
   return lb_policy;
 }

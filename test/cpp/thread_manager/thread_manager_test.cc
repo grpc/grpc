@@ -111,7 +111,7 @@ void ThreadManagerTest::PerformTest() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  std::srand(std::time(NULL));
+  std::srand(std::time(nullptr));
 
   grpc::testing::InitTest(&argc, &argv, true);
   grpc::ThreadManagerTest test_rpc_manager;

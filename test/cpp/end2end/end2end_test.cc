@@ -711,7 +711,7 @@ TEST_P(End2endTest, ReconnectChannel) {
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
   char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-  if (s != NULL && 0 == strcmp(s, "poll")) {
+  if (s != nullptr && 0 == strcmp(s, "poll")) {
     poller_slowdown_factor = 2;
   }
   gpr_free(s);
@@ -741,6 +741,7 @@ TEST_P(End2endTest, RequestStreamOneRequest) {
   Status s = stream->Finish();
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(context.debug_error_string().empty());
 }
 
 TEST_P(End2endTest, RequestStreamOneRequestWithCoalescingApi) {
@@ -1148,7 +1149,7 @@ TEST_P(End2endTest, ChannelState) {
   CompletionQueue cq;
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::milliseconds(10);
-  channel_->NotifyOnStateChange(GRPC_CHANNEL_IDLE, deadline, &cq, NULL);
+  channel_->NotifyOnStateChange(GRPC_CHANNEL_IDLE, deadline, &cq, nullptr);
   void* tag;
   bool ok = true;
   cq.Next(&tag, &ok);
@@ -1258,6 +1259,13 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
+    EXPECT_TRUE(context.debug_error_string().find("created") !=
+                std::string::npos);
+    EXPECT_TRUE(context.debug_error_string().find("file") != std::string::npos);
+    EXPECT_TRUE(context.debug_error_string().find("line") != std::string::npos);
+    EXPECT_TRUE(context.debug_error_string().find("status") !=
+                std::string::npos);
+    EXPECT_TRUE(context.debug_error_string().find("13") != std::string::npos);
   }
 }
 
@@ -1300,12 +1308,19 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_skip_cancelled_check(true);
-  // Let server sleep for 2 ms first to guarantee expiry
-  request.mutable_param()->set_server_sleep_us(2 * 1000);
+  // Let server sleep for 40 ms first to guarantee expiry.
+  // 40 ms might seem a bit extreme but the timer manager would have been just
+  // initialized (when ResetStub() was called) and there are some warmup costs
+  // i.e the timer thread many not have even started. There might also be other
+  // delays in the timer manager thread (in acquiring locks, timer data
+  // structure manipulations, starting backup timer threads) that add to the
+  // delays. 40ms is still not enough in some cases but this significantly
+  // reduces the test flakes
+  request.mutable_param()->set_server_sleep_us(40 * 1000);
 
   ClientContext context;
   std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::microseconds(10);
+      std::chrono::system_clock::now() + std::chrono::milliseconds(1);
   context.set_deadline(deadline);
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.error_code());

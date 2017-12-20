@@ -63,7 +63,7 @@ static void* socket_mutator_arg_copy(void* p) {
   return grpc_socket_mutator_ref((grpc_socket_mutator*)p);
 }
 
-static void socket_mutator_arg_destroy(grpc_exec_ctx* exec_ctx, void* p) {
+static void socket_mutator_arg_destroy(void* p) {
   grpc_socket_mutator_unref((grpc_socket_mutator*)p);
 }
 

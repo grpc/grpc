@@ -73,8 +73,7 @@ struct grpc_tcp_server {
   grpc_resource_quota* resource_quota;
 };
 
-grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
-                                   grpc_closure* shutdown_complete,
+grpc_error* grpc_tcp_server_create(grpc_closure* shutdown_complete,
                                    const grpc_channel_args* args,
                                    grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
@@ -82,11 +81,11 @@ grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(s->resource_quota);
         s->resource_quota = grpc_resource_quota_ref_internal(
             (grpc_resource_quota*)args->args[i].value.pointer.p);
       } else {
-        grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+        grpc_resource_quota_unref_internal(s->resource_quota);
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
@@ -119,10 +118,10 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s,
                            GRPC_ERROR_NONE);
 }
 
-static void finish_shutdown(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+static void finish_shutdown(grpc_tcp_server* s) {
   GPR_ASSERT(s->shutdown);
   if (s->shutdown_complete != NULL) {
-    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   while (s->head) {
@@ -132,18 +131,17 @@ static void finish_shutdown(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
     gpr_free(sp->handle);
     gpr_free(sp);
   }
-  grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
+  grpc_resource_quota_unref_internal(s->resource_quota);
   gpr_free(s);
 }
 
 static void handle_close_callback(uv_handle_t* handle) {
   grpc_tcp_listener* sp = (grpc_tcp_listener*)handle->data;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   sp->server->open_ports--;
   if (sp->server->open_ports == 0 && sp->server->shutdown) {
-    finish_shutdown(&exec_ctx, sp->server);
+    finish_shutdown(sp->server);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void close_listener(grpc_tcp_listener* sp) {
@@ -153,7 +151,7 @@ static void close_listener(grpc_tcp_listener* sp) {
   }
 }
 
-static void tcp_server_destroy(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+static void tcp_server_destroy(grpc_tcp_server* s) {
   int immediately_done = 0;
   grpc_tcp_listener* sp;
 
@@ -168,28 +166,22 @@ static void tcp_server_destroy(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
   }
 
   if (immediately_done) {
-    finish_shutdown(exec_ctx, s);
+    finish_shutdown(s);
   }
 }
 
-void grpc_tcp_server_unref(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+void grpc_tcp_server_unref(grpc_tcp_server* s) {
   GRPC_UV_ASSERT_SAME_THREAD();
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
-    grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
-    GRPC_CLOSURE_LIST_SCHED(&local_exec_ctx, &s->shutdown_starting);
-    if (exec_ctx == NULL) {
-      grpc_exec_ctx_flush(&local_exec_ctx);
-      tcp_server_destroy(&local_exec_ctx, s);
-      grpc_exec_ctx_finish(&local_exec_ctx);
-    } else {
-      grpc_exec_ctx_finish(&local_exec_ctx);
-      tcp_server_destroy(exec_ctx, s);
-    }
+    grpc_core::ExecCtx exec_ctx;
+    GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);
+    grpc_core::ExecCtx::Get()->Flush();
+    tcp_server_destroy(s);
   }
 }
 
-static void finish_accept(grpc_exec_ctx* exec_ctx, grpc_tcp_listener* sp) {
+static void finish_accept(grpc_tcp_listener* sp) {
   grpc_tcp_server_acceptor* acceptor =
       (grpc_tcp_server_acceptor*)gpr_malloc(sizeof(*acceptor));
   uv_tcp_t* client = NULL;
@@ -213,7 +205,7 @@ static void finish_accept(grpc_exec_ctx* exec_ctx, grpc_tcp_listener* sp) {
   } else {
     gpr_log(GPR_INFO, "uv_tcp_getpeername error: %s", uv_strerror(err));
   }
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     if (peer_name_string) {
       gpr_log(GPR_DEBUG, "SERVER_CONNECT: %p accepted connection: %s",
               sp->server, peer_name_string);
@@ -225,14 +217,13 @@ static void finish_accept(grpc_exec_ctx* exec_ctx, grpc_tcp_listener* sp) {
   acceptor->from_server = sp->server;
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;
-  sp->server->on_accept_cb(exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
-                           acceptor);
+  sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, NULL, acceptor);
   gpr_free(peer_name_string);
 }
 
 static void on_connect(uv_stream_t* server, int status) {
   grpc_tcp_listener* sp = (grpc_tcp_listener*)server->data;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   if (status < 0) {
     switch (status) {
@@ -247,28 +238,48 @@ static void on_connect(uv_stream_t* server, int status) {
 
   GPR_ASSERT(!sp->has_pending_connection);
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "SERVER_CONNECT: %p incoming connection", sp->server);
   }
 
   // Create acceptor.
   if (sp->server->on_accept_cb) {
-    finish_accept(&exec_ctx, sp);
+    finish_accept(sp);
   } else {
     sp->has_pending_connection = true;
   }
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static grpc_error* add_socket_to_server(grpc_tcp_server* s, uv_tcp_t* handle,
-                                        const grpc_resolved_address* addr,
-                                        unsigned port_index,
-                                        grpc_tcp_listener** listener) {
+static grpc_error* add_addr_to_server(grpc_tcp_server* s,
+                                      const grpc_resolved_address* addr,
+                                      unsigned port_index,
+                                      grpc_tcp_listener** listener) {
   grpc_tcp_listener* sp = NULL;
   int port = -1;
   int status;
   grpc_error* error;
   grpc_resolved_address sockname_temp;
+  uv_tcp_t* handle = (uv_tcp_t*)gpr_malloc(sizeof(uv_tcp_t));
+  int family = grpc_sockaddr_get_family(addr);
+
+  status = uv_tcp_init_ex(uv_default_loop(), handle, (unsigned int)family);
+#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
+  if (family == AF_INET || family == AF_INET6) {
+    int fd;
+    uv_fileno((uv_handle_t*)handle, &fd);
+    int enable = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
+  }
+#endif /* GPR_LINUX && SO_REUSEPORT */
+
+  if (status != 0) {
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to initialize UV tcp handle");
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                           grpc_slice_from_static_string(uv_strerror(status)));
+    return error;
+  }
 
   // The last argument to uv_tcp_bind is flags
   status = uv_tcp_bind(handle, (struct sockaddr*)addr->addr, 0);
@@ -325,20 +336,48 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, uv_tcp_t* handle,
   return GRPC_ERROR_NONE;
 }
 
+static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
+                                                unsigned port_index,
+                                                int requested_port,
+                                                grpc_tcp_listener** listener) {
+  grpc_resolved_address wild4;
+  grpc_resolved_address wild6;
+  grpc_tcp_listener* sp = nullptr;
+  grpc_tcp_listener* sp2 = nullptr;
+  grpc_error* v6_err = GRPC_ERROR_NONE;
+  grpc_error* v4_err = GRPC_ERROR_NONE;
+
+  grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
+  /* Try listening on IPv6 first. */
+  if ((v6_err = add_addr_to_server(s, &wild6, port_index, &sp)) ==
+      GRPC_ERROR_NONE) {
+    *listener = sp;
+    return GRPC_ERROR_NONE;
+  }
+
+  if ((v4_err = add_addr_to_server(s, &wild4, port_index, &sp2)) ==
+      GRPC_ERROR_NONE) {
+    *listener = sp2;
+    return GRPC_ERROR_NONE;
+  }
+
+  grpc_error* root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Failed to add any wildcard listeners");
+  root_err = grpc_error_add_child(root_err, v6_err);
+  root_err = grpc_error_add_child(root_err, v4_err);
+  return root_err;
+}
+
 grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
                                      const grpc_resolved_address* addr,
                                      int* port) {
   // This function is mostly copied from tcp_server_windows.c
   grpc_tcp_listener* sp = NULL;
-  uv_tcp_t* handle;
   grpc_resolved_address addr6_v4mapped;
-  grpc_resolved_address wildcard;
   grpc_resolved_address* allocated_addr = NULL;
   grpc_resolved_address sockname_temp;
   unsigned port_index = 0;
-  int status;
   grpc_error* error = GRPC_ERROR_NONE;
-  int family;
 
   GRPC_UV_ASSERT_SAME_THREAD();
 
@@ -367,43 +406,20 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
     }
   }
 
-  if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
-    addr = &addr6_v4mapped;
-  }
-
   /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
   if (grpc_sockaddr_is_wildcard(addr, port)) {
-    grpc_sockaddr_make_wildcard6(*port, &wildcard);
-
-    addr = &wildcard;
-  }
-
-  handle = (uv_tcp_t*)gpr_malloc(sizeof(uv_tcp_t));
-
-  family = grpc_sockaddr_get_family(addr);
-  status = uv_tcp_init_ex(uv_default_loop(), handle, (unsigned int)family);
-#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
-  if (family == AF_INET || family == AF_INET6) {
-    int fd;
-    uv_fileno((uv_handle_t*)handle, &fd);
-    int enable = 1;
-    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
-  }
-#endif /* GPR_LINUX && SO_REUSEPORT */
-
-  if (status == 0) {
-    error = add_socket_to_server(s, handle, addr, port_index, &sp);
+    error = add_wildcard_addrs_to_server(s, port_index, *port, &sp);
   } else {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Failed to initialize UV tcp handle");
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                           grpc_slice_from_static_string(uv_strerror(status)));
+    if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
+      addr = &addr6_v4mapped;
+    }
+
+    error = add_addr_to_server(s, addr, port_index, &sp);
   }
 
   gpr_free(allocated_addr);
 
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     char* port_string;
     grpc_sockaddr_to_string(&port_string, addr, 0);
     const char* str = grpc_error_string(error);
@@ -428,14 +444,14 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
   return error;
 }
 
-void grpc_tcp_server_start(grpc_exec_ctx* exec_ctx, grpc_tcp_server* server,
-                           grpc_pollset** pollsets, size_t pollset_count,
+void grpc_tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
+                           size_t pollset_count,
                            grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
   grpc_tcp_listener* sp;
   (void)pollsets;
   (void)pollset_count;
   GRPC_UV_ASSERT_SAME_THREAD();
-  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+  if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "SERVER_START %p", server);
   }
   GPR_ASSERT(on_accept_cb);
@@ -444,13 +460,12 @@ void grpc_tcp_server_start(grpc_exec_ctx* exec_ctx, grpc_tcp_server* server,
   server->on_accept_cb_arg = cb_arg;
   for (sp = server->head; sp; sp = sp->next) {
     if (sp->has_pending_connection) {
-      finish_accept(exec_ctx, sp);
+      finish_accept(sp);
       sp->has_pending_connection = false;
     }
   }
 }
 
-void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx* exec_ctx,
-                                        grpc_tcp_server* s) {}
+void grpc_tcp_server_shutdown_listeners(grpc_tcp_server* s) {}
 
 #endif /* GRPC_UV */

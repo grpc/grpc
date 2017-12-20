@@ -68,8 +68,7 @@ static void init(void) {
 #endif
 }
 
-grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
-                                   grpc_closure* shutdown_complete,
+grpc_error* grpc_tcp_server_create(grpc_closure* shutdown_complete,
                                    const grpc_channel_args* args,
                                    grpc_tcp_server** server) {
   gpr_once_init(&check_init, init);
@@ -77,7 +76,7 @@ grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_zalloc(sizeof(grpc_tcp_server));
   s->so_reuseport = has_so_reuseport;
   s->expand_wildcard_addrs = false;
-  for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
+  for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
         s->so_reuseport =
@@ -102,13 +101,13 @@ grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
   s->active_ports = 0;
   s->destroyed_ports = 0;
   s->shutdown = false;
-  s->shutdown_starting.head = NULL;
-  s->shutdown_starting.tail = NULL;
+  s->shutdown_starting.head = nullptr;
+  s->shutdown_starting.tail = nullptr;
   s->shutdown_complete = shutdown_complete;
-  s->on_accept_cb = NULL;
-  s->on_accept_cb_arg = NULL;
-  s->head = NULL;
-  s->tail = NULL;
+  s->on_accept_cb = nullptr;
+  s->on_accept_cb_arg = nullptr;
+  s->head = nullptr;
+  s->tail = nullptr;
   s->nports = 0;
   s->channel_args = grpc_channel_args_copy(args);
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
@@ -116,12 +115,12 @@ grpc_error* grpc_tcp_server_create(grpc_exec_ctx* exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-static void finish_shutdown(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+static void finish_shutdown(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(s->shutdown);
   gpr_mu_unlock(&s->mu);
-  if (s->shutdown_complete != NULL) {
-    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+  if (s->shutdown_complete != nullptr) {
+    GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -131,19 +130,18 @@ static void finish_shutdown(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
     s->head = sp->next;
     gpr_free(sp);
   }
-  grpc_channel_args_destroy(exec_ctx, s->channel_args);
+  grpc_channel_args_destroy(s->channel_args);
 
   gpr_free(s);
 }
 
-static void destroyed_port(grpc_exec_ctx* exec_ctx, void* server,
-                           grpc_error* error) {
+static void destroyed_port(void* server, grpc_error* error) {
   grpc_tcp_server* s = (grpc_tcp_server*)server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
   if (s->destroyed_ports == s->nports) {
     gpr_mu_unlock(&s->mu);
-    finish_shutdown(exec_ctx, s);
+    finish_shutdown(s);
   } else {
     GPR_ASSERT(s->destroyed_ports < s->nports);
     gpr_mu_unlock(&s->mu);
@@ -153,7 +151,7 @@ static void destroyed_port(grpc_exec_ctx* exec_ctx, void* server,
 /* called when all listening endpoints have been shutdown, so no further
    events will be received on them - at this point it's safe to destroy
    things */
-static void deactivated_all_ports(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+static void deactivated_all_ports(grpc_tcp_server* s) {
   /* delete ALL the things */
   gpr_mu_lock(&s->mu);
 
@@ -165,17 +163,17 @@ static void deactivated_all_ports(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
       grpc_unlink_if_unix_domain_socket(&sp->addr);
       GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
                         grpc_schedule_on_exec_ctx);
-      grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
+      grpc_fd_orphan(sp->emfd, &sp->destroyed_closure, nullptr,
                      false /* already_closed */, "tcp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
   } else {
     gpr_mu_unlock(&s->mu);
-    finish_shutdown(exec_ctx, s);
+    finish_shutdown(s);
   }
 }
 
-static void tcp_server_destroy(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+static void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
 
   GPR_ASSERT(!s->shutdown);
@@ -186,18 +184,17 @@ static void tcp_server_destroy(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
       grpc_fd_shutdown(
-          exec_ctx, sp->emfd,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server destroyed"));
+          sp->emfd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server destroyed"));
     }
     gpr_mu_unlock(&s->mu);
   } else {
     gpr_mu_unlock(&s->mu);
-    deactivated_all_ports(exec_ctx, s);
+    deactivated_all_ports(s);
   }
 }
 
 /* event manager callback when reads are ready */
-static void on_read(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* err) {
+static void on_read(void* arg, grpc_error* err) {
   grpc_tcp_listener* sp = (grpc_tcp_listener*)arg;
   grpc_pollset* read_notifier_pollset;
   if (err != GRPC_ERROR_NONE) {
@@ -223,7 +220,7 @@ static void on_read(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* err) {
         case EINTR:
           continue;
         case EAGAIN:
-          grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
+          grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
           return;
         default:
           gpr_mu_lock(&sp->server->mu);
@@ -243,13 +240,13 @@ static void on_read(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* err) {
     addr_str = grpc_sockaddr_to_uri(&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
-    if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
     grpc_fd* fdobj = grpc_fd_create(fd, name);
 
-    grpc_pollset_add_fd(exec_ctx, read_notifier_pollset, fdobj);
+    grpc_pollset_add_fd(read_notifier_pollset, fdobj);
 
     // Create acceptor.
     grpc_tcp_server_acceptor* acceptor =
@@ -259,8 +256,8 @@ static void on_read(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* err) {
     acceptor->fd_index = sp->fd_index;
 
     sp->server->on_accept_cb(
-        exec_ctx, sp->server->on_accept_cb_arg,
-        grpc_tcp_create(exec_ctx, fdobj, sp->server->channel_args, addr_str),
+        sp->server->on_accept_cb_arg,
+        grpc_tcp_create(fdobj, sp->server->channel_args, addr_str),
         read_notifier_pollset, acceptor);
 
     gpr_free(name);
@@ -273,7 +270,7 @@ error:
   gpr_mu_lock(&sp->server->mu);
   if (0 == --sp->server->active_ports && sp->server->shutdown) {
     gpr_mu_unlock(&sp->server->mu);
-    deactivated_all_ports(exec_ctx, sp->server);
+    deactivated_all_ports(sp->server);
   } else {
     gpr_mu_unlock(&sp->server->mu);
   }
@@ -288,8 +285,8 @@ static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
   grpc_resolved_address wild6;
   unsigned fd_index = 0;
   grpc_dualstack_mode dsmode;
-  grpc_tcp_listener* sp = NULL;
-  grpc_tcp_listener* sp2 = NULL;
+  grpc_tcp_listener* sp = nullptr;
+  grpc_tcp_listener* sp2 = nullptr;
   grpc_error* v6_err = GRPC_ERROR_NONE;
   grpc_error* v4_err = GRPC_ERROR_NONE;
   *out_port = -1;
@@ -314,7 +311,7 @@ static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
   if ((v4_err = grpc_tcp_server_add_addr(s, &wild4, port_index, fd_index,
                                          &dsmode, &sp2)) == GRPC_ERROR_NONE) {
     *out_port = sp2->port;
-    if (sp != NULL) {
+    if (sp != nullptr) {
       sp2->is_sibling = 1;
       sp->sibling = sp2;
     }
@@ -346,7 +343,7 @@ static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
 }
 
 static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
-  grpc_tcp_listener* sp = NULL;
+  grpc_tcp_listener* sp = nullptr;
   char* addr_str;
   char* name;
   grpc_error* err;
@@ -383,7 +380,7 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     sp->port_index = listener->port_index;
     sp->fd_index = listener->fd_index + count - i;
     GPR_ASSERT(sp->emfd);
-    while (listener->server->tail->next != NULL) {
+    while (listener->server->tail->next != nullptr) {
       listener->server->tail = listener->server->tail->next;
     }
     gpr_free(addr_str);
@@ -404,7 +401,7 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
   grpc_dualstack_mode dsmode;
   grpc_error* err;
   *out_port = -1;
-  if (s->tail != NULL) {
+  if (s->tail != nullptr) {
     port_index = s->tail->port_index + 1;
   }
   grpc_unlink_if_unix_domain_socket(addr);
@@ -454,7 +451,7 @@ static grpc_tcp_listener* get_port_index(grpc_tcp_server* s,
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server* s,
@@ -483,8 +480,8 @@ int grpc_tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
   return -1;
 }
 
-void grpc_tcp_server_start(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s,
-                           grpc_pollset** pollsets, size_t pollset_count,
+void grpc_tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
+                           size_t pollset_count,
                            grpc_tcp_server_cb on_accept_cb,
                            void* on_accept_cb_arg) {
   size_t i;
@@ -498,26 +495,26 @@ void grpc_tcp_server_start(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s,
   s->pollsets = pollsets;
   s->pollset_count = pollset_count;
   sp = s->head;
-  while (sp != NULL) {
+  while (sp != nullptr) {
     if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
         pollset_count > 1) {
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "clone_port", clone_port(sp, (unsigned)(pollset_count - 1))));
       for (i = 0; i < pollset_count; i++) {
-        grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
+        grpc_pollset_add_fd(pollsets[i], sp->emfd);
         GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                           grpc_schedule_on_exec_ctx);
-        grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
+        grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
         s->active_ports++;
         sp = sp->next;
       }
     } else {
       for (i = 0; i < pollset_count; i++) {
-        grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
+        grpc_pollset_add_fd(pollsets[i], sp->emfd);
       }
       GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
                         grpc_schedule_on_exec_ctx);
-      grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
+      grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
       s->active_ports++;
       sp = sp->next;
     }
@@ -538,25 +535,24 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s,
   gpr_mu_unlock(&s->mu);
 }
 
-void grpc_tcp_server_unref(grpc_exec_ctx* exec_ctx, grpc_tcp_server* s) {
+void grpc_tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
-    grpc_tcp_server_shutdown_listeners(exec_ctx, s);
+    grpc_tcp_server_shutdown_listeners(s);
     gpr_mu_lock(&s->mu);
-    GRPC_CLOSURE_LIST_SCHED(exec_ctx, &s->shutdown_starting);
+    GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
-    tcp_server_destroy(exec_ctx, s);
+    tcp_server_destroy(s);
   }
 }
 
-void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx* exec_ctx,
-                                        grpc_tcp_server* s) {
+void grpc_tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   s->shutdown_listeners = true;
   /* shutdown all fd's */
   if (s->active_ports) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
-      grpc_fd_shutdown(exec_ctx, sp->emfd,
+      grpc_fd_shutdown(sp->emfd,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
     }
   }

@@ -24,10 +24,6 @@
 #include "src/core/lib/channel/handshaker_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef enum {
   HANDSHAKER_CLIENT = 0,
   HANDSHAKER_SERVER,
@@ -35,7 +31,7 @@ typedef enum {
 } grpc_handshaker_type;
 
 void grpc_handshaker_factory_registry_init();
-void grpc_handshaker_factory_registry_shutdown(grpc_exec_ctx* exec_ctx);
+void grpc_handshaker_factory_registry_shutdown();
 
 /// Registers a new handshaker factory.  Takes ownership.
 /// If \a at_start is true, the new handshaker will be at the beginning of
@@ -44,13 +40,8 @@ void grpc_handshaker_factory_register(bool at_start,
                                       grpc_handshaker_type handshaker_type,
                                       grpc_handshaker_factory* factory);
 
-void grpc_handshakers_add(grpc_exec_ctx* exec_ctx,
-                          grpc_handshaker_type handshaker_type,
+void grpc_handshakers_add(grpc_handshaker_type handshaker_type,
                           const grpc_channel_args* args,
                           grpc_handshake_manager* handshake_mgr);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H */

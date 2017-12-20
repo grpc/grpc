@@ -200,21 +200,6 @@ EXPORTS
     gpr_cmdline_usage_string
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_histogram_create
-    gpr_histogram_destroy
-    gpr_histogram_add
-    gpr_histogram_merge
-    gpr_histogram_percentile
-    gpr_histogram_mean
-    gpr_histogram_stddev
-    gpr_histogram_variance
-    gpr_histogram_maximum
-    gpr_histogram_minimum
-    gpr_histogram_count
-    gpr_histogram_sum
-    gpr_histogram_sum_of_squares
-    gpr_histogram_get_contents
-    gpr_histogram_merge_contents
     gpr_join_host_port
     gpr_split_host_port
     gpr_log_severity_string

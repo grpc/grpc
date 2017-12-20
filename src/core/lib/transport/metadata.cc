@@ -48,9 +48,9 @@
  * used to determine which kind of element a pointer refers to.
  */
 
+grpc_core::DebugOnlyTraceFlag grpc_trace_metadata(false, "metadata");
+
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_metadata =
-    GRPC_TRACER_INITIALIZER(false, "metadata");
 #define DEBUG_ARGS , const char *file, int line
 #define FWD_DEBUG_ARGS , file, line
 #define REF_MD_LOCKED(shard, s) ref_md_locked((shard), (s), __FILE__, __LINE__)
@@ -108,7 +108,7 @@ typedef struct mdtab_shard {
 
 static mdtab_shard g_shards[SHARD_COUNT];
 
-static void gc_mdtab(grpc_exec_ctx* exec_ctx, mdtab_shard* shard);
+static void gc_mdtab(mdtab_shard* shard);
 
 void grpc_mdctx_global_init(void) {
   /* initialize shards */
@@ -123,11 +123,11 @@ void grpc_mdctx_global_init(void) {
   }
 }
 
-void grpc_mdctx_global_shutdown(grpc_exec_ctx* exec_ctx) {
+void grpc_mdctx_global_shutdown() {
   for (size_t i = 0; i < SHARD_COUNT; i++) {
     mdtab_shard* shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
-    gc_mdtab(exec_ctx, shard);
+    gc_mdtab(shard);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
       gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata elements were leaked",
@@ -149,7 +149,7 @@ static int is_mdelem_static(grpc_mdelem e) {
 static void ref_md_locked(mdtab_shard* shard,
                           interned_metadata* md DEBUG_ARGS) {
 #ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+  if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(md->key);
     char* value_str = grpc_slice_to_c_string(md->value);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
@@ -165,7 +165,7 @@ static void ref_md_locked(mdtab_shard* shard,
   }
 }
 
-static void gc_mdtab(grpc_exec_ctx* exec_ctx, mdtab_shard* shard) {
+static void gc_mdtab(mdtab_shard* shard) {
   size_t i;
   interned_metadata** prev_next;
   interned_metadata *md, *next;
@@ -178,8 +178,8 @@ static void gc_mdtab(grpc_exec_ctx* exec_ctx, mdtab_shard* shard) {
       void* user_data = (void*)gpr_atm_no_barrier_load(&md->user_data);
       next = md->bucket_next;
       if (gpr_atm_acq_load(&md->refcnt) == 0) {
-        grpc_slice_unref_internal(exec_ctx, md->key);
-        grpc_slice_unref_internal(exec_ctx, md->value);
+        grpc_slice_unref_internal(md->key);
+        grpc_slice_unref_internal(md->value);
         if (md->user_data) {
           ((destroy_user_data_func)gpr_atm_no_barrier_load(
               &md->destroy_user_data))(user_data);
@@ -228,20 +228,20 @@ static void grow_mdtab(mdtab_shard* shard) {
   GPR_TIMER_END("grow_mdtab", 0);
 }
 
-static void rehash_mdtab(grpc_exec_ctx* exec_ctx, mdtab_shard* shard) {
+static void rehash_mdtab(mdtab_shard* shard) {
   if (gpr_atm_no_barrier_load(&shard->free_estimate) >
       (gpr_atm)(shard->capacity / 4)) {
-    gc_mdtab(exec_ctx, shard);
+    gc_mdtab(shard);
   } else {
     grow_mdtab(shard);
   }
 }
 
 grpc_mdelem grpc_mdelem_create(
-    grpc_exec_ctx* exec_ctx, grpc_slice key, grpc_slice value,
+    grpc_slice key, grpc_slice value,
     grpc_mdelem_data* compatible_external_backing_store) {
   if (!grpc_slice_is_interned(key) || !grpc_slice_is_interned(value)) {
-    if (compatible_external_backing_store != NULL) {
+    if (compatible_external_backing_store != nullptr) {
       return GRPC_MAKE_MDELEM(compatible_external_backing_store,
                               GRPC_MDELEM_STORAGE_EXTERNAL);
     }
@@ -252,7 +252,7 @@ grpc_mdelem grpc_mdelem_create(
     allocated->value = grpc_slice_ref_internal(value);
     gpr_atm_rel_store(&allocated->refcnt, 1);
 #ifndef NDEBUG
-    if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+    if (grpc_trace_metadata.enabled()) {
       char* key_str = grpc_slice_to_c_string(allocated->key);
       char* value_str = grpc_slice_to_c_string(allocated->value);
       gpr_log(GPR_DEBUG, "ELM ALLOC:%p:%" PRIdPTR ": '%s' = '%s'",
@@ -306,7 +306,7 @@ grpc_mdelem grpc_mdelem_create(
   shard->elems[idx] = md;
   gpr_mu_init(&md->mu_user_data);
 #ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+  if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(md->key);
     char* value_str = grpc_slice_to_c_string(md->value);
     gpr_log(GPR_DEBUG, "ELM   NEW:%p:%" PRIdPTR ": '%s' = '%s'", (void*)md,
@@ -318,7 +318,7 @@ grpc_mdelem grpc_mdelem_create(
   shard->count++;
 
   if (shard->count > shard->capacity * 2) {
-    rehash_mdtab(exec_ctx, shard);
+    rehash_mdtab(shard);
   }
 
   gpr_mu_unlock(&shard->mu);
@@ -328,23 +328,21 @@ grpc_mdelem grpc_mdelem_create(
   return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
 }
 
-grpc_mdelem grpc_mdelem_from_slices(grpc_exec_ctx* exec_ctx, grpc_slice key,
-                                    grpc_slice value) {
-  grpc_mdelem out = grpc_mdelem_create(exec_ctx, key, value, NULL);
-  grpc_slice_unref_internal(exec_ctx, key);
-  grpc_slice_unref_internal(exec_ctx, value);
+grpc_mdelem grpc_mdelem_from_slices(grpc_slice key, grpc_slice value) {
+  grpc_mdelem out = grpc_mdelem_create(key, value, nullptr);
+  grpc_slice_unref_internal(key);
+  grpc_slice_unref_internal(value);
   return out;
 }
 
-grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_exec_ctx* exec_ctx,
-                                           grpc_metadata* metadata) {
+grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
   bool changed = false;
   grpc_slice key_slice =
       grpc_slice_maybe_static_intern(metadata->key, &changed);
   grpc_slice value_slice =
       grpc_slice_maybe_static_intern(metadata->value, &changed);
-  return grpc_mdelem_create(exec_ctx, key_slice, value_slice,
-                            changed ? NULL : (grpc_mdelem_data*)metadata);
+  return grpc_mdelem_create(key_slice, value_slice,
+                            changed ? nullptr : (grpc_mdelem_data*)metadata);
 }
 
 static size_t get_base64_encoded_size(size_t raw_length) {
@@ -373,7 +371,7 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_INTERNED: {
       interned_metadata* md = (interned_metadata*)GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
-      if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+      if (grpc_trace_metadata.enabled()) {
         char* key_str = grpc_slice_to_c_string(md->key);
         char* value_str = grpc_slice_to_c_string(md->value);
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
@@ -395,7 +393,7 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       allocated_metadata* md = (allocated_metadata*)GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
-      if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+      if (grpc_trace_metadata.enabled()) {
         char* key_str = grpc_slice_to_c_string(md->key);
         char* value_str = grpc_slice_to_c_string(md->value);
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
@@ -417,7 +415,7 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
   return gmd;
 }
 
-void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
+void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
   switch (GRPC_MDELEM_STORAGE(gmd)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_STATIC:
@@ -425,7 +423,7 @@ void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_INTERNED: {
       interned_metadata* md = (interned_metadata*)GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
-      if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+      if (grpc_trace_metadata.enabled()) {
         char* key_str = grpc_slice_to_c_string(md->key);
         char* value_str = grpc_slice_to_c_string(md->value);
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
@@ -451,7 +449,7 @@ void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       allocated_metadata* md = (allocated_metadata*)GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
-      if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+      if (grpc_trace_metadata.enabled()) {
         char* key_str = grpc_slice_to_c_string(md->key);
         char* value_str = grpc_slice_to_c_string(md->value);
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
@@ -465,8 +463,8 @@ void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
       const gpr_atm prev_refcount = gpr_atm_full_fetch_add(&md->refcnt, -1);
       GPR_ASSERT(prev_refcount >= 1);
       if (1 == prev_refcount) {
-        grpc_slice_unref_internal(exec_ctx, md->key);
-        grpc_slice_unref_internal(exec_ctx, md->value);
+        grpc_slice_unref_internal(md->key);
+        grpc_slice_unref_internal(md->value);
         gpr_free(md);
       }
       break;
@@ -478,7 +476,7 @@ void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
   switch (GRPC_MDELEM_STORAGE(md)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_ALLOCATED:
-      return NULL;
+      return nullptr;
     case GRPC_MDELEM_STORAGE_STATIC:
       return (void*)grpc_static_mdelem_user_data[GRPC_MDELEM_DATA(md) -
                                                  grpc_static_mdelem_table];
@@ -488,12 +486,12 @@ void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
       if (gpr_atm_acq_load(&im->destroy_user_data) == (gpr_atm)destroy_func) {
         return (void*)gpr_atm_no_barrier_load(&im->user_data);
       } else {
-        return NULL;
+        return nullptr;
       }
       return result;
     }
   }
-  GPR_UNREACHABLE_CODE(return NULL);
+  GPR_UNREACHABLE_CODE(return nullptr);
 }
 
 void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
@@ -502,7 +500,7 @@ void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_ALLOCATED:
       destroy_func(user_data);
-      return NULL;
+      return nullptr;
     case GRPC_MDELEM_STORAGE_STATIC:
       destroy_func(user_data);
       return (void*)grpc_static_mdelem_user_data[GRPC_MDELEM_DATA(md) -
@@ -510,12 +508,12 @@ void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
     case GRPC_MDELEM_STORAGE_INTERNED: {
       interned_metadata* im = (interned_metadata*)GRPC_MDELEM_DATA(md);
       GPR_ASSERT(!is_mdelem_static(md));
-      GPR_ASSERT((user_data == NULL) == (destroy_func == NULL));
+      GPR_ASSERT((user_data == nullptr) == (destroy_func == nullptr));
       gpr_mu_lock(&im->mu_user_data);
       if (gpr_atm_no_barrier_load(&im->destroy_user_data)) {
         /* user data can only be set once */
         gpr_mu_unlock(&im->mu_user_data);
-        if (destroy_func != NULL) {
+        if (destroy_func != nullptr) {
           destroy_func(user_data);
         }
         return (void*)gpr_atm_no_barrier_load(&im->user_data);
@@ -526,7 +524,7 @@ void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
       return user_data;
     }
   }
-  GPR_UNREACHABLE_CODE(return NULL);
+  GPR_UNREACHABLE_CODE(return nullptr);
 }
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b) {

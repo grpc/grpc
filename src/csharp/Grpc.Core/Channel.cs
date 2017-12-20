@@ -127,6 +127,20 @@ namespace Grpc.Core
             }
         }
 
+        // cached handler for watch connectivity state
+        static readonly BatchCompletionDelegate WatchConnectivityStateHandler = (success, ctx, state) =>
+        {
+            var tcs = (TaskCompletionSource<object>) state;
+            if (success)
+            {
+                tcs.SetResult(null);
+            }
+            else
+            {
+                tcs.SetCanceled();
+            }
+        };
+
         /// <summary>
         /// Returned tasks completes once channel state has become different from 
         /// given lastObservedState. 
@@ -138,18 +152,11 @@ namespace Grpc.Core
                 "Shutdown is a terminal state. No further state changes can occur.");
             var tcs = new TaskCompletionSource<object>();
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
-            var handler = new BatchCompletionDelegate((success, ctx) =>
+            lock (myLock)
             {
-                if (success)
-                {
-                    tcs.SetResult(null);
-                }
-                else
-                {
-                    tcs.SetCanceled();
-                }
-            });
-            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, handler);
+                // pass "tcs" as "state" for WatchConnectivityStateHandler.
+                handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+            }
             return tcs.Task;
         }
 
@@ -232,7 +239,10 @@ namespace Grpc.Core
                 Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
             }
 
-            handle.Dispose();
+            lock (myLock)
+            {
+                handle.Dispose();
+            }
 
             await Task.WhenAll(GrpcEnvironment.ReleaseAsync(), connectivityWatcherTask).ConfigureAwait(false);
         }
@@ -281,7 +291,10 @@ namespace Grpc.Core
         {
             try
             {
-                return handle.CheckConnectivityState(tryToConnect);
+                lock (myLock)
+                {
+                    return handle.CheckConnectivityState(tryToConnect);
+                }
             }
             catch (ObjectDisposedException)
             {

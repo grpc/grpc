@@ -34,13 +34,10 @@
 
 #include "src/core/lib/debug/trace.h"
 
-#ifndef NDEBUG
-grpc_tracer_flag grpc_trace_fd_refcount =
-    GRPC_TRACER_INITIALIZER(false, "fd_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 
 struct grpc_pollset {
-  uv_timer_t timer;
+  uv_timer_t* timer;
   int shutting_down;
 };
 
@@ -78,17 +75,20 @@ void grpc_pollset_global_shutdown(void) {
 
 static void timer_run_cb(uv_timer_t* timer) {}
 
-static void timer_close_cb(uv_handle_t* handle) { handle->data = (void*)1; }
+static void timer_close_cb(uv_handle_t* handle) {
+  handle->data = (void*)1;
+  gpr_free(handle);
+}
 
 void grpc_pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   GRPC_UV_ASSERT_SAME_THREAD();
   *mu = &grpc_polling_mu;
-  uv_timer_init(uv_default_loop(), &pollset->timer);
+  pollset->timer = (uv_timer_t*)gpr_malloc(sizeof(uv_timer_t));
+  uv_timer_init(uv_default_loop(), pollset->timer);
   pollset->shutting_down = 0;
 }
 
-void grpc_pollset_shutdown(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
-                           grpc_closure* closure) {
+void grpc_pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   GPR_ASSERT(!pollset->shutting_down);
   GRPC_UV_ASSERT_SAME_THREAD();
   pollset->shutting_down = 1;
@@ -99,29 +99,29 @@ void grpc_pollset_shutdown(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
     // kick the loop once
     uv_timer_start(dummy_uv_handle, dummy_timer_cb, 0, 0);
   }
-  GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
 }
 
-void grpc_pollset_destroy(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset) {
+void grpc_pollset_destroy(grpc_pollset* pollset) {
   GRPC_UV_ASSERT_SAME_THREAD();
-  uv_close((uv_handle_t*)&pollset->timer, timer_close_cb);
+  uv_close((uv_handle_t*)pollset->timer, timer_close_cb);
   // timer.data is a boolean indicating that the timer has finished closing
-  pollset->timer.data = (void*)0;
+  pollset->timer->data = (void*)0;
   if (grpc_pollset_work_run_loop) {
-    while (!pollset->timer.data) {
+    while (!pollset->timer->data) {
       uv_run(uv_default_loop(), UV_RUN_NOWAIT);
     }
   }
 }
 
-grpc_error* grpc_pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
+grpc_error* grpc_pollset_work(grpc_pollset* pollset,
                               grpc_pollset_worker** worker_hdl,
                               grpc_millis deadline) {
   uint64_t timeout;
   GRPC_UV_ASSERT_SAME_THREAD();
   gpr_mu_unlock(&grpc_polling_mu);
   if (grpc_pollset_work_run_loop) {
-    grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+    grpc_millis now = grpc_core::ExecCtx::Get()->Now();
     if (deadline >= now) {
       timeout = deadline - now;
     } else {
@@ -130,23 +130,23 @@ grpc_error* grpc_pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
     /* We special-case timeout=0 so that we don't bother with the timer when
        the loop won't block anyway */
     if (timeout > 0) {
-      uv_timer_start(&pollset->timer, timer_run_cb, timeout, 0);
+      uv_timer_start(pollset->timer, timer_run_cb, timeout, 0);
       /* Run until there is some I/O activity or the timer triggers. It doesn't
          matter which happens */
       uv_run(uv_default_loop(), UV_RUN_ONCE);
-      uv_timer_stop(&pollset->timer);
+      uv_timer_stop(pollset->timer);
     } else {
       uv_run(uv_default_loop(), UV_RUN_NOWAIT);
     }
   }
-  if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
-    grpc_exec_ctx_flush(exec_ctx);
+  if (!grpc_closure_list_empty(*grpc_core::ExecCtx::Get()->closure_list())) {
+    grpc_core::ExecCtx::Get()->Flush();
   }
   gpr_mu_lock(&grpc_polling_mu);
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_pollset_kick(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
+grpc_error* grpc_pollset_kick(grpc_pollset* pollset,
                               grpc_pollset_worker* specific_worker) {
   GRPC_UV_ASSERT_SAME_THREAD();
   uv_timer_start(dummy_uv_handle, dummy_timer_cb, 0, 0);

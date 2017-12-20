@@ -28,8 +28,8 @@
 static void* targets_info_copy(void* p) {
   return grpc_slice_hash_table_ref((grpc_slice_hash_table*)p);
 }
-static void targets_info_destroy(grpc_exec_ctx* exec_ctx, void* p) {
-  grpc_slice_hash_table_unref(exec_ctx, (grpc_slice_hash_table*)p);
+static void targets_info_destroy(void* p) {
+  grpc_slice_hash_table_unref((grpc_slice_hash_table*)p);
 }
 static int targets_info_cmp(void* a, void* b) {
   return grpc_slice_hash_table_cmp((const grpc_slice_hash_table*)a,
@@ -49,9 +49,9 @@ grpc_slice_hash_table* grpc_lb_targets_info_find_in_args(
     const grpc_channel_args* args) {
   const grpc_arg* targets_info_arg =
       grpc_channel_args_find(args, GRPC_ARG_LB_SECURE_NAMING_MAP);
-  if (targets_info_arg != NULL) {
+  if (targets_info_arg != nullptr) {
     GPR_ASSERT(targets_info_arg->type == GRPC_ARG_POINTER);
     return (grpc_slice_hash_table*)targets_info_arg->value.pointer.p;
   }
-  return NULL;
+  return nullptr;
 }

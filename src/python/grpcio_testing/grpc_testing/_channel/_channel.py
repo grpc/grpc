@@ -32,20 +32,28 @@ class TestingChannel(grpc_testing.Channel):
     def unsubscribe(self, callback):
         raise NotImplementedError()
 
-    def unary_unary(
-            self, method, request_serializer=None, response_deserializer=None):
+    def unary_unary(self,
+                    method,
+                    request_serializer=None,
+                    response_deserializer=None):
         return _multi_callable.UnaryUnary(method, self._state)
 
-    def unary_stream(
-            self, method, request_serializer=None, response_deserializer=None):
+    def unary_stream(self,
+                     method,
+                     request_serializer=None,
+                     response_deserializer=None):
         return _multi_callable.UnaryStream(method, self._state)
 
-    def stream_unary(
-            self, method, request_serializer=None, response_deserializer=None):
+    def stream_unary(self,
+                     method,
+                     request_serializer=None,
+                     response_deserializer=None):
         return _multi_callable.StreamUnary(method, self._state)
 
-    def stream_stream(
-            self, method, request_serializer=None, response_deserializer=None):
+    def stream_stream(self,
+                      method,
+                      request_serializer=None,
+                      response_deserializer=None):
         return _multi_callable.StreamStream(method, self._state)
 
     def take_unary_unary(self, method_descriptor):
@@ -59,4 +67,6 @@ class TestingChannel(grpc_testing.Channel):
 
     def take_stream_stream(self, method_descriptor):
         return _channel_rpc.stream_stream(self._state, method_descriptor)
+
+
 # pylint: enable=unused-argument

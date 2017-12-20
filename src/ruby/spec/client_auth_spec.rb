@@ -95,7 +95,7 @@ describe 'client-server auth' do
     server_opts = {
       poll_period: 1
     }
-    @srv = RpcServer.new(**server_opts)
+    @srv = new_rpc_server_for_testing(**server_opts)
     port = @srv.add_http2_port('0.0.0.0:0', create_server_creds)
     @srv.handle(SslTestService)
     @srv_thd = Thread.new { @srv.run }

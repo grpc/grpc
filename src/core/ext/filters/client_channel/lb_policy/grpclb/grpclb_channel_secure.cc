@@ -29,13 +29,13 @@
 #include "src/core/lib/support/string.h"
 
 grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
-    grpc_exec_ctx* exec_ctx, const char* lb_service_target_addresses,
+    const char* lb_service_target_addresses,
     grpc_client_channel_factory* client_channel_factory,
     grpc_channel_args* args) {
   grpc_channel_args* new_args = args;
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args);
-  if (channel_credentials != NULL) {
+  if (channel_credentials != nullptr) {
     /* Substitute the channel credentials with a version without call
      * credentials: the load balancer is not necessarily trusted to handle
      * bearer token credentials */
@@ -43,26 +43,26 @@ grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
     grpc_channel_credentials* creds_sans_call_creds =
         grpc_channel_credentials_duplicate_without_call_credentials(
             channel_credentials);
-    GPR_ASSERT(creds_sans_call_creds != NULL);
+    GPR_ASSERT(creds_sans_call_creds != nullptr);
     grpc_arg args_to_add[] = {
         grpc_channel_credentials_to_arg(creds_sans_call_creds)};
     /* Create the new set of channel args */
     new_args = grpc_channel_args_copy_and_add_and_remove(
         args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
         GPR_ARRAY_SIZE(args_to_add));
-    grpc_channel_credentials_unref(exec_ctx, creds_sans_call_creds);
+    grpc_channel_credentials_unref(creds_sans_call_creds);
   }
   grpc_channel* lb_channel = grpc_client_channel_factory_create_channel(
-      exec_ctx, client_channel_factory, lb_service_target_addresses,
+      client_channel_factory, lb_service_target_addresses,
       GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, new_args);
-  if (channel_credentials != NULL) {
-    grpc_channel_args_destroy(exec_ctx, new_args);
+  if (channel_credentials != nullptr) {
+    grpc_channel_args_destroy(new_args);
   }
   return lb_channel;
 }
 
 grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
-    grpc_exec_ctx* exec_ctx, grpc_slice_hash_table* targets_info,
+    grpc_slice_hash_table* targets_info,
     grpc_fake_resolver_response_generator* response_generator,
     const grpc_channel_args* args) {
   const grpc_arg to_add[] = {

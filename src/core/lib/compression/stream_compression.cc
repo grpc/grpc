@@ -21,7 +21,7 @@
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/compression/stream_compression_gzip.h"
 
-extern "C" const grpc_stream_compression_vtable
+extern const grpc_stream_compression_vtable
     grpc_stream_compression_identity_vtable;
 
 bool grpc_stream_compress(grpc_stream_compression_context* ctx,
@@ -51,7 +51,7 @@ grpc_stream_compression_context* grpc_stream_compression_context_create(
       return grpc_stream_compression_gzip_vtable.context_create(method);
     default:
       gpr_log(GPR_ERROR, "Unknown stream compression method: %d", method);
-      return NULL;
+      return nullptr;
   }
 }
 

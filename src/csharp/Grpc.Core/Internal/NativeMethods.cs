@@ -29,6 +29,8 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
+    internal delegate void NativeCallbackTestDelegate(bool success);
+
     /// <summary>
     /// Provides access to all native methods provided by <c>NativeExtension</c>.
     /// An extra level of indirection is added to P/Invoke calls to allow intelligent loading
@@ -50,6 +52,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate grpcsharp_batch_context_recv_status_on_client_details;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
         public readonly Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate grpcsharp_batch_context_recv_close_on_server_cancelled;
+        public readonly Delegates.grpcsharp_batch_context_reset_delegate grpcsharp_batch_context_reset;
         public readonly Delegates.grpcsharp_batch_context_destroy_delegate grpcsharp_batch_context_destroy;
 
         public readonly Delegates.grpcsharp_request_call_context_create_delegate grpcsharp_request_call_context_create;
@@ -58,6 +61,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_request_call_context_host_delegate grpcsharp_request_call_context_host;
         public readonly Delegates.grpcsharp_request_call_context_deadline_delegate grpcsharp_request_call_context_deadline;
         public readonly Delegates.grpcsharp_request_call_context_request_metadata_delegate grpcsharp_request_call_context_request_metadata;
+        public readonly Delegates.grpcsharp_request_call_context_reset_delegate grpcsharp_request_call_context_reset;
         public readonly Delegates.grpcsharp_request_call_context_destroy_delegate grpcsharp_request_call_context_destroy;
 
         public readonly Delegates.grpcsharp_composite_call_credentials_create_delegate grpcsharp_composite_call_credentials_create;
@@ -167,6 +171,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_recv_status_on_client_details = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate>(library);
             this.grpcsharp_batch_context_recv_close_on_server_cancelled = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate>(library);
+            this.grpcsharp_batch_context_reset = GetMethodDelegate<Delegates.grpcsharp_batch_context_reset_delegate>(library);
             this.grpcsharp_batch_context_destroy = GetMethodDelegate<Delegates.grpcsharp_batch_context_destroy_delegate>(library);
 
             this.grpcsharp_request_call_context_create = GetMethodDelegate<Delegates.grpcsharp_request_call_context_create_delegate>(library);
@@ -175,6 +180,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_request_call_context_host = GetMethodDelegate<Delegates.grpcsharp_request_call_context_host_delegate>(library);
             this.grpcsharp_request_call_context_deadline = GetMethodDelegate<Delegates.grpcsharp_request_call_context_deadline_delegate>(library);
             this.grpcsharp_request_call_context_request_metadata = GetMethodDelegate<Delegates.grpcsharp_request_call_context_request_metadata_delegate>(library);
+            this.grpcsharp_request_call_context_reset = GetMethodDelegate<Delegates.grpcsharp_request_call_context_reset_delegate>(library);
             this.grpcsharp_request_call_context_destroy = GetMethodDelegate<Delegates.grpcsharp_request_call_context_destroy_delegate>(library);
 
             this.grpcsharp_composite_call_credentials_create = GetMethodDelegate<Delegates.grpcsharp_composite_call_credentials_create_delegate>(library);
@@ -309,6 +315,7 @@ namespace Grpc.Core.Internal
             public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_details_delegate(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
             public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate(BatchContextSafeHandle ctx);
             public delegate int grpcsharp_batch_context_recv_close_on_server_cancelled_delegate(BatchContextSafeHandle ctx);
+            public delegate void grpcsharp_batch_context_reset_delegate(BatchContextSafeHandle ctx);
             public delegate void grpcsharp_batch_context_destroy_delegate(IntPtr ctx);
 
             public delegate RequestCallContextSafeHandle grpcsharp_request_call_context_create_delegate();
@@ -317,6 +324,7 @@ namespace Grpc.Core.Internal
             public delegate IntPtr grpcsharp_request_call_context_host_delegate(RequestCallContextSafeHandle ctx, out UIntPtr hostLength);
             public delegate Timespec grpcsharp_request_call_context_deadline_delegate(RequestCallContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_request_call_context_request_metadata_delegate(RequestCallContextSafeHandle ctx);
+            public delegate void grpcsharp_request_call_context_reset_delegate(RequestCallContextSafeHandle ctx);
             public delegate void grpcsharp_request_call_context_destroy_delegate(IntPtr ctx);
 
             public delegate CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create_delegate(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2);
@@ -420,7 +428,7 @@ namespace Grpc.Core.Internal
             public delegate Timespec gprsharp_convert_clock_type_delegate(Timespec t, ClockType targetClock);
             public delegate int gprsharp_sizeof_timespec_delegate();
 
-            public delegate CallError grpcsharp_test_callback_delegate([MarshalAs(UnmanagedType.FunctionPtr)] OpCompletionDelegate callback);
+            public delegate CallError grpcsharp_test_callback_delegate([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback);
             public delegate IntPtr grpcsharp_test_nop_delegate(IntPtr ptr);
             public delegate void grpcsharp_test_override_method_delegate(string methodName, string variant);
         }
