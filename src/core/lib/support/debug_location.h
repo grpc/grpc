@@ -36,7 +36,7 @@ class DebugLocation {
   const char* file_;
   const int line_;
 };
-#define DEBUG_LOCATION DebugLocation(__FILE__, __LINE__)
+#define DEBUG_LOCATION ::grpc_core::DebugLocation(__FILE__, __LINE__)
 #else
 class DebugLocation {
  public:
@@ -44,7 +44,7 @@ class DebugLocation {
   const char* file() const { return nullptr; }
   int line() const { return -1; }
 };
-#define DEBUG_LOCATION DebugLocation()
+#define DEBUG_LOCATION ::grpc_core::DebugLocation()
 #endif
 
 }  // namespace grpc_core
