@@ -373,9 +373,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
     SetNextResolution(addresses);
   }
 
-  void ResetStub(int fallback_timeout = 0) {
+  void ResetStub(int fallback_timeout = 0, int reresolution_timeout = 1000) {
     ChannelArguments args;
     args.SetGrpclbFallbackTimeout(fallback_timeout);
+    args.SetGrpclbReresolutionTimeout(grpc_test_slowdown_factor() *
+                                      reresolution_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_);
     std::ostringstream uri;
@@ -453,9 +455,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc::string balancer_name;
   };
 
-  //  If reresolution is true, only set the resolution results which will be
-  //  returned by the resolver later when it sees an error. Otherwise, trigger a
-  //  normal resolution immediately.
+  // If re-resolution is true, don't trigger a resolution immediately after
+  // setting the response.
   void SetNextResolution(const std::vector<AddressData>& address_data,
                          bool reresolution = false) {
     grpc_core::ExecCtx exec_ctx;
@@ -475,7 +476,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
     grpc_fake_resolver_response_generator_set_response(
-        response_generator_, &fake_result, reresolution);
+        response_generator_, &fake_result, !reresolution);
     grpc_lb_addresses_destroy(addresses);
   }
 
@@ -1074,6 +1075,9 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
 }
 
 TEST_F(UpdatesTest, Reresolve) {
+  // The re-resolution_timeout is larger than timeout_ms in SendRpc() so that
+  // the client can receive the new response on its first re-resolution request.
+  ResetStub(0 /* fallback_timeout */, 1500 /* reresolution_timeout */);
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
   SetNextResolution(addresses);

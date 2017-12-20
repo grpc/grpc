@@ -106,7 +106,7 @@ static void test_fake_resolver() {
   // Set resolver results and trigger first resolution. on_resolution_cb
   // performs the checks.
   grpc_fake_resolver_response_generator_set_response(response_generator,
-                                                     results, false);
+                                                     results, true);
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
   grpc_core::ExecCtx::Get()->Flush();
@@ -141,7 +141,7 @@ static void test_fake_resolver() {
 
   // Set updated resolver results and trigger a second resolution.
   grpc_fake_resolver_response_generator_set_response(response_generator,
-                                                     results_update, false);
+                                                     results_update, true);
   grpc_resolver_next_locked(resolver, &on_res_arg_update.resolver_result,
                             on_resolution);
   grpc_core::ExecCtx::Get()->Flush();
@@ -180,13 +180,15 @@ static void test_fake_resolver() {
       GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg_update_upon_error,
                           grpc_combiner_scheduler(combiner));
 
-  // Set resolver results upon error and trigger a third resolution.
-  grpc_fake_resolver_response_generator_set_response(
-      response_generator, results_update_upon_error, true);
-  // Flush here to guarantee that the response has been set.
-  grpc_core::ExecCtx::Get()->Flush();
+  // Set target_result and next_completion for next resolution.
   grpc_resolver_next_locked(
       resolver, &on_res_arg_update_upon_error.resolver_result, on_resolution);
+  // Set resolver results without triggering a resolution.
+  grpc_fake_resolver_response_generator_set_response(
+      response_generator, results_update_upon_error, false);
+  // Flush here to guarantee that the response has been set.
+  grpc_core::ExecCtx::Get()->Flush();
+  // Trigger a resolution.
   grpc_resolver_channel_saw_error_locked(resolver);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg_update_upon_error.ev,

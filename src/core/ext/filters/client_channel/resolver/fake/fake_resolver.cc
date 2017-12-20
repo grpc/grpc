@@ -47,30 +47,30 @@
 //
 
 typedef struct {
-  // base class -- must be first
+  // Base class -- must be first
   grpc_resolver base;
 
-  // passed-in parameters
+  // Passed-in parameters
   grpc_channel_args* channel_args;
 
   // If not NULL, the next set of resolution results to be returned to
   // grpc_resolver_next_locked()'s closure.
   grpc_channel_args* next_results;
 
-  // Results to use for the pretended re-resolution in
-  // fake_resolver_channel_saw_error_locked().
-  grpc_channel_args* results_upon_error;
+  // A copy of the most-recently used resolution results
+  grpc_channel_args* latest_used_results;
 
-  // pending next completion, or NULL
+  // Pending next completion, or NULL
   grpc_closure* next_completion;
-  // target result address for next completion
+
+  // Target result address for next completion
   grpc_channel_args** target_result;
 } fake_resolver;
 
 static void fake_resolver_destroy(grpc_resolver* gr) {
   fake_resolver* r = (fake_resolver*)gr;
   grpc_channel_args_destroy(r->next_results);
-  grpc_channel_args_destroy(r->results_upon_error);
+  grpc_channel_args_destroy(r->latest_used_results);
   grpc_channel_args_destroy(r->channel_args);
   gpr_free(r);
 }
@@ -89,7 +89,10 @@ static void fake_resolver_maybe_finish_next_locked(fake_resolver* r) {
   if (r->next_completion != nullptr && r->next_results != nullptr) {
     *r->target_result =
         grpc_channel_args_union(r->next_results, r->channel_args);
-    grpc_channel_args_destroy(r->next_results);
+    if (r->latest_used_results != nullptr) {
+      grpc_channel_args_destroy(r->latest_used_results);
+    }
+    r->latest_used_results = r->next_results;
     r->next_results = nullptr;
     GRPC_CLOSURE_SCHED(r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = nullptr;
@@ -98,12 +101,12 @@ static void fake_resolver_maybe_finish_next_locked(fake_resolver* r) {
 
 static void fake_resolver_channel_saw_error_locked(grpc_resolver* resolver) {
   fake_resolver* r = (fake_resolver*)resolver;
-  if (r->results_upon_error != nullptr) {
-    // Pretend we re-resolved.
-    if (r->next_results != nullptr) {
-      grpc_channel_args_destroy(r->next_results);
-    }
-    r->next_results = grpc_channel_args_copy(r->results_upon_error);
+  // A resolution must have been returned before an error is seen.
+  GPR_ASSERT(r->latest_used_results != nullptr);
+  if (r->next_results == nullptr) {
+    // If a new set of resolution results is unavailable, re-resolve with the
+    // most-recently used results to avoid a no-op re-resolution.
+    r->next_results = grpc_channel_args_copy(r->latest_used_results);
   }
   fake_resolver_maybe_finish_next_locked(r);
 }
@@ -153,37 +156,32 @@ typedef struct set_response_closure_arg {
   grpc_closure set_response_closure;
   grpc_fake_resolver_response_generator* generator;
   grpc_channel_args* response;
-  bool upon_error;
+  bool finish_next;
 } set_response_closure_arg;
 
 static void set_response_closure_fn(void* arg, grpc_error* error) {
   set_response_closure_arg* closure_arg = (set_response_closure_arg*)arg;
   grpc_fake_resolver_response_generator* generator = closure_arg->generator;
   fake_resolver* r = generator->resolver;
-  if (!closure_arg->upon_error) {
-    if (r->next_results != nullptr) {
-      grpc_channel_args_destroy(r->next_results);
-    }
-    r->next_results = closure_arg->response;
+  if (r->next_results != nullptr) {
+    grpc_channel_args_destroy(r->next_results);
+  }
+  r->next_results = closure_arg->response;
+  if (closure_arg->finish_next) {
     fake_resolver_maybe_finish_next_locked(r);
-  } else {
-    if (r->results_upon_error != nullptr) {
-      grpc_channel_args_destroy(r->results_upon_error);
-    }
-    r->results_upon_error = closure_arg->response;
   }
   gpr_free(closure_arg);
 }
 
 void grpc_fake_resolver_response_generator_set_response(
     grpc_fake_resolver_response_generator* generator,
-    grpc_channel_args* response, bool upon_error) {
+    grpc_channel_args* response, bool finish_next) {
   GPR_ASSERT(generator->resolver != nullptr);
   set_response_closure_arg* closure_arg =
       (set_response_closure_arg*)gpr_zalloc(sizeof(*closure_arg));
   closure_arg->generator = generator;
   closure_arg->response = grpc_channel_args_copy(response);
-  closure_arg->upon_error = upon_error;
+  closure_arg->finish_next = finish_next;
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
                                        set_response_closure_fn, closure_arg,
                                        grpc_combiner_scheduler(

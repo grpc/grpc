@@ -36,13 +36,12 @@ typedef struct grpc_fake_resolver_response_generator
 grpc_fake_resolver_response_generator*
 grpc_fake_resolver_response_generator_create();
 
-// Set the resolution response of the fake resolver associated with the \a
-// response_generator instance. If \a only_upon_error is true, only set \a
-// results_upon_error of the resolver. Otherwise, set both \a only_upon_error
-// and \a next_results and trigger a new resolution.
+// Set next_results of the fake resolver associated with the \a
+// response_generator instance. If \a finish_next is true, trigger a new
+// resolution.
 void grpc_fake_resolver_response_generator_set_response(
     grpc_fake_resolver_response_generator* generator,
-    grpc_channel_args* response, bool only_upon_error);
+    grpc_channel_args* response, bool finish_next);
 
 // Return a \a grpc_arg for a \a grpc_fake_resolver_response_generator instance.
 grpc_arg grpc_fake_resolver_response_generator_arg(

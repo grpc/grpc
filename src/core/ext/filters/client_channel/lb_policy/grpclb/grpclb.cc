@@ -125,8 +125,7 @@
 #define GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_GRPCLB_RECONNECT_JITTER 0.2
 #define GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS 10000
-// TODO(juanlishen): The timeout should take (1, 2] second.
-#define GRPC_GRPCLB_DEFAULT_RERESOLUTION_TIMEOUT_MS 17000
+#define GRPC_GRPCLB_DEFAULT_RERESOLUTION_TIMEOUT_MS 1000
 
 grpc_core::TraceFlag grpc_lb_glb_trace(false, "glb");
 
@@ -1799,7 +1798,7 @@ static void glb_update_locked(grpc_lb_policy* policy,
   grpc_channel_args* lb_channel_args = build_lb_channel_args(
       addresses, glb_policy->response_generator, args->args);
   grpc_fake_resolver_response_generator_set_response(
-      glb_policy->response_generator, lb_channel_args, false);
+      glb_policy->response_generator, lb_channel_args, true);
   grpc_channel_args_destroy(lb_channel_args);
   // Start watching the LB channel connectivity for connection, if not
   // already doing so.
@@ -1980,7 +1979,7 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
 
   /* Propagate initial resolution */
   grpc_fake_resolver_response_generator_set_response(
-      glb_policy->response_generator, lb_channel_args, false);
+      glb_policy->response_generator, lb_channel_args, true);
   grpc_channel_args_destroy(lb_channel_args);
   gpr_free(uri_str);
   if (glb_policy->lb_channel == nullptr) {

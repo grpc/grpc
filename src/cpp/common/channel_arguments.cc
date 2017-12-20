@@ -88,6 +88,10 @@ void ChannelArguments::SetGrpclbFallbackTimeout(int fallback_timeout) {
   SetInt(GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS, fallback_timeout);
 }
 
+void ChannelArguments::SetGrpclbReresolutionTimeout(int reresolution_timeout) {
+  SetInt(GRPC_ARG_GRPCLB_RERESOLUTION_TIMEOUT_MS, reresolution_timeout);
+}
+
 void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   if (!mutator) {
     return;
