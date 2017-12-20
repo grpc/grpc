@@ -1733,7 +1733,7 @@ const grpc_event_engine_vtable* grpc_init_epollsig_linux(
 const grpc_event_engine_vtable* grpc_init_epollsig_linux(
     bool explicit_request) {
   gpr_log(GPR_ERROR,
-          "Skipping epollsig becuase GRPC_LINUX_EPOLL is not defined.");
+          "Skipping epollsig because GRPC_LINUX_EPOLL is not defined.");
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
