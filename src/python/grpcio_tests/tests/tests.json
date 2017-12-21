@@ -34,6 +34,7 @@
   "unit._cython._no_messages_server_completion_queue_per_call_test.Test",
   "unit._cython._no_messages_single_server_completion_queue_test.Test",
   "unit._cython._read_some_but_not_all_responses_test.ReadSomeButNotAllResponsesTest",
+  "unit._cython._server_test.Test",
   "unit._cython.cygrpc_test.InsecureServerInsecureClient",
   "unit._cython.cygrpc_test.SecureServerSecureClient",
   "unit._cython.cygrpc_test.TypeSmokeTest",

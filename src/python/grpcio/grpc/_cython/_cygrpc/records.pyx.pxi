@@ -229,13 +229,15 @@ cdef class OperationTag:
     self.c_nops = 0 if self._operations is None else len(self._operations)
     if 0 < self.c_nops:
       self.c_ops = <grpc_op *>gpr_malloc(sizeof(grpc_op) * self.c_nops)
-      for index in range(self.c_nops):
-        self.c_ops[index] = (<Operation>(self._operations[index])).c_op
+      for index, operation in enumerate(self._operations):
+        (<Operation>operation).c()
+        self.c_ops[index] = (<Operation>operation).c_op
 
   cdef object release_ops(self):
     if 0 < self.c_nops:
       for index, operation in enumerate(self._operations):
         (<Operation>operation).c_op = self.c_ops[index]
+        (<Operation>operation).un_c()
       gpr_free(self.c_ops)
       return self._operations
     else:
@@ -258,69 +260,6 @@ cdef class Event:
     self.request_metadata = request_metadata
     self.batch_operations = batch_operations
     self.is_new_request = is_new_request
-
-
-cdef class ByteBuffer:
-
-  def __cinit__(self, bytes data):
-    grpc_init()
-    if data is None:
-      self.c_byte_buffer = NULL
-      return
-
-    cdef char *c_data = data
-    cdef grpc_slice data_slice
-    cdef size_t data_length = len(data)
-    with nogil:
-      data_slice = grpc_slice_from_copied_buffer(c_data, data_length)
-    with nogil:
-      self.c_byte_buffer = grpc_raw_byte_buffer_create(
-          &data_slice, 1)
-    with nogil:
-      grpc_slice_unref(data_slice)
-
-  def bytes(self):
-    cdef grpc_byte_buffer_reader reader
-    cdef grpc_slice data_slice
-    cdef size_t data_slice_length
-    cdef void *data_slice_pointer
-    cdef bint reader_status
-    if self.c_byte_buffer != NULL:
-      with nogil:
-        reader_status = grpc_byte_buffer_reader_init(
-            &reader, self.c_byte_buffer)
-      if not reader_status:
-        return None
-      result = bytearray()
-      with nogil:
-        while grpc_byte_buffer_reader_next(&reader, &data_slice):
-          data_slice_pointer = grpc_slice_start_ptr(data_slice)
-          data_slice_length = grpc_slice_length(data_slice)
-          with gil:
-            result += (<char *>data_slice_pointer)[:data_slice_length]
-          grpc_slice_unref(data_slice)
-      with nogil:
-        grpc_byte_buffer_reader_destroy(&reader)
-      return bytes(result)
-    else:
-      return None
-
-  def __len__(self):
-    cdef size_t result
-    if self.c_byte_buffer != NULL:
-      with nogil:
-        result = grpc_byte_buffer_length(self.c_byte_buffer)
-      return result
-    else:
-      return 0
-
-  def __str__(self):
-    return self.bytes()
-
-  def __dealloc__(self):
-    if self.c_byte_buffer != NULL:
-      grpc_byte_buffer_destroy(self.c_byte_buffer)
-    grpc_shutdown()
 
 
 cdef class SslPemKeyCertPair:
@@ -365,7 +304,7 @@ cdef class ChannelArg:
     elif hasattr(value, '__int__'):
       # Pointer objects must override __int__() to return
       # the underlying C address (Python ints are word size).  The
-      # lifecycle of the pointer is fixed to the lifecycle of the 
+      # lifecycle of the pointer is fixed to the lifecycle of the
       # python object wrapping it.
       self.ptr_vtable.copy = &copy_ptr
       self.ptr_vtable.destroy = &destroy_ptr
@@ -405,185 +344,6 @@ cdef class ChannelArgs:
   def __getitem__(self, size_t i):
     # self.args is never stale; it's only updated from this file
     return self.args[i]
-
-
-cdef class Operation:
-
-  def __cinit__(self):
-    grpc_init()
-    self.references = []
-    self._c_metadata_needs_release = False
-    self._c_metadata_array_needs_destruction = False
-    self._status_details = grpc_empty_slice()
-    self.is_valid = False
-
-  @property
-  def type(self):
-    return self.c_op.type
-
-  @property
-  def flags(self):
-    return self.c_op.flags
-
-  @property
-  def has_status(self):
-    return self.c_op.type == GRPC_OP_RECV_STATUS_ON_CLIENT
-
-  @property
-  def received_message(self):
-    if self.c_op.type != GRPC_OP_RECV_MESSAGE:
-      raise TypeError("self must be an operation receiving a message")
-    return self._received_message
-
-  @property
-  def received_message_or_none(self):
-    if self.c_op.type != GRPC_OP_RECV_MESSAGE:
-      return None
-    return self._received_message
-
-  @property
-  def received_metadata(self):
-    if (self.c_op.type != GRPC_OP_RECV_INITIAL_METADATA and
-        self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT):
-      raise TypeError("self must be an operation receiving metadata")
-    return _metadata(&self._c_metadata_array)
-
-  @property
-  def received_status_code(self):
-    if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
-      raise TypeError("self must be an operation receiving a status code")
-    return self._received_status_code
-
-  @property
-  def received_status_code_or_none(self):
-    if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
-      return None
-    return self._received_status_code
-
-  @property
-  def received_status_details(self):
-    if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
-      raise TypeError("self must be an operation receiving status details")
-    return _slice_bytes(self._status_details)
-
-  @property
-  def received_status_details_or_none(self):
-    if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
-      return None
-    return _slice_bytes(self._status_details)
-
-  @property
-  def received_cancelled(self):
-    if self.c_op.type != GRPC_OP_RECV_CLOSE_ON_SERVER:
-      raise TypeError("self must be an operation receiving cancellation "
-                      "information")
-    return False if self._received_cancelled == 0 else True
-
-  @property
-  def received_cancelled_or_none(self):
-    if self.c_op.type != GRPC_OP_RECV_CLOSE_ON_SERVER:
-      return None
-    return False if self._received_cancelled == 0 else True
-
-  def __dealloc__(self):
-    if self._c_metadata_needs_release:
-      _release_c_metadata(self._c_metadata, self._c_metadata_count)
-    if self._c_metadata_array_needs_destruction:
-      grpc_metadata_array_destroy(&self._c_metadata_array)
-    grpc_slice_unref(self._status_details)
-    grpc_shutdown()
-
-def operation_send_initial_metadata(metadata, int flags):
-  cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_SEND_INITIAL_METADATA
-  op.c_op.flags = flags
-  _store_c_metadata(metadata, &op._c_metadata, &op._c_metadata_count)
-  op._c_metadata_needs_release = True
-  op.c_op.data.send_initial_metadata.count = op._c_metadata_count
-  op.c_op.data.send_initial_metadata.metadata = op._c_metadata
-  op.is_valid = True
-  return op
-
-def operation_send_message(data, int flags):
-  cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_SEND_MESSAGE
-  op.c_op.flags = flags
-  byte_buffer = ByteBuffer(data)
-  op.c_op.data.send_message.send_message = byte_buffer.c_byte_buffer
-  op.references.append(byte_buffer)
-  op.is_valid = True
-  return op
-
-def operation_send_close_from_client(int flags):
-  cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_SEND_CLOSE_FROM_CLIENT
-  op.c_op.flags = flags
-  op.is_valid = True
-  return op
-
-def operation_send_status_from_server(
-    metadata, grpc_status_code code, bytes details, int flags):
-  cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_SEND_STATUS_FROM_SERVER
-  op.c_op.flags = flags
-  _store_c_metadata(metadata, &op._c_metadata, &op._c_metadata_count)
-  op._c_metadata_needs_release = True
-  op.c_op.data.send_status_from_server.trailing_metadata_count = (
-      op._c_metadata_count)
-  op.c_op.data.send_status_from_server.trailing_metadata = op._c_metadata
-  op.c_op.data.send_status_from_server.status = code
-  grpc_slice_unref(op._status_details)
-  op._status_details = _slice_from_bytes(details)
-  op.c_op.data.send_status_from_server.status_details = &op._status_details
-  op.is_valid = True
-  return op
-
-def operation_receive_initial_metadata(int flags):
-  cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_RECV_INITIAL_METADATA
-  op.c_op.flags = flags
-  grpc_metadata_array_init(&op._c_metadata_array)
-  op.c_op.data.receive_initial_metadata.receive_initial_metadata = (
-      &op._c_metadata_array)
-  op._c_metadata_array_needs_destruction = True
-  op.is_valid = True
-  return op
-
-def operation_receive_message(int flags):
-  cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_RECV_MESSAGE
-  op.c_op.flags = flags
-  op._received_message = ByteBuffer(None)
-  # n.b. the c_op.data.receive_message field needs to be deleted by us,
-  # anyway, so we just let that be handled by the ByteBuffer() we allocated
-  # the line before.
-  op.c_op.data.receive_message.receive_message = (
-      &op._received_message.c_byte_buffer)
-  op.is_valid = True
-  return op
-
-def operation_receive_status_on_client(int flags):
-  cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_RECV_STATUS_ON_CLIENT
-  op.c_op.flags = flags
-  grpc_metadata_array_init(&op._c_metadata_array)
-  op.c_op.data.receive_status_on_client.trailing_metadata = (
-      &op._c_metadata_array)
-  op._c_metadata_array_needs_destruction = True
-  op.c_op.data.receive_status_on_client.status = (
-      &op._received_status_code)
-  op.c_op.data.receive_status_on_client.status_details = (
-      &op._status_details)
-  op.is_valid = True
-  return op
-
-def operation_receive_close_on_server(int flags):
-  cdef Operation op = Operation()
-  op.c_op.type = GRPC_OP_RECV_CLOSE_ON_SERVER
-  op.c_op.flags = flags
-  op.c_op.data.receive_close_on_server.cancelled = &op._received_cancelled
-  op.is_valid = True
-  return op
 
 
 cdef class CompressionOptions:
