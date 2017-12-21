@@ -31,6 +31,44 @@ def _handle_unary_unary(unused_request, unused_servicer_context):
     return _RESPONSE
 
 
+def _get_reuse_socket_option():
+    try:
+        return socket.SO_REUSEPORT
+    except AttributeError:
+        # SO_REUSEPORT is unavailable on Windows, but SO_REUSEADDR
+        # allows forcibly re-binding to a port
+        return socket.SO_REUSEADDR
+
+
+def _pick_and_bind_port(sock_opt):
+    # Reserve a port, when we restart the server we want
+    # to hold onto the port
+    port = 0
+    for address_family in (socket.AF_INET6, socket.AF_INET):
+        try:
+            s = socket.socket(address_family, socket.SOCK_STREAM)
+        except socket.error:
+            continue  # this address family is unavailable
+        s.setsockopt(socket.SOL_SOCKET, sock_opt, 1)
+        try:
+            s.bind(('localhost', port))
+            # for socket.SOCK_STREAM sockets, it is necessary to call
+            # listen to get the desired behavior.
+            s.listen(1)
+            port = s.getsockname()[1]
+        except socket.error:
+            # port was not available on the current address family
+            # try again
+            port = 0
+            break
+        finally:
+            s.close()
+    if s:
+        return port if port != 0 else _pick_and_bind_port(sock_opt)
+    else:
+        return None  # no address family was available
+
+
 class ReconnectTest(unittest.TestCase):
 
     def test_reconnect(self):
@@ -39,18 +77,9 @@ class ReconnectTest(unittest.TestCase):
             'UnaryUnary':
             grpc.unary_unary_rpc_method_handler(_handle_unary_unary)
         })
-        # Reserve a port, when we restart the server we want
-        # to hold onto the port
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            opt = socket.SO_REUSEPORT
-        except AttributeError:
-            # SO_REUSEPORT is unavailable on Windows, but SO_REUSEADDR
-            # allows forcibly re-binding to a port
-            opt = socket.SO_REUSEADDR
-        s.setsockopt(socket.SOL_SOCKET, opt, 1)
-        s.bind(('localhost', 0))
-        port = s.getsockname()[1]
+        sock_opt = _get_reuse_socket_option()
+        port = _pick_and_bind_port(sock_opt)
+        self.assertIsNotNone(port)
 
         server = grpc.server(server_pool, (handler,))
         server.add_insecure_port('[::]:{}'.format(port))
