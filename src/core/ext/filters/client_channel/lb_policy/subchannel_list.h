@@ -81,7 +81,7 @@ void grpc_lb_subchannel_data_stop_connectivity_watch(
 
 struct grpc_lb_subchannel_list {
   /** backpointer to owning policy */
-  grpc_lb_policy* policy;
+  grpc_core::LoadBalancingPolicy* policy;
 
   grpc_core::TraceFlag* tracer;
 
@@ -116,8 +116,9 @@ struct grpc_lb_subchannel_list {
 };
 
 grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
-    grpc_lb_policy* p, grpc_core::TraceFlag* tracer,
-    const grpc_lb_addresses* addresses, const grpc_lb_policy_args* args,
+    grpc_core::LoadBalancingPolicy* p, grpc_core::TraceFlag* tracer,
+    const grpc_lb_addresses* addresses,
+    const grpc_core::LoadBalancingPolicy::Args& args,
     grpc_iomgr_cb_func connectivity_changed_cb);
 
 void grpc_lb_subchannel_list_ref(grpc_lb_subchannel_list* subchannel_list,

@@ -22,49 +22,50 @@
 
 #include "src/core/lib/support/string.h"
 
-#define MAX_POLICIES 10
+namespace grpc_core {
 
-static grpc_lb_policy_factory* g_all_of_the_lb_policies[MAX_POLICIES];
-static int g_number_of_lb_policies = 0;
+namespace {
+LoadBalancingPolicyRegistry* g_registry = nullptr;
+}  // namespace
 
-void grpc_lb_policy_registry_init(void) { g_number_of_lb_policies = 0; }
-
-void grpc_lb_policy_registry_shutdown(void) {
-  int i;
-  for (i = 0; i < g_number_of_lb_policies; i++) {
-    grpc_lb_policy_factory_unref(g_all_of_the_lb_policies[i]);
-  }
+LoadBalancingPolicyRegistry* LoadBalancingPolicyRegistry::Global() {
+  return g_registry;
 }
 
-void grpc_register_lb_policy(grpc_lb_policy_factory* factory) {
-  int i;
-  for (i = 0; i < g_number_of_lb_policies; i++) {
-    GPR_ASSERT(0 != gpr_stricmp(factory->vtable->name,
-                                g_all_of_the_lb_policies[i]->vtable->name));
-  }
-  GPR_ASSERT(g_number_of_lb_policies != MAX_POLICIES);
-  grpc_lb_policy_factory_ref(factory);
-  g_all_of_the_lb_policies[g_number_of_lb_policies++] = factory;
+void LoadBalancingPolicyRegistry::Init() {
+  g_registry = New<LoadBalancingPolicyRegistry>();
 }
 
-static grpc_lb_policy_factory* lookup_factory(const char* name) {
-  int i;
+void LoadBalancingPolicyRegistry::Shutdown() {
+  Delete(g_registry);
+  g_registry = nullptr;
+}
 
-  if (name == nullptr) return nullptr;
+LoadBalancingPolicyRegistry::LoadBalancingPolicyRegistry() {}
 
-  for (i = 0; i < g_number_of_lb_policies; i++) {
-    if (0 == gpr_stricmp(name, g_all_of_the_lb_policies[i]->vtable->name)) {
-      return g_all_of_the_lb_policies[i];
+LoadBalancingPolicyRegistry::~LoadBalancingPolicyRegistry() {}
+
+void LoadBalancingPolicyRegistry::RegisterLoadBalancingPolicyFactory(
+    UniquePtr<LoadBalancingPolicyFactory> factory) {
+  for (size_t i = 0; i < factories_.size(); ++i) {
+    GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
+  }
+  factories_.push_back(std::move(factory));
+}
+
+OrphanablePtr<LoadBalancingPolicy>
+LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+    const char* name, const LoadBalancingPolicy::Args& args) {
+  // Find factory.
+  LoadBalancingPolicyFactory* factory = nullptr;
+  for (size_t i = 0; i < factories_.size(); ++i) {
+    if (strcmp(name, factories_[i]->name()) == 0) {
+      factory = factories_[i].get();
     }
   }
-
-  return nullptr;
+  if (factory == nullptr) return nullptr;  // Specified name not found.
+  // Create policy via factory.
+  return factory->CreateLoadBalancingPolicy(args);
 }
 
-grpc_lb_policy* grpc_lb_policy_create(const char* name,
-                                      grpc_lb_policy_args* args) {
-  grpc_lb_policy_factory* factory = lookup_factory(name);
-  grpc_lb_policy* lb_policy =
-      grpc_lb_policy_factory_create_lb_policy(factory, args);
-  return lb_policy;
-}
+}  // namespace grpc_core

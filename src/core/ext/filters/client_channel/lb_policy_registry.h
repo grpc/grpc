@@ -21,20 +21,41 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/support/memory.h"
+#include "src/core/lib/support/orphanable.h"
+#include "src/core/lib/support/vector.h"
 
-/** Initialize the registry and set \a default_factory as the factory to be
- * returned when no name is provided in a lookup */
-void grpc_lb_policy_registry_init(void);
-void grpc_lb_policy_registry_shutdown(void);
+namespace grpc_core {
 
-/** Register a LB policy factory. */
-void grpc_register_lb_policy(grpc_lb_policy_factory* factory);
+class LoadBalancingPolicyRegistry {
+ public:
+  /// Returns the global LB policy registry.
+  static LoadBalancingPolicyRegistry* Global();
 
-/** Create a \a grpc_lb_policy instance.
- *
- * If \a name is NULL, the default factory from \a grpc_lb_policy_registry_init
- * will be returned. */
-grpc_lb_policy* grpc_lb_policy_create(const char* name,
-                                      grpc_lb_policy_args* args);
+  /// Registers an LB policy factory.  The factory will be used to create an
+  /// LB policy for any URI whose scheme matches that of the factory.
+  void RegisterLoadBalancingPolicyFactory(
+      UniquePtr<LoadBalancingPolicyFactory> factory);
+
+  /// Creates a LB policy of the type specified by \a name.
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      const char* name, const LoadBalancingPolicy::Args& args);
+
+  /// Global initialization and shutdown hooks.
+  static void Init();
+  static void Shutdown();
+
+  // DO NOT USE THESE.
+  // Instead, use the singleton instance returned by Global().
+  // The only reason these are not private is that they need to be
+  // accessed by the gRPC-specific New<> and Delete<>.
+  LoadBalancingPolicyRegistry();
+  ~LoadBalancingPolicyRegistry();
+
+ private:
+  InlinedVector<UniquePtr<LoadBalancingPolicyFactory>, 10> factories_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_REGISTRY_H */
