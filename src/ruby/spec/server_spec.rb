@@ -30,12 +30,12 @@ describe Server do
 
   describe '#start' do
     it 'runs without failing' do
-      blk = proc { Server.new(nil).start }
+      blk = proc { new_core_server_for_testing(nil).start }
       expect(&blk).to_not raise_error
     end
 
     it 'fails if the server is closed' do
-      s = Server.new(nil)
+      s = new_core_server_for_testing(nil)
       s.close
       expect { s.start }.to raise_error(RuntimeError)
     end
@@ -85,7 +85,7 @@ describe Server do
     describe 'for insecure servers' do
       it 'runs without failing' do
         blk = proc do
-          s = Server.new(nil)
+          s = new_core_server_for_testing(nil)
           s.add_http2_port('localhost:0', :this_port_is_insecure)
           s.close
         end
@@ -93,7 +93,7 @@ describe Server do
       end
 
       it 'fails if the server is closed' do
-        s = Server.new(nil)
+        s = new_core_server_for_testing(nil)
         s.close
         blk = proc do
           s.add_http2_port('localhost:0', :this_port_is_insecure)
@@ -106,7 +106,7 @@ describe Server do
       let(:cert) { create_test_cert }
       it 'runs without failing' do
         blk = proc do
-          s = Server.new(nil)
+          s = new_core_server_for_testing(nil)
           s.add_http2_port('localhost:0', cert)
           s.close
         end
@@ -114,7 +114,7 @@ describe Server do
       end
 
       it 'fails if the server is closed' do
-        s = Server.new(nil)
+        s = new_core_server_for_testing(nil)
         s.close
         blk = proc { s.add_http2_port('localhost:0', cert) }
         expect(&blk).to raise_error(RuntimeError)
@@ -124,7 +124,7 @@ describe Server do
 
   shared_examples '#new' do
     it 'takes nil channel args' do
-      expect { Server.new(nil) }.to_not raise_error
+      expect { new_core_server_for_testing(nil) }.to_not raise_error
     end
 
     it 'does not take a hash with bad keys as channel args' do
@@ -175,14 +175,14 @@ describe Server do
 
   describe '#new with an insecure channel' do
     def construct_with_args(a)
-      proc { Server.new(a) }
+      proc { new_core_server_for_testing(a) }
     end
 
     it_behaves_like '#new'
   end
 
   def start_a_server
-    s = Server.new(nil)
+    s = new_core_server_for_testing(nil)
     s.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     s.start
     s

@@ -54,9 +54,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
                     'AuthMetadataPluginCallback raised exception "{}"!'.format(
                         self._state.exception))
         if error is None:
-            self._callback(
-                _common.to_cygrpc_metadata(metadata), cygrpc.StatusCode.ok,
-                None)
+            self._callback(metadata, cygrpc.StatusCode.ok, None)
         else:
             self._callback(None, cygrpc.StatusCode.internal,
                            _common.encode(str(error)))

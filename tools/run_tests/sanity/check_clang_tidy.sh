@@ -16,6 +16,6 @@
 set -e
 
 make buildtests \
-  -j `python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
-find src/core src/cpp test/core test/cpp -name '*.h' -or -name '*.cc' | \
-  xargs tools/distrib/run_clang_tidy.py $*
+  -j "$(python -c 'import multiprocessing; print multiprocessing.cpu_count()')"
+find src/core src/cpp test/core test/cpp -print0 -name '*.h' -or -name '*.cc' \
+  | xargs -0 tools/distrib/run_clang_tidy.py "$@"

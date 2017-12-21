@@ -35,7 +35,6 @@
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
-#define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
 #define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
@@ -90,13 +89,20 @@ class NativeDnsResolver : public Resolver {
   grpc_timer retry_timer_;
   grpc_closure on_retry_;
   /// retry backoff state
-  grpc_backoff backoff_state_;
+  BackOff backoff_;
   /// currently resolving addresses
   grpc_resolved_addresses* addresses_ = nullptr;
 };
 
 NativeDnsResolver::NativeDnsResolver(const ResolverArgs& args)
-    : Resolver(args.combiner) {
+    : Resolver(args.combiner),
+      backoff_(
+          BackOff::Options()
+              .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
+                                   1000)
+              .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
+              .set_jitter(GRPC_DNS_RECONNECT_JITTER)
+              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
   char* path = args.uri->path;
   if (path[0] == '/') ++path;
   name_to_resolve_ = gpr_strdup(path);
@@ -105,11 +111,6 @@ NativeDnsResolver::NativeDnsResolver(const ResolverArgs& args)
   if (args.pollset_set != nullptr) {
     grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
   }
-  grpc_backoff_init(
-      &backoff_state_, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000,
-      GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER, GRPC_DNS_RECONNECT_JITTER,
-      GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
-      GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
 }
 
 NativeDnsResolver::~NativeDnsResolver() {
@@ -127,7 +128,7 @@ void NativeDnsResolver::NextLocked(grpc_channel_args** result,
   next_completion_ = on_complete;
   target_result_ = result;
   if (resolved_version_ == 0 && !resolving_) {
-    grpc_backoff_reset(&backoff_state_);
+    backoff_.Reset();
     StartResolvingLocked();
   } else {
     MaybeFinishNextLocked();
@@ -136,7 +137,7 @@ void NativeDnsResolver::NextLocked(grpc_channel_args** result,
 
 void NativeDnsResolver::ChannelSawErrorLocked() {
   if (!resolving_) {
-    grpc_backoff_reset(&backoff_state_);
+    backoff_.Reset();
     StartResolvingLocked();
   }
 }
@@ -147,9 +148,8 @@ void NativeDnsResolver::ShutdownLocked() {
   }
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(
-        next_completion_,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
+    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                             "Resolver Shutdown"));
     next_completion_ = nullptr;
   }
 }
@@ -171,11 +171,11 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   GPR_ASSERT(r->resolving_);
   r->resolving_ = false;
   GRPC_ERROR_REF(error);
-  error = grpc_error_set_str(
-      error, GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(r->name_to_resolve_));
+  error =
+      grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                         grpc_slice_from_copied_string(r->name_to_resolve_));
   if (r->addresses_ != nullptr) {
-    grpc_lb_addresses *addresses = grpc_lb_addresses_create(
+    grpc_lb_addresses* addresses = grpc_lb_addresses_create(
         r->addresses_->naddrs, nullptr /* user_data_vtable */);
     for (size_t i = 0; i < r->addresses_->naddrs; ++i) {
       grpc_lb_addresses_set_address(
@@ -188,8 +188,7 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     grpc_resolved_addresses_destroy(r->addresses_);
     grpc_lb_addresses_destroy(addresses);
   } else {
-    grpc_millis next_try =
-        grpc_backoff_step(&r->backoff_state_).next_attempt_start_time;
+    grpc_millis next_try = r->backoff_.Step();
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
@@ -228,8 +227,7 @@ void NativeDnsResolver::StartResolvingLocked() {
 }
 
 void NativeDnsResolver::MaybeFinishNextLocked() {
-  if (next_completion_ != nullptr &&
-      resolved_version_ != published_version_) {
+  if (next_completion_ != nullptr && resolved_version_ != published_version_) {
     *target_result_ = resolved_result_ == nullptr
                           ? nullptr
                           : grpc_channel_args_copy(resolved_result_);
@@ -245,8 +243,8 @@ void NativeDnsResolver::MaybeFinishNextLocked() {
 
 class NativeDnsResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
-      const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      const ResolverArgs& args) const override {
     if (0 != strcmp(args.uri->authority, "")) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
       return OrphanablePtr<Resolver>(nullptr);

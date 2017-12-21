@@ -507,6 +507,7 @@ static void ru_shutdown(void* ru, grpc_error* error) {
     gpr_log(GPR_DEBUG, "RU shutdown %p", ru);
   }
   grpc_resource_user* resource_user = (grpc_resource_user*)ru;
+  gpr_mu_lock(&resource_user->mu);
   GRPC_CLOSURE_SCHED(resource_user->reclaimers[0], GRPC_ERROR_CANCELLED);
   GRPC_CLOSURE_SCHED(resource_user->reclaimers[1], GRPC_ERROR_CANCELLED);
   resource_user->reclaimers[0] = nullptr;
@@ -516,6 +517,7 @@ static void ru_shutdown(void* ru, grpc_error* error) {
   if (resource_user->allocating) {
     rq_step_sched(resource_user->resource_quota);
   }
+  gpr_mu_unlock(&resource_user->mu);
 }
 
 static void ru_destroy(void* ru, grpc_error* error) {

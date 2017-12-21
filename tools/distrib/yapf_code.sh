@@ -19,9 +19,13 @@ set -ex
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
+    'examples/python'
     'src/python'
+    'tools'
 )
 EXCLUSIONS=(
+    '*protoc_lib_deps.py'  # this file is auto-generated
+    '*_pb2*.py'  # no need to format protoc generated files
 )
 
 VIRTUALENV=yapf_virtual_environment
@@ -50,7 +54,7 @@ else
 	tempdir=$(mktemp -d)
 	cp -RT "${dir}" "${tempdir}"
 	yapf "${tempdir}"
-	diff -ru "${dir}" "${tempdir}" || ok=no
+	diff -x '*.pyc' -ru "${dir}" "${tempdir}" || ok=no
 	rm -rf "${tempdir}"
     done
     if [[ ${ok} == no ]]; then

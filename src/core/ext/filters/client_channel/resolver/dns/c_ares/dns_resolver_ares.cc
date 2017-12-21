@@ -43,7 +43,6 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/service_config.h"
 
-#define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
 #define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
@@ -106,7 +105,7 @@ class AresDnsResolver : public Resolver {
   bool have_retry_timer_ = false;
   grpc_timer retry_timer_;
   /// retry backoff state
-  grpc_backoff backoff_state_;
+  BackOff backoff_;
   /// currently resolving addresses
   grpc_lb_addresses* lb_addresses_ = nullptr;
   /// currently resolving service config
@@ -114,7 +113,14 @@ class AresDnsResolver : public Resolver {
 };
 
 AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
-    : Resolver(args.combiner) {
+    : Resolver(args.combiner),
+      backoff_(
+          BackOff::Options()
+              .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
+                                   1000)
+              .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
+              .set_jitter(GRPC_DNS_RECONNECT_JITTER)
+              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
   // Get name to resolve from URI path.
   const char* path = args.uri->path;
   if (path[0] == '/') ++path;
@@ -130,19 +136,11 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
       arg, (grpc_integer_options){false, false, true});
   interested_parties_ = grpc_pollset_set_create();
   if (args.pollset_set != nullptr) {
-    grpc_pollset_set_add_pollset_set(interested_parties_,
-                                     args.pollset_set);
+    grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
   }
-  grpc_backoff_init(
-      &backoff_state_, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000,
-      GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER, GRPC_DNS_RECONNECT_JITTER,
-      GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
-      GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
-  GRPC_CLOSURE_INIT(&dns_ares_on_retry_timer_locked_,
-                    OnRetryTimerLocked, this,
+  GRPC_CLOSURE_INIT(&dns_ares_on_retry_timer_locked_, OnRetryTimerLocked, this,
                     grpc_combiner_scheduler(combiner()));
-  GRPC_CLOSURE_INIT(&dns_ares_on_resolved_locked_,
-                    OnResolvedLocked, this,
+  GRPC_CLOSURE_INIT(&dns_ares_on_resolved_locked_, OnResolvedLocked, this,
                     grpc_combiner_scheduler(combiner()));
 }
 
@@ -164,7 +162,7 @@ void AresDnsResolver::NextLocked(grpc_channel_args** target_result,
   next_completion_ = on_complete;
   target_result_ = target_result;
   if (resolved_version_ == 0 && !resolving_) {
-    grpc_backoff_reset(&backoff_state_);
+    backoff_.Reset();
     StartResolvingLocked();
   } else {
     MaybeFinishNextLocked();
@@ -173,7 +171,7 @@ void AresDnsResolver::NextLocked(grpc_channel_args** target_result,
 
 void AresDnsResolver::ChannelSawErrorLocked() {
   if (!resolving_) {
-    grpc_backoff_reset(&backoff_state_);
+    backoff_.Reset();
     StartResolvingLocked();
   }
 }
@@ -187,9 +185,8 @@ void AresDnsResolver::ShutdownLocked() {
   }
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(
-        next_completion_,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
+    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                             "Resolver Shutdown"));
     next_completion_ = nullptr;
   }
 }
@@ -232,8 +229,7 @@ char* ChooseServiceConfig(char* service_config_choice_json) {
          field = field->next) {
       // Check client language, if specified.
       if (strcmp(field->key, "clientLanguage") == 0) {
-        if (field->type != GRPC_JSON_ARRAY ||
-            !ValueInJsonArray(field, "c++")) {
+        if (field->type != GRPC_JSON_ARRAY || !ValueInJsonArray(field, "c++")) {
           service_config_json = nullptr;
           break;
         }
@@ -322,8 +318,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   } else {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
-    grpc_millis next_try =
-        grpc_backoff_step(&r->backoff_state_).next_attempt_start_time;
+    grpc_millis next_try = r->backoff_.Step();
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
@@ -354,18 +349,16 @@ void AresDnsResolver::StartResolvingLocked() {
   lb_addresses_ = nullptr;
   service_config_json_ = nullptr;
   pending_request_ = grpc_dns_lookup_ares(
-      dns_server_, name_to_resolve_, kDefaultPort,
-      interested_parties_, &dns_ares_on_resolved_locked_, &lb_addresses_,
-      true /* check_grpclb */,
+      dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
+      &dns_ares_on_resolved_locked_, &lb_addresses_, true /* check_grpclb */,
       request_service_config_ ? &service_config_json_ : nullptr);
 }
 
 void AresDnsResolver::MaybeFinishNextLocked() {
-  if (next_completion_ != nullptr &&
-      resolved_version_ != published_version_) {
+  if (next_completion_ != nullptr && resolved_version_ != published_version_) {
     *target_result_ = resolved_result_ == nullptr
-                            ? nullptr
-                            : grpc_channel_args_copy(resolved_result_);
+                          ? nullptr
+                          : grpc_channel_args_copy(resolved_result_);
     gpr_log(GPR_DEBUG, "AresDnsResolver::MaybeFinishNextLocked()");
     GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_NONE);
     next_completion_ = nullptr;
@@ -379,8 +372,8 @@ void AresDnsResolver::MaybeFinishNextLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
-      const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      const ResolverArgs& args) const override {
     return OrphanablePtr<Resolver>(New<AresDnsResolver>(args));
   }
 
