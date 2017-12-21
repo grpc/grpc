@@ -287,8 +287,10 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
                       FLAGS_local_dns_server_address.c_str(),
                       FLAGS_target_name.c_str()));
   // create resolver and resolve
-  grpc_resolver* resolver =
-      grpc_resolver_create(whole_uri, nullptr, args.pollset_set, args.lock);
+  grpc_core::RefCountedPtr<Resolver> resolver =
+      grpc_core::ResolverRegistry::Global()->CreateResolver(whole_uri, nullptr,
+                                                            args.pollset_set,
+                                                            args.lock);
   gpr_free(whole_uri);
   grpc_closure on_resolver_result_changed;
   GRPC_CLOSURE_INIT(&on_resolver_result_changed, CheckResolverResultLocked,
@@ -297,7 +299,6 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
                             &on_resolver_result_changed);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
-  GRPC_RESOLVER_UNREF(resolver, nullptr);
   ArgsFinish(&args);
 }
 

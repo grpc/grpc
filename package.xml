@@ -359,8 +359,10 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/debug_location.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/orphanable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/ref_counted_ptr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/alarm_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
@@ -620,7 +622,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
