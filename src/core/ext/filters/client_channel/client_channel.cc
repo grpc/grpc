@@ -1129,7 +1129,7 @@ static bool pick_callback_start_locked(grpc_call_element* elem) {
   }
   calld->pick.initial_metadata =
       calld->initial_metadata_batch->payload->send_initial_metadata
-          .send_initial_metadata,
+          .send_initial_metadata;
   calld->pick.initial_metadata_flags = initial_metadata_flags;
   GRPC_CLOSURE_INIT(&calld->lb_pick_closure, pick_callback_done_locked, elem,
                     grpc_combiner_scheduler(chand->combiner));
