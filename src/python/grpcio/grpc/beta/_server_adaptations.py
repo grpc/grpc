@@ -174,7 +174,7 @@ def _run_request_pipe_thread(request_iterator, request_consumer,
     request_pipe_thread = _common.CleanupThread(
         stop_request_pipe,
         target=pipe_requests,
-        name='Thread-gRPC-StopRequestPipe',
+        name='Thread-gRPC-pipe_requests',
     )
     request_pipe_thread.start()
 

@@ -756,7 +756,7 @@ def _stop(state, grace):
 
                 thread = threading.Thread(
                     target=cancel_all_calls_after_grace,
-                    name='Thread-gRPC-CancelAfterGrace',
+                    name='Thread-gRPC-cancel_all_calls_after_grace',
                 )
                 thread.start()
                 return shutdown_event
@@ -782,7 +782,7 @@ def _start(state):
             cleanup_server,
             target=_serve,
             args=(state,),
-            name='Thread-gRPC-CleanupServer',
+            name='Thread-gRPC-_serve',
         )
         thread.start()
 

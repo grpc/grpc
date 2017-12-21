@@ -43,7 +43,7 @@ cdef int _get_metadata(
   threading.Thread(
       target=<object>state,
       args=args,
-      name='Thread-gRPC-PluginGetMetadata',
+      name='Thread-gRPC-_get_metadata',
   ).start()
   return 0  # Asynchronous return
 
