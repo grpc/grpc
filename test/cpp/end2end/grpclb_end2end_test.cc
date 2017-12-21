@@ -455,10 +455,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc::string balancer_name;
   };
 
-  // If re-resolution is true, don't trigger a resolution immediately after
-  // setting the response.
   void SetNextResolution(const std::vector<AddressData>& address_data,
-                         bool reresolution = false) {
+                         bool upon_error = false) {
     grpc_core::ExecCtx exec_ctx;
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(address_data.size(), nullptr);
@@ -476,7 +474,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
     grpc_fake_resolver_response_generator_set_response(
-        response_generator_, &fake_result, !reresolution);
+        response_generator_, &fake_result, upon_error);
     grpc_lb_addresses_destroy(addresses);
   }
 
@@ -1132,7 +1130,7 @@ TEST_F(UpdatesTest, Reresolve) {
   addresses.clear();
   addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
   gpr_log(GPR_INFO, "========= ABOUT TO PREPARE RERESOLUTION  ==========");
-  SetNextResolution(addresses, true /* reresolution */);
+  SetNextResolution(addresses, true /* upon_error */);
   gpr_log(GPR_INFO, "========= RERESOLUTION READY ==========");
 
   // Wait until reresolution has been triggered, as signaled by the second

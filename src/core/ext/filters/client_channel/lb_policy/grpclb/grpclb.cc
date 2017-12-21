@@ -1798,7 +1798,7 @@ static void glb_update_locked(grpc_lb_policy* policy,
   grpc_channel_args* lb_channel_args = build_lb_channel_args(
       addresses, glb_policy->response_generator, args->args);
   grpc_fake_resolver_response_generator_set_response(
-      glb_policy->response_generator, lb_channel_args, true);
+      glb_policy->response_generator, lb_channel_args, false);
   grpc_channel_args_destroy(lb_channel_args);
   // Start watching the LB channel connectivity for connection, if not
   // already doing so.
@@ -1979,7 +1979,7 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
 
   /* Propagate initial resolution */
   grpc_fake_resolver_response_generator_set_response(
-      glb_policy->response_generator, lb_channel_args, true);
+      glb_policy->response_generator, lb_channel_args, false);
   grpc_channel_args_destroy(lb_channel_args);
   gpr_free(uri_str);
   if (glb_policy->lb_channel == nullptr) {
