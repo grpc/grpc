@@ -29,14 +29,8 @@
 
 namespace grpc {
 
-static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
+static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>
     g_plugin_factory_list;
-static gpr_once once_init_plugin_list = GPR_ONCE_INIT;
-
-static void do_plugin_list_init(void) {
-  g_plugin_factory_list =
-      new std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>();
-}
 
 ServerBuilder::ServerBuilder()
     : max_receive_message_size_(-1),
@@ -44,9 +38,8 @@ ServerBuilder::ServerBuilder()
       sync_server_settings_(SyncServerSettings()),
       resource_quota_(nullptr),
       generic_service_(nullptr) {
-  gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
-  for (auto it = g_plugin_factory_list->begin();
-       it != g_plugin_factory_list->end(); it++) {
+  for (auto it = g_plugin_factory_list.begin();
+       it != g_plugin_factory_list.end(); it++) {
     auto& factory = *it;
     plugins_.emplace_back(factory());
   }
@@ -352,8 +345,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
 void ServerBuilder::InternalAddPluginFactory(
     std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)()) {
-  gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
-  (*g_plugin_factory_list).push_back(CreatePlugin);
+  g_plugin_factory_list.push_back(CreatePlugin);
 }
 
 ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
