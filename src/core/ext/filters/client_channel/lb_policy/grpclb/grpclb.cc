@@ -131,7 +131,7 @@ grpc_core::TraceFlag grpc_lb_glb_trace(false, "glb");
 typedef struct glb_lb_policy glb_lb_policy;
 
 /// Linked list of pending pick requests. It stores all information needed to
-//// eventually call (Round Robin's) pick() on them. They mainly stay pending
+/// eventually call (Round Robin's) pick() on them. They mainly stay pending
 /// waiting for the RR policy to be created.
 ///
 /// Note that when a pick is sent to the RR policy, we inject our own
