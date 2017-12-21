@@ -72,4 +72,17 @@ sudo xcode-select -s /Applications/Xcode_8.3.3.app/Contents/Developer
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
 date
 
+pip install pip --upgrade
+
+# reinstall broken PHP
+brew update
+brew search php
+brew reinstall php@5.6 --build-from-source
+
+
+# isntall c#
+curl https://download.microsoft.com/download/D/8/1/D8131218-F121-4E13-8C5F-39B09A36E406/dotnet-sdk-2.1.104-osx-gs-x64.pkg \
+  -o ./dotnet-sdk-2.1.104-osx-gs-x64.pkg
+sudo installer -pkg ./dotnet-sdk-2.1.104-osx-gs-x64.pkg -target /
+
 git submodule update --init
