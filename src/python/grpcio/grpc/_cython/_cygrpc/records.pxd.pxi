@@ -65,11 +65,6 @@ cdef class Event:
   cdef readonly object batch_operations
 
 
-cdef class ByteBuffer:
-
-  cdef grpc_byte_buffer *c_byte_buffer
-
-
 cdef class SslPemKeyCertPair:
 
   cdef grpc_ssl_pem_key_cert_pair c_pair
@@ -87,22 +82,6 @@ cdef class ChannelArgs:
 
   cdef grpc_channel_args c_args
   cdef list args
-
-
-cdef class Operation:
-
-  cdef grpc_op c_op
-  cdef bint _c_metadata_needs_release
-  cdef size_t _c_metadata_count
-  cdef grpc_metadata *_c_metadata
-  cdef ByteBuffer _received_message
-  cdef bint _c_metadata_array_needs_destruction
-  cdef grpc_metadata_array _c_metadata_array
-  cdef grpc_status_code _received_status_code
-  cdef grpc_slice _status_details
-  cdef int _received_cancelled
-  cdef readonly bint is_valid
-  cdef object references
 
 
 cdef class CompressionOptions:

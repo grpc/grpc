@@ -65,10 +65,10 @@ class _Handler(object):
 
         with self._lock:
             self._call.start_server_batch(
-                (cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),),
+                (cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),),
                 _RECEIVE_CLOSE_ON_SERVER_TAG)
             self._call.start_server_batch(
-                (cygrpc.operation_receive_message(_EMPTY_FLAGS),),
+                (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
                 _RECEIVE_MESSAGE_TAG)
         first_event = self._completion_queue.poll()
         if _is_cancellation_event(first_event):
@@ -76,10 +76,10 @@ class _Handler(object):
         else:
             with self._lock:
                 operations = (
-                    cygrpc.operation_send_initial_metadata(_EMPTY_METADATA,
-                                                           _EMPTY_FLAGS),
-                    cygrpc.operation_send_message(b'\x79\x57', _EMPTY_FLAGS),
-                    cygrpc.operation_send_status_from_server(
+                    cygrpc.SendInitialMetadataOperation(_EMPTY_METADATA,
+                                                        _EMPTY_FLAGS),
+                    cygrpc.SendMessageOperation(b'\x79\x57', _EMPTY_FLAGS),
+                    cygrpc.SendStatusFromServerOperation(
                         _EMPTY_METADATA, cygrpc.StatusCode.ok, b'test details!',
                         _EMPTY_FLAGS),)
                 self._call.start_server_batch(operations,
@@ -169,13 +169,13 @@ class CancelManyCallsTest(unittest.TestCase):
                     None, _EMPTY_FLAGS, client_completion_queue, b'/twinkies',
                     None, _INFINITE_FUTURE)
                 operations = (
-                    cygrpc.operation_send_initial_metadata(_EMPTY_METADATA,
-                                                           _EMPTY_FLAGS),
-                    cygrpc.operation_send_message(b'\x45\x56', _EMPTY_FLAGS),
-                    cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
-                    cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),
-                    cygrpc.operation_receive_message(_EMPTY_FLAGS),
-                    cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),)
+                    cygrpc.SendInitialMetadataOperation(_EMPTY_METADATA,
+                                                        _EMPTY_FLAGS),
+                    cygrpc.SendMessageOperation(b'\x45\x56', _EMPTY_FLAGS),
+                    cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
+                    cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
+                    cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
+                    cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),)
                 tag = 'client_complete_call_{0:04d}_tag'.format(index)
                 client_call.start_client_batch(operations, tag)
                 client_due.add(tag)

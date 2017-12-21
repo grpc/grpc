@@ -17,6 +17,7 @@ cimport libc.time
 
 # Typedef types with approximately the same semantics to provide their names to
 # Cython
+ctypedef unsigned char uint8_t
 ctypedef int int32_t
 ctypedef unsigned uint32_t
 ctypedef long int64_t
@@ -25,6 +26,7 @@ ctypedef long int64_t
 cdef extern from "grpc/support/alloc.h":
 
   void *gpr_malloc(size_t size) nogil
+  void *gpr_zalloc(size_t size) nogil
   void gpr_free(void *ptr) nogil
   void *gpr_realloc(void *p, size_t size) nogil
 
@@ -190,6 +192,18 @@ cdef extern from "grpc/grpc.h":
     size_t arguments_length "num_args"
     grpc_arg *arguments "args"
 
+  ctypedef enum grpc_compression_level:
+    GRPC_COMPRESS_LEVEL_NONE
+    GRPC_COMPRESS_LEVEL_LOW
+    GRPC_COMPRESS_LEVEL_MED
+    GRPC_COMPRESS_LEVEL_HIGH
+
+  ctypedef enum grpc_stream_compression_level:
+    GRPC_STREAM_COMPRESS_LEVEL_NONE
+    GRPC_STREAM_COMPRESS_LEVEL_LOW
+    GRPC_STREAM_COMPRESS_LEVEL_MED
+    GRPC_STREAM_COMPRESS_LEVEL_HIGH
+
   ctypedef enum grpc_call_error:
     GRPC_CALL_OK
     GRPC_CALL_ERROR
@@ -265,9 +279,19 @@ cdef extern from "grpc/grpc.h":
     GRPC_OP_RECV_STATUS_ON_CLIENT
     GRPC_OP_RECV_CLOSE_ON_SERVER
 
+  ctypedef struct grpc_op_send_initial_metadata_maybe_compression_level:
+    uint8_t is_set
+    grpc_compression_level level
+
+  ctypedef struct grpc_op_send_initial_metadata_maybe_stream_compression_level:
+    uint8_t is_set
+    grpc_stream_compression_level level
+
   ctypedef struct grpc_op_data_send_initial_metadata:
     size_t count
     grpc_metadata *metadata
+    grpc_op_send_initial_metadata_maybe_compression_level maybe_compression_level
+    grpc_op_send_initial_metadata_maybe_stream_compression_level maybe_stream_compression_level
 
   ctypedef struct grpc_op_data_send_status_from_server:
     size_t trailing_metadata_count
@@ -524,7 +548,7 @@ cdef extern from "grpc/grpc_security.h":
 
   grpc_auth_property_iterator grpc_auth_context_property_iterator(
       const grpc_auth_context *ctx)
- 
+
   grpc_auth_property_iterator grpc_auth_context_peer_identity(
       const grpc_auth_context *ctx)
 
