@@ -132,21 +132,39 @@ static test_socket_factory* test_socket_factory_create(void) {
   return factory;
 }
 
+static void destroy_pollset(void* p, grpc_error* error) {
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
+}
+
+static void shutdwn_and_destroy_pollset() {
+  auto closure = GRPC_CLOSURE_CREATE(destroy_pollset, g_pollset,
+                                     grpc_schedule_on_exec_ctx);
+  grpc_pollset_shutdown(g_pollset, closure);
+  /* Flush exec_ctx to run |destroyed| */
+  grpc_core::ExecCtx::Get()->Flush();
+}
+
 static void test_no_op(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
+  LOG_TEST("test_no_op");
   grpc_udp_server_destroy(s, nullptr);
+  shutdwn_and_destroy_pollset();
 }
 
 static void test_no_op_with_start(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_start");
   grpc_udp_server_start(s, nullptr, 0, nullptr);
   grpc_udp_server_destroy(s, nullptr);
+  shutdwn_and_destroy_pollset();
 }
 
 static void test_no_op_with_port(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
@@ -164,9 +182,11 @@ static void test_no_op_with_port(void) {
 
   /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
+  shutdwn_and_destroy_pollset();
 }
 
 static void test_no_op_with_port_and_socket_factory(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
@@ -196,9 +216,11 @@ static void test_no_op_with_port_and_socket_factory(void) {
 
   /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
+  shutdwn_and_destroy_pollset();
 }
 
 static void test_no_op_with_port_and_start(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
@@ -219,9 +241,11 @@ static void test_no_op_with_port_and_start(void) {
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
+  shutdwn_and_destroy_pollset();
 }
 
 static void test_receive(int number_of_clients) {
+  grpc_pollset_init(g_pollset, &g_mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
@@ -284,20 +308,15 @@ static void test_receive(int number_of_clients) {
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
-}
-
-static void destroy_pollset(void* p, grpc_error* error) {
-  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
+  shutdwn_and_destroy_pollset();
 }
 
 int main(int argc, char** argv) {
-  grpc_closure destroyed;
   grpc_test_init(argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-    grpc_pollset_init(g_pollset, &g_mu);
 
     test_no_op();
     test_no_op_with_start();
@@ -307,10 +326,6 @@ int main(int argc, char** argv) {
     test_receive(1);
     test_receive(10);
 
-    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                      grpc_schedule_on_exec_ctx);
-    grpc_pollset_shutdown(g_pollset, &destroyed);
-    grpc_core::ExecCtx::Get()->Flush();
     gpr_free(g_pollset);
   }
   grpc_shutdown();
