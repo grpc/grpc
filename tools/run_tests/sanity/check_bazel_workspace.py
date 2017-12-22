@@ -30,13 +30,66 @@ git_hash_pattern = re.compile('[0-9a-f]{40}')
 git_submodules = subprocess.check_output('git submodule', shell=True).strip().split('\n')
 git_submodule_hashes = {re.search(git_hash_pattern, s).group() for s in git_submodules}
 
-# Parse git hashes from Bazel WORKSPACE {new_}http_archive rules
-with open('WORKSPACE', 'r') as f:
-  workspace_rules = [expr.value for expr in ast.parse(f.read()).body]
+_GRPC_DEP_NAMES = [
+    'boringssl',
+    'com_github_madler_zlib',
+    'com_google_protobuf',
+    'com_github_google_googletest',
+    'com_github_gflags_gflags',
+    'com_github_google_benchmark',
+    'com_github_cares_cares',
+    'com_google_absl',
+]
 
-http_archive_rules = [rule for rule in workspace_rules if rule.func.id.endswith('http_archive')]
-archive_urls = [kw.value.s for rule in http_archive_rules for kw in rule.keywords if kw.arg == 'url']
-workspace_git_hashes = {re.search(git_hash_pattern, url).group() for url in archive_urls}
+
+class BazelEvalState(object):
+
+    def __init__(self, names_and_urls, overridden_name=None):
+        self.names_and_urls = names_and_urls
+        self.overridden_name = overridden_name
+
+    def http_archive(self, **args):
+        self.archive(**args)
+
+    def new_http_archive(self, **args):
+        self.archive(**args)
+
+    def bind(self, **args):
+        pass
+
+    def existing_rules(self):
+        if self.overridden_name:
+            return [self.overridden_name]
+        return []
+
+    def archive(self, **args):
+        self.names_and_urls[args['name']] = args['url']
+
+
+# Parse git hashes from bazel/grpc_deps.bzl {new_}http_archive rules
+with open(os.path.join('bazel', 'grpc_deps.bzl'), 'r') as f:
+    names_and_urls = {}
+    eval_state = BazelEvalState(names_and_urls)
+    bazel_file = f.read()
+
+# grpc_deps.bzl only defines 'grpc_deps', add this to call it
+bazel_file += '\ngrpc_deps()\n'
+build_rules = {
+    'native': eval_state,
+}
+exec bazel_file in build_rules
+for name in _GRPC_DEP_NAMES:
+    assert name in names_and_urls.keys()
+assert len(_GRPC_DEP_NAMES) == len(names_and_urls.keys())
+
+archive_urls = [names_and_urls[name] for name in names_and_urls.keys()]
+workspace_git_hashes = {
+    re.search(git_hash_pattern, url).group()
+    for url in archive_urls
+}
+if len(workspace_git_hashes) == 0:
+    print("(Likely) parse error, did not find any bazel git dependencies.")
+    sys.exit(1)
 
 # Validate the equivalence of the git submodules and Bazel git dependencies. The
 # condition we impose is that there is a git submodule for every dependency in
@@ -45,5 +98,16 @@ workspace_git_hashes = {re.search(git_hash_pattern, url).group() for url in arch
 if len(workspace_git_hashes - git_submodule_hashes) > 0:
     print("Found discrepancies between git submodules and Bazel WORKSPACE dependencies")
     sys.exit(1)
+
+# Also check that we can override each dependency
+for name in _GRPC_DEP_NAMES:
+    names_and_urls_with_overridden_name = {}
+    state = BazelEvalState(
+        names_and_urls_with_overridden_name, overridden_name=name)
+    rules = {
+        'native': state,
+    }
+    exec bazel_file in rules
+    assert name not in names_and_urls_with_overridden_name.keys()
 
 sys.exit(0)
