@@ -43,7 +43,6 @@
 
 #include <iostream>
 
-using namespace std;
 using ::testing::AtLeast;
 using ::testing::DoAll;
 using ::testing::Invoke;
@@ -57,6 +56,7 @@ using grpc::testing::EchoResponse;
 using grpc::testing::EchoTestService;
 using grpc::testing::MockClientReaderWriter;
 using std::chrono::system_clock;
+using std::vector;
 
 namespace grpc {
 namespace testing {
