@@ -212,18 +212,6 @@ void grpc_lb_subchannel_list_unref(grpc_lb_subchannel_list* subchannel_list,
   }
 }
 
-void grpc_lb_subchannel_list_ref_for_connectivity_watch(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason) {
-  subchannel_list->policy->Ref(DEBUG_LOCATION, reason);
-  grpc_lb_subchannel_list_ref(subchannel_list, reason);
-}
-
-void grpc_lb_subchannel_list_unref_for_connectivity_watch(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason) {
-  subchannel_list->policy->Unref(DEBUG_LOCATION, reason);
-  grpc_lb_subchannel_list_unref(subchannel_list, reason);
-}
-
 static void subchannel_data_cancel_connectivity_watch(
     grpc_lb_subchannel_data* sd, const char* reason) {
   if (sd->subchannel_list->tracer->enabled()) {

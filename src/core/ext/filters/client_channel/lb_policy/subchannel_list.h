@@ -127,13 +127,6 @@ void grpc_lb_subchannel_list_ref(grpc_lb_subchannel_list* subchannel_list,
 void grpc_lb_subchannel_list_unref(grpc_lb_subchannel_list* subchannel_list,
                                    const char* reason);
 
-/// Takes and releases refs needed for a connectivity notification.
-/// This includes a ref to subchannel_list and a weak ref to the LB policy.
-void grpc_lb_subchannel_list_ref_for_connectivity_watch(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason);
-void grpc_lb_subchannel_list_unref_for_connectivity_watch(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason);
-
 /// Mark subchannel_list as discarded. Unsubscribes all its subchannels. The
 /// connectivity state notification callback will ultimately unref it.
 void grpc_lb_subchannel_list_shutdown_and_unref(

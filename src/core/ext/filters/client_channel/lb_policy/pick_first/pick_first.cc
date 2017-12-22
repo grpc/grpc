@@ -44,29 +44,19 @@ class PickFirst : public LoadBalancingPolicy {
   explicit PickFirst(const Args& args);
 
   bool PickLocked(PickState* pick) override;
-
   void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
-
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
-
   void CancelPicksLocked(uint32_t initial_metadata_flags_mask,
                          uint32_t initial_metadata_flags_eq,
                          grpc_error* error) override;
-
   void ExitIdleLocked() override;
-
   void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
                                  grpc_closure* closure) override;
-
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
-
   void UpdateLocked(const Args& args) override;
-
   void SetReresolutionClosureLocked(grpc_closure* request_reresolution) override;
-
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
-
   void ShutdownLocked() override;
 
  private:
@@ -76,6 +66,11 @@ class PickFirst : public LoadBalancingPolicy {
   void DestroyUnselectedSubchannelsLocked();
 
   static void OnConnectivityChangedLocked(void* arg, grpc_error* error);
+
+  void SubchannelListRefForConnectivityWatch(
+      grpc_lb_subchannel_list* subchannel_list, const char* reason);
+  void SubchannelListUnrefForConnectivityWatch(
+      grpc_lb_subchannel_list* subchannel_list, const char* reason);
 
   /** all our subchannels */
   grpc_lb_subchannel_list* subchannel_list_ = nullptr;
@@ -104,14 +99,14 @@ PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args.combiner) {
 }
 
 PickFirst::~PickFirst() {
+  if (grpc_lb_pick_first_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "Destroying Pick First %p", this);
+  }
   GPR_ASSERT(subchannel_list_ == nullptr);
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
   GPR_ASSERT(pending_picks_ == nullptr);
   grpc_connectivity_state_destroy(&state_tracker_);
   grpc_subchannel_index_unref();
-  if (grpc_lb_pick_first_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Pick First %p destroyed.", this);
-  }
 }
 
 void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
@@ -199,7 +194,7 @@ void PickFirst::StartPickingLocked() {
     subchannel_list_->checking_subchannel = 0;
     for (size_t i = 0; i < subchannel_list_->num_subchannels; ++i) {
       if (subchannel_list_->subchannels[i].subchannel != nullptr) {
-        grpc_lb_subchannel_list_ref_for_connectivity_watch(
+        SubchannelListRefForConnectivityWatch(
             subchannel_list_, "connectivity_watch+start_picking");
         grpc_lb_subchannel_data_start_connectivity_watch(
             &subchannel_list_->subchannels[i]);
@@ -261,6 +256,18 @@ void PickFirst::PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) {
     GRPC_CLOSURE_SCHED(on_ack,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Not connected"));
   }
+}
+
+void PickFirst::SubchannelListRefForConnectivityWatch(
+    grpc_lb_subchannel_list* subchannel_list, const char* reason) {
+  Ref(DEBUG_LOCATION, reason);
+  grpc_lb_subchannel_list_ref(subchannel_list, reason);
+}
+
+void PickFirst::SubchannelListUnrefForConnectivityWatch(
+    grpc_lb_subchannel_list* subchannel_list, const char* reason) {
+  Unref(DEBUG_LOCATION, reason);
+  grpc_lb_subchannel_list_unref(subchannel_list, reason);
 }
 
 void PickFirst::UpdateLocked(const Args& args) {
@@ -340,7 +347,7 @@ void PickFirst::UpdateLocked(const Args& args) {
         }
         subchannel_list_ = subchannel_list;
         DestroyUnselectedSubchannelsLocked();
-        grpc_lb_subchannel_list_ref_for_connectivity_watch(
+        SubchannelListRefForConnectivityWatch(
             subchannel_list, "connectivity_watch+replace_selected");
         grpc_lb_subchannel_data_start_connectivity_watch(sd);
         // If there was a previously pending update (which may or may
@@ -374,8 +381,8 @@ void PickFirst::UpdateLocked(const Args& args) {
   // If we've started picking, start trying to connect to the first
   // subchannel in the new list.
   if (started_picking_) {
-    grpc_lb_subchannel_list_ref_for_connectivity_watch(
-        subchannel_list, "connectivity_watch+update");
+    SubchannelListRefForConnectivityWatch(subchannel_list,
+                                          "connectivity_watch+update");
     grpc_lb_subchannel_data_start_connectivity_watch(
         &subchannel_list->subchannels[0]);
   }
@@ -400,16 +407,16 @@ void PickFirst::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
   if (p->shutdown_) {
     grpc_lb_subchannel_data_stop_connectivity_watch(sd);
     grpc_lb_subchannel_data_unref_subchannel(sd, "pf_shutdown");
-    grpc_lb_subchannel_list_unref_for_connectivity_watch(sd->subchannel_list,
-                                                         "pf_shutdown");
+    p->SubchannelListUnrefForConnectivityWatch(sd->subchannel_list,
+                                               "pf_shutdown");
     return;
   }
   // If the subchannel list is shutting down, stop watching.
   if (sd->subchannel_list->shutting_down || error == GRPC_ERROR_CANCELLED) {
     grpc_lb_subchannel_data_stop_connectivity_watch(sd);
     grpc_lb_subchannel_data_unref_subchannel(sd, "pf_sl_shutdown");
-    grpc_lb_subchannel_list_unref_for_connectivity_watch(sd->subchannel_list,
-                                                         "pf_sl_shutdown");
+    p->SubchannelListUnrefForConnectivityWatch(sd->subchannel_list,
+                                               "pf_sl_shutdown");
     return;
   }
   // If we're still here, the notification must be for a subchannel in
@@ -426,7 +433,7 @@ void PickFirst::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
         p->latest_pending_subchannel_list_ != nullptr) {
       p->selected_ = nullptr;
       grpc_lb_subchannel_data_stop_connectivity_watch(sd);
-      grpc_lb_subchannel_list_unref_for_connectivity_watch(
+      p->SubchannelListUnrefForConnectivityWatch(
           sd->subchannel_list, "selected_not_ready+switch_to_update");
       grpc_lb_subchannel_list_shutdown_and_unref(
           p->subchannel_list_, "selected_not_ready+switch_to_update");
@@ -460,8 +467,8 @@ void PickFirst::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
       } else {
         p->selected_ = nullptr;
         grpc_lb_subchannel_data_stop_connectivity_watch(sd);
-        grpc_lb_subchannel_list_unref_for_connectivity_watch(
-            sd->subchannel_list, "pf_selected_shutdown");
+        p->SubchannelListUnrefForConnectivityWatch(sd->subchannel_list,
+                                                   "pf_selected_shutdown");
         grpc_lb_subchannel_data_unref_subchannel(sd, "pf_selected_shutdown");
       }
     }
@@ -563,7 +570,7 @@ void PickFirst::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
                   ->subchannels[sd->subchannel_list->checking_subchannel];
       } while (sd->subchannel == nullptr && sd != original_sd);
       if (sd == original_sd) {
-        grpc_lb_subchannel_list_unref_for_connectivity_watch(
+        p->SubchannelListUnrefForConnectivityWatch(
             sd->subchannel_list, "pf_exhausted_subchannels");
         if (sd->subchannel_list == p->subchannel_list_) {
           grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_IDLE,
