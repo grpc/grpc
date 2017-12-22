@@ -137,9 +137,11 @@ static void destroy_pollset(void* p, grpc_error* error) {
 }
 
 static void shutdown_and_destroy_pollset() {
+  gpr_mu_lock(g_mu);
   auto closure = GRPC_CLOSURE_CREATE(destroy_pollset, g_pollset,
                                      grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, closure);
+  gpr_mu_unlock(g_mu);
   /* Flush exec_ctx to run |destroyed| */
   grpc_core::ExecCtx::Get()->Flush();
 }
