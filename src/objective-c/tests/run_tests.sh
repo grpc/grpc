@@ -57,7 +57,7 @@ while [ $retries -lt 3 ]; do
         HOST_PORT_LOCALSSL=localhost:5051 \
         HOST_PORT_LOCAL=localhost:5050 \
         HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-        test \
+        test 2>&1 \
         | egrep -v "$XCODEBUILD_FILTER" \
         | egrep -v '^$' \
         | egrep -v "(GPBDictionary|GPBArray)" - ) || return_code=$?
