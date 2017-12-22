@@ -136,7 +136,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
-static void shutdwn_and_destroy_pollset() {
+static void shutdown_and_destroy_pollset() {
   auto closure = GRPC_CLOSURE_CREATE(destroy_pollset, g_pollset,
                                      grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, closure);
@@ -150,7 +150,7 @@ static void test_no_op(void) {
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op");
   grpc_udp_server_destroy(s, nullptr);
-  shutdwn_and_destroy_pollset();
+  shutdown_and_destroy_pollset();
 }
 
 static void test_no_op_with_start(void) {
@@ -160,7 +160,7 @@ static void test_no_op_with_start(void) {
   LOG_TEST("test_no_op_with_start");
   grpc_udp_server_start(s, nullptr, 0, nullptr);
   grpc_udp_server_destroy(s, nullptr);
-  shutdwn_and_destroy_pollset();
+  shutdown_and_destroy_pollset();
 }
 
 static void test_no_op_with_port(void) {
@@ -182,7 +182,7 @@ static void test_no_op_with_port(void) {
 
   /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
-  shutdwn_and_destroy_pollset();
+  shutdown_and_destroy_pollset();
 }
 
 static void test_no_op_with_port_and_socket_factory(void) {
@@ -216,7 +216,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
 
   /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
-  shutdwn_and_destroy_pollset();
+  shutdown_and_destroy_pollset();
 }
 
 static void test_no_op_with_port_and_start(void) {
@@ -241,7 +241,7 @@ static void test_no_op_with_port_and_start(void) {
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
-  shutdwn_and_destroy_pollset();
+  shutdown_and_destroy_pollset();
 }
 
 static void test_receive(int number_of_clients) {
@@ -308,7 +308,7 @@ static void test_receive(int number_of_clients) {
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
-  shutdwn_and_destroy_pollset();
+  shutdown_and_destroy_pollset();
 }
 
 int main(int argc, char** argv) {
