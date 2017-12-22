@@ -20,6 +20,16 @@ package grpc.testing;
 
 option objc_class_prefix = "RMT";
 
+message BoolValue {
+  // The bool value.
+  bool value = 1;
+}
+
+message EchoStatus {
+  int32 code = 1;
+  string message = 2;
+}
+
 // The type of payload that should be returned.
 enum PayloadType {
   // Compressable text format.
@@ -58,6 +68,18 @@ message SimpleRequest {
 
   // Whether SimpleResponse should include OAuth scope.
   bool fill_oauth_scope = 5;
+
+  // Whether to request the server to compress the response. This field is
+  // "nullable" in order to interoperate seamlessly with clients not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the response's compression status.
+  BoolValue response_compressed = 6;
+
+  // Whether server should return a given status
+  EchoStatus response_status = 7;
+
+  // Whether the server should expect this request to be compressed.
+  BoolValue expect_compressed = 8;
 }
 
 // Unary response, as configured by the request.
