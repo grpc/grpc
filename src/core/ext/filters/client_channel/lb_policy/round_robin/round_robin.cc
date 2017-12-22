@@ -643,18 +643,18 @@ void RoundRobin::SetReresolutionClosureLocked(
 class RoundRobinFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) {
+      const LoadBalancingPolicy::Args& args) const override {
     return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(args));
   }
 
-  const char* name() const override { return "pick_first"; }
+  const char* name() const override { return "round_robin"; }
 };
 
 }  // namespace
 
 }  // namespace grpc_core
 
-void grpc_lb_policy_pick_first_init() {
+void grpc_lb_policy_round_robin_init() {
   grpc_core::LoadBalancingPolicyRegistry::Global()
       ->RegisterLoadBalancingPolicyFactory(
           grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(

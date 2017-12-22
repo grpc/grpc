@@ -155,12 +155,23 @@ class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
   /// failed.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
+// FIXME: reconsider whether any of this request_reresolution code
+// belongs in the base class
+
   /// Tries to request a re-resolution.
   void TryReresolution(grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error);
 
   void set_request_reresolution(grpc_closure* request_reresolution) {
     GPR_ASSERT(request_reresolution_ == nullptr);
     request_reresolution_ = request_reresolution;
+  }
+
+  grpc_closure* request_reresolution() const { return request_reresolution_; }
+
+  grpc_closure* ReleaseRequestReresolution() {
+    grpc_closure* request_reresolution = request_reresolution_;
+    request_reresolution_ = nullptr;
+    return request_reresolution;
   }
 
  private:

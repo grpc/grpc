@@ -605,7 +605,7 @@ void PickFirst::SetReresolutionClosureLocked(
 class PickFirstFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) {
+      const LoadBalancingPolicy::Args& args) const override {
     return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(args));
   }
 
