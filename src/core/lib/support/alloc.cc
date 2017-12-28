@@ -100,3 +100,10 @@ void* gpr_malloc_aligned(size_t size, size_t alignment_log) {
 }
 
 void gpr_free_aligned(void* ptr) { gpr_free(((void**)ptr)[-1]); }
+
+// Provide a default global delete operation definition in order to allow
+// linking when the compiler emits calls to it (even if they'll never be
+// invoked).
+#ifdef __GNUC__
+extern "C" __attribute__((weak)) void _ZdlPv(void* ptr) { abort(); }
+#endif
