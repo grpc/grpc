@@ -165,6 +165,10 @@ struct grpc_subchannel_args {
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
                                         const grpc_subchannel_args* args);
 
+/// retrieves the trace for this subchannel in JSON form.
+char* grpc_subchannel_get_trace(grpc_subchannel* subchannel, bool recursive);
+intptr_t grpc_subchannel_get_uuid(grpc_subchannel* subchannel);
+
 /// Sets \a addr from \a args.
 void grpc_get_subchannel_address_arg(const grpc_channel_args* args,
                                      grpc_resolved_address* addr);

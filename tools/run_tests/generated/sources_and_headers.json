@@ -924,6 +924,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "grpc_channel_tracer_test", 
+    "src": [
+      "test/core/channel/channel_tracer_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "grpc_completion_queue_test", 
     "src": [
       "test/core/surface/completion_queue_test.cc"
@@ -7791,6 +7808,7 @@
       "src/core/lib/support/log_windows.cc", 
       "src/core/lib/support/mpscq.cc", 
       "src/core/lib/support/murmur_hash.cc", 
+      "src/core/lib/support/object_registry.cc", 
       "src/core/lib/support/string.cc", 
       "src/core/lib/support/string_posix.cc", 
       "src/core/lib/support/string_util_windows.cc", 
@@ -7859,6 +7877,7 @@
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
+      "src/core/lib/support/object_registry.h", 
       "src/core/lib/support/spinlock.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
@@ -7908,6 +7927,7 @@
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
+      "src/core/lib/support/object_registry.h", 
       "src/core/lib/support/spinlock.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
@@ -8002,6 +8022,7 @@
       "src/core/lib/channel/channel_args.cc", 
       "src/core/lib/channel/channel_stack.cc", 
       "src/core/lib/channel/channel_stack_builder.cc", 
+      "src/core/lib/channel/channel_tracer.cc", 
       "src/core/lib/channel/connected_channel.cc", 
       "src/core/lib/channel/handshaker.cc", 
       "src/core/lib/channel/handshaker_factory.cc", 
@@ -8158,6 +8179,7 @@
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
+      "src/core/lib/channel/channel_tracer.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
       "src/core/lib/channel/handshaker.h", 
@@ -8297,6 +8319,7 @@
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
+      "src/core/lib/channel/channel_tracer.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
       "src/core/lib/channel/handshaker.h", 
@@ -8940,6 +8963,7 @@
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
+      "test/core/util/channel_tracing_utils.h", 
       "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/histogram.h", 
@@ -8967,6 +8991,8 @@
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.cc", 
       "test/core/iomgr/endpoint_tests.h", 
+      "test/core/util/channel_tracing_utils.cc", 
+      "test/core/util/channel_tracing_utils.h", 
       "test/core/util/debugger_macros.cc", 
       "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.cc", 

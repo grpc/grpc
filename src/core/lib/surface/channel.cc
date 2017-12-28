@@ -28,9 +28,11 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_tracer.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/object_registry.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -51,6 +53,7 @@ typedef struct registered_call {
 } registered_call;
 
 struct grpc_channel {
+  intptr_t uuid;
   int is_client;
   grpc_compression_options compression_options;
   grpc_mdelem default_authority;
@@ -59,6 +62,8 @@ struct grpc_channel {
 
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
+
+  grpc_channel_tracer* tracer;
 
   char* target;
 };
@@ -91,12 +96,16 @@ grpc_channel* grpc_channel_create_with_builder(
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
     gpr_free(target);
-    goto done;
+    grpc_channel_args_destroy(args);
+    return channel;
   }
 
   memset(channel, 0, sizeof(*channel));
+  channel->uuid = grpc_object_registry_register_object(
+      channel, GRPC_OBJECT_REGISTRY_CHANNEL);
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
+  channel->tracer = NULL;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
 
@@ -186,13 +195,33 @@ grpc_channel* grpc_channel_create_with_builder(
           .enabled_stream_compression_algorithms_bitset =
           (uint32_t)args->args[i].value.integer |
           0x1; /* always support no compression */
+    } else if (0 ==
+               strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING_MAX_NODES)) {
+      GPR_ASSERT(channel->tracer == NULL);
+      // max_nodes defaults to 10, clamped between 0 and 100.
+      const grpc_integer_options options = {10, 0, 100};
+      size_t max_nodes =
+          (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
+      if (max_nodes > 0) {
+        channel->tracer = GRPC_CHANNEL_TRACER_CREATE(max_nodes, channel->uuid);
+      }
     }
   }
 
-done:
   grpc_channel_args_destroy(args);
+  grpc_channel_tracer_add_trace(
+      channel->tracer, grpc_slice_from_static_string("Channel created"),
+      GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, NULL);
   return channel;
 }
+
+char* grpc_channel_get_trace(grpc_channel* channel, bool recursive) {
+  return channel->tracer
+             ? grpc_channel_tracer_render_trace(channel->tracer, recursive)
+             : NULL;
+}
+
+intptr_t grpc_channel_get_uuid(grpc_channel* channel) { return channel->uuid; }
 
 grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* input_args,

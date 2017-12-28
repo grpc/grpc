@@ -62,6 +62,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/log_windows.cc \
     src/core/lib/support/mpscq.cc \
     src/core/lib/support/murmur_hash.cc \
+    src/core/lib/support/object_registry.cc \
     src/core/lib/support/string.cc \
     src/core/lib/support/string_posix.cc \
     src/core/lib/support/string_util_windows.cc \
@@ -88,6 +89,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/channel_tracer.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \

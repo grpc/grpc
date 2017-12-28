@@ -41,6 +41,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/fork.h"
+#include "src/core/lib/support/object_registry.h"
 #include "src/core/lib/support/thd_internal.h"
 #include "src/core/lib/surface/alarm_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -129,6 +130,7 @@ void grpc_init(void) {
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
+    grpc_object_registry_init();
     grpc_security_pre_init();
     grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
@@ -177,6 +179,7 @@ void grpc_shutdown(void) {
       grpc_mdctx_global_shutdown();
       grpc_handshaker_factory_registry_shutdown();
       grpc_slice_intern_shutdown();
+      grpc_object_registry_shutdown();
       grpc_stats_shutdown();
     }
     grpc_core::ExecCtx::GlobalShutdown();
