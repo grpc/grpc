@@ -79,6 +79,33 @@ static int ipv6_prefix_match_length(const struct sockaddr_in6* sa,
   return cur_bit;
 }
 
+static int in6_is_addr_loopback(const struct in6_addr* ipv6_address) {
+  uint32_t* bits32 = (uint32_t*)ipv6_address;
+  return bits32[0] == 0 && bits32[1] == 0 && bits32[2] == 0 &&
+         bits32[3] == htonl(1);
+}
+
+static int in6_is_addr_v4mapped(const struct in6_addr* ipv6_address) {
+  uint32_t* bits32 = (uint32_t*)ipv6_address;
+  return bits32[0] == 0 && bits32[1] == 0 && bits32[2] == htonl(0x0000ffff);
+}
+
+static int in6_is_addr_v4compat(const struct in6_addr* ipv6_address) {
+  uint32_t* bits32 = (uint32_t*)ipv6_address;
+  return bits32[0] == 0 && bits32[1] == 0 && bits32[2] == 0 && bits32[3] != 0 &&
+         bits32[3] != htonl(1);
+}
+
+static int in6_is_addr_sitelocal(const struct in6_addr* ipv6_address) {
+  uint8_t* bytes = (uint8_t*)ipv6_address;
+  return bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0xc0;
+}
+
+static int in6_is_addr_linklocal(const struct in6_addr* ipv6_address) {
+  uint8_t* bytes = (uint8_t*)ipv6_address;
+  return bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80;
+}
+
 static int in6_is_addr_6to4(const struct in6_addr* ipv6_address) {
   uint8_t* bytes = (uint8_t*)ipv6_address;
   return bytes[0] == 0x20 && bytes[1] == 0x02;
@@ -121,9 +148,9 @@ static int get_label_value(const address_sorting_address* resolved_addr) {
     return 1;
   }
   struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
-  if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr)) {
+  if (in6_is_addr_loopback(&ipv6_addr->sin6_addr)) {
     return 0;
-  } else if (IN6_IS_ADDR_V4MAPPED(&ipv6_addr->sin6_addr)) {
+  } else if (in6_is_addr_v4mapped(&ipv6_addr->sin6_addr)) {
     return 4;
   } else if (in6_is_addr_6to4(&ipv6_addr->sin6_addr)) {
     return 2;
@@ -131,9 +158,9 @@ static int get_label_value(const address_sorting_address* resolved_addr) {
     return 5;
   } else if (in6_is_addr_ula(&ipv6_addr->sin6_addr)) {
     return 13;
-  } else if (IN6_IS_ADDR_V4COMPAT(&ipv6_addr->sin6_addr)) {
+  } else if (in6_is_addr_v4compat(&ipv6_addr->sin6_addr)) {
     return 3;
-  } else if (IN6_IS_ADDR_SITELOCAL(&ipv6_addr->sin6_addr)) {
+  } else if (in6_is_addr_sitelocal(&ipv6_addr->sin6_addr)) {
     return 11;
   } else if (in6_is_addr_6bone(&ipv6_addr->sin6_addr)) {
     return 12;
@@ -150,9 +177,9 @@ static int get_precedence_value(const address_sorting_address* resolved_addr) {
     return 1;
   }
   struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
-  if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr)) {
+  if (in6_is_addr_loopback(&ipv6_addr->sin6_addr)) {
     return 50;
-  } else if (IN6_IS_ADDR_V4MAPPED(&ipv6_addr->sin6_addr)) {
+  } else if (in6_is_addr_v4mapped(&ipv6_addr->sin6_addr)) {
     return 35;
   } else if (in6_is_addr_6to4(&ipv6_addr->sin6_addr)) {
     return 30;
@@ -160,8 +187,8 @@ static int get_precedence_value(const address_sorting_address* resolved_addr) {
     return 5;
   } else if (in6_is_addr_ula(&ipv6_addr->sin6_addr)) {
     return 3;
-  } else if (IN6_IS_ADDR_V4COMPAT(&ipv6_addr->sin6_addr) ||
-             IN6_IS_ADDR_SITELOCAL(&ipv6_addr->sin6_addr) ||
+  } else if (in6_is_addr_v4compat(&ipv6_addr->sin6_addr) ||
+             in6_is_addr_sitelocal(&ipv6_addr->sin6_addr) ||
              in6_is_addr_6bone(&ipv6_addr->sin6_addr)) {
     return 1;
   }
@@ -175,11 +202,11 @@ static int sockaddr_get_scope(const address_sorting_address* resolved_addr) {
   } else if (address_sorting_abstract_get_family(resolved_addr) ==
              ADDRESS_SORTING_AF_INET6) {
     struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
-    if (IN6_IS_ADDR_LOOPBACK(&ipv6_addr->sin6_addr) ||
-        IN6_IS_ADDR_LINKLOCAL(&ipv6_addr->sin6_addr)) {
+    if (in6_is_addr_loopback(&ipv6_addr->sin6_addr) ||
+        in6_is_addr_linklocal(&ipv6_addr->sin6_addr)) {
       return kIPv6AddrScopeLinkLocal;
     }
-    if (IN6_IS_ADDR_SITELOCAL(&ipv6_addr->sin6_addr)) {
+    if (in6_is_addr_sitelocal(&ipv6_addr->sin6_addr)) {
       return kIPv6AddrScopeSiteLocal;
     }
     return kIPv6AddrScopeGlobal;
