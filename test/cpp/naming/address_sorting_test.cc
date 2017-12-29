@@ -46,7 +46,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -326,6 +326,61 @@ TEST(AddressSortingTest,
 }
 
 TEST(AddressSortingTest,
+     TestUsesDestinationWithHigherPrecedenceWithV4CompatAndLocalhostAddress) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
+#if GPR_APPLE == 1
+  const char* v4_compat_dest = "[::0.0.0.2]:443";
+  const char* v4_compat_src = "[::0.0.0.2]:0";
+#else
+  const char* v4_compat_dest = "[::2]:443";
+  const char* v4_compat_src = "[::2]:0";
+#endif
+  OverrideAddressSortingSourceAddrFactory(
+      ipv4_supported, ipv6_supported,
+      {
+          {"[::1]:443", {"[::1]:0", AF_INET6}},
+          {v4_compat_dest, {v4_compat_src, AF_INET6}},
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {v4_compat_dest, AF_INET6},
+      {"[::1]:443", AF_INET6},
+  });
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[::1]:443",
+                                    v4_compat_dest,
+                                });
+}
+
+TEST(AddressSortingTest,
+     TestUsesDestinationWithHigherPrecedenceWithCatchAllAndLocalhostAddress) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+  OverrideAddressSortingSourceAddrFactory(
+      ipv4_supported, ipv6_supported,
+      {
+          // 1234::2 for src and dest to make sure that prefix matching has no
+          // influence on this test.
+          {"[1234::2]:443", {"[1234::2]:0", AF_INET6}},
+          {"[::1]:443", {"[::1]:0", AF_INET6}},
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[1234::2]:443", AF_INET6},
+      {"[::1]:443", AF_INET6},
+  });
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+  VerifyLbAddrOutputs(
+      lb_addrs,
+      {
+          // ::1 should match the localhost precedence entry and be prioritized
+          "[::1]:443",
+          "[1234::2]:443",
+      });
+}
+
+TEST(AddressSortingTest,
      TestUsesDestinationWithHigherPrecedenceWith2000PrefixedAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
@@ -388,6 +443,30 @@ TEST(AddressSortingTest,
   VerifyLbAddrOutputs(lb_addrs, {
                                     "[fc00::5001]:443",
                                     "[fec0::1234]:443",
+                                });
+}
+
+TEST(
+    AddressSortingTest,
+    TestUsesDestinationWithHigherPrecedenceWithCatchAllAndAndV4MappedAddresses) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+  OverrideAddressSortingSourceAddrFactory(
+      ipv4_supported, ipv6_supported,
+      {
+          {"[::ffff:0.0.0.2]:443", {"[::ffff:0.0.0.3]:0", AF_INET6}},
+          {"[1234::2]:443", {"[1234::3]:0", AF_INET6}},
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[::ffff:0.0.0.2]:443", AF_INET6},
+      {"[1234::2]:443", AF_INET6},
+  });
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    // ::ffff:0:2 should match the v4-mapped
+                                    // precedence entry and be deprioritized.
+                                    "[1234::2]:443",
+                                    "[::ffff:0.0.0.2]:443",
                                 });
 }
 
@@ -609,6 +688,37 @@ TEST(AddressSortingTest, TestStableSortNoSrcAddrsExistWithIpv4) {
                                     "[::ffff:5.6.7.8]:443",
                                     "1.2.3.4:443",
                                 });
+}
+
+TEST(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
+#if GPR_APPLE == 1
+  const char* v4_compat_dest = "[::0.0.0.2]:443";
+  const char* v4_compat_src = "[::0.0.0.3]:0";
+#else
+  const char* v4_compat_dest = "[::2]:443";
+  const char* v4_compat_src = "[::3]:0";
+#endif
+  OverrideAddressSortingSourceAddrFactory(
+      ipv4_supported, ipv6_supported,
+      {
+          {"[fec0::2000]:443", {"[fec0::2001]:0", AF_INET6}},
+          {v4_compat_dest, {v4_compat_src, AF_INET6}},
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[fec0::2000]:443", AF_INET6},
+      {v4_compat_dest, AF_INET6},
+  });
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+  VerifyLbAddrOutputs(lb_addrs,
+                      {
+                          // The sort should be stable since
+                          // v4-compatible has same precedence as site-local.
+                          "[fec0::2000]:443",
+                          v4_compat_dest,
+                      });
 }
 
 int main(int argc, char** argv) {

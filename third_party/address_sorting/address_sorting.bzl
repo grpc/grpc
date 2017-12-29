@@ -28,33 +28,11 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-package(
-    default_visibility = ["//visibility:public"],
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
-
-load(":address_sorting.bzl", "address_sorting_cc_library")
-
-licenses(["notice"])  # BSD
-
-exports_files(["LICENSE"])
-
-address_sorting_cc_library(
-    name = "address_sorting",
-    srcs = [
-        "address_sorting.c",
-        "address_sorting_posix.c",
-        "address_sorting_windows.c",
-    ],
-    hdrs = [
-        "address_sorting.h",
-        "address_sorting_internal.h",
-    ],
-    copts = ["-std=c99"],
-    includes = [
-        ".",
-    ],
-)
+def address_sorting_cc_library(name, srcs, hdrs, copts, includes):
+  native.cc_library(
+      name = name,
+      srcs = srcs,
+      hdrs = hdrs,
+      copts = copts,
+      includes = includes,
+  )

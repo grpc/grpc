@@ -51,7 +51,10 @@
 /* Workaround for issue described in
  *
  * https://bugs.launchpad.net/ubuntu/+source/eglibc/+bug/1187301 */
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #define ADDRESS_SORTING_POSIX 1
