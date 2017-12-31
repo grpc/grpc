@@ -53,7 +53,7 @@ class _Handler(object):
         self._state = state
         self._lock = threading.Lock()
         self._completion_queue = completion_queue
-        self._call = rpc_event.operation_call
+        self._call = rpc_event.call
 
     def __call__(self):
         with self._state.condition:

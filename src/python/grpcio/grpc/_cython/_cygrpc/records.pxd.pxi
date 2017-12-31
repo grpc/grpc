@@ -28,43 +28,6 @@ cdef class CallDetails:
   cdef grpc_call_details c_details
 
 
-cdef class OperationTag:
-
-  cdef object user_tag
-  cdef list references
-  # This allows CompletionQueue to notify the Python Server object that the
-  # underlying GRPC core server has shutdown
-  cdef Server shutting_down_server
-  cdef Call operation_call
-  cdef CallDetails request_call_details
-  cdef grpc_metadata_array _c_request_metadata
-  cdef grpc_op *c_ops
-  cdef size_t c_nops
-  cdef readonly object _operations
-  cdef bint is_new_request
-
-  cdef void store_ops(self)
-  cdef object release_ops(self)
-
-
-cdef class Event:
-
-  cdef readonly grpc_completion_type type
-  cdef readonly bint success
-  cdef readonly object tag
-
-  # For Server.request_call
-  cdef readonly bint is_new_request
-  cdef readonly CallDetails request_call_details
-  cdef readonly object request_metadata
-
-  # For server calls
-  cdef readonly Call operation_call
-
-  # For Call.start_batch
-  cdef readonly object batch_operations
-
-
 cdef class SslPemKeyCertPair:
 
   cdef grpc_ssl_pem_key_cert_pair c_pair

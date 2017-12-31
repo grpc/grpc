@@ -218,50 +218,6 @@ cdef class CallDetails:
     return timespec
 
 
-cdef class OperationTag:
-
-  def __cinit__(self, user_tag, operations):
-    self.user_tag = user_tag
-    self.references = []
-    self._operations = operations
-
-  cdef void store_ops(self):
-    self.c_nops = 0 if self._operations is None else len(self._operations)
-    if 0 < self.c_nops:
-      self.c_ops = <grpc_op *>gpr_malloc(sizeof(grpc_op) * self.c_nops)
-      for index, operation in enumerate(self._operations):
-        (<Operation>operation).c()
-        self.c_ops[index] = (<Operation>operation).c_op
-
-  cdef object release_ops(self):
-    if 0 < self.c_nops:
-      for index, operation in enumerate(self._operations):
-        (<Operation>operation).c_op = self.c_ops[index]
-        (<Operation>operation).un_c()
-      gpr_free(self.c_ops)
-      return self._operations
-    else:
-      return ()
-
-
-cdef class Event:
-
-  def __cinit__(self, grpc_completion_type type, bint success,
-                object tag, Call operation_call,
-                CallDetails request_call_details,
-                object request_metadata,
-                bint is_new_request,
-                object batch_operations):
-    self.type = type
-    self.success = success
-    self.tag = tag
-    self.operation_call = operation_call
-    self.request_call_details = request_call_details
-    self.request_metadata = request_metadata
-    self.batch_operations = batch_operations
-    self.is_new_request = is_new_request
-
-
 cdef class SslPemKeyCertPair:
 
   def __cinit__(self, bytes private_key, bytes certificate_chain):
