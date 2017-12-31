@@ -31,7 +31,7 @@ web-specific features such as CORS, XSRF
 * become optional (in 1-2 years) when browsers are able to speak the native
 gRPC protocol via the new [whatwg fetch/streams API](https://github.com/whatwg/fetch)
 
-# Protocol differences vs [gRPC over HTTP2](https://grpc.io/docs/guides/wire.html)
+# Protocol differences vs [gRPC over HTTP2](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md)
 
 Content-Type
 
@@ -53,14 +53,14 @@ HTTP wire protocols
 
 ---
 
-HTTP/2 related behavior (specified in [gRPC over HTTP2](https://grpc.io/docs/guides/wire.html))
+HTTP/2 related behavior (specified in [gRPC over HTTP2](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md))
 
 1. stream-id is not supported or used
 2. go-away is not supported or used
 
 ---
 
-Message framing (vs. [http2-transport-mapping](https://grpc.io/docs/guides/wire.html#http2-transport-mapping))
+Message framing (vs. [http2-transport-mapping](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#http2-transport-mapping))
 
 1. Response status encoded as part of the response body
   * Key-value pairs encoded as a HTTP/1 headers block (without the terminating newline), per https://tools.ietf.org/html/rfc7230#section-3.2
