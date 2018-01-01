@@ -44,17 +44,14 @@ class Test(_common.RpcTest, unittest.TestCase):
         with self.client_condition:
             client_receive_initial_metadata_start_batch_result = (
                 client_call.start_client_batch([
-                    cygrpc.operation_receive_initial_metadata(
-                        _common.EMPTY_FLAGS),
+                    cygrpc.ReceiveInitialMetadataOperation(_common.EMPTY_FLAGS),
                 ], client_receive_initial_metadata_tag))
             client_complete_rpc_start_batch_result = client_call.start_client_batch(
                 [
-                    cygrpc.operation_send_initial_metadata(
+                    cygrpc.SendInitialMetadataOperation(
                         _common.INVOCATION_METADATA, _common.EMPTY_FLAGS),
-                    cygrpc.operation_send_close_from_client(
-                        _common.EMPTY_FLAGS),
-                    cygrpc.operation_receive_status_on_client(
-                        _common.EMPTY_FLAGS),
+                    cygrpc.SendCloseFromClientOperation(_common.EMPTY_FLAGS),
+                    cygrpc.ReceiveStatusOnClientOperation(_common.EMPTY_FLAGS),
                 ], client_complete_rpc_tag)
             self.client_driver.add_due({
                 client_receive_initial_metadata_tag,
@@ -67,7 +64,7 @@ class Test(_common.RpcTest, unittest.TestCase):
         with self.server_condition:
             server_send_initial_metadata_start_batch_result = (
                 server_request_call_event.operation_call.start_server_batch([
-                    cygrpc.operation_send_initial_metadata(
+                    cygrpc.SendInitialMetadataOperation(
                         _common.INITIAL_METADATA, _common.EMPTY_FLAGS),
                 ], server_send_initial_metadata_tag))
             self.server_driver.add_due({
@@ -79,11 +76,10 @@ class Test(_common.RpcTest, unittest.TestCase):
         with self.server_condition:
             server_complete_rpc_start_batch_result = (
                 server_request_call_event.operation_call.start_server_batch([
-                    cygrpc.operation_receive_close_on_server(
-                        _common.EMPTY_FLAGS),
-                    cygrpc.operation_send_status_from_server(
+                    cygrpc.ReceiveCloseOnServerOperation(_common.EMPTY_FLAGS),
+                    cygrpc.SendStatusFromServerOperation(
                         _common.TRAILING_METADATA, cygrpc.StatusCode.ok,
-                        b'test details', _common.EMPTY_FLAGS),
+                        'test details', _common.EMPTY_FLAGS),
                 ], server_complete_rpc_tag))
             self.server_driver.add_due({
                 server_complete_rpc_tag,

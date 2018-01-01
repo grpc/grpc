@@ -50,7 +50,7 @@ _UNEXPECTED_EXIT_SERVER_GRACE = 1.0
 
 
 def _serialized_request(request_event):
-    return request_event.batch_operations[0].received_message.bytes()
+    return request_event.batch_operations[0].message()
 
 
 def _application_code(code):
@@ -130,13 +130,13 @@ def _abort(state, call, code, details):
         effective_code = _abortion_code(state, code)
         effective_details = details if state.details is None else state.details
         if state.initial_metadata_allowed:
-            operations = (cygrpc.operation_send_initial_metadata(
-                (), _EMPTY_FLAGS), cygrpc.operation_send_status_from_server(
+            operations = (cygrpc.SendInitialMetadataOperation(
+                None, _EMPTY_FLAGS), cygrpc.SendStatusFromServerOperation(
                     state.trailing_metadata, effective_code, effective_details,
                     _EMPTY_FLAGS),)
             token = _SEND_INITIAL_METADATA_AND_SEND_STATUS_FROM_SERVER_TOKEN
         else:
-            operations = (cygrpc.operation_send_status_from_server(
+            operations = (cygrpc.SendStatusFromServerOperation(
                 state.trailing_metadata, effective_code, effective_details,
                 _EMPTY_FLAGS),)
             token = _SEND_STATUS_FROM_SERVER_TOKEN
@@ -150,8 +150,7 @@ def _receive_close_on_server(state):
 
     def receive_close_on_server(receive_close_on_server_event):
         with state.condition:
-            if receive_close_on_server_event.batch_operations[
-                    0].received_cancelled:
+            if receive_close_on_server_event.batch_operations[0].cancelled():
                 state.client = _CANCELLED
             elif state.client is _OPEN:
                 state.client = _CLOSED
@@ -262,7 +261,7 @@ class _Context(grpc.ServicerContext):
                 _raise_rpc_error(self._state)
             else:
                 if self._state.initial_metadata_allowed:
-                    operation = cygrpc.operation_send_initial_metadata(
+                    operation = cygrpc.SendInitialMetadataOperation(
                         initial_metadata, _EMPTY_FLAGS)
                     self._rpc_event.operation_call.start_server_batch(
                         (operation,), _send_initial_metadata(self._state))
@@ -305,7 +304,7 @@ class _RequestIterator(object):
             raise StopIteration()
         else:
             self._call.start_server_batch(
-                (cygrpc.operation_receive_message(_EMPTY_FLAGS),),
+                (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
                 _receive_message(self._state, self._call,
                                  self._request_deserializer))
             self._state.due.add(_RECEIVE_MESSAGE_TOKEN)
@@ -348,7 +347,7 @@ def _unary_request(rpc_event, state, request_deserializer):
                 return None
             else:
                 rpc_event.operation_call.start_server_batch(
-                    (cygrpc.operation_receive_message(_EMPTY_FLAGS),),
+                    (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
                     _receive_message(state, rpc_event.operation_call,
                                      request_deserializer))
                 state.due.add(_RECEIVE_MESSAGE_TOKEN)
@@ -424,14 +423,15 @@ def _send_response(rpc_event, state, serialized_response):
             return False
         else:
             if state.initial_metadata_allowed:
-                operations = (cygrpc.operation_send_initial_metadata(
-                    (), _EMPTY_FLAGS), cygrpc.operation_send_message(
-                        serialized_response, _EMPTY_FLAGS),)
+                operations = (cygrpc.SendInitialMetadataOperation(None,
+                                                                  _EMPTY_FLAGS),
+                              cygrpc.SendMessageOperation(serialized_response,
+                                                          _EMPTY_FLAGS),)
                 state.initial_metadata_allowed = False
                 token = _SEND_INITIAL_METADATA_AND_SEND_MESSAGE_TOKEN
             else:
-                operations = (cygrpc.operation_send_message(serialized_response,
-                                                            _EMPTY_FLAGS),)
+                operations = (cygrpc.SendMessageOperation(serialized_response,
+                                                          _EMPTY_FLAGS),)
                 token = _SEND_MESSAGE_TOKEN
             rpc_event.operation_call.start_server_batch(
                 operations, _send_message(state, token))
@@ -448,16 +448,16 @@ def _status(rpc_event, state, serialized_response):
             code = _completion_code(state)
             details = _details(state)
             operations = [
-                cygrpc.operation_send_status_from_server(
+                cygrpc.SendStatusFromServerOperation(
                     state.trailing_metadata, code, details, _EMPTY_FLAGS),
             ]
             if state.initial_metadata_allowed:
                 operations.append(
-                    cygrpc.operation_send_initial_metadata((), _EMPTY_FLAGS))
+                    cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS))
             if serialized_response is not None:
                 operations.append(
-                    cygrpc.operation_send_message(serialized_response,
-                                                  _EMPTY_FLAGS))
+                    cygrpc.SendMessageOperation(serialized_response,
+                                                _EMPTY_FLAGS))
             rpc_event.operation_call.start_server_batch(
                 operations,
                 _send_status_from_server(state, _SEND_STATUS_FROM_SERVER_TOKEN))
@@ -563,10 +563,10 @@ def _find_method_handler(rpc_event, generic_handlers, interceptor_pipeline):
 
 
 def _reject_rpc(rpc_event, status, details):
-    operations = (cygrpc.operation_send_initial_metadata((), _EMPTY_FLAGS),
-                  cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
-                  cygrpc.operation_send_status_from_server((), status, details,
-                                                           _EMPTY_FLAGS),)
+    operations = (cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS),
+                  cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
+                  cygrpc.SendStatusFromServerOperation(None, status, details,
+                                                       _EMPTY_FLAGS),)
     rpc_state = _RPCState()
     rpc_event.operation_call.start_server_batch(
         operations, lambda ignored_event: (rpc_state, (),))
@@ -577,7 +577,7 @@ def _handle_with_method_handler(rpc_event, method_handler, thread_pool):
     state = _RPCState()
     with state.condition:
         rpc_event.operation_call.start_server_batch(
-            (cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),),
+            (cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),),
             _receive_close_on_server(state))
         state.due.add(_RECEIVE_CLOSE_ON_SERVER_TOKEN)
         if method_handler.request_streaming:
