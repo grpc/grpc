@@ -72,7 +72,7 @@ class Test(_common.RpcTest, unittest.TestCase):
 
         with server_call_condition:
             server_send_initial_metadata_start_batch_result = (
-                server_request_call_event.operation_call.start_server_batch([
+                server_request_call_event.call.start_server_batch([
                     cygrpc.SendInitialMetadataOperation(
                         _common.INITIAL_METADATA, _common.EMPTY_FLAGS),
                 ], server_send_initial_metadata_tag))
@@ -84,7 +84,7 @@ class Test(_common.RpcTest, unittest.TestCase):
 
         with server_call_condition:
             server_complete_rpc_start_batch_result = (
-                server_request_call_event.operation_call.start_server_batch([
+                server_request_call_event.call.start_server_batch([
                     cygrpc.ReceiveCloseOnServerOperation(_common.EMPTY_FLAGS),
                     cygrpc.SendStatusFromServerOperation(
                         _common.TRAILING_METADATA, cygrpc.StatusCode.ok,
@@ -101,23 +101,24 @@ class Test(_common.RpcTest, unittest.TestCase):
         client_complete_rpc_event = self.client_driver.event_with_tag(
             client_complete_rpc_tag)
 
-        return (_common.OperationResult(server_request_call_start_batch_result,
-                                        server_request_call_event.type,
-                                        server_request_call_event.success),
+        return (_common.OperationResult(
+            server_request_call_start_batch_result,
+            server_request_call_event.completion_type,
+            server_request_call_event.success), _common.OperationResult(
+                client_receive_initial_metadata_start_batch_result,
+                client_receive_initial_metadata_event.completion_type,
+                client_receive_initial_metadata_event.success),
                 _common.OperationResult(
-                    client_receive_initial_metadata_start_batch_result,
-                    client_receive_initial_metadata_event.type,
-                    client_receive_initial_metadata_event.success),
-                _common.OperationResult(client_complete_rpc_start_batch_result,
-                                        client_complete_rpc_event.type,
-                                        client_complete_rpc_event.success),
+                    client_complete_rpc_start_batch_result,
+                    client_complete_rpc_event.completion_type,
+                    client_complete_rpc_event.success), _common.OperationResult(
+                        server_send_initial_metadata_start_batch_result,
+                        server_send_initial_metadata_event.completion_type,
+                        server_send_initial_metadata_event.success),
                 _common.OperationResult(
-                    server_send_initial_metadata_start_batch_result,
-                    server_send_initial_metadata_event.type,
-                    server_send_initial_metadata_event.success),
-                _common.OperationResult(server_complete_rpc_start_batch_result,
-                                        server_complete_rpc_event.type,
-                                        server_complete_rpc_event.success),)
+                    server_complete_rpc_start_batch_result,
+                    server_complete_rpc_event.completion_type,
+                    server_complete_rpc_event.success),)
 
     def test_rpcs(self):
         expecteds = [(_common.SUCCESSFUL_OPERATION_RESULT,) *

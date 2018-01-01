@@ -87,7 +87,8 @@ class TypeSmokeTest(unittest.TestCase):
         shutdown_tag = object()
         server.shutdown(completion_queue, shutdown_tag)
         event = completion_queue.poll()
-        self.assertEqual(cygrpc.CompletionType.operation_complete, event.type)
+        self.assertEqual(cygrpc.CompletionType.operation_complete,
+                         event.completion_type)
         self.assertIs(shutdown_tag, event.tag)
         del server
         del completion_queue
@@ -147,7 +148,7 @@ class ServerClientMixin(object):
                 self.assertEqual(cygrpc.CallError.ok, call_result)
                 event = queue.poll(deadline)
                 self.assertEqual(cygrpc.CompletionType.operation_complete,
-                                 event.type)
+                                 event.completion_type)
                 self.assertTrue(event.success)
                 self.assertIs(tag, event.tag)
             except Exception as error:
@@ -205,22 +206,20 @@ class ServerClientMixin(object):
 
         request_event = self.server_completion_queue.poll(cygrpc_deadline)
         self.assertEqual(cygrpc.CompletionType.operation_complete,
-                         request_event.type)
-        self.assertIsInstance(request_event.operation_call, cygrpc.Call)
+                         request_event.completion_type)
+        self.assertIsInstance(request_event.call, cygrpc.Call)
         self.assertIs(server_request_tag, request_event.tag)
-        self.assertEqual(0, len(request_event.batch_operations))
         self.assertTrue(
             test_common.metadata_transmitted(client_initial_metadata,
-                                             request_event.request_metadata))
-        self.assertEqual(METHOD, request_event.request_call_details.method)
-        self.assertEqual(self.expected_host,
-                         request_event.request_call_details.host)
+                                             request_event.invocation_metadata))
+        self.assertEqual(METHOD, request_event.call_details.method)
+        self.assertEqual(self.expected_host, request_event.call_details.host)
         self.assertLess(
-            abs(DEADLINE - float(request_event.request_call_details.deadline)),
+            abs(DEADLINE - float(request_event.call_details.deadline)),
             DEADLINE_TOLERANCE)
 
         server_call_tag = object()
-        server_call = request_event.operation_call
+        server_call = request_event.call
         server_initial_metadata = (
             (SERVER_INITIAL_METADATA_KEY, SERVER_INITIAL_METADATA_VALUE,),)
         server_trailing_metadata = (
@@ -322,7 +321,7 @@ class ServerClientMixin(object):
         ], "Client prologue")
 
         request_event = self.server_completion_queue.poll(cygrpc_deadline)
-        server_call = request_event.operation_call
+        server_call = request_event.call
 
         def perform_server_operations(operations, description):
             return self._perform_operations(operations, server_call,
