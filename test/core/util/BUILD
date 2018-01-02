@@ -51,6 +51,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
+        "channel_tracing_utils.cc",
         "grpc_profiler.cc",
         "histogram.cc",
         "mock_endpoint.cc",
@@ -66,6 +67,7 @@ grpc_cc_library(
         "trickle_endpoint.cc",
     ],
     hdrs = [
+        "channel_tracing_utils.h",
         "grpc_profiler.h",
         "histogram.h",
         "mock_endpoint.h",
@@ -97,6 +99,8 @@ grpc_cc_library(
         "//:grpc",
     ],
 )
+
+
 
 grpc_cc_library(
     name = "grpc_test_util_unsecure",

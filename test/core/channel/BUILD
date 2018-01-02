@@ -53,3 +53,15 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+cc_test(
+    name = "channel_tracer_test",
+    srcs = ["channel_tracer_test.cc"],
+    copts = ["-std=c99"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
