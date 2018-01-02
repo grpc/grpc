@@ -517,10 +517,9 @@ static void init_transport(grpc_chttp2_transport* t,
 
   if (flow_control_enabled == -1) {
     char* env_variable = gpr_getenv("GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL");
-    if (env_variable != nullptr){
+    if (env_variable != nullptr) {
       flow_control_enabled = 0;
-    }
-    else {
+    } else {
       flow_control_enabled = 1;
     }
     gpr_free(env_variable);
