@@ -23,38 +23,43 @@
 
 /* Helpers for hpack varint encoding */
 
-/* length of a value that needs varint tail encoding (it's bigger than can be
-   bitpacked into the opcode byte) - returned value includes the length of the
-   opcode byte */
-uint32_t grpc_chttp2_hpack_varint_length(uint32_t tail_value);
+namespace grpc_core {
 
-void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
-                                         uint32_t tail_length);
+namespace varint_impl {
+uint32_t ComputeLengthWithTail(uint32_t tail_value);
+void WriteTail(uint32_t tail_value, uint8_t* target, uint32_t tail_length);
+}  // namespace varint_impl
 
-/* maximum value that can be bitpacked with the opcode if the opcode has a
-   prefix
-   of length prefix_bits */
-#define GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits) \
-  ((uint32_t)((1 << (8 - (prefix_bits))) - 1))
+template <uint32_t kPrefixBits>
+class VarIntEncoder {
+ public:
+  VarIntEncoder(uint32_t value, uint32_t prefix_or)
+      : value_(value), length_(ComputeLength(value)), prefix_or_(prefix_or) {}
 
-/* length required to bitpack a value */
-#define GRPC_CHTTP2_VARINT_LENGTH(n, prefix_bits) \
-  ((n) < GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits)   \
-       ? 1u                                       \
-       : grpc_chttp2_hpack_varint_length(         \
-             (n)-GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits)))
+  uint32_t length() const { return length_; }
 
-#define GRPC_CHTTP2_WRITE_VARINT(n, prefix_bits, prefix_or, target, length)   \
-  do {                                                                        \
-    uint8_t* tgt = target;                                                    \
-    if ((length) == 1u) {                                                     \
-      (tgt)[0] = (uint8_t)((prefix_or) | (n));                                \
-    } else {                                                                  \
-      (tgt)[0] =                                                              \
-          (prefix_or) | (uint8_t)GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits);      \
-      grpc_chttp2_hpack_write_varint_tail(                                    \
-          (n)-GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits), (tgt) + 1, (length)-1); \
-    }                                                                         \
-  } while (0)
+  void Write(uint8_t* tgt) const {
+    if (length_ == 1u) {
+      (tgt)[0] = static_cast<uint8_t>(prefix_or_ | value_);
+    } else {
+      (tgt)[0] = prefix_or_ | kMaxInPrefix;
+      varint_impl::WriteTail(value_ - kMaxInPrefix, (tgt) + 1, length_ - 1);
+    }
+  }
+
+ private:
+  static constexpr uint32_t kMaxInPrefix = (1 << (8 - kPrefixBits)) - 1;
+
+  static uint32_t ComputeLength(uint32_t value) {
+    if (value < kMaxInPrefix) return 1;
+    return varint_impl::ComputeLengthWithTail(value - kMaxInPrefix);
+  }
+
+  const uint32_t value_;
+  const uint32_t length_;
+  const uint32_t prefix_or_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_VARINT_H */

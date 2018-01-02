@@ -116,16 +116,19 @@ enum class HttpTe : uint8_t {
   TRAILERS,
 };
 
-enum class NamedKeys : int {
+enum class NamedKeys : uint8_t {
   AUTHORITY,
+  // non colon prefixed names start here
+  USER_AGENT,
   GRPC_MESSAGE,
   GRPC_PAYLOAD_BIN,
   GRPC_SERVER_STATS_BIN,
   GRPC_TAGS_BIN,
-  USER_AGENT,
   HOST,
   COUNT  // must be last
 };
+
+grpc_slice NamedKeyKey(NamedKeys k);
 
 enum class ContentType : uint8_t {
   UNSET,
@@ -193,6 +196,21 @@ class Collection {
     return SetWithPublicUnset(&content_type_, content_type, reset);
   }
 
+  template <class CB>
+  void ForEachField(CB* cb) const {
+    if (path_ != kPathUnset) cb->OnPath(path_);
+    if (status_ != kStatusUnset) cb->OnStatus(status_);
+    if (method_ != HttpMethod::UNSET) cb->OnMethod(method_);
+    if (scheme_ != HttpScheme::UNSET) cb->OnScheme(scheme_);
+    for (int i = 0; i < static_cast<int>(NamedKeys::COUNT); i++) {
+      if (named_keys_[i] != nullptr) {
+        cb->OnNamedKey(static_cast<NamedKeys>(i), *named_keys_[i]);
+      }
+    }
+    if (te_ != HttpTe::UNSET) cb->OnTe(te_);
+    if (content_type_ != ContentType::UNSET) cb->OnContentType(content_type_);
+  }
+
  private:
   template <class T>
   bool SetFn(T* store, T newval, bool reset, T unset) {
@@ -213,6 +231,7 @@ class Collection {
   grpc_slice* named_keys_[static_cast<int>(NamedKeys::COUNT)] = {nullptr};
   static constexpr int kPathUnset = -1;
   int path_ = kPathUnset;
+  // http status
   static constexpr uint16_t kStatusUnset = 0;
   uint16_t status_ = kStatusUnset;
   static constexpr int16_t kGrpcStatusUnset = -1;
