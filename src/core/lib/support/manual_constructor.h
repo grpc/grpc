@@ -208,4 +208,4 @@ class ManualConstructor {
 
 }  // namespace grpc_core
 
-#endif
+#endif /* GRPC_CORE_LIB_SUPPORT_MANUAL_CONSTRUCTOR_H */

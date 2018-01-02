@@ -16,17 +16,23 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_VECTOR_H
-#define GRPC_CORE_LIB_SUPPORT_VECTOR_H
-
-#include "absl/container/inlined_vector.h"
-#include "src/core/lib/support/memory.h"
+#include "src/core/lib/support/tuple.h"
+#include <gtest/gtest.h>
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
+namespace testing {
 
-template <typename T, size_t N>
-using InlinedVector = absl::InlinedVector<T, N, Allocator<T>>;
+TEST(TupleTest, Simple) {
+  Tuple<int, int> tuple(21, 2);
+  EXPECT_EQ(42, TupleCall([](int a, int b) { return a * b; }, tuple));
+}
 
+}  // namespace testing
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SUPPORT_VECTOR_H */
+int main(int argc, char** argv) {
+  grpc_test_init(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

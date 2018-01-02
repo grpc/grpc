@@ -434,6 +434,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "support_tuple",
+    hdrs = ["src/core/lib/support/tuple.h"],
+)
+
+grpc_cc_library(
+    name = "support_closure_ref",
+    hdrs = ["src/core/lib/support/closure_ref.h"],
+    deps = [":support_tuple"],
+)
+
+grpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/profiling/basic_timers.cc",

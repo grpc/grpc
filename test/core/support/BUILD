@@ -202,6 +202,32 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "tuple_test",
+    srcs = ["tuple_test.cc"],
+    language = "C++",
+    deps = [
+        "//:support_tuple",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "closure_ref_test",
+    srcs = ["closure_ref_test.cc"],
+    language = "C++",
+    deps = [
+        "//:support_closure_ref",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
     name = "vector_test",
     srcs = ["vector_test.cc"],
     external_deps = [
