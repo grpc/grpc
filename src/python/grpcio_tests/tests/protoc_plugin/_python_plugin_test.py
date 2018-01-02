@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import collections
-from concurrent import futures
 import contextlib
 import distutils.spawn
 import errno
@@ -28,6 +27,7 @@ import unittest
 from six import moves
 
 import grpc
+from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
 import tests.protoc_plugin.protos.payload.test_payload_pb2 as payload_pb2
@@ -155,8 +155,7 @@ def _CreateService():
         def HalfDuplexCall(self, request_iter, context):
             return servicer_methods.HalfDuplexCall(request_iter, context)
 
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=test_constants.POOL_SIZE))
+    server = test_common.test_server()
     getattr(service_pb2_grpc, ADD_SERVICER_TO_SERVER_IDENTIFIER)(Servicer(),
                                                                  server)
     port = server.add_insecure_port('[::]:0')
@@ -177,8 +176,7 @@ def _CreateIncompleteService():
     class Servicer(getattr(service_pb2_grpc, SERVICER_IDENTIFIER)):
         pass
 
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=test_constants.POOL_SIZE))
+    server = test_common.test_server()
     getattr(service_pb2_grpc, ADD_SERVICER_TO_SERVER_IDENTIFIER)(Servicer(),
                                                                  server)
     port = server.add_insecure_port('[::]:0')

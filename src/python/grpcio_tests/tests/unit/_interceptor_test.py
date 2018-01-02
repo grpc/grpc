@@ -22,6 +22,7 @@ from concurrent import futures
 import grpc
 from grpc.framework.foundation import logging_pool
 
+from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 from tests.unit.framework.common import test_control
 
@@ -304,6 +305,7 @@ class InterceptorTest(unittest.TestCase):
 
         self._server = grpc.server(
             self._server_pool,
+            options=(('grpc.so_reuseport', 0),),
             interceptors=(_LoggingInterceptor('s1', self._record),
                           conditional_interceptor,
                           _LoggingInterceptor('s2', self._record),))

@@ -15,7 +15,7 @@
 
 set -e
 
-cd `dirname $0`/../../..
+cd "$(dirname "$0")/../../.."
 
 #
 # Make sure that all core struct/unions have a name or are typedef'ed

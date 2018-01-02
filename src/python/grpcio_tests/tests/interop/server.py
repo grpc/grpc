@@ -23,6 +23,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 from tests.interop import methods
 from tests.interop import resources
+from tests.unit import test_common
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -38,7 +39,7 @@ def serve():
         help='require a secure connection')
     args = parser.parse_args()
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = test_common.test_server()
     test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
                                                     server)
     if args.use_tls:

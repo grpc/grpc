@@ -78,19 +78,15 @@ cdef class Server:
       raise ValueError("server must be started and not shutting down")
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
-    cdef OperationTag operation_tag = OperationTag(tag, None)
-    operation_tag.operation_call = Call()
-    operation_tag.request_call_details = CallDetails()
-    grpc_metadata_array_init(&operation_tag._c_request_metadata)
-    operation_tag.references.extend([self, call_queue, server_queue])
-    operation_tag.is_new_request = True
-    cpython.Py_INCREF(operation_tag)
+    cdef _RequestCallTag request_call_tag = _RequestCallTag(tag)
+    request_call_tag.prepare()
+    cpython.Py_INCREF(request_call_tag)
     return grpc_server_request_call(
-        self.c_server, &operation_tag.operation_call.c_call,
-        &operation_tag.request_call_details.c_details,
-        &operation_tag._c_request_metadata,
+        self.c_server, &request_call_tag.call.c_call,
+        &request_call_tag.call_details.c_details,
+        &request_call_tag.c_invocation_metadata,
         call_queue.c_completion_queue, server_queue.c_completion_queue,
-        <cpython.PyObject *>operation_tag)
+        <cpython.PyObject *>request_call_tag)
 
   def register_completion_queue(
       self, CompletionQueue queue not None):
@@ -131,16 +127,14 @@ cdef class Server:
 
   cdef _c_shutdown(self, CompletionQueue queue, tag):
     self.is_shutting_down = True
-    operation_tag = OperationTag(tag, None)
-    operation_tag.shutting_down_server = self
-    cpython.Py_INCREF(operation_tag)
+    cdef _ServerShutdownTag server_shutdown_tag = _ServerShutdownTag(tag, self)
+    cpython.Py_INCREF(server_shutdown_tag)
     with nogil:
       grpc_server_shutdown_and_notify(
           self.c_server, queue.c_completion_queue,
-          <cpython.PyObject *>operation_tag)
+          <cpython.PyObject *>server_shutdown_tag)
 
   def shutdown(self, CompletionQueue queue not None, tag):
-    cdef OperationTag operation_tag
     if queue.is_shutting_down:
       raise ValueError("queue must be live")
     elif not self.is_started:
@@ -153,7 +147,8 @@ cdef class Server:
       self._c_shutdown(queue, tag)
 
   cdef notify_shutdown_complete(self):
-    # called only by a completion queue on receiving our shutdown operation tag
+    # called only after our server shutdown tag has emerged from a completion
+    # queue.
     self.is_shutdown = True
 
   def cancel_all_calls(self):

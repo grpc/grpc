@@ -212,6 +212,9 @@ finish:
     fd = nullptr;
   }
   done = (--ac->refs == 0);
+  // Create a copy of the data from "ac" to be accessed after the unlock, as
+  // "ac" and its contents may be deallocated by the time they are read.
+  const grpc_slice addr_str_slice = grpc_slice_from_copied_string(ac->addr_str);
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     char* error_descr;
@@ -225,9 +228,13 @@ finish:
     gpr_free(error_descr);
     gpr_free(desc);
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                               grpc_slice_from_copied_string(ac->addr_str));
+                               addr_str_slice /* takes ownership */);
+  } else {
+    grpc_slice_unref(addr_str_slice);
   }
   if (done) {
+    // This is safe even outside the lock, because "done", the sentinel, is
+    // populated *inside* the lock.
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
     grpc_channel_args_destroy(ac->channel_args);

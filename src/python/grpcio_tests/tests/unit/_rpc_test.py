@@ -21,6 +21,7 @@ from concurrent import futures
 import grpc
 from grpc.framework.foundation import logging_pool
 
+from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 from tests.unit.framework.common import test_control
 
@@ -169,9 +170,8 @@ class RPCTest(unittest.TestCase):
     def setUp(self):
         self._control = test_control.PauseFailControl()
         self._handler = _Handler(self._control)
-        self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
 
-        self._server = grpc.server(self._server_pool)
+        self._server = test_common.test_server()
         port = self._server.add_insecure_port('[::]:0')
         self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
         self._server.start()
@@ -180,7 +180,6 @@ class RPCTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(None)
-        self._server_pool.shutdown(wait=True)
 
     def testUnrecognizedMethod(self):
         request = b'abc'

@@ -40,6 +40,7 @@ from concurrent import futures
 
 import grpc
 from tests.unit import resources
+from tests.unit import test_common
 from tests.testing import _application_common
 from tests.testing import _server_application
 from tests.testing.proto import services_pb2_grpc
@@ -135,7 +136,7 @@ class _ServerSSLCertReloadTest(
         raise NotImplementedError()
 
     def setUp(self):
-        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        self.server = test_common.test_server()
         services_pb2_grpc.add_FirstServiceServicer_to_server(
             _server_application.FirstServiceServicer(), self.server)
         switch_cert_on_client_num = 10
@@ -407,7 +408,7 @@ class ServerSSLCertReloadTestCertConfigReuse(_ServerSSLCertReloadTest):
         return True
 
     def setUp(self):
-        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        self.server = test_common.test_server()
         services_pb2_grpc.add_FirstServiceServicer_to_server(
             _server_application.FirstServiceServicer(), self.server)
         self.cert_config_A = grpc.ssl_server_certificate_configuration(

@@ -102,183 +102,12 @@ else()
   set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
 endif()
 
-if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
-  if(NOT ZLIB_ROOT_DIR)
-    set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
-  endif()
-  set(ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}")
-  if(EXISTS "${ZLIB_ROOT_DIR}/CMakeLists.txt")
-      # TODO(jtattermusch): workaround for https://github.com/madler/zlib/issues/218
-      include_directories(${ZLIB_INCLUDE_DIR})
-
-      add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
-      if(TARGET zlibstatic)
-          set(_gRPC_ZLIB_LIBRARIES zlibstatic)
-      endif()
-  else()
-      message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
-  endif()
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ZLIB_PROVIDER is \"module\"")
-    set(gRPC_INSTALL FALSE)
-  endif()
-elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
-  find_package(ZLIB REQUIRED)
-  set(_gRPC_ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
-  set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
-endif()
-
-if("${gRPC_CARES_PROVIDER}" STREQUAL "module")
-  if(NOT CARES_ROOT_DIR)
-    set(CARES_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cares/cares)
-  endif()
-  set(CARES_SHARED OFF CACHE BOOL "disable shared library")
-  set(CARES_STATIC ON CACHE BOOL "link cares statically")
-  set(CARES_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cares/cares")
-  add_subdirectory(third_party/cares/cares)
-  if(TARGET c-ares)
-    set(_gRPC_CARES_LIBRARIES c-ares)
-  endif()
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_CARES_PROVIDER is \"module\"")
-    set(gRPC_INSTALL FALSE)
-  endif()
-elseif("${gRPC_CARES_PROVIDER}" STREQUAL "package")
-  find_package(c-ares REQUIRED CONFIG)
-  if(TARGET c-ares::cares)
-    set(_gRPC_CARES_LIBRARIES c-ares::cares)
-  endif()
-  set(_gRPC_FIND_CARES "if(NOT c-ares_FOUND)\n  find_package(c-ares CONFIG)\nendif()")
-endif()
-
-if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
-  # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
-  # Disable them unless they are explicitly requested from the cmake command line (when we assume
-  # gmock is downloaded to the right location inside protobuf).
-  if(NOT protobuf_BUILD_TESTS)
-    set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
-  endif()
-  # Disable building protobuf with zlib. Building protobuf with zlib breaks
-  # the build if zlib is not installed on the system.
-  if(NOT protobuf_WITH_ZLIB)
-    set(protobuf_WITH_ZLIB OFF CACHE BOOL "Build protobuf with zlib.")
-  endif()
-  if(NOT PROTOBUF_ROOT_DIR)
-    set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
-  endif()
-  set(PROTOBUF_WELLKNOWN_IMPORT_DIR ${PROTOBUF_ROOT_DIR}/src)
-  if(EXISTS "${PROTOBUF_ROOT_DIR}/cmake/CMakeLists.txt")
-    set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
-    add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
-    if(TARGET ${_gRPC_PROTOBUF_LIBRARY_NAME})
-      set(_gRPC_PROTOBUF_LIBRARIES ${_gRPC_PROTOBUF_LIBRARY_NAME})
-    endif()
-    if(TARGET libprotoc)
-      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
-    endif()
-    if(TARGET protoc)
-      set(_gRPC_PROTOBUF_PROTOC protoc)
-      set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protoc>)
-    endif()
-  else()
-      message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
-  endif()
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_PROTOBUF_PROVIDER is \"module\"")
-    set(gRPC_INSTALL FALSE)
-  endif()
-elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
-  find_package(Protobuf REQUIRED ${gRPC_PROTOBUF_PACKAGE_TYPE})
-  if(Protobuf_FOUND OR PROTOBUF_FOUND)
-    if(TARGET protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
-      set(_gRPC_PROTOBUF_LIBRARIES protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
-    else()
-      set(_gRPC_PROTOBUF_LIBRARIES ${PROTOBUF_LIBRARIES})
-    endif()
-    if(TARGET protobuf::libprotoc)
-      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
-    else()
-      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES ${PROTOBUF_PROTOC_LIBRARIES})
-    endif()
-    if(TARGET protobuf::protoc)
-      set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
-      set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protobuf::protoc>)
-    else()
-      set(_gRPC_PROTOBUF_PROTOC ${PROTOBUF_PROTOC_EXECUTABLE})
-      set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE ${PROTOBUF_PROTOC_EXECUTABLE})
-    endif()
-    set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND AND NOT PROTOBUF_FOUND)\n  find_package(Protobuf ${gRPC_PROTOBUF_PACKAGE_TYPE})\nendif()")
-  endif()
-  if(PROTOBUF_FOUND)
-    include_directories(${PROTOBUF_INCLUDE_DIRS})
-  endif()
-  set(PROTOBUF_WELLKNOWN_IMPORT_DIR /usr/local/include)
-endif()
-
-if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
-  if(NOT BORINGSSL_ROOT_DIR)
-    set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
-  endif()
-  if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
-    set(OPENSSL_NO_ASM ON)  # make boringssl buildable with Visual Studio
-    add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
-    if(TARGET ssl)
-      set(_gRPC_SSL_LIBRARIES ssl)
-      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/include)
-    endif()
-  else()
-      message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
-  endif()
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_SSL_PROVIDER is \"module\"")
-    set(gRPC_INSTALL FALSE)
-  endif()
-elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
-  find_package(OpenSSL REQUIRED)
-  set(_gRPC_SSL_LIBRARIES ${OPENSSL_LIBRARIES})
-  set(_gRPC_SSL_INCLUDE_DIR ${OPENSSL_INCLUDE_DIR})
-  set(_gRPC_FIND_SSL "if(NOT OPENSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
-endif()
-
-if("${gRPC_GFLAGS_PROVIDER}" STREQUAL "module")
-  if(NOT GFLAGS_ROOT_DIR)
-    set(GFLAGS_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gflags)
-  endif()
-  if(EXISTS "${GFLAGS_ROOT_DIR}/CMakeLists.txt")
-      add_subdirectory(${GFLAGS_ROOT_DIR} third_party/gflags)
-      if(TARGET gflags_static)
-          set(_gRPC_GFLAGS_LIBRARIES gflags_static)
-      endif()
-  else()
-      message(WARNING "gRPC_GFLAGS_PROVIDER is \"module\" but GFLAGS_ROOT_DIR is wrong")
-  endif()
-elseif("${gRPC_GFLAGS_PROVIDER}" STREQUAL "package")
-  find_package(gflags)
-  if(TARGET gflags::gflags)
-    set(_gRPC_GFLAGS_LIBRARIES gflags::gflags)
-  endif()
-  set(_gRPC_FIND_GFLAGS "if(NOT gflags_FOUND)\n  find_package(gflags)\nendif()")
-endif()
-
-if("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "module")
-  if(NOT BENCHMARK_ROOT_DIR)
-    set(BENCHMARK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/benchmark)
-  endif()
-  if(EXISTS "${BENCHMARK_ROOT_DIR}/CMakeLists.txt")
-      add_subdirectory(${BENCHMARK_ROOT_DIR} third_party/benchmark)
-      if(TARGET benchmark)
-          set(_gRPC_BENCHMARK_LIBRARIES benchmark)
-      endif()
-  else()
-      message(WARNING "gRPC_BENCHMARK_PROVIDER is \"module\" but BENCHMARK_ROOT_DIR is wrong")
-  endif()
-elseif("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "package")
-  find_package(benchmark)
-  if(TARGET benchmark::benchmark)
-    set(_gRPC_BENCHMARK_LIBRARIES benchmark::benchmark)
-  endif()
-  set(_gRPC_FIND_BENCHMARK "if(NOT benchmark_FOUND)\n  find_package(benchmark)\nendif()")
-endif()
+include(cmake/zlib.cmake)
+include(cmake/cares.cmake)
+include(cmake/protobuf.cmake)
+include(cmake/ssl.cmake)
+include(cmake/gflags.cmake)
+include(cmake/benchmark.cmake)
 
 if(NOT MSVC)
   set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
@@ -381,7 +210,6 @@ add_dependencies(buildtests_c algorithm_test)
 add_dependencies(buildtests_c alloc_test)
 add_dependencies(buildtests_c alpn_test)
 add_dependencies(buildtests_c arena_test)
-add_dependencies(buildtests_c backoff_test)
 add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
@@ -634,6 +462,7 @@ add_custom_target(buildtests_cxx)
 add_dependencies(buildtests_cxx alarm_cpp_test)
 add_dependencies(buildtests_cxx async_end2end_test)
 add_dependencies(buildtests_cxx auth_property_iterator_test)
+add_dependencies(buildtests_cxx backoff_test)
 add_dependencies(buildtests_cxx bdp_estimator_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_arena)
@@ -5110,35 +4939,6 @@ target_link_libraries(arena_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(backoff_test
-  test/core/backoff/backoff_test.cc
-)
-
-
-target_include_directories(backoff_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(backoff_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(bad_server_response_test
   test/core/end2end/bad_server_response_test.cc
 )
@@ -8941,6 +8741,44 @@ target_link_libraries(auth_property_iterator_test
   grpc++_test_util
   grpc_test_util
   grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(backoff_test
+  test/core/backoff/backoff_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(backoff_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(backoff_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc
   gpr_test_util
   gpr

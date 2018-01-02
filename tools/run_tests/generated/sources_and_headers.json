@@ -104,23 +104,6 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "backoff_test", 
-    "src": [
-      "test/core/backoff/backoff_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
       "grpc_test_util", 
       "test_tcp_server"
     ], 
@@ -2493,6 +2476,23 @@
     "name": "auth_property_iterator_test", 
     "src": [
       "test/cpp/common/auth_property_iterator_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "backoff_test", 
+    "src": [
+      "test/core/backoff/backoff_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
