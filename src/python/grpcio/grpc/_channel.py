@@ -29,24 +29,32 @@ _USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 _EMPTY_FLAGS = 0
 _INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
 
-_UNARY_UNARY_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
-                            cygrpc.OperationType.send_message,
-                            cygrpc.OperationType.send_close_from_client,
-                            cygrpc.OperationType.receive_initial_metadata,
-                            cygrpc.OperationType.receive_message,
-                            cygrpc.OperationType.receive_status_on_client,)
-_UNARY_STREAM_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
-                             cygrpc.OperationType.send_message,
-                             cygrpc.OperationType.send_close_from_client,
-                             cygrpc.OperationType.receive_initial_metadata,
-                             cygrpc.OperationType.receive_status_on_client,)
-_STREAM_UNARY_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
-                             cygrpc.OperationType.receive_initial_metadata,
-                             cygrpc.OperationType.receive_message,
-                             cygrpc.OperationType.receive_status_on_client,)
-_STREAM_STREAM_INITIAL_DUE = (cygrpc.OperationType.send_initial_metadata,
-                              cygrpc.OperationType.receive_initial_metadata,
-                              cygrpc.OperationType.receive_status_on_client,)
+_UNARY_UNARY_INITIAL_DUE = (
+    cygrpc.OperationType.send_initial_metadata,
+    cygrpc.OperationType.send_message,
+    cygrpc.OperationType.send_close_from_client,
+    cygrpc.OperationType.receive_initial_metadata,
+    cygrpc.OperationType.receive_message,
+    cygrpc.OperationType.receive_status_on_client,
+)
+_UNARY_STREAM_INITIAL_DUE = (
+    cygrpc.OperationType.send_initial_metadata,
+    cygrpc.OperationType.send_message,
+    cygrpc.OperationType.send_close_from_client,
+    cygrpc.OperationType.receive_initial_metadata,
+    cygrpc.OperationType.receive_status_on_client,
+)
+_STREAM_UNARY_INITIAL_DUE = (
+    cygrpc.OperationType.send_initial_metadata,
+    cygrpc.OperationType.receive_initial_metadata,
+    cygrpc.OperationType.receive_message,
+    cygrpc.OperationType.receive_status_on_client,
+)
+_STREAM_STREAM_INITIAL_DUE = (
+    cygrpc.OperationType.send_initial_metadata,
+    cygrpc.OperationType.receive_initial_metadata,
+    cygrpc.OperationType.receive_status_on_client,
+)
 
 _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE = (
     'Exception calling channel subscription callback!')
@@ -457,7 +465,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
                 cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
                 cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
-                cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),)
+                cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+            )
             return state, operations, deadline, deadline_timespec, None
 
     def _blocking(self, request, timeout, metadata, credentials):
@@ -538,11 +547,12 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                     (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
                     event_handler)
                 operations = (
-                    cygrpc.SendInitialMetadataOperation(
-                        metadata, _EMPTY_FLAGS), cygrpc.SendMessageOperation(
-                            serialized_request, _EMPTY_FLAGS),
+                    cygrpc.SendInitialMetadataOperation(metadata, _EMPTY_FLAGS),
+                    cygrpc.SendMessageOperation(serialized_request,
+                                                _EMPTY_FLAGS),
                     cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
-                    cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),)
+                    cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+                )
                 call_error = call.start_client_batch(operations, event_handler)
                 if call_error != cygrpc.CallError.ok:
                     _call_error_set_RPCstate(state, call_error, metadata)
@@ -576,7 +586,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             operations = (
                 cygrpc.SendInitialMetadataOperation(metadata, _EMPTY_FLAGS),
                 cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
-                cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),)
+                cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+            )
             call_error = call.start_client_batch(operations, None)
             _check_call_error(call_error, metadata)
             _consume_request_iterator(request_iterator, state, call,
@@ -627,7 +638,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             operations = (
                 cygrpc.SendInitialMetadataOperation(metadata, _EMPTY_FLAGS),
                 cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
-                cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),)
+                cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+            )
             call_error = call.start_client_batch(operations, event_handler)
             if call_error != cygrpc.CallError.ok:
                 _call_error_set_RPCstate(state, call_error, metadata)
@@ -666,7 +678,8 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                 event_handler)
             operations = (
                 cygrpc.SendInitialMetadataOperation(metadata, _EMPTY_FLAGS),
-                cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),)
+                cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+            )
             call_error = call.start_client_batch(operations, event_handler)
             if call_error != cygrpc.CallError.ok:
                 _call_error_set_RPCstate(state, call_error, metadata)
@@ -787,7 +800,11 @@ def _deliver(state, initial_connectivity, initial_callbacks):
 
 def _spawn_delivery(state, callbacks):
     delivering_thread = threading.Thread(
-        target=_deliver, args=(state, state.connectivity, callbacks,))
+        target=_deliver, args=(
+            state,
+            state.connectivity,
+            callbacks,
+        ))
     delivering_thread.start()
     state.delivering = True
 
@@ -862,17 +879,16 @@ def _subscribe(state, callback, try_to_connect):
 
 def _unsubscribe(state, callback):
     with state.lock:
-        for index, (subscribed_callback, unused_connectivity
-                   ) in enumerate(state.callbacks_and_connectivities):
+        for index, (subscribed_callback, unused_connectivity) in enumerate(
+                state.callbacks_and_connectivities):
             if callback == subscribed_callback:
                 state.callbacks_and_connectivities.pop(index)
                 break
 
 
 def _options(options):
-    return list(options) + [
-        (cygrpc.ChannelArgKey.primary_user_agent_string, _USER_AGENT)
-    ]
+    return list(options) + [(cygrpc.ChannelArgKey.primary_user_agent_string,
+                             _USER_AGENT)]
 
 
 class Channel(grpc.Channel):
@@ -887,8 +903,8 @@ class Channel(grpc.Channel):
       credentials: A cygrpc.ChannelCredentials or None.
     """
         self._channel = cygrpc.Channel(
-            _common.encode(target),
-            _common.channel_args(_options(options)), credentials)
+            _common.encode(target), _common.channel_args(_options(options)),
+            credentials)
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
 
@@ -908,8 +924,7 @@ class Channel(grpc.Channel):
                     request_serializer=None,
                     response_deserializer=None):
         return _UnaryUnaryMultiCallable(
-            self._channel,
-            _channel_managed_call_management(self._call_state),
+            self._channel, _channel_managed_call_management(self._call_state),
             _common.encode(method), request_serializer, response_deserializer)
 
     def unary_stream(self,
@@ -917,8 +932,7 @@ class Channel(grpc.Channel):
                      request_serializer=None,
                      response_deserializer=None):
         return _UnaryStreamMultiCallable(
-            self._channel,
-            _channel_managed_call_management(self._call_state),
+            self._channel, _channel_managed_call_management(self._call_state),
             _common.encode(method), request_serializer, response_deserializer)
 
     def stream_unary(self,
@@ -926,8 +940,7 @@ class Channel(grpc.Channel):
                      request_serializer=None,
                      response_deserializer=None):
         return _StreamUnaryMultiCallable(
-            self._channel,
-            _channel_managed_call_management(self._call_state),
+            self._channel, _channel_managed_call_management(self._call_state),
             _common.encode(method), request_serializer, response_deserializer)
 
     def stream_stream(self,
@@ -935,8 +948,7 @@ class Channel(grpc.Channel):
                       request_serializer=None,
                       response_deserializer=None):
         return _StreamStreamMultiCallable(
-            self._channel,
-            _channel_managed_call_management(self._call_state),
+            self._channel, _channel_managed_call_management(self._call_state),
             _common.encode(method), request_serializer, response_deserializer)
 
     def __del__(self):

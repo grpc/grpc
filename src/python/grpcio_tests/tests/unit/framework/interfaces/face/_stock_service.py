@@ -33,8 +33,8 @@ def _get_last_trade_price(stock_request, stock_reply_callback, control, active):
     if active():
         stock_reply_callback(
             stock_pb2.StockReply(
-                symbol=stock_request.symbol, price=_price(
-                    stock_request.symbol)))
+                symbol=stock_request.symbol,
+                price=_price(stock_request.symbol)))
     else:
         raise abandonment.Abandoned()
 

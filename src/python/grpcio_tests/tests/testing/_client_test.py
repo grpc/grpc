@@ -193,8 +193,10 @@ class ClientTest(unittest.TestCase):
             rpc.take_request()
             rpc.take_request()
             rpc.requests_closed()
-            rpc.send_initial_metadata((
-                ('my_metadata_key', 'My Metadata Value!',),))
+            rpc.send_initial_metadata(((
+                'my_metadata_key',
+                'My Metadata Value!',
+            ),))
         for rpc in rpcs[:-1]:
             rpc.terminate(_application_common.STREAM_UNARY_RESPONSE, (),
                           grpc.StatusCode.OK, '')

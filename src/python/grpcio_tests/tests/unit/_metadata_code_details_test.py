@@ -36,16 +36,16 @@ _UNARY_STREAM = 'UnaryStream'
 _STREAM_UNARY = 'StreamUnary'
 _STREAM_STREAM = 'StreamStream'
 
-_CLIENT_METADATA = (('client-md-key', 'client-md-key'),
-                    ('client-md-key-bin', b'\x00\x01'))
+_CLIENT_METADATA = (('client-md-key', 'client-md-key'), ('client-md-key-bin',
+                                                         b'\x00\x01'))
 
-_SERVER_INITIAL_METADATA = (
-    ('server-initial-md-key', 'server-initial-md-value'),
-    ('server-initial-md-key-bin', b'\x00\x02'))
+_SERVER_INITIAL_METADATA = (('server-initial-md-key',
+                             'server-initial-md-value'),
+                            ('server-initial-md-key-bin', b'\x00\x02'))
 
-_SERVER_TRAILING_METADATA = (
-    ('server-trailing-md-key', 'server-trailing-md-value'),
-    ('server-trailing-md-key-bin', b'\x00\x03'))
+_SERVER_TRAILING_METADATA = (('server-trailing-md-key',
+                              'server-trailing-md-value'),
+                             ('server-trailing-md-key-bin', b'\x00\x03'))
 
 _NON_OK_CODE = grpc.StatusCode.NOT_FOUND
 _DETAILS = 'Test details!'
@@ -193,17 +193,33 @@ class MetadataCodeDetailsTest(unittest.TestCase):
 
         channel = grpc.insecure_channel('localhost:{}'.format(port))
         self._unary_unary = channel.unary_unary(
-            '/'.join(('', _SERVICE, _UNARY_UNARY,)),
+            '/'.join((
+                '',
+                _SERVICE,
+                _UNARY_UNARY,
+            )),
             request_serializer=_REQUEST_SERIALIZER,
-            response_deserializer=_RESPONSE_DESERIALIZER,)
-        self._unary_stream = channel.unary_stream(
-            '/'.join(('', _SERVICE, _UNARY_STREAM,)),)
-        self._stream_unary = channel.stream_unary(
-            '/'.join(('', _SERVICE, _STREAM_UNARY,)),)
+            response_deserializer=_RESPONSE_DESERIALIZER,
+        )
+        self._unary_stream = channel.unary_stream('/'.join((
+            '',
+            _SERVICE,
+            _UNARY_STREAM,
+        )),)
+        self._stream_unary = channel.stream_unary('/'.join((
+            '',
+            _SERVICE,
+            _STREAM_UNARY,
+        )),)
         self._stream_stream = channel.stream_stream(
-            '/'.join(('', _SERVICE, _STREAM_STREAM,)),
+            '/'.join((
+                '',
+                _SERVICE,
+                _STREAM_STREAM,
+            )),
             request_serializer=_REQUEST_SERIALIZER,
-            response_deserializer=_RESPONSE_DESERIALIZER,)
+            response_deserializer=_RESPONSE_DESERIALIZER,
+        )
 
     def testSuccessfulUnaryUnary(self):
         self._servicer.set_details(_DETAILS)

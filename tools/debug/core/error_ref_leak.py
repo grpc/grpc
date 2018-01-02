@@ -39,7 +39,7 @@ for line in data:
         elif line[0] == "realloc":
             errs.remove(line[1])
             errs.append(line[3])
-        # explicitly look for the last dereference 
+        # explicitly look for the last dereference
         elif line[1] == "1" and line[3] == "0":
             assert (err in errs)
             errs.remove(err)

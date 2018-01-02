@@ -29,8 +29,10 @@ _EMPTY_FLAGS = 0
 
 
 def _metadata_plugin(context, callback):
-    callback(((_CALL_CREDENTIALS_METADATA_KEY,
-               _CALL_CREDENTIALS_METADATA_VALUE,),), cygrpc.StatusCode.ok, b'')
+    callback(((
+        _CALL_CREDENTIALS_METADATA_KEY,
+        _CALL_CREDENTIALS_METADATA_VALUE,
+    ),), cygrpc.StatusCode.ok, b'')
 
 
 class TypeSmokeTest(unittest.TestCase):
@@ -113,13 +115,12 @@ class ServerClientMixin(object):
                 cygrpc.ChannelArg(cygrpc.ChannelArgKey.ssl_target_name_override,
                                   host_override)
             ])
-            self.client_channel = cygrpc.Channel(
-                'localhost:{}'.format(self.port).encode(),
-                client_channel_arguments, client_credentials)
+            self.client_channel = cygrpc.Channel('localhost:{}'.format(
+                self.port).encode(), client_channel_arguments,
+                                                 client_credentials)
         else:
-            self.client_channel = cygrpc.Channel(
-                'localhost:{}'.format(self.port).encode(),
-                cygrpc.ChannelArgs([]))
+            self.client_channel = cygrpc.Channel('localhost:{}'.format(
+                self.port).encode(), cygrpc.ChannelArgs([]))
         if host_override:
             self.host_argument = None  # default host
             self.expected_host = host_override
@@ -152,8 +153,8 @@ class ServerClientMixin(object):
                 self.assertTrue(event.success)
                 self.assertIs(tag, event.tag)
             except Exception as error:
-                raise Exception(
-                    "Error in '{}': {}".format(description, error.message))
+                raise Exception("Error in '{}': {}".format(
+                    description, error.message))
             return event
 
         return test_utilities.SimpleFuture(performer)
@@ -189,8 +190,15 @@ class ServerClientMixin(object):
             None, 0, self.client_completion_queue, METHOD, self.host_argument,
             cygrpc_deadline)
         client_initial_metadata = (
-            (CLIENT_METADATA_ASCII_KEY, CLIENT_METADATA_ASCII_VALUE,),
-            (CLIENT_METADATA_BIN_KEY, CLIENT_METADATA_BIN_VALUE,),)
+            (
+                CLIENT_METADATA_ASCII_KEY,
+                CLIENT_METADATA_ASCII_VALUE,
+            ),
+            (
+                CLIENT_METADATA_BIN_KEY,
+                CLIENT_METADATA_BIN_VALUE,
+            ),
+        )
         client_start_batch_result = client_call.start_client_batch([
             cygrpc.SendInitialMetadataOperation(client_initial_metadata,
                                                 _EMPTY_FLAGS),
@@ -220,14 +228,18 @@ class ServerClientMixin(object):
 
         server_call_tag = object()
         server_call = request_event.call
-        server_initial_metadata = (
-            (SERVER_INITIAL_METADATA_KEY, SERVER_INITIAL_METADATA_VALUE,),)
-        server_trailing_metadata = (
-            (SERVER_TRAILING_METADATA_KEY, SERVER_TRAILING_METADATA_VALUE,),)
+        server_initial_metadata = ((
+            SERVER_INITIAL_METADATA_KEY,
+            SERVER_INITIAL_METADATA_VALUE,
+        ),)
+        server_trailing_metadata = ((
+            SERVER_TRAILING_METADATA_KEY,
+            SERVER_TRAILING_METADATA_VALUE,
+        ),)
         server_start_batch_result = server_call.start_server_batch([
-            cygrpc.SendInitialMetadataOperation(
-                server_initial_metadata,
-                _EMPTY_FLAGS), cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
+            cygrpc.SendInitialMetadataOperation(server_initial_metadata,
+                                                _EMPTY_FLAGS),
+            cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
             cygrpc.SendMessageOperation(RESPONSE, _EMPTY_FLAGS),
             cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
             cygrpc.SendStatusFromServerOperation(
@@ -377,10 +389,11 @@ class InsecureServerInsecureClient(unittest.TestCase, ServerClientMixin):
 class SecureServerSecureClient(unittest.TestCase, ServerClientMixin):
 
     def setUp(self):
-        server_credentials = cygrpc.server_credentials_ssl(None, [
-            cygrpc.SslPemKeyCertPair(resources.private_key(),
-                                     resources.certificate_chain())
-        ], False)
+        server_credentials = cygrpc.server_credentials_ssl(
+            None, [
+                cygrpc.SslPemKeyCertPair(resources.private_key(),
+                                         resources.certificate_chain())
+            ], False)
         client_credentials = cygrpc.SSLChannelCredentials(
             resources.test_root_certificates(), None, None)
         self.setUpMixin(server_credentials, client_credentials,

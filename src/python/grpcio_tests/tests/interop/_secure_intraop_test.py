@@ -34,15 +34,16 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
                                                         self.server)
         port = self.server.add_secure_port(
             '[::]:0',
-            grpc.ssl_server_credentials(
-                [(resources.private_key(), resources.certificate_chain())]))
+            grpc.ssl_server_credentials([(resources.private_key(),
+                                          resources.certificate_chain())]))
         self.server.start()
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel('localhost:{}'.format(port),
                                 grpc.ssl_channel_credentials(
-                                    resources.test_root_certificates()), (
-                                        ('grpc.ssl_target_name_override',
-                                         _SERVER_HOST_OVERRIDE,),)))
+                                    resources.test_root_certificates()), ((
+                                        'grpc.ssl_target_name_override',
+                                        _SERVER_HOST_OVERRIDE,
+                                    ),)))
 
 
 if __name__ == '__main__':

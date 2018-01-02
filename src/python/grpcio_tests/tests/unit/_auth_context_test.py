@@ -29,8 +29,12 @@ _RESPONSE = b'\x00\x00\x00'
 _UNARY_UNARY = '/test/UnaryUnary'
 
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
-_CLIENT_IDS = (b'*.test.google.fr', b'waterzooi.test.google.be',
-               b'*.test.youtube.com', b'192.168.1.3',)
+_CLIENT_IDS = (
+    b'*.test.google.fr',
+    b'waterzooi.test.google.be',
+    b'*.test.youtube.com',
+    b'192.168.1.3',
+)
 _ID = 'id'
 _ID_KEY = 'id_key'
 _AUTH_CTX = 'auth_ctx'
@@ -39,7 +43,10 @@ _PRIVATE_KEY = resources.private_key()
 _CERTIFICATE_CHAIN = resources.certificate_chain()
 _TEST_ROOT_CERTIFICATES = resources.test_root_certificates()
 _SERVER_CERTS = ((_PRIVATE_KEY, _CERTIFICATE_CHAIN),)
-_PROPERTY_OPTIONS = (('grpc.ssl_target_name_override', _SERVER_HOST_OVERRIDE,),)
+_PROPERTY_OPTIONS = ((
+    'grpc.ssl_target_name_override',
+    _SERVER_HOST_OVERRIDE,
+),)
 
 
 def handle_unary_unary(request, servicer_context):

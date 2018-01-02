@@ -48,7 +48,8 @@ def _args():
         '--loops',
         type=int,
         default=4,
-        help='Number of loops for each benchmark. More loops cuts down on noise')
+        help='Number of loops for each benchmark. More loops cuts down on noise'
+    )
     argp.add_argument(
         '-j',
         '--jobs',
@@ -128,8 +129,8 @@ def diff(scenarios, loops, old, new):
     rows = []
     for sn in scenarios:
         mdn_diff = abs(_median(new_data[sn]) - _median(old_data[sn]))
-        print('%s: %s=%r %s=%r mdn_diff=%r' %
-              (sn, new, new_data[sn], old, old_data[sn], mdn_diff))
+        print('%s: %s=%r %s=%r mdn_diff=%r' % (sn, new, new_data[sn], old,
+                                               old_data[sn], mdn_diff))
         s = bm_speedup.speedup(new_data[sn], old_data[sn], 10e-5)
         if abs(s) > 3 and mdn_diff > 0.5:
             rows.append([sn, '%+d%%' % s])

@@ -110,8 +110,8 @@ def insecure_channel(host, port):
   Returns:
     A Channel to the remote host through which RPCs may be conducted.
   """
-    channel = grpc.insecure_channel(host
-                                    if port is None else '%s:%d' % (host, port))
+    channel = grpc.insecure_channel(host if port is None else '%s:%d' % (host,
+                                                                         port))
     return Channel(channel)
 
 

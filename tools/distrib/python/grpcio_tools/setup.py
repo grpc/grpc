@@ -196,7 +196,8 @@ def extension_modules():
         language='c++',
         define_macros=list(DEFINE_MACROS),
         extra_compile_args=list(EXTRA_COMPILE_ARGS),
-        extra_link_args=list(EXTRA_LINK_ARGS),)
+        extra_link_args=list(EXTRA_LINK_ARGS),
+    )
     extensions = [plugin_ext]
     if BUILD_WITH_CYTHON:
         from Cython import Build
@@ -220,4 +221,5 @@ setuptools.setup(
         'protobuf>=3.5.0.post1',
         'grpcio>={version}'.format(version=grpc_version.VERSION),
     ],
-    package_data=package_data(),)
+    package_data=package_data(),
+)

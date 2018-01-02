@@ -124,8 +124,8 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(_GreeterServicer(),
                                                       server)
-    route_guide_pb2_grpc.add_RouteGuideServicer_to_server(_RouteGuideServicer(),
-                                                          server)
+    route_guide_pb2_grpc.add_RouteGuideServicer_to_server(
+        _RouteGuideServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     try:

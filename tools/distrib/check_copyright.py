@@ -84,13 +84,15 @@ _EXEMPT = frozenset((
     # census.proto copied from github
     'tools/grpcz/census.proto',
     # status.proto copied from googleapis
-    'src/proto/grpc/status/status.proto',))
+    'src/proto/grpc/status/status.proto',
+))
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) gRPC authors.'
-RE_LICENSE = dict((k, r'\n'.join(
-    LICENSE_PREFIX[k] + (RE_YEAR
-                         if re.search(RE_YEAR, line) else re.escape(line))
-    for line in LICENSE_NOTICE)) for k, v in LICENSE_PREFIX.iteritems())
+RE_LICENSE = dict(
+    (k, r'\n'.join(LICENSE_PREFIX[k] +
+                   (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
+                   for line in LICENSE_NOTICE))
+    for k, v in LICENSE_PREFIX.iteritems())
 
 if args.precommit:
     FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''

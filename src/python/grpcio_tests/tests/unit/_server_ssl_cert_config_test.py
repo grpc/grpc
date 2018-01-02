@@ -74,7 +74,8 @@ def _create_client_stub(
         expect_success,
         root_certificates=None,
         private_key=None,
-        certificate_chain=None,):
+        certificate_chain=None,
+):
     channel = grpc.secure_channel('localhost:{}'.format(port),
                                   grpc.ssl_channel_credentials(
                                       root_certificates=root_certificates,
