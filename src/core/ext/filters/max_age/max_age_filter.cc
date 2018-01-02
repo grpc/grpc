@@ -37,7 +37,8 @@
 #define MAX_CONNECTION_IDLE_INTEGER_OPTIONS \
   { DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX }
 
-typedef struct channel_data {
+namespace {
+struct channel_data {
   /* We take a reference to the channel stack for the timer callback */
   grpc_channel_stack* channel_stack;
   /* Guards access to max_age_timer, max_age_timer_pending, max_age_grace_timer
@@ -84,7 +85,8 @@ typedef struct channel_data {
   grpc_connectivity_state connectivity_state;
   /* Number of active calls */
   gpr_atm call_count;
-} channel_data;
+};
+}  // namespace
 
 /* Increase the nubmer of active calls. Before the increasement, if there are no
    calls, the max_idle_timer should be cancelled. */

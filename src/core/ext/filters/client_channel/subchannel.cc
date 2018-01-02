@@ -59,11 +59,13 @@
   ((grpc_connected_subchannel*)(gpr_atm_##barrier##_load( \
       &(subchannel)->connected_subchannel)))
 
-typedef struct {
+namespace {
+struct state_watcher {
   grpc_closure closure;
   grpc_subchannel* subchannel;
   grpc_connectivity_state connectivity_state;
-} state_watcher;
+};
+}  // namespace
 
 typedef struct external_state_watcher {
   grpc_subchannel* subchannel;
