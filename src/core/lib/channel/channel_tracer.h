@@ -26,10 +26,10 @@
 /* Forward declaration */
 typedef struct grpc_channel_tracer grpc_channel_tracer;
 
-// #define GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_channel_tracer_refcount;
 
 /* Creates a new tracer. The caller owns a reference to the returned tracer. */
-#ifdef GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
+#ifndef NDEBUG
 grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes, intptr_t uuid,
                                                 const char* file, int line,
                                                 const char* func);
@@ -42,7 +42,7 @@ grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
   grpc_channel_tracer_create(max_nodes, id)
 #endif
 
-#ifdef GRPC_CHANNEL_TRACER_REFCOUNT_DEBUG
+#ifndef NDEBUG
 grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer,
                                              const char* file, int line,
                                              const char* func);
