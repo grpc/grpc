@@ -2046,6 +2046,12 @@ static grpc_error* removal_error(grpc_error* extra_error, grpc_chttp2_stream* s,
                                                              refs, nrefs);
   }
   GRPC_ERROR_UNREF(extra_error);
+  // Stream removal errors should return UNAVAILABLE to allow implementations
+  // to retry the RPC.
+  if (!grpc_error_has_clear_grpc_status(error)) {
+    error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAVAILABLE);
+  }
   return error;
 }
 
