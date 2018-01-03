@@ -233,7 +233,7 @@ void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) { gpr_ref(&t->refs); }
 static const grpc_transport_vtable* get_vtable(void);
 
 // -1 == unset, 0 == disabled, 1 == enabled
-static int flow_control_enabled = -1;
+static gpr_atm flow_control_enabled = -1;
 
 static void init_transport(grpc_chttp2_transport* t,
                            const grpc_channel_args* channel_args,
@@ -520,17 +520,17 @@ static void init_transport(grpc_chttp2_transport* t,
     }
   }
 
-  if (flow_control_enabled == -1) {
+  if (gpr_atm_no_barrier_load(&flow_control_enabled) == -1) {
     char* env_variable = gpr_getenv("GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL");
     if (env_variable != nullptr) {
-      flow_control_enabled = 0;
+      gpr_atm_no_barrier_store(&flow_control_enabled, 0);
     } else {
-      flow_control_enabled = 1;
+      gpr_atm_no_barrier_store(&flow_control_enabled, 1);
     }
     gpr_free(env_variable);
   }
 
-  if (flow_control_enabled) {
+  if (gpr_atm_no_barrier_load(&flow_control_enabled)) {
     t->flow_control.Init<grpc_core::chttp2::TransportFlowControl>(t,
                                                                   enable_bdp);
   } else {
