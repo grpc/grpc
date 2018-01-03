@@ -53,6 +53,7 @@
       break;
     default:
       NSLog(@"Invalid compression algorithm");
+      abort();
   }
 }
 
