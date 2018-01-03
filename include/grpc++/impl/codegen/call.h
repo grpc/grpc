@@ -622,6 +622,7 @@ class CallOpSetInterface : public CompletionQueueTag {
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
   virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
+  virtual void SneakyExecute(grpc_call* call) {}
 };
 
 /// Primary implementaiton of CallOpSetInterface.

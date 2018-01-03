@@ -49,6 +49,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
 
   void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override;
   bool FinalizeResult(void** tag, bool* status) override;
+  void SneakyExecute(grpc_call* call) override;
 
   bool CheckCancelled(CompletionQueue* cq) {
     cq->TryPluck(this);
@@ -77,12 +78,34 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   int cancelled_;
 };
 
+}
+
+static void completion_op_callback(void* arg, grpc_error* error) {
+  void* unused_tag;
+  bool unused_ok;
+  grpc::ServerContext::CompletionOp* op = (grpc::ServerContext::CompletionOp*) arg;
+  op->FinalizeResult(&unused_tag, &unused_ok);
+}
+
+namespace grpc {
+
 void ServerContext::CompletionOp::Unref() {
   std::unique_lock<std::mutex> lock(mu_);
   if (--refs_ == 0) {
     lock.unlock();
     delete this;
   }
+}
+
+void ServerContext::CompletionOp::SneakyExecute(grpc_call* call) {
+  grpc_op ops;
+  ops.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  ops.data.recv_close_on_server.cancelled = &cancelled_;
+  ops.flags = 0;
+  ops.reserved = nullptr;
+
+  grpc_closure* closure = GRPC_CLOSURE_CREATE(completion_op_callback, this, grpc_schedule_on_exec_ctx);
+  grpc_call_start_batch_and_execute(call, &ops, 1, closure);
 }
 
 void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,
@@ -151,8 +174,10 @@ void ServerContext::BeginCompletionOp(internal::Call* call) {
   completion_op_ = new CompletionOp();
   if (has_notify_when_done_tag_) {
     completion_op_->set_tag(async_notify_when_done_tag_);
+    call->PerformOps(completion_op_);
+  } else {
+    completion_op_->SneakyExecute(call->call());
   }
-  call->PerformOps(completion_op_);
 }
 
 internal::CompletionQueueTag* ServerContext::GetCompletionOpTag() {
