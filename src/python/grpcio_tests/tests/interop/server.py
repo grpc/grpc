@@ -45,8 +45,8 @@ def serve():
     if args.use_tls:
         private_key = resources.private_key()
         certificate_chain = resources.certificate_chain()
-        credentials = grpc.ssl_server_credentials((
-            (private_key, certificate_chain),))
+        credentials = grpc.ssl_server_credentials(((private_key,
+                                                    certificate_chain),))
         server.add_secure_port('[::]:{}'.format(args.port), credentials)
     else:
         server.add_insecure_port('[::]:{}'.format(args.port))

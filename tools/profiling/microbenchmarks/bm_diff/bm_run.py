@@ -51,7 +51,8 @@ def _args():
         '-n',
         '--name',
         type=str,
-        help='Unique name of the build to run. Needs to match the handle passed to bm_build.py'
+        help=
+        'Unique name of the build to run. Needs to match the handle passed to bm_build.py'
     )
     argp.add_argument(
         '-r',
@@ -64,7 +65,8 @@ def _args():
         '--loops',
         type=int,
         default=20,
-        help='Number of times to loops the benchmarks. More loops cuts down on noise'
+        help=
+        'Number of times to loops the benchmarks. More loops cuts down on noise'
     )
     argp.add_argument('--counters', dest='counters', action='store_true')
     argp.add_argument('--no-counters', dest='counters', action='store_false')
@@ -82,13 +84,14 @@ def _collect_bm_data(bm, cfg, name, regex, idx, loops):
             'bm_diff_%s/%s/%s' % (name, cfg, bm), '--benchmark_list_tests',
             '--benchmark_filter=%s' % regex
     ]).splitlines():
-        stripped_line = line.strip().replace("/", "_").replace(
-            "<", "_").replace(">", "_").replace(", ", "_")
+        stripped_line = line.strip().replace("/",
+                                             "_").replace("<", "_").replace(
+                                                 ">", "_").replace(", ", "_")
         cmd = [
             'bm_diff_%s/%s/%s' % (name, cfg, bm),
             '--benchmark_filter=^%s$' % line,
-            '--benchmark_out=%s.%s.%s.%s.%d.json' %
-            (bm, stripped_line, cfg, name, idx),
+            '--benchmark_out=%s.%s.%s.%s.%d.json' % (bm, stripped_line, cfg,
+                                                     name, idx),
             '--benchmark_out_format=json',
         ]
         jobs_list.append(

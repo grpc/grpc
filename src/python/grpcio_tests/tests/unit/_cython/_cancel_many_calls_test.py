@@ -81,7 +81,8 @@ class _Handler(object):
                     cygrpc.SendMessageOperation(b'\x79\x57', _EMPTY_FLAGS),
                     cygrpc.SendStatusFromServerOperation(
                         _EMPTY_METADATA, cygrpc.StatusCode.ok, b'test details!',
-                        _EMPTY_FLAGS),)
+                        _EMPTY_FLAGS),
+                )
                 self._call.start_server_batch(operations,
                                               _SERVER_COMPLETE_CALL_TAG)
             self._completion_queue.poll()
@@ -151,8 +152,12 @@ class CancelManyCallsTest(unittest.TestCase):
 
         state = _State()
 
-        server_thread_args = (state, server, server_completion_queue,
-                              server_thread_pool,)
+        server_thread_args = (
+            state,
+            server,
+            server_completion_queue,
+            server_thread_pool,
+        )
         server_thread = threading.Thread(target=_serve, args=server_thread_args)
         server_thread.start()
 
@@ -176,7 +181,8 @@ class CancelManyCallsTest(unittest.TestCase):
                     cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
                     cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
                     cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
-                    cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),)
+                    cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+                )
                 tag = 'client_complete_call_{0:04d}_tag'.format(index)
                 client_call.start_client_batch(operations, tag)
                 client_due.add(tag)
@@ -193,8 +199,8 @@ class CancelManyCallsTest(unittest.TestCase):
                     state.condition.notify_all()
                     break
 
-        client_driver.events(test_constants.RPC_CONCURRENCY *
-                             _SUCCESS_CALL_FRACTION)
+        client_driver.events(
+            test_constants.RPC_CONCURRENCY * _SUCCESS_CALL_FRACTION)
         with client_condition:
             for client_call in client_calls:
                 client_call.cancel()

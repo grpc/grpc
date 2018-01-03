@@ -101,5 +101,5 @@ def iterate_suite_cases(suite):
         elif isinstance(item, unittest.TestCase):
             yield item
         else:
-            raise ValueError(
-                'unexpected suite item of type {}'.format(type(item)))
+            raise ValueError('unexpected suite item of type {}'.format(
+                type(item)))

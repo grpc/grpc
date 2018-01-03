@@ -31,7 +31,8 @@ end_date = datetime.date(2017, 3, 29)
 for dt in daterange(start_date, end_date):
     dmy = dt.strftime('%Y-%m-%d')
     sha1 = subprocess.check_output(
-        ['git', 'rev-list', '-n', '1', '--before=%s' % dmy, 'master']).strip()
+        ['git', 'rev-list', '-n', '1',
+         '--before=%s' % dmy, 'master']).strip()
     subprocess.check_call(['git', 'checkout', sha1])
     subprocess.check_call(['git', 'submodule', 'update'])
     subprocess.check_call(['git', 'clean', '-f', '-x', '-d'])

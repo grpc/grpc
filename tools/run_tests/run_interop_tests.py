@@ -685,7 +685,8 @@ def cloud_to_prod_jobspec(language,
     cmdargs = [
         '--server_host=%s' % server_host_detail[0],
         '--server_host_override=%s' % server_host_detail[1],
-        '--server_port=443', '--use_tls=true', '--test_case=%s' % test_case
+        '--server_port=443', '--use_tls=true',
+        '--test_case=%s' % test_case
     ]
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
     if auth:
@@ -696,18 +697,19 @@ def cloud_to_prod_jobspec(language,
     cwd = language.client_cwd
 
     if docker_image:
-        container_name = dockerjob.random_name('interop_client_%s' %
-                                               language.safename)
+        container_name = dockerjob.random_name(
+            'interop_client_%s' % language.safename)
         cmdline = docker_run_cmdline(
             cmdline,
             image=docker_image,
             cwd=cwd,
             environ=environ,
-            docker_args=['--net=host', '--name=%s' % container_name])
+            docker_args=['--net=host',
+                         '--name=%s' % container_name])
         if manual_cmd_log is not None:
             if manual_cmd_log == []:
-                manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' %
-                                      docker_image)
+                manual_cmd_log.append(
+                    'echo "Testing ${docker_image:=%s}"' % docker_image)
             manual_cmd_log.append(manual_cmdline(cmdline, docker_image))
         cwd = None
         environ = None
@@ -775,18 +777,19 @@ def cloud_to_cloud_jobspec(language,
     environ = language.global_env()
     if docker_image and language.safename != 'objc':
         # we can't run client in docker for objc.
-        container_name = dockerjob.random_name('interop_client_%s' %
-                                               language.safename)
+        container_name = dockerjob.random_name(
+            'interop_client_%s' % language.safename)
         cmdline = docker_run_cmdline(
             cmdline,
             image=docker_image,
             environ=environ,
             cwd=cwd,
-            docker_args=['--net=host', '--name=%s' % container_name])
+            docker_args=['--net=host',
+                         '--name=%s' % container_name])
         if manual_cmd_log is not None:
             if manual_cmd_log == []:
-                manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' %
-                                      docker_image)
+                manual_cmd_log.append(
+                    'echo "Testing ${docker_image:=%s}"' % docker_image)
             manual_cmd_log.append(manual_cmdline(cmdline, docker_image))
         cwd = None
 
@@ -807,12 +810,12 @@ def cloud_to_cloud_jobspec(language,
 
 def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
     """Create jobspec for running a server"""
-    container_name = dockerjob.random_name('interop_server_%s' %
-                                           language.safename)
+    container_name = dockerjob.random_name(
+        'interop_server_%s' % language.safename)
     cmdline = bash_cmdline(
         language.server_cmd([
-            '--port=%s' % _DEFAULT_SERVER_PORT, '--use_tls=%s' % (
-                'false' if insecure else 'true')
+            '--port=%s' % _DEFAULT_SERVER_PORT,
+            '--use_tls=%s' % ('false' if insecure else 'true')
         ]))
     environ = language.global_env()
     docker_args = ['--name=%s' % container_name]
@@ -821,9 +824,9 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
         # with the server port. These ports are used for http2 interop test
         # (one test case per port).
         docker_args += list(
-            itertools.chain.from_iterable(('-p', str(_DEFAULT_SERVER_PORT + i))
-                                          for i in range(
-                                              len(_HTTP2_SERVER_TEST_CASES))))
+            itertools.chain.from_iterable(
+                ('-p', str(_DEFAULT_SERVER_PORT + i))
+                for i in range(len(_HTTP2_SERVER_TEST_CASES))))
         # Enable docker's healthcheck mechanism.
         # This runs a Python script inside the container every second. The script
         # pings the http2 server to verify it is ready. The 'health-retries' flag
@@ -834,8 +837,8 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
         # command line.
         docker_args += [
             '--health-cmd=python test/http2_test/http2_server_health_check.py '
-            '--server_host=%s --server_port=%d' %
-            ('localhost', _DEFAULT_SERVER_PORT),
+            '--server_host=%s --server_port=%d' % ('localhost',
+                                                   _DEFAULT_SERVER_PORT),
             '--health-interval=1s',
             '--health-retries=5',
             '--health-timeout=10s',
@@ -852,8 +855,8 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
         docker_args=docker_args)
     if manual_cmd_log is not None:
         if manual_cmd_log == []:
-            manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' %
-                                  docker_image)
+            manual_cmd_log.append(
+                'echo "Testing ${docker_image:=%s}"' % docker_image)
         manual_cmd_log.append(manual_cmdline(docker_cmdline, docker_image))
     server_job = jobset.JobSpec(
         cmdline=docker_cmdline,
@@ -974,7 +977,8 @@ argp.add_argument(
     '--override_server',
     action='append',
     type=lambda kv: kv.split('='),
-    help='Use servername=HOST:PORT to explicitly specify a server. E.g. csharp=localhost:50000',
+    help=
+    'Use servername=HOST:PORT to explicitly specify a server. E.g. csharp=localhost:50000',
     default=[])
 argp.add_argument(
     '-t', '--travis', default=False, action='store_const', const=True)
@@ -993,7 +997,8 @@ argp.add_argument(
     default=False,
     action='store_const',
     const=True,
-    help='Allow flaky tests to show as passing (re-runs failed tests up to five times)'
+    help=
+    'Allow flaky tests to show as passing (re-runs failed tests up to five times)'
 )
 argp.add_argument(
     '--manual_run',
@@ -1014,7 +1019,8 @@ argp.add_argument(
     default=False,
     action='store_const',
     const=True,
-    help='Enable HTTP/2 server edge case testing. (Includes positive and negative tests'
+    help=
+    'Enable HTTP/2 server edge case testing. (Includes positive and negative tests'
 )
 argp.add_argument(
     '--insecure',
@@ -1039,8 +1045,8 @@ args = argp.parse_args()
 
 servers = set(
     s
-    for s in itertools.chain.from_iterable(_SERVERS if x == 'all' else [x]
-                                           for x in args.server))
+    for s in itertools.chain.from_iterable(
+        _SERVERS if x == 'all' else [x] for x in args.server))
 
 if args.use_docker:
     if not args.travis:
@@ -1067,10 +1073,9 @@ if not args.use_docker and servers:
 # we want to include everything but objc in 'all'
 # because objc won't run on non-mac platforms
 all_but_objc = set(six.iterkeys(_LANGUAGES)) - set(['objc'])
-languages = set(
-    _LANGUAGES[l]
-    for l in itertools.chain.from_iterable(all_but_objc if x == 'all' else [x]
-                                           for x in args.language))
+languages = set(_LANGUAGES[l]
+                for l in itertools.chain.from_iterable(
+                    all_but_objc if x == 'all' else [x] for x in args.language))
 
 languages_http2_clients_for_http2_server_interop = set()
 if args.http2_server_interop:

@@ -101,28 +101,29 @@ class Test(_common.RpcTest, unittest.TestCase):
         client_complete_rpc_event = self.client_driver.event_with_tag(
             client_complete_rpc_tag)
 
-        return (_common.OperationResult(
-            server_request_call_start_batch_result,
-            server_request_call_event.completion_type,
-            server_request_call_event.success), _common.OperationResult(
+        return (
+            _common.OperationResult(server_request_call_start_batch_result,
+                                    server_request_call_event.completion_type,
+                                    server_request_call_event.success),
+            _common.OperationResult(
                 client_receive_initial_metadata_start_batch_result,
                 client_receive_initial_metadata_event.completion_type,
                 client_receive_initial_metadata_event.success),
-                _common.OperationResult(
-                    client_complete_rpc_start_batch_result,
-                    client_complete_rpc_event.completion_type,
-                    client_complete_rpc_event.success), _common.OperationResult(
-                        server_send_initial_metadata_start_batch_result,
-                        server_send_initial_metadata_event.completion_type,
-                        server_send_initial_metadata_event.success),
-                _common.OperationResult(
-                    server_complete_rpc_start_batch_result,
-                    server_complete_rpc_event.completion_type,
-                    server_complete_rpc_event.success),)
+            _common.OperationResult(client_complete_rpc_start_batch_result,
+                                    client_complete_rpc_event.completion_type,
+                                    client_complete_rpc_event.success),
+            _common.OperationResult(
+                server_send_initial_metadata_start_batch_result,
+                server_send_initial_metadata_event.completion_type,
+                server_send_initial_metadata_event.success),
+            _common.OperationResult(server_complete_rpc_start_batch_result,
+                                    server_complete_rpc_event.completion_type,
+                                    server_complete_rpc_event.success),
+        )
 
     def test_rpcs(self):
-        expecteds = [(_common.SUCCESSFUL_OPERATION_RESULT,) *
-                     5] * _common.RPC_COUNT
+        expecteds = [(
+            _common.SUCCESSFUL_OPERATION_RESULT,) * 5] * _common.RPC_COUNT
         actuallys = _common.execute_many_times(self._do_rpcs)
         self.assertSequenceEqual(expecteds, actuallys)
 

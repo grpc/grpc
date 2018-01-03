@@ -152,6 +152,9 @@ class PHPPackage:
 def targets():
     """Gets list of supported targets"""
     return [
-        CSharpPackage(), CSharpPackage(linux=True), RubyPackage(),
-        PythonPackage(), PHPPackage()
+        CSharpPackage(),
+        CSharpPackage(linux=True),
+        RubyPackage(),
+        PythonPackage(),
+        PHPPackage()
     ]

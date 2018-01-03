@@ -61,7 +61,7 @@ _BUILDS = {
 }
 _URL_BASE = 'https://grpc-testing.appspot.com/job'
 
-# This is a dynamic list where known and active issues should be added. 
+# This is a dynamic list where known and active issues should be added.
 # Fixed ones should be removed.
 # Also try not to add multiple messages from the same failure.
 _KNOWN_ERRORS = [
@@ -106,8 +106,8 @@ def _scrape_for_known_errors(html):
                 'description': known_error,
                 'count': this_error_count
             })
-            print('====> %d failures due to %s' %
-                  (this_error_count, known_error))
+            print('====> %d failures due to %s' % (this_error_count,
+                                                   known_error))
     return error_list
 
 
@@ -116,8 +116,9 @@ def _no_report_files_found(html):
 
 
 def _get_last_processed_buildnumber(build_name):
-    query = 'SELECT max(build_number) FROM [%s:%s.%s];' % (
-        _PROJECT_ID, _DATASET_ID, build_name)
+    query = 'SELECT max(build_number) FROM [%s:%s.%s];' % (_PROJECT_ID,
+                                                           _DATASET_ID,
+                                                           build_name)
     query_job = big_query_utils.sync_query_job(bq, _PROJECT_ID, query)
     page = bq.jobs().getQueryResults(
         pageToken=None, **query_job['jobReference']).execute(num_retries=3)
@@ -167,8 +168,8 @@ def _process_build(json_url, console_url):
         html = urllib.urlopen(console_url).read()
         build_result['pass_count'] = 0
         build_result['failure_count'] = 1
-        # In this case, the string doesn't exist in the result html but the fact 
-        # that we fail to parse the result html indicates Jenkins failure and hence 
+        # In this case, the string doesn't exist in the result html but the fact
+        # that we fail to parse the result html indicates Jenkins failure and hence
         # no report files were generated.
         build_result['no_report_files_found'] = True
         error_list = _scrape_for_known_errors(html)
@@ -223,7 +224,7 @@ for build_name in _BUILDS.keys() if 'all' in args.builds else args.builds:
             if build.get_status() == 'ABORTED':
                 continue
             # If any build is still running, stop processing this job. Next time, we
-            # start from where it was left so that all builds are processed 
+            # start from where it was left so that all builds are processed
             # sequentially.
             if build.is_running():
                 print('====> Build %d is still running.' % build_number)

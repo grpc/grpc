@@ -50,8 +50,8 @@ def docker_mapped_port(cid, port, timeout_seconds=15):
             return int(output.split(':', 2)[1])
         except subprocess.CalledProcessError as e:
             pass
-    raise Exception('Failed to get exposed port %s for container %s.' %
-                    (port, cid))
+    raise Exception('Failed to get exposed port %s for container %s.' % (port,
+                                                                         cid))
 
 
 def wait_for_healthy(cid, shortname, timeout_seconds):

@@ -133,12 +133,13 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
                     logging.info(explanatory_text)
                 logging.info('%s: %s', tag, msg)
             else:
-                sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
-                    _BEGINNING_OF_LINE, _CLEAR_LINE, '\n%s' % explanatory_text
-                    if explanatory_text is not None else '',
-                    _COLORS[_TAG_COLOR[tag]][1], _COLORS[_TAG_COLOR[tag]][0],
-                    tag, msg, '\n'
-                    if do_newline or explanatory_text is not None else ''))
+                sys.stdout.write(
+                    '%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' %
+                    (_BEGINNING_OF_LINE, _CLEAR_LINE, '\n%s' % explanatory_text
+                     if explanatory_text is not None else '',
+                     _COLORS[_TAG_COLOR[tag]][1], _COLORS[_TAG_COLOR[tag]][0],
+                     tag, msg, '\n'
+                     if do_newline or explanatory_text is not None else ''))
             sys.stdout.flush()
             return
         except IOError, e:
@@ -210,8 +211,8 @@ class JobSpec(object):
 
     def __str__(self):
         return '%s: %s %s' % (self.shortname, ' '.join(
-            '%s=%s' % kv
-            for kv in self.environ.items()), ' '.join(self.cmdline))
+            '%s=%s' % kv for kv in self.environ.items()),
+                              ' '.join(self.cmdline))
 
 
 class JobResult(object):
@@ -284,8 +285,9 @@ class Job(object):
                 self._process = try_start()
                 break
             except OSError:
-                message('WARNING', 'Failed to start %s, retrying in %f seconds'
-                        % (self._spec.shortname, delay))
+                message('WARNING',
+                        'Failed to start %s, retrying in %f seconds' %
+                        (self._spec.shortname, delay))
                 time.sleep(delay)
                 delay *= 2
         else:
@@ -343,8 +345,8 @@ class Job(object):
                     if real > 0.5:
                         cores = (user + sys) / real
                         self.result.cpu_measured = float('%.01f' % cores)
-                        self.result.cpu_estimated = float('%.01f' %
-                                                          self._spec.cpu_cost)
+                        self.result.cpu_estimated = float(
+                            '%.01f' % self._spec.cpu_cost)
                         measurement = '; cpu_cost=%.01f; estimated=%.01f' % (
                             self.result.cpu_measured, self.result.cpu_estimated)
                 if not self._quiet_success:
@@ -378,8 +380,8 @@ class Job(object):
             else:
                 message(
                     'TIMEOUT',
-                    '%s [pid=%d, time=%.1fsec]' %
-                    (self._spec.shortname, self._process.pid, elapsed),
+                    '%s [pid=%d, time=%.1fsec]' % (self._spec.shortname,
+                                                   self._process.pid, elapsed),
                     stdout(),
                     do_newline=True)
                 self.kill()

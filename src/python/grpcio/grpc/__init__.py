@@ -1376,8 +1376,8 @@ def metadata_call_credentials(metadata_plugin, name=None):
       A CallCredentials.
     """
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
-    return _plugin_wrapping.metadata_plugin_call_credentials(metadata_plugin,
-                                                             name)
+    return _plugin_wrapping.metadata_plugin_call_credentials(
+        metadata_plugin, name)
 
 
 def access_token_call_credentials(access_token):
@@ -1631,25 +1631,57 @@ def server(thread_pool,
 ###################################  __all__  #################################
 
 __all__ = (
-    'FutureTimeoutError', 'FutureCancelledError', 'Future',
-    'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext', 'Call',
-    'ChannelCredentials', 'CallCredentials', 'AuthMetadataContext',
-    'AuthMetadataPluginCallback', 'AuthMetadataPlugin', 'ClientCallDetails',
-    'ServerCertificateConfiguration', 'ServerCredentials',
-    'UnaryUnaryMultiCallable', 'UnaryStreamMultiCallable',
-    'StreamUnaryMultiCallable', 'StreamStreamMultiCallable',
-    'UnaryUnaryClientInterceptor', 'UnaryStreamClientInterceptor',
-    'StreamUnaryClientInterceptor', 'StreamStreamClientInterceptor', 'Channel',
-    'ServicerContext', 'RpcMethodHandler', 'HandlerCallDetails',
-    'GenericRpcHandler', 'ServiceRpcHandler', 'Server', 'ServerInterceptor',
-    'unary_unary_rpc_method_handler', 'unary_stream_rpc_method_handler',
-    'stream_unary_rpc_method_handler', 'stream_stream_rpc_method_handler',
-    'method_handlers_generic_handler', 'ssl_channel_credentials',
-    'metadata_call_credentials', 'access_token_call_credentials',
-    'composite_call_credentials', 'composite_channel_credentials',
-    'ssl_server_credentials', 'ssl_server_certificate_configuration',
-    'dynamic_ssl_server_credentials', 'channel_ready_future',
-    'insecure_channel', 'secure_channel', 'intercept_channel', 'server',)
+    'FutureTimeoutError',
+    'FutureCancelledError',
+    'Future',
+    'ChannelConnectivity',
+    'StatusCode',
+    'RpcError',
+    'RpcContext',
+    'Call',
+    'ChannelCredentials',
+    'CallCredentials',
+    'AuthMetadataContext',
+    'AuthMetadataPluginCallback',
+    'AuthMetadataPlugin',
+    'ClientCallDetails',
+    'ServerCertificateConfiguration',
+    'ServerCredentials',
+    'UnaryUnaryMultiCallable',
+    'UnaryStreamMultiCallable',
+    'StreamUnaryMultiCallable',
+    'StreamStreamMultiCallable',
+    'UnaryUnaryClientInterceptor',
+    'UnaryStreamClientInterceptor',
+    'StreamUnaryClientInterceptor',
+    'StreamStreamClientInterceptor',
+    'Channel',
+    'ServicerContext',
+    'RpcMethodHandler',
+    'HandlerCallDetails',
+    'GenericRpcHandler',
+    'ServiceRpcHandler',
+    'Server',
+    'ServerInterceptor',
+    'unary_unary_rpc_method_handler',
+    'unary_stream_rpc_method_handler',
+    'stream_unary_rpc_method_handler',
+    'stream_stream_rpc_method_handler',
+    'method_handlers_generic_handler',
+    'ssl_channel_credentials',
+    'metadata_call_credentials',
+    'access_token_call_credentials',
+    'composite_call_credentials',
+    'composite_channel_credentials',
+    'ssl_server_credentials',
+    'ssl_server_certificate_configuration',
+    'dynamic_ssl_server_credentials',
+    'channel_ready_future',
+    'insecure_channel',
+    'secure_channel',
+    'intercept_channel',
+    'server',
+)
 
 ############################### Extension Shims ################################
 

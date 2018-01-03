@@ -173,8 +173,8 @@ def build_all_images_for_lang(lang):
             releases = client_matrix.get_release_tags(lang)
         else:
             # Build a particular release.
-            if args.release not in ['master'] + client_matrix.get_release_tags(
-                    lang):
+            if args.release not in ['master'
+                                   ] + client_matrix.get_release_tags(lang):
                 jobset.message(
                     'SKIPPED',
                     '%s for %s is not defined' % (args.release, lang),

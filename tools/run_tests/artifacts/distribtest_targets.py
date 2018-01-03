@@ -106,8 +106,8 @@ class CSharpDistribTest(object):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/distribtest/csharp_%s_%s' % (
-                    self.docker_suffix, self.arch),
+                'tools/dockerfile/distribtest/csharp_%s_%s' %
+                (self.docker_suffix, self.arch),
                 'test/distrib/csharp/run_distrib_test%s.sh' %
                 self.script_suffix,
                 copy_rel_path='test/distrib')
@@ -260,8 +260,8 @@ class CppDistribTest(object):
     def build_jobspec(self):
         if self.platform == 'linux':
             return create_docker_jobspec(
-                self.name, 'tools/dockerfile/distribtest/cpp_%s_%s' % (
-                    self.docker_suffix, self.arch),
+                self.name, 'tools/dockerfile/distribtest/cpp_%s_%s' %
+                (self.docker_suffix, self.arch),
                 'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase)
         elif self.platform == 'windows':
             return create_jobspec(
