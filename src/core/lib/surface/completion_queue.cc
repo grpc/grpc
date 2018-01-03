@@ -780,11 +780,10 @@ typedef struct {
   bool first_loop;
 } cq_is_finished_arg;
 
-class ExecCtxNext final : public grpc_core::ExecCtx {
+class ExecCtxNext : public grpc_core::ExecCtx {
  public:
   ExecCtxNext(void* arg) : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
 
- private:
   bool CheckReadyToFinish() override {
     cq_is_finished_arg* a = (cq_is_finished_arg*)check_ready_to_finish_arg_;
     grpc_completion_queue* cq = a->cq;
@@ -812,6 +811,7 @@ class ExecCtxNext final : public grpc_core::ExecCtx {
     return !a->first_loop && a->deadline < grpc_core::ExecCtx::Get()->Now();
   }
 
+ private:
   void* check_ready_to_finish_arg_;
 };
 
@@ -1035,11 +1035,10 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
   GPR_UNREACHABLE_CODE(return );
 }
 
-class ExecCtxPluck final : public grpc_core::ExecCtx {
+class ExecCtxPluck : public grpc_core::ExecCtx {
  public:
   ExecCtxPluck(void* arg) : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
 
- private:
   bool CheckReadyToFinish() override {
     cq_is_finished_arg* a = (cq_is_finished_arg*)check_ready_to_finish_arg_;
     grpc_completion_queue* cq = a->cq;
@@ -1073,6 +1072,7 @@ class ExecCtxPluck final : public grpc_core::ExecCtx {
     return !a->first_loop && a->deadline < grpc_core::ExecCtx::Get()->Now();
   }
 
+ private:
   void* check_ready_to_finish_arg_;
 };
 
