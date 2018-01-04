@@ -54,10 +54,10 @@ grpc_cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "channel_tracer_test",
     srcs = ["channel_tracer_test.cc"],
-    copts = ["-std=c99"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
