@@ -229,7 +229,7 @@ class ClientChannelStressTest {
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
     grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                       &fake_result, false);
+                                                       &fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
 
