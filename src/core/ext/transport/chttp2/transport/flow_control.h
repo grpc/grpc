@@ -304,7 +304,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
  private:
   double TargetLogBdp();
   double SmoothLogBdp(double value);
-  FlowControlAction::Urgency DeltaUrgency(int32_t value,
+  FlowControlAction::Urgency DeltaUrgency(int64_t value,
                                           grpc_chttp2_setting_id setting_id);
 
   FlowControlAction UpdateAction(FlowControlAction action) {

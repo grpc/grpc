@@ -337,7 +337,7 @@ double TransportFlowControl::SmoothLogBdp(double value) {
 }
 
 FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(
-    int32_t value, grpc_chttp2_setting_id setting_id) {
+    int64_t value, grpc_chttp2_setting_id setting_id) {
   int64_t delta =
       (int64_t)value - (int64_t)t_->settings[GRPC_LOCAL_SETTINGS][setting_id];
   // TODO(ncteisen): tune this
@@ -363,7 +363,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     action.set_send_initial_window_update(
         DeltaUrgency(target_initial_window_size_,
                      GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE),
-        target_initial_window_size_);
+        (uint32_t)target_initial_window_size_);
 
     // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = bdp_estimator_.EstimateBandwidth();
@@ -373,7 +373,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                 target_initial_window_size_),
         16384, 16777215);
     action.set_send_max_frame_size_update(
-        DeltaUrgency(frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
+        DeltaUrgency((int64_t)frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
         frame_size);
   }
   return UpdateAction(action);
