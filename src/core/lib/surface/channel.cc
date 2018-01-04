@@ -104,7 +104,7 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   channel->uuid = -1;
-  channel->tracer = NULL;
+  channel->tracer = nullptr;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
 
@@ -196,7 +196,7 @@ grpc_channel* grpc_channel_create_with_builder(
           0x1; /* always support no compression */
     } else if (0 ==
                strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING_MAX_NODES)) {
-      GPR_ASSERT(channel->tracer == NULL);
+      GPR_ASSERT(channel->tracer == nullptr);
       // max_nodes defaults to 10, clamped between 0 and 100.
       const grpc_integer_options options = {10, 0, 100};
       size_t max_nodes =
@@ -211,14 +211,14 @@ grpc_channel* grpc_channel_create_with_builder(
   grpc_channel_args_destroy(args);
   grpc_channel_tracer_add_trace(
       channel->tracer, grpc_slice_from_static_string("Channel created"),
-      GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, NULL);
+      GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, nullptr);
   return channel;
 }
 
 char* grpc_channel_get_trace(grpc_channel* channel, bool recursive) {
   return channel->tracer
              ? grpc_channel_tracer_render_trace(channel->tracer, recursive)
-             : NULL;
+             : nullptr;
 }
 
 intptr_t grpc_channel_get_uuid(grpc_channel* channel) { return channel->uuid; }

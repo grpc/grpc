@@ -55,16 +55,16 @@ void grpc_json_destroy(grpc_json* json) {
 grpc_json* grpc_json_link_child(grpc_json* parent, grpc_json* child,
                                 grpc_json* sibling) {
   // first child case.
-  if (parent->child == NULL) {
-    GPR_ASSERT(sibling == NULL);
+  if (parent->child == nullptr) {
+    GPR_ASSERT(sibling == nullptr);
     parent->child = child;
     return child;
   }
-  if (sibling == NULL) {
+  if (sibling == nullptr) {
     sibling = parent->child;
   }
   // always find the right most sibling.
-  while (sibling->next != NULL) {
+  while (sibling->next != nullptr) {
     sibling = sibling->next;
   }
   sibling->next = child;

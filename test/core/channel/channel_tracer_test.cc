@@ -30,9 +30,10 @@
 #include "test/core/util/test_config.h"
 
 static void add_simple_trace(grpc_channel_tracer* tracer) {
-  grpc_channel_tracer_add_trace(
-      tracer, grpc_slice_from_static_string("simple trace"),
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_CHANNEL_READY, NULL);
+  grpc_channel_tracer_add_trace(tracer,
+                                grpc_slice_from_static_string("simple trace"),
+                                GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
+                                GRPC_CHANNEL_READY, nullptr);
 }
 
 // checks for the existence of all the required members of the tracer.
@@ -66,10 +67,10 @@ static void test_basic_channel_tracing(size_t max_nodes) {
       tracer, grpc_slice_from_static_string("trace three"),
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
                          GRPC_ERROR_INT_HTTP2_ERROR, 2),
-      GRPC_CHANNEL_IDLE, NULL);
-  grpc_channel_tracer_add_trace(tracer,
-                                grpc_slice_from_static_string("trace four"),
-                                GRPC_ERROR_NONE, GRPC_CHANNEL_SHUTDOWN, NULL);
+      GRPC_CHANNEL_IDLE, nullptr);
+  grpc_channel_tracer_add_trace(
+      tracer, grpc_slice_from_static_string("trace four"), GRPC_ERROR_NONE,
+      GRPC_CHANNEL_SHUTDOWN, nullptr);
   validate_tracer(tracer, 4, max_nodes);
   add_simple_trace(tracer);
   add_simple_trace(tracer);

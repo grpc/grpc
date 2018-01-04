@@ -73,7 +73,7 @@ intptr_t grpc_object_registry_register_object(void* object,
   tracker->type = type;
   intptr_t prior = gpr_atm_no_barrier_fetch_add(&g_uuid, 1);
   gpr_mu_lock(&g_mu);
-  g_avl = gpr_avl_add(g_avl, (void*)prior, tracker, NULL);
+  g_avl = gpr_avl_add(g_avl, (void*)prior, tracker, nullptr);
   gpr_mu_unlock(&g_mu);
   return prior;
 }
@@ -91,8 +91,8 @@ grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid,
   object_tracker* tracker =
       static_cast<object_tracker*>(gpr_avl_get(g_avl, (void*)uuid, nullptr));
   gpr_mu_unlock(&g_mu);
-  if (tracker == NULL) {
-    *object = NULL;
+  if (tracker == nullptr) {
+    *object = nullptr;
     return GRPC_OBJECT_REGISTRY_UNKNOWN;
   }
   *object = tracker->object;

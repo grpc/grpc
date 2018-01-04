@@ -25,11 +25,12 @@
 #include "src/core/lib/json/json.h"
 
 static grpc_json* get_json_child(grpc_json* parent, const char* key) {
-  GPR_ASSERT(parent != NULL);
-  for (grpc_json* child = parent->child; child != NULL; child = child->next) {
-    if (child->key != NULL && strcmp(child->key, key) == 0) return child;
+  GPR_ASSERT(parent != nullptr);
+  for (grpc_json* child = parent->child; child != nullptr;
+       child = child->next) {
+    if (child->key != nullptr && strcmp(child->key, key) == 0) return child;
   }
-  return NULL;
+  return nullptr;
 }
 
 void validate_json_array_size(grpc_json* json, const char* key,
@@ -38,7 +39,7 @@ void validate_json_array_size(grpc_json* json, const char* key,
   GPR_ASSERT(arr);
   GPR_ASSERT(arr->type == GRPC_JSON_ARRAY);
   size_t count = 0;
-  for (grpc_json* child = arr->child; child != NULL; child = child->next) {
+  for (grpc_json* child = arr->child; child != nullptr; child = child->next) {
     ++count;
   }
   GPR_ASSERT(count == expected_size);
@@ -54,7 +55,7 @@ void validate_channel_data(grpc_json* json, size_t num_nodes_logged_expected,
   grpc_json* start_time = get_json_child(channel_data, "startTime");
   GPR_ASSERT(start_time);
   size_t num_nodes_logged =
-      (size_t)strtol(num_nodes_logged_json->value, NULL, 0);
+      (size_t)strtol(num_nodes_logged_json->value, nullptr, 0);
   GPR_ASSERT(num_nodes_logged == num_nodes_logged_expected);
   validate_json_array_size(channel_data, "nodes", actual_num_nodes_expected);
 }
