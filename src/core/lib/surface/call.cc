@@ -2059,6 +2059,7 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
                                                   const grpc_op* ops,
                                                   size_t nops,
                                                   grpc_closure* closure) {
+  grpc_core::ExecCtx exec_ctx;
   return call_start_batch(call, ops, nops, closure, 1);
 }
 
