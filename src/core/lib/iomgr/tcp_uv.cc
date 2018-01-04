@@ -65,6 +65,17 @@ typedef struct {
   grpc_pollset* pollset;
 } grpc_tcp;
 
+static grpc_error* tcp_annotate_error(grpc_error* src_error, grpc_tcp* tcp) {
+  return grpc_error_set_str(
+      grpc_error_set_int(
+          src_error,
+          /* All tcp errors are marked with UNAVAILABLE so that application may
+           * choose to retry. */
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+      GRPC_ERROR_STR_TARGET_ADDRESS,
+      grpc_slice_from_copied_string(tcp->peer_string));
+}
+
 static void tcp_free(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp) {
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
   gpr_free(tcp->handle);
@@ -166,7 +177,8 @@ static void read_callback(uv_stream_t* stream, ssize_t nread,
   // TODO(murgatroid99): figure out what the return value here means
   uv_read_stop(stream);
   if (nread == UV_EOF) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF");
+    error =
+        tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"), tcp);
     grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, tcp->read_slices);
   } else if (nread > 0) {
     // Successful read
@@ -181,7 +193,8 @@ static void read_callback(uv_stream_t* stream, ssize_t nread,
     }
   } else {
     // nread < 0: Error
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed");
+    error = tcp_annotate_error(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed"), tcp);
     grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, tcp->read_slices);
   }
   call_read_cb(&exec_ctx, tcp, error);
@@ -200,7 +213,9 @@ static void tcp_read_allocation_done(grpc_exec_ctx* exec_ctx, void* tcpp,
     status =
         uv_read_start((uv_stream_t*)tcp->handle, alloc_uv_buf, read_callback);
     if (status != 0) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed at start");
+      error = tcp_annotate_error(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Read failed at start"),
+          tcp);
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_OS_ERROR,
           grpc_slice_from_static_string(uv_strerror(status)));
@@ -241,7 +256,8 @@ static void write_callback(uv_write_t* req, int status) {
   if (status == 0) {
     error = GRPC_ERROR_NONE;
   } else {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Write failed");
+    error = tcp_annotate_error(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP Write failed"), tcp);
   }
   if (grpc_tcp_trace.enabled()) {
     const char* str = grpc_error_string(error);
@@ -275,9 +291,10 @@ static void uv_endpoint_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
   }
 
   if (tcp->shutting_down) {
-    GRPC_CLOSURE_SCHED(
-        exec_ctx, cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TCP socket is shutting down"));
+    GRPC_CLOSURE_SCHED(exec_ctx, cb,
+                       tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                              "TCP socket is shutting down"),
+                                          tcp));
     return;
   }
 
