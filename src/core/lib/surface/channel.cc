@@ -101,10 +101,9 @@ grpc_channel* grpc_channel_create_with_builder(
   }
 
   memset(channel, 0, sizeof(*channel));
-  channel->uuid = grpc_object_registry_register_object(
-      channel, GRPC_OBJECT_REGISTRY_CHANNEL);
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
+  channel->uuid = -1;
   channel->tracer = NULL;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
@@ -203,7 +202,8 @@ grpc_channel* grpc_channel_create_with_builder(
       size_t max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
       if (max_nodes > 0) {
-        channel->tracer = GRPC_CHANNEL_TRACER_CREATE(max_nodes, channel->uuid);
+        channel->tracer = GRPC_CHANNEL_TRACER_CREATE(max_nodes);
+        channel->uuid = grpc_channel_tracer_get_uuid(channel->tracer);
       }
     }
   }

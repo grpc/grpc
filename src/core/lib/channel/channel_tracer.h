@@ -30,16 +30,15 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_channel_tracer_refcount;
 
 /* Creates a new tracer. The caller owns a reference to the returned tracer. */
 #ifndef NDEBUG
-grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes, intptr_t uuid,
+grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
                                                 const char* file, int line,
                                                 const char* func);
-#define GRPC_CHANNEL_TRACER_CREATE(max_nodes, id) \
-  grpc_channel_tracer_create(max_nodes, id, __FILE__, __LINE__, __func__)
+#define GRPC_CHANNEL_TRACER_CREATE(max_nodes) \
+  grpc_channel_tracer_create(max_nodes, __FILE__, __LINE__, __func__)
 #else
-grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
-                                                intptr_t uuid);
-#define GRPC_CHANNEL_TRACER_CREATE(max_nodes, id) \
-  grpc_channel_tracer_create(max_nodes, id)
+grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes);
+#define GRPC_CHANNEL_TRACER_CREATE(max_nodes) \
+  grpc_channel_tracer_create(max_nodes)
 #endif
 
 #ifndef NDEBUG
@@ -58,6 +57,9 @@ void grpc_channel_tracer_unref(grpc_channel_tracer* tracer);
 #define GRPC_CHANNEL_TRACER_REF(tracer) grpc_channel_tracer_ref(tracer)
 #define GRPC_CHANNEL_TRACER_UNREF(tracer) grpc_channel_tracer_unref(tracer)
 #endif
+
+/* returns the tracers uuid */
+intptr_t grpc_channel_tracer_get_uuid(grpc_channel_tracer* tracer);
 
 /* Adds a new trace node to the tracing object */
 void grpc_channel_tracer_add_trace(grpc_channel_tracer* tracer, grpc_slice data,

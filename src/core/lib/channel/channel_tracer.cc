@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/object_registry.h"
@@ -62,12 +61,11 @@ struct grpc_channel_tracer {
 };
 
 #ifndef NDEBUG
-grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes, intptr_t uuid,
+grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
                                                 const char* file, int line,
                                                 const char* func) {
 #else
-grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
-                                                intptr_t uuid) {
+grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes) {
 #endif
   grpc_channel_tracer* tracer = static_cast<grpc_channel_tracer*>(
       gpr_zalloc(sizeof(grpc_channel_tracer)));
@@ -78,7 +76,8 @@ grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
     gpr_log(GPR_DEBUG, "%p create [%s:%d %s]", tracer, file, line, func);
   }
 #endif
-  tracer->channel_uuid = uuid;
+  tracer->channel_uuid = grpc_object_registry_register_object(
+      tracer, GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
   tracer->max_list_size = max_nodes;
   tracer->time_created = gpr_now(GPR_CLOCK_REALTIME);
   return tracer;
@@ -144,6 +143,10 @@ void grpc_channel_tracer_unref(grpc_channel_tracer* tracer) {
   }
 }
 #endif
+
+intptr_t grpc_channel_tracer_get_uuid(grpc_channel_tracer* tracer) {
+  return tracer->channel_uuid;
+}
 
 void grpc_channel_tracer_add_trace(grpc_channel_tracer* tracer, grpc_slice data,
                                    grpc_error* error,
@@ -318,18 +321,7 @@ char* grpc_channel_tracer_get_trace(intptr_t uuid, bool recursive) {
   void* object;
   grpc_object_registry_type type =
       grpc_object_registry_get_object(uuid, &object);
-  GPR_ASSERT(type == GRPC_OBJECT_REGISTRY_CHANNEL ||
-             type == GPRC_OBJECT_REGISTRY_SUBCHANNEL);
-  switch (type) {
-    case GRPC_OBJECT_REGISTRY_CHANNEL:
-      return grpc_channel_get_trace(static_cast<grpc_channel*>(object),
-                                    recursive);
-      break;
-    case GPRC_OBJECT_REGISTRY_SUBCHANNEL:
-      return grpc_subchannel_get_trace(static_cast<grpc_subchannel*>(object),
-                                       recursive);
-      break;
-    default:
-      abort();
-  }
+  GPR_ASSERT(type == GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
+  return grpc_channel_tracer_render_trace(
+      static_cast<grpc_channel_tracer*>(object), recursive);
 }

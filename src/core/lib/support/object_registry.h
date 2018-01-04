@@ -22,8 +22,7 @@
 #include <stdint.h>
 
 typedef enum {
-  GRPC_OBJECT_REGISTRY_CHANNEL,
-  GPRC_OBJECT_REGISTRY_SUBCHANNEL,
+  GRPC_OBJECT_REGISTRY_CHANNEL_TRACER,
   GRPC_OBJECT_REGISTRY_UNKNOWN,
 } grpc_object_registry_type;
 

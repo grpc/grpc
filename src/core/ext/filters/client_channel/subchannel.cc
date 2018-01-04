@@ -188,7 +188,6 @@ void grpc_connected_subchannel_unref(
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel* c = (grpc_subchannel*)arg;
-  grpc_object_registry_unregister_object(c->uuid);
   gpr_free((void*)c->filters);
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
@@ -343,8 +342,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
 
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   c = (grpc_subchannel*)gpr_zalloc(sizeof(*c));
-  c->uuid =
-      grpc_object_registry_register_object(c, GPRC_OBJECT_REGISTRY_SUBCHANNEL);
+  c->uuid = -1;
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
@@ -391,15 +389,6 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   gpr_mu_init(&c->mu);
 
   return grpc_subchannel_index_register(key, c);
-}
-
-char* grpc_subchannel_get_trace(grpc_subchannel* subchannel, bool recursive) {
-  return subchannel->tracer != NULL
-             ? grpc_channel_tracer_render_trace(subchannel->tracer, recursive)
-             : NULL;
-}
-intptr_t grpc_subchannel_get_uuid(grpc_subchannel* subchannel) {
-  return subchannel->uuid;
 }
 
 static void continue_connect_locked(grpc_subchannel* c) {
