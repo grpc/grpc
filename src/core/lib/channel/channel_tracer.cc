@@ -241,7 +241,7 @@ static void populate_node_data(grpc_trace_node* node, seen_tracers* tracker,
       false);
   if (node->referenced_tracer != nullptr) {
     char* uuid_str;
-    gpr_asprintf(&uuid_str, "%ld", node->referenced_tracer->channel_uuid);
+    gpr_asprintf(&uuid_str, "%" PRIdPTR, node->referenced_tracer->channel_uuid);
     child = grpc_json_create_child(child, json, "uuid", uuid_str,
                                    GRPC_JSON_NUMBER, true);
     if (children && !seen_tracers_check(tracker, node->referenced_tracer)) {
@@ -272,7 +272,7 @@ static void populate_tracer_data(grpc_channel_tracer* tracer,
   grpc_json* child = nullptr;
 
   char* uuid_str;
-  gpr_asprintf(&uuid_str, "%ld", tracer->channel_uuid);
+  gpr_asprintf(&uuid_str, "%" PRIdPTR, tracer->channel_uuid);
   child = grpc_json_create_child(child, channel_data, "uuid", uuid_str,
                                  GRPC_JSON_NUMBER, true);
   char* num_nodes_logged_str;
