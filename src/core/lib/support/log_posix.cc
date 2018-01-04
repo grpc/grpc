@@ -35,15 +35,15 @@ static intptr_t gettid(void) { return (intptr_t)pthread_self(); }
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
   char buf[64];
-  char* allocated = NULL;
-  char* message = NULL;
+  char* allocated = nullptr;
+  char* message = nullptr;
   int ret;
   va_list args;
   va_start(args, format);
   ret = vsnprintf(buf, sizeof(buf), format, args);
   va_end(args);
   if (ret < 0) {
-    message = NULL;
+    message = nullptr;
   } else if ((size_t)ret <= sizeof(buf) - 1) {
     message = buf;
   } else {
@@ -66,7 +66,7 @@ void gpr_default_log(gpr_log_func_args* args) {
 
   timer = (time_t)now.tv_sec;
   final_slash = strrchr(args->file, '/');
-  if (final_slash == NULL)
+  if (final_slash == nullptr)
     display_file = args->file;
   else
     display_file = final_slash + 1;
