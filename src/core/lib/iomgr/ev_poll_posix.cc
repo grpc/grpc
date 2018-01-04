@@ -242,7 +242,7 @@ struct grpc_pollset_set {
 
 typedef struct poll_result {
   gpr_refcount refcount;
-  cv_node* watchers;
+  grpc_cv_node* watchers;
   int watchcount;
   struct pollfd* fds;
   nfds_t nfds;
@@ -273,7 +273,7 @@ typedef struct poll_hash_table {
 } poll_hash_table;
 
 poll_hash_table poll_cache;
-cv_fd_table g_cvfds;
+grpc_cv_fd_table g_cvfds;
 
 /*******************************************************************************
  * fd_posix.c
@@ -1435,7 +1435,7 @@ static void decref_poll_result(poll_result* res) {
   }
 }
 
-void remove_cvn(cv_node** head, cv_node* target) {
+void remove_cvn(grpc_cv_node** head, grpc_cv_node* target) {
   if (target->next) {
     target->next->prev = target->prev;
   }
@@ -1460,7 +1460,7 @@ static void run_poll(void* args) {
       result->completed = 1;
       result->retval = retval;
       result->err = errno;
-      cv_node* watcher = result->watchers;
+      grpc_cv_node* watcher = result->watchers;
       while (watcher) {
         gpr_cv_signal(watcher->cv);
         watcher = watcher->next;
@@ -1471,7 +1471,7 @@ static void run_poll(void* args) {
       decref_poll_result(result);
       // Leave this polling thread alive for a grace period to do another poll()
       // op
-      gpr_timespec deadline = gpr_now(GPR_CLOCK_REALTIME);
+      gpr_timespec deadline = gpr_now(GPR_CLOCK_MONOTONIC);
       deadline = gpr_time_add(deadline, thread_grace);
       pargs->trigger_set = 0;
       gpr_cv_wait(&pargs->trigger, &g_cvfds.mu, deadline);
@@ -1494,17 +1494,17 @@ static void run_poll(void* args) {
 static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
   unsigned int i;
   int res, idx;
-  cv_node* pollcv;
+  grpc_cv_node* pollcv;
   int skip_poll = 0;
   nfds_t nsockfds = 0;
   poll_result* result = nullptr;
   gpr_mu_lock(&g_cvfds.mu);
-  pollcv = (cv_node*)gpr_malloc(sizeof(cv_node));
+  pollcv = (grpc_cv_node*)gpr_malloc(sizeof(grpc_cv_node));
   pollcv->next = nullptr;
   gpr_cv pollcv_cv;
   gpr_cv_init(&pollcv_cv);
   pollcv->cv = &pollcv_cv;
-  cv_node* fd_cvs = (cv_node*)gpr_malloc(nfds * sizeof(cv_node));
+  grpc_cv_node* fd_cvs = (grpc_cv_node*)gpr_malloc(nfds * sizeof(grpc_cv_node));
 
   for (i = 0; i < nfds; i++) {
     fds[i].revents = 0;
@@ -1526,9 +1526,9 @@ static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
     }
   }
 
-  gpr_timespec deadline = gpr_now(GPR_CLOCK_REALTIME);
+  gpr_timespec deadline = gpr_now(GPR_CLOCK_MONOTONIC);
   if (timeout < 0) {
-    deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+    deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   } else {
     deadline =
         gpr_time_add(deadline, gpr_time_from_millis(timeout, GPR_TIMESPAN));
@@ -1600,7 +1600,8 @@ static void global_cv_fd_table_init() {
   gpr_cv_init(&g_cvfds.shutdown_cv);
   gpr_ref_init(&g_cvfds.pollcount, 1);
   g_cvfds.size = CV_DEFAULT_TABLE_SIZE;
-  g_cvfds.cvfds = (fd_node*)gpr_malloc(sizeof(fd_node) * CV_DEFAULT_TABLE_SIZE);
+  g_cvfds.cvfds =
+      (grpc_fd_node*)gpr_malloc(sizeof(grpc_fd_node) * CV_DEFAULT_TABLE_SIZE);
   g_cvfds.free_fds = nullptr;
   thread_grace = gpr_time_from_millis(POLLCV_THREAD_GRACE_MS, GPR_TIMESPAN);
   for (int i = 0; i < CV_DEFAULT_TABLE_SIZE; i++) {
@@ -1631,7 +1632,7 @@ static void global_cv_fd_table_shutdown() {
   // Not doing so will result in reported memory leaks
   if (!gpr_unref(&g_cvfds.pollcount)) {
     int res = gpr_cv_wait(&g_cvfds.shutdown_cv, &g_cvfds.mu,
-                          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                        gpr_time_from_seconds(3, GPR_TIMESPAN)));
     GPR_ASSERT(res == 0);
   }

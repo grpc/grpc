@@ -951,7 +951,6 @@ alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 arena_test: $(BINDIR)/$(CONFIG)/arena_test
-backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
@@ -980,9 +979,6 @@ fling_client: $(BINDIR)/$(CONFIG)/fling_client
 fling_server: $(BINDIR)/$(CONFIG)/fling_server
 fling_stream_test: $(BINDIR)/$(CONFIG)/fling_stream_test
 fling_test: $(BINDIR)/$(CONFIG)/fling_test
-gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
-gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
-gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 goaway_server_test: $(BINDIR)/$(CONFIG)/goaway_server_test
 gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
 gpr_cmdline_test: $(BINDIR)/$(CONFIG)/gpr_cmdline_test
@@ -1097,6 +1093,7 @@ wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
+backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
 bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bm_arena: $(BINDIR)/$(CONFIG)/bm_arena
 bm_call_create: $(BINDIR)/$(CONFIG)/bm_call_create
@@ -1185,6 +1182,9 @@ thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
+gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
+gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
+gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
 boringssl_asn1_test: $(BINDIR)/$(CONFIG)/boringssl_asn1_test
 boringssl_base64_test: $(BINDIR)/$(CONFIG)/boringssl_base64_test
@@ -1352,7 +1352,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
   $(BINDIR)/$(CONFIG)/arena_test \
-  $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
@@ -1541,6 +1540,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
@@ -1669,6 +1669,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
@@ -1772,8 +1773,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing arena_test"
 	$(Q) $(BINDIR)/$(CONFIG)/arena_test || ( echo test arena_test failed ; exit 1 )
-	$(E) "[RUN]     Testing backoff_test"
-	$(Q) $(BINDIR)/$(CONFIG)/backoff_test || ( echo test backoff_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_server_response_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_server_response_test || ( echo test bad_server_response_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_decoder_test"
@@ -2038,6 +2037,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing backoff_test"
+	$(Q) $(BINDIR)/$(CONFIG)/backoff_test || ( echo test backoff_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bdp_estimator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_arena"
@@ -2187,7 +2188,7 @@ test_python: static_c
 tools: tools_c tools_cxx
 
 
-tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/check_epollexclusive $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt
+tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/check_epollexclusive $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 
 tools_cxx: privatelibs_cxx
 
@@ -2796,14 +2797,14 @@ install-plugins: $(PROTOC_PLUGINS)
 install-pkg-config_c: pc_c pc_c_unsecure
 	$(E) "[INSTALL] Installing C pkg-config files"
 	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
+	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
 
 install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
 	$(E) "[INSTALL] Installing C++ pkg-config files"
 	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
+	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
+	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
 
 install-certs: etc/roots.pem
 	$(E) "[INSTALL] Installing root certificates"
@@ -8912,38 +8913,6 @@ endif
 endif
 
 
-BACKOFF_TEST_SRC = \
-    test/core/backoff/backoff_test.cc \
-
-BACKOFF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BACKOFF_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/backoff_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/backoff_test: $(BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/backoff_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/backoff/backoff_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_backoff_test: $(BACKOFF_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BACKOFF_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 BAD_SERVER_RESPONSE_TEST_SRC = \
     test/core/end2end/bad_server_response_test.cc \
 
@@ -9839,102 +9808,6 @@ deps_fling_test: $(FLING_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(FLING_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GEN_HPACK_TABLES_SRC = \
-    tools/codegen/core/gen_hpack_tables.c \
-
-GEN_HPACK_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_HPACK_TABLES_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gen_hpack_tables: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_hpack_tables
-
-endif
-
-$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_hpack_tables.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
-
-deps_gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GEN_HPACK_TABLES_OBJS:.o=.dep)
-endif
-endif
-
-
-GEN_LEGAL_METADATA_CHARACTERS_SRC = \
-    tools/codegen/core/gen_legal_metadata_characters.c \
-
-GEN_LEGAL_METADATA_CHARACTERS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_LEGAL_METADATA_CHARACTERS_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GEN_LEGAL_METADATA_CHARACTERS_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
-
-endif
-
-$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_legal_metadata_characters.o: 
-
-deps_gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
-endif
-endif
-
-
-GEN_PERCENT_ENCODING_TABLES_SRC = \
-    tools/codegen/core/gen_percent_encoding_tables.c \
-
-GEN_PERCENT_ENCODING_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_PERCENT_ENCODING_TABLES_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GEN_PERCENT_ENCODING_TABLES_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
-
-endif
-
-$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_percent_encoding_tables.o: 
-
-deps_gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
 endif
 endif
 
@@ -13625,6 +13498,49 @@ deps_auth_property_iterator_test: $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BACKOFF_TEST_SRC = \
+    test/core/backoff/backoff_test.cc \
+
+BACKOFF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BACKOFF_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/backoff_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/backoff_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/backoff_test: $(PROTOBUF_DEP) $(BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/backoff_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/backoff/backoff_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_backoff_test: $(BACKOFF_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BACKOFF_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -17427,6 +17343,102 @@ deps_public_headers_must_be_c89: $(PUBLIC_HEADERS_MUST_BE_C89_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(PUBLIC_HEADERS_MUST_BE_C89_OBJS:.o=.dep)
+endif
+endif
+
+
+GEN_HPACK_TABLES_SRC = \
+    tools/codegen/core/gen_hpack_tables.cc \
+
+GEN_HPACK_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_HPACK_TABLES_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_hpack_tables: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_hpack_tables
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_hpack_tables.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_HPACK_TABLES_OBJS:.o=.dep)
+endif
+endif
+
+
+GEN_LEGAL_METADATA_CHARACTERS_SRC = \
+    tools/codegen/core/gen_legal_metadata_characters.cc \
+
+GEN_LEGAL_METADATA_CHARACTERS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_LEGAL_METADATA_CHARACTERS_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_LEGAL_METADATA_CHARACTERS_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_legal_metadata_characters.o: 
+
+deps_gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
+endif
+endif
+
+
+GEN_PERCENT_ENCODING_TABLES_SRC = \
+    tools/codegen/core/gen_percent_encoding_tables.cc \
+
+GEN_PERCENT_ENCODING_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_PERCENT_ENCODING_TABLES_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_PERCENT_ENCODING_TABLES_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_percent_encoding_tables.o: 
+
+deps_gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
 endif
 endif
 

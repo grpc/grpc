@@ -81,7 +81,8 @@ RUN apt-get update && apt-get install -y \
       libtool \
       curl \
       python-virtualenv \
-      python-lxml
+      python-lxml \
+      shellcheck
 RUN pip install simplejson mako
 
 #======================================

@@ -29,7 +29,8 @@
         libtool ${"\\"}
         curl ${"\\"}
         python-virtualenv ${"\\"}
-        python-lxml
+        python-lxml ${"\\"}
+        shellcheck
   RUN pip install simplejson mako
   
   #======================================

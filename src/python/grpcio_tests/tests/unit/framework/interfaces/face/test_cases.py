@@ -24,7 +24,8 @@ from tests.unit.framework.interfaces.face import test_interfaces  # pylint: disa
 
 _TEST_CASE_SUPERCLASSES = (
     _blocking_invocation_inline_service.TestCase,
-    _future_invocation_asynchronous_event_service.TestCase,)
+    _future_invocation_asynchronous_event_service.TestCase,
+)
 
 
 def test_cases(implementation):
@@ -42,8 +43,9 @@ def test_cases(implementation):
     for invoker_constructor in _invocation.invoker_constructors():
         for super_class in _TEST_CASE_SUPERCLASSES:
             test_case_classes.append(
-                type(invoker_constructor.name() + super_class.NAME, (
-                    super_class,), {
+                type(
+                    invoker_constructor.name() + super_class.NAME,
+                    (super_class,), {
                         'implementation': implementation,
                         'invoker_constructor': invoker_constructor,
                         '__module__': implementation.__module__,

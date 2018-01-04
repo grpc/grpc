@@ -15,17 +15,17 @@
 
 set -ex
 
-out=$(readlink -f ${1:-coverage})
+out=$(readlink -f "${1:-coverage}")
 
-root=$(readlink -f $(dirname $0)/../../..)
+root=$(readlink -f "$(dirname "$0")/../../..")
 shift || true
 tmp=$(mktemp)
-cd $root
-tools/run_tests/run_tests.py -c gcov -l c c++ $@ || true
-lcov --capture --directory . --output-file $tmp
-genhtml $tmp --output-directory $out
-rm $tmp
+cd "$root"
+tools/run_tests/run_tests.py -c gcov -l c c++ "$@" || true
+lcov --capture --directory . --output-file "$tmp"
+genhtml "$tmp" --output-directory "$out"
+rm "$tmp"
 if which xdg-open > /dev/null
 then
-  xdg-open file://$out/index.html
+  xdg-open "file://$out/index.html"
 fi

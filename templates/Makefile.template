@@ -1383,14 +1383,14 @@
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
 
   install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
   	$(E) "[INSTALL] Installing C++ pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
 
   install-certs: etc/roots.pem
   	$(E) "[INSTALL] Installing root certificates"
