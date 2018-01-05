@@ -31,12 +31,14 @@
 
 grpc_core::TraceFlag grpc_lb_pick_first_trace(false, "pick_first");
 
-typedef struct pending_pick {
+namespace {
+struct pending_pick {
   struct pending_pick* next;
   uint32_t initial_metadata_flags;
   grpc_connected_subchannel** target;
   grpc_closure* on_complete;
-} pending_pick;
+};
+}  // namespace
 
 typedef struct {
   /** base policy: must be first */

@@ -26,13 +26,14 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-typedef enum {
+namespace {
+enum async_state {
   STATE_INIT = 0,
   STATE_DONE,
   STATE_CANCELLED,
-} async_state;
+};
 
-typedef struct call_data {
+struct call_data {
   grpc_call_combiner* call_combiner;
   grpc_call_stack* owning_call;
   grpc_transport_stream_op_batch* recv_initial_metadata_batch;
@@ -44,12 +45,13 @@ typedef struct call_data {
   grpc_auth_context* auth_context;
   grpc_closure cancel_closure;
   gpr_atm state;  // async_state
-} call_data;
+};
 
-typedef struct channel_data {
+struct channel_data {
   grpc_auth_context* auth_context;
   grpc_server_credentials* creds;
-} channel_data;
+};
+}  // namespace
 
 static grpc_metadata_array metadata_batch_to_md_array(
     const grpc_metadata_batch* batch) {

@@ -226,6 +226,7 @@ static void wrapped_rr_closure(void* arg, grpc_error* error) {
   gpr_free(wc_arg->free_when_done);
 }
 
+namespace {
 /* Linked list of pending pick requests. It stores all information needed to
  * eventually call (Round Robin's) pick() on them. They mainly stay pending
  * waiting for the RR policy to be created/updated.
@@ -234,7 +235,7 @@ static void wrapped_rr_closure(void* arg, grpc_error* error) {
  * (in \a wrapped_on_complete and \a wrapped_on_complete_arg). This is needed in
  * order to correctly unref the RR policy instance upon completion of the pick.
  * See \a wrapped_rr_closure for details. */
-typedef struct pending_pick {
+struct pending_pick {
   struct pending_pick* next;
 
   /* original pick()'s arguments */
@@ -246,7 +247,8 @@ typedef struct pending_pick {
 
   /* args for wrapped_on_complete */
   wrapped_rr_closure_arg wrapped_on_complete_arg;
-} pending_pick;
+};
+}  // namespace
 
 static void add_pending_pick(pending_pick** root,
                              const grpc_lb_policy_pick_args* pick_args,

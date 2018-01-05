@@ -41,11 +41,12 @@
 
 grpc_core::TraceFlag grpc_lb_round_robin_trace(false, "round_robin");
 
+namespace {
 /** List of entities waiting for a pick.
  *
  * Once a pick is available, \a target is updated and \a on_complete called. */
-typedef struct pending_pick {
-  struct pending_pick* next;
+struct pending_pick {
+  pending_pick* next;
 
   /* output argument where to store the pick()ed user_data. It'll be NULL if no
    * such data is present or there's an error (the definite test for errors is
@@ -62,7 +63,8 @@ typedef struct pending_pick {
 
   /* to be invoked once the pick() has completed (regardless of success) */
   grpc_closure* on_complete;
-} pending_pick;
+};
+}  // namespace
 
 typedef struct round_robin_lb_policy {
   /** base policy: must be first */
