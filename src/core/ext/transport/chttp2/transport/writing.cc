@@ -138,10 +138,11 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                          const char* staller) {
   gpr_log(
       GPR_DEBUG,
-      "%s:%p stream %d stalled by %s [fc:pending=%" PRIdPTR "pending-compressed=%" PRId64
-      ":flowed=%" PRId64 ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
-      t->peer_string, t, s->id, staller, s->flow_controlled_buffer.length, s->compressed_data_buffer.length,
-      s->flow_controlled_bytes_flowed,
+      "%s:%p stream %d stalled by %s [fc:pending=%" PRIdPTR
+      ":pending-compressed=%" PRIdPTR ":flowed=%" PRId64
+      ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
+      t->peer_string, t, s->id, staller, s->flow_controlled_buffer.length,
+      s->compressed_data_buffer.length, s->flow_controlled_bytes_flowed,
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
       t->flow_control->remote_window(),
