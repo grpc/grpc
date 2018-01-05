@@ -76,7 +76,7 @@ static grpc_error* tcp_annotate_error(grpc_error* src_error, grpc_tcp* tcp) {
       grpc_slice_from_copied_string(tcp->peer_string));
 }
 
-static void tcp_free(grpc_exec_ctx* exec_ctx, grpc_tcp* tcp) {
+static void tcp_free(grpc_tcp* tcp) {
   grpc_resource_user_unref(tcp->resource_user);
   gpr_free(tcp->handle);
   gpr_free(tcp->peer_string);
