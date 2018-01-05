@@ -104,11 +104,23 @@ static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
 grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
 
 namespace grpc_core {
-GPR_TLS_CLASS_DEF(ExecCtx::exec_ctx_);
+namespace {
+GPR_TLS_DECL(g_exec_ctx);
+}  // namespace
 
-void ExecCtx::GlobalInit(void) {
+void ExecCtx::GlobalInit() {
   g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  gpr_tls_init(&exec_ctx_);
+  gpr_tls_init(&g_exec_ctx);
+}
+
+void ExecCtx::GlobalShutdown() { gpr_tls_destroy(&g_exec_ctx); }
+
+ExecCtx* ExecCtx::Get() {
+  return reinterpret_cast<ExecCtx*>(gpr_tls_get(&g_exec_ctx));
+}
+
+void ExecCtx::Set(ExecCtx* exec_ctx) {
+  gpr_tls_set(&g_exec_ctx, reinterpret_cast<intptr_t>(exec_ctx));
 }
 
 bool ExecCtx::Flush() {
