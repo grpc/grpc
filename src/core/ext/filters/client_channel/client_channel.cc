@@ -1004,7 +1004,7 @@ static void create_subchannel_call_locked(grpc_call_element* elem,
                                           grpc_error* error) {
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  const grpc_connected_subchannel_call_args call_args = {
+  const grpc_connected_subchannel::CallArgs call_args = {
       calld->pollent,                  // pollent
       calld->path,                     // path
       calld->call_start_time,          // start_time
@@ -1013,8 +1013,8 @@ static void create_subchannel_call_locked(grpc_call_element* elem,
       calld->subchannel_call_context,  // context
       calld->call_combiner             // call_combiner
   };
-  grpc_error* new_error = grpc_connected_subchannel_create_call(
-      calld->connected_subchannel, &call_args, &calld->subchannel_call);
+  grpc_error* new_error = calld->connected_subchannel->CreateCall(
+      &call_args, &calld->subchannel_call);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
             chand, calld, calld->subchannel_call, grpc_error_string(new_error));

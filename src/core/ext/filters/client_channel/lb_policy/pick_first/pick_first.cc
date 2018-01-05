@@ -225,8 +225,7 @@ static void pf_ping_one_locked(grpc_lb_policy* pol, grpc_closure* on_initiate,
                                grpc_closure* on_ack) {
   pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
   if (p->selected) {
-    grpc_connected_subchannel_ping(p->selected->connected_subchannel,
-                                   on_initiate, on_ack);
+    p->selected->connected_subchannel->Ping(on_initiate, on_ack);
   } else {
     GRPC_CLOSURE_SCHED(on_initiate,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Not connected"));
@@ -413,6 +412,18 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
           &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_REF(error), "selected_not_ready+switch_to_update");
     } else {
+      if (sd->curr_connectivity_state < GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // Renew notification.
+        grpc_lb_subchannel_data_start_connectivity_watch(sd);
+      } else {  // in transient failure or shutdown. Rely on re-resolution to
+                // recover.
+        p->selected = nullptr;
+        grpc_lb_subchannel_data_stop_connectivity_watch(sd);
+        grpc_lb_subchannel_list_unref_for_connectivity_watch(
+            sd->subchannel_list, "pf_selected_shutdown");
+        grpc_lb_subchannel_data_unref_subchannel(
+            sd, "pf_selected_shutdown");  // Unrefs connected subchannel
+      }
       // TODO(juanlishen): we re-resolve when the selected subchannel goes to
       // TRANSIENT_FAILURE because we used to shut down in this case before
       // re-resolution is introduced. But we need to investigate whether we
@@ -431,16 +442,6 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
         grpc_connectivity_state_set(&p->state_tracker,
                                     sd->curr_connectivity_state,
                                     GRPC_ERROR_REF(error), "selected_changed");
-      }
-      if (sd->curr_connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
-        // Renew notification.
-        grpc_lb_subchannel_data_start_connectivity_watch(sd);
-      } else {
-        p->selected = nullptr;
-        grpc_lb_subchannel_data_stop_connectivity_watch(sd);
-        grpc_lb_subchannel_list_unref_for_connectivity_watch(
-            sd->subchannel_list, "pf_selected_shutdown");
-        grpc_lb_subchannel_data_unref_subchannel(sd, "pf_selected_shutdown");
       }
     }
     return;

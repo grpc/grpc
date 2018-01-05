@@ -164,7 +164,7 @@ int grpc_lb_policy_pick_locked(grpc_lb_policy* policy,
                                grpc_call_context_element* context,
                                void** user_data, grpc_closure* on_complete);
 
-/** Perform a connected subchannel ping (see \a grpc_connected_subchannel_ping)
+/** Perform a connected subchannel ping (see \a grpc_connected_subchannel::Ping)
     against one of the connected subchannels managed by \a policy. */
 void grpc_lb_policy_ping_one_locked(grpc_lb_policy* policy,
                                     grpc_closure* on_initiate,

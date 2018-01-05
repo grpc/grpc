@@ -23,6 +23,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/support/arena.h"
+#include "src/core/lib/support/ref_counted.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -32,7 +33,6 @@
 /** A (sub-)channel that knows how to connect to exactly one target
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
-typedef struct grpc_connected_subchannel grpc_connected_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
 typedef struct grpc_subchannel_args grpc_subchannel_args;
 typedef struct grpc_subchannel_key grpc_subchannel_key;
@@ -73,6 +73,34 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
 #endif
 
+class grpc_connected_subchannel : public grpc_core::RefCountedWithTracing {
+ public:
+  struct CallArgs {
+    grpc_polling_entity* pollent;
+    grpc_slice path;
+    gpr_timespec start_time;
+    grpc_millis deadline;
+    gpr_arena* arena;
+    grpc_call_context_element* context;
+    grpc_call_combiner* call_combiner;
+  };
+
+  grpc_connected_subchannel(grpc_channel_stack* channel_stack);
+  grpc_connected_subchannel* Ref(const grpc_core::DebugLocation& location,
+                                 const char* reason);
+  void Unref(const grpc_core::DebugLocation& location, const char* reason);
+  grpc_channel_stack* channel_stack() { return channel_stack_; }
+  void NotifyOnStateChange(grpc_pollset_set* interested_parties,
+                           grpc_connectivity_state* state,
+                           grpc_closure* closure);
+  void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
+
+  grpc_error* CreateCall(const CallArgs* args, grpc_subchannel_call** call);
+
+ private:
+  grpc_channel_stack* channel_stack_;
+};
+
 grpc_subchannel* grpc_subchannel_ref(
     grpc_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 grpc_subchannel* grpc_subchannel_ref_from_weak_ref(
@@ -92,26 +120,6 @@ void grpc_subchannel_call_ref(
 void grpc_subchannel_call_unref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
-/** construct a subchannel call */
-typedef struct {
-  grpc_polling_entity* pollent;
-  grpc_slice path;
-  gpr_timespec start_time;
-  grpc_millis deadline;
-  gpr_arena* arena;
-  grpc_call_context_element* context;
-  grpc_call_combiner* call_combiner;
-} grpc_connected_subchannel_call_args;
-
-grpc_error* grpc_connected_subchannel_create_call(
-    grpc_connected_subchannel* connected_subchannel,
-    const grpc_connected_subchannel_call_args* args,
-    grpc_subchannel_call** subchannel_call);
-
-/** process a transport level op */
-void grpc_connected_subchannel_process_transport_op(
-    grpc_connected_subchannel* subchannel, grpc_transport_op* op);
-
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
     grpc_subchannel* channel, grpc_error** error);
@@ -121,12 +129,6 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(
 void grpc_subchannel_notify_on_state_change(
     grpc_subchannel* channel, grpc_pollset_set* interested_parties,
     grpc_connectivity_state* state, grpc_closure* notify);
-void grpc_connected_subchannel_notify_on_state_change(
-    grpc_connected_subchannel* channel, grpc_pollset_set* interested_parties,
-    grpc_connectivity_state* state, grpc_closure* notify);
-void grpc_connected_subchannel_ping(grpc_connected_subchannel* channel,
-                                    grpc_closure* on_initiate,
-                                    grpc_closure* on_ack);
 
 /** retrieve the grpc_connected_subchannel - or NULL if called before
     the subchannel becomes connected */

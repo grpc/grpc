@@ -442,8 +442,19 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
   // Update state counters and new overall state.
   update_state_counters_locked(sd);
   update_lb_connectivity_status_locked(sd, GRPC_ERROR_REF(error));
+  // If the sd's new state is TRANSIENT_FAILURE, unref the *connected*
+  // subchannel, if any.
+  if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    if (sd->connected_subchannel != nullptr) {
+      GRPC_CONNECTED_SUBCHANNEL_UNREF(sd->connected_subchannel,
+                                      "connected_subchannel_transient_failure");
+      sd->connected_subchannel = nullptr;
+    }
+    // Renew notification.
+    grpc_lb_subchannel_data_start_connectivity_watch(sd);
+  }
   // If the sd's new state is SHUTDOWN, unref the subchannel.
-  if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
+  else if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
     grpc_lb_subchannel_data_stop_connectivity_watch(sd);
     grpc_lb_subchannel_data_unref_subchannel(sd, "rr_connectivity_shutdown");
     grpc_lb_subchannel_list_unref_for_connectivity_watch(
@@ -540,7 +551,7 @@ static void rr_ping_one_locked(grpc_lb_policy* pol, grpc_closure* on_initiate,
         &p->subchannel_list->subchannels[next_ready_index];
     grpc_connected_subchannel* target = GRPC_CONNECTED_SUBCHANNEL_REF(
         selected->connected_subchannel, "rr_ping");
-    grpc_connected_subchannel_ping(target, on_initiate, on_ack);
+    target->Ping(on_initiate, on_ack);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(target, "rr_ping");
   } else {
     GRPC_CLOSURE_SCHED(on_initiate, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
