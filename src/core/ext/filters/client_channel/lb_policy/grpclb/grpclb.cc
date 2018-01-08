@@ -128,6 +128,8 @@
 
 grpc_core::TraceFlag grpc_lb_glb_trace(false, "glb");
 
+struct glb_lb_policy;
+
 namespace {
 
 /// Linked list of pending pick requests. It stores all information needed to
@@ -1393,10 +1395,8 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  /* take a weak ref (won't prevent calling of \a glb_shutdown if the strong ref
-   * count goes to zero) to be unref'd in lb_on_sent_initial_request_locked() */
-  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base,
-                          "lb_on_sent_initial_request_locked");
+  /* take a ref to be released in lb_on_sent_initial_request_locked() */
+  GRPC_LB_POLICY_REF(&glb_policy->base, "lb_on_sent_initial_request_locked");
   call_error = grpc_call_start_batch_and_execute(
       glb_policy->lb_call, ops, (size_t)(op - ops),
       &glb_policy->lb_on_sent_initial_request);
@@ -1412,8 +1412,7 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  /* take a weak ref (won't prevent calling of \a glb_shutdown if the strong ref
-   * count goes to zero) to be unref'd in lb_on_server_status_received_locked */
+  /* take a ref to be released in lb_on_server_status_received_locked() */
   GRPC_LB_POLICY_REF(&glb_policy->base, "lb_on_server_status_received_locked");
   call_error = grpc_call_start_batch_and_execute(
       glb_policy->lb_call, ops, (size_t)(op - ops),
@@ -1426,8 +1425,7 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  /* take another weak ref to be unref'd/reused in
-   * lb_on_response_received_locked */
+  /* take a ref to be unref'd/reused in lb_on_response_received_locked() */
   GRPC_LB_POLICY_REF(&glb_policy->base, "lb_on_response_received_locked");
   call_error = grpc_call_start_batch_and_execute(
       glb_policy->lb_call, ops, (size_t)(op - ops),
@@ -1443,8 +1441,7 @@ static void lb_on_sent_initial_request_locked(void* arg, grpc_error* error) {
   if (glb_policy->client_load_report_payload != nullptr) {
     do_send_client_load_report_locked(glb_policy);
   }
-  GRPC_LB_POLICY_WEAK_UNREF(&glb_policy->base,
-                            "lb_on_sent_initial_request_locked");
+  GRPC_LB_POLICY_UNREF(&glb_policy->base, "lb_on_sent_initial_request_locked");
 }
 
 static void lb_on_response_received_locked(void* arg, grpc_error* error) {
