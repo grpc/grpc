@@ -21,6 +21,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include <functional>
 #include <memory>
 #include <thread>
 
