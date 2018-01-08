@@ -473,7 +473,7 @@ static grpc_error* fd_shutdown_error(grpc_fd* fd) {
 
 static void notify_on_locked(grpc_exec_ctx* exec_ctx, grpc_fd* fd,
                              grpc_closure** st, grpc_closure* closure) {
-  if (fd->shutdown) {
+  if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
     GRPC_CLOSURE_SCHED(exec_ctx, closure,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"));
   } else if (*st == CLOSURE_NOT_READY) {
