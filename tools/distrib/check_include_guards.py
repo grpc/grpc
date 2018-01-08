@@ -95,14 +95,14 @@ class GuardValidator(object):
         # Does the guard end with a '_H'?
         running_guard = match.group(1)
         if not running_guard.endswith('_H'):
-            fcontents = self.fail(fpath, match.re, match.string,
-                                  match.group(1), valid_guard, fix)
+            fcontents = self.fail(fpath, match.re, match.string, match.group(1),
+                                  valid_guard, fix)
             if fix: save(fpath, fcontents)
 
         # Is it the expected one based on the file path?
         if running_guard != valid_guard:
-            fcontents = self.fail(fpath, match.re, match.string,
-                                  match.group(1), valid_guard, fix)
+            fcontents = self.fail(fpath, match.re, match.string, match.group(1),
+                                  valid_guard, fix)
             if fix: save(fpath, fcontents)
 
         # Is there a #define? Is it the same as the #ifndef one?
@@ -114,8 +114,8 @@ class GuardValidator(object):
 
         # Is the #define guard the same as the #ifndef guard?
         if match.group(1) != running_guard:
-            fcontents = self.fail(fpath, match.re, match.string,
-                                  match.group(1), valid_guard, fix)
+            fcontents = self.fail(fpath, match.re, match.string, match.group(1),
+                                  valid_guard, fix)
             if fix: save(fpath, fcontents)
 
         # Is there a properly commented #endif?
@@ -138,8 +138,8 @@ class GuardValidator(object):
                 self.fail(fpath, endif_re, flines[-1], '', '', False)
         elif match.group(1) != running_guard:
             # Is the #endif guard the same as the #ifndef and #define guards?
-            fcontents = self.fail(fpath, endif_re, fcontents,
-                                  match.group(1), valid_guard, fix)
+            fcontents = self.fail(fpath, endif_re, fcontents, match.group(1),
+                                  valid_guard, fix)
             if fix: save(fpath, fcontents)
 
         return not self.failed  # Did the check succeed? (ie, not failed)

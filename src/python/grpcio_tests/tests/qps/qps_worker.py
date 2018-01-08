@@ -16,15 +16,15 @@
 import argparse
 import time
 
-from concurrent import futures
 import grpc
 from src.proto.grpc.testing import services_pb2_grpc
 
 from tests.qps import worker_server
+from tests.unit import test_common
 
 
 def run_worker_server(port):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
+    server = test_common.test_server()
     servicer = worker_server.WorkerServer()
     services_pb2_grpc.add_WorkerServiceServicer_to_server(servicer, server)
     server.add_insecure_port('[::]:{}'.format(port))

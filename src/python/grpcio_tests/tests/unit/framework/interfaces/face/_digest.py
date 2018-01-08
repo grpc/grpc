@@ -34,11 +34,15 @@ _IDENTITY = lambda x: x
 
 class TestServiceDigest(
         collections.namedtuple('TestServiceDigest', (
-            'methods', 'inline_method_implementations',
-            'event_method_implementations', 'multi_method_implementation',
-            'unary_unary_messages_sequences', 'unary_stream_messages_sequences',
+            'methods',
+            'inline_method_implementations',
+            'event_method_implementations',
+            'multi_method_implementation',
+            'unary_unary_messages_sequences',
+            'unary_stream_messages_sequences',
             'stream_unary_messages_sequences',
-            'stream_stream_messages_sequences',))):
+            'stream_stream_messages_sequences',
+        ))):
     """A transformation of a service.TestService.
 
   Attributes:
@@ -421,8 +425,8 @@ def digest(service, control, pool):
     events.update(stream_unary.events)
     events.update(stream_stream.events)
 
-    return TestServiceDigest(
-        methods, inlines, events,
-        _MultiMethodImplementation(adaptations, control, pool),
-        unary_unary.messages, unary_stream.messages, stream_unary.messages,
-        stream_stream.messages)
+    return TestServiceDigest(methods, inlines, events,
+                             _MultiMethodImplementation(adaptations, control,
+                                                        pool),
+                             unary_unary.messages, unary_stream.messages,
+                             stream_unary.messages, stream_stream.messages)

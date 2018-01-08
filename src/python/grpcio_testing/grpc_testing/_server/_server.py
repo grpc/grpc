@@ -76,7 +76,11 @@ class _Serverish(_common.Serverish):
                 rpc, self._time, deadline)
             service_thread = threading.Thread(
                 target=service_behavior,
-                args=(implementation, rpc, servicer_context,))
+                args=(
+                    implementation,
+                    rpc,
+                    servicer_context,
+                ))
             service_thread.start()
 
     def invoke_unary_unary(self, method_descriptor, handler,

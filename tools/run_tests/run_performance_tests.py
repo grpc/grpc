@@ -100,7 +100,8 @@ def create_qpsworker_job(language,
     jobspec = jobset.JobSpec(
         cmdline=cmdline,
         shortname=shortname,
-        timeout_seconds=worker_timeout,  # workers get restarted after each scenario
+        timeout_seconds=
+        worker_timeout,  # workers get restarted after each scenario
         verbose_success=True)
     return QpsWorkerJob(jobspec, language, host_and_port, perf_file_base_name)
 
@@ -298,7 +299,8 @@ def create_qpsworkers(languages, worker_hosts, perf_cmd=None):
             port=worker[1] + language.worker_port_offset(),
             remote_host=worker[0],
             perf_cmd=perf_cmd)
-        for language in languages for worker_idx, worker in enumerate(workers)
+        for language in languages
+        for worker_idx, worker in enumerate(workers)
     ]
 
 
@@ -367,10 +369,10 @@ def create_scenarios(languages,
                     workers = workers_by_lang[str(language)][:]
                     # 'SERVER_LANGUAGE' is an indicator for this script to pick
                     # a server in different language.
-                    custom_server_lang = scenario_json.get('SERVER_LANGUAGE',
-                                                           None)
-                    custom_client_lang = scenario_json.get('CLIENT_LANGUAGE',
-                                                           None)
+                    custom_server_lang = scenario_json.get(
+                        'SERVER_LANGUAGE', None)
+                    custom_client_lang = scenario_json.get(
+                        'CLIENT_LANGUAGE', None)
                     scenario_json = scenario_config.remove_nonproto_fields(
                         scenario_json)
                     if custom_server_lang and custom_client_lang:
@@ -480,8 +482,8 @@ def main():
     argp.add_argument(
         '--remote_driver_host',
         default=None,
-        help='Run QPS driver on given host. By default, QPS driver is run locally.'
-    )
+        help=
+        'Run QPS driver on given host. By default, QPS driver is run locally.')
     argp.add_argument(
         '--remote_worker_host',
         nargs='+',
@@ -560,7 +562,8 @@ def main():
         '--flame_graph_reports',
         default='perf_reports',
         type=str,
-        help='Name of directory to output flame graph profiles to, if any are created.'
+        help=
+        'Name of directory to output flame graph profiles to, if any are created.'
     )
     argp.add_argument(
         '-u',
@@ -662,15 +665,16 @@ def main():
                         six.iteritems(resultset)))
             finally:
                 # Consider qps workers that need to be killed as failures
-                qps_workers_killed += finish_qps_workers(scenario.workers,
-                                                         qpsworker_jobs)
+                qps_workers_killed += finish_qps_workers(
+                    scenario.workers, qpsworker_jobs)
 
             if perf_cmd and scenario_failures == 0 and not args.skip_generate_flamegraphs:
                 workers_and_base_names = {}
                 for worker in scenario.workers:
                     if not worker.perf_file_base_name:
                         raise Exception(
-                            'using perf buf perf report filename is unspecified')
+                            'using perf buf perf report filename is unspecified'
+                        )
                     workers_and_base_names[
                         worker.host_and_port] = worker.perf_file_base_name
                 perf_report_failures += run_collect_perf_profile_jobs(

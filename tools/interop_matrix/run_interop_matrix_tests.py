@@ -105,8 +105,8 @@ def find_all_images_for_lang(lang):
         releases = ['master'] + client_matrix.get_release_tags(lang)
     else:
         # Look for a particular release.
-        if args.release not in ['master'] + client_matrix.get_release_tags(
-                lang):
+        if args.release not in ['master'
+                               ] + client_matrix.get_release_tags(lang):
             jobset.message(
                 'SKIPPED',
                 '%s for %s is not defined' % (args.release, lang),
@@ -136,7 +136,8 @@ def find_all_images_for_lang(lang):
             'Skipped images (no-tag/unknown-tag): %d' % skipped,
             do_newline=True)
         # Filter tags based on the releases.
-        images[runtime] = [(tag, '%s:%s' % (image_path, tag)) for tag in tags
+        images[runtime] = [(tag, '%s:%s' % (image_path, tag))
+                           for tag in tags
                            if tag in releases]
     return images
 

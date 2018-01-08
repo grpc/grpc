@@ -47,7 +47,8 @@ args = argp.parse_args()
 #
 
 owners_files = [
-    os.path.join(root, 'OWNERS') for root, dirs, files in os.walk(git_root)
+    os.path.join(root, 'OWNERS')
+    for root, dirs, files in os.walk(git_root)
     if 'OWNERS' in files
 ]
 
