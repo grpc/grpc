@@ -4966,6 +4966,10 @@ configs:
     CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
     LDFLAGS: -rdynamic
+  noexcept:
+    CPPFLAGS: -O2
+    CXXFLAGS: -fno-exceptions
+    DEFINES: NDEBUG
   opt:
     CPPFLAGS: -O2
     DEFINES: NDEBUG
