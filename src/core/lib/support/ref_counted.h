@@ -117,7 +117,7 @@ class RefCountedWithTracing {
 
 #ifdef NDEBUG
   explicit RefCountedWithTracing(DebugOnlyTraceFlag* trace_flag)
-      : RefCountedWithTracing(nullptr) {}
+      : RefCountedWithTracing() {}
 #endif
 
   virtual ~RefCountedWithTracing() {}

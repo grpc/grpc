@@ -123,7 +123,7 @@ class InternallyRefCountedWithTracing : public Orphanable {
 
 #ifdef NDEBUG
   explicit InternallyRefCountedWithTracing(DebugOnlyTraceFlag* trace_flag)
-      : InternallyRefCountedWithTracing(nullptr) {}
+      : InternallyRefCountedWithTracing() {}
 #endif
 
   virtual ~InternallyRefCountedWithTracing() {}
