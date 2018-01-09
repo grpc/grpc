@@ -115,6 +115,11 @@ class RefCountedWithTracing {
     gpr_ref_init(&refs_, 1);
   }
 
+#ifdef NDEBUG
+  explicit RefCountedWithTracing(DebugOnlyTraceFlag* trace_flag)
+      : RefCountedWithTracing(nullptr) {}
+#endif
+
   virtual ~RefCountedWithTracing() {}
 
  private:
