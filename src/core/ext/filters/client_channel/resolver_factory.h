@@ -59,6 +59,8 @@ class ResolverFactory {
   /// Caller does NOT take ownership of result.
   virtual const char* scheme() const GRPC_ABSTRACT;
 
+  virtual ~ResolverFactory() {}
+
   GRPC_ABSTRACT_BASE_CLASS
 };
 
