@@ -434,6 +434,14 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 
+#ifndef GRPC_UNUSED
+#if defined(__GNUC__) && !defined(__MINGW32__)
+#define GRPC_UNUSED __attribute__((unused))
+#else
+#define GRPC_UNUSED
+#endif
+#endif
+
 #ifndef GPR_PRINT_FORMAT_CHECK
 #ifdef __GNUC__
 #define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
