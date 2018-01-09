@@ -17,6 +17,11 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
 
   include(ExternalProject)
 
+  if(CMAKE_ASM_NASM_COMPILER)
+    # TODO(jtattermusch): needed to correctly locate yasm.exe on jenkins, remove once not needed
+    set(_gRPC_BORINGSSL_ASM_ARGS -DCMAKE_ASM_NASM_COMPILER:PATH="${CMAKE_ASM_NASM_COMPILER}")
+  endif()
+
   ExternalProject_Add(boringssl
     PREFIX boringssl
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl"
@@ -25,7 +30,7 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
           ${_gRPC_EP_COMMON_ARGS}
           # make boringssl buildable with Visual Studio
           -DOPENSSL_NO_ASM:BOOL=ON
-          ${_gRPC_EXTRA_BORINGSSL_ARGS}
+          ${_gRPC_BORINGSSL_ASM_ARGS}
   )
 
   add_library(ssl::ssl STATIC IMPORTED)
