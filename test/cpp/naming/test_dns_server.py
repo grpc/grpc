@@ -33,6 +33,7 @@ import twisted.names.dns
 import twisted.names.server
 from twisted.names import client, server, common, authority, dns
 import argparse
+import service_config_utils
 
 _SERVER_HEALTH_CHECK_RECORD_NAME = 'health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp' # missing end '.' for twisted syntax
 _SERVER_HEALTH_CHECK_RECORD_DATA = '123.123.123.123'
@@ -53,17 +54,6 @@ def start_local_dns_server(args):
       return
     all_records[name] = [r]
 
-  def _maybe_split_up_txt_data(name, txt_data, r_ttl):
-    start = 0
-    txt_data_list = []
-    while len(txt_data[start:]) > 0:
-      next_read = len(txt_data[start:])
-      if next_read > 255:
-        next_read = 255
-      txt_data_list.append(txt_data[start:start+next_read])
-      start += next_read
-    _push_record(name, dns.Record_TXT(*txt_data_list, ttl=r_ttl))
-
   with open(args.records_config_path) as config:
     test_records_config = yaml.load(config)
   common_zone_name = test_records_config['resolver_tests_common_zone_name']
@@ -71,7 +61,7 @@ def start_local_dns_server(args):
     for name in group['records'].keys():
       for record in group['records'][name]:
         r_type = record['type']
-        r_data = record['data']
+        r_data = record.get('data')
         r_ttl = int(record['TTL'])
         record_full_name = '%s.%s' % (name, common_zone_name)
         assert record_full_name[-1] == '.'
@@ -89,7 +79,9 @@ def start_local_dns_server(args):
           r_data = '%s %s %s %s' % (p, w, port, target_full_name)
           _push_record(record_full_name, dns.Record_SRV(p, w, port, target_full_name, ttl=r_ttl))
         if r_type == 'TXT':
-          _maybe_split_up_txt_data(record_full_name, r_data, r_ttl)
+          assert r_data is None
+          txt_data_chunks = service_config_utils.txt_data_list_from_service_config_json(name, False)
+          _push_record(record_full_name, dns.Record_TXT(*txt_data_chunks, ttl=r_ttl))
   # Server health check record
   _push_record(_SERVER_HEALTH_CHECK_RECORD_NAME, dns.Record_A(_SERVER_HEALTH_CHECK_RECORD_DATA, ttl=0))
   soa_record = dns.Record_SOA(mname = common_zone_name)

@@ -1,0 +1,36 @@
+[
+    {
+        "percentage": 0, 
+        "serviceConfig": {
+            "loadBalancingPolicy": "round_robin", 
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "method": "Foo", 
+                            "service": "NeverPickedService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }
+            ]
+        }
+    }, 
+    {
+        "percentage": 100, 
+        "serviceConfig": {
+            "loadBalancingPolicy": "round_robin", 
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "method": "Foo", 
+                            "service": "AlwaysPickedService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }
+            ]
+        }
+    }
+]

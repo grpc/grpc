@@ -21,6 +21,7 @@ import yaml
 import collections
 import hashlib
 import json
+import service_config_utils
 
 _LOCAL_DNS_SERVER_ADDRESS = '127.0.0.1:15353'
 
@@ -39,7 +40,7 @@ def _build_expected_addrs_cmd_arg(expected_addrs):
     out.append('%s,%s' % (addr['address'], str(addr['is_balancer'])))
   return ';'.join(out)
 
-def _data_for_type(r_type, r_data, common_zone_name):
+def _data_for_type(r_type, r_data, common_zone_name, record_name):
   if r_type in ['A', 'AAAA']:
     return ' '.join(map(lambda x: '\"%s\"' % x, r_data))
   if r_type == 'SRV':
@@ -51,30 +52,9 @@ def _data_for_type(r_type, r_data, common_zone_name):
     return '\"%s\"' % ' '.join(uploadable)
   if r_type == 'TXT':
     assert len(r_data) == 1
-    chunks = []
-    all_data = r_data[0]
-    cur = 0
-    # Split TXT records that span more than 255 characters (the single
-    # string length-limit in DNS) into multiple strings. Each string
-    # needs to be wrapped with double-quotes, and all inner double-quotes
-    # are escaped. The wrapping double-quotes and inner backslashes can be
-    # counted towards the 255 character length limit (as observed with gcloud),
-    # so make sure all strings fit within that limit.
-    while len(all_data[cur:]) > 0:
-      next_chunk = '\"'
-      while len(next_chunk) < 254 and len(all_data[cur:]) > 0:
-        if all_data[cur] == '\"':
-          if len(next_chunk) < 253:
-            next_chunk += '\\\"'
-          else:
-            break
-        else:
-          next_chunk += all_data[cur]
-        cur += 1
-      next_chunk += '\"'
-      if len(next_chunk) > 255:
-        raise Exception('Bug: next chunk is too long.')
-      chunks.append(next_chunk)
+    assert r_data[0] is None, ('TXT data is present in the yaml file. '
+                               'It is meant to be read from a json file.')
+    chunks = service_config_utils.txt_data_list_from_service_config_json(record_name, True)
     # Wrap the whole record in single quotes to make sure all strings
     # are associated with the same TXT record (to make it one bash token for
     # gcloud)
@@ -98,7 +78,7 @@ def _gcloud_uploadable_form(test_cases, common_zone_name):
         r_type = r_data['type']
         if all_r_data.get(r_type) is None:
           all_r_data[r_type] = []
-        all_r_data[r_type].append(r_data['data'])
+        all_r_data[r_type].append(r_data.get('data'))
       for r_type in all_r_data.keys():
         for r in out:
           assert r['name'] != record_name or r['type'] != r_type, 'attempt to add a duplicate record'
@@ -106,7 +86,7 @@ def _gcloud_uploadable_form(test_cases, common_zone_name):
             'name': record_name,
             'ttl': r_ttl,
             'type': r_type,
-            'data': _data_for_type(r_type, all_r_data[r_type], common_zone_name)
+            'data': _data_for_type(r_type, all_r_data[r_type], common_zone_name, record_name),
         })
   return out
 

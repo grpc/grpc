@@ -82,7 +82,7 @@ gcloud dns record-sets transaction add \
   --name=_grpc_config.srv-ipv4-simple-service-config.resolver-tests-version-4.grpctestingexp. \
   --type=TXT \
   --ttl=2100 \
-  '"grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"SimpleService\",\"waitForReady\":true}]}]}}]"'
+  '"grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"SimpleService\"}],\"waitForReady\":true}]}}]"'
 
 gcloud dns record-sets transaction add \
   -z=resolver-tests-version-4-grpctestingexp-zone-id \
@@ -110,14 +110,14 @@ gcloud dns record-sets transaction add \
   --name=_grpc_config.ipv4-no-srv-simple-service-config.resolver-tests-version-4.grpctestingexp. \
   --type=TXT \
   --ttl=2100 \
-  '"grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NoSrvSimpleService\",\"waitForReady\":true}]}]}}]"'
+  '"grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NoSrvSimpleService\"}],\"waitForReady\":true}]}}]"'
 
 gcloud dns record-sets transaction add \
   -z=resolver-tests-version-4-grpctestingexp-zone-id \
   --name=_grpc_config.ipv4-no-config-for-cpp.resolver-tests-version-4.grpctestingexp. \
   --type=TXT \
   --ttl=2100 \
-  '"grpc_config=[{\"clientLanguage\":[\"python\"],\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"PythonService\",\"waitForReady\":true}]}]}}]"'
+  '"grpc_config=[{\"clientLanguage\":[\"python\"],\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"PythonService\"}],\"waitForReady\":true}]}}]"'
 
 gcloud dns record-sets transaction add \
   -z=resolver-tests-version-4-grpctestingexp-zone-id \
@@ -138,7 +138,7 @@ gcloud dns record-sets transaction add \
   --name=_grpc_config.ipv4-cpp-config-has-zero-percentage.resolver-tests-version-4.grpctestingexp. \
   --type=TXT \
   --ttl=2100 \
-  '"grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"CppService\",\"waitForReady\":true}]}]}}]"'
+  '"grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"CppService\"}],\"waitForReady\":true}]}}]"'
 
 gcloud dns record-sets transaction add \
   -z=resolver-tests-version-4-grpctestingexp-zone-id \
@@ -166,7 +166,7 @@ gcloud dns record-sets transaction add \
   --name=_grpc_config.ipv4-config-with-percentages.resolver-tests-version-4.grpctestingexp. \
   --type=TXT \
   --ttl=2100 \
-  '"grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NeverPickedService\",\"waitForReady\":true}]}]}},{\"percentage\":100,\"serviceConfig\":{\"loadBalanc" "ingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"AlwaysPickedService\",\"waitForReady\":true}]}]}}]"'
+  '"grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NeverPickedService\"}],\"waitForReady\":true}]}},{\"percentage\":100,\"serviceConfig\":{\"loadBalanc" "ingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"AlwaysPickedService\"}],\"waitForReady\":true}]}}]"'
 
 gcloud dns record-sets transaction add \
   -z=resolver-tests-version-4-grpctestingexp-zone-id \

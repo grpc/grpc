@@ -1,0 +1,18 @@
+[
+    {
+        "serviceConfig": {
+            "loadBalancingPolicy": "round_robin", 
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "method": "Foo", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }
+            ]
+        }
+    }
+]

@@ -1,0 +1,19 @@
+[
+    {
+        "percentage": 0, 
+        "serviceConfig": {
+            "loadBalancingPolicy": "round_robin", 
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "method": "Foo", 
+                            "service": "CppService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }
+            ]
+        }
+    }
+]

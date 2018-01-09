@@ -1,0 +1,21 @@
+[
+    {
+        "clientLanguage": [
+            "python"
+        ], 
+        "serviceConfig": {
+            "loadBalancingPolicy": "round_robin", 
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "method": "Foo", 
+                            "service": "PythonService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }
+            ]
+        }
+    }
+]

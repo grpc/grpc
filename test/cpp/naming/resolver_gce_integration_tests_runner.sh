@@ -272,7 +272,7 @@ ONE_FAILED=0
 bins/$CONFIG/resolver_component_test \
   --target_name='srv-ipv4-simple-service-config.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:1234,True' \
-  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}' \
+  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true}]}' \
   --expected_lb_policy='round_robin' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
   echo "Test based on target record: srv-ipv4-simple-service-config.resolver-tests-version-4.grpctestingexp. FAILED"
@@ -283,7 +283,7 @@ ONE_FAILED=0
 bins/$CONFIG/resolver_component_test \
   --target_name='ipv4-no-srv-simple-service-config.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
-  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService","waitForReady":true}]}]}' \
+  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService"}],"waitForReady":true}]}' \
   --expected_lb_policy='round_robin' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
   echo "Test based on target record: ipv4-no-srv-simple-service-config.resolver-tests-version-4.grpctestingexp. FAILED"
@@ -327,7 +327,7 @@ ONE_FAILED=0
 bins/$CONFIG/resolver_component_test \
   --target_name='ipv4-config-with-percentages.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
-  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService","waitForReady":true}]}]}' \
+  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService"}],"waitForReady":true}]}' \
   --expected_lb_policy='round_robin' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
   echo "Test based on target record: ipv4-config-with-percentages.resolver-tests-version-4.grpctestingexp. FAILED"

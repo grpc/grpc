@@ -212,12 +212,12 @@ void CheckServiceConfigResultLocked(grpc_channel_args* channel_args,
   const grpc_arg* service_config_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (args->expected_service_config_string != "") {
-    GPR_ASSERT(service_config_arg != nullptr);
-    GPR_ASSERT(service_config_arg->type == GRPC_ARG_STRING);
+    ASSERT_NE(service_config_arg, nullptr);
+    ASSERT_EQ(service_config_arg->type, GRPC_ARG_STRING);
     EXPECT_EQ(service_config_arg->value.string,
               args->expected_service_config_string);
   } else {
-    GPR_ASSERT(service_config_arg == nullptr);
+    ASSERT_EQ(service_config_arg, nullptr);
   }
 }
 
