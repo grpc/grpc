@@ -178,8 +178,8 @@ def _ping_pong_scenario(name,
         # clamp buffer usage to something reasonable (16 gig for now)
         MAX_MEMORY_USE = 16 * 1024 * 1024 * 1024
         if outstanding_calls * max(req_size, resp_size) > MAX_MEMORY_USE:
-            outstanding_calls = max(1, MAX_MEMORY_USE / max(req_size,
-                                                            resp_size))
+            outstanding_calls = max(1,
+                                    MAX_MEMORY_USE / max(req_size, resp_size))
         wide = channels if channels is not None else WIDE
         deep = int(math.ceil(1.0 * outstanding_calls / wide))
 
@@ -503,8 +503,8 @@ class CXXLanguage:
             ]:
                 for synchronicity in ['sync', 'async']:
                     yield _ping_pong_scenario(
-                        'cpp_protobuf_%s_%s_ping_pong_%s' %
-                        (synchronicity, rpc_type, secstr),
+                        'cpp_protobuf_%s_%s_ping_pong_%s' % (synchronicity,
+                                                             rpc_type, secstr),
                         rpc_type=rpc_type.upper(),
                         client_type='%s_CLIENT' % synchronicity.upper(),
                         server_type='%s_SERVER' % synchronicity.upper(),
@@ -580,10 +580,10 @@ class CXXLanguage:
                                 minimal_stack=not secure,
                                 categories=[SWEEP])
 
-                    for channels in geometric_progression(1, 20000,
-                                                          math.sqrt(10)):
-                        for outstanding in geometric_progression(1, 200000,
-                                                                 math.sqrt(10)):
+                    for channels in geometric_progression(
+                            1, 20000, math.sqrt(10)):
+                        for outstanding in geometric_progression(
+                                1, 200000, math.sqrt(10)):
                             if synchronicity == 'sync' and outstanding > 1200:
                                 continue
                             if outstanding < channels: continue

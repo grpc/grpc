@@ -15,11 +15,10 @@
 import itertools
 import threading
 import unittest
-from concurrent import futures
 
 import grpc
-from grpc.framework.foundation import logging_pool
 
+from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 from tests.unit.framework.common import test_control
 
@@ -63,7 +62,10 @@ class _Handler(object):
     def handle_unary_unary(self, request, servicer_context):
         self._control.control()
         if servicer_context is not None:
-            servicer_context.set_trailing_metadata((('testkey', 'testvalue',),))
+            servicer_context.set_trailing_metadata(((
+                'testkey',
+                'testvalue',
+            ),))
         return request
 
     def handle_unary_stream(self, request, servicer_context):
@@ -72,7 +74,10 @@ class _Handler(object):
             yield request
         self._control.control()
         if servicer_context is not None:
-            servicer_context.set_trailing_metadata((('testkey', 'testvalue',),))
+            servicer_context.set_trailing_metadata(((
+                'testkey',
+                'testvalue',
+            ),))
 
     def handle_stream_unary(self, request_iterator, servicer_context):
         if servicer_context is not None:
@@ -84,13 +89,19 @@ class _Handler(object):
             response_elements.append(request)
         self._control.control()
         if servicer_context is not None:
-            servicer_context.set_trailing_metadata((('testkey', 'testvalue',),))
+            servicer_context.set_trailing_metadata(((
+                'testkey',
+                'testvalue',
+            ),))
         return b''.join(response_elements)
 
     def handle_stream_stream(self, request_iterator, servicer_context):
         self._control.control()
         if servicer_context is not None:
-            servicer_context.set_trailing_metadata((('testkey', 'testvalue',),))
+            servicer_context.set_trailing_metadata(((
+                'testkey',
+                'testvalue',
+            ),))
         for request in request_iterator:
             self._control.control()
             yield request
@@ -191,9 +202,8 @@ class InvocationDefectsTest(unittest.TestCase):
     def setUp(self):
         self._control = test_control.PauseFailControl()
         self._handler = _Handler(self._control)
-        self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
 
-        self._server = grpc.server(self._server_pool)
+        self._server = test_common.test_server()
         port = self._server.add_insecure_port('[::]:0')
         self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
         self._server.start()
@@ -210,8 +220,8 @@ class InvocationDefectsTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             response = multi_callable(
                 requests,
-                metadata=(
-                    ('test', 'IterableStreamRequestBlockingUnaryResponse'),))
+                metadata=(('test',
+                           'IterableStreamRequestBlockingUnaryResponse'),))
 
     def testIterableStreamRequestFutureUnaryResponse(self):
         requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]

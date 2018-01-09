@@ -183,7 +183,8 @@ def expand_json(js, js2=None):
         context = js['context']
         if 'label' in bm:
             labels_list = [
-                s.split(':') for s in bm['label'].strip().split(' ')
+                s.split(':')
+                for s in bm['label'].strip().split(' ')
                 if len(s) and s[0] != '#'
             ]
             for el in labels_list:

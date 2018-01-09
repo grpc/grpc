@@ -37,42 +37,20 @@ cdef class CompletionQueue:
     self.is_shutdown = False
 
   cdef _interpret_event(self, grpc_event event):
-    cdef OperationTag tag = None
-    cdef object user_tag = None
-    cdef Call operation_call = None
-    cdef CallDetails request_call_details = None
-    cdef object request_metadata = None
-    cdef object batch_operations = None
+    cdef _Tag tag = None
     if event.type == GRPC_QUEUE_TIMEOUT:
-      return Event(
-          event.type, False, None, None, None, None, False, None)
+      # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
+      return ConnectivityEvent(GRPC_QUEUE_TIMEOUT, False, None)
     elif event.type == GRPC_QUEUE_SHUTDOWN:
       self.is_shutdown = True
-      return Event(
-          event.type, True, None, None, None, None, False, None)
+      # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
+      return ConnectivityEvent(GRPC_QUEUE_TIMEOUT, True, None)
     else:
-      if event.tag != NULL:
-        tag = <OperationTag>event.tag
-        # We receive event tags only after they've been inc-ref'd elsewhere in
-        # the code.
-        cpython.Py_DECREF(tag)
-        if tag.shutting_down_server is not None:
-          tag.shutting_down_server.notify_shutdown_complete()
-        user_tag = tag.user_tag
-        operation_call = tag.operation_call
-        request_call_details = tag.request_call_details
-        if tag.is_new_request:
-          request_metadata = _metadata(&tag._c_request_metadata)
-          grpc_metadata_array_destroy(&tag._c_request_metadata)
-        batch_operations = tag.release_ops()
-        if tag.is_new_request:
-          # Stuff in the tag not explicitly handled by us needs to live through
-          # the life of the call
-          operation_call.references.extend(tag.references)
-      return Event(
-          event.type, event.success, user_tag, operation_call,
-          request_call_details, request_metadata, tag.is_new_request,
-          batch_operations)
+      tag = <_Tag>event.tag
+      # We receive event tags only after they've been inc-ref'd elsewhere in
+      # the code.
+      cpython.Py_DECREF(tag)
+      return tag.event(event)
 
   def poll(self, Timespec deadline=None):
     # We name this 'poll' to avoid problems with CPython's expectations for

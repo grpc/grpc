@@ -195,12 +195,25 @@
 #define GPR_PTHREAD_TLS 1
 #else /* __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7 */
 #define GPR_CPU_POSIX 1
+/* TODO(vjpai): there is a reported issue in bazel build for Mac where __thread
+   in a header is currently not working (bazelbuild/bazel#4341). Remove
+   the following conditional and use GPR_GCC_TLS when that is fixed */
+#ifndef GRPC_BAZEL_BUILD
 #define GPR_GCC_TLS 1
+#else /* GRPC_BAZEL_BUILD */
+#define GPR_PTHREAD_TLS 1
+#endif /* GRPC_BAZEL_BUILD */
 #define GPR_APPLE_PTHREAD_NAME 1
 #endif
 #else /* __MAC_OS_X_VERSION_MIN_REQUIRED */
 #define GPR_CPU_POSIX 1
+/* TODO(vjpai): Remove the following conditional and use only GPR_GCC_TLS
+   when bazelbuild/bazel#4341 is fixed */
+#ifndef GRPC_BAZEL_BUILD
 #define GPR_GCC_TLS 1
+#else /* GRPC_BAZEL_BUILD */
+#define GPR_PTHREAD_TLS 1
+#endif /* GRPC_BAZEL_BUILD */
 #endif
 #define GPR_POSIX_CRASH_HANDLER 1
 #endif
@@ -305,20 +318,23 @@
  * This is primarily because of linker problems and toolchain misconfiguration:
  * TLS isn't supported until NDK r12b per
  * https://developer.android.com/ndk/downloads/revision_history.html
+ * TLS also does not work with Android NDK if GCC is being used as the compiler
+ * instead of Clang.
  * Since NDK r16, `__NDK_MAJOR__` and `__NDK_MINOR__` are defined in
  * <android/ndk-version.h>. For NDK < r16, users should define these macros,
  * e.g. `-D__NDK_MAJOR__=11 -D__NKD_MINOR__=0` for NDK r11. */
-#if defined(__ANDROID__) && defined(__clang__) && defined(GPR_GCC_TLS)
+#if defined(__ANDROID__) && defined(GPR_GCC_TLS)
 #if __has_include(<android/ndk-version.h>)
 #include <android/ndk-version.h>
 #endif /* __has_include(<android/ndk-version.h>) */
-#if defined(__ANDROID__) && defined(__clang__) && defined(__NDK_MAJOR__) && \
-    defined(__NDK_MINOR__) &&                                               \
-    ((__NDK_MAJOR__ < 12) || ((__NDK_MAJOR__ == 12) && (__NDK_MINOR__ < 1)))
+#if (defined(__clang__) && defined(__NDK_MAJOR__) && defined(__NDK_MINOR__) && \
+     ((__NDK_MAJOR__ < 12) ||                                                  \
+      ((__NDK_MAJOR__ == 12) && (__NDK_MINOR__ < 1)))) ||                      \
+    (defined(__GNUC__) && !defined(__clang__))
 #undef GPR_GCC_TLS
 #define GPR_PTHREAD_TLS 1
 #endif
-#endif /*defined(__ANDROID__) && defined(__clang__) && defined(GPR_GCC_TLS) */
+#endif /*defined(__ANDROID__) && defined(GPR_GCC_TLS) */
 
 #if defined(__has_include)
 #if __has_include(<atomic>)
@@ -415,6 +431,14 @@ typedef unsigned __int64 uint64_t;
 #else
 #define GRPC_MUST_USE_RESULT
 #define GPR_ALIGN_STRUCT(n)
+#endif
+#endif
+
+#ifndef GRPC_UNUSED
+#if defined(__GNUC__) && !defined(__MINGW32__)
+#define GRPC_UNUSED __attribute__((unused))
+#else
+#define GRPC_UNUSED
 #endif
 #endif
 

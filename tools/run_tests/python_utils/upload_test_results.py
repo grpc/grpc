@@ -72,7 +72,10 @@ def _get_build_metadata(test_results):
   variables set by Jenkins/Kokoro.
   """
     build_id = os.getenv('BUILD_ID') or os.getenv('KOKORO_BUILD_NUMBER')
-    build_url = os.getenv('BUILD_URL') or os.getenv('KOKORO_BUILD_URL')
+    build_url = os.getenv('BUILD_URL')
+    if os.getenv('KOKORO_BUILD_ID'):
+        build_url = 'https://sponge.corp.google.com/invocation?id=%s' % os.getenv(
+            'KOKORO_BUILD_ID')
     job_name = os.getenv('JOB_BASE_NAME') or os.getenv('KOKORO_JOB_NAME')
 
     if build_id:

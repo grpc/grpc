@@ -56,11 +56,12 @@ def mako_plugin(dictionary):
             target['vs_props'] = []
         target['vs_proj_dir'] = target.get('vs_proj_dir', default_test_dir)
         if target.get('vs_project_guid',
-                      None) is None and 'windows' in target.get('platforms',
-                                                                ['windows']):
+                      None) is None and 'windows' in target.get(
+                          'platforms', ['windows']):
             name = target['name']
             guid = re.sub('(........)(....)(....)(....)(.*)',
-                          r'{\1-\2-\3-\4-\5}', hashlib.md5(name).hexdigest())
+                          r'{\1-\2-\3-\4-\5}',
+                          hashlib.md5(name).hexdigest())
             target['vs_project_guid'] = guid.upper()
     # Exclude projects without a visual project guid, such as the tests.
     projects = [
@@ -69,9 +70,9 @@ def mako_plugin(dictionary):
 
     projects = [
         project for project in projects
-        if project['language'] != 'c++' or project['build'] == 'all' or project[
-            'build'] == 'protoc' or (project['language'] == 'c++' and (project[
-                'build'] == 'test' or project['build'] == 'private'))
+        if project['language'] != 'c++' or project['build'] == 'all' or
+        project['build'] == 'protoc' or (project['language'] == 'c++' and (
+            project['build'] == 'test' or project['build'] == 'private'))
     ]
 
     project_dict = dict([(p['name'], p) for p in projects])

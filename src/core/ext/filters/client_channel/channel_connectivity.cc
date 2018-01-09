@@ -58,7 +58,8 @@ typedef enum {
   CALLING_BACK_AND_FINISHED,
 } callback_phase;
 
-typedef struct {
+namespace {
+struct state_watcher {
   gpr_mu mu;
   callback_phase phase;
   grpc_closure on_complete;
@@ -71,7 +72,8 @@ typedef struct {
   grpc_channel* channel;
   grpc_error* error;
   void* tag;
-} state_watcher;
+};
+}  // namespace
 
 static void delete_state_watcher(state_watcher* w) {
   grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(

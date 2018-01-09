@@ -65,7 +65,8 @@ def _args():
         '--loops',
         type=int,
         default=20,
-        help='Number of times to loops the benchmarks. Must match what was passed to bm_run.py'
+        help=
+        'Number of times to loops the benchmarks. Must match what was passed to bm_run.py'
     )
     argp.add_argument(
         '-r',

@@ -245,9 +245,15 @@ def _adapt_stream_stream_event(stream_stream_event):
 
 class _SimpleMethodHandler(
         collections.namedtuple('_MethodHandler', (
-            'request_streaming', 'response_streaming', 'request_deserializer',
-            'response_serializer', 'unary_unary', 'unary_stream',
-            'stream_unary', 'stream_stream',)), grpc.RpcMethodHandler):
+            'request_streaming',
+            'response_streaming',
+            'request_deserializer',
+            'response_serializer',
+            'unary_unary',
+            'unary_stream',
+            'stream_unary',
+            'stream_stream',
+        )), grpc.RpcMethodHandler):
     pass
 
 
@@ -255,15 +261,17 @@ def _simple_method_handler(implementation, request_deserializer,
                            response_serializer):
     if implementation.style is style.Service.INLINE:
         if implementation.cardinality is cardinality.Cardinality.UNARY_UNARY:
-            return _SimpleMethodHandler(
-                False, False, request_deserializer, response_serializer,
-                _adapt_unary_request_inline(implementation.unary_unary_inline),
-                None, None, None)
+            return _SimpleMethodHandler(False, False, request_deserializer,
+                                        response_serializer,
+                                        _adapt_unary_request_inline(
+                                            implementation.unary_unary_inline),
+                                        None, None, None)
         elif implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
-            return _SimpleMethodHandler(
-                False, True, request_deserializer, response_serializer, None,
-                _adapt_unary_request_inline(implementation.unary_stream_inline),
-                None, None)
+            return _SimpleMethodHandler(False, True, request_deserializer,
+                                        response_serializer, None,
+                                        _adapt_unary_request_inline(
+                                            implementation.unary_stream_inline),
+                                        None, None)
         elif implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
             return _SimpleMethodHandler(True, False, request_deserializer,
                                         response_serializer, None, None,
@@ -278,26 +286,28 @@ def _simple_method_handler(implementation, request_deserializer,
                     implementation.stream_stream_inline))
     elif implementation.style is style.Service.EVENT:
         if implementation.cardinality is cardinality.Cardinality.UNARY_UNARY:
-            return _SimpleMethodHandler(
-                False, False, request_deserializer, response_serializer,
-                _adapt_unary_unary_event(implementation.unary_unary_event),
-                None, None, None)
+            return _SimpleMethodHandler(False, False, request_deserializer,
+                                        response_serializer,
+                                        _adapt_unary_unary_event(
+                                            implementation.unary_unary_event),
+                                        None, None, None)
         elif implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
-            return _SimpleMethodHandler(
-                False, True, request_deserializer, response_serializer, None,
-                _adapt_unary_stream_event(implementation.unary_stream_event),
-                None, None)
+            return _SimpleMethodHandler(False, True, request_deserializer,
+                                        response_serializer, None,
+                                        _adapt_unary_stream_event(
+                                            implementation.unary_stream_event),
+                                        None, None)
         elif implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
-            return _SimpleMethodHandler(
-                True, False, request_deserializer, response_serializer, None,
-                None,
-                _adapt_stream_unary_event(implementation.stream_unary_event),
-                None)
+            return _SimpleMethodHandler(True, False, request_deserializer,
+                                        response_serializer, None, None,
+                                        _adapt_stream_unary_event(
+                                            implementation.stream_unary_event),
+                                        None)
         elif implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
-            return _SimpleMethodHandler(
-                True, True, request_deserializer, response_serializer, None,
-                None, None,
-                _adapt_stream_stream_event(implementation.stream_stream_event))
+            return _SimpleMethodHandler(True, True, request_deserializer,
+                                        response_serializer, None, None, None,
+                                        _adapt_stream_stream_event(
+                                            implementation.stream_stream_event))
 
 
 def _flatten_method_pair_map(method_pair_map):
@@ -325,10 +335,11 @@ class _GenericRpcHandler(grpc.GenericRpcHandler):
         method_implementation = self._method_implementations.get(
             handler_call_details.method)
         if method_implementation is not None:
-            return _simple_method_handler(
-                method_implementation,
-                self._request_deserializers.get(handler_call_details.method),
-                self._response_serializers.get(handler_call_details.method))
+            return _simple_method_handler(method_implementation,
+                                          self._request_deserializers.get(
+                                              handler_call_details.method),
+                                          self._response_serializers.get(
+                                              handler_call_details.method))
         elif self._multi_method_implementation is None:
             return None
         else:

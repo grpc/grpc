@@ -1449,8 +1449,6 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
  * NULL */
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested) {
-  gpr_log(GPR_ERROR,
-          "Skipping epollex because GRPC_LINUX_EPOLL is not defined.");
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
