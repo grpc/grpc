@@ -65,6 +65,7 @@ class BlockingUnaryCallImpl {
                             context->initial_metadata_flags());
     ops.RecvInitialMetadata(context);
     ops.RecvMessage(result);
+    ops.AllowNoMessage();
     ops.ClientSendClose();
     ops.ClientRecvStatus(context, &status_);
     call.PerformOps(&ops);

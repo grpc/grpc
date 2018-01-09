@@ -15,7 +15,17 @@
 
 from grpc_tools import protoc
 
-protoc.main(('', '-I../../protos', '--python_out=.', '--grpc_python_out=.',
-             '../../protos/helloworld.proto',))
-protoc.main(('', '-I../../protos', '--python_out=.', '--grpc_python_out=.',
-             '../../protos/route_guide.proto',))
+protoc.main((
+    '',
+    '-I../../protos',
+    '--python_out=.',
+    '--grpc_python_out=.',
+    '../../protos/helloworld.proto',
+))
+protoc.main((
+    '',
+    '-I../../protos',
+    '--python_out=.',
+    '--grpc_python_out=.',
+    '../../protos/route_guide.proto',
+))

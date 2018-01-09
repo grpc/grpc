@@ -43,16 +43,16 @@ def start_port_server():
     if running:
         current_version = int(
             subprocess.check_output([
-                sys.executable, os.path.abspath(
-                    'tools/run_tests/python_utils/port_server.py'),
+                sys.executable,
+                os.path.abspath('tools/run_tests/python_utils/port_server.py'),
                 'dump_version'
             ]))
         logging.info('my port server is version %d', current_version)
         running = (version >= current_version)
         if not running:
             logging.info('port_server version mismatch: killing the old one')
-            urllib.urlopen('http://localhost:%d/quitquitquit' %
-                           _PORT_SERVER_PORT).read()
+            urllib.urlopen(
+                'http://localhost:%d/quitquitquit' % _PORT_SERVER_PORT).read()
             time.sleep(1)
     if not running:
         fd, logfile = tempfile.mkstemp()
@@ -61,7 +61,8 @@ def start_port_server():
         args = [
             sys.executable,
             os.path.abspath('tools/run_tests/python_utils/port_server.py'),
-            '-p', '%d' % _PORT_SERVER_PORT, '-l', logfile
+            '-p',
+            '%d' % _PORT_SERVER_PORT, '-l', logfile
         ]
         env = dict(os.environ)
         env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
@@ -91,8 +92,8 @@ def start_port_server():
                 # try one final time: maybe another build managed to start one
                 time.sleep(1)
                 try:
-                    urllib.urlopen('http://localhost:%d/get' %
-                                   _PORT_SERVER_PORT).read()
+                    urllib.urlopen(
+                        'http://localhost:%d/get' % _PORT_SERVER_PORT).read()
                     logging.info(
                         'last ditch attempt to contact port server succeeded')
                     break

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import abc
-from concurrent import futures
 import contextlib
 import importlib
 import os
@@ -29,7 +28,7 @@ import six
 
 import grpc
 from grpc_tools import protoc
-from tests.unit.framework.common import test_constants
+from tests.unit import test_common
 
 _MESSAGES_IMPORT = b'import "messages.proto";'
 _SPLIT_NAMESPACE = b'package grpc_protoc_plugin.invocation_testing.split;'
@@ -65,8 +64,8 @@ def _massage_proto_content(proto_content, test_name_bytes,
                            messages_proto_relative_file_name_bytes):
     package_substitution = (b'package grpc_protoc_plugin.invocation_testing.' +
                             test_name_bytes + b';')
-    common_namespace_substituted = proto_content.replace(_COMMON_NAMESPACE,
-                                                         package_substitution)
+    common_namespace_substituted = proto_content.replace(
+        _COMMON_NAMESPACE, package_substitution)
     split_namespace_substituted = common_namespace_substituted.replace(
         _SPLIT_NAMESPACE, package_substitution)
     message_import_replaced = split_namespace_substituted.replace(
@@ -164,8 +163,12 @@ class _GrpcBeforeProtoProtocStyle(object):
         return pb2_grpc_protoc_exit_code, pb2_protoc_exit_code,
 
 
-_PROTOC_STYLES = (_Mid2016ProtocStyle(), _SingleProtocExecutionProtocStyle(),
-                  _ProtoBeforeGrpcProtocStyle(), _GrpcBeforeProtoProtocStyle(),)
+_PROTOC_STYLES = (
+    _Mid2016ProtocStyle(),
+    _SingleProtocExecutionProtocStyle(),
+    _ProtoBeforeGrpcProtocStyle(),
+    _GrpcBeforeProtoProtocStyle(),
+)
 
 
 @unittest.skipIf(platform.python_implementation() == 'PyPy',
@@ -181,18 +184,22 @@ class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
         os.makedirs(self._python_out)
 
         proto_directories_and_names = {
-            (self.MESSAGES_PROTO_RELATIVE_DIRECTORY_NAMES,
-             self.MESSAGES_PROTO_FILE_NAME,),
-            (self.SERVICES_PROTO_RELATIVE_DIRECTORY_NAMES,
-             self.SERVICES_PROTO_FILE_NAME,),
+            (
+                self.MESSAGES_PROTO_RELATIVE_DIRECTORY_NAMES,
+                self.MESSAGES_PROTO_FILE_NAME,
+            ),
+            (
+                self.SERVICES_PROTO_RELATIVE_DIRECTORY_NAMES,
+                self.SERVICES_PROTO_FILE_NAME,
+            ),
         }
         messages_proto_relative_file_name_forward_slashes = '/'.join(
-            self.MESSAGES_PROTO_RELATIVE_DIRECTORY_NAMES + (
-                self.MESSAGES_PROTO_FILE_NAME,))
-        _create_directory_tree(self._proto_path, (
-            relative_proto_directory_names
-            for relative_proto_directory_names, _ in proto_directories_and_names
-        ))
+            self.MESSAGES_PROTO_RELATIVE_DIRECTORY_NAMES +
+            (self.MESSAGES_PROTO_FILE_NAME,))
+        _create_directory_tree(self._proto_path,
+                               (relative_proto_directory_names
+                                for relative_proto_directory_names, _ in
+                                proto_directories_and_names))
         self._absolute_proto_file_names = set()
         for relative_directory_names, file_name in proto_directories_and_names:
             absolute_proto_file_name = path.join(
@@ -201,8 +208,7 @@ class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
                 'tests.protoc_plugin.protos.invocation_testing',
                 path.join(*relative_directory_names + (file_name,)))
             massaged_proto_content = _massage_proto_content(
-                raw_proto_content,
-                self.NAME.encode(),
+                raw_proto_content, self.NAME.encode(),
                 messages_proto_relative_file_name_forward_slashes.encode())
             with open(absolute_proto_file_name, 'wb') as proto_file:
                 proto_file.write(massaged_proto_content)
@@ -256,9 +262,7 @@ class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
         self._protoc()
 
         for services_module in self._services_modules():
-            server = grpc.server(
-                futures.ThreadPoolExecutor(
-                    max_workers=test_constants.POOL_SIZE))
+            server = test_common.test_server()
             services_module.add_TestServiceServicer_to_server(
                 _Servicer(self._messages_pb2.Response), server)
             port = server.add_insecure_port('[::]:0')
@@ -278,7 +282,9 @@ def _create_test_case_class(split_proto, protoc_style):
 
     if split_proto:
         attributes['MESSAGES_PROTO_RELATIVE_DIRECTORY_NAMES'] = (
-            'split_messages', 'sub',)
+            'split_messages',
+            'sub',
+        )
         attributes['MESSAGES_PROTO_FILE_NAME'] = 'messages.proto'
         attributes['SERVICES_PROTO_RELATIVE_DIRECTORY_NAMES'] = (
             'split_services',)
@@ -304,7 +310,10 @@ def _create_test_case_class(split_proto, protoc_style):
 
 
 def _create_test_case_classes():
-    for split_proto in (False, True,):
+    for split_proto in (
+            False,
+            True,
+    ):
         for protoc_style in _PROTOC_STYLES:
             yield _create_test_case_class(split_proto, protoc_style)
 

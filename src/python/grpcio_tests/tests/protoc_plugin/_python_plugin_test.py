@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import collections
-from concurrent import futures
 import contextlib
 import distutils.spawn
 import errno
@@ -28,6 +27,7 @@ import unittest
 from six import moves
 
 import grpc
+from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
 import tests.protoc_plugin.protos.payload.test_payload_pb2 as payload_pb2
@@ -119,8 +119,11 @@ class _ServicerMethods(object):
 
 
 class _Service(
-        collections.namedtuple('_Service', ('servicer_methods', 'server',
-                                            'stub',))):
+        collections.namedtuple('_Service', (
+            'servicer_methods',
+            'server',
+            'stub',
+        ))):
     """A live and running service.
 
   Attributes:
@@ -155,8 +158,7 @@ def _CreateService():
         def HalfDuplexCall(self, request_iter, context):
             return servicer_methods.HalfDuplexCall(request_iter, context)
 
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=test_constants.POOL_SIZE))
+    server = test_common.test_server()
     getattr(service_pb2_grpc, ADD_SERVICER_TO_SERVER_IDENTIFIER)(Servicer(),
                                                                  server)
     port = server.add_insecure_port('[::]:0')
@@ -177,8 +179,7 @@ def _CreateIncompleteService():
     class Servicer(getattr(service_pb2_grpc, SERVICER_IDENTIFIER)):
         pass
 
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=test_constants.POOL_SIZE))
+    server = test_common.test_server()
     getattr(service_pb2_grpc, ADD_SERVICER_TO_SERVER_IDENTIFIER)(Servicer(),
                                                                  server)
     port = server.add_insecure_port('[::]:0')
@@ -299,8 +300,8 @@ class PythonPluginTest(unittest.TestCase):
         responses = service.stub.StreamingOutputCall(request)
         expected_responses = service.servicer_methods.StreamingOutputCall(
             request, 'not a real RpcContext!')
-        for expected_response, response in moves.zip_longest(expected_responses,
-                                                             responses):
+        for expected_response, response in moves.zip_longest(
+                expected_responses, responses):
             self.assertEqual(expected_response, response)
 
     def testStreamingOutputCallExpired(self):
@@ -390,8 +391,8 @@ class PythonPluginTest(unittest.TestCase):
         responses = service.stub.FullDuplexCall(_full_duplex_request_iterator())
         expected_responses = service.servicer_methods.FullDuplexCall(
             _full_duplex_request_iterator(), 'not a real RpcContext!')
-        for expected_response, response in moves.zip_longest(expected_responses,
-                                                             responses):
+        for expected_response, response in moves.zip_longest(
+                expected_responses, responses):
             self.assertEqual(expected_response, response)
 
     def testFullDuplexCallExpired(self):
@@ -441,8 +442,8 @@ class PythonPluginTest(unittest.TestCase):
         responses = service.stub.HalfDuplexCall(half_duplex_request_iterator())
         expected_responses = service.servicer_methods.HalfDuplexCall(
             half_duplex_request_iterator(), 'not a real RpcContext!')
-        for expected_response, response in moves.zip_longest(expected_responses,
-                                                             responses):
+        for expected_response, response in moves.zip_longest(
+                expected_responses, responses):
             self.assertEqual(expected_response, response)
 
     def testHalfDuplexCallWedged(self):

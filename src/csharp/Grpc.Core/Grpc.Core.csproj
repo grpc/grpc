@@ -14,11 +14,11 @@
     <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <IncludeSource>true</IncludeSource>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+
+  <Import Project="SourceLink.csproj.include" />
 
   <ItemGroup>
     <EmbeddedResource Include="..\..\..\etc\roots.pem" />

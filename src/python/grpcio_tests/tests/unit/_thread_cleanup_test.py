@@ -52,7 +52,9 @@ class CleanupThreadTest(unittest.TestCase):
             target=target,
             name='test-name',
             args=('arg1', 'arg2'),
-            kwargs={'arg3': 'arg3'})
+            kwargs={
+                'arg3': 'arg3'
+            })
         cleanup_thread.start()
         cleanup_thread.join()
         self.assertEqual(cleanup_thread.name, 'test-name')

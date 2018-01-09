@@ -70,8 +70,8 @@ class TestCase(
         self.implementation.destantiate(self._memo)
 
     def testSuccessfulUnaryRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -81,8 +81,8 @@ class TestCase(
                 test_messages.verify(request, response, self)
 
     def testSuccessfulUnaryRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -93,8 +93,8 @@ class TestCase(
                 test_messages.verify(request, responses, self)
 
     def testSuccessfulStreamRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
 
@@ -104,8 +104,8 @@ class TestCase(
                 test_messages.verify(requests, response, self)
 
     def testSuccessfulStreamRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
 
@@ -116,8 +116,8 @@ class TestCase(
                 test_messages.verify(requests, responses, self)
 
     def testSequentialInvocations(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 first_request = test_messages.request()
                 second_request = test_messages.request()
@@ -134,8 +134,8 @@ class TestCase(
 
     def testParallelInvocations(self):
         pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = []
                 response_futures = []
@@ -158,8 +158,8 @@ class TestCase(
 
     def testWaitingForSomeButNotAllParallelInvocations(self):
         pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = []
                 response_futures_to_indices = {}
@@ -197,8 +197,8 @@ class TestCase(
         raise NotImplementedError()
 
     def testExpiredUnaryRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -208,8 +208,8 @@ class TestCase(
                         request, _3069_test_constant.REALLY_SHORT_TIMEOUT)
 
     def testExpiredUnaryRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -220,33 +220,33 @@ class TestCase(
                     list(response_iterator)
 
     def testExpiredStreamRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
 
                 with self._control.pause(), self.assertRaises(
                         face.ExpirationError):
-                    self._invoker.blocking(group, method)(
-                        iter(requests),
-                        _3069_test_constant.REALLY_SHORT_TIMEOUT)
+                    self._invoker.blocking(
+                        group, method)(iter(requests),
+                                       _3069_test_constant.REALLY_SHORT_TIMEOUT)
 
     def testExpiredStreamRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
 
                 with self._control.pause(), self.assertRaises(
                         face.ExpirationError):
-                    response_iterator = self._invoker.blocking(group, method)(
-                        iter(requests),
-                        _3069_test_constant.REALLY_SHORT_TIMEOUT)
+                    response_iterator = self._invoker.blocking(
+                        group, method)(iter(requests),
+                                       _3069_test_constant.REALLY_SHORT_TIMEOUT)
                     list(response_iterator)
 
     def testFailedUnaryRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -255,8 +255,8 @@ class TestCase(
                         request, test_constants.LONG_TIMEOUT)
 
     def testFailedUnaryRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -266,8 +266,8 @@ class TestCase(
                     list(response_iterator)
 
     def testFailedStreamRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
 
@@ -276,8 +276,8 @@ class TestCase(
                         iter(requests), test_constants.LONG_TIMEOUT)
 
     def testFailedStreamRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
 

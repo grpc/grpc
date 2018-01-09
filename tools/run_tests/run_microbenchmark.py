@@ -92,8 +92,9 @@ def collect_latency(bm_name, args):
         benchmarks.append(
             jobset.JobSpec(
                 [
-                    'bins/basicprof/%s' % bm_name, '--benchmark_filter=^%s$' %
-                    line, '--benchmark_min_time=0.05'
+                    'bins/basicprof/%s' % bm_name,
+                    '--benchmark_filter=^%s$' % line,
+                    '--benchmark_min_time=0.05'
                 ],
                 environ={'LATENCY_TRACE': '%s.trace' % fnize(line)},
                 shortname='profile-%s' % fnize(line)))
@@ -102,8 +103,9 @@ def collect_latency(bm_name, args):
                 [
                     sys.executable,
                     'tools/profiling/latency_profile/profile_analyzer.py',
-                    '--source', '%s.trace' % fnize(line), '--fmt', 'simple',
-                    '--out', 'reports/%s.txt' % fnize(line)
+                    '--source',
+                    '%s.trace' % fnize(line), '--fmt', 'simple', '--out',
+                    'reports/%s.txt' % fnize(line)
                 ],
                 timeout_seconds=20 * 60,
                 shortname='analyze-%s' % fnize(line)))
@@ -116,7 +118,8 @@ def collect_latency(bm_name, args):
             # run up to half the cpu count: each benchmark can use up to two cores
             # (one for the microbenchmark, one for the data flush)
             jobset.run(
-                benchmarks, maxjobs=max(1, multiprocessing.cpu_count() / 2))
+                benchmarks, maxjobs=max(1,
+                                        multiprocessing.cpu_count() / 2))
             jobset.run(profile_analysis, maxjobs=multiprocessing.cpu_count())
             jobset.run(cleanup, maxjobs=multiprocessing.cpu_count())
             benchmarks = []
@@ -145,8 +148,9 @@ def collect_perf(bm_name, args):
         benchmarks.append(
             jobset.JobSpec(
                 [
-                    'perf', 'record', '-o', '%s-perf.data' % fnize(
-                        line), '-g', '-F', '997', 'bins/mutrace/%s' % bm_name,
+                    'perf', 'record', '-o',
+                    '%s-perf.data' % fnize(line), '-g', '-F', '997',
+                    'bins/mutrace/%s' % bm_name,
                     '--benchmark_filter=^%s$' % line, '--benchmark_min_time=10'
                 ],
                 shortname='perf-%s' % fnize(line)))
@@ -183,12 +187,14 @@ def collect_perf(bm_name, args):
 
 def run_summary(bm_name, cfg, base_json_name):
     subprocess.check_call([
-        'make', bm_name, 'CONFIG=%s' % cfg, '-j',
+        'make', bm_name,
+        'CONFIG=%s' % cfg, '-j',
         '%d' % multiprocessing.cpu_count()
     ])
     cmd = [
-        'bins/%s/%s' % (cfg, bm_name), '--benchmark_out=%s.%s.json' %
-        (base_json_name, cfg), '--benchmark_out_format=json'
+        'bins/%s/%s' % (cfg, bm_name),
+        '--benchmark_out=%s.%s.json' % (base_json_name, cfg),
+        '--benchmark_out_format=json'
     ]
     if args.summary_time is not None:
         cmd += ['--benchmark_min_time=%d' % args.summary_time]
@@ -205,10 +211,12 @@ def collect_summary(bm_name, args):
             f.write(
                 subprocess.check_output([
                     'tools/profiling/microbenchmarks/bm2bq.py',
-                    '%s.counters.json' % bm_name, '%s.opt.json' % bm_name
+                    '%s.counters.json' % bm_name,
+                    '%s.opt.json' % bm_name
                 ]))
         subprocess.check_call([
-            'bq', 'load', 'microbenchmarks.microbenchmarks', '%s.csv' % bm_name
+            'bq', 'load', 'microbenchmarks.microbenchmarks',
+            '%s.csv' % bm_name
         ])
 
 

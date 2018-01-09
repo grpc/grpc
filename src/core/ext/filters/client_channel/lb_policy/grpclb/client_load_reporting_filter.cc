@@ -32,7 +32,8 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 
 static void destroy_channel_elem(grpc_channel_element* elem) {}
 
-typedef struct {
+namespace {
+struct call_data {
   // Stats object to update.
   grpc_grpclb_client_stats* client_stats;
   // State for intercepting send_initial_metadata.
@@ -43,7 +44,8 @@ typedef struct {
   grpc_closure recv_initial_metadata_ready;
   grpc_closure* original_recv_initial_metadata_ready;
   bool recv_initial_metadata_succeeded;
-} call_data;
+};
+}  // namespace
 
 static void on_complete_for_send(void* arg, grpc_error* error) {
   call_data* calld = (call_data*)arg;

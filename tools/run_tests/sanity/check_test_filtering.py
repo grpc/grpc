@@ -80,7 +80,8 @@ class TestFilteringTest(unittest.TestCase):
                 if (label in job.labels):
                     jobs_matching_labels += 1
         self.assertEquals(
-            len(filtered_jobs), len(all_jobs) - jobs_matching_labels)
+            len(filtered_jobs),
+            len(all_jobs) - jobs_matching_labels)
 
     def test_individual_language_filters(self):
         # Changing unlisted file should trigger all languages
