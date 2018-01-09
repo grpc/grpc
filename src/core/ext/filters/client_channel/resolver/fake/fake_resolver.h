@@ -42,8 +42,10 @@ void grpc_fake_resolver_response_generator_set_response(
     grpc_fake_resolver_response_generator* generator,
     grpc_channel_args* response);
 
-// Set next response upon error of the fake resolver associated with the \a
-// response_generator instance.
+// Set results_upon_error of the fake resolver associated with the \a
+// response_generator instance. When fake_resolver_channel_saw_error_locked() is
+// called, results_upon_error will be returned as long as it's non-NULL,
+// otherwise the most-recently used response will be returned.
 void grpc_fake_resolver_response_generator_set_response_upon_error(
     grpc_fake_resolver_response_generator* generator,
     grpc_channel_args* response);
