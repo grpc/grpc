@@ -26,16 +26,13 @@ cdef class Call:
   def _start_batch(self, operations, tag, retain_self):
     if not self.is_valid:
       raise ValueError("invalid call object cannot be used from Python")
-    cdef OperationTag operation_tag = OperationTag(tag, operations)
-    if retain_self:
-      operation_tag.operation_call = self
-    else:
-      operation_tag.operation_call = None
-    operation_tag.store_ops()
-    cpython.Py_INCREF(operation_tag)
+    cdef _BatchOperationTag batch_operation_tag = _BatchOperationTag(
+        tag, operations, self if retain_self else None)
+    batch_operation_tag.prepare()
+    cpython.Py_INCREF(batch_operation_tag)
     return grpc_call_start_batch(
-          self.c_call, operation_tag.c_ops, operation_tag.c_nops,
-          <cpython.PyObject *>operation_tag, NULL)
+          self.c_call, batch_operation_tag.c_ops, batch_operation_tag.c_nops,
+          <cpython.PyObject *>batch_operation_tag, NULL)
 
   def start_client_batch(self, operations, tag):
     # We don't reference this call in the operations tag because

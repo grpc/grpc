@@ -182,15 +182,15 @@ def get_c_tests(travis, test_lang):
         js = json.load(f)
         return [
             tgt for tgt in js
-            if tgt['language'] == test_lang and platform_string() in tgt[
-                platforms_str] and not (travis and tgt['flaky'])
+            if tgt['language'] == test_lang and platform_string() in
+            tgt[platforms_str] and not (travis and tgt['flaky'])
         ]
 
 
 def _check_compiler(compiler, supported_compilers):
     if compiler not in supported_compilers:
-        raise Exception('Compiler %s not supported (on this platform).' %
-                        compiler)
+        raise Exception(
+            'Compiler %s not supported (on this platform).' % compiler)
 
 
 def _check_arch(arch, supported_archs):
@@ -263,9 +263,9 @@ class CLanguage(object):
         self.config = config
         self.args = args
         if self.platform == 'windows':
-            _check_compiler(self.args.compiler, [
-                'default', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
-            ])
+            _check_compiler(
+                self.args.compiler,
+                ['default', 'cmake', 'cmake_vs2015', 'cmake_vs2017'])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
             self._cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
             self._cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
@@ -305,9 +305,9 @@ class CLanguage(object):
                 # cmake doesn't build boringssl tests
                 continue
             auto_timeout_scaling = target.get('auto_timeout_scaling', True)
-            polling_strategies = (
-                _POLLING_STRATEGIES.get(self.platform, ['all'])
-                if target.get('uses_polling', True) else ['none'])
+            polling_strategies = (_POLLING_STRATEGIES.get(
+                self.platform, ['all']) if target.get('uses_polling', True) else
+                                  ['none'])
             if self.args.iomgr_platform == 'uv':
                 polling_strategies = ['all']
             for polling_strategy in polling_strategies:
@@ -377,7 +377,8 @@ class CLanguage(object):
                         for line in tests.split('\n'):
                             test = line.strip()
                             if not test: continue
-                            cmdline = [binary, '--benchmark_filter=%s$' % test
+                            cmdline = [binary,
+                                       '--benchmark_filter=%s$' % test
                                       ] + target['args']
                             out.append(
                                 self.config.job_spec(
@@ -408,7 +409,8 @@ class CLanguage(object):
                                 assert base is not None
                                 assert line[1] == ' '
                                 test = base + line.strip()
-                                cmdline = [binary, '--gtest_filter=%s' % test
+                                cmdline = [binary,
+                                           '--gtest_filter=%s' % test
                                           ] + target['args']
                                 out.append(
                                     self.config.job_spec(
@@ -445,8 +447,8 @@ class CLanguage(object):
             # don't build tools on windows just yet
             return ['buildtests_%s' % self.make_target]
         return [
-            'buildtests_%s' % self.make_target, 'tools_%s' % self.make_target,
-            'check_epollexclusive'
+            'buildtests_%s' % self.make_target,
+            'tools_%s' % self.make_target, 'check_epollexclusive'
         ]
 
     def make_options(self):
@@ -480,14 +482,18 @@ class CLanguage(object):
 
     def _clang_make_options(self, version_suffix=''):
         return [
-            'CC=clang%s' % version_suffix, 'CXX=clang++%s' % version_suffix,
-            'LD=clang%s' % version_suffix, 'LDXX=clang++%s' % version_suffix
+            'CC=clang%s' % version_suffix,
+            'CXX=clang++%s' % version_suffix,
+            'LD=clang%s' % version_suffix,
+            'LDXX=clang++%s' % version_suffix
         ]
 
     def _gcc_make_options(self, version_suffix):
         return [
-            'CC=gcc%s' % version_suffix, 'CXX=g++%s' % version_suffix,
-            'LD=gcc%s' % version_suffix, 'LDXX=g++%s' % version_suffix
+            'CC=gcc%s' % version_suffix,
+            'CXX=g++%s' % version_suffix,
+            'LD=gcc%s' % version_suffix,
+            'LDXX=g++%s' % version_suffix
         ]
 
     def _compiler_options(self, use_docker, compiler):
@@ -700,8 +706,8 @@ class PythonLanguage(object):
                 environ=dict(
                     list(environment.items()) + [(
                         'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
-                shortname='%s.test.%s' % (config.name, suite_name),)
-            for suite_name in tests_json for config in self.pythons
+                shortname='%s.test.%s' % (config.name, suite_name),
+            ) for suite_name in tests_json for config in self.pythons
         ]
 
     def pre_build_steps(self):
@@ -801,7 +807,10 @@ class PythonLanguage(object):
             if os.name == 'nt':
                 return (python35_config,)
             else:
-                return (python27_config, python34_config,)
+                return (
+                    python27_config,
+                    python34_config,
+                )
         elif args.compiler == 'python2.7':
             return (python27_config,)
         elif args.compiler == 'python3.4':
@@ -817,8 +826,12 @@ class PythonLanguage(object):
         elif args.compiler == 'python_alpine':
             return (python27_config,)
         elif args.compiler == 'all_the_cpythons':
-            return (python27_config, python34_config, python35_config,
-                    python36_config,)
+            return (
+                python27_config,
+                python34_config,
+                python35_config,
+                python36_config,
+            )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
 
@@ -921,13 +934,15 @@ class CSharpLanguage(object):
 
         specs = []
         for assembly in six.iterkeys(tests_by_assembly):
-            assembly_file = 'src/csharp/%s/%s/%s%s' % (
-                assembly, assembly_subdir, assembly, assembly_extension)
+            assembly_file = 'src/csharp/%s/%s/%s%s' % (assembly,
+                                                       assembly_subdir,
+                                                       assembly,
+                                                       assembly_extension)
             if self.config.build_config != 'gcov' or self.platform != 'windows':
                 # normally, run each test as a separate process
                 for test in tests_by_assembly[assembly]:
-                    cmdline = runtime_cmd + [assembly_file, '--test=%s' % test
-                                            ] + nunit_args
+                    cmdline = runtime_cmd + [assembly_file,
+                                             '--test=%s' % test] + nunit_args
                     specs.append(
                         self.config.job_spec(
                             cmdline,
@@ -1147,8 +1162,8 @@ class Sanity(object):
 
 # different configurations we can run under
 with open('tools/run_tests/generated/configs.json') as f:
-    _CONFIGS = dict((cfg['config'], Config(**cfg))
-                    for cfg in ast.literal_eval(f.read()))
+    _CONFIGS = dict(
+        (cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
 
 _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
@@ -1298,13 +1313,15 @@ argp.add_argument(
     default=False,
     action='store_const',
     const=True,
-    help='Allow flaky tests to show as passing (re-runs failed tests up to five times)'
+    help=
+    'Allow flaky tests to show as passing (re-runs failed tests up to five times)'
 )
 argp.add_argument(
     '--arch',
     choices=['default', 'x86', 'x64'],
     default='default',
-    help='Selects architecture to target. For some platforms "default" is the only supported choice.'
+    help=
+    'Selects architecture to target. For some platforms "default" is the only supported choice.'
 )
 argp.add_argument(
     '--compiler',
@@ -1316,7 +1333,8 @@ argp.add_argument(
         'cmake_vs2015', 'cmake_vs2017'
     ],
     default='default',
-    help='Selects compiler to use. Allowed values depend on the platform and language.'
+    help=
+    'Selects compiler to use. Allowed values depend on the platform and language.'
 )
 argp.add_argument(
     '--iomgr_platform',
@@ -1339,7 +1357,8 @@ argp.add_argument(
     '--update_submodules',
     default=[],
     nargs='*',
-    help='Update some submodules before building. If any are updated, also run generate_projects. '
+    help=
+    'Update some submodules before building. If any are updated, also run generate_projects. '
     +
     'Submodules are specified as SUBMODULE_NAME:BRANCH; if BRANCH is omitted, master is assumed.'
 )
@@ -1360,7 +1379,8 @@ argp.add_argument(
     default=False,
     action='store_const',
     const=True,
-    help='Don\'t print anything when a test passes. Passing tests also will not be reported in XML report. '
+    help=
+    'Don\'t print anything when a test passes. Passing tests also will not be reported in XML report. '
     + 'Useful when running many iterations of each test (argument -n).')
 argp.add_argument(
     '--force_default_poller',
@@ -1399,8 +1419,8 @@ if not args.disable_auto_set_flakes:
             if test.flaky: flaky_tests.add(test.name)
             if test.cpu > 0: shortname_to_cpu[test.name] = test.cpu
     except:
-        print("Unexpected error getting flaky tests: %s" %
-              traceback.format_exc())
+        print(
+            "Unexpected error getting flaky tests: %s" % traceback.format_exc())
 
 if args.force_default_poller:
     _POLLING_STRATEGIES = {}
@@ -1473,7 +1493,8 @@ if any(language.make_options() for language in languages):
         language_make_options = list(
             set([
                 make_option
-                for lang in languages for make_option in lang.make_options()
+                for lang in languages
+                for make_option in lang.make_options()
             ]))
 
 if args.use_docker:
@@ -1530,8 +1551,8 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
         return [
             jobset.JobSpec(
                 [
-                    'cmake', '--build', '.', '--target', '%s' % target,
-                    '--config', _MSBUILD_CONFIG[cfg]
+                    'cmake', '--build', '.', '--target',
+                    '%s' % target, '--config', _MSBUILD_CONFIG[cfg]
                 ],
                 cwd=os.path.dirname(makefile),
                 timeout_seconds=None) for target in targets
@@ -1541,8 +1562,8 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
             # With cmake, we've passed all the build configuration in the pre-build step already
             return [
                 jobset.JobSpec(
-                    [os.getenv('MAKE', 'make'), '-j', '%d' % args.jobs] +
-                    targets,
+                    [os.getenv('MAKE', 'make'), '-j',
+                     '%d' % args.jobs] + targets,
                     cwd='cmake/build',
                     timeout_seconds=None)
             ]
@@ -1550,10 +1571,11 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
             return [
                 jobset.JobSpec(
                     [
-                        os.getenv('MAKE', 'make'), '-f', makefile, '-j', '%d' %
-                        args.jobs,
+                        os.getenv('MAKE', 'make'), '-f', makefile, '-j',
+                        '%d' % args.jobs,
                         'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                        args.slowdown, 'CONFIG=%s' % cfg, 'Q='
+                        args.slowdown,
+                        'CONFIG=%s' % cfg, 'Q='
                     ] + language_make_options +
                     ([] if not args.travis else ['JENKINS_BUILD=1']) + targets,
                     timeout_seconds=None)
@@ -1565,8 +1587,8 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
 make_targets = {}
 for l in languages:
     makefile = l.makefile_name()
-    make_targets[makefile] = make_targets.get(
-        makefile, set()).union(set(l.make_targets()))
+    make_targets[makefile] = make_targets.get(makefile, set()).union(
+        set(l.make_targets()))
 
 
 def build_step_environ(cfg):
@@ -1581,7 +1603,8 @@ build_steps = list(
     set(
         jobset.JobSpec(
             cmdline, environ=build_step_environ(build_config), flake_retries=2)
-        for l in languages for cmdline in l.pre_build_steps()))
+        for l in languages
+        for cmdline in l.pre_build_steps()))
 if make_targets:
     make_commands = itertools.chain.from_iterable(
         make_jobspec(build_config, list(targets), makefile)
@@ -1593,12 +1616,14 @@ build_steps.extend(
             cmdline,
             environ=build_step_environ(build_config),
             timeout_seconds=None)
-        for l in languages for cmdline in l.build_steps()))
+        for l in languages
+        for cmdline in l.build_steps()))
 
 post_tests_steps = list(
     set(
         jobset.JobSpec(cmdline, environ=build_step_environ(build_config))
-        for l in languages for cmdline in l.post_tests_steps()))
+        for l in languages
+        for cmdline in l.post_tests_steps()))
 runs_per_test = args.runs_per_test
 forever = args.forever
 
@@ -1612,8 +1637,8 @@ def _shut_down_legacy_server(legacy_server_port):
     except:
         pass
     else:
-        urllib.request.urlopen('http://localhost:%d/quitquitquit' %
-                               legacy_server_port).read()
+        urllib.request.urlopen(
+            'http://localhost:%d/quitquitquit' % legacy_server_port).read()
 
 
 def _calculate_num_runs_failures(list_of_results):
@@ -1679,8 +1704,8 @@ def _build_and_run(check_cancelled,
         return []
 
     if not args.travis and not _has_epollexclusive() and platform_string(
-    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[
-            platform_string()]:
+    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[platform_string(
+    )]:
         print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
         _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
@@ -1694,12 +1719,11 @@ def _build_and_run(check_cancelled,
     num_test_failures = 0
     try:
         infinite_runs = runs_per_test == 0
-        one_run = set(spec
-                      for language in languages
-                      for spec in language.test_specs()
-                      if (re.search(args.regex, spec.shortname) and (
-                          args.regex_exclude == '' or not re.search(
-                              args.regex_exclude, spec.shortname))))
+        one_run = set(
+            spec for language in languages for spec in language.test_specs()
+            if (re.search(args.regex, spec.shortname) and
+                (args.regex_exclude == '' or
+                 not re.search(args.regex_exclude, spec.shortname))))
         # When running on travis, we want out test runs to be as similar as possible
         # for reproducibility purposes.
         if args.travis and args.max_time <= 0:
@@ -1722,8 +1746,9 @@ def _build_and_run(check_cancelled,
         if infinite_runs:
             assert len(massaged_one_run
                       ) > 0, 'Must have at least one test for a -n inf run'
-        runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
-                         else itertools.repeat(massaged_one_run, runs_per_test))
+        runs_sequence = (itertools.repeat(massaged_one_run)
+                         if infinite_runs else itertools.repeat(
+                             massaged_one_run, runs_per_test))
         all_runs = itertools.chain.from_iterable(runs_sequence)
 
         if args.quiet_success:
@@ -1750,8 +1775,8 @@ def _build_and_run(check_cancelled,
                     else:
                         jobset.message(
                             'FLAKE',
-                            '%s [%d/%d runs flaked]' %
-                            (k, num_failures, num_runs),
+                            '%s [%d/%d runs flaked]' % (k, num_failures,
+                                                        num_runs),
                             do_newline=True)
     finally:
         for antagonist in antagonists:

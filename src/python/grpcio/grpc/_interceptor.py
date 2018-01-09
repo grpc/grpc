@@ -44,9 +44,10 @@ def service_pipeline(interceptors):
 
 
 class _ClientCallDetails(
-        collections.namedtuple('_ClientCallDetails',
-                               ('method', 'timeout', 'metadata',
-                                'credentials')), grpc.ClientCallDetails):
+        collections.namedtuple(
+            '_ClientCallDetails',
+            ('method', 'timeout', 'metadata', 'credentials')),
+        grpc.ClientCallDetails):
     pass
 
 

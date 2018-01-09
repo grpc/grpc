@@ -30,8 +30,8 @@ def build_package_protos(package_root):
                 proto_files.append(
                     os.path.abspath(os.path.join(root, filename)))
 
-    well_known_protos_include = pkg_resources.resource_filename('grpc_tools',
-                                                                '_proto')
+    well_known_protos_include = pkg_resources.resource_filename(
+        'grpc_tools', '_proto')
 
     for proto_file in proto_files:
         command = [

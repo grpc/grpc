@@ -31,7 +31,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-typedef struct call_data {
+namespace {
+struct call_data {
   intptr_t id; /**< an id unique to the call */
   bool have_trailing_md_string;
   grpc_slice trailing_md_string;
@@ -48,11 +49,12 @@ typedef struct call_data {
   /* to get notified of the availability of the incoming initial metadata. */
   grpc_closure on_initial_md_ready;
   grpc_metadata_batch* recv_initial_metadata;
-} call_data;
+};
 
-typedef struct channel_data {
+struct channel_data {
   intptr_t id; /**< an id unique to the channel */
-} channel_data;
+};
+}  // namespace
 
 static void on_initial_md_ready(void* user_data, grpc_error* err) {
   grpc_call_element* elem = (grpc_call_element*)user_data;

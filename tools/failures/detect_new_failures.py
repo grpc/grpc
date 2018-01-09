@@ -49,8 +49,8 @@ def gh(url, data=None):
     if 200 <= response.getcode() < 300:
         return json.loads(response.read())
     else:
-        raise ValueError('Error ({}) accessing {}'.format(response.getcode(),
-                                                          response.geturl()))
+        raise ValueError('Error ({}) accessing {}'.format(
+            response.getcode(), response.geturl()))
 
 
 def search_gh_issues(search_term, status='open'):
@@ -92,11 +92,11 @@ def create_issues(new_flakes, always_create):
         else:
             preexisting_issues = search_gh_issues(test_name)
             if preexisting_issues['total_count'] > 0:
-                print('\nFound {} issues for "{}":'.format(preexisting_issues[
-                    'total_count'], test_name))
+                print('\nFound {} issues for "{}":'.format(
+                    preexisting_issues['total_count'], test_name))
                 for issue in preexisting_issues['items']:
-                    print('\t"{}" ; URL: {}'.format(issue['title'], issue[
-                        'html_url']))
+                    print('\t"{}" ; URL: {}'.format(issue['title'],
+                                                    issue['html_url']))
             else:
                 print(
                     '\nNo preexisting issues found for "{}"'.format(test_name))
@@ -148,10 +148,11 @@ def get_new_failures(dates):
     rows = page.get('rows')
     if rows:
         return {
-            row['f'][0]['v']: Row(poll_strategy=row['f'][1]['v'],
-                                  job_name=row['f'][2]['v'],
-                                  build_id=row['f'][3]['v'],
-                                  timestamp=row['f'][4]['v'])
+            row['f'][0]['v']: Row(
+                poll_strategy=row['f'][1]['v'],
+                job_name=row['f'][2]['v'],
+                build_id=row['f'][3]['v'],
+                timestamp=row['f'][4]['v'])
             for row in rows
         }
     else:
@@ -294,13 +295,14 @@ def main():
     elif args.format == 'csv':
         if args.count_only:
             print('from_date,to_date,count')
-            print('{},{},{}'.format(dates['reporting']['begin'].isoformat(
-            ), dates['reporting']['end'].isoformat(), len(new_flakes)))
+            print('{},{},{}'.format(dates['reporting']['begin'].isoformat(),
+                                    dates['reporting']['end'].isoformat(),
+                                    len(new_flakes)))
         else:
             print_table(new_flakes, 'csv')
     else:
-        raise ValueError(
-            'Invalid argument for --format: {}'.format(args.format))
+        raise ValueError('Invalid argument for --format: {}'.format(
+            args.format))
 
 
 if __name__ == '__main__':

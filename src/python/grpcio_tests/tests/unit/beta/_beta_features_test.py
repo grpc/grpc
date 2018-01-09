@@ -163,7 +163,10 @@ class BetaFeaturesTest(unittest.TestCase):
         self._server = implementations.server(
             method_implementations, options=server_options)
         server_credentials = implementations.ssl_server_credentials([
-            (resources.private_key(), resources.certificate_chain(),),
+            (
+                resources.private_key(),
+                resources.certificate_chain(),
+            ),
         ])
         port = self._server.add_secure_port('[::]:0', server_credentials)
         self._server.start()
@@ -289,7 +292,10 @@ class ContextManagementAndLifecycleTest(unittest.TestCase):
         self._server_options = implementations.server_options(
             thread_pool_size=test_constants.POOL_SIZE)
         self._server_credentials = implementations.ssl_server_credentials([
-            (resources.private_key(), resources.certificate_chain(),),
+            (
+                resources.private_key(),
+                resources.certificate_chain(),
+            ),
         ])
         self._channel_credentials = implementations.ssl_channel_credentials(
             resources.test_root_certificates())

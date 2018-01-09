@@ -43,7 +43,8 @@ def _args():
         '-n',
         '--name',
         type=str,
-        help='Unique name of this build. To be used as a handle to pass to the other bm* scripts'
+        help=
+        'Unique name of this build. To be used as a handle to pass to the other bm* scripts'
     )
     argp.add_argument('--counters', dest='counters', action='store_true')
     argp.add_argument('--no-counters', dest='counters', action='store_false')
@@ -71,7 +72,8 @@ def build(name, benchmarks, jobs, counters):
             subprocess.check_call(_make_cmd('counters', benchmarks, jobs))
     os.rename(
         'bins',
-        'bm_diff_%s' % name,)
+        'bm_diff_%s' % name,
+    )
 
 
 if __name__ == '__main__':

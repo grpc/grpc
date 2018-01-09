@@ -174,10 +174,13 @@ for decorated_setting in sorted(decorated_settings):
         print >> C, "{NULL, 0, 0, 0, GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE, GRPC_HTTP2_PROTOCOL_ERROR},"
         i += 1
     print >> C, "{\"%s\", %du, %du, %du, GRPC_CHTTP2_%s, GRPC_HTTP2_%s}," % (
-        decorated_setting.name, decorated_setting.setting.default,
-        decorated_setting.setting.min, decorated_setting.setting.max,
+        decorated_setting.name,
+        decorated_setting.setting.default,
+        decorated_setting.setting.min,
+        decorated_setting.setting.max,
         decorated_setting.setting.on_error.behavior,
-        decorated_setting.setting.on_error.code,)
+        decorated_setting.setting.on_error.code,
+    )
     i += 1
 print >> C, "};"
 

@@ -72,9 +72,13 @@ def output(pr,
                 errors))
     elif mode == 'csv':
         print(','.join([
-            str(pr), str(base_time), str(test_time), str(
-                int((test_time - base_time).total_seconds())), str(successes),
-            str(failures), str(errors)
+            str(pr),
+            str(base_time),
+            str(test_time),
+            str(int((test_time - base_time).total_seconds())),
+            str(successes),
+            str(failures),
+            str(errors)
         ]))
 
 
@@ -117,8 +121,7 @@ def get_status_data(statuses_url, system):
     if system == 'kokoro': string_in_target_url = 'kokoro'
     elif system == 'jenkins': string_in_target_url = 'grpc-testing'
     for status in statuses['statuses']:
-        if not status['target_url'] or string_in_target_url not in status[
-                'target_url']:
+        if not status['target_url'] or string_in_target_url not in status['target_url']:
             continue  # Ignore jenkins
         if status['state'] == 'pending': return None
         elif status['state'] == 'success': successes += 1
@@ -130,8 +133,8 @@ def get_status_data(statuses_url, system):
             latest_datetime = max(latest_datetime,
                                   parse_timestamp(status['updated_at']))
     # First status is the most recent one.
-    if any([successes, failures, errors]) and sum(
-        [successes, failures, errors]) > 15:
+    if any([successes, failures, errors
+           ]) and sum([successes, failures, errors]) > 15:
         return {
             'latest_datetime': latest_datetime,
             'successes': successes,

@@ -146,6 +146,7 @@ END2END_TESTS = {
     'trailing_metadata': test_options(),
     'authority_not_supported': test_options(),
     'filter_latency': test_options(),
+    'filter_status_code': test_options(),
     'workaround_cronet_compression': test_options(),
     'write_buffering': test_options(needs_write_buffering=True),
     'write_buffering_at_end': test_options(needs_write_buffering=True),
