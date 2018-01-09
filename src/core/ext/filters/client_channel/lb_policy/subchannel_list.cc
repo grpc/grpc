@@ -213,13 +213,13 @@ void grpc_lb_subchannel_list_unref(grpc_lb_subchannel_list* subchannel_list,
 
 void grpc_lb_subchannel_list_ref_for_connectivity_watch(
     grpc_lb_subchannel_list* subchannel_list, const char* reason) {
-  GRPC_LB_POLICY_WEAK_REF(subchannel_list->policy, reason);
+  GRPC_LB_POLICY_REF(subchannel_list->policy, reason);
   grpc_lb_subchannel_list_ref(subchannel_list, reason);
 }
 
 void grpc_lb_subchannel_list_unref_for_connectivity_watch(
     grpc_lb_subchannel_list* subchannel_list, const char* reason) {
-  GRPC_LB_POLICY_WEAK_UNREF(subchannel_list->policy, reason);
+  GRPC_LB_POLICY_UNREF(subchannel_list->policy, reason);
   grpc_lb_subchannel_list_unref(subchannel_list, reason);
 }
 
