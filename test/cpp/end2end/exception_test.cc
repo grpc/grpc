@@ -105,7 +105,6 @@ TEST_F(ExceptionTest, RequestStream) {
 
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(s.error_code(), StatusCode::UNKNOWN);
-  EXPECT_EQ(s.error_message(), kErrorMessage);
 }
 
 #endif  // GRPC_ALLOW_EXCEPTIONS

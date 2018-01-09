@@ -40,10 +40,8 @@ Status CatchingFunctionHandler(Callable&& handler) {
 #if GRPC_ALLOW_EXCEPTIONS
   try {
     return handler();
-  } catch (const std::exception& e) {
-    return Status(StatusCode::UNKNOWN, e.what());
   } catch (...) {
-    return Status(StatusCode::UNKNOWN, "Exception in method handler");
+    return Status(StatusCode::UNKNOWN, "Unexpected error in RPC handling");
   }
 #else   // GRPC_ALLOW_EXCEPTIONS
   return handler();
