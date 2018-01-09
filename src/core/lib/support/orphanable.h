@@ -114,7 +114,7 @@ class InternallyRefCountedWithTracing : public Orphanable {
   friend void Delete(T*);
 
   InternallyRefCountedWithTracing()
-      : InternallyRefCountedWithTracing(nullptr) {}
+      : InternallyRefCountedWithTracing(static_cast<TraceFlag*>(nullptr)) {}
 
   explicit InternallyRefCountedWithTracing(TraceFlag* trace_flag)
       : trace_flag_(trace_flag) {

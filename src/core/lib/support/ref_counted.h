@@ -108,7 +108,8 @@ class RefCountedWithTracing {
   template <typename T>
   friend void Delete(T*);
 
-  RefCountedWithTracing() : RefCountedWithTracing(nullptr) {}
+  RefCountedWithTracing()
+      : RefCountedWithTracing(static_cast<TraceFlag*>(nullptr)) {}
 
   explicit RefCountedWithTracing(TraceFlag* trace_flag)
       : trace_flag_(trace_flag) {
