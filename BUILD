@@ -922,6 +922,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "orphanable",
         "ref_counted",
         "ref_counted_ptr",
         "gpr_base",
