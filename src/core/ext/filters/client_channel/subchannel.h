@@ -49,9 +49,9 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 #define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) \
   grpc_subchannel_weak_unref((p), __FILE__, __LINE__, (r))
 #define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) \
-  grpc_connected_subchannel_ref((p), __FILE__, __LINE__, (r))
+  ConnectedSubchannel_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_CONNECTED_SUBCHANNEL_UNREF(p, r) \
-  grpc_connected_subchannel_unref((p), __FILE__, __LINE__, (r))
+  ConnectedSubchannel_unref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) \
   grpc_subchannel_call_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_UNREF(p, r) \
@@ -65,15 +65,15 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 #define GRPC_SUBCHANNEL_UNREF(p, r) grpc_subchannel_unref((p))
 #define GRPC_SUBCHANNEL_WEAK_REF(p, r) grpc_subchannel_weak_ref((p))
 #define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) grpc_subchannel_weak_unref((p))
-#define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) grpc_connected_subchannel_ref((p))
-#define GRPC_CONNECTED_SUBCHANNEL_UNREF(p, r) \
-  grpc_connected_subchannel_unref((p))
+#define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) ConnectedSubchannel_ref((p))
+#define GRPC_CONNECTED_SUBCHANNEL_UNREF(p, r) ConnectedSubchannel_unref((p))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) grpc_subchannel_call_ref((p))
 #define GRPC_SUBCHANNEL_CALL_UNREF(p, r) grpc_subchannel_call_unref((p))
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
 #endif
 
-class grpc_connected_subchannel : public grpc_core::RefCountedWithTracing {
+namespace grpc_core {
+class ConnectedSubchannel : public grpc_core::RefCountedWithTracing {
  public:
   struct CallArgs {
     grpc_polling_entity* pollent;
@@ -85,21 +85,20 @@ class grpc_connected_subchannel : public grpc_core::RefCountedWithTracing {
     grpc_call_combiner* call_combiner;
   };
 
-  grpc_connected_subchannel(grpc_channel_stack* channel_stack);
-  grpc_connected_subchannel* Ref(const grpc_core::DebugLocation& location,
-                                 const char* reason);
-  void Unref(const grpc_core::DebugLocation& location, const char* reason);
+  explicit ConnectedSubchannel(grpc_channel_stack* channel_stack);
+  ~ConnectedSubchannel();
+
   grpc_channel_stack* channel_stack() { return channel_stack_; }
   void NotifyOnStateChange(grpc_pollset_set* interested_parties,
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-
-  grpc_error* CreateCall(const CallArgs* args, grpc_subchannel_call** call);
+  grpc_error* CreateCall(const CallArgs& args, grpc_subchannel_call** call);
 
  private:
   grpc_channel_stack* channel_stack_;
 };
+}  // namespace grpc_core
 
 grpc_subchannel* grpc_subchannel_ref(
     grpc_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
@@ -111,10 +110,10 @@ grpc_subchannel* grpc_subchannel_weak_ref(
     grpc_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_weak_unref(
     grpc_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-grpc_connected_subchannel* grpc_connected_subchannel_ref(
-    grpc_connected_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_connected_subchannel_unref(
-    grpc_connected_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+grpc_core::ConnectedSubchannel* ConnectedSubchannel_ref(
+    grpc_core::ConnectedSubchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void ConnectedSubchannel_unref(
+    grpc_core::ConnectedSubchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_ref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_unref(
@@ -130,9 +129,9 @@ void grpc_subchannel_notify_on_state_change(
     grpc_subchannel* channel, grpc_pollset_set* interested_parties,
     grpc_connectivity_state* state, grpc_closure* notify);
 
-/** retrieve the grpc_connected_subchannel - or NULL if called before
+/** retrieve the grpc_core::ConnectedSubchannel - or NULL if called before
     the subchannel becomes connected */
-grpc_connected_subchannel* grpc_subchannel_get_connected_subchannel(
+grpc_core::ConnectedSubchannel* grpc_subchannel_get_connected_subchannel(
     grpc_subchannel* subchannel);
 
 /** return the subchannel index key for \a subchannel */

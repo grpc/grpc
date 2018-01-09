@@ -102,7 +102,7 @@ void grpc_lb_policy_weak_unref(grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
 
 int grpc_lb_policy_pick_locked(grpc_lb_policy* policy,
                                const grpc_lb_policy_pick_args* pick_args,
-                               grpc_connected_subchannel** target,
+                               grpc_core::ConnectedSubchannel** target,
                                grpc_call_context_element* context,
                                void** user_data, grpc_closure* on_complete) {
   return policy->vtable->pick_locked(policy, pick_args, target, context,
@@ -110,7 +110,7 @@ int grpc_lb_policy_pick_locked(grpc_lb_policy* policy,
 }
 
 void grpc_lb_policy_cancel_pick_locked(grpc_lb_policy* policy,
-                                       grpc_connected_subchannel** target,
+                                       grpc_core::ConnectedSubchannel** target,
                                        grpc_error* error) {
   policy->vtable->cancel_pick_locked(policy, target, error);
 }

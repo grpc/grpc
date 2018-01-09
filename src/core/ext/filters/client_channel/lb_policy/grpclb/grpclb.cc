@@ -157,7 +157,7 @@ typedef struct wrapped_rr_closure_arg {
 
   /* the picked target, used to determine which LB token to add to the pick's
    * initial metadata */
-  grpc_connected_subchannel** target;
+  grpc_core::ConnectedSubchannel** target;
 
   /* the context to be populated for the subchannel call */
   grpc_call_context_element* context;
@@ -242,7 +242,7 @@ typedef struct pending_pick {
 
   /* output argument where to store the pick()ed connected subchannel, or
    * nullptr upon error. */
-  grpc_connected_subchannel** target;
+  grpc_core::ConnectedSubchannel** target;
 
   /* args for wrapped_on_complete */
   wrapped_rr_closure_arg wrapped_on_complete_arg;
@@ -250,7 +250,7 @@ typedef struct pending_pick {
 
 static void add_pending_pick(pending_pick** root,
                              const grpc_lb_policy_pick_args* pick_args,
-                             grpc_connected_subchannel** target,
+                             grpc_core::ConnectedSubchannel** target,
                              grpc_call_context_element* context,
                              grpc_closure* on_complete) {
   pending_pick* pp = (pending_pick*)gpr_zalloc(sizeof(*pp));
@@ -657,7 +657,7 @@ static void update_lb_connectivity_status_locked(
  * completion callback even if the pick is available immediately. */
 static bool pick_from_internal_rr_locked(
     glb_lb_policy* glb_policy, const grpc_lb_policy_pick_args* pick_args,
-    bool force_async, grpc_connected_subchannel** target,
+    bool force_async, grpc_core::ConnectedSubchannel** target,
     wrapped_rr_closure_arg* wc_arg) {
   // Check for drops if we are not using fallback backend addresses.
   if (glb_policy->serverlist != nullptr) {
@@ -1090,7 +1090,7 @@ static void glb_shutdown_locked(grpc_lb_policy* pol) {
 //   level (grpclb), inside the glb_policy->pending_picks list. To cancel these,
 //   we invoke the completion closure and set *target to nullptr right here.
 static void glb_cancel_pick_locked(grpc_lb_policy* pol,
-                                   grpc_connected_subchannel** target,
+                                   grpc_core::ConnectedSubchannel** target,
                                    grpc_error* error) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)pol;
   pending_pick* pp = glb_policy->pending_picks;
@@ -1184,7 +1184,7 @@ static void glb_exit_idle_locked(grpc_lb_policy* pol) {
 
 static int glb_pick_locked(grpc_lb_policy* pol,
                            const grpc_lb_policy_pick_args* pick_args,
-                           grpc_connected_subchannel** target,
+                           grpc_core::ConnectedSubchannel** target,
                            grpc_call_context_element* context, void** user_data,
                            grpc_closure* on_complete) {
   if (pick_args->lb_token_mdelem_storage == nullptr) {

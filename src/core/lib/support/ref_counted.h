@@ -45,6 +45,7 @@ class RefCounted {
   // Not copyable nor movable.
   RefCounted(const RefCounted&) = delete;
   RefCounted& operator=(const RefCounted&) = delete;
+  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   // Allow Delete() to access destructor.
@@ -111,6 +112,8 @@ class RefCountedWithTracing {
       : trace_flag_(trace_flag) {
     gpr_ref_init(&refs_, 1);
   }
+
+  virtual ~RefCountedWithTracing() {}
 
  private:
   TraceFlag* trace_flag_ = nullptr;

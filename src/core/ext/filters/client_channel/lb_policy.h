@@ -61,13 +61,13 @@ struct grpc_lb_policy_vtable {
   /** \see grpc_lb_policy_pick */
   int (*pick_locked)(grpc_lb_policy* policy,
                      const grpc_lb_policy_pick_args* pick_args,
-                     grpc_connected_subchannel** target,
+                     grpc_core::ConnectedSubchannel** target,
                      grpc_call_context_element* context, void** user_data,
                      grpc_closure* on_complete);
 
   /** \see grpc_lb_policy_cancel_pick */
   void (*cancel_pick_locked)(grpc_lb_policy* policy,
-                             grpc_connected_subchannel** target,
+                             grpc_core::ConnectedSubchannel** target,
                              grpc_error* error);
 
   /** \see grpc_lb_policy_cancel_picks */
@@ -160,11 +160,12 @@ void grpc_lb_policy_init(grpc_lb_policy* policy,
     in the \a grpc_lb_policy struct. */
 int grpc_lb_policy_pick_locked(grpc_lb_policy* policy,
                                const grpc_lb_policy_pick_args* pick_args,
-                               grpc_connected_subchannel** target,
+                               grpc_core::ConnectedSubchannel** target,
                                grpc_call_context_element* context,
                                void** user_data, grpc_closure* on_complete);
 
-/** Perform a connected subchannel ping (see \a grpc_connected_subchannel::Ping)
+/** Perform a connected subchannel ping (see \a
+   grpc_core::ConnectedSubchannel::Ping)
     against one of the connected subchannels managed by \a policy. */
 void grpc_lb_policy_ping_one_locked(grpc_lb_policy* policy,
                                     grpc_closure* on_initiate,
@@ -174,7 +175,7 @@ void grpc_lb_policy_ping_one_locked(grpc_lb_policy* policy,
     The \a on_complete callback of the pending picks will be invoked with \a
     *target set to NULL. */
 void grpc_lb_policy_cancel_pick_locked(grpc_lb_policy* policy,
-                                       grpc_connected_subchannel** target,
+                                       grpc_core::ConnectedSubchannel** target,
                                        grpc_error* error);
 
 /** Cancel all pending picks for which their \a initial_metadata_flags (as given
