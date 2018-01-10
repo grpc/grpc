@@ -60,11 +60,13 @@
   ((grpc_core::ConnectedSubchannel*)(gpr_atm_##barrier##_load( \
       &(subchannel)->connected_subchannel)))
 
-typedef struct {
+namespace {
+struct state_watcher {
   grpc_closure closure;
   grpc_subchannel* subchannel;
   grpc_connectivity_state connectivity_state;
-} state_watcher;
+};
+}  // namespace
 
 typedef struct external_state_watcher {
   grpc_subchannel* subchannel;
@@ -167,13 +169,13 @@ static void connection_destroy(void* arg, grpc_error* error) {
   gpr_free(stk);
 }
 
-grpc_core::ConnectedSubchannel* ConnectedSubchannel_ref(
+grpc_core::ConnectedSubchannel* grpc_connected_subchannel_ref(
     grpc_core::ConnectedSubchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   c->Ref(DEBUG_LOCATION, REF_REASON);
   return c;
 }
 
-void ConnectedSubchannel_unref(
+void grpc_connected_subchannel_unref(
     grpc_core::ConnectedSubchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   c->Unref(DEBUG_LOCATION, REF_REASON);
 }
@@ -541,10 +543,6 @@ static void on_connected_subchannel_connectivity_changed(void* p,
     if (!c->disconnected && con != nullptr) {
       GRPC_CONNECTED_SUBCHANNEL_UNREF(con, "transient_failure");
       gpr_atm_no_barrier_store(&c->connected_subchannel, (gpr_atm) nullptr);
-      gpr_log(
-          GPR_INFO,
-          "LOL FORMER Connected subchannel %p of subchannel %p is now NULL.",
-          con, c);
       grpc_connectivity_state_set(&c->state_tracker,
                                   GRPC_CHANNEL_TRANSIENT_FAILURE,
                                   GRPC_ERROR_REF(error), "reflect_child");
@@ -554,8 +552,9 @@ static void on_connected_subchannel_connectivity_changed(void* p,
         gpr_log(GPR_INFO,
                 "Connected subchannel %p of subchannel %p has gone into %s. "
                 "Attempting to reconnect.",
-                con, c, grpc_connectivity_state_name(
-                            connected_subchannel_watcher->connectivity_state));
+                con, c,
+                grpc_connectivity_state_name(
+                    connected_subchannel_watcher->connectivity_state));
       }
       maybe_start_connecting_locked(c);
     } else {

@@ -49,9 +49,9 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 #define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) \
   grpc_subchannel_weak_unref((p), __FILE__, __LINE__, (r))
 #define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) \
-  ConnectedSubchannel_ref((p), __FILE__, __LINE__, (r))
+  grpc_connected_subchannel_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_CONNECTED_SUBCHANNEL_UNREF(p, r) \
-  ConnectedSubchannel_unref((p), __FILE__, __LINE__, (r))
+  grpc_connected_subchannel_unref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) \
   grpc_subchannel_call_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_UNREF(p, r) \
@@ -65,8 +65,9 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 #define GRPC_SUBCHANNEL_UNREF(p, r) grpc_subchannel_unref((p))
 #define GRPC_SUBCHANNEL_WEAK_REF(p, r) grpc_subchannel_weak_ref((p))
 #define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) grpc_subchannel_weak_unref((p))
-#define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) ConnectedSubchannel_ref((p))
-#define GRPC_CONNECTED_SUBCHANNEL_UNREF(p, r) ConnectedSubchannel_unref((p))
+#define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) grpc_connected_subchannel_ref((p))
+#define GRPC_CONNECTED_SUBCHANNEL_UNREF(p, r) \
+  grpc_connected_subchannel_unref((p))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) grpc_subchannel_call_ref((p))
 #define GRPC_SUBCHANNEL_CALL_UNREF(p, r) grpc_subchannel_call_unref((p))
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
@@ -110,9 +111,9 @@ grpc_subchannel* grpc_subchannel_weak_ref(
     grpc_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_weak_unref(
     grpc_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-grpc_core::ConnectedSubchannel* ConnectedSubchannel_ref(
+grpc_core::ConnectedSubchannel* grpc_connected_subchannel_ref(
     grpc_core::ConnectedSubchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void ConnectedSubchannel_unref(
+void grpc_connected_subchannel_unref(
     grpc_core::ConnectedSubchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_ref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
