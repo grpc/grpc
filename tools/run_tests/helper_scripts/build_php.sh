@@ -18,9 +18,9 @@ set -ex
 CONFIG=${CONFIG:-opt}
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
-root=`pwd`
+root=$(pwd)
 export GRPC_LIB_SUBDIR=libs/$CONFIG
 export CFLAGS="-Wno-parentheses-equality"
 
@@ -30,8 +30,8 @@ cd src/php
 cd ext/grpc
 phpize
 if [ "$CONFIG" != "gcov" ] ; then
-  ./configure --enable-grpc=$root
+  ./configure --enable-grpc="$root"
 else
-  ./configure --enable-grpc=$root --enable-coverage
+  ./configure --enable-grpc="$root" --enable-coverage
 fi
 make

@@ -32,8 +32,11 @@ _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
 class _SerializationBehaviors(
         collections.namedtuple('_SerializationBehaviors', (
-            'request_serializers', 'request_deserializers',
-            'response_serializers', 'response_deserializers',))):
+            'request_serializers',
+            'request_deserializers',
+            'response_serializers',
+            'response_deserializers',
+        ))):
     pass
 
 
@@ -73,7 +76,10 @@ class _Implementation(test_interfaces.Implementation):
         server = implementations.server(
             method_implementations, options=server_options)
         server_credentials = implementations.ssl_server_credentials([
-            (resources.private_key(), resources.certificate_chain(),),
+            (
+                resources.private_key(),
+                resources.certificate_chain(),
+            ),
         ])
         port = server.add_secure_port('[::]:0', server_credentials)
         server.start()
@@ -116,9 +122,10 @@ class _Implementation(test_interfaces.Implementation):
 
 
 def load_tests(loader, tests, pattern):
-    return unittest.TestSuite(tests=tuple(
-        loader.loadTestsFromTestCase(test_case_class)
-        for test_case_class in test_cases.test_cases(_Implementation())))
+    return unittest.TestSuite(
+        tests=tuple(
+            loader.loadTestsFromTestCase(test_case_class)
+            for test_case_class in test_cases.test_cases(_Implementation())))
 
 
 if __name__ == '__main__':

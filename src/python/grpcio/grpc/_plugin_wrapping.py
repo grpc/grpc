@@ -23,7 +23,9 @@ from grpc._cython import cygrpc
 
 class _AuthMetadataContext(
         collections.namedtuple('AuthMetadataContext', (
-            'service_url', 'method_name',)), grpc.AuthMetadataContext):
+            'service_url',
+            'method_name',
+        )), grpc.AuthMetadataContext):
     pass
 
 
@@ -54,9 +56,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
                     'AuthMetadataPluginCallback raised exception "{}"!'.format(
                         self._state.exception))
         if error is None:
-            self._callback(
-                _common.to_cygrpc_metadata(metadata), cygrpc.StatusCode.ok,
-                None)
+            self._callback(metadata, cygrpc.StatusCode.ok, None)
         else:
             self._callback(None, cygrpc.StatusCode.internal,
                            _common.encode(str(error)))
@@ -72,8 +72,9 @@ class _Plugin(object):
             _common.decode(service_url), _common.decode(method_name))
         callback_state = _CallbackState()
         try:
-            self._metadata_plugin(
-                context, _AuthMetadataPluginCallback(callback_state, callback))
+            self._metadata_plugin(context,
+                                  _AuthMetadataPluginCallback(
+                                      callback_state, callback))
         except Exception as exception:  # pylint: disable=broad-except
             logging.exception(
                 'AuthMetadataPluginCallback "%s" raised exception!',

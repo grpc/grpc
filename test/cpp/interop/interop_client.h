@@ -103,8 +103,10 @@ class InteropClient {
   /// Run \a custom_check_fn as an additional check.
   bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
                          CheckerFn custom_checks_fn);
-  bool AssertStatusOk(const Status& s);
-  bool AssertStatusCode(const Status& s, StatusCode expected_code);
+  bool AssertStatusOk(const Status& s,
+                      const grpc::string& optional_debug_string);
+  bool AssertStatusCode(const Status& s, StatusCode expected_code,
+                        const grpc::string& optional_debug_string);
   bool TransientFailureOrAbort();
   ServiceStub serviceStub_;
 

@@ -66,7 +66,7 @@ def main
 
   # The "shutdown" RPC should end very quickly.
   # Allow a few seconds to be safe.
-  srv = GRPC::RpcServer.new(poll_period: 3)
+  srv = new_rpc_server_for_testing(poll_period: 3)
   srv.add_http2_port("0.0.0.0:#{client_control_port}",
                      :this_port_is_insecure)
   stub = Echo::EchoServer::Stub.new("localhost:#{server_port}",

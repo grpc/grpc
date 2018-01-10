@@ -31,7 +31,14 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
+/* Minimum and maximum protocol accepted versions. */
+#define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
+#define GRPC_PROTOCOL_VERSION_MAX_MINOR 1
+#define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
+#define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
+
 /* forward declarations */
+
 typedef struct grpc_transport grpc_transport;
 
 /* grpc_stream doesn't actually exist. It's used as a typesafe

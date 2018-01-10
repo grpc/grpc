@@ -22,43 +22,44 @@ from grpc_tools import protoc
 
 
 def build_package_protos(package_root):
-  proto_files = []
-  inclusion_root = os.path.abspath(package_root)
-  for root, _, files in os.walk(inclusion_root):
-    for filename in files:
-      if filename.endswith('.proto'):
-        proto_files.append(os.path.abspath(os.path.join(root, filename)))
+    proto_files = []
+    inclusion_root = os.path.abspath(package_root)
+    for root, _, files in os.walk(inclusion_root):
+        for filename in files:
+            if filename.endswith('.proto'):
+                proto_files.append(
+                    os.path.abspath(os.path.join(root, filename)))
 
-  well_known_protos_include = pkg_resources.resource_filename(
-      'grpc_tools', '_proto')
+    well_known_protos_include = pkg_resources.resource_filename(
+        'grpc_tools', '_proto')
 
-  for proto_file in proto_files:
-    command = [
-        'grpc_tools.protoc',
-        '--proto_path={}'.format(inclusion_root),
-        '--proto_path={}'.format(well_known_protos_include),
-        '--python_out={}'.format(inclusion_root),
-        '--grpc_python_out={}'.format(inclusion_root),
-    ] + [proto_file]
-    if protoc.main(command) != 0:
-      sys.stderr.write('warning: {} failed'.format(command))
+    for proto_file in proto_files:
+        command = [
+            'grpc_tools.protoc',
+            '--proto_path={}'.format(inclusion_root),
+            '--proto_path={}'.format(well_known_protos_include),
+            '--python_out={}'.format(inclusion_root),
+            '--grpc_python_out={}'.format(inclusion_root),
+        ] + [proto_file]
+        if protoc.main(command) != 0:
+            sys.stderr.write('warning: {} failed'.format(command))
 
 
 class BuildPackageProtos(setuptools.Command):
-  """Command to generate project *_pb2.py modules from proto files."""
+    """Command to generate project *_pb2.py modules from proto files."""
 
-  description = 'build grpc protobuf modules'
-  user_options = []
+    description = 'build grpc protobuf modules'
+    user_options = []
 
-  def initialize_options(self):
-    pass
+    def initialize_options(self):
+        pass
 
-  def finalize_options(self):
-    pass
+    def finalize_options(self):
+        pass
 
-  def run(self):
-    # due to limitations of the proto generator, we require that only *one*
-    # directory is provided as an 'include' directory. We assume it's the '' key
-    # to `self.distribution.package_dir` (and get a key error if it's not
-    # there).
-    build_package_protos(self.distribution.package_dir[''])
+    def run(self):
+        # due to limitations of the proto generator, we require that only *one*
+        # directory is provided as an 'include' directory. We assume it's the '' key
+        # to `self.distribution.package_dir` (and get a key error if it's not
+        # there).
+        build_package_protos(self.distribution.package_dir[''])

@@ -1,4 +1,5 @@
 build --client_env=CC=clang
+build --copt -DGRPC_BAZEL_BUILD
 
 build:asan --strip=never
 build:asan --copt -fsanitize-coverage=edge
