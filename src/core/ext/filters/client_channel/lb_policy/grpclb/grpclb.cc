@@ -882,6 +882,8 @@ static void glb_destroy(grpc_lb_policy* pol) {
   if (glb_policy->fallback_backend_addresses != nullptr) {
     grpc_lb_addresses_destroy(glb_policy->fallback_backend_addresses);
   }
+  // TODO(roth): Remove this once the LB policy becomes a C++ object.
+  glb_policy->response_generator.reset();
   grpc_subchannel_index_unref();
   gpr_free(glb_policy);
 }
