@@ -1322,9 +1322,9 @@ static void glb_notify_on_state_change_locked(grpc_lb_policy* pol,
 
 static void lb_call_on_retry_timer_locked(void* arg, grpc_error* error) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
+  GPR_ASSERT(glb_policy->lb_calld == nullptr);
   glb_policy->retry_timer_active = false;
-  if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE &&
-      glb_policy->lb_calld == nullptr) {
+  if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server", glb_policy);
     }
@@ -1333,37 +1333,29 @@ static void lb_call_on_retry_timer_locked(void* arg, grpc_error* error) {
   GRPC_LB_POLICY_WEAK_UNREF(&glb_policy->base, "grpclb_retry_timer");
 }
 
-static void maybe_restart_lb_call(glb_lb_policy* glb_policy) {
-  if (glb_policy->started_picking && glb_policy->updating_lb_call) {
-    if (glb_policy->retry_timer_active) {
-      grpc_timer_cancel(&glb_policy->lb_call_retry_timer);
-    }
-    if (!glb_policy->shutting_down) start_picking_locked(glb_policy);
-    glb_policy->updating_lb_call = false;
-  } else if (!glb_policy->shutting_down) {
-    /* if we aren't shutting down, restart the LB client call after some time */
-    grpc_millis next_try = glb_policy->lb_call_backoff->Step();
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
+static void start_lb_call_retry_timer(glb_lb_policy* glb_policy) {
+  if (glb_policy->shutting_down) return;
+  grpc_millis next_try = glb_policy->lb_call_backoff->Step();
+  if (grpc_lb_glb_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
+            glb_policy);
+    grpc_millis timeout = next_try - grpc_core::ExecCtx::Get()->Now();
+    if (timeout > 0) {
+      gpr_log(GPR_DEBUG,
+              "[grpclb %p] ... retry_timer_active in %" PRIuPTR "ms.",
+              glb_policy, timeout);
+    } else {
+      gpr_log(GPR_DEBUG, "[grpclb %p] ... retry_timer_active immediately.",
               glb_policy);
-      grpc_millis timeout = next_try - grpc_core::ExecCtx::Get()->Now();
-      if (timeout > 0) {
-        gpr_log(GPR_DEBUG,
-                "[grpclb %p] ... retry_timer_active in %" PRIuPTR "ms.",
-                glb_policy, timeout);
-      } else {
-        gpr_log(GPR_DEBUG, "[grpclb %p] ... retry_timer_active immediately.",
-                glb_policy);
-      }
     }
-    GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "grpclb_retry_timer");
-    GRPC_CLOSURE_INIT(&glb_policy->lb_on_call_retry,
-                      lb_call_on_retry_timer_locked, glb_policy,
-                      grpc_combiner_scheduler(glb_policy->base.combiner));
-    glb_policy->retry_timer_active = true;
-    grpc_timer_init(&glb_policy->lb_call_retry_timer, next_try,
-                    &glb_policy->lb_on_call_retry);
   }
+  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "grpclb_retry_timer");
+  GRPC_CLOSURE_INIT(&glb_policy->lb_on_call_retry,
+                    lb_call_on_retry_timer_locked, glb_policy,
+                    grpc_combiner_scheduler(glb_policy->base.combiner));
+  glb_policy->retry_timer_active = true;
+  grpc_timer_init(&glb_policy->lb_call_retry_timer, next_try,
+                  &glb_policy->lb_on_call_retry);
 }
 
 static void client_load_report_due_locked(void* arg, grpc_error* error);
@@ -1748,11 +1740,14 @@ static void lb_on_server_status_received_locked(void* arg, grpc_error* error) {
             lb_calld, lb_calld->lb_call, grpc_error_string(error));
     gpr_free(status_details);
   }
+  glb_lb_call_data_unref(lb_calld, "lb_call_ended");
+  // If this lb_calld is still in use, this call ended because of a failure so
+  // we want to retry connecting. Otherwise, we have deliberately ended this
+  // call and no further action is required.
   if (lb_calld == glb_policy->lb_calld) {
     glb_policy->lb_calld = nullptr;
+    start_lb_call_retry_timer(glb_policy);
   }
-  glb_lb_call_data_unref(lb_calld, "lb_call_ended");
-  maybe_restart_lb_call(glb_policy);
 }
 
 static void lb_on_fallback_timer_locked(void* arg, grpc_error* error) {
@@ -1854,7 +1849,7 @@ static void glb_lb_channel_on_connectivity_changed_cb(void* arg,
   switch (glb_policy->lb_channel_connectivity) {
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      /* resub. */
+      // Keep watching the LB channel.
       grpc_channel_element* client_channel_elem =
           grpc_channel_stack_last_element(
               grpc_channel_get_channel_stack(glb_policy->lb_channel));
@@ -1867,31 +1862,27 @@ static void glb_lb_channel_on_connectivity_changed_cb(void* arg,
           &glb_policy->lb_channel_on_connectivity_changed, nullptr);
       break;
     }
+    // The LB channel may be IDLE because it's shut down before the update.
+    // Restart the LB call to kick the LB channel into gear.
     case GRPC_CHANNEL_IDLE:
-    // lb channel inactive (probably shutdown prior to update). Restart lb
-    // call to kick the lb channel into gear.
-    /* fallthrough */
     case GRPC_CHANNEL_READY:
       if (glb_policy->lb_calld != nullptr) {
-        glb_policy->updating_lb_call = true;
         GPR_ASSERT(glb_policy->lb_calld->lb_call != nullptr);
         grpc_call_cancel(glb_policy->lb_calld->lb_call, nullptr);
-        // lb_on_server_status_received() will pick up the cancel and reinit
-        // lb_call.
+        // glb_policy->lb_calld will point to a new location.
+        start_picking_locked(glb_policy);
       } else if (glb_policy->started_picking) {
         if (glb_policy->retry_timer_active) {
           grpc_timer_cancel(&glb_policy->lb_call_retry_timer);
-          glb_policy->retry_timer_active = false;
         }
         start_picking_locked(glb_policy);
-      }
-    /* fallthrough */
+      }  // todo retry?
+    // Fall through.
     case GRPC_CHANNEL_SHUTDOWN:
     done:
       glb_policy->watching_lb_channel = false;
       GRPC_LB_POLICY_WEAK_UNREF(&glb_policy->base,
                                 "watch_lb_channel_connectivity_cb_shutdown");
-      break;
   }
 }
 
