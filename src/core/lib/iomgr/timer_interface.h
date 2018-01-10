@@ -84,7 +84,7 @@ class TimerEngine {
   // be updated on any given execution; however, with high probability at least
   // one thread in the system will see an update at any time slice.
   enum class CheckResult { NOT_CHECKED, CHECKED_AND_EMPTY, FIRED };
-  virtual void CheckTimers(grpc_exec_ctx* exec_ctx, grpc_millis* next) = 0;
+  virtual CheckResult CheckTimers(grpc_exec_ctx* exec_ctx, grpc_millis* next) = 0;
 
   // Consume a kick received by TimerManager::Kick
   virtual void ConsumeKick() = 0;
