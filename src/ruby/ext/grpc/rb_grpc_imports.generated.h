@@ -768,7 +768,7 @@ extern gpr_stats_inc_type gpr_stats_inc_import;
 typedef intptr_t(*gpr_stats_read_type)(const gpr_stats_counter* c);
 extern gpr_stats_read_type gpr_stats_read_import;
 #define gpr_stats_read gpr_stats_read_import
-typedef int(*gpr_thd_new_type)(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg, const gpr_thd_options* options);
+typedef int(*gpr_thd_new_type)(gpr_thd_id* t, const char* thd_name, void (*thd_body)(void* arg), void* arg, const gpr_thd_options* options);
 extern gpr_thd_new_type gpr_thd_new_import;
 #define gpr_thd_new gpr_thd_new_import
 typedef gpr_thd_options(*gpr_thd_options_default_type)(void);

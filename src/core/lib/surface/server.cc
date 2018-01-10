@@ -43,24 +43,23 @@
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/metadata.h"
 
-typedef struct listener {
+grpc_core::TraceFlag grpc_server_channel_trace(false, "server_channel");
+
+namespace {
+struct listener {
   void* arg;
   void (*start)(grpc_server* server, void* arg, grpc_pollset** pollsets,
                 size_t pollset_count);
   void (*destroy)(grpc_server* server, void* arg, grpc_closure* closure);
   struct listener* next;
   grpc_closure destroy_done;
-} listener;
+};
 
-typedef struct call_data call_data;
-typedef struct channel_data channel_data;
-typedef struct registered_method registered_method;
+enum requested_call_type { BATCH_CALL, REGISTERED_CALL };
 
-typedef enum { BATCH_CALL, REGISTERED_CALL } requested_call_type;
+struct registered_method;
 
-grpc_core::TraceFlag grpc_server_channel_trace(false, "server_channel");
-
-typedef struct requested_call {
+struct requested_call {
   gpr_mpscq_node request_link; /* must be first */
   requested_call_type type;
   size_t cq_idx;
@@ -80,15 +79,15 @@ typedef struct requested_call {
       grpc_byte_buffer** optional_payload;
     } registered;
   } data;
-} requested_call;
+};
 
-typedef struct channel_registered_method {
+struct channel_registered_method {
   registered_method* server_registered_method;
   uint32_t flags;
   bool has_host;
   grpc_slice method;
   grpc_slice host;
-} channel_registered_method;
+};
 
 struct channel_data {
   grpc_server* server;
@@ -175,6 +174,7 @@ typedef struct {
   grpc_channel** channels;
   size_t num_channels;
 } channel_broadcaster;
+}  // namespace
 
 struct grpc_server {
   grpc_channel_args* channel_args;
@@ -1169,7 +1169,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   gpr_mu_lock(&server->mu_global);
   while (server->starting) {
     gpr_cv_wait(&server->starting_cv, &server->mu_global,
-                gpr_inf_future(GPR_CLOCK_REALTIME));
+                gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
 
   /* stay locked, and gather up some stuff to do */

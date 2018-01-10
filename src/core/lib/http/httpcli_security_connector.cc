@@ -184,8 +184,9 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   c->handshake_mgr = grpc_handshake_manager_create();
   grpc_handshakers_add(HANDSHAKER_CLIENT, &args, c->handshake_mgr);
   grpc_handshake_manager_do_handshake(
-      c->handshake_mgr, tcp, nullptr /* channel_args */, deadline,
-      nullptr /* acceptor */, on_handshake_done, c /* user_data */);
+      c->handshake_mgr, nullptr /* interested_parties */, tcp,
+      nullptr /* channel_args */, deadline, nullptr /* acceptor */,
+      on_handshake_done, c /* user_data */);
   GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
 }
 

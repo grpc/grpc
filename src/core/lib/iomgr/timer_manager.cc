@@ -93,7 +93,7 @@ static void start_timer_thread_and_unlock(void) {
   // to leak through g_completed_threads and be freed in gc_completed_threads()
   // before "&ct->t" is written to, causing a use-after-free.
   gpr_mu_lock(&g_mu);
-  gpr_thd_new(&ct->t, timer_thread, ct, &opt);
+  gpr_thd_new(&ct->t, "grpc_global_timer", timer_thread, ct, &opt);
   gpr_mu_unlock(&g_mu);
 }
 
@@ -192,7 +192,7 @@ static bool wait_until(grpc_millis next) {
     }
 
     gpr_cv_wait(&g_cv_wait, &g_mu,
-                grpc_millis_to_timespec(next, GPR_CLOCK_REALTIME));
+                grpc_millis_to_timespec(next, GPR_CLOCK_MONOTONIC));
 
     if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG, "wait ended: was_timed:%d kicked:%d",
@@ -317,7 +317,7 @@ static void stop_threads(void) {
       gpr_log(GPR_DEBUG, "num timer threads: %d", g_thread_count);
     }
     while (g_thread_count > 0) {
-      gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+      gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
       if (grpc_timer_check_trace.enabled()) {
         gpr_log(GPR_DEBUG, "num timer threads: %d", g_thread_count);
       }

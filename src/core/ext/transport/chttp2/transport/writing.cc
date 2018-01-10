@@ -67,14 +67,15 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     return;
   }
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
+
+  grpc_millis next_allowed_ping_interval =
+      (t->keepalive_permit_without_calls == 0 &&
+       grpc_chttp2_stream_map_size(&t->stream_map) == 0)
+          ? 7200 * GPR_MS_PER_SEC
+          : t->ping_policy.min_sent_ping_interval_without_data;
   grpc_millis next_allowed_ping =
-      t->ping_state.last_ping_sent_time +
-      t->ping_policy.min_sent_ping_interval_without_data;
-  if (t->keepalive_permit_without_calls == 0 &&
-      grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
-    next_allowed_ping =
-        t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
-  }
+      t->ping_state.last_ping_sent_time + next_allowed_ping_interval;
+
   if (next_allowed_ping > now) {
     /* not enough elapsed time between successive pings */
     if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
@@ -137,10 +138,11 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                          const char* staller) {
   gpr_log(
       GPR_DEBUG,
-      "%s:%p stream %d stalled by %s [fc:pending=%" PRIdPTR ":flowed=%" PRId64
+      "%s:%p stream %d stalled by %s [fc:pending=%" PRIdPTR
+      ":pending-compressed=%" PRIdPTR ":flowed=%" PRId64
       ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
       t->peer_string, t, s->id, staller, s->flow_controlled_buffer.length,
-      s->flow_controlled_bytes_flowed,
+      s->compressed_data_buffer.length, s->flow_controlled_bytes_flowed,
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
       t->flow_control->remote_window(),

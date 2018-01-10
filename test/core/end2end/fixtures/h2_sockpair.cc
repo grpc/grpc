@@ -87,10 +87,10 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
-  transport = grpc_create_chttp2_transport(client_args, sfd->client, 1);
+  transport = grpc_create_chttp2_transport(client_args, sfd->client, true);
   client_setup_transport(&cs, transport);
   GPR_ASSERT(f->client);
-  grpc_chttp2_transport_start_reading(transport, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 }
 
 static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
@@ -102,9 +102,9 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-  transport = grpc_create_chttp2_transport(server_args, sfd->server, 0);
+  transport = grpc_create_chttp2_transport(server_args, sfd->server, false);
   server_setup_transport(f, transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {

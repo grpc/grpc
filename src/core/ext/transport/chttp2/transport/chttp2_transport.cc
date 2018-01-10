@@ -79,7 +79,9 @@ static int g_default_server_keepalive_time_ms =
     DEFAULT_SERVER_KEEPALIVE_TIME_MS;
 static int g_default_server_keepalive_timeout_ms =
     DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS;
-static bool g_default_keepalive_permit_without_calls =
+static bool g_default_client_keepalive_permit_without_calls =
+    DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
+static bool g_default_server_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 
 static int g_default_min_sent_ping_interval_without_data_ms =
@@ -343,6 +345,8 @@ static void init_transport(grpc_chttp2_transport* t,
     t->keepalive_timeout = g_default_client_keepalive_timeout_ms == INT_MAX
                                ? GRPC_MILLIS_INF_FUTURE
                                : g_default_client_keepalive_timeout_ms;
+    t->keepalive_permit_without_calls =
+        g_default_client_keepalive_permit_without_calls;
   } else {
     t->keepalive_time = g_default_server_keepalive_time_ms == INT_MAX
                             ? GRPC_MILLIS_INF_FUTURE
@@ -350,8 +354,9 @@ static void init_transport(grpc_chttp2_transport* t,
     t->keepalive_timeout = g_default_server_keepalive_timeout_ms == INT_MAX
                                ? GRPC_MILLIS_INF_FUTURE
                                : g_default_server_keepalive_timeout_ms;
+    t->keepalive_permit_without_calls =
+        g_default_server_keepalive_permit_without_calls;
   }
-  t->keepalive_permit_without_calls = g_default_keepalive_permit_without_calls;
 
   t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
 
@@ -614,6 +619,10 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     }
     GPR_ASSERT(t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE);
     grpc_endpoint_shutdown(t->ep, GRPC_ERROR_REF(error));
+  }
+  if (t->notify_on_receive_settings != nullptr) {
+    GRPC_CLOSURE_SCHED(t->notify_on_receive_settings, GRPC_ERROR_CANCELLED);
+    t->notify_on_receive_settings = nullptr;
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1702,7 +1711,6 @@ static void perform_transport_op_locked(void* stream_op,
   grpc_transport_op* op = (grpc_transport_op*)stream_op;
   grpc_chttp2_transport* t =
       (grpc_chttp2_transport*)op->handler_private.extra_arg;
-  grpc_error* close_transport = op->disconnect_with_error;
 
   if (op->goaway_error) {
     send_goaway(t, op->goaway_error);
@@ -1722,8 +1730,8 @@ static void perform_transport_op_locked(void* stream_op,
     grpc_endpoint_add_to_pollset_set(t->ep, op->bind_pollset_set);
   }
 
-  if (op->send_ping) {
-    send_ping_locked(t, nullptr, op->send_ping);
+  if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
+    send_ping_locked(t, op->send_ping.on_initiate, op->send_ping.on_ack);
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING);
   }
 
@@ -1733,8 +1741,8 @@ static void perform_transport_op_locked(void* stream_op,
         op->on_connectivity_state_change);
   }
 
-  if (close_transport != GRPC_ERROR_NONE) {
-    close_transport_locked(t, close_transport);
+  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+    close_transport_locked(t, op->disconnect_with_error);
   }
 
   GRPC_CLOSURE_RUN(op->on_consumed, GRPC_ERROR_NONE);
@@ -2518,7 +2526,9 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
     for (i = 0; i < args->num_args; i++) {
       if (0 == strcmp(args->args[i].key, GRPC_ARG_KEEPALIVE_TIME_MS)) {
         const int value = grpc_channel_arg_get_integer(
-            &args->args[i], {g_default_client_keepalive_time_ms, 1, INT_MAX});
+            &args->args[i], {is_client ? g_default_client_keepalive_time_ms
+                                       : g_default_server_keepalive_time_ms,
+                             1, INT_MAX});
         if (is_client) {
           g_default_client_keepalive_time_ms = value;
         } else {
@@ -2527,8 +2537,9 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
         const int value = grpc_channel_arg_get_integer(
-            &args->args[i],
-            {g_default_client_keepalive_timeout_ms, 0, INT_MAX});
+            &args->args[i], {is_client ? g_default_client_keepalive_timeout_ms
+                                       : g_default_server_keepalive_timeout_ms,
+                             0, INT_MAX});
         if (is_client) {
           g_default_client_keepalive_timeout_ms = value;
         } else {
@@ -2536,10 +2547,16 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
         }
       } else if (0 == strcmp(args->args[i].key,
                              GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
-        g_default_keepalive_permit_without_calls =
-            (uint32_t)grpc_channel_arg_get_integer(
-                &args->args[i],
-                {g_default_keepalive_permit_without_calls, 0, 1});
+        const bool value = (uint32_t)grpc_channel_arg_get_integer(
+            &args->args[i],
+            {is_client ? g_default_client_keepalive_permit_without_calls
+                       : g_default_server_keepalive_timeout_ms,
+             0, 1});
+        if (is_client) {
+          g_default_client_keepalive_permit_without_calls = value;
+        } else {
+          g_default_server_keepalive_permit_without_calls = value;
+        }
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
         g_default_max_ping_strikes = grpc_channel_arg_get_integer(
@@ -3079,15 +3096,16 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
 static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
 
 grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, int is_client) {
+    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client) {
   grpc_chttp2_transport* t =
       (grpc_chttp2_transport*)gpr_zalloc(sizeof(grpc_chttp2_transport));
-  init_transport(t, channel_args, ep, is_client != 0);
+  init_transport(t, channel_args, ep, is_client);
   return &t->base;
 }
 
-void grpc_chttp2_transport_start_reading(grpc_transport* transport,
-                                         grpc_slice_buffer* read_buffer) {
+void grpc_chttp2_transport_start_reading(
+    grpc_transport* transport, grpc_slice_buffer* read_buffer,
+    grpc_closure* notify_on_receive_settings) {
   grpc_chttp2_transport* t = (grpc_chttp2_transport*)transport;
   GRPC_CHTTP2_REF_TRANSPORT(
       t, "reading_action"); /* matches unref inside reading_action */
@@ -3095,5 +3113,6 @@ void grpc_chttp2_transport_start_reading(grpc_transport* transport,
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);
   }
+  t->notify_on_receive_settings = notify_on_receive_settings;
   GRPC_CLOSURE_SCHED(&t->read_action_locked, GRPC_ERROR_NONE);
 }

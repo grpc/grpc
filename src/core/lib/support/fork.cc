@@ -39,7 +39,7 @@ void grpc_fork_support_init() {
 #else
   fork_support_enabled = 0;
   char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
-  if (env != NULL) {
+  if (env != nullptr) {
     static const char* truthy[] = {"yes",  "Yes",  "YES", "true",
                                    "True", "TRUE", "1"};
     for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {

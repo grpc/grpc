@@ -104,8 +104,8 @@ void grpc_executor_set_threading(bool threading) {
 
     gpr_thd_options opt = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&opt);
-    gpr_thd_new(&g_thread_state[0].id, executor_thread, &g_thread_state[0],
-                &opt);
+    gpr_thd_new(&g_thread_state[0].id, "grpc_executor", executor_thread,
+                &g_thread_state[0], &opt);
   } else {
     if (cur_threads == 0) return;
     for (size_t i = 0; i < g_max_threads; i++) {
@@ -155,7 +155,7 @@ static void executor_thread(void* arg) {
     ts->depth -= subtract_depth;
     while (grpc_closure_list_empty(ts->elems) && !ts->shutdown) {
       ts->queued_long_job = false;
-      gpr_cv_wait(&ts->cv, &ts->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+      gpr_cv_wait(&ts->cv, &ts->mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
     }
     if (ts->shutdown) {
       if (executor_trace.enabled()) {
@@ -242,7 +242,7 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
         }
         continue;
       }
-      if (grpc_closure_list_empty(ts->elems)) {
+      if (grpc_closure_list_empty(ts->elems) && !ts->shutdown) {
         GRPC_STATS_INC_EXECUTOR_WAKEUP_INITIATED();
         gpr_cv_signal(&ts->cv);
       }
@@ -261,8 +261,8 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
 
         gpr_thd_options opt = gpr_thd_options_default();
         gpr_thd_options_set_joinable(&opt);
-        gpr_thd_new(&g_thread_state[cur_thread_count].id, executor_thread,
-                    &g_thread_state[cur_thread_count], &opt);
+        gpr_thd_new(&g_thread_state[cur_thread_count].id, "gpr_executor",
+                    executor_thread, &g_thread_state[cur_thread_count], &opt);
       }
       gpr_spinlock_unlock(&g_adding_thread_lock);
     }

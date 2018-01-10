@@ -130,6 +130,11 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
             memcpy(parser->target_settings, parser->incoming_settings,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
+            if (t->notify_on_receive_settings != nullptr) {
+              GRPC_CLOSURE_SCHED(t->notify_on_receive_settings,
+                                 GRPC_ERROR_NONE);
+              t->notify_on_receive_settings = nullptr;
+            }
           }
           return GRPC_ERROR_NONE;
         }

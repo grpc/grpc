@@ -157,9 +157,6 @@ void grpc_init(void) {
 void grpc_shutdown(void) {
   int i;
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
-  if (grpc_core::ExecCtx::Get()) {
-    grpc_core::ExecCtx::Get()->Flush();
-  }
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     {
@@ -174,11 +171,11 @@ void grpc_shutdown(void) {
           }
         }
       }
+      grpc_iomgr_shutdown();
       gpr_timers_global_destroy();
       grpc_tracer_shutdown();
-      grpc_handshaker_factory_registry_shutdown();
-      grpc_iomgr_shutdown();
       grpc_mdctx_global_shutdown();
+      grpc_handshaker_factory_registry_shutdown();
       grpc_slice_intern_shutdown();
       grpc_stats_shutdown();
     }

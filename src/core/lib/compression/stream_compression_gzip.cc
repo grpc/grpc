@@ -114,7 +114,8 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
     if (ctx->zs.avail_out == 0) {
       grpc_slice_buffer_add(out, slice_out);
     } else if (ctx->zs.avail_out < slice_size) {
-      slice_out.data.refcounted.length -= ctx->zs.avail_out;
+      size_t len = GRPC_SLICE_LENGTH(slice_out);
+      GRPC_SLICE_SET_LENGTH(slice_out, len - ctx->zs.avail_out);
       grpc_slice_buffer_add(out, slice_out);
     } else {
       grpc_slice_unref_internal(slice_out);

@@ -33,7 +33,8 @@
 
 #define DEFAULT_POLL_INTERVAL_MS 5000
 
-typedef struct backup_poller {
+namespace {
+struct backup_poller {
   grpc_timer polling_timer;
   grpc_closure run_poller_closure;
   grpc_closure shutdown_closure;
@@ -42,7 +43,8 @@ typedef struct backup_poller {
   bool shutting_down;     // guarded by pollset_mu
   gpr_refcount refs;
   gpr_refcount shutdown_refs;
-} backup_poller;
+};
+}  // namespace
 
 static gpr_once g_once = GPR_ONCE_INIT;
 static gpr_mu g_poller_mu;
@@ -82,8 +84,8 @@ static void done_poller(void* arg, grpc_error* error) {
 }
 
 static void g_poller_unref() {
+  gpr_mu_lock(&g_poller_mu);
   if (gpr_unref(&g_poller->refs)) {
-    gpr_mu_lock(&g_poller_mu);
     backup_poller* p = g_poller;
     g_poller = nullptr;
     gpr_mu_unlock(&g_poller_mu);
@@ -94,6 +96,8 @@ static void g_poller_unref() {
                                       grpc_schedule_on_exec_ctx));
     gpr_mu_unlock(p->pollset_mu);
     grpc_timer_cancel(&p->polling_timer);
+  } else {
+    gpr_mu_unlock(&g_poller_mu);
   }
 }
 

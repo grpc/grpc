@@ -80,7 +80,7 @@ class ExecCtx {
   ExecCtx(uintptr_t fl) : flags_(fl) { Set(this); }
 
   /** Destructor */
-  ~ExecCtx() {
+  virtual ~ExecCtx() {
     flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
     Set(last_exec_ctx_);
@@ -111,7 +111,7 @@ class ExecCtx {
 
   /** Checks if there is work to be done */
   bool HasWork() {
-    return combiner_data_.active_combiner != NULL ||
+    return combiner_data_.active_combiner != nullptr ||
            !grpc_closure_list_empty(closure_list_);
   }
 
@@ -176,6 +176,9 @@ on outside context */
  protected:
   /** Check if ready to finish */
   virtual bool CheckReadyToFinish() { return false; }
+
+  /** Disallow delete on ExecCtx */
+  static void operator delete(void* p) { abort(); }
 
  private:
   /** Set exec_ctx_ to exec_ctx */

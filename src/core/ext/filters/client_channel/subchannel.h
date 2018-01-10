@@ -125,7 +125,8 @@ void grpc_connected_subchannel_notify_on_state_change(
     grpc_connected_subchannel* channel, grpc_pollset_set* interested_parties,
     grpc_connectivity_state* state, grpc_closure* notify);
 void grpc_connected_subchannel_ping(grpc_connected_subchannel* channel,
-                                    grpc_closure* notify);
+                                    grpc_closure* on_initiate,
+                                    grpc_closure* on_ack);
 
 /** retrieve the grpc_connected_subchannel - or NULL if called before
     the subchannel becomes connected */

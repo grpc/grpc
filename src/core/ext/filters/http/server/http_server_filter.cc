@@ -31,7 +31,8 @@
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
 
-typedef struct call_data {
+namespace {
+struct call_data {
   grpc_call_combiner* call_combiner;
 
   grpc_linked_mdelem status;
@@ -60,11 +61,12 @@ typedef struct call_data {
   grpc_closure hs_on_recv;
   grpc_closure hs_on_complete;
   grpc_closure hs_recv_message_ready;
-} call_data;
+};
 
-typedef struct channel_data {
+struct channel_data {
   uint8_t unused;
-} channel_data;
+};
+}  // namespace
 
 static grpc_error* server_filter_outgoing_metadata(grpc_call_element* elem,
                                                    grpc_metadata_batch* b) {

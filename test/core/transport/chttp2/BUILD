@@ -115,6 +115,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "settings_timeout_test",
+    srcs = ["settings_timeout_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
     language = "C++",

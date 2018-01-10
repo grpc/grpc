@@ -16,7 +16,7 @@
 set -ex
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 EXIT_CODE=0
 ruby src/ruby/end2end/sig_handling_driver.rb || EXIT_CODE=1

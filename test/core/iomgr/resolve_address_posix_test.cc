@@ -102,7 +102,7 @@ static void actually_poll(void* argsp) {
 static void poll_pollset_until_request_done(args_struct* args) {
   gpr_atm_rel_store(&args->done_atm, 0);
   gpr_thd_id id;
-  gpr_thd_new(&id, actually_poll, args, nullptr);
+  gpr_thd_new(&id, "grpc_poll_pollset", actually_poll, args, nullptr);
 }
 
 static void must_succeed(void* argsp, grpc_error* err) {

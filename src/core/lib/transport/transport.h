@@ -31,7 +31,14 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata.h"
 
+/* Minimum and maximum protocol accepted versions. */
+#define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
+#define GRPC_PROTOCOL_VERSION_MAX_MINOR 1
+#define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
+#define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
+
 /* forward declarations */
+
 typedef struct grpc_transport grpc_transport;
 
 /* grpc_stream doesn't actually exist. It's used as a typesafe
@@ -243,8 +250,14 @@ typedef struct grpc_transport_op {
   grpc_pollset* bind_pollset;
   /** add this transport to a pollset_set */
   grpc_pollset_set* bind_pollset_set;
-  /** send a ping, call this back if not NULL */
-  grpc_closure* send_ping;
+  /** send a ping, if either on_initiate or on_ack is not NULL */
+  struct {
+    /** Ping may be delayed by the transport, on_initiate callback will be
+        called when the ping is actually being sent. */
+    grpc_closure* on_initiate;
+    /** Called when the ping ack is received */
+    grpc_closure* on_ack;
+  } send_ping;
 
   /***************************************************************************
    * remaining fields are initialized and used at the discretion of the
@@ -320,9 +333,6 @@ void grpc_transport_ping(grpc_transport* transport, grpc_closure* cb);
 /* Advise peer of pending connection termination. */
 void grpc_transport_goaway(grpc_transport* transport, grpc_status_code status,
                            grpc_slice debug_data);
-
-/* Close a transport. Aborts all open streams. */
-void grpc_transport_close(grpc_transport* transport);
 
 /* Destroy the transport */
 void grpc_transport_destroy(grpc_transport* transport);

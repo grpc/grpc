@@ -27,7 +27,8 @@ def _not_found_error():
     return reflection_pb2.ServerReflectionResponse(
         error_response=reflection_pb2.ErrorResponse(
             error_code=grpc.StatusCode.NOT_FOUND.value[0],
-            error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),))
+            error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
+        ))
 
 
 def _file_descriptor_response(descriptor):
@@ -70,7 +71,8 @@ class ReflectionServicer(reflection_pb2_grpc.ServerReflectionServicer):
 
     def _file_containing_extension(self, containing_type, extension_number):
         try:
-            message_descriptor = self._pool.FindMessageTypeByName(containing_type)
+            message_descriptor = self._pool.FindMessageTypeByName(
+                containing_type)
             extension_descriptor = self._pool.FindExtensionByNumber(
                 message_descriptor, extension_number)
             descriptor = self._pool.FindFileContainingSymbol(
@@ -82,10 +84,13 @@ class ReflectionServicer(reflection_pb2_grpc.ServerReflectionServicer):
 
     def _all_extension_numbers_of_type(self, containing_type):
         try:
-            message_descriptor = self._pool.FindMessageTypeByName(containing_type)
-            extension_numbers = tuple(sorted(
-                extension.number
-                for extension in self._pool.FindAllExtensions(message_descriptor)))
+            message_descriptor = self._pool.FindMessageTypeByName(
+                containing_type)
+            extension_numbers = tuple(
+                sorted(
+                    extension.number
+                    for extension in self._pool.FindAllExtensions(
+                        message_descriptor)))
         except KeyError:
             return _not_found_error()
         else:
@@ -97,10 +102,11 @@ class ReflectionServicer(reflection_pb2_grpc.ServerReflectionServicer):
 
     def _list_services(self):
         return reflection_pb2.ServerReflectionResponse(
-            list_services_response=reflection_pb2.ListServiceResponse(service=[
-                reflection_pb2.ServiceResponse(name=service_name)
-                for service_name in self._service_names
-            ]))
+            list_services_response=reflection_pb2.ListServiceResponse(
+                service=[
+                    reflection_pb2.ServiceResponse(name=service_name)
+                    for service_name in self._service_names
+                ]))
 
     def ServerReflectionInfo(self, request_iterator, context):
         # pylint: disable=unused-argument
@@ -124,7 +130,8 @@ class ReflectionServicer(reflection_pb2_grpc.ServerReflectionServicer):
                     error_response=reflection_pb2.ErrorResponse(
                         error_code=grpc.StatusCode.INVALID_ARGUMENT.value[0],
                         error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1]
-                        .encode(),))
+                        .encode(),
+                    ))
 
 
 def enable_server_reflection(service_names, server, pool=None):
