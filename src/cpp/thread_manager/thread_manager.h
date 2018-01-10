@@ -20,6 +20,7 @@
 #define GRPC_INTERNAL_CPP_THREAD_MANAGER_H
 
 #include <condition_variable>
+#include <functional>
 #include <list>
 #include <memory>
 #include <mutex>
