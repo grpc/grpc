@@ -142,6 +142,9 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   ///
   /// \param thread_creator The thread creation function for the sync
   /// server. Typically gpr_thd_new
+  ///
+  /// \param thread_joiner The thread joining function for the sync
+  /// server. Typically gpr_thd_join
   Server(int max_message_size, ChannelArguments* args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
