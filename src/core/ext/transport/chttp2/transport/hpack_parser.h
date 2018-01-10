@@ -27,77 +27,92 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/metadata.h"
 
-typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
+namespace grpc_core {
+namespace chttp2 {
 
-typedef grpc_error* (*grpc_chttp2_hpack_parser_state)(
-    grpc_chttp2_hpack_parser* p, const uint8_t* beg, const uint8_t* end);
+class HpackParser {
+ public:
+  HpackParser();
+  ~HpackParser();
 
-typedef struct {
-  bool copied;
-  struct {
-    grpc_slice referenced;
-    struct {
-      char* str;
-      uint32_t length;
-      uint32_t capacity;
-    } copied;
-  } data;
-} grpc_chttp2_hpack_parser_string;
+  grpc_error* ParseSlice(grpc_slice slice,
+                         grpc_core::metadata::Collection* parsing_metadata);
 
-struct grpc_chttp2_hpack_parser {
-  /* user specified callback for each header output */
-  void (*on_header)(void* user_data, grpc_mdelem md);
-  void* on_header_user_data;
+ private:
+  class ParserString {
+   public:
+    void ResetReferenced(grpc_slice_refcount* refcount, const uint8_t* beg,
+                         size_t len);
+    void ResetCopied();
+    grpc_slice Take(bool intern);
+    void AppendBytes(const uint8_t* data, size_t length);
 
-  grpc_error* last_error;
+   private:
+    enum class State { COPIED, REFERENCED, EMPTY };
+    State state_ = State::EMPTY;
+    union {
+      grpc_slice referenced;
+      struct {
+        char* str;
+        uint32_t length;
+        uint32_t capacity;
+      } copied;
+    } data_;
+  };
+
+  class ParseContext;
+  typedef grpc_error* (ParseContext::*State)();
+
+  grpc_error* last_error_;
+
+  enum class BinaryParseState : uint8_t {
+    NOT_BINARY,
+    BINARY_BEGIN,
+    B64_BYTE0,
+    B64_BYTE1,
+    B64_BYTE2,
+    B64_BYTE3
+  };
 
   /* current parse state - or a function that implements it */
-  grpc_chttp2_hpack_parser_state state;
+  State state_;
   /* future states dependent on the opening op code */
-  const grpc_chttp2_hpack_parser_state* next_state;
+  const State* next_state_;
   /* what to do after skipping prioritization data */
-  grpc_chttp2_hpack_parser_state after_prioritization;
-  /* the refcount of the slice that we're currently parsing */
-  grpc_slice_refcount* current_slice_refcount;
+  State after_prioritization_;
   /* the value we're currently parsing */
   union {
     uint32_t* value;
-    grpc_chttp2_hpack_parser_string* str;
-  } parsing;
+    ParserString* str;
+  } parsing_;
   /* string parameters for each chunk */
-  grpc_chttp2_hpack_parser_string key;
-  grpc_chttp2_hpack_parser_string value;
+  ParserString key_;
+  ParserString value_;
   /* parsed index */
-  uint32_t index;
+  uint32_t index_;
   /* length of source bytes for the currently parsing string */
-  uint32_t strlen;
+  uint32_t strlen_;
   /* number of source bytes read for the currently parsing string */
-  uint32_t strgot;
+  uint32_t strgot_;
+  uint32_t base64_buffer_;
   /* huffman decoding state */
-  int16_t huff_state;
+  int16_t huff_state_;
   /* is the string being decoded binary? */
-  uint8_t binary;
+  BinaryParseState binary_ : 3;
   /* is the current string huffman encoded? */
-  uint8_t huff;
-  /* is a dynamic table update allowed? */
-  uint8_t dynamic_table_update_allowed;
+  bool huff_ : 1;
+  /* how many dynamic table updates are allowed this http frame? */
+  uint8_t dynamic_table_update_allowed_ : 2;  // 0, 1, 2
   /* set by higher layers, used by grpc_chttp2_header_parser_parse to signal
      it should append a metadata boundary at the end of frame */
-  uint8_t is_boundary;
-  uint8_t is_eof;
-  uint32_t base64_buffer;
+  bool is_boundary_ : 1;
+  bool is_eof_ : 1;
 
-  /* hpack table */
-  grpc_chttp2_hptbl table;
+  HpackTable table_;
 };
 
-void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser* p);
-void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser* p);
-
-void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser* p);
-
-grpc_error* grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser* p,
-                                           grpc_slice slice);
+}  // namespace chttp2
+}  // namespace grpc_core
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */

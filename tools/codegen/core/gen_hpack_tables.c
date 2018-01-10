@@ -31,7 +31,7 @@
  */
 
 typedef struct {
-  const char *call;
+  const char* call;
   /* bit prefix for the field type */
   unsigned char prefix;
   /* length of the bit prefix for the field type */
@@ -71,10 +71,10 @@ static unsigned char suffix_mask(unsigned char prefix_len) {
 
 static void generate_first_byte_lut(void) {
   int i, j, n;
-  const spec *chrspec;
+  const spec* chrspec;
   unsigned char suffix;
 
-  n = printf("static CALLTYPE first_byte[256] = {");
+  n = printf("static FirstByteType first_byte_lut[256] = {");
   /* for each potential first byte of a header */
   for (i = 0; i < 256; i++) {
     /* find the field type that matches it */
@@ -99,9 +99,9 @@ static void generate_first_byte_lut(void) {
       }
     }
     if (chrspec) {
-      n += printf("%s, ", chrspec->call);
+      n += printf("FirstByteType::%s, ", chrspec->call);
     } else {
-      n += printf("ILLEGAL, ");
+      n += printf("FirstByteType::ILLEGAL, ");
     }
     /* make some small effort towards readable output */
     if (n > 70) {
@@ -112,16 +112,20 @@ static void generate_first_byte_lut(void) {
   printf("};\n");
 }
 
-/*
- * Huffman decoder table generation
- */
+  /*
+   * Huffman decoder table generation
+   */
 
 #define MAXHUFFSTATES 1024
 
 /* represents a set of symbols as an array of booleans indicating inclusion */
-typedef struct { char included[GRPC_CHTTP2_NUM_HUFFSYMS]; } symset;
+typedef struct {
+  char included[GRPC_CHTTP2_NUM_HUFFSYMS];
+} symset;
 /* represents a lookup table indexed by a nibble */
-typedef struct { unsigned values[16]; } nibblelut;
+typedef struct {
+  unsigned values[16];
+} nibblelut;
 
 #define NOT_SET (~(unsigned)0)
 
@@ -178,7 +182,7 @@ static unsigned nhuffstates = 0;
 /* given a number of decoded bits and a set of symbols that are live,
    return the index into the decoder table for this state.
    set isnew to 1 if this state was previously undiscovered */
-static unsigned state_index(unsigned bitofs, symset syms, unsigned *isnew) {
+static unsigned state_index(unsigned bitofs, symset syms, unsigned* isnew) {
   unsigned i;
   for (i = 0; i < nhuffstates; i++) {
     if (huffstates[i].bitofs != bitofs) continue;
@@ -189,10 +193,10 @@ static unsigned state_index(unsigned bitofs, symset syms, unsigned *isnew) {
     return i;
   }
   GPR_ASSERT(nhuffstates != MAXHUFFSTATES);
- 
+
   i = nhuffstates;
   nhuffstates++;
-  
+
   huffstates[i].bitofs = bitofs;
   huffstates[i].syms = syms;
   huffstates[i].next = nibblelut_empty();
@@ -276,7 +280,7 @@ static int ctbl_idx(nibblelut x) {
   return i;
 }
 
-static void dump_ctbl(const char *name) {
+static void dump_ctbl(const char* name) {
   int i, j;
   printf("static const gpr_int16 %s[%d*16] = {\n", name, nctbl);
   for (i = 0; i < nctbl; i++) {

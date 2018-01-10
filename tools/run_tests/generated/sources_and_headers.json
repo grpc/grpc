@@ -589,8 +589,8 @@
   }, 
   {
     "deps": [
-      "gpr", 
-      "grpc"
+      "chttp2_huffsyms", 
+      "gpr"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -7781,6 +7781,21 @@
     "type": "filegroup"
   }, 
   {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/transport/chttp2/transport/huffsyms.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "chttp2_huffsyms", 
+    "src": [
+      "src/core/ext/transport/chttp2/transport/huffsyms.cc", 
+      "src/core/ext/transport/chttp2/transport/huffsyms.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
     "deps": [
       "gpr_base_headers"
     ], 
@@ -9052,6 +9067,7 @@
   }, 
   {
     "deps": [
+      "chttp2_huffsyms", 
       "gpr", 
       "grpc_base", 
       "grpc_http_filters", 
@@ -9073,7 +9089,6 @@
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
       "src/core/ext/transport/chttp2/transport/http2_settings.h", 
-      "src/core/ext/transport/chttp2/transport/huffsyms.h", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/chttp2/transport/internal.h", 
       "src/core/ext/transport/chttp2/transport/stream_map.h", 
@@ -9113,8 +9128,6 @@
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
       "src/core/ext/transport/chttp2/transport/http2_settings.cc", 
       "src/core/ext/transport/chttp2/transport/http2_settings.h", 
-      "src/core/ext/transport/chttp2/transport/huffsyms.cc", 
-      "src/core/ext/transport/chttp2/transport/huffsyms.h", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.cc", 
       "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/chttp2/transport/internal.h", 
