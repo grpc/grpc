@@ -101,11 +101,10 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
     // get the next <ip>,<port> (v4 or v6)
     size_t next_comma = expected_addrs.find(",");
     if (next_comma == std::string::npos) {
-      gpr_log(
-          GPR_ERROR,
-          "Missing ','. Expected_addrs arg should be a semicolon-separated "
-          "list of <ip-port>,<bool> pairs. Left-to-be-parsed arg is |%s|",
-          expected_addrs.c_str());
+      gpr_log(GPR_ERROR,
+              "Missing ','. Expected_addrs arg should be a semicolon-separated "
+              "list of <ip-port>,<bool> pairs. Left-to-be-parsed arg is |%s|",
+              expected_addrs.c_str());
       abort();
     }
     std::string next_addr = expected_addrs.substr(0, next_comma);
