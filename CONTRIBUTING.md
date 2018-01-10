@@ -44,7 +44,7 @@ How to get your contributions merged smoothly and quickly.
  
 - Keep your PR up to date with upstream/master (if there are merge conflicts, we can't really merge your change).
  
-- if you are regenerating the projects using `tools/buildgen/generate_projects.sh`, make changes to generated files a separate commit with commit message `regenerate projects`. Mixing changes to generated and hand-written files make your PR difficult to review.
+- if you are regenerating the projects using `tools/buildgen/generate_projects.sh`, make changes to generated files a separate commit with commit message `regenerate projects`. Mixing changes to generated and hand-written files make your PR difficult to review. Note that running this script requires the installation of Python packages `pyyaml` and `mako` (typically installed using `pip`) as well as a recent version of [`go`](https://golang.org/doc/install#install).
  
 - **All tests need to be passing** before your change can be merged. We recommend you **run tests locally** before creating your PR to catch breakages early on (see [tools/run_tests](tools/run_tests). Ultimately, the green signal will be provided by our testing infrastructure. The reviewer will help you if there are test failures that seem not related to the change you are making.
  
