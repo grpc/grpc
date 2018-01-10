@@ -196,7 +196,8 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
           call_(mrd->call_, server, &cq_, server->max_receive_message_size()),
           ctx_(mrd->deadline_, &mrd->request_metadata_),
           has_request_payload_(mrd->has_request_payload_),
-          request_payload_(mrd->request_payload_),
+          request_payload_(has_request_payload_ ? mrd->request_payload_
+                                                : nullptr),
           method_(mrd->method_),
           server_(server) {
       ctx_.set_call(mrd->call_);

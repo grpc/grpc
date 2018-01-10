@@ -266,6 +266,11 @@ class ErrorMethodHandler : public MethodHandler {
     FillOps(param.server_context, &ops);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
+    // We also have to destroy any request payload in the handler parameter
+    ByteBuffer* payload = param.request.bbuf_ptr();
+    if (payload != nullptr) {
+      payload->Clear();
+    }
   }
 };
 
