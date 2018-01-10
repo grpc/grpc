@@ -44,8 +44,8 @@ struct ResolverArgs {
 class ResolverFactory {
  public:
   /// Returns a new resolver instance.
-  virtual OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
-      const GRPC_ABSTRACT;
+  virtual OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args) const
+      GRPC_ABSTRACT;
 
   /// Returns a string representing the default authority to use for this
   /// scheme.

@@ -28,21 +28,16 @@ namespace grpc_core {
 
 static ResolverRegistry* g_registry = nullptr;
 
-ResolverRegistry* ResolverRegistry::Global() {
-  return g_registry;
-}
+ResolverRegistry* ResolverRegistry::Global() { return g_registry; }
 
-void ResolverRegistry::Init() {
-  g_registry = New<ResolverRegistry>();
-}
+void ResolverRegistry::Init() { g_registry = New<ResolverRegistry>(); }
 
 void ResolverRegistry::Shutdown() {
   Delete(g_registry);
   g_registry = nullptr;
 }
 
-ResolverRegistry::ResolverRegistry()
-    : default_prefix_(gpr_strdup("dns:///")) {}
+ResolverRegistry::ResolverRegistry() : default_prefix_(gpr_strdup("dns:///")) {}
 
 ResolverRegistry::~ResolverRegistry() {}
 
@@ -118,14 +113,13 @@ UniquePtr<char> ResolverRegistry::GetDefaultAuthority(const char* target) {
   return authority;
 }
 
-UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(
-    const char* target) {
+UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(const char* target) {
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
   FindFactory(target, &uri, &canonical_target);
   grpc_uri_destroy(uri);
-  return UniquePtr<char>(
-      canonical_target == nullptr ? gpr_strdup(target) : canonical_target);
+  return UniquePtr<char>(canonical_target == nullptr ? gpr_strdup(target)
+                                                     : canonical_target);
 }
 
 }  // namespace grpc_core

@@ -53,10 +53,9 @@ class Resolver : public InternallyRefCountedWithTracing {
 
   void Orphan() override {
     // Invoke ShutdownLocked() inside of the combiner.
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(&Resolver::ShutdownLocked, this,
-                            grpc_combiner_scheduler(combiner_)),
-        GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(&Resolver::ShutdownLocked, this,
+                                           grpc_combiner_scheduler(combiner_)),
+                       GRPC_ERROR_NONE);
   }
 
   grpc_combiner* combiner() const { return combiner_; }
