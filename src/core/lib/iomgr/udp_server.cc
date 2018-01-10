@@ -283,8 +283,8 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
                           const grpc_resolved_address* addr) {
   grpc_resolved_address sockname_temp;
   struct sockaddr* addr_ptr = (struct sockaddr*)addr->addr;
-  /* Set send/receive socket buffers to 1 MB */
-  int buffer_size_bytes = 1024 * 1024;
+  /* Set send/receive socket buffers to 10 MB */
+  int buffer_size_bytes = 1024 * 1024 * 10;
 
   if (fd < 0) {
     goto error;
