@@ -39,12 +39,19 @@ How to get your contributions merged smoothly and quickly.
 - Don't fix code style and formatting unless you are already changing that line to address an issue. PRs with irrelevant changes won't be merged. If you do want to fix formatting or style, do that in a separate PR.
  
 - Unless your PR is trivial, you should expect there will be reviewer comments that you'll need to address before merging. We expect you to be reasonably responsive to those comments, otherwise the PR will be closed after 2-3 weeks of inactivity.
+
+- If you have non-trivial contributions, please consider adding an entry to [the
+  AUTHORS file](https://github.com/grpc/grpc/blob/master/AUTHORS) listing the
+  copyright holder for the contribution (yourself, if you are signing the
+  individual CLA, or your company, for corporate CLAs) in the same PR as your
+  contribution.  This needs to be done only once, for each company, or
+  individual.
  
 - Maintain **clean commit history** and use **meaningful commit messages**. PRs with messy commit history are difficult to review and won't be merged. Use `rebase -i upstream/master` to curate your commit history and/or to bring in latest changes from master (but avoid rebasing in the middle of a code review).
  
 - Keep your PR up to date with upstream/master (if there are merge conflicts, we can't really merge your change).
  
-- if you are regenerating the projects using `tools/buildgen/generate_projects.sh`, make changes to generated files a separate commit with commit message `regenerate projects`. Mixing changes to generated and hand-written files make your PR difficult to review.
+- If you are regenerating the projects using `tools/buildgen/generate_projects.sh`, make changes to generated files a separate commit with commit message `regenerate projects`. Mixing changes to generated and hand-written files make your PR difficult to review.
  
 - **All tests need to be passing** before your change can be merged. We recommend you **run tests locally** before creating your PR to catch breakages early on (see [tools/run_tests](tools/run_tests). Ultimately, the green signal will be provided by our testing infrastructure. The reviewer will help you if there are test failures that seem not related to the change you are making.
  
