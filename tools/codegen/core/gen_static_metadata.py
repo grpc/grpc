@@ -583,10 +583,5 @@ print >> C, '};'
 
 print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
-<<<<<<< HEAD
-=======
-print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
-
->>>>>>> 2eb22fd67d73a210c1f41d79efcfe52285ccb2ec
 H.close()
 C.close()
