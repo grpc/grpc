@@ -37,21 +37,6 @@ def _metadata_plugin(context, callback):
 
 class TypeSmokeTest(unittest.TestCase):
 
-    def testTimespec(self):
-        now = time.time()
-        now_timespec_a = cygrpc.Timespec(now)
-        now_timespec_b = cygrpc.Timespec(now)
-        self.assertAlmostEqual(now, float(now_timespec_a), places=8)
-        self.assertEqual(now_timespec_a, now_timespec_b)
-        self.assertLess(cygrpc.Timespec(now - 1), cygrpc.Timespec(now))
-        self.assertGreater(cygrpc.Timespec(now + 1), cygrpc.Timespec(now))
-        self.assertGreaterEqual(cygrpc.Timespec(now + 1), cygrpc.Timespec(now))
-        self.assertGreaterEqual(cygrpc.Timespec(now), cygrpc.Timespec(now))
-        self.assertLessEqual(cygrpc.Timespec(now - 1), cygrpc.Timespec(now))
-        self.assertLessEqual(cygrpc.Timespec(now), cygrpc.Timespec(now))
-        self.assertNotEqual(cygrpc.Timespec(now - 1), cygrpc.Timespec(now))
-        self.assertNotEqual(cygrpc.Timespec(now + 1), cygrpc.Timespec(now))
-
     def testCompletionQueueUpDown(self):
         completion_queue = cygrpc.CompletionQueue()
         del completion_queue
@@ -147,7 +132,7 @@ class ServerClientMixin(object):
             try:
                 call_result = call.start_client_batch(operations, tag)
                 self.assertEqual(cygrpc.CallError.ok, call_result)
-                event = queue.poll(deadline)
+                event = queue.poll(deadline=deadline)
                 self.assertEqual(cygrpc.CompletionType.operation_complete,
                                  event.completion_type)
                 self.assertTrue(event.success)
@@ -176,8 +161,6 @@ class ServerClientMixin(object):
         RESPONSE = b'his name is robert paulson'
         METHOD = b'twinkies'
 
-        cygrpc_deadline = cygrpc.Timespec(DEADLINE)
-
         server_request_tag = object()
         request_call_result = self.server.request_call(
             self.server_completion_queue, self.server_completion_queue,
@@ -188,7 +171,7 @@ class ServerClientMixin(object):
         client_call_tag = object()
         client_call = self.client_channel.create_call(
             None, 0, self.client_completion_queue, METHOD, self.host_argument,
-            cygrpc_deadline)
+            DEADLINE)
         client_initial_metadata = (
             (
                 CLIENT_METADATA_ASCII_KEY,
@@ -210,9 +193,9 @@ class ServerClientMixin(object):
         ], client_call_tag)
         self.assertEqual(cygrpc.CallError.ok, client_start_batch_result)
         client_event_future = test_utilities.CompletionQueuePollFuture(
-            self.client_completion_queue, cygrpc_deadline)
+            self.client_completion_queue, DEADLINE)
 
-        request_event = self.server_completion_queue.poll(cygrpc_deadline)
+        request_event = self.server_completion_queue.poll(deadline=DEADLINE)
         self.assertEqual(cygrpc.CompletionType.operation_complete,
                          request_event.completion_type)
         self.assertIsInstance(request_event.call, cygrpc.Call)
@@ -223,7 +206,7 @@ class ServerClientMixin(object):
         self.assertEqual(METHOD, request_event.call_details.method)
         self.assertEqual(self.expected_host, request_event.call_details.host)
         self.assertLess(
-            abs(DEADLINE - float(request_event.call_details.deadline)),
+            abs(DEADLINE - request_event.call_details.deadline),
             DEADLINE_TOLERANCE)
 
         server_call_tag = object()
@@ -248,7 +231,7 @@ class ServerClientMixin(object):
         ], server_call_tag)
         self.assertEqual(cygrpc.CallError.ok, server_start_batch_result)
 
-        server_event = self.server_completion_queue.poll(cygrpc_deadline)
+        server_event = self.server_completion_queue.poll(deadline=DEADLINE)
         client_event = client_event_future.result()
 
         self.assertEqual(6, len(client_event.batch_operations))
@@ -310,7 +293,6 @@ class ServerClientMixin(object):
         DEADLINE_TOLERANCE = 0.25
         METHOD = b'twinkies'
 
-        cygrpc_deadline = cygrpc.Timespec(DEADLINE)
         empty_metadata = ()
 
         server_request_tag = object()
@@ -319,26 +301,26 @@ class ServerClientMixin(object):
                                  server_request_tag)
         client_call = self.client_channel.create_call(
             None, 0, self.client_completion_queue, METHOD, self.host_argument,
-            cygrpc_deadline)
+            DEADLINE)
 
         # Prologue
         def perform_client_operations(operations, description):
             return self._perform_operations(operations, client_call,
                                             self.client_completion_queue,
-                                            cygrpc_deadline, description)
+                                            DEADLINE, description)
 
         client_event_future = perform_client_operations([
             cygrpc.SendInitialMetadataOperation(empty_metadata, _EMPTY_FLAGS),
             cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
         ], "Client prologue")
 
-        request_event = self.server_completion_queue.poll(cygrpc_deadline)
+        request_event = self.server_completion_queue.poll(deadline=DEADLINE)
         server_call = request_event.call
 
         def perform_server_operations(operations, description):
             return self._perform_operations(operations, server_call,
                                             self.server_completion_queue,
-                                            cygrpc_deadline, description)
+                                            DEADLINE, description)
 
         server_event_future = perform_server_operations([
             cygrpc.SendInitialMetadataOperation(empty_metadata, _EMPTY_FLAGS),
