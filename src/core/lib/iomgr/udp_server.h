@@ -68,6 +68,7 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index);
                   all of the multiple socket port matching logic in one place */
 int grpc_udp_server_add_port(grpc_udp_server* s,
                              const grpc_resolved_address* addr,
+                             size_t rcv_buf_size, size_t snd_buf_size,
                              grpc_udp_server_start_cb start_cb,
                              grpc_udp_server_read_cb read_cb,
                              grpc_udp_server_write_cb write_cb,
