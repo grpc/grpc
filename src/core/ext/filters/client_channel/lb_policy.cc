@@ -19,6 +19,8 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/lib/iomgr/combiner.h"
 
+#define WEAK_REF_BITS 16
+
 grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
     false, "lb_policy_refcount");
 
@@ -26,60 +28,91 @@ void grpc_lb_policy_init(grpc_lb_policy* policy,
                          const grpc_lb_policy_vtable* vtable,
                          grpc_combiner* combiner) {
   policy->vtable = vtable;
-  gpr_ref_init(&policy->refs, 1);
+  gpr_atm_no_barrier_store(&policy->ref_pair, 1 << WEAK_REF_BITS);
   policy->interested_parties = grpc_pollset_set_create();
   policy->combiner = GRPC_COMBINER_REF(combiner, "lb_policy");
 }
 
 #ifndef NDEBUG
-void grpc_lb_policy_ref(grpc_lb_policy* lb_policy, const char* file, int line,
-                        const char* reason) {
-  if (grpc_trace_lb_policy_refcount.enabled()) {
-    gpr_atm old_refs = gpr_atm_no_barrier_load(&lb_policy->refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "LB_POLICY:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", lb_policy,
-            old_refs, old_refs + 1, reason);
-  }
+#define REF_FUNC_EXTRA_ARGS , const char *file, int line, const char *reason
+#define REF_MUTATE_EXTRA_ARGS REF_FUNC_EXTRA_ARGS, const char* purpose
+#define REF_FUNC_PASS_ARGS(new_reason) , file, line, new_reason
+#define REF_MUTATE_PASS_ARGS(purpose) , file, line, reason, purpose
 #else
-void grpc_lb_policy_ref(grpc_lb_policy* lb_policy) {
+#define REF_FUNC_EXTRA_ARGS
+#define REF_MUTATE_EXTRA_ARGS
+#define REF_FUNC_PASS_ARGS(new_reason)
+#define REF_MUTATE_PASS_ARGS(x)
 #endif
-  gpr_ref(&lb_policy->refs);
+
+static gpr_atm ref_mutate(grpc_lb_policy* c, gpr_atm delta,
+                          int barrier REF_MUTATE_EXTRA_ARGS) {
+  gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
+                            : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
+#ifndef NDEBUG
+  if (grpc_trace_lb_policy_refcount.enabled()) {
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "LB_POLICY: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
+            purpose, old_val, old_val + delta, reason);
+  }
+#endif
+  return old_val;
 }
 
-#ifndef NDEBUG
-void grpc_lb_policy_unref(grpc_lb_policy* lb_policy, const char* file, int line,
-                          const char* reason) {
-  if (grpc_trace_lb_policy_refcount.enabled()) {
-    gpr_atm old_refs = gpr_atm_no_barrier_load(&lb_policy->refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "LB_POLICY:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", lb_policy,
-            old_refs, old_refs - 1, reason);
+void grpc_lb_policy_ref(grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
+  ref_mutate(policy, 1 << WEAK_REF_BITS, 0 REF_MUTATE_PASS_ARGS("STRONG_REF"));
+}
+
+static void shutdown_locked(void* arg, grpc_error* error) {
+  grpc_lb_policy* policy = (grpc_lb_policy*)arg;
+  policy->vtable->shutdown_locked(policy);
+  GRPC_LB_POLICY_WEAK_UNREF(policy, "strong-unref");
+}
+
+void grpc_lb_policy_unref(grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
+  gpr_atm old_val =
+      ref_mutate(policy, (gpr_atm)1 - (gpr_atm)(1 << WEAK_REF_BITS),
+                 1 REF_MUTATE_PASS_ARGS("STRONG_UNREF"));
+  gpr_atm mask = ~(gpr_atm)((1 << WEAK_REF_BITS) - 1);
+  gpr_atm check = 1 << WEAK_REF_BITS;
+  if ((old_val & mask) == check) {
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_CREATE(shutdown_locked, policy,
+                            grpc_combiner_scheduler(policy->combiner)),
+        GRPC_ERROR_NONE);
+  } else {
+    grpc_lb_policy_weak_unref(policy REF_FUNC_PASS_ARGS("strong-unref"));
   }
-#else
-void grpc_lb_policy_unref(grpc_lb_policy* lb_policy) {
-#endif
-  if (gpr_unref(&lb_policy->refs)) {
-    grpc_pollset_set_destroy(lb_policy->interested_parties);
-    grpc_combiner* combiner = lb_policy->combiner;
-    lb_policy->vtable->destroy(lb_policy);
+}
+
+void grpc_lb_policy_weak_ref(grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
+  ref_mutate(policy, 1, 0 REF_MUTATE_PASS_ARGS("WEAK_REF"));
+}
+
+void grpc_lb_policy_weak_unref(grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
+  gpr_atm old_val =
+      ref_mutate(policy, -(gpr_atm)1, 1 REF_MUTATE_PASS_ARGS("WEAK_UNREF"));
+  if (old_val == 1) {
+    grpc_pollset_set_destroy(policy->interested_parties);
+    grpc_combiner* combiner = policy->combiner;
+    policy->vtable->destroy(policy);
     GRPC_COMBINER_UNREF(combiner, "lb_policy");
   }
 }
 
-void grpc_lb_policy_shutdown_locked(grpc_lb_policy* policy,
-                                    grpc_lb_policy* new_policy) {
-  policy->vtable->shutdown_locked(policy, new_policy);
-}
-
 int grpc_lb_policy_pick_locked(grpc_lb_policy* policy,
-                               grpc_lb_policy_pick_state* pick) {
-  return policy->vtable->pick_locked(policy, pick);
+                               const grpc_lb_policy_pick_args* pick_args,
+                               grpc_connected_subchannel** target,
+                               grpc_call_context_element* context,
+                               void** user_data, grpc_closure* on_complete) {
+  return policy->vtable->pick_locked(policy, pick_args, target, context,
+                                     user_data, on_complete);
 }
 
 void grpc_lb_policy_cancel_pick_locked(grpc_lb_policy* policy,
-                                       grpc_lb_policy_pick_state* pick,
+                                       grpc_connected_subchannel** target,
                                        grpc_error* error) {
-  policy->vtable->cancel_pick_locked(policy, pick, error);
+  policy->vtable->cancel_pick_locked(policy, target, error);
 }
 
 void grpc_lb_policy_cancel_picks_locked(grpc_lb_policy* policy,
