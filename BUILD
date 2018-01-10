@@ -53,6 +53,16 @@ config_setting(
     values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
 )
 
+config_setting(
+    name = "windows",
+    values = { "cpu": "x64_windows" },
+)
+
+config_setting(
+    name = "windows_msvc",
+    values = {"cpu": "x64_windows_msvc"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "glamorous"
 
