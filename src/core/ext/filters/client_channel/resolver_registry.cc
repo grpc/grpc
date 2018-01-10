@@ -97,7 +97,8 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
   resolver_args.combiner = combiner;
-  OrphanablePtr<Resolver> resolver = factory->CreateResolver(resolver_args);
+  OrphanablePtr<Resolver> resolver =
+      factory == nullptr ? nullptr : factory->CreateResolver(resolver_args);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return resolver;
@@ -107,7 +108,8 @@ UniquePtr<char> ResolverRegistry::GetDefaultAuthority(const char* target) {
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
   ResolverFactory* factory = FindFactory(target, &uri, &canonical_target);
-  UniquePtr<char> authority = factory->GetDefaultAuthority(uri);
+  UniquePtr<char> authority =
+      factory == nullptr ? nullptr : factory->GetDefaultAuthority(uri);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return authority;
