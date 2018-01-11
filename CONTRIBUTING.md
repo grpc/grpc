@@ -73,7 +73,7 @@ How to get your contributions merged smoothly and quickly.
  
 - If you are regenerating the projects using
   `tools/buildgen/generate_projects.sh`, make changes to generated files a
-  separate commit with commit message `regenerate projects`. Mixing changes
+  separate commit with commit message `regenerate projects`.  Mixing changes
   to generated and hand-written files make your PR difficult to review.
   Note that running this script requires the installation of Python packages
   `pyyaml` and `mako` (typically installed using `pip`) as well as a recent
