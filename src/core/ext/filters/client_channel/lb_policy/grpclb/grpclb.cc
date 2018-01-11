@@ -340,7 +340,9 @@ static void pending_pick_set_metadata_and_context(pending_pick* pp) {
     pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
         destroy_client_stats;
   } else {
-    grpc_grpclb_client_stats_unref(pp->client_stats);
+    if (pp->client_stats != nullptr) {
+      grpc_grpclb_client_stats_unref(pp->client_stats);
+    }
   }
 }
 
@@ -927,7 +929,9 @@ static void glb_shutdown_locked(grpc_lb_policy* pol,
     pending_pick* next = pp->next;
     if (new_policy != nullptr) {
       // Hand pick over to new policy.
-      grpc_grpclb_client_stats_unref(pp->client_stats);
+      if (pp->client_stats != nullptr) {
+        grpc_grpclb_client_stats_unref(pp->client_stats);
+      }
       pp->pick->on_complete = pp->original_on_complete;
       if (grpc_lb_policy_pick_locked(new_policy, pp->pick)) {
         // Synchronous return; schedule callback.
