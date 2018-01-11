@@ -352,14 +352,12 @@ See metadata.h for an explanation of the interface here, and metadata.cc for
 an explanation of what's going on.
 """.splitlines())
 
-print >> H, '#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
-print >> H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
-print >> H
-print >> H, '#include "src/core/lib/transport/metadata.h"'
+print >> H, "#ifndef GRPC__CAN_INCLUDE_STATIC_METADATA_H"
+print >> H, "#error include via static_metadata.h"
+print >> H, "#endif"
 print >> H
 
-print >> C, '#include "src/core/lib/transport/static_metadata.h"'
-print >> C
+print >> C, '#include "src/core/lib/transport/metadata.h"'
 print >> C, '#include "src/core/lib/slice/slice_internal.h"'
 print >> C
 
@@ -584,8 +582,6 @@ print >> C, '0,%s' % ','.join(
 print >> C, '};'
 
 print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
-
-print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 
 H.close()
 C.close()

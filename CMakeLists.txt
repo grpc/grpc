@@ -188,6 +188,9 @@ add_custom_target(plugins
 add_custom_target(tools_c
   DEPENDS
   check_epollexclusive
+  gen_hpack_tables
+  gen_legal_metadata_characters
+  gen_percent_encoding_tables
   grpc_create_jwt
   grpc_print_google_default_creds_token
   grpc_verify_jwt
@@ -460,6 +463,7 @@ add_dependencies(buildtests_c uri_fuzzer_test_one_entry)
 
 add_custom_target(buildtests_cxx)
 add_dependencies(buildtests_cxx alarm_cpp_test)
+add_dependencies(buildtests_cxx any_test)
 add_dependencies(buildtests_cxx async_end2end_test)
 add_dependencies(buildtests_cxx auth_property_iterator_test)
 add_dependencies(buildtests_cxx backoff_test)
@@ -526,6 +530,7 @@ add_dependencies(buildtests_cxx cxx_time_test)
 add_dependencies(buildtests_cxx end2end_test)
 add_dependencies(buildtests_cxx error_details_test)
 add_dependencies(buildtests_cxx filter_end2end_test)
+add_dependencies(buildtests_cxx function_test)
 add_dependencies(buildtests_cxx generic_end2end_test)
 add_dependencies(buildtests_cxx golden_file_test)
 add_dependencies(buildtests_cxx grpc_cli)
@@ -915,7 +920,6 @@ add_library(grpc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -940,7 +944,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -952,6 +955,7 @@ add_library(grpc
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
@@ -1257,7 +1261,6 @@ add_library(grpc_cronet
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -1285,7 +1288,6 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -1297,6 +1299,7 @@ add_library(grpc_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -1582,7 +1585,6 @@ add_library(grpc_test_util
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -1628,7 +1630,6 @@ add_library(grpc_test_util
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -1640,6 +1641,7 @@ add_library(grpc_test_util
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/transport/chttp2/transport/huffsyms.cc
 )
 
 if(WIN32 AND MSVC)
@@ -1851,7 +1853,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -1897,7 +1898,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -1909,6 +1909,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/transport/chttp2/transport/huffsyms.cc
 )
 
 if(WIN32 AND MSVC)
@@ -2103,7 +2104,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -2129,7 +2129,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -2141,6 +2140,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -2719,7 +2719,6 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -2851,7 +2850,6 @@ add_library(grpc++_cronet
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
@@ -2865,6 +2863,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -5729,6 +5728,104 @@ target_link_libraries(fling_test
 
 endif()
 endif (gRPC_BUILD_TESTS)
+
+add_executable(gen_hpack_tables
+  tools/codegen/core/gen_hpack_tables.c
+  src/core/ext/transport/chttp2/transport/huffsyms.cc
+)
+
+
+target_include_directories(gen_hpack_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(gen_hpack_tables
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS gen_hpack_tables EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_executable(gen_legal_metadata_characters
+  tools/codegen/core/gen_legal_metadata_characters.c
+)
+
+
+target_include_directories(gen_legal_metadata_characters
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(gen_legal_metadata_characters
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_executable(gen_percent_encoding_tables
+  tools/codegen/core/gen_percent_encoding_tables.c
+)
+
+
+target_include_directories(gen_percent_encoding_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(gen_percent_encoding_tables
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+if (gRPC_INSTALL)
+  install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
@@ -8663,6 +8760,45 @@ target_link_libraries(alarm_cpp_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(any_test
+  test/core/support/any_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(any_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(any_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(async_end2end_test
   test/cpp/end2end/async_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10208,6 +10344,45 @@ target_link_libraries(filter_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(function_test
+  test/core/support/function_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(function_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(function_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++
   grpc

@@ -202,6 +202,33 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "function_test",
+    srcs = ["function_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "any_test",
+    srcs = ["any_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:support_any",
+        "//test/core/util:gpr_test_util",
+    ],
+    uses_polling = False,
+)
+
+grpc_cc_test(
     name = "vector_test",
     srcs = ["vector_test.cc"],
     external_deps = [

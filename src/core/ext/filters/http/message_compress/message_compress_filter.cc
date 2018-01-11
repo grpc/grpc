@@ -33,7 +33,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 namespace {
 enum initial_metadata_state {

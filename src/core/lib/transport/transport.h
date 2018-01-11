@@ -29,7 +29,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/byte_stream.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/metadata.h"
 
 /* Minimum and maximum protocol accepted versions. */
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2

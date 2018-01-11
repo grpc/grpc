@@ -29,7 +29,7 @@
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"

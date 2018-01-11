@@ -159,6 +159,7 @@ KNOWN_BAD = set([
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
     'include/grpc++/ext/reflection.grpc.pb.h',
     'include/grpc++/ext/reflection.pb.h',
+    'src/core/lib/transport/static_metadata.h',
 ])
 
 grep_filter = r"grep -E '^(include|src/core)/.*\.h$'"

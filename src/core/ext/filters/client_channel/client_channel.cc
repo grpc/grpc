@@ -50,9 +50,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/service_config.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 /* Client channel implementation */
 

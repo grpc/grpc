@@ -97,12 +97,14 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/abstract.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/any.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_atm.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_std.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/fork.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/function.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
@@ -207,7 +209,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.h" role="src" />
@@ -216,6 +217,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.h" role="src" />
@@ -381,7 +383,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
@@ -536,7 +537,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.cc" role="src" />
@@ -561,7 +561,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_table.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
@@ -573,6 +572,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/http/http_filters_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.cc" role="src" />

@@ -1027,6 +1027,7 @@ src/core/lib/slice/slice_hash_table.h \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/support/abstract.h \
+src/core/lib/support/any.h \
 src/core/lib/support/arena.h \
 src/core/lib/support/atomic.h \
 src/core/lib/support/atomic_with_atm.h \
@@ -1034,6 +1035,7 @@ src/core/lib/support/atomic_with_std.h \
 src/core/lib/support/debug_location.h \
 src/core/lib/support/env.h \
 src/core/lib/support/fork.h \
+src/core/lib/support/function.h \
 src/core/lib/support/manual_constructor.h \
 src/core/lib/support/memory.h \
 src/core/lib/support/mpscq.h \
@@ -1067,7 +1069,6 @@ src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.h \
 src/core/lib/transport/http2_errors.h \
 src/core/lib/transport/metadata.h \
-src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/pid_controller.h \
 src/core/lib/transport/service_config.h \
 src/core/lib/transport/static_metadata.h \

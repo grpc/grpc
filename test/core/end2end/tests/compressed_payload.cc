@@ -33,7 +33,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }

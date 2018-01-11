@@ -22,7 +22,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 #include "test/cpp/microbenchmarks/helpers.h"
 

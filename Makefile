@@ -979,6 +979,9 @@ fling_client: $(BINDIR)/$(CONFIG)/fling_client
 fling_server: $(BINDIR)/$(CONFIG)/fling_server
 fling_stream_test: $(BINDIR)/$(CONFIG)/fling_stream_test
 fling_test: $(BINDIR)/$(CONFIG)/fling_test
+gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
+gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
+gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 goaway_server_test: $(BINDIR)/$(CONFIG)/goaway_server_test
 gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
 gpr_cmdline_test: $(BINDIR)/$(CONFIG)/gpr_cmdline_test
@@ -1091,6 +1094,7 @@ uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
 wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
+any_test: $(BINDIR)/$(CONFIG)/any_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
 backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
@@ -1127,6 +1131,7 @@ cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
 filter_end2end_test: $(BINDIR)/$(CONFIG)/filter_end2end_test
+function_test: $(BINDIR)/$(CONFIG)/function_test
 generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
 grpc_cli: $(BINDIR)/$(CONFIG)/grpc_cli
@@ -1539,6 +1544,7 @@ buildtests_c: privatelibs_c \
 ifeq ($(EMBED_OPENSSL),true)
 buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
+  $(BINDIR)/$(CONFIG)/any_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
@@ -1575,6 +1581,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
+  $(BINDIR)/$(CONFIG)/function_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
@@ -1669,6 +1676,7 @@ buildtests_cxx: privatelibs_cxx \
 else
 buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
+  $(BINDIR)/$(CONFIG)/any_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
@@ -1705,6 +1713,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
+  $(BINDIR)/$(CONFIG)/function_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
@@ -2036,6 +2045,8 @@ flaky_test_c: buildtests_c
 test_cxx: buildtests_cxx
 	$(E) "[RUN]     Testing alarm_cpp_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alarm_cpp_test || ( echo test alarm_cpp_test failed ; exit 1 )
+	$(E) "[RUN]     Testing any_test"
+	$(Q) $(BINDIR)/$(CONFIG)/any_test || ( echo test any_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
@@ -2106,6 +2117,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/error_details_test || ( echo test error_details_test failed ; exit 1 )
 	$(E) "[RUN]     Testing filter_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/filter_end2end_test || ( echo test filter_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing function_test"
+	$(Q) $(BINDIR)/$(CONFIG)/function_test || ( echo test function_test failed ; exit 1 )
 	$(E) "[RUN]     Testing generic_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/generic_end2end_test || ( echo test generic_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing golden_file_test"
@@ -2193,7 +2206,7 @@ test_python: static_c
 tools: tools_c tools_cxx
 
 
-tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/check_epollexclusive $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
+tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/check_epollexclusive $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 
 tools_cxx: privatelibs_cxx
 
@@ -3100,7 +3113,6 @@ LIBGRPC_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -3125,7 +3137,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
-    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
@@ -3137,6 +3148,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/lib/http/httpcli_security_connector.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
@@ -3442,7 +3454,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -3470,7 +3481,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
-    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
@@ -3482,6 +3492,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
     src/core/ext/filters/client_channel/client_channel.cc \
@@ -3766,7 +3777,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -3812,7 +3822,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
-    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
@@ -3824,6 +3833,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer.h \
@@ -4026,7 +4036,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -4072,7 +4081,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
-    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
@@ -4084,6 +4092,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer.h \
@@ -4256,7 +4265,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -4282,7 +4290,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
-    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
@@ -4294,6 +4301,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
@@ -4855,7 +4863,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
-    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
@@ -4987,7 +4994,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
@@ -5001,6 +5007,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
     src/core/ext/filters/client_channel/client_channel.cc \
@@ -9809,6 +9816,105 @@ endif
 endif
 
 
+GEN_HPACK_TABLES_SRC = \
+    tools/codegen/core/gen_hpack_tables.c \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
+
+GEN_HPACK_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_HPACK_TABLES_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_hpack_tables: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_hpack_tables
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_hpack_tables.o:  $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/src/core/ext/transport/chttp2/transport/huffsyms.o:  $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_HPACK_TABLES_OBJS:.o=.dep)
+endif
+endif
+
+
+GEN_LEGAL_METADATA_CHARACTERS_SRC = \
+    tools/codegen/core/gen_legal_metadata_characters.c \
+
+GEN_LEGAL_METADATA_CHARACTERS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_LEGAL_METADATA_CHARACTERS_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_LEGAL_METADATA_CHARACTERS_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_legal_metadata_characters.o: 
+
+deps_gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
+endif
+endif
+
+
+GEN_PERCENT_ENCODING_TABLES_SRC = \
+    tools/codegen/core/gen_percent_encoding_tables.c \
+
+GEN_PERCENT_ENCODING_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_PERCENT_ENCODING_TABLES_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_PERCENT_ENCODING_TABLES_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_percent_encoding_tables.o: 
+
+deps_gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
+endif
+endif
+
+
 GOAWAY_SERVER_TEST_SRC = \
     test/core/end2end/goaway_server_test.cc \
 
@@ -13413,6 +13519,49 @@ endif
 endif
 
 
+ANY_TEST_SRC = \
+    test/core/support/any_test.cc \
+
+ANY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ANY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/any_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/any_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/any_test: $(PROTOBUF_DEP) $(ANY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ANY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/any_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/any_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_any_test: $(ANY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ANY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 ASYNC_END2END_TEST_SRC = \
     test/cpp/end2end/async_end2end_test.cc \
 
@@ -15015,6 +15164,49 @@ deps_filter_end2end_test: $(FILTER_END2END_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(FILTER_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+FUNCTION_TEST_SRC = \
+    test/core/support/function_test.cc \
+
+FUNCTION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FUNCTION_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/function_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/function_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/function_test: $(PROTOBUF_DEP) $(FUNCTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(FUNCTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/function_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/function_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_function_test: $(FUNCTION_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(FUNCTION_TEST_OBJS:.o=.dep)
 endif
 endif
 

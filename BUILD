@@ -196,6 +196,12 @@ GRPCXX_PUBLIC_HDRS = [
 ]
 
 grpc_cc_library(
+    name = "support_any",
+    language = "c++",
+    hdrs = ["src/core/lib/support/any.h"]
+)
+
+grpc_cc_library(
     name = "gpr",
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -489,6 +495,7 @@ grpc_cc_library(
         "src/core/lib/support/atomic_with_atm.h",
         "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/support/env.h",
+        "src/core/lib/support/function.h",
         "src/core/lib/support/fork.h",
         "src/core/lib/support/manual_constructor.h",
         "src/core/lib/support/memory.h",
@@ -691,7 +698,6 @@ grpc_cc_library(
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/metadata.cc",
-        "src/core/lib/transport/metadata_batch.cc",
         "src/core/lib/transport/pid_controller.cc",
         "src/core/lib/transport/service_config.cc",
         "src/core/lib/transport/static_metadata.cc",
@@ -812,7 +818,6 @@ grpc_cc_library(
         "src/core/lib/transport/error_utils.h",
         "src/core/lib/transport/http2_errors.h",
         "src/core/lib/transport/metadata.h",
-        "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/pid_controller.h",
         "src/core/lib/transport/service_config.h",
         "src/core/lib/transport/static_metadata.h",
@@ -830,6 +835,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
+        "support_any",
     ],
 )
 

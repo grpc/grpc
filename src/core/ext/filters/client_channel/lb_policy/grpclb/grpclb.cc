@@ -118,7 +118,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6

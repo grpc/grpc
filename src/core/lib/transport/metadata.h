@@ -24,8 +24,11 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/any.h"
+#include "src/core/lib/support/arena.h"
+#include "src/core/lib/support/function.h"
+#include "src/core/lib/support/memory.h"
 
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.
@@ -57,107 +60,265 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
    They are not refcounted, but can be passed to _ref and _unref functions
    declared here - in which case those functions are effectively no-ops. */
 
-/* Forward declarations */
-typedef struct grpc_mdelem grpc_mdelem;
+namespace grpc_core {
 
-/* if changing this, make identical changes in:
-   - interned_metadata, allocated_metadata in metadata.c
-   - grpc_metadata in grpc_types.h */
-typedef struct grpc_mdelem_data {
-  const grpc_slice key;
-  const grpc_slice value;
-  /* there is a private part to this in metadata.c */
-} grpc_mdelem_data;
+extern DebugOnlyTraceFlag grpc_trace_metadata;
 
-/* GRPC_MDELEM_STORAGE_* enum values that can be treated as interned always have
-   this bit set in their integer value */
-#define GRPC_MDELEM_STORAGE_INTERNED_BIT 1
+namespace metadata {
 
-typedef enum {
-  /* memory pointed to by grpc_mdelem::payload is owned by an external system */
-  GRPC_MDELEM_STORAGE_EXTERNAL = 0,
-  /* memory pointed to by grpc_mdelem::payload is interned by the metadata
-     system */
-  GRPC_MDELEM_STORAGE_INTERNED = GRPC_MDELEM_STORAGE_INTERNED_BIT,
-  /* memory pointed to by grpc_mdelem::payload is allocated by the metadata
-     system */
-  GRPC_MDELEM_STORAGE_ALLOCATED = 2,
-  /* memory is in the static metadata table */
-  GRPC_MDELEM_STORAGE_STATIC = 2 | GRPC_MDELEM_STORAGE_INTERNED_BIT,
-} grpc_mdelem_data_storage;
+class Collection;
+typedef Any<> AnyValue;
 
-struct grpc_mdelem {
-  /* a grpc_mdelem_data* generally, with the two lower bits signalling memory
-     ownership as per grpc_mdelem_data_storage */
-  uintptr_t payload;
+class Key {
+ public:
+  virtual grpc_error* Parse(grpc_slice slice, AnyValue* value) const = 0;
+  virtual grpc_error* ParseIntoCollection(grpc_slice slice,
+                                          Collection* collection) const = 0;
+  virtual grpc_error* SetInCollection(const AnyValue& value,
+                                      Collection* collection) const = 0;
+  virtual AnyValue GetFromCollection(const Collection* collection) const = 0;
+  virtual bool SerializeValue(const AnyValue& value,
+                              grpc_slice_buffer* buffer) const = 0;
+  virtual bool SerializeFromCollection(const Collection* collection,
+                                       grpc_slice_buffer* buffer) const = 0;
+  virtual uint32_t SizeInHpackTable(const AnyValue& value) const = 0;
 };
 
-#define GRPC_MDELEM_DATA(md) ((grpc_mdelem_data*)((md).payload & ~(uintptr_t)3))
-#define GRPC_MDELEM_STORAGE(md) \
-  ((grpc_mdelem_data_storage)((md).payload & (uintptr_t)3))
-#ifdef __cplusplus
-#define GRPC_MAKE_MDELEM(data, storage) \
-  (grpc_mdelem{((uintptr_t)(data)) | ((uintptr_t)storage)})
-#else
-#define GRPC_MAKE_MDELEM(data, storage) \
-  ((grpc_mdelem){((uintptr_t)(data)) | ((uintptr_t)storage)})
-#endif
-#define GRPC_MDELEM_IS_INTERNED(md)          \
-  ((grpc_mdelem_data_storage)((md).payload & \
-                              (uintptr_t)GRPC_MDELEM_STORAGE_INTERNED_BIT))
+template <typename T>
+class TypedKey : public Key {
+ public:
+  virtual void TypedSetInCollection(const T& value,
+                                    Collection* collection) const = 0;
+  virtual const T* TypedGetFromCollection(
+      const Collection* collection) const = 0;
+  virtual bool TypedSerializeValue(const T& value,
+                                   grpc_slice_buffer* buffer) const = 0;
+};
 
-/* Unrefs the slices. */
-grpc_mdelem grpc_mdelem_from_slices(grpc_slice key, grpc_slice value);
+enum class HttpMethod : uint8_t {
+  UNSET,
+  UNKNOWN,
+  GET,
+  PUT,
+  POST,
+};
 
-/* Cheaply convert a grpc_metadata to a grpc_mdelem; may use the grpc_metadata
-   object as backing storage (so lifetimes should align) */
-grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata);
+enum class HttpScheme : uint8_t {
+  UNSET,
+  UNKNOWN,
+  HTTP,
+  HTTPS,
+  GRPC,
+};
 
-/* Does not unref the slices; if a new non-interned mdelem is needed, allocates
-   one if compatible_external_backing_store is NULL, or uses
-   compatible_external_backing_store if it is non-NULL (in which case it's the
-   users responsibility to ensure that it outlives usage) */
-grpc_mdelem grpc_mdelem_create(
-    grpc_slice key, grpc_slice value,
-    grpc_mdelem_data* compatible_external_backing_store);
+enum class HttpTe : uint8_t {
+  UNSET,
+  UNKNOWN,
+  TRAILERS,
+};
 
-bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
+enum class NamedKeys : uint8_t {
+  AUTHORITY,
+  // non colon prefixed names start here
+  USER_AGENT,
+  GRPC_MESSAGE,
+  GRPC_PAYLOAD_BIN,
+  GRPC_SERVER_STATS_BIN,
+  GRPC_TAGS_BIN,
+  HOST,
+  COUNT  // must be last
+};
 
-size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem,
-                                           bool use_true_binary_metadata);
+grpc_slice NamedKeyKey(NamedKeys k);
 
-/* Mutator and accessor for grpc_mdelem user data. The destructor function
-   is used as a type tag and is checked during user_data fetch. */
-void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*if_destroy_func)(void*));
-void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
-                                void* user_data);
+enum class ContentType : uint8_t {
+  UNSET,
+  UNKNOWN,
+  APPLICATION_SLASH_GRPC,
+};
 
-#ifndef NDEBUG
-#define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
-#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s), __FILE__, __LINE__)
-grpc_mdelem grpc_mdelem_ref(grpc_mdelem md, const char* file, int line);
-void grpc_mdelem_unref(grpc_mdelem md, const char* file, int line);
-#else
-#define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s))
-#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s))
-grpc_mdelem grpc_mdelem_ref(grpc_mdelem md);
-void grpc_mdelem_unref(grpc_mdelem md);
-#endif
+class Collection {
+ public:
+  explicit Collection(gpr_arena* arena) : arena_(arena) {}
 
-#define GRPC_MDKEY(md) (GRPC_MDELEM_DATA(md)->key)
-#define GRPC_MDVALUE(md) (GRPC_MDELEM_DATA(md)->value)
+  bool SetNamedKey(NamedKeys key, grpc_slice slice, bool reset = true) {
+    int idx = static_cast<int>(key);
+    if (named_keys_[idx] != nullptr) {
+      if (!reset) return false;
+      grpc_slice_unref_internal(*named_keys_[idx]);
+    } else {
+      named_keys_[idx] =
+          static_cast<grpc_slice*>(gpr_arena_alloc(arena_, sizeof(slice)));
+    }
+    *named_keys_[idx] = grpc_slice_ref(slice);
+    return true;
+  }
 
-#define GRPC_MDNULL GRPC_MAKE_MDELEM(NULL, GRPC_MDELEM_STORAGE_EXTERNAL)
-#define GRPC_MDISNULL(md) (GRPC_MDELEM_DATA(md) == NULL)
+  bool SetPath(int path, bool reset = true) {
+    return SetFn(&path_, path, reset, kPathUnset);
+  }
 
-/* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
-#define GRPC_MDELEM_LENGTH(e)                                                  \
-  (GRPC_SLICE_LENGTH(GRPC_MDKEY((e))) + GRPC_SLICE_LENGTH(GRPC_MDVALUE((e))) + \
-   32)
+  bool HasPath() const { return path_ != kPathUnset; }
 
-#define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
+  int Path() const {
+    assert(path_ != kPathUnset);
+    return path_;
+  }
 
-void grpc_mdctx_global_init(void);
-void grpc_mdctx_global_shutdown();
+  bool SetStatus(uint16_t status, bool reset = true) {
+    return SetFn(&status_, status, reset, kStatusUnset);
+  }
+
+  bool HasStatus() const { return status_ != kStatusUnset; }
+
+  uint16_t Status() const {
+    assert(status_ != kStatusUnset);
+    return status_;
+  }
+
+  bool SetGrpcStatus(grpc_status_code grpc_status, bool reset = true) {
+    return SetFn(&grpc_status_, static_cast<int16_t>(grpc_status), reset,
+                 kGrpcStatusUnset);
+  }
+
+  bool SetMethod(HttpMethod method, bool reset = true) {
+    return SetWithPublicUnset(&method_, method, reset);
+  }
+
+  bool SetScheme(HttpScheme scheme, bool reset = true) {
+    return SetWithPublicUnset(&scheme_, scheme, reset);
+  }
+
+  bool SetTe(HttpTe te, bool reset = true) {
+    return SetWithPublicUnset(&te_, te, reset);
+  }
+
+  bool SetContentType(ContentType content_type, bool reset = true) {
+    return SetWithPublicUnset(&content_type_, content_type, reset);
+  }
+
+  template <class CB>
+  void ForEachField(CB* cb) const {
+    if (path_ != kPathUnset) cb->OnPath(path_);
+    if (status_ != kStatusUnset) cb->OnStatus(status_);
+    if (method_ != HttpMethod::UNSET) cb->OnMethod(method_);
+    if (scheme_ != HttpScheme::UNSET) cb->OnScheme(scheme_);
+    for (int i = 0; i < static_cast<int>(NamedKeys::COUNT); i++) {
+      if (named_keys_[i] != nullptr) {
+        cb->OnNamedKey(static_cast<NamedKeys>(i), *named_keys_[i]);
+      }
+    }
+    if (te_ != HttpTe::UNSET) cb->OnTe(te_);
+    if (content_type_ != ContentType::UNSET) cb->OnContentType(content_type_);
+  }
+
+ private:
+  template <class T>
+  bool SetFn(T* store, T newval, bool reset, T unset) {
+    if (!reset && *store != unset) return false;
+    *store = newval;
+    return true;
+  }
+
+  template <class T>
+  bool SetWithPublicUnset(T* store, T newval, bool reset) {
+    GPR_ASSERT(newval != T::UNSET);
+    if (!reset && *store != T::UNSET) return false;
+    *store = newval;
+    return true;
+  }
+
+  gpr_arena* const arena_;
+  grpc_slice* named_keys_[static_cast<int>(NamedKeys::COUNT)] = {nullptr};
+  static constexpr int kPathUnset = -1;
+  int path_ = kPathUnset;
+  // http status
+  static constexpr uint16_t kStatusUnset = 0;
+  uint16_t status_ = kStatusUnset;
+  static constexpr int16_t kGrpcStatusUnset = -1;
+  int16_t grpc_status_ = kGrpcStatusUnset;
+  HttpMethod method_ = HttpMethod::UNSET;
+  HttpScheme scheme_ = HttpScheme::UNSET;
+  HttpTe te_ = HttpTe::UNSET;
+  ContentType content_type_ = ContentType::UNSET;
+};
+
+namespace impl {
+
+void RegisterKeyType(const char* key_name, Key* key);
+
+}  // namespace impl
+
+template <class KeyType>
+const KeyType* RegisterKeyType(const char* key_name) {
+  KeyType* k = New<KeyType>();
+  impl::RegisterKeyType(key_name, k);
+  return k;
+}
+
+// given a key name, return a Key implementation
+const Key* LookupKey(grpc_slice key_name);
+
+int InternPath(const char* path);
+grpc_slice PathSlice(int idx);
+
+namespace impl {
+
+template <NamedKeys key>
+class NamedKey final : public Key {
+ public:
+  bool ParseIntoCollection(grpc_slice slice, Collection* collection) {
+    return collection->SetNamedKey(key, slice, false);
+  }
+};
+
+template <typename T, bool (Collection::*SetFn)(T, bool),
+          bool (Collection::*HasFn)() const,
+          const T& (Collection::*GetFn)() const,
+          bool (*ParseFn)(grpc_slice slice, T* value),
+          bool (*SerializeFn)(const T& value, grpc_slice_buffer* buffer)>
+class SpecialKey final : public TypedKey<T> {
+ public:
+  AnyValue Parse(grpc_slice slice, AnyValue* value) const override {
+    T x;
+    if (ParseFn(slice, &x)) {
+      return AnyValue(std::move(x));
+    } else {
+      return AnyValue();
+    }
+  }
+  bool ParseIntoCollection(grpc_slice slice,
+                           Collection* collection) const override {
+    T val;
+    if (!ParseFn(slice, &val)) return false;
+    return (collection->*SetFn)(val, false);
+  }
+  bool SetInCollection(const AnyValue& value,
+                       Collection* collection) const override {
+    const T* p = value.as<T>();
+    if (p == nullptr) return false;
+    return (collection->*SetFn)(*p, false);
+  }
+  AnyValue GetFromCollection(const Collection* collection) const override {
+    if (!(collection->*HasFn)()) return AnyValue();
+    return AnyValue((collection->*GetFn)());
+  }
+  bool SerializeValue(const AnyValue& value,
+                      grpc_slice_buffer* buffer) const override {
+    const T* val = value.as<T>();
+    if (!val) return false;
+    return SerializeFn(*val, buffer);
+  }
+};
+
+}  // namespace impl
+
+extern const Key* const authority;
+extern const Key* const grpc_message;
+extern const Key* const grpc_payload_bin;
+
+}  // namespace metadata
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */

@@ -26,7 +26,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"

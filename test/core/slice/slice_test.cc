@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x);

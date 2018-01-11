@@ -26,7 +26,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 #include "test/core/util/test_config.h"
 
 static void test_algorithm_mesh(void) {

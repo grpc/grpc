@@ -1273,6 +1273,7 @@ src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/support/abstract.h \
 src/core/lib/support/alloc.cc \
+src/core/lib/support/any.h \
 src/core/lib/support/arena.cc \
 src/core/lib/support/arena.h \
 src/core/lib/support/atm.cc \
@@ -1292,6 +1293,7 @@ src/core/lib/support/env_posix.cc \
 src/core/lib/support/env_windows.cc \
 src/core/lib/support/fork.cc \
 src/core/lib/support/fork.h \
+src/core/lib/support/function.h \
 src/core/lib/support/host_port.cc \
 src/core/lib/support/log.cc \
 src/core/lib/support/log_android.cc \
@@ -1382,8 +1384,6 @@ src/core/lib/transport/error_utils.h \
 src/core/lib/transport/http2_errors.h \
 src/core/lib/transport/metadata.cc \
 src/core/lib/transport/metadata.h \
-src/core/lib/transport/metadata_batch.cc \
-src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/pid_controller.cc \
 src/core/lib/transport/pid_controller.h \
 src/core/lib/transport/service_config.cc \

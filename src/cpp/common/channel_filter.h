@@ -28,7 +28,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/metadata.h"
 
 /// An interface to define filters.
 ///

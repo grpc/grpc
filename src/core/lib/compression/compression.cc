@@ -24,7 +24,7 @@
 
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 int grpc_compression_algorithm_parse(grpc_slice name,
                                      grpc_compression_algorithm* algorithm) {

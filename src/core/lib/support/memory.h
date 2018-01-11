@@ -41,6 +41,24 @@ inline void Delete(T* p) {
   gpr_free(p);
 }
 
+// Alternative to new[]
+template <typename T>
+inline T* ArrayNew(size_t n) {
+  T* p = static_cast<T*>(gpr_malloc(sizeof(T) * n));
+  for (size_t i = 0; i < n; i++) {
+    new (p + i) T();
+  }
+  return p;
+}
+
+template <typename T>
+void ArrayDelete(T* p, size_t n) {
+  for (size_t i = 0; i < n; i++) {
+    p[i].~T();
+  }
+  gpr_free(p);
+}
+
 template <typename T>
 class DefaultDelete {
  public:

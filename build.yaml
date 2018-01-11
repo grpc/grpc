@@ -24,6 +24,11 @@ filegroups:
   uses:
   - grpc_base
   - nanopb
+- name: chttp2_huffsyms
+  headers:
+  - src/core/ext/transport/chttp2/transport/huffsyms.h
+  src:
+  - src/core/ext/transport/chttp2/transport/huffsyms.cc
 - name: gpr_base
   src:
   - src/core/lib/profiling/basic_timers.cc
@@ -103,12 +108,14 @@ filegroups:
   headers:
   - src/core/lib/profiling/timers.h
   - src/core/lib/support/abstract.h
+  - src/core/lib/support/any.h
   - src/core/lib/support/arena.h
   - src/core/lib/support/atomic.h
   - src/core/lib/support/atomic_with_atm.h
   - src/core/lib/support/atomic_with_std.h
   - src/core/lib/support/env.h
   - src/core/lib/support/fork.h
+  - src/core/lib/support/function.h
   - src/core/lib/support/manual_constructor.h
   - src/core/lib/support/memory.h
   - src/core/lib/support/mpscq.h
@@ -275,7 +282,6 @@ filegroups:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/metadata.cc
-  - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/service_config.cc
   - src/core/lib/transport/static_metadata.cc
@@ -420,7 +426,6 @@ filegroups:
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata.h
-  - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/service_config.h
   - src/core/lib/transport/static_metadata.h
@@ -778,7 +783,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
-  - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
@@ -799,7 +803,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
-  - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
@@ -811,6 +814,7 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2_alpn
   - grpc_http_filters
+  - chttp2_huffsyms
 - name: grpc_transport_chttp2_alpn
   headers:
   - src/core/ext/transport/chttp2/alpn/alpn.h
@@ -2110,6 +2114,29 @@ targets:
   - mac
   - linux
   - posix
+- name: gen_hpack_tables
+  build: tool
+  language: c
+  src:
+  - tools/codegen/core/gen_hpack_tables.c
+  deps:
+  - gpr
+  filegroups:
+  - chttp2_huffsyms
+  uses_polling: false
+- name: gen_legal_metadata_characters
+  build: tool
+  language: c
+  src:
+  - tools/codegen/core/gen_legal_metadata_characters.c
+  deps: []
+- name: gen_percent_encoding_tables
+  build: tool
+  language: c
+  src:
+  - tools/codegen/core/gen_percent_encoding_tables.c
+  deps: []
+  uses_polling: false
 - name: goaway_server_test
   cpu_cost: 0.1
   build: test
@@ -3419,6 +3446,21 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+- name: any_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/any_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
+  uses_polling: false
 - name: async_end2end_test
   gtest: true
   build: test
@@ -4020,6 +4062,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: function_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/function_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
+  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test

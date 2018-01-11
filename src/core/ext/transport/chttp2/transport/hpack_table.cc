@@ -30,280 +30,46 @@
 
 extern grpc_core::TraceFlag grpc_http_trace;
 
-static struct {
-  const char* key;
-  const char* value;
-} static_table[] = {
-    /* 0: */
-    {nullptr, nullptr},
-    /* 1: */
-    {":authority", ""},
-    /* 2: */
-    {":method", "GET"},
-    /* 3: */
-    {":method", "POST"},
-    /* 4: */
-    {":path", "/"},
-    /* 5: */
-    {":path", "/index.html"},
-    /* 6: */
-    {":scheme", "http"},
-    /* 7: */
-    {":scheme", "https"},
-    /* 8: */
-    {":status", "200"},
-    /* 9: */
-    {":status", "204"},
-    /* 10: */
-    {":status", "206"},
-    /* 11: */
-    {":status", "304"},
-    /* 12: */
-    {":status", "400"},
-    /* 13: */
-    {":status", "404"},
-    /* 14: */
-    {":status", "500"},
-    /* 15: */
-    {"accept-charset", ""},
-    /* 16: */
-    {"accept-encoding", "gzip, deflate"},
-    /* 17: */
-    {"accept-language", ""},
-    /* 18: */
-    {"accept-ranges", ""},
-    /* 19: */
-    {"accept", ""},
-    /* 20: */
-    {"access-control-allow-origin", ""},
-    /* 21: */
-    {"age", ""},
-    /* 22: */
-    {"allow", ""},
-    /* 23: */
-    {"authorization", ""},
-    /* 24: */
-    {"cache-control", ""},
-    /* 25: */
-    {"content-disposition", ""},
-    /* 26: */
-    {"content-encoding", ""},
-    /* 27: */
-    {"content-language", ""},
-    /* 28: */
-    {"content-length", ""},
-    /* 29: */
-    {"content-location", ""},
-    /* 30: */
-    {"content-range", ""},
-    /* 31: */
-    {"content-type", ""},
-    /* 32: */
-    {"cookie", ""},
-    /* 33: */
-    {"date", ""},
-    /* 34: */
-    {"etag", ""},
-    /* 35: */
-    {"expect", ""},
-    /* 36: */
-    {"expires", ""},
-    /* 37: */
-    {"from", ""},
-    /* 38: */
-    {"host", ""},
-    /* 39: */
-    {"if-match", ""},
-    /* 40: */
-    {"if-modified-since", ""},
-    /* 41: */
-    {"if-none-match", ""},
-    /* 42: */
-    {"if-range", ""},
-    /* 43: */
-    {"if-unmodified-since", ""},
-    /* 44: */
-    {"last-modified", ""},
-    /* 45: */
-    {"link", ""},
-    /* 46: */
-    {"location", ""},
-    /* 47: */
-    {"max-forwards", ""},
-    /* 48: */
-    {"proxy-authenticate", ""},
-    /* 49: */
-    {"proxy-authorization", ""},
-    /* 50: */
-    {"range", ""},
-    /* 51: */
-    {"referer", ""},
-    /* 52: */
-    {"refresh", ""},
-    /* 53: */
-    {"retry-after", ""},
-    /* 54: */
-    {"server", ""},
-    /* 55: */
-    {"set-cookie", ""},
-    /* 56: */
-    {"strict-transport-security", ""},
-    /* 57: */
-    {"transfer-encoding", ""},
-    /* 58: */
-    {"user-agent", ""},
-    /* 59: */
-    {"vary", ""},
-    /* 60: */
-    {"via", ""},
-    /* 61: */
-    {"www-authenticate", ""},
-};
+namespace grpc_core {
+namespace chttp2 {
 
-static uint32_t entries_for_bytes(uint32_t bytes) {
-  return (bytes + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) /
-         GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
-}
+HpackTable::HpackTable() { ents_ = ArrayNew<Row>(cap_entries_); }
+HpackTable::~HpackTable() { ArrayDelete(ents_, cap_entries_); }
 
-void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl* tbl) {
-  size_t i;
-
-  memset(tbl, 0, sizeof(*tbl));
-  tbl->current_table_bytes = tbl->max_bytes =
-      GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
-  tbl->max_entries = tbl->cap_entries =
-      entries_for_bytes(tbl->current_table_bytes);
-  tbl->ents = (grpc_mdelem*)gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries);
-  memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
-  for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    tbl->static_ents[i - 1] = grpc_mdelem_from_slices(
-        grpc_slice_intern(grpc_slice_from_static_string(static_table[i].key)),
-        grpc_slice_intern(
-            grpc_slice_from_static_string(static_table[i].value)));
-  }
-}
-
-void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl* tbl) {
-  size_t i;
-  for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    GRPC_MDELEM_UNREF(tbl->static_ents[i]);
-  }
-  for (i = 0; i < tbl->num_ents; i++) {
-    GRPC_MDELEM_UNREF(tbl->ents[(tbl->first_ent + i) % tbl->cap_entries]);
-  }
-  gpr_free(tbl->ents);
-}
-
-grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
-                                     uint32_t tbl_index) {
+const HpackTable::Row* HpackTable::Lookup(uint32_t tbl_index) {
   /* Static table comes first, just return an entry from it */
-  if (tbl_index <= GRPC_CHTTP2_LAST_STATIC_ENTRY) {
-    return tbl->static_ents[tbl_index - 1];
+  if (tbl_index <= kLastStaticEntry) {
+    return &static_ents_[tbl_index - 1];
   }
   /* Otherwise, find the value in the list of valid entries */
-  tbl_index -= (GRPC_CHTTP2_LAST_STATIC_ENTRY + 1);
-  if (tbl_index < tbl->num_ents) {
-    uint32_t offset =
-        (tbl->num_ents - 1u - tbl_index + tbl->first_ent) % tbl->cap_entries;
-    return tbl->ents[offset];
+  tbl_index -= (kLastStaticEntry + 1);
+  if (tbl_index < num_ents_) {
+    uint32_t offset = (num_ents_ - 1u - tbl_index + first_ent_) % cap_entries_;
+    return &ents_[offset];
   }
   /* Invalid entry: return error */
-  return GRPC_MDNULL;
+  return nullptr;
 }
 
-/* Evict one element from the table */
-static void evict1(grpc_chttp2_hptbl* tbl) {
-  grpc_mdelem first_ent = tbl->ents[tbl->first_ent];
-  size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(first_ent)) +
-                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(first_ent)) +
-                      GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
-  GPR_ASSERT(elem_bytes <= tbl->mem_used);
-  tbl->mem_used -= (uint32_t)elem_bytes;
-  tbl->first_ent = ((tbl->first_ent + 1) % tbl->cap_entries);
-  tbl->num_ents--;
-  GRPC_MDELEM_UNREF(first_ent);
-}
-
-static void rebuild_ents(grpc_chttp2_hptbl* tbl, uint32_t new_cap) {
-  grpc_mdelem* ents = (grpc_mdelem*)gpr_malloc(sizeof(*ents) * new_cap);
-  uint32_t i;
-
-  for (i = 0; i < tbl->num_ents; i++) {
-    ents[i] = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
-  }
-  gpr_free(tbl->ents);
-  tbl->ents = ents;
-  tbl->cap_entries = new_cap;
-  tbl->first_ent = 0;
-}
-
-void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
-                                     uint32_t max_bytes) {
-  if (tbl->max_bytes == max_bytes) {
-    return;
-  }
-  if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Update hpack parser max size to %d", max_bytes);
-  }
-  while (tbl->mem_used > max_bytes) {
-    evict1(tbl);
-  }
-  tbl->max_bytes = max_bytes;
-}
-
-grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
-                                                     uint32_t bytes) {
-  if (tbl->current_table_bytes == bytes) {
-    return GRPC_ERROR_NONE;
-  }
-  if (bytes > tbl->max_bytes) {
-    char* msg;
-    gpr_asprintf(&msg,
-                 "Attempt to make hpack table %d bytes when max is %d bytes",
-                 bytes, tbl->max_bytes);
-    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return err;
-  }
-  if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Update hpack parser table size to %d", bytes);
-  }
-  while (tbl->mem_used > bytes) {
-    evict1(tbl);
-  }
-  tbl->current_table_bytes = bytes;
-  tbl->max_entries = entries_for_bytes(bytes);
-  if (tbl->max_entries > tbl->cap_entries) {
-    rebuild_ents(tbl, GPR_MAX(tbl->max_entries, 2 * tbl->cap_entries));
-  } else if (tbl->max_entries < tbl->cap_entries / 3) {
-    uint32_t new_cap = GPR_MAX(tbl->max_entries, 16u);
-    if (new_cap != tbl->cap_entries) {
-      rebuild_ents(tbl, new_cap);
-    }
-  }
-  return GRPC_ERROR_NONE;
-}
-
-grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl, grpc_mdelem md) {
+grpc_error* HpackTable::Add(const metadata::Key* key,
+                            metadata::AnyValue* value) {
   /* determine how many bytes of buffer this entry represents */
-  size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(md)) +
-                      GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) +
-                      GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
+  size_t elem_bytes = key->SizeInHpackTable(*value);
 
-  if (tbl->current_table_bytes > tbl->max_bytes) {
+  if (current_table_bytes_ > max_bytes_) {
     char* msg;
     gpr_asprintf(
         &msg,
         "HPACK max table size reduced to %d but not reflected by hpack "
         "stream (still at %d)",
-        tbl->max_bytes, tbl->current_table_bytes);
+        max_bytes_, current_table_bytes_);
     grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
 
   /* we can't add elements bigger than the max table size */
-  if (elem_bytes > tbl->current_table_bytes) {
+  if (elem_bytes > current_table_bytes_) {
     /* HPACK draft 10 section 4.4 states:
      * If the size of the new entry is less than or equal to the maximum
      * size, that entry is added to the table.  It is not an error to
@@ -313,51 +79,92 @@ grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl, grpc_mdelem md) {
      * to be emptied of all existing entries, and results in an
      * empty table.
      */
-    while (tbl->num_ents) {
-      evict1(tbl);
+    while (num_ents_) {
+      EvictOneEntry();
     }
     return GRPC_ERROR_NONE;
   }
 
   /* evict entries to ensure no overflow */
-  while (elem_bytes > (size_t)tbl->current_table_bytes - tbl->mem_used) {
-    evict1(tbl);
+  while (elem_bytes > (size_t)current_table_bytes_ - mem_used_) {
+    EvictOneEntry();
   }
 
   /* copy the finalized entry in */
-  tbl->ents[(tbl->first_ent + tbl->num_ents) % tbl->cap_entries] =
-      GRPC_MDELEM_REF(md);
+  ents_[(first_ent_ + num_ents_) % cap_entries_] = Row{key, std::move(*value)};
 
   /* update accounting values */
-  tbl->num_ents++;
-  tbl->mem_used += (uint32_t)elem_bytes;
+  num_ents_++;
+  mem_used_ += (uint32_t)elem_bytes;
   return GRPC_ERROR_NONE;
 }
 
-grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
-    const grpc_chttp2_hptbl* tbl, grpc_mdelem md) {
-  grpc_chttp2_hptbl_find_result r = {0, 0};
+void HpackTable::EvictOneEntry() {
+  Row* row = &ents_[first_ent_];
+  uint32_t elem_bytes = row->key->SizeInHpackTable(row->value);
+  GPR_ASSERT(elem_bytes <= mem_used_);
+  mem_used_ -= elem_bytes;
+  first_ent_ = ((first_ent_ + 1) % cap_entries_);
+  num_ents_--;
+}
+
+void HpackTable::RebuildEnts(uint32_t new_cap) {
+  Row* ents = ArrayNew<Row>(new_cap);
   uint32_t i;
 
-  /* See if the string is in the static table */
-  for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    grpc_mdelem ent = tbl->static_ents[i];
-    if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
-    r.index = i + 1u;
-    r.has_value = grpc_slice_eq(GRPC_MDVALUE(md), GRPC_MDVALUE(ent));
-    if (r.has_value) return r;
+  for (i = 0; i < num_ents_; i++) {
+    ents[i] = std::move(ents_[(first_ent_ + i) % cap_entries_]);
   }
-
-  /* Scan the dynamic table */
-  for (i = 0; i < tbl->num_ents; i++) {
-    uint32_t idx =
-        (uint32_t)(tbl->num_ents - i + GRPC_CHTTP2_LAST_STATIC_ENTRY);
-    grpc_mdelem ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
-    if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
-    r.index = idx;
-    r.has_value = grpc_slice_eq(GRPC_MDVALUE(md), GRPC_MDVALUE(ent));
-    if (r.has_value) return r;
-  }
-
-  return r;
+  ArrayDelete(ents_, cap_entries_);
+  ents_ = ents;
+  cap_entries_ = new_cap;
+  first_ent_ = 0;
 }
+
+void HpackTable::SetMaxBytes(uint32_t max_bytes) {
+  if (max_bytes_ == max_bytes) {
+    return;
+  }
+  if (grpc_http_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "Update hpack parser max size to %d", max_bytes);
+  }
+  while (mem_used_ > max_bytes) {
+    EvictOneEntry();
+  }
+  max_bytes_ = max_bytes;
+}
+
+grpc_error* HpackTable::SetCurrentTableSize(uint32_t bytes) {
+  if (current_table_bytes_ == bytes) {
+    return GRPC_ERROR_NONE;
+  }
+  if (bytes > max_bytes_) {
+    char* msg;
+    gpr_asprintf(&msg,
+                 "Attempt to make hpack table %d bytes when max is %d bytes",
+                 bytes, max_bytes_);
+    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    gpr_free(msg);
+    return err;
+  }
+  if (grpc_http_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "Update hpack parser table size to %d", bytes);
+  }
+  while (mem_used_ > bytes) {
+    EvictOneEntry();
+  }
+  current_table_bytes_ = bytes;
+  max_entries_ = EntriesForBytes(bytes);
+  if (max_entries_ > cap_entries_) {
+    RebuildEnts(std::max(max_entries_, 2 * cap_entries_));
+  } else if (max_entries_ < cap_entries_ / 3) {
+    uint32_t new_cap = std::max(max_entries_, 16u);
+    if (new_cap != cap_entries_) {
+      RebuildEnts(new_cap);
+    }
+  }
+  return GRPC_ERROR_NONE;
+}
+
+}  // namespace chttp2
+}  // namespace grpc_core
