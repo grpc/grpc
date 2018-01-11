@@ -21,6 +21,10 @@
 #define _GNU_SOURCE
 #endif
 
+#ifndef SO_RXQ_OVFL
+#define SO_RXQ_OVFL 40
+#endif
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET
@@ -325,13 +329,13 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
   }
 
   if (grpc_set_socket_sndbuf(fd, snd_buf_size) != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Failed to set send buffer size to %lu bytes",
+    gpr_log(GPR_ERROR, "Failed to set send buffer size to %zd bytes",
             snd_buf_size);
     goto error;
   }
 
   if (grpc_set_socket_rcvbuf(fd, rcv_buf_size) != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Failed to set receive buffer size to %lu bytes",
+    gpr_log(GPR_ERROR, "Failed to set receive buffer size to %zd bytes",
             rcv_buf_size);
     goto error;
   }
@@ -457,8 +461,7 @@ static void on_write(void* arg, grpc_error* error) {
 
 static int add_socket_to_server(grpc_udp_server* s, int fd,
                                 const grpc_resolved_address* addr,
-                                size_t rcv_buf_size,
-                                size_t snd_buf_size,
+                                size_t rcv_buf_size, size_t snd_buf_size,
                                 grpc_udp_server_start_cb start_cb,
                                 grpc_udp_server_read_cb read_cb,
                                 grpc_udp_server_write_cb write_cb,
