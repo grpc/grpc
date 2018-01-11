@@ -107,7 +107,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
   now.clock_type = clock;
   switch (clock) {
     case GPR_CLOCK_REALTIME:
-      gettimeofday(&now_tv, NULL);
+      gettimeofday(&now_tv, nullptr);
       now.tv_sec = now_tv.tv_sec;
       now.tv_nsec = now_tv.tv_usec * 1000;
       break;

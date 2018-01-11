@@ -149,7 +149,6 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/byte_buffer_reader.h )
   s.files += %w( include/grpc/impl/codegen/compression_types.h )
   s.files += %w( include/grpc/impl/codegen/connectivity_state.h )
-  s.files += %w( include/grpc/impl/codegen/exec_ctx_fwd.h )
   s.files += %w( include/grpc/impl/codegen/grpc_types.h )
   s.files += %w( include/grpc/impl/codegen/propagation_bits.h )
   s.files += %w( include/grpc/impl/codegen/slice.h )
