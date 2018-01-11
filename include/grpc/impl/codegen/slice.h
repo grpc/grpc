@@ -23,7 +23,6 @@
 
 #include <stddef.h>
 
-#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_slice.h>
 
 typedef struct grpc_slice grpc_slice;
