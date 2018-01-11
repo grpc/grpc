@@ -443,7 +443,7 @@ HOST_LDLIBS = $(LDLIBS)
 
 CACHE_MK =
 
-HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
+HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) --help >/dev/null 2>&1 && echo true || echo false)
 
 ifeq ($(HAS_PKG_CONFIG), true)
 CACHE_MK += HAS_PKG_CONFIG = true,
@@ -792,6 +792,7 @@ ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
 LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
 endif
 endif
+LDFLAGS := $(LDFLAGS_PROTOBUF_PKG_CONFIG) $(LDFLAGS)
 else
 PC_LIBS_GRPCXX = -lprotobuf
 endif
