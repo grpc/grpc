@@ -1292,6 +1292,7 @@ src/core/lib/support/env_posix.cc \
 src/core/lib/support/env_windows.cc \
 src/core/lib/support/fork.cc \
 src/core/lib/support/fork.h \
+src/core/lib/support/function.h \
 src/core/lib/support/host_port.cc \
 src/core/lib/support/log.cc \
 src/core/lib/support/log_android.cc \

@@ -1127,6 +1127,7 @@ cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
 filter_end2end_test: $(BINDIR)/$(CONFIG)/filter_end2end_test
+function_test: $(BINDIR)/$(CONFIG)/function_test
 generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
 grpc_cli: $(BINDIR)/$(CONFIG)/grpc_cli
@@ -1575,6 +1576,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
+  $(BINDIR)/$(CONFIG)/function_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
@@ -1705,6 +1707,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
+  $(BINDIR)/$(CONFIG)/function_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
@@ -2106,6 +2109,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/error_details_test || ( echo test error_details_test failed ; exit 1 )
 	$(E) "[RUN]     Testing filter_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/filter_end2end_test || ( echo test filter_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing function_test"
+	$(Q) $(BINDIR)/$(CONFIG)/function_test || ( echo test function_test failed ; exit 1 )
 	$(E) "[RUN]     Testing generic_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/generic_end2end_test || ( echo test generic_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing golden_file_test"
@@ -15015,6 +15020,49 @@ deps_filter_end2end_test: $(FILTER_END2END_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(FILTER_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+FUNCTION_TEST_SRC = \
+    test/core/support/function_test.cc \
+
+FUNCTION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FUNCTION_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/function_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/function_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/function_test: $(PROTOBUF_DEP) $(FUNCTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(FUNCTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/function_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/function_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_function_test: $(FUNCTION_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(FUNCTION_TEST_OBJS:.o=.dep)
 endif
 endif
 
