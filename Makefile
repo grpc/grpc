@@ -627,6 +627,8 @@ endif
 PC_REQUIRES_GRPC =
 PC_LIBS_GRPC =
 
+GRPC_LIBDIRS =
+
 ifeq ($(HAS_SYSTEM_ZLIB),false)
 ifeq ($(HAS_EMBEDDED_ZLIB), true)
 EMBED_ZLIB ?= true
@@ -644,6 +646,7 @@ ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
 ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
 CPPFLAGS += -Ithird_party/zlib
 LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
+GRPC_LIBDIRS += $(LIBDIR)/$(CONFIG)/zlib
 else
 ifeq ($(HAS_PKG_CONFIG),true)
 CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -675,6 +678,7 @@ CARES_MERGE_OBJS = $(LIBARES_OBJS)
 CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
 CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
 LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
+GRPC_LIBDIRS += $(LIBDIR)/$(CONFIG)/c-ares  
 else
 ifeq ($(HAS_PKG_CONFIG),true)
 PC_REQUIRES_GRPC += libcares
@@ -801,6 +805,7 @@ ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
 CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
 LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
+GRPC_LIBDIRS += $(LIBDIR)/$(CONFIG)/protobuf
 ifneq ($(USE_BUILT_PROTOC),false)
 PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
@@ -1301,6 +1306,7 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
+	$(Q)mkdir -p . $(GRPC_LIBDIRS)
 	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
@@ -2911,6 +2917,7 @@ LIBGPR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB
 
 $(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBGPR_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBGPR_OBJS) 
@@ -2953,6 +2960,7 @@ LIBGPR_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 $(LIBDIR)/$(CONFIG)/libgpr_test_util.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBGPR_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr_test_util.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBGPR_TEST_UTIL_OBJS) 
@@ -3274,6 +3282,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
@@ -3576,6 +3585,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBGRPC_CRONET_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBGRPC_CRONET_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
@@ -3858,6 +3868,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBGRPC_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS) 
@@ -4108,6 +4119,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix 
 
 $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS) 
@@ -4386,6 +4398,7 @@ LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS) 
@@ -4438,6 +4451,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libreconnect_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBRECONNECT_SERVER_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libreconnect_server.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBRECONNECT_SERVER_OBJS) 
@@ -4477,6 +4491,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBTEST_TCP_SERVER_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBTEST_TCP_SERVER_OBJS) 
@@ -4703,6 +4718,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS) 
@@ -4771,6 +4787,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_CORE_STATS_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBGRPC++_CORE_STATS_OBJS) 
@@ -5188,6 +5205,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_CRONET_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet.a $(LIBGRPC++_CRONET_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS)  $(OPENSSL_MERGE_OBJS) 
@@ -5258,6 +5276,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details.a $(LIBGRPC++_ERROR_DETAILS_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS) 
@@ -5327,6 +5346,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_PROTO_REFLECTION_DESC_DB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBGRPC++_PROTO_REFLECTION_DESC_DB_OBJS) 
@@ -5382,6 +5402,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_REFLECTION_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBGRPC++_REFLECTION_OBJS) 
@@ -5450,6 +5471,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_TEST_CONFIG_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBGRPC++_TEST_CONFIG_OBJS) 
@@ -5562,6 +5584,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS) 
@@ -5679,6 +5702,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_TEST_UTIL_UNSECURE_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBGRPC++_TEST_UTIL_UNSECURE_OBJS) 
@@ -5895,6 +5919,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)  $(LIBGPR_OBJS)  $(ZLIB_MERGE_OBJS)  $(CARES_MERGE_OBJS) 
@@ -5958,6 +5983,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC_BENCHMARK_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBGRPC_BENCHMARK_OBJS) 
@@ -6013,6 +6039,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC_CLI_LIBS_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBGRPC_CLI_LIBS_OBJS) 
@@ -6065,6 +6092,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(LIBGRPC_PLUGIN_SUPPORT_OBJS) 
@@ -6113,6 +6141,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBHTTP2_CLIENT_MAIN_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBHTTP2_CLIENT_MAIN_OBJS) 
@@ -6164,6 +6193,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBINTEROP_CLIENT_HELPER_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBINTEROP_CLIENT_HELPER_OBJS) 
@@ -6218,6 +6248,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libinterop_client_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBINTEROP_CLIENT_MAIN_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_client_main.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBINTEROP_CLIENT_MAIN_OBJS) 
@@ -6269,6 +6300,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBINTEROP_SERVER_HELPER_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBINTEROP_SERVER_HELPER_OBJS) 
@@ -6321,6 +6353,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBINTEROP_SERVER_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBINTEROP_SERVER_LIB_OBJS) 
@@ -6371,6 +6404,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libinterop_server_main.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBINTEROP_SERVER_MAIN_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libinterop_server_main.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBINTEROP_SERVER_MAIN_OBJS) 
@@ -6434,6 +6468,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libqps.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBQPS_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libqps.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBQPS_OBJS) 
@@ -6486,6 +6521,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBGRPC_CSHARP_EXT_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBGRPC_CSHARP_EXT_OBJS) 
@@ -6837,6 +6873,7 @@ $(LIBBORINGSSL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused
 
 $(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl.a $(LIBBORINGSSL_OBJS) 
@@ -6875,6 +6912,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBBORINGSSL_TEST_UTIL_OBJS) 
@@ -6913,6 +6951,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AES_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBBORINGSSL_AES_TEST_LIB_OBJS) 
@@ -6951,6 +6990,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ASN1_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBBORINGSSL_ASN1_TEST_LIB_OBJS) 
@@ -6989,6 +7029,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BASE64_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBBORINGSSL_BASE64_TEST_LIB_OBJS) 
@@ -7027,6 +7068,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BIO_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBBORINGSSL_BIO_TEST_LIB_OBJS) 
@@ -7065,6 +7107,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BN_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBBORINGSSL_BN_TEST_LIB_OBJS) 
@@ -7103,6 +7146,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS) 
@@ -7141,6 +7185,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AEAD_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBBORINGSSL_AEAD_TEST_LIB_OBJS) 
@@ -7179,6 +7224,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS) 
@@ -7217,6 +7263,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CMAC_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBBORINGSSL_CMAC_TEST_LIB_OBJS) 
@@ -7255,6 +7302,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS) 
@@ -7293,6 +7341,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ED25519_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBBORINGSSL_ED25519_TEST_LIB_OBJS) 
@@ -7331,6 +7380,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_SPAKE25519_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBBORINGSSL_SPAKE25519_TEST_LIB_OBJS) 
@@ -7369,6 +7419,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_X25519_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBBORINGSSL_X25519_TEST_LIB_OBJS) 
@@ -7407,6 +7458,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS) 
@@ -7436,6 +7488,7 @@ $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conver
 
 $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS) 
@@ -7472,6 +7525,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS) 
@@ -7510,6 +7564,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDH_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBBORINGSSL_ECDH_TEST_LIB_OBJS) 
@@ -7548,6 +7603,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a $(LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_OBJS) 
@@ -7586,6 +7642,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS) 
@@ -7624,6 +7681,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a $(LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_OBJS) 
@@ -7662,6 +7720,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS) 
@@ -7700,6 +7759,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EVP_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBBORINGSSL_EVP_TEST_LIB_OBJS) 
@@ -7738,6 +7798,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS) 
@@ -7776,6 +7837,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_HKDF_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBBORINGSSL_HKDF_TEST_LIB_OBJS) 
@@ -7814,6 +7876,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_HMAC_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBBORINGSSL_HMAC_TEST_LIB_OBJS) 
@@ -7852,6 +7915,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_LHASH_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBBORINGSSL_LHASH_TEST_LIB_OBJS) 
@@ -7890,6 +7954,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_GCM_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBBORINGSSL_GCM_TEST_LIB_OBJS) 
@@ -7928,6 +7993,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_OBJ_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBBORINGSSL_OBJ_TEST_LIB_OBJS) 
@@ -7966,6 +8032,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS) 
@@ -8004,6 +8071,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS) 
@@ -8042,6 +8110,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS) 
@@ -8080,6 +8149,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_POOL_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBBORINGSSL_POOL_TEST_LIB_OBJS) 
@@ -8118,6 +8188,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS) 
@@ -8147,6 +8218,7 @@ $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conver
 
 $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS) 
@@ -8174,6 +8246,7 @@ $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-convers
 
 $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS) 
@@ -8210,6 +8283,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_X509_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBBORINGSSL_X509_TEST_LIB_OBJS) 
@@ -8239,6 +8313,7 @@ $(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversio
 
 $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_TAB_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBBORINGSSL_TAB_TEST_LIB_OBJS) 
@@ -8266,6 +8341,7 @@ $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conver
 
 $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS) 
@@ -8314,6 +8390,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libbenchmark.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBENCHMARK_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbenchmark.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBBENCHMARK_OBJS) 
@@ -8356,6 +8433,7 @@ $(LIBZ_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -
 
 $(LIBDIR)/$(CONFIG)/libz.a: $(CARES_DEP)  $(LIBZ_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libz.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libz.a $(LIBZ_OBJS) 
@@ -8431,6 +8509,7 @@ $(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),
 
 $(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libares.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libares.a $(LIBARES_OBJS) 
@@ -8466,6 +8545,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libbad_client_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBBAD_CLIENT_TEST_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_client_test.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBBAD_CLIENT_TEST_OBJS) 
@@ -8505,6 +8585,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBBAD_SSL_TEST_SERVER_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBBAD_SSL_TEST_SERVER_OBJS) 
@@ -8605,6 +8686,7 @@ else
 
 $(LIBDIR)/$(CONFIG)/libend2end_tests.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBEND2END_TESTS_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_tests.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBEND2END_TESTS_OBJS) 
@@ -8694,6 +8776,7 @@ LIBEND2END_NOSEC_TESTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, 
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBEND2END_NOSEC_TESTS_OBJS) 
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p . $(GRPC_LIBDIRS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBEND2END_NOSEC_TESTS_OBJS) 
