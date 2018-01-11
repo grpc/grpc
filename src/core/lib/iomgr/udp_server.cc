@@ -329,13 +329,13 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
   }
 
   if (grpc_set_socket_sndbuf(fd, snd_buf_size) != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Failed to set send buffer size to %zd bytes",
+    gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
             snd_buf_size);
     goto error;
   }
 
   if (grpc_set_socket_rcvbuf(fd, rcv_buf_size) != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Failed to set receive buffer size to %zd bytes",
+    gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes",
             rcv_buf_size);
     goto error;
   }
