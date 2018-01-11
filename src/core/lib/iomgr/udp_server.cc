@@ -284,8 +284,8 @@ static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
 
 /* Prepare a recently-created socket for listening. */
 static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
-                          const grpc_resolved_address* addr,
-                          int rcv_buf_size, int snd_buf_size) {
+                          const grpc_resolved_address* addr, int rcv_buf_size,
+                          int snd_buf_size) {
   grpc_resolved_address sockname_temp;
   struct sockaddr* addr_ptr = (struct sockaddr*)addr->addr;
 
