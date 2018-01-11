@@ -220,8 +220,7 @@ class _Context(grpc.ServicerContext):
             return self._state.client is not _CANCELLED and not self._state.statused
 
     def time_remaining(self):
-        return max(
-            float(self._rpc_event.call_details.deadline) - time.time(), 0)
+        return max(self._rpc_event.call_details.deadline - time.time(), 0)
 
     def cancel(self):
         self._rpc_event.call.cancel()

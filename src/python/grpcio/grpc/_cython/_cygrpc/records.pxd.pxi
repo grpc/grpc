@@ -18,11 +18,6 @@ cdef grpc_slice _copy_slice(grpc_slice slice) nogil
 cdef grpc_slice _slice_from_bytes(bytes value) nogil
 
 
-cdef class Timespec:
-
-  cdef gpr_timespec c_time
-
-
 cdef class CallDetails:
 
   cdef grpc_call_details c_details
