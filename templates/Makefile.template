@@ -547,6 +547,8 @@
   PC_REQUIRES_GRPC =
   PC_LIBS_GRPC =
 
+  GRPC_LIBDIRS =
+
   ifeq ($(HAS_SYSTEM_ZLIB),false)
   ifeq ($(HAS_EMBEDDED_ZLIB), true)
   EMBED_ZLIB ?= true
@@ -564,6 +566,7 @@
   ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
   CPPFLAGS += -Ithird_party/zlib
   LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
+  GRPC_LIBDIRS += $(LIBDIR)/$(CONFIG)/zlib
   else
   ifeq ($(HAS_PKG_CONFIG),true)
   CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -595,6 +598,7 @@
   CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
   CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
+  GRPC_LIBDIRS += $(LIBDIR)/$(CONFIG)/c-ares  
   else
   ifeq ($(HAS_PKG_CONFIG),true)
   PC_REQUIRES_GRPC += libcares
@@ -727,6 +731,7 @@
   PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
   CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
+  GRPC_LIBDIRS += $(LIBDIR)/$(CONFIG)/protobuf
   ifneq ($(USE_BUILT_PROTOC),false)
   PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
   PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
@@ -896,6 +901,7 @@
 
   $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
   	$(E) "[MAKE]    Building protobuf"
+  	$(Q)mkdir -p . $(GRPC_LIBDIRS)
   	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
   	$(Q)$(MAKE) -C third_party/protobuf clean
   	$(Q)$(MAKE) -C third_party/protobuf
@@ -1514,6 +1520,7 @@
   % endif
 
   	$(E) "[AR]      Creating $@"
+  	$(Q) mkdir -p . $(GRPC_LIBDIRS)
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
