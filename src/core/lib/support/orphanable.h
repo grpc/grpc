@@ -16,11 +16,13 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_REF_COUNTED_H
-#define GRPC_CORE_LIB_SUPPORT_REF_COUNTED_H
+#ifndef GRPC_CORE_LIB_SUPPORT_ORPHANABLE_H
+#define GRPC_CORE_LIB_SUPPORT_ORPHANABLE_H
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+
+#include <memory>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/support/abstract.h"
@@ -29,11 +31,51 @@
 
 namespace grpc_core {
 
-// A base class for reference-counted objects.
-// New objects should be created via New() and start with a refcount of 1.
-// When the refcount reaches 0, the object will be deleted via Delete().
-class RefCounted {
+// A base class for orphanable objects.
+class Orphanable {
  public:
+  // Gives up ownership of the object.  The implementation must arrange
+  // to destroy the object without further interaction from the caller.
+  virtual void Orphan() GRPC_ABSTRACT;
+
+  // Not copyable or movable.
+  Orphanable(const Orphanable&) = delete;
+  Orphanable& operator=(const Orphanable&) = delete;
+
+  GRPC_ABSTRACT_BASE_CLASS
+
+ protected:
+  Orphanable() {}
+  virtual ~Orphanable() {}
+};
+
+template <typename T>
+class OrphanableDelete {
+ public:
+  void operator()(T* p) { p->Orphan(); }
+};
+
+template <typename T, typename Deleter = OrphanableDelete<T>>
+using OrphanablePtr = std::unique_ptr<T, Deleter>;
+
+template <typename T, typename... Args>
+inline OrphanablePtr<T> MakeOrphanable(Args&&... args) {
+  return OrphanablePtr<T>(New<T>(std::forward<Args>(args)...));
+}
+
+// A type of Orphanable with internal ref-counting.
+class InternallyRefCounted : public Orphanable {
+ public:
+  // Not copyable nor movable.
+  InternallyRefCounted(const InternallyRefCounted&) = delete;
+  InternallyRefCounted& operator=(const InternallyRefCounted&) = delete;
+
+  GRPC_ABSTRACT_BASE_CLASS
+
+ protected:
+  InternallyRefCounted() { gpr_ref_init(&refs_, 1); }
+  virtual ~InternallyRefCounted() {}
+
   void Ref() { gpr_ref(&refs_); }
 
   void Unref() {
@@ -42,9 +84,27 @@ class RefCounted {
     }
   }
 
+  // Allow Delete() to access destructor.
+  template <typename T>
+  friend void Delete(T*);
+
+ private:
+  gpr_refcount refs_;
+};
+
+// An alternative version of the InternallyRefCounted base class that
+// supports tracing.  This is intended to be used in cases where the
+// object will be handled both by idiomatic C++ code using smart
+// pointers and legacy code that is manually calling Ref() and Unref().
+// Once all of our code is converted to idiomatic C++, we may be able to
+// eliminate this class.
+class InternallyRefCountedWithTracing : public Orphanable {
+ public:
   // Not copyable nor movable.
-  RefCounted(const RefCounted&) = delete;
-  RefCounted& operator=(const RefCounted&) = delete;
+  InternallyRefCountedWithTracing(const InternallyRefCountedWithTracing&) =
+      delete;
+  InternallyRefCountedWithTracing& operator=(
+      const InternallyRefCountedWithTracing&) = delete;
 
   GRPC_ABSTRACT_BASE_CLASS
 
@@ -53,22 +113,21 @@ class RefCounted {
   template <typename T>
   friend void Delete(T*);
 
-  RefCounted() { gpr_ref_init(&refs_, 1); }
+  InternallyRefCountedWithTracing()
+      : InternallyRefCountedWithTracing(static_cast<TraceFlag*>(nullptr)) {}
 
-  virtual ~RefCounted() {}
+  explicit InternallyRefCountedWithTracing(TraceFlag* trace_flag)
+      : trace_flag_(trace_flag) {
+    gpr_ref_init(&refs_, 1);
+  }
 
- private:
-  gpr_refcount refs_;
-};
+#ifdef NDEBUG
+  explicit InternallyRefCountedWithTracing(DebugOnlyTraceFlag* trace_flag)
+      : InternallyRefCountedWithTracing() {}
+#endif
 
-// An alternative version of the RefCounted base class that
-// supports tracing.  This is intended to be used in cases where the
-// object will be handled both by idiomatic C++ code using smart
-// pointers and legacy code that is manually calling Ref() and Unref().
-// Once all of our code is converted to idiomatic C++, we may be able to
-// eliminate this class.
-class RefCountedWithTracing {
- public:
+  virtual ~InternallyRefCountedWithTracing() {}
+
   void Ref() { gpr_ref(&refs_); }
 
   void Ref(const DebugLocation& location, const char* reason) {
@@ -97,32 +156,6 @@ class RefCountedWithTracing {
     Unref();
   }
 
-  // Not copyable nor movable.
-  RefCountedWithTracing(const RefCountedWithTracing&) = delete;
-  RefCountedWithTracing& operator=(const RefCountedWithTracing&) = delete;
-
-  GRPC_ABSTRACT_BASE_CLASS
-
- protected:
-  // Allow Delete() to access destructor.
-  template <typename T>
-  friend void Delete(T*);
-
-  RefCountedWithTracing()
-      : RefCountedWithTracing(static_cast<TraceFlag*>(nullptr)) {}
-
-  explicit RefCountedWithTracing(TraceFlag* trace_flag)
-      : trace_flag_(trace_flag) {
-    gpr_ref_init(&refs_, 1);
-  }
-
-#ifdef NDEBUG
-  explicit RefCountedWithTracing(DebugOnlyTraceFlag* trace_flag)
-      : RefCountedWithTracing() {}
-#endif
-
-  virtual ~RefCountedWithTracing() {}
-
  private:
   TraceFlag* trace_flag_ = nullptr;
   gpr_refcount refs_;
@@ -130,4 +163,4 @@ class RefCountedWithTracing {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SUPPORT_REF_COUNTED_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_ORPHANABLE_H */

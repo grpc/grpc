@@ -549,6 +549,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "orphanable",
+    public_hdrs = ["src/core/lib/support/orphanable.h"],
+    language = "c++",
+    deps = [
+        "grpc_trace",
+        "debug_location",
+    ],
+)
+
+grpc_cc_library(
     name = "ref_counted",
     public_hdrs = ["src/core/lib/support/ref_counted.h"],
     language = "c++",
