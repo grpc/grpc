@@ -51,8 +51,8 @@ static int g_number_of_bytes_read = 0;
 static int g_number_of_orphan_calls = 0;
 static int g_number_of_starts = 0;
 
-size_t rcv_buf_size = 1024;
-size_t snd_buf_size = 1024;
+int rcv_buf_size = 1024;
+int snd_buf_size = 1024;
 
 static void on_start(grpc_fd* emfd, void* user_data) { g_number_of_starts++; }
 
