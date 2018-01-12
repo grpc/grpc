@@ -67,7 +67,7 @@ void gpr_log_verbosity_init() {
   char* verbosity = nullptr;
   const char* insecure_getenv = gpr_getenv_silent("GRPC_VERBOSITY", &verbosity);
 
-  gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
+  gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_DEBUG;
   if (verbosity != nullptr) {
     if (gpr_stricmp(verbosity, "DEBUG") == 0) {
       min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_DEBUG;
