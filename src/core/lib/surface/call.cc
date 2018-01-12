@@ -1851,8 +1851,9 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         {
           grpc_error* override_error = GRPC_ERROR_NONE;
           if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
-            override_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Error from server send status");
+            override_error =
+                error_from_status(op->data.send_status_from_server.status,
+                                  "Returned non-ok status");
           }
           if (op->data.send_status_from_server.status_details != nullptr) {
             call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
