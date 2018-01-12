@@ -73,8 +73,8 @@ class ResolverRegistry {
   ~ResolverRegistry();
 
  private:
-  ResolverFactory* FindFactory(const char* target, grpc_uri** uri,
-                               char** canonical_target);
+  ResolverFactory* FindResolverFactory(const char* target, grpc_uri** uri,
+                                       char** canonical_target);
 
   InlinedVector<UniquePtr<ResolverFactory>, 10> factories_;
   UniquePtr<char> default_prefix_;

@@ -64,9 +64,8 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
   return nullptr;
 }
 
-ResolverFactory* ResolverRegistry::FindFactory(const char* target,
-                                               grpc_uri** uri,
-                                               char** canonical_target) {
+ResolverFactory* ResolverRegistry::FindResolverFactory(
+    const char* target, grpc_uri** uri, char** canonical_target) {
   GPR_ASSERT(uri != nullptr);
   *uri = grpc_uri_parse(target, 1);
   ResolverFactory* factory =
@@ -91,7 +90,8 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     grpc_pollset_set* pollset_set, grpc_combiner* combiner) {
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
-  ResolverFactory* factory = FindFactory(target, &uri, &canonical_target);
+  ResolverFactory* factory =
+      FindResolverFactory(target, &uri, &canonical_target);
   ResolverArgs resolver_args;
   resolver_args.uri = uri;
   resolver_args.args = args;
@@ -107,7 +107,8 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
 UniquePtr<char> ResolverRegistry::GetDefaultAuthority(const char* target) {
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
-  ResolverFactory* factory = FindFactory(target, &uri, &canonical_target);
+  ResolverFactory* factory =
+      FindResolverFactory(target, &uri, &canonical_target);
   UniquePtr<char> authority =
       factory == nullptr ? nullptr : factory->GetDefaultAuthority(uri);
   grpc_uri_destroy(uri);
@@ -118,7 +119,7 @@ UniquePtr<char> ResolverRegistry::GetDefaultAuthority(const char* target) {
 UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(const char* target) {
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
-  FindFactory(target, &uri, &canonical_target);
+  FindResolverFactory(target, &uri, &canonical_target);
   grpc_uri_destroy(uri);
   return UniquePtr<char>(canonical_target == nullptr ? gpr_strdup(target)
                                                      : canonical_target);
