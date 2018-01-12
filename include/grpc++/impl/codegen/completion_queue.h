@@ -78,7 +78,8 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
-class UnknownMethodHandler;
+template <StatusCode code>
+class ErrorMethodHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <class InputMessage, class OutputMessage>
@@ -221,7 +222,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
-  friend class ::grpc::internal::UnknownMethodHandler;
+  template <StatusCode code>
+  friend class ::grpc::internal::ErrorMethodHandler;
   friend class ::grpc::Server;
   friend class ::grpc::ServerContext;
   friend class ::grpc::ServerInterface;

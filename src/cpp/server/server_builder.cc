@@ -23,6 +23,7 @@
 #include <grpc++/server.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
@@ -43,7 +44,9 @@ ServerBuilder::ServerBuilder()
       max_send_message_size_(-1),
       sync_server_settings_(SyncServerSettings()),
       resource_quota_(nullptr),
-      generic_service_(nullptr) {
+      generic_service_(nullptr),
+      thread_creator_(gpr_thd_new),
+      thread_joiner_(gpr_thd_join) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   for (auto it = g_plugin_factory_list->begin();
        it != g_plugin_factory_list->end(); it++) {
@@ -262,7 +265,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<Server> server(new Server(
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
-      sync_server_settings_.cq_timeout_msec));
+      sync_server_settings_.cq_timeout_msec, thread_creator_, thread_joiner_));
 
   if (has_sync_methods) {
     // This is a Sync server
