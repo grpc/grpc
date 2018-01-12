@@ -8552,7 +8552,6 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/filter_call_init_fails.cc \
     test/core/end2end/tests/filter_causes_close.cc \
     test/core/end2end/tests/filter_latency.cc \
-    test/core/end2end/tests/filter_status_code.cc \
     test/core/end2end/tests/graceful_server_shutdown.cc \
     test/core/end2end/tests/high_initial_seqno.cc \
     test/core/end2end/tests/hpack_size.cc \
@@ -8651,7 +8650,6 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/filter_call_init_fails.cc \
     test/core/end2end/tests/filter_causes_close.cc \
     test/core/end2end/tests/filter_latency.cc \
-    test/core/end2end/tests/filter_status_code.cc \
     test/core/end2end/tests/graceful_server_shutdown.cc \
     test/core/end2end/tests/high_initial_seqno.cc \
     test/core/end2end/tests/hpack_size.cc \
