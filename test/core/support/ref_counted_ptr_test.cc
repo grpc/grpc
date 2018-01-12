@@ -138,6 +138,19 @@ TEST(RefCountedPtr, DerefernceOperators) {
   foo_ref.value();
 }
 
+TEST(RefCountedPtr, EqualityOperators) {
+  RefCountedPtr<Foo> foo(New<Foo>());
+  RefCountedPtr<Foo> bar = foo;
+  RefCountedPtr<Foo> empty;
+  // Test equality between RefCountedPtrs.
+  EXPECT_EQ(foo, bar);
+  EXPECT_NE(foo, empty);
+  // Test equality with bare pointers.
+  EXPECT_EQ(foo, foo.get());
+  EXPECT_EQ(empty, nullptr);
+  EXPECT_NE(foo, nullptr);
+}
+
 TEST(MakeRefCounted, NoArgs) {
   RefCountedPtr<Foo> foo = MakeRefCounted<Foo>();
   EXPECT_EQ(0, foo->value());
