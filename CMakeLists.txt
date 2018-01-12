@@ -8674,7 +8674,7 @@ add_executable(any_test
 target_include_directories(any_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
   PRIVATE ${BENCHMARK_ROOT_DIR}/include
   PRIVATE ${ZLIB_ROOT_DIR}
