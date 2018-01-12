@@ -105,7 +105,7 @@ void ServerContext::CompletionOp::SneakyExecute(grpc_call* call) {
   ops.reserved = nullptr;
 
   grpc_closure* closure = GRPC_CLOSURE_CREATE(completion_op_callback, this, grpc_schedule_on_exec_ctx);
-  grpc_call_start_batch_and_execute(call, &ops, 1, closure);
+  grpc_call_start_batch_and_execute_surface(call, &ops, 1, closure);
 }
 
 void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,

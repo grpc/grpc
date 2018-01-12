@@ -71,6 +71,11 @@ void grpc_call_internal_unref(grpc_call* call);
 
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call);
 
+grpc_call_error grpc_call_start_batch_and_execute_surface(grpc_call* call,
+                                                  const grpc_op* ops,
+                                                  size_t nops,
+                                                  grpc_closure* closure);
+
 grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
                                                   const grpc_op* ops,
                                                   size_t nops,
