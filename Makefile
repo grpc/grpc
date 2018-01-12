@@ -950,7 +950,6 @@ systemtap_dep_error:
 stop:
 	@false
 
-alarm_test: $(BINDIR)/$(CONFIG)/alarm_test
 algorithm_test: $(BINDIR)/$(CONFIG)/algorithm_test
 alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
@@ -1095,7 +1094,7 @@ udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
 uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
 wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
-alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
+alarm_test: $(BINDIR)/$(CONFIG)/alarm_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
 backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
@@ -1355,7 +1354,6 @@ endif
 buildtests: buildtests_c buildtests_cxx
 
 buildtests_c: privatelibs_c \
-  $(BINDIR)/$(CONFIG)/alarm_test \
   $(BINDIR)/$(CONFIG)/algorithm_test \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
@@ -1545,7 +1543,7 @@ buildtests_c: privatelibs_c \
 
 ifeq ($(EMBED_OPENSSL),true)
 buildtests_cxx: privatelibs_cxx \
-  $(BINDIR)/$(CONFIG)/alarm_cpp_test \
+  $(BINDIR)/$(CONFIG)/alarm_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
@@ -1677,7 +1675,7 @@ buildtests_cxx: privatelibs_cxx \
 
 else
 buildtests_cxx: privatelibs_cxx \
-  $(BINDIR)/$(CONFIG)/alarm_cpp_test \
+  $(BINDIR)/$(CONFIG)/alarm_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
@@ -1777,8 +1775,6 @@ test: test_c test_cxx
 flaky_test: flaky_test_c flaky_test_cxx
 
 test_c: buildtests_c
-	$(E) "[RUN]     Testing alarm_test"
-	$(Q) $(BINDIR)/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing algorithm_test"
 	$(Q) $(BINDIR)/$(CONFIG)/algorithm_test || ( echo test algorithm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alloc_test"
@@ -2045,8 +2041,8 @@ flaky_test_c: buildtests_c
 
 
 test_cxx: buildtests_cxx
-	$(E) "[RUN]     Testing alarm_cpp_test"
-	$(Q) $(BINDIR)/$(CONFIG)/alarm_cpp_test || ( echo test alarm_cpp_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alarm_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
@@ -3091,7 +3087,6 @@ LIBGRPC_SRC = \
     src/core/lib/slice/slice_hash_table.cc \
     src/core/lib/slice/slice_intern.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/alarm.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
@@ -3433,7 +3428,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/slice/slice_hash_table.cc \
     src/core/lib/slice/slice_intern.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/alarm.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
@@ -3757,7 +3751,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/slice/slice_hash_table.cc \
     src/core/lib/slice/slice_intern.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/alarm.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
@@ -4017,7 +4010,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/slice/slice_hash_table.cc \
     src/core/lib/slice/slice_intern.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/alarm.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
@@ -4247,7 +4239,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/slice/slice_hash_table.cc \
     src/core/lib/slice/slice_intern.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/alarm.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
@@ -4532,6 +4523,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
+    src/cpp/common/alarm.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
@@ -4825,6 +4817,7 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
+    src/cpp/common/alarm.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
@@ -4978,7 +4971,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/slice/slice_hash_table.cc \
     src/core/lib/slice/slice_intern.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/alarm.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
@@ -5736,6 +5728,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
+    src/cpp/common/alarm.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
@@ -8731,38 +8724,6 @@ endif
 
 
 # All of the test targets, and protoc plugins
-
-
-ALARM_TEST_SRC = \
-    test/core/surface/alarm_test.cc \
-
-ALARM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/alarm_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/alarm_test: $(ALARM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(ALARM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/alarm_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/surface/alarm_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_alarm_test: $(ALARM_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(ALARM_TEST_OBJS:.o=.dep)
-endif
-endif
 
 
 ALGORITHM_TEST_SRC = \
@@ -13385,15 +13346,15 @@ endif
 endif
 
 
-ALARM_CPP_TEST_SRC = \
-    test/cpp/common/alarm_cpp_test.cc \
+ALARM_TEST_SRC = \
+    test/cpp/common/alarm_test.cc \
 
-ALARM_CPP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_CPP_TEST_SRC))))
+ALARM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/alarm_cpp_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/alarm_test: openssl_dep_error
 
 else
 
@@ -13404,26 +13365,26 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/alarm_cpp_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/alarm_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/alarm_cpp_test: $(PROTOBUF_DEP) $(ALARM_CPP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/alarm_test: $(PROTOBUF_DEP) $(ALARM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(ALARM_CPP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alarm_cpp_test
+	$(Q) $(LDXX) $(LDFLAGS) $(ALARM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alarm_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/common/alarm_cpp_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/common/alarm_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_alarm_cpp_test: $(ALARM_CPP_TEST_OBJS:.o=.dep)
+deps_alarm_test: $(ALARM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(ALARM_CPP_TEST_OBJS:.o=.dep)
+-include $(ALARM_TEST_OBJS:.o=.dep)
 endif
 endif
 

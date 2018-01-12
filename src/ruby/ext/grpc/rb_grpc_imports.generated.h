@@ -132,18 +132,6 @@ extern grpc_completion_queue_thread_local_cache_init_type grpc_completion_queue_
 typedef int(*grpc_completion_queue_thread_local_cache_flush_type)(grpc_completion_queue* cq, void** tag, int* ok);
 extern grpc_completion_queue_thread_local_cache_flush_type grpc_completion_queue_thread_local_cache_flush_import;
 #define grpc_completion_queue_thread_local_cache_flush grpc_completion_queue_thread_local_cache_flush_import
-typedef grpc_alarm*(*grpc_alarm_create_type)(void* reserved);
-extern grpc_alarm_create_type grpc_alarm_create_import;
-#define grpc_alarm_create grpc_alarm_create_import
-typedef void(*grpc_alarm_set_type)(grpc_alarm* alarm, grpc_completion_queue* cq, gpr_timespec deadline, void* tag, void* reserved);
-extern grpc_alarm_set_type grpc_alarm_set_import;
-#define grpc_alarm_set grpc_alarm_set_import
-typedef void(*grpc_alarm_cancel_type)(grpc_alarm* alarm, void* reserved);
-extern grpc_alarm_cancel_type grpc_alarm_cancel_import;
-#define grpc_alarm_cancel grpc_alarm_cancel_import
-typedef void(*grpc_alarm_destroy_type)(grpc_alarm* alarm, void* reserved);
-extern grpc_alarm_destroy_type grpc_alarm_destroy_import;
-#define grpc_alarm_destroy grpc_alarm_destroy_import
 typedef grpc_connectivity_state(*grpc_channel_check_connectivity_state_type)(grpc_channel* channel, int try_to_connect);
 extern grpc_channel_check_connectivity_state_type grpc_channel_check_connectivity_state_import;
 #define grpc_channel_check_connectivity_state grpc_channel_check_connectivity_state_import
