@@ -24,9 +24,9 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <thread>
 
 #include <grpc++/support/config.h>
-#include <grpc/support/thd.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -34,26 +34,20 @@ namespace grpc {
 
 class DynamicThreadPool final : public ThreadPoolInterface {
  public:
-  DynamicThreadPool(int reserve_threads,
-                    std::function<int(gpr_thd_id*, const char*, void (*)(void*),
-                                      void*, const gpr_thd_options*)>
-                        thread_creator,
-                    std::function<void(gpr_thd_id)> thread_joiner);
+  explicit DynamicThreadPool(int reserve_threads);
   ~DynamicThreadPool();
 
-  bool Add(const std::function<void()>& callback) override;
+  void Add(const std::function<void()>& callback) override;
 
  private:
   class DynamicThread {
    public:
-    DynamicThread(DynamicThreadPool* pool, bool* valid);
+    DynamicThread(DynamicThreadPool* pool);
     ~DynamicThread();
 
    private:
     DynamicThreadPool* pool_;
-    std::mutex dt_mu_;
-    gpr_thd_id thd_;
-    bool valid_;
+    std::unique_ptr<std::thread> thd_;
     void ThreadFunc();
   };
   std::mutex mu_;
@@ -65,10 +59,6 @@ class DynamicThreadPool final : public ThreadPoolInterface {
   int nthreads_;
   int threads_waiting_;
   std::list<DynamicThread*> dead_threads_;
-  std::function<int(gpr_thd_id*, const char*, void (*)(void*), void*,
-                    const gpr_thd_options*)>
-      thread_creator_;
-  std::function<void(gpr_thd_id)> thread_joiner_;
 
   void ThreadFunc();
   static void ReapThreads(std::list<DynamicThread*>* tlist);

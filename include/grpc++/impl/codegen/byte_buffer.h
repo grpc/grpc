@@ -41,8 +41,6 @@ template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
-template <StatusCode code>
-class ErrorMethodHandler;
 template <class R>
 class DeserializeFuncType;
 }  // namespace internal
@@ -109,8 +107,6 @@ class ByteBuffer final {
   friend class internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class internal::ServerStreamingHandler;
-  template <StatusCode code>
-  friend class internal::ErrorMethodHandler;
   template <class R>
   friend class internal::DeserializeFuncType;
 

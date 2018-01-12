@@ -29,9 +29,7 @@ class ThreadPoolInterface {
   virtual ~ThreadPoolInterface() {}
 
   // Schedule the given callback for execution.
-  // Return true on success, false on failure
-  virtual bool Add(const std::function<void()>& callback)
-      GRPC_MUST_USE_RESULT = 0;
+  virtual void Add(const std::function<void()>& callback) = 0;
 };
 
 // Allows different codebases to use their own thread pool impls

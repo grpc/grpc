@@ -242,14 +242,12 @@ class SplitServerStreamingHandler
             ServerSplitStreamer<RequestType, ResponseType>, false>(func) {}
 };
 
-/// General method handler class for errors that prevent real method use
-/// e.g., handle unknown method by returning UNIMPLEMENTED error.
-template <StatusCode code>
-class ErrorMethodHandler : public MethodHandler {
+/// Handle unknown method by returning UNIMPLEMENTED error.
+class UnknownMethodHandler : public MethodHandler {
  public:
   template <class T>
   static void FillOps(ServerContext* context, T* ops) {
-    Status status(code, "");
+    Status status(StatusCode::UNIMPLEMENTED, "");
     if (!context->sent_initial_metadata_) {
       ops->SendInitialMetadata(context->initial_metadata_,
                                context->initial_metadata_flags());
@@ -266,17 +264,8 @@ class ErrorMethodHandler : public MethodHandler {
     FillOps(param.server_context, &ops);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
-    // We also have to destroy any request payload in the handler parameter
-    ByteBuffer* payload = param.request.bbuf_ptr();
-    if (payload != nullptr) {
-      payload->Clear();
-    }
   }
 };
-
-typedef ErrorMethodHandler<StatusCode::UNIMPLEMENTED> UnknownMethodHandler;
-typedef ErrorMethodHandler<StatusCode::RESOURCE_EXHAUSTED>
-    ResourceExhaustedHandler;
 
 }  // namespace internal
 }  // namespace grpc
