@@ -57,8 +57,7 @@ cmdline = [
     clang_tidy,
     '--checks=-*,%s' % ','.join(GRPC_CHECKS),
     '--warnings-as-errors=%s' % ','.join(GRPC_CHECKS)
-] 
-# + ['--extra-arg-before=%s' % arg for arg in extra_args]
+] + ['--extra-arg-before=%s' % arg for arg in extra_args]
 
 if args.fix:
     cmdline.append('--fix')
