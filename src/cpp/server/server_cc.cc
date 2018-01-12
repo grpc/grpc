@@ -36,7 +36,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/profiling/timers.h"
@@ -196,10 +195,8 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
           call_(mrd->call_, server, &cq_, server->max_receive_message_size()),
           ctx_(mrd->deadline_, &mrd->request_metadata_),
           has_request_payload_(mrd->has_request_payload_),
-          request_payload_(has_request_payload_ ? mrd->request_payload_
-                                                : nullptr),
-          method_(mrd->method_),
-          server_(server) {
+          request_payload_(mrd->request_payload_),
+          method_(mrd->method_) {
       ctx_.set_call(mrd->call_);
       ctx_.cq_ = &cq_;
       GPR_ASSERT(mrd->in_flight_);
@@ -213,13 +210,10 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
       }
     }
 
-    void Run(std::shared_ptr<GlobalCallbacks> global_callbacks,
-             bool resources) {
+    void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
-      auto* handler = resources ? method_->handler()
-                                : server_->resource_exhausted_handler_.get();
-      handler->RunHandler(internal::MethodHandler::HandlerParameter(
+      method_->handler()->RunHandler(internal::MethodHandler::HandlerParameter(
           &call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
@@ -241,7 +235,6 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
     const bool has_request_payload_;
     grpc_byte_buffer* request_payload_;
     internal::RpcServiceMethod* const method_;
-    Server* server_;
   };
 
  private:
@@ -262,15 +255,11 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
 // appropriate RPC handlers
 class Server::SyncRequestThreadManager : public ThreadManager {
  public:
-  SyncRequestThreadManager(
-      Server* server, CompletionQueue* server_cq,
-      std::shared_ptr<GlobalCallbacks> global_callbacks, int min_pollers,
-      int max_pollers, int cq_timeout_msec,
-      std::function<int(gpr_thd_id*, const char*, void (*)(void*), void*,
-                        const gpr_thd_options*)>
-          thread_creator,
-      std::function<void(gpr_thd_id)> thread_joiner)
-      : ThreadManager(min_pollers, max_pollers, thread_creator, thread_joiner),
+  SyncRequestThreadManager(Server* server, CompletionQueue* server_cq,
+                           std::shared_ptr<GlobalCallbacks> global_callbacks,
+                           int min_pollers, int max_pollers,
+                           int cq_timeout_msec)
+      : ThreadManager(min_pollers, max_pollers),
         server_(server),
         server_cq_(server_cq),
         cq_timeout_msec_(cq_timeout_msec),
@@ -296,7 +285,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     GPR_UNREACHABLE_CODE(return TIMEOUT);
   }
 
-  void DoWork(void* tag, bool ok, bool resources) override {
+  void DoWork(void* tag, bool ok) override {
     SyncRequest* sync_req = static_cast<SyncRequest*>(tag);
 
     if (!sync_req) {
@@ -316,7 +305,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
       }
 
       GPR_TIMER_SCOPE("cd.Run()", 0);
-      cd.Run(global_callbacks_, resources);
+      cd.Run(global_callbacks_);
     }
     // TODO (sreek) If ok is false here (which it isn't in case of
     // grpc_request_registered_call), we should still re-queue the request
@@ -378,11 +367,7 @@ Server::Server(
     int max_receive_message_size, ChannelArguments* args,
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
-    int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-    std::function<int(gpr_thd_id*, const char*, void (*)(void*), void*,
-                      const gpr_thd_options*)>
-        thread_creator,
-    std::function<void(gpr_thd_id)> thread_joiner)
+    int min_pollers, int max_pollers, int sync_cq_timeout_msec)
     : max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(sync_server_cqs),
       started_(false),
@@ -391,9 +376,7 @@ Server::Server(
       has_generic_service_(false),
       server_(nullptr),
       server_initializer_(new ServerInitializer(this)),
-      health_check_service_disabled_(false),
-      thread_creator_(thread_creator),
-      thread_joiner_(thread_joiner) {
+      health_check_service_disabled_(false) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -403,7 +386,7 @@ Server::Server(
        it++) {
     sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
         this, (*it).get(), global_callbacks_, min_pollers, max_pollers,
-        sync_cq_timeout_msec, thread_creator_, thread_joiner_));
+        sync_cq_timeout_msec));
   }
 
   grpc_channel_args channel_args;
@@ -564,10 +547,6 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
         new UnimplementedAsyncRequest(this, cqs[i]);
       }
     }
-  }
-
-  if (!sync_server_cqs_->empty()) {
-    resource_exhausted_handler_.reset(new internal::ResourceExhaustedHandler);
   }
 
   for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {

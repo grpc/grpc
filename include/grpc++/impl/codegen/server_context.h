@@ -63,8 +63,7 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
-template <StatusCode code>
-class ErrorMethodHandler;
+class UnknownMethodHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 class Call;
@@ -256,8 +255,7 @@ class ServerContext {
   friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
-  template <StatusCode code>
-  friend class ::grpc::internal::ErrorMethodHandler;
+  friend class ::grpc::internal::UnknownMethodHandler;
   friend class ::grpc::ClientContext;
 
   /// Prevent copying.

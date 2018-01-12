@@ -20,23 +20,18 @@
 #define GRPC_INTERNAL_CPP_THREAD_MANAGER_H
 
 #include <condition_variable>
-#include <functional>
 #include <list>
 #include <memory>
 #include <mutex>
+#include <thread>
 
 #include <grpc++/support/config.h>
-#include <grpc/support/thd.h>
 
 namespace grpc {
 
 class ThreadManager {
  public:
-  ThreadManager(int min_pollers, int max_pollers,
-                std::function<int(gpr_thd_id*, const char*, void (*)(void*),
-                                  void*, const gpr_thd_options*)>
-                    thread_creator,
-                std::function<void(gpr_thd_id)> thread_joiner);
+  explicit ThreadManager(int min_pollers, int max_pollers);
   virtual ~ThreadManager();
 
   // Initializes and Starts the Rpc Manager threads
@@ -55,8 +50,6 @@ class ThreadManager {
   //  - ThreadManager does not interpret the values of 'tag' and 'ok'
   //  - ThreadManager WILL call DoWork() and pass '*tag' and 'ok' as input to
   //    DoWork()
-  //  - ThreadManager will also pass DoWork a bool saying if there are actually
-  //    resources to do the work
   //
   // If the return value is SHUTDOWN:,
   //  - ThreadManager WILL NOT call DoWork() and terminates the thead
@@ -76,7 +69,7 @@ class ThreadManager {
   // The implementation of DoWork() should also do any setup needed to ensure
   // that the next call to PollForWork() (not necessarily by the current thread)
   // actually finds some work
-  virtual void DoWork(void* tag, bool ok, bool resources) = 0;
+  virtual void DoWork(void* tag, bool ok) = 0;
 
   // Mark the ThreadManager as shutdown and begin draining the work. This is a
   // non-blocking call and the caller should call Wait(), a blocking call which
@@ -91,15 +84,15 @@ class ThreadManager {
   virtual void Wait();
 
  private:
-  // Helper wrapper class around thread. This takes a ThreadManager object
-  // and starts a new thread to calls the Run() function.
+  // Helper wrapper class around std::thread. This takes a ThreadManager object
+  // and starts a new std::thread to calls the Run() function.
   //
   // The Run() function calls ThreadManager::MainWorkLoop() function and once
   // that completes, it marks the WorkerThread completed by calling
   // ThreadManager::MarkAsCompleted()
   class WorkerThread {
    public:
-    WorkerThread(ThreadManager* thd_mgr, bool* valid);
+    WorkerThread(ThreadManager* thd_mgr);
     ~WorkerThread();
 
    private:
@@ -109,8 +102,7 @@ class ThreadManager {
 
     ThreadManager* const thd_mgr_;
     std::mutex wt_mu_;
-    gpr_thd_id thd_;
-    bool valid_;
+    std::thread thd_;
   };
 
   // The main funtion in ThreadManager
@@ -136,13 +128,6 @@ class ThreadManager {
   // The total number of threads (includes threads includes the threads that are
   // currently polling i.e num_pollers_)
   int num_threads_;
-
-  // Functions for creating/joining threads. Normally, these should
-  // be gpr_thd_new/gpr_thd_join but they are overridable
-  std::function<int(gpr_thd_id*, const char*, void (*)(void*), void*,
-                    const gpr_thd_options*)>
-      thread_creator_;
-  std::function<void(gpr_thd_id)> thread_joiner_;
 
   std::mutex list_mu_;
   std::list<WorkerThread*> completed_threads_;
