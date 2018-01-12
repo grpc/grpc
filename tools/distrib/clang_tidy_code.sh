@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,13 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+set -ex
 
-RUN apt-get update && apt-get -y install wget xz-utils
-RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+# change to root directory
+cd $(dirname $0)/../..
+REPO_ROOT=$(pwd)
 
-RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-format /usr/local/bin/clang-format
-ENV CLANG_FORMAT=clang-format
-ADD clang_format_all_the_things.sh /
-CMD ["echo 'Run with tools/distrib/clang_format_code.sh'"]
+if [ "$CLANG_TIDY_SKIP_DOCKER" == "" ]
+then
+  # build clang-tidy docker image
+  docker build -t grpc_clang_tidy tools/dockerfile/grpc_clang_tidy
+
+  # run clang-tidy against the checked out codebase
+  docker run -e TEST=$TEST -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_TIDY_ROOT="/local-code" --rm=true -v "${REPO_ROOT}":/local-code -t grpc_clang_tidy /clang_tidy_all_the_things.sh
+else
+  CLANG_tidy_ROOT="${REPO_ROOT}" tools/dockerfile/grpc_clang_tidy/clang_tidy_all_the_things.sh
+fi
