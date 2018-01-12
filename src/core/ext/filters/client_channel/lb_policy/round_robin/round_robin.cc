@@ -36,6 +36,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/support/ref_counted_ptr.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -127,7 +128,7 @@ static void update_last_ready_subchannel_index_locked(round_robin_lb_policy* p,
             (void*)p, (unsigned long)last_ready_index,
             (void*)p->subchannel_list->subchannels[last_ready_index].subchannel,
             (void*)p->subchannel_list->subchannels[last_ready_index]
-                .connected_subchannel);
+                .connected_subchannel.get());
   }
 }
 
@@ -162,7 +163,7 @@ static void rr_shutdown_locked(grpc_lb_policy* pol,
         GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
       }
     } else {
-      pick->connected_subchannel = nullptr;
+      pick->connected_subchannel.reset();
       GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_REF(error));
     }
   }
@@ -192,7 +193,7 @@ static void rr_cancel_pick_locked(grpc_lb_policy* pol,
   while (pp != nullptr) {
     grpc_lb_policy_pick_state* next = pp->next;
     if (pp == pick) {
-      pick->connected_subchannel = nullptr;
+      pick->connected_subchannel.reset();
       GRPC_CLOSURE_SCHED(pick->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick cancelled", &error, 1));
@@ -216,7 +217,7 @@ static void rr_cancel_picks_locked(grpc_lb_policy* pol,
     grpc_lb_policy_pick_state* next = pick->next;
     if ((pick->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      pick->connected_subchannel = nullptr;
+      pick->connected_subchannel.reset();
       GRPC_CLOSURE_SCHED(pick->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick cancelled", &error, 1));
@@ -262,8 +263,7 @@ static int rr_pick_locked(grpc_lb_policy* pol,
       /* readily available, report right away */
       grpc_lb_subchannel_data* sd =
           &p->subchannel_list->subchannels[next_ready_index];
-      pick->connected_subchannel =
-          GRPC_CONNECTED_SUBCHANNEL_REF(sd->connected_subchannel, "rr_picked");
+      pick->connected_subchannel = sd->connected_subchannel;
       if (pick->user_data != nullptr) {
         *pick->user_data = sd->user_data;
       }
@@ -272,8 +272,8 @@ static int rr_pick_locked(grpc_lb_policy* pol,
             GPR_DEBUG,
             "[RR %p] Picked target <-- Subchannel %p (connected %p) (sl %p, "
             "index %" PRIuPTR ")",
-            p, sd->subchannel, pick->connected_subchannel, sd->subchannel_list,
-            next_ready_index);
+            p, sd->subchannel, pick->connected_subchannel.get(),
+            sd->subchannel_list, next_ready_index);
       }
       /* only advance the last picked pointer if the selection was used */
       update_last_ready_subchannel_index_locked(p, next_ready_index);
@@ -373,7 +373,6 @@ static void update_lb_connectivity_status_locked(grpc_lb_subchannel_data* sd,
 
 static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
   grpc_lb_subchannel_data* sd = (grpc_lb_subchannel_data*)arg;
-  GPR_ASSERT(sd->curr_connectivity_state != GRPC_CHANNEL_SHUTDOWN);
   round_robin_lb_policy* p =
       (round_robin_lb_policy*)sd->subchannel_list->policy;
   if (grpc_lb_round_robin_trace.enabled()) {
@@ -408,6 +407,7 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
   // either the current or latest pending subchannel lists.
   GPR_ASSERT(sd->subchannel_list == p->subchannel_list ||
              sd->subchannel_list == p->latest_pending_subchannel_list);
+  GPR_ASSERT(sd->pending_connectivity_state_unsafe != GRPC_CHANNEL_SHUTDOWN);
   // Now that we're inside the combiner, copy the pending connectivity
   // state (which was set by the connectivity state watcher) to
   // curr_connectivity_state, which is what we use inside of the combiner.
@@ -419,18 +419,13 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
   // subchannel, if any.
   switch (sd->curr_connectivity_state) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      if (sd->connected_subchannel != nullptr) {
-        GRPC_CONNECTED_SUBCHANNEL_UNREF(
-            sd->connected_subchannel, "connected_subchannel_transient_failure");
-        sd->connected_subchannel = nullptr;
-      }
+      sd->connected_subchannel.reset();
       break;
     }
     case GRPC_CHANNEL_READY: {
-      if (sd->connected_subchannel == nullptr) {
-        sd->connected_subchannel = GRPC_CONNECTED_SUBCHANNEL_REF(
-            grpc_subchannel_get_connected_subchannel(sd->subchannel),
-            "connected");
+      if (!sd->connected_subchannel) {
+        sd->connected_subchannel =
+            grpc_subchannel_get_connected_subchannel(sd->subchannel);
       }
       if (sd->subchannel_list != p->subchannel_list) {
         // promote sd->subchannel_list to p->subchannel_list.
@@ -473,8 +468,7 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
       grpc_lb_policy_pick_state* pick;
       while ((pick = p->pending_picks)) {
         p->pending_picks = pick->next;
-        pick->connected_subchannel = GRPC_CONNECTED_SUBCHANNEL_REF(
-            selected->connected_subchannel, "rr_picked");
+        pick->connected_subchannel = selected->connected_subchannel;
         if (pick->user_data != nullptr) {
           *pick->user_data = selected->user_data;
         }
@@ -519,10 +513,9 @@ static void rr_ping_one_locked(grpc_lb_policy* pol, grpc_closure* on_initiate,
   if (next_ready_index < p->subchannel_list->num_subchannels) {
     grpc_lb_subchannel_data* selected =
         &p->subchannel_list->subchannels[next_ready_index];
-    grpc_core::ConnectedSubchannel* target = GRPC_CONNECTED_SUBCHANNEL_REF(
-        selected->connected_subchannel, "rr_ping");
+    grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel> target =
+        selected->connected_subchannel;
     target->Ping(on_initiate, on_ack);
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(target, "rr_ping");
   } else {
     GRPC_CLOSURE_SCHED(on_initiate, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                         "Round Robin not connected"));

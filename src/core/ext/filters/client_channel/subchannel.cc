@@ -108,12 +108,12 @@ struct grpc_subchannel {
       being setup */
   grpc_pollset_set* pollset_set;
 
-  /** active connection, or null; of type grpc_core::ConnectedSubchannel
-   */
-  gpr_atm connected_subchannel;
-
   /** mutex protecting remaining elements */
   gpr_mu mu;
+
+  /** active connection, or null; of type grpc_core::ConnectedSubchannel
+   */
+  grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel> connected_subchannel;
 
   /** have we seen a disconnection? */
   bool disconnected;
@@ -167,17 +167,6 @@ static void connection_destroy(void* arg, grpc_error* error) {
   grpc_channel_stack* stk = (grpc_channel_stack*)arg;
   grpc_channel_stack_destroy(stk);
   gpr_free(stk);
-}
-
-grpc_core::ConnectedSubchannel* grpc_connected_subchannel_ref(
-    grpc_core::ConnectedSubchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  c->Ref(DEBUG_LOCATION, REF_REASON);
-  return c;
-}
-
-void grpc_connected_subchannel_unref(
-    grpc_core::ConnectedSubchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  c->Unref(DEBUG_LOCATION, REF_REASON);
 }
 
 /*
@@ -250,11 +239,7 @@ static void disconnect(grpc_subchannel* c) {
   c->disconnected = true;
   grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                             "Subchannel disconnected"));
-  grpc_core::ConnectedSubchannel* con = GET_CONNECTED_SUBCHANNEL(c, no_barrier);
-  if (con != nullptr) {
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(con, "disconnect");
-    gpr_atm_no_barrier_store(&c->connected_subchannel, (gpr_atm)0xdeadbeef);
-  }
+  c->connected_subchannel.reset();
   gpr_mu_unlock(&c->mu);
 }
 
@@ -458,7 +443,7 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     return;
   }
 
-  if (GET_CONNECTED_SUBCHANNEL(c, no_barrier) != nullptr) {
+  if (c->connected_subchannel) {
     /* Already connected: don't restart */
     return;
   }
@@ -536,38 +521,37 @@ static void on_connected_subchannel_connectivity_changed(void* p,
 
   gpr_mu_lock(mu);
 
-  auto* con = GET_CONNECTED_SUBCHANNEL(c, no_barrier);
-  /* if we failed just leave this closure */
-  if (connected_subchannel_watcher->connectivity_state >=
-      GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    if (!c->disconnected && con != nullptr) {
-      GRPC_CONNECTED_SUBCHANNEL_UNREF(con, "transient_failure");
-      gpr_atm_no_barrier_store(&c->connected_subchannel, (gpr_atm) nullptr);
-      grpc_connectivity_state_set(&c->state_tracker,
-                                  GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                  GRPC_ERROR_REF(error), "reflect_child");
-      c->backoff_begun = false;
-      c->backoff->Reset();
-      if (grpc_trace_stream_refcount.enabled()) {
-        gpr_log(GPR_INFO,
-                "Connected subchannel %p of subchannel %p has gone into %s. "
-                "Attempting to reconnect.",
-                con, c,
-                grpc_connectivity_state_name(
-                    connected_subchannel_watcher->connectivity_state));
+  switch (connected_subchannel_watcher->connectivity_state) {
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+    case GRPC_CHANNEL_SHUTDOWN: {
+      if (!c->disconnected && c->connected_subchannel) {
+        if (grpc_trace_stream_refcount.enabled()) {
+          gpr_log(GPR_INFO,
+                  "Connected subchannel %p of subchannel %p has gone into %s. "
+                  "Attempting to reconnect.",
+                  c->connected_subchannel.get(), c,
+                  grpc_connectivity_state_name(
+                      connected_subchannel_watcher->connectivity_state));
+        }
+        c->connected_subchannel.reset();
+        grpc_connectivity_state_set(&c->state_tracker,
+                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    GRPC_ERROR_REF(error), "reflect_child");
+        c->backoff_begun = false;
+        c->backoff->Reset();
+        maybe_start_connecting_locked(c);
+      } else {
+        connected_subchannel_watcher->connectivity_state =
+            GRPC_CHANNEL_SHUTDOWN;
       }
-      maybe_start_connecting_locked(c);
-    } else {
-      connected_subchannel_watcher->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
+      break;
     }
-  } else {
-    grpc_connectivity_state_set(
-        &c->state_tracker, connected_subchannel_watcher->connectivity_state,
-        GRPC_ERROR_REF(error), "reflect_child");
-    if (connected_subchannel_watcher->connectivity_state <
-        GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    default: {
+      grpc_connectivity_state_set(
+          &c->state_tracker, connected_subchannel_watcher->connectivity_state,
+          GRPC_ERROR_REF(error), "reflect_child");
       GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
-      con->NotifyOnStateChange(
+      c->connected_subchannel->NotifyOnStateChange(
           nullptr, &connected_subchannel_watcher->connectivity_state,
           &connected_subchannel_watcher->closure);
       connected_subchannel_watcher = nullptr;
@@ -619,22 +603,19 @@ static bool publish_transport_locked(grpc_subchannel* c) {
   }
 
   /* publish */
-  /* TODO(ctiller): this full barrier seems to clear up a TSAN failure.
-                    I'd have expected the rel_cas below to be enough, but
-                    seemingly it's not.
-                    Re-evaluate if we really need this. */
-  grpc_core::ConnectedSubchannel* con =
-      grpc_core::New<grpc_core::ConnectedSubchannel>(stk);
+  c->connected_subchannel.reset(
+      grpc_core::New<grpc_core::ConnectedSubchannel>(stk));
   gpr_atm_full_barrier();
-  GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
+  gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
+          c->connected_subchannel.get(), c);
 
   /* setup subchannel watching connected subchannel for changes; subchannel
      ref for connecting is donated to the state watcher */
   GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
   GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
-  con->NotifyOnStateChange(c->pollset_set,
-                           &connected_subchannel_watcher->connectivity_state,
-                           &connected_subchannel_watcher->closure);
+  c->connected_subchannel->NotifyOnStateChange(
+      c->pollset_set, &connected_subchannel_watcher->connectivity_state,
+      &connected_subchannel_watcher->closure);
 
   /* signal completion */
   grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_READY,
@@ -684,7 +665,7 @@ static void subchannel_call_destroy(void* call, grpc_error* error) {
   grpc_core::ConnectedSubchannel* connection = c->connection;
   grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(c), nullptr,
                           c->schedule_closure_after_destroy);
-  GRPC_CONNECTED_SUBCHANNEL_UNREF(connection, "subchannel_call");
+  connection->Unref(DEBUG_LOCATION, "subchannel_call");
   GPR_TIMER_END("grpc_subchannel_call_unref.destroy", 0);
 }
 
@@ -715,9 +696,12 @@ void grpc_subchannel_call_process_op(grpc_subchannel_call* call,
   GPR_TIMER_END("grpc_subchannel_call_process_op", 0);
 }
 
-grpc_core::ConnectedSubchannel* grpc_subchannel_get_connected_subchannel(
-    grpc_subchannel* c) {
-  return GET_CONNECTED_SUBCHANNEL(c, acq);
+grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>
+grpc_subchannel_get_connected_subchannel(grpc_subchannel* c) {
+  gpr_mu_lock(&c->mu);
+  auto copy = c->connected_subchannel;
+  gpr_mu_unlock(&c->mu);
+  return copy;
 }
 
 const grpc_subchannel_key* grpc_subchannel_get_key(

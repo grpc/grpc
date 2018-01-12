@@ -21,6 +21,7 @@
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/support/ref_counted_ptr.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 /** A load balancing policy: specified by a vtable and a struct (which
@@ -54,9 +55,9 @@ typedef struct grpc_lb_policy_pick_state {
   grpc_linked_mdelem lb_token_mdelem_storage;
   /// Closure to run when pick is complete, if not completed synchronously.
   grpc_closure* on_complete;
-  /// Will be set to the selected subchannel, or NULL on failure or when
+  /// Will be set to the selected subchannel, or nullptr on failure or when
   /// the LB policy decides to drop the call.
-  grpc_core::ConnectedSubchannel* connected_subchannel;
+  grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel> connected_subchannel;
   /// Will be populated with context to pass to the subchannel call, if needed.
   grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
   /// Upon success, \a *user_data will be set to whatever opaque information

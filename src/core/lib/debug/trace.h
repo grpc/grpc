@@ -88,10 +88,9 @@ class TraceFlag {
 #ifndef NDEBUG
 typedef TraceFlag DebugOnlyTraceFlag;
 #else
-class DebugOnlyTraceFlag : public TraceFlag {
+class DebugOnlyTraceFlag {
  public:
-  DebugOnlyTraceFlag(bool default_enabled, const char* name)
-      : TraceFlag(default_enabled, name) {}
+  DebugOnlyTraceFlag(bool default_enabled, const char* name) {}
   bool enabled() { return false; }
 
  private:

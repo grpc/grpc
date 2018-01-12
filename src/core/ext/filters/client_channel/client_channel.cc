@@ -1031,7 +1031,7 @@ static void create_subchannel_call_locked(grpc_call_element* elem,
 static void pick_done_locked(grpc_call_element* elem, grpc_error* error) {
   call_data* calld = (call_data*)elem->call_data;
   channel_data* chand = (channel_data*)elem->channel_data;
-  if (calld->pick.connected_subchannel == nullptr) {
+  if (!calld->pick.connected_subchannel) {
     // Failed to create subchannel.
     GRPC_ERROR_UNREF(calld->error);
     calld->error = error == GRPC_ERROR_NONE
@@ -1283,7 +1283,7 @@ static void start_pick_locked(void* arg, grpc_error* ignored) {
   grpc_call_element* elem = (grpc_call_element*)arg;
   call_data* calld = (call_data*)elem->call_data;
   channel_data* chand = (channel_data*)elem->channel_data;
-  GPR_ASSERT(calld->pick.connected_subchannel == nullptr);
+  GPR_ASSERT(!calld->pick.connected_subchannel);
   if (chand->lb_policy != nullptr) {
     // We already have an LB policy, so ask it for a pick.
     if (pick_callback_start_locked(elem)) {
@@ -1462,8 +1462,8 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
                                "client_channel_destroy_call");
   }
   GPR_ASSERT(calld->waiting_for_pick_batches_count == 0);
-  if (calld->pick.connected_subchannel != nullptr) {
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(calld->pick.connected_subchannel, "picked");
+  if (calld->pick.connected_subchannel) {
+    calld->pick.connected_subchannel.reset();
   }
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
     if (calld->pick.subchannel_call_context[i].value != nullptr) {

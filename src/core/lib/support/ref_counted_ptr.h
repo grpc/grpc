@@ -76,6 +76,8 @@ class RefCountedPtr {
   T& operator*() const { return *value_; }
   T* operator->() const { return value_; }
 
+  explicit operator bool() const { return get() != nullptr; }
+
  private:
   T* value_ = nullptr;
 };

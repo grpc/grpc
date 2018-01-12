@@ -106,12 +106,18 @@ class RefCountedWithTracing {
   template <typename T>
   friend void Delete(T*);
 
-  RefCountedWithTracing() : RefCountedWithTracing(nullptr) {}
+  RefCountedWithTracing()
+      : RefCountedWithTracing(static_cast<TraceFlag*>(nullptr)) {}
 
   explicit RefCountedWithTracing(TraceFlag* trace_flag)
       : trace_flag_(trace_flag) {
     gpr_ref_init(&refs_, 1);
   }
+
+#ifdef NDEBUG
+  explicit RefCountedWithTracing(DebugOnlyTraceFlag* trace_flag)
+      : RefCountedWithTracing() {}
+#endif
 
   virtual ~RefCountedWithTracing() {}
 
