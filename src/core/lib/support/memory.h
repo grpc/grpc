@@ -27,14 +27,16 @@
 
 namespace grpc_core {
 
-// Alternative to new, since we cannot use it (for fear of libstdc++)
+// Uses gpr_malloc to allocate memory, then placement new to initialize object.
+// We cannot use the normal new operator (for fear of libstdc++).
 template <typename T, typename... Args>
 inline T* New(Args&&... args) {
   void* p = gpr_malloc(sizeof(T));
   return new (p) T(std::forward<Args>(args)...);
 }
 
-// Alternative to delete, since we cannot use it (for fear of libstdc++)
+// Uses gpr_free to free memory. We cannot use the normal new operator (for fear
+// of libstdc++).
 template <typename T>
 inline void Delete(T* p) {
   p->~T();
