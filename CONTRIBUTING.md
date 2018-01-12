@@ -75,6 +75,9 @@ How to get your contributions merged smoothly and quickly.
   `tools/buildgen/generate_projects.sh`, make changes to generated files a
   separate commit with commit message `regenerate projects`.  Mixing changes
   to generated and hand-written files make your PR difficult to review.
+  Note that running this script requires the installation of Python packages
+  `pyyaml` and `mako` (typically installed using `pip`) as well as a recent
+  version of [`go`](https://golang.org/doc/install#install).
  
 - **All tests need to be passing** before your change can be merged.
   We recommend you **run tests locally** before creating your PR to catch
