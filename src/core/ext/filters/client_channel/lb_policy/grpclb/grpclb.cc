@@ -322,7 +322,7 @@ static void pending_pick_set_metadata_and_context(pending_pick* pp) {
   /* if connected_subchannel is nullptr, no pick has been made by the RR
    * policy (e.g., all addresses failed to connect). There won't be any
    * user_data/token available */
-  if (pp->pick->connected_subchannel.get() != nullptr) {
+  if (pp->pick->connected_subchannel != nullptr) {
     if (!GRPC_MDISNULL(pp->lb_token)) {
       initial_metadata_add_lb_token(pp->pick->initial_metadata,
                                     &pp->pick->lb_token_mdelem_storage,
@@ -935,8 +935,7 @@ static void glb_shutdown_locked(grpc_lb_policy* pol,
       }
       gpr_free(pp);
     } else {
-      pp->pick->connected_subchannel =
-          grpc_core::MakeRefCounted<grpc_core::ConnectedSubchannel>(nullptr);
+      pp->pick->connected_subchannel.reset(nullptr);
       GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
     }
     pp = next;
@@ -973,8 +972,7 @@ static void glb_cancel_pick_locked(grpc_lb_policy* pol,
   while (pp != nullptr) {
     pending_pick* next = pp->next;
     if (pp->pick == pick) {
-      pick->connected_subchannel =
-          grpc_core::MakeRefCounted<grpc_core::ConnectedSubchannel>(nullptr);
+      pick->connected_subchannel.reset(nullptr);
       GRPC_CLOSURE_SCHED(&pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick Cancelled", &error, 1));

@@ -56,10 +56,6 @@
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
-#define GET_CONNECTED_SUBCHANNEL(subchannel, barrier)          \
-  ((grpc_core::ConnectedSubchannel*)(gpr_atm_##barrier##_load( \
-      &(subchannel)->connected_subchannel)))
-
 namespace {
 struct state_watcher {
   grpc_closure closure;
@@ -443,7 +439,7 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     return;
   }
 
-  if (c->connected_subchannel) {
+  if (c->connected_subchannel != nullptr) {
     /* Already connected: don't restart */
     return;
   }
@@ -524,7 +520,7 @@ static void on_connected_subchannel_connectivity_changed(void* p,
   switch (connected_subchannel_watcher->connectivity_state) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
     case GRPC_CHANNEL_SHUTDOWN: {
-      if (!c->disconnected && c->connected_subchannel) {
+      if (!c->disconnected && c->connected_subchannel != nullptr) {
         if (grpc_trace_stream_refcount.enabled()) {
           gpr_log(GPR_INFO,
                   "Connected subchannel %p of subchannel %p has gone into %s. "
@@ -605,7 +601,6 @@ static bool publish_transport_locked(grpc_subchannel* c) {
   /* publish */
   c->connected_subchannel.reset(
       grpc_core::New<grpc_core::ConnectedSubchannel>(stk));
-  gpr_atm_full_barrier();
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           c->connected_subchannel.get(), c);
 

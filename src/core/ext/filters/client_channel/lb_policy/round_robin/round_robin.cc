@@ -423,7 +423,7 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
       break;
     }
     case GRPC_CHANNEL_READY: {
-      if (!sd->connected_subchannel) {
+      if (sd->connected_subchannel == nullptr) {
         sd->connected_subchannel =
             grpc_subchannel_get_connected_subchannel(sd->subchannel);
       }

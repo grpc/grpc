@@ -294,7 +294,7 @@ static void pf_update_locked(grpc_lb_policy* policy,
                   p, p->selected->subchannel, i,
                   subchannel_list->num_subchannels);
         }
-        if (p->selected->connected_subchannel) {
+        if (p->selected->connected_subchannel != nullptr) {
           sd->connected_subchannel = p->selected->connected_subchannel;
         }
         p->selected = sd;
@@ -458,8 +458,6 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
       // Cases 1 and 2.
       grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_READY,
                                   GRPC_ERROR_NONE, "connecting_ready");
-      sd->connected_subchannel =
-          grpc_subchannel_get_connected_subchannel(sd->subchannel);
       p->selected = sd;
       if (grpc_lb_pick_first_trace.enabled()) {
         gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", (void*)p,
