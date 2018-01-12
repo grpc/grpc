@@ -31,6 +31,9 @@ def _get_external_deps(external_deps):
   for dep in external_deps:
     if dep == "nanopb":
       ret.append("//third_party/nanopb")
+    elif dep == "cares":
+      ret += select({"//:grpc_no_ares": [],
+                     "//conditions:default": ["//external:cares"],})
     else:
       ret.append("//external:" + dep)
   return ret
