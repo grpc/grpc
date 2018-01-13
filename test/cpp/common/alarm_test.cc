@@ -182,6 +182,29 @@ TEST(AlarmTest, Cancellation) {
   EXPECT_EQ(junk, output_tag);
 }
 
+TEST(AlarmTest, SetDestruction) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  {
+    Alarm alarm;
+    alarm.Set(&cq, grpc_timeout_seconds_to_deadline(2), junk);
+  }
+
+  void* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_FALSE(ok);
+  EXPECT_EQ(junk, output_tag);
+}
+
+TEST(AlarmTest, UnsetDestruction) {
+  CompletionQueue cq;
+  Alarm alarm;
+}
+
 }  // namespace
 }  // namespace grpc
 
