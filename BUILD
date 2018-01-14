@@ -56,7 +56,7 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "glamorous"
 
-core_version = "5.0.0-dev"
+core_version = "6.0.0-dev"
 
 version = "1.10.0-dev"
 
