@@ -46,8 +46,7 @@ class AlarmImpl : public CompletionQueueTag {
                         alarm->Ref();
                         grpc_cq_end_op(
                             alarm->cq_, alarm, error,
-                            [](void* arg, grpc_cq_completion* completion) {
-                            },
+                            [](void* arg, grpc_cq_completion* completion) {},
                             arg, &alarm->completion_);
                       },
                       this, grpc_schedule_on_exec_ctx);
@@ -80,6 +79,7 @@ class AlarmImpl : public CompletionQueueTag {
     Cancel();
     Unref();
   }
+
  private:
   void Ref() { gpr_ref(&refs_); }
   void Unref() {
