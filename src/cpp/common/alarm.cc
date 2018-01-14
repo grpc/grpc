@@ -34,7 +34,7 @@
 namespace grpc {
 
 namespace internal {
-class AlarmImpl {
+class AlarmImpl : public CompletionQueueTag {
  public:
   AlarmImpl() : cq_(nullptr), tag_(nullptr) {
     gpr_ref_init(&refs_, 1);
@@ -45,10 +45,8 @@ class AlarmImpl {
                         AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
                         alarm->Ref();
                         grpc_cq_end_op(
-                            alarm->cq_, &alarm->tag_, error,
+                            alarm->cq_, alarm, error,
                             [](void* arg, grpc_cq_completion* completion) {
-                              AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
-                              alarm->Unref();
                             },
                             arg, &alarm->completion_);
                       },
@@ -60,12 +58,17 @@ class AlarmImpl {
       GRPC_CQ_INTERNAL_UNREF(cq_, "alarm");
     }
   }
+  bool FinalizeResult(void** tag, bool* status) override {
+    *tag = tag_;
+    Unref();
+    return true;
+  }
   void Set(CompletionQueue* cq, gpr_timespec deadline, void* tag) {
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
-    tag_.Set(tag);
-    GPR_ASSERT(grpc_cq_begin_op(cq_, &tag_));
+    tag_ = tag;
+    GPR_ASSERT(grpc_cq_begin_op(cq_, this));
     grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline),
                     &on_alarm_);
   }
@@ -77,21 +80,7 @@ class AlarmImpl {
     Cancel();
     Unref();
   }
-
  private:
-  class AlarmEntry : public internal::CompletionQueueTag {
-   public:
-    AlarmEntry(void* tag) : tag_(tag) {}
-    void Set(void* tag) { tag_ = tag; }
-    bool FinalizeResult(void** tag, bool* status) override {
-      *tag = tag_;
-      return true;
-    }
-
-   private:
-    void* tag_;
-  };
-
   void Ref() { gpr_ref(&refs_); }
   void Unref() {
     if (gpr_unref(&refs_)) {
@@ -105,7 +94,7 @@ class AlarmImpl {
   grpc_cq_completion completion_;
   // completion queue where events about this alarm will be posted
   grpc_completion_queue* cq_;
-  AlarmEntry tag_;
+  void* tag_;
 };
 }  // namespace internal
 
@@ -116,14 +105,19 @@ Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
 }
 
 void Alarm::SetInternal(CompletionQueue* cq, gpr_timespec deadline, void* tag) {
-  alarm_->Set(cq, deadline, tag);
+  // Note that we know that alarm_ is actually an internal::AlarmImpl
+  // but we declared it as the base pointer to avoid a forward declaration
+  // or exposing core data structures in the C++ public headers.
+  // Thus it is safe to use a static_cast to the subclass here, and the
+  // C++ style guide allows us to do so in this case
+  static_cast<internal::AlarmImpl*>(alarm_)->Set(cq, deadline, tag);
 }
 
 Alarm::~Alarm() {
   if (alarm_ != nullptr) {
-    alarm_->Destroy();
+    static_cast<internal::AlarmImpl*>(alarm_)->Destroy();
   }
 }
 
-void Alarm::Cancel() { alarm_->Cancel(); }
+void Alarm::Cancel() { static_cast<internal::AlarmImpl*>(alarm_)->Cancel(); }
 }  // namespace grpc

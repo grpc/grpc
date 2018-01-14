@@ -30,10 +30,6 @@
 
 namespace grpc {
 
-namespace internal {
-class AlarmImpl;
-}
-
 /// A thin wrapper around \a grpc_alarm (see / \a / src/core/surface/alarm.h).
 class Alarm : private GrpcLibraryCodegen {
  public:
@@ -83,7 +79,7 @@ class Alarm : private GrpcLibraryCodegen {
  private:
   void SetInternal(CompletionQueue* cq, gpr_timespec deadline, void* tag);
 
-  internal::AlarmImpl* alarm_;
+  internal::CompletionQueueTag* alarm_;
 };
 
 }  // namespace grpc
