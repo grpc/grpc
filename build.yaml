@@ -4007,6 +4007,19 @@ targets:
   deps:
   - grpc++_error_details
   - grpc++
+- name: exception_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/exception_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -4927,7 +4940,6 @@ configs:
     DEFINES: NDEBUG
   dbg:
     CPPFLAGS: -O0
-    CXXFLAGS: -fno-exceptions
     DEFINES: _DEBUG DEBUG
   gcov:
     CC: gcc
@@ -4968,9 +4980,12 @@ configs:
     CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
     LDFLAGS: -rdynamic
-  opt:
+  noexcept:
     CPPFLAGS: -O2
     CXXFLAGS: -fno-exceptions
+    DEFINES: NDEBUG
+  opt:
+    CPPFLAGS: -O2
     DEFINES: NDEBUG
   stapprof:
     CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
