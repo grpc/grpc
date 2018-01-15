@@ -397,7 +397,7 @@ module GRPC
               begin
                 rpc_descs[mth].run_server_method(
                   c,
-                  rpc_handlers[mth],
+                  rpc_handlers[mth].call,
                   @interceptors.build_context
                 )
               rescue StandardError
@@ -476,11 +476,11 @@ module GRPC
         specs[route] = spec
         rpc_name = GenericService.underscore(name.to_s).to_sym
         if service.is_a?(Class)
-          handlers[route] = cls.new.method(rpc_name)
+          handlers[route] = -> { cls.new.method(rpc_name) }
         else
-          handlers[route] = service.method(rpc_name)
+          handlers[route] = -> { service.method(rpc_name) }
         end
-        GRPC.logger.info("handling #{route} with #{handlers[route]}")
+        GRPC.logger.info("handling #{route} with #{handlers[route].call}")
       end
     end
   end
