@@ -70,10 +70,6 @@
  * \see https://github.com/grpc/grpc/blob/master/doc/load-balancing.md for the
  * high level design and details. */
 
-/* TODO(dgq):
- * - Implement LB service forwarding (point 2c. in the doc's diagram).
- */
-
 /* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
    using that endpoint. Because of various transitive includes in uv.h,
    including windows.h on Windows, uv.h must be included before other system
@@ -1011,12 +1007,12 @@ void GrpcLb::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
     pending_picks_ = pp->next;
     grpc_grpclb_client_stats_unref(pp->client_stats);
     pp->pick->on_complete = pp->original_on_complete;
-    pp->pick->user_data = nullptr;  // FIXME: add this in previous PR
+    pp->pick->user_data = nullptr;
     if (new_policy->PickLocked(pp->pick)) {
       // Synchronous return, schedule closure.
+      // Note: pp is deleted in this callback.
       GRPC_CLOSURE_SCHED(pp->pick->on_complete, GRPC_ERROR_NONE);
     }
-    Delete(pp);
   }
 }
 
@@ -1057,8 +1053,8 @@ void GrpcLb::ShutdownLocked() {
   while ((pp = pending_picks_) != nullptr) {
     pending_picks_ = pp->next;
     pp->pick->connected_subchannel = nullptr;
+    // Note: pp is deleted in this callback.
     GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
-    Delete(pp);
   }
   // Clear pending pings.
   PendingPing* pping;
@@ -1089,6 +1085,7 @@ void GrpcLb::CancelPickLocked(PickState* pick, grpc_error* error) {
     PendingPick* next = pp->next;
     if (pp->pick == pick) {
       pick->connected_subchannel = nullptr;
+      // Note: pp is deleted in this callback.
       GRPC_CLOSURE_SCHED(&pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick Cancelled", &error, 1));
@@ -1537,10 +1534,7 @@ void GrpcLb::OnBalancerReceivedMessageLocked(void* arg, grpc_error* error) {
                   "client load reporting interval = %" PRIdPTR " milliseconds",
                   glb_policy, glb_policy->client_stats_report_interval_);
         }
-// FIXME: update comment in previous PR
-        /* take a weak ref (won't prevent calling of \a glb_shutdown() if the
-         * strong ref count goes to zero) to be unref'd in
-         * send_client_load_report_locked() */
+        // Take ref to be released in send_client_load_report_locked().
         glb_policy->client_load_report_timer_callback_pending_ = true;
         glb_policy->Ref(DEBUG_LOCATION, "client_load_report");
         glb_policy->ScheduleNextClientLoadReportLocked();
@@ -1625,9 +1619,8 @@ void GrpcLb::OnBalancerReceivedMessageLocked(void* arg, grpc_error* error) {
       op->flags = 0;
       op->reserved = nullptr;
       op++;
-// FIXME: update this comment in previous PR
-      /* reuse the "lb_on_response_received_locked" weak ref taken in
-       * query_for_backends_locked() */
+      // Reuse the "lb_on_response_received_locked" ref taken in
+      // query_for_backends_locked().
       const grpc_call_error call_error = grpc_call_start_batch_and_execute(
           glb_policy->lb_call_, ops, (size_t)(op - ops),
           &glb_policy->lb_on_response_received_); /* loop */
@@ -1637,9 +1630,8 @@ void GrpcLb::OnBalancerReceivedMessageLocked(void* arg, grpc_error* error) {
                         "lb_on_response_received_locked_shutdown");
     }
   } else { /* empty payload: call cancelled. */
-// FIXME: update this comment in previous PR
-           /* dispose of the "lb_on_response_received_locked" weak ref taken in
-            * query_for_backends_locked() and reused in every reception loop */
+    // Dispose of the "lb_on_response_received_locked" ref taken in
+    // query_for_backends_locked() and reused in every reception loop.
     glb_policy->Unref(DEBUG_LOCATION,
                       "lb_on_response_received_locked_empty_payload");
   }
@@ -1701,7 +1693,8 @@ void GrpcLb::UpdateLocked(const Args& args) {
       grpc_channel_args_find(args.args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     if (lb_channel_ == nullptr) {
-      // If we don't have a current channel to the LB, go into TRANSIENT_FAILURE.
+      // If we don't have a current channel to the LB, go into
+      // TRANSIENT_FAILURE.
       grpc_connectivity_state_set(
           &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
@@ -1840,7 +1833,9 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace grpc_core
 
-/* Plugin registration */
+//
+// Plugin registration
+//
 
 // Only add client_load_reporting filter if the grpclb LB policy is used.
 static bool maybe_add_client_load_reporting_filter(
