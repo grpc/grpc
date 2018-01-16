@@ -114,6 +114,8 @@ class LoadBalancingPolicyFactory {
   /// Caller does NOT take ownership of result.
   virtual const char* name() const GRPC_ABSTRACT;
 
+  virtual ~LoadBalancingPolicyFactory() {}
+
   GRPC_ABSTRACT_BASE_CLASS
 };
 
