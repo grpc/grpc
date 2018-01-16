@@ -60,42 +60,6 @@ static void test_alarm(void) {
     GPR_ASSERT(ev.success);
     grpc_alarm_destroy(alarm, nullptr);
   }
-  {
-    /* cancellation */
-    grpc_event ev;
-    void* tag = create_test_tag();
-    grpc_alarm* alarm = grpc_alarm_create(nullptr);
-    grpc_alarm_set(alarm, cc, grpc_timeout_seconds_to_deadline(2), tag,
-                   nullptr);
-
-    grpc_alarm_cancel(alarm, nullptr);
-    ev = grpc_completion_queue_next(cc, grpc_timeout_seconds_to_deadline(1),
-                                    nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-    GPR_ASSERT(ev.tag == tag);
-    GPR_ASSERT(ev.success == 0);
-    grpc_alarm_destroy(alarm, nullptr);
-  }
-  {
-    /* alarm_destroy before cq_next */
-    grpc_event ev;
-    void* tag = create_test_tag();
-    grpc_alarm* alarm = grpc_alarm_create(nullptr);
-    grpc_alarm_set(alarm, cc, grpc_timeout_seconds_to_deadline(2), tag,
-                   nullptr);
-
-    grpc_alarm_destroy(alarm, nullptr);
-    ev = grpc_completion_queue_next(cc, grpc_timeout_seconds_to_deadline(1),
-                                    nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-    GPR_ASSERT(ev.tag == tag);
-    GPR_ASSERT(ev.success == 0);
-  }
-  {
-    /* alarm_destroy before set */
-    grpc_alarm* alarm = grpc_alarm_create(nullptr);
-    grpc_alarm_destroy(alarm, nullptr);
-  }
 
   shutdown_and_destroy(cc);
 }

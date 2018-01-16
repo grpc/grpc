@@ -20,6 +20,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 
 #include <inttypes.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -674,6 +675,15 @@ static void cq_end_op_for_next(grpc_completion_queue* cq, void* tag,
           GRPC_ERROR_UNREF(kick_error);
         }
       }
+      
+      // the kick will wakeup cq_next (if it is sleeping) and the usleep
+      // will make sure that the race between cq_next and cq_end_op_for_next
+      // will become apparent (before we update pending_events here,
+      // grpc_completion_queue_shutdown will run and postpone cq_finish_shutdown_next
+      // until here (and that's too late for a no-polling cq_next that expects 
+      // SHUTDOWN event). 
+      usleep(10000);
+      
       if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
         GRPC_CQ_INTERNAL_REF(cq, "shutting_down");
         gpr_mu_lock(cq->mu);
