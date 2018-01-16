@@ -283,6 +283,7 @@ static grpc_channel_credentials* read_ssl_channel_creds(input_stream* inp) {
 static grpc_call_credentials* read_call_creds(input_stream* inp, int depth) {
   if (depth > 64) {
     // prevent creating infinitely deep call creds
+    end(inp);
     return nullptr;
   }
   switch (next_byte(inp)) {
