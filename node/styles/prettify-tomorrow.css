@@ -98,7 +98,7 @@
 /*
 pre.prettyprint {
   background: white;
-  font-family: Consolas, Monaco, 'Andale Mono', monospace;
+  font-family: Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   line-height: 1.5;
   border: 1px solid #ccc;
