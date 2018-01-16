@@ -55,7 +55,8 @@ class PickFirst : public LoadBalancingPolicy {
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
   void UpdateLocked(const Args& args) override;
-  void SetReresolutionClosureLocked(grpc_closure* request_reresolution) override;
+  void SetReresolutionClosureLocked(
+      grpc_closure* request_reresolution) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ShutdownLocked() override;
 
@@ -90,7 +91,8 @@ class PickFirst : public LoadBalancingPolicy {
 
 PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args.combiner) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
-  grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "pick_first");
+  grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
+                               "pick_first");
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Pick First %p created.", this);
   }
@@ -139,8 +141,8 @@ void PickFirst::ShutdownLocked() {
     subchannel_list_ = nullptr;
   }
   if (latest_pending_subchannel_list_ != nullptr) {
-    grpc_lb_subchannel_list_shutdown_and_unref(
-        latest_pending_subchannel_list_, "pf_shutdown");
+    grpc_lb_subchannel_list_shutdown_and_unref(latest_pending_subchannel_list_,
+                                               "pf_shutdown");
     latest_pending_subchannel_list_ = nullptr;
   }
   TryReresolution(&grpc_lb_pick_first_trace, GRPC_ERROR_CANCELLED);
@@ -189,8 +191,7 @@ void PickFirst::CancelPicksLocked(uint32_t initial_metadata_flags_mask,
 
 void PickFirst::StartPickingLocked() {
   started_picking_ = true;
-  if (subchannel_list_ != nullptr &&
-      subchannel_list_->num_subchannels > 0) {
+  if (subchannel_list_ != nullptr && subchannel_list_->num_subchannels > 0) {
     subchannel_list_->checking_subchannel = 0;
     for (size_t i = 0; i < subchannel_list_->num_subchannels; ++i) {
       if (subchannel_list_->subchannels[i].subchannel != nullptr) {
@@ -293,8 +294,8 @@ void PickFirst::UpdateLocked(const Args& args) {
       (const grpc_lb_addresses*)arg->value.pointer.p;
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO,
-            "Pick First %p received update with %" PRIuPTR " addresses",
-            this, addresses->num_addresses);
+            "Pick First %p received update with %" PRIuPTR " addresses", this,
+            addresses->num_addresses);
   }
   grpc_lb_subchannel_list* subchannel_list = grpc_lb_subchannel_list_create(
       this, &grpc_lb_pick_first_trace, addresses, args,
@@ -570,8 +571,8 @@ void PickFirst::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
                   ->subchannels[sd->subchannel_list->checking_subchannel];
       } while (sd->subchannel == nullptr && sd != original_sd);
       if (sd == original_sd) {
-        p->SubchannelListUnrefForConnectivityWatch(
-            sd->subchannel_list, "pf_exhausted_subchannels");
+        p->SubchannelListUnrefForConnectivityWatch(sd->subchannel_list,
+                                                   "pf_exhausted_subchannels");
         if (sd->subchannel_list == p->subchannel_list_) {
           grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_IDLE,
                                       GRPC_ERROR_NONE,

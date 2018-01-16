@@ -32,8 +32,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 namespace grpc_core {
 
 // FIXME: find a place for this comment
-  /// Any IO should be done under the \a interested_parties \a grpc_pollset_set
-  /// in the \a grpc_lb_policy struct.
+/// Any IO should be done under the \a interested_parties \a grpc_pollset_set
+/// in the \a grpc_lb_policy struct.
 
 /// Interface for load balancing policies.
 /// Note: All methods with a "Locked" suffix must be called from the
@@ -64,7 +64,8 @@ class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
     /// Will be set to the selected subchannel, or NULL on failure or when
     /// the LB policy decides to drop the call.
     grpc_connected_subchannel* connected_subchannel;
-    /// Will be populated with context to pass to the subchannel call, if needed.
+    /// Will be populated with context to pass to the subchannel call, if
+    /// needed.
     grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
     /// Upon success, \a *user_data will be set to whatever opaque information
     /// may need to be propagated from the LB policy, or NULL if not needed.
@@ -87,14 +88,14 @@ class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
 
   /// Performs a connected subchannel ping (\see grpc_connected_subchannel_ping)
   /// against one of the connected subchannels managed by the policy.
-  virtual void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack)
-      GRPC_ABSTRACT;
+  virtual void PingOneLocked(grpc_closure* on_initiate,
+                             grpc_closure* on_ack) GRPC_ABSTRACT;
 
   /// Cancels \a pick.
   /// The \a on_complete callback of the pending pick will be invoked with
   /// \a pick->connected_subchannel set to null.
-  virtual void CancelPickLocked(PickState* pick, grpc_error* error)
-      GRPC_ABSTRACT;
+  virtual void CancelPickLocked(PickState* pick,
+                                grpc_error* error) GRPC_ABSTRACT;
 
   /// Cancels all pending picks for which their \a initial_metadata_flags (as
   /// given in the call to \a grpc_lb_policy_pick_locked()) matches
@@ -155,8 +156,8 @@ class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
   /// failed.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
-// FIXME: reconsider whether any of this request_reresolution code
-// belongs in the base class
+  // FIXME: reconsider whether any of this request_reresolution code
+  // belongs in the base class
 
   /// Tries to request a re-resolution.
   void TryReresolution(grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error);

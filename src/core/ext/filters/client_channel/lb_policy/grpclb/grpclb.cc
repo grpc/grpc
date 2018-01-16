@@ -148,8 +148,8 @@ class GrpcLb : public LoadBalancingPolicy {
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
   void UpdateLocked(const Args& args) override;
-  void SetReresolutionClosureLocked(grpc_closure* request_reresolution)
-      override;
+  void SetReresolutionClosureLocked(
+      grpc_closure* request_reresolution) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ShutdownLocked() override;
 
@@ -203,10 +203,10 @@ class GrpcLb : public LoadBalancingPolicy {
   LoadBalancingPolicy::Args* LbPolicyArgsCreateLocked();
   void CreateRRLocked(const Args& args);
   bool PickFromInternalRRLocked(bool force_async, PendingPick* pp);
-  static void OnRRConnectivityChangedLocked(void* arg, grpc_error *error);
+  static void OnRRConnectivityChangedLocked(void* arg, grpc_error* error);
 
   static void OnBalancerChannelConnectivityChangedLocked(void* arg,
-                                                         grpc_error *error);
+                                                         grpc_error* error);
 
   void StartPickingLocked();
   void ScheduleNextClientLoadReportLocked();
@@ -404,9 +404,7 @@ grpc_lb_addresses* ExtractBackendAddresses(const grpc_lb_addresses* addresses) {
 }
 
 // Functions used for slice_hash_table vtable.
-void BalancerNameDestroy(void* balancer_name) {
-  gpr_free(balancer_name);
-}
+void BalancerNameDestroy(void* balancer_name) { gpr_free(balancer_name); }
 int BalancerNameCmp(void* a, void* b) {
   const char* a_str = (const char*)a;
   const char* b_str = (const char*)b;
@@ -459,8 +457,8 @@ grpc_channel_args* BuildBalancerChannelArgs(
     char* addr_str;
     GPR_ASSERT(grpc_sockaddr_to_string(
                    &addr_str, &addresses->addresses[i].address, true) > 0);
-    targets_info_entries[lb_addresses_idx] = BalancerEntryCreate(
-        addr_str, addresses->addresses[i].balancer_name);
+    targets_info_entries[lb_addresses_idx] =
+        BalancerEntryCreate(addr_str, addresses->addresses[i].balancer_name);
     gpr_free(addr_str);
     grpc_lb_addresses_set_address(
         lb_addresses, lb_addresses_idx++, addresses->addresses[i].address.addr,
@@ -490,12 +488,12 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses, const Args& args)
     : LoadBalancingPolicy(args.combiner),
       lb_call_backoff_(
           BackOff::Options()
-              .set_initial_backoff(GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS
-                                   * 1000)
+              .set_initial_backoff(GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS *
+                                   1000)
               .set_multiplier(GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(GRPC_GRPCLB_RECONNECT_JITTER)
-              .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS
-                               * 1000)) {
+              .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS *
+                               1000)) {
   // Record client channel factory.
   cc_factory_ = args.client_channel_factory;
   GPR_ASSERT(cc_factory_ != nullptr);
@@ -505,8 +503,7 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses, const Args& args)
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
   grpc_uri* uri = grpc_uri_parse(arg->value.string, true);
   GPR_ASSERT(uri->path[0] != '\0');
-  server_name_ =
-      gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Will use '%s' as the server name for LB request.",
@@ -532,8 +529,8 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses, const Args& args)
   /* Create a client channel to communicate with a balancer. */
   response_generator_ =
       MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(
-      addresses, response_generator_.get(), args.args);
+  grpc_channel_args* lb_channel_args =
+      BuildBalancerChannelArgs(addresses, response_generator_.get(), args.args);
   char* uri_str;
   gpr_asprintf(&uri_str, "fake:///%s", server_name_);
   lb_channel_ = grpc_lb_policy_grpclb_create_lb_channel(
@@ -684,7 +681,7 @@ bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
 }
 
 void ParseServer(const grpc_grpclb_server* server,
-                         grpc_resolved_address* addr) {
+                 grpc_resolved_address* addr) {
   memset(addr, 0, sizeof(*addr));
   if (server->drop) return;
   const uint16_t netorder_port = htons((uint16_t)server->port);
@@ -820,7 +817,8 @@ void GrpcLb::CreateRRLocked(const Args& args) {
   rr_policy_ = LoadBalancingPolicyRegistry::Global()->CreateLoadBalancingPolicy(
       "round_robin", args);
   if (rr_policy_.get() == nullptr) {
-    gpr_log(GPR_ERROR, "[grpclb %p] Failure creating a RoundRobin policy", this);
+    gpr_log(GPR_ERROR, "[grpclb %p] Failure creating a RoundRobin policy",
+            this);
     return;
   }
   rr_policy_->SetReresolutionClosureLocked(ReleaseRequestReresolution());
@@ -847,8 +845,8 @@ void GrpcLb::CreateRRLocked(const Args& args) {
     pending_picks_ = pp->next;
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "[grpclb %p] Pending pick about to (async) PICK from RR %p",
-              this, rr_policy_.get());
+              "[grpclb %p] Pending pick about to (async) PICK from RR %p", this,
+              rr_policy_.get());
     }
     PickFromInternalRRLocked(true /* force_async */, pp);
   }
@@ -969,8 +967,7 @@ void GrpcLb::UpdateConnectivityStateLocked(grpc_connectivity_state rr_state,
     gpr_log(
         GPR_INFO,
         "[grpclb %p] Setting grpclb's state to %s from new RR policy %p state.",
-        this, grpc_connectivity_state_name(rr_state),
-        rr_policy_.get());
+        this, grpc_connectivity_state_name(rr_state), rr_policy_.get());
   }
   grpc_connectivity_state_set(&state_tracker_, rr_state, rr_state_error,
                               "update_lb_connectivity_status_locked");
@@ -991,8 +988,8 @@ void GrpcLb::OnRRConnectivityChangedLocked(void* arg, grpc_error* error) {
     return;
   }
   /* rr state != SHUTDOWN && !glb_policy->shutting down: biz as usual */
-  glb_policy->UpdateConnectivityStateLocked(
-      glb_policy->rr_connectivity_state_, GRPC_ERROR_REF(error));
+  glb_policy->UpdateConnectivityStateLocked(glb_policy->rr_connectivity_state_,
+                                            GRPC_ERROR_REF(error));
   /* Resubscribe. Reuse the "glb_rr_connectivity_cb" weak ref. */
   glb_policy->rr_policy_->NotifyOnStateChangeLocked(
       &glb_policy->rr_connectivity_state_,
@@ -1254,16 +1251,14 @@ void GrpcLb::MaybeRestartBalancerCallLocked() {
     /* if we aren't shutting down, restart the LB client call after some time */
     grpc_millis next_try = lb_call_backoff_.Step();
     if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
-              this);
+      gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...", this);
       grpc_millis timeout = next_try - grpc_core::ExecCtx::Get()->Now();
       if (timeout > 0) {
         gpr_log(GPR_DEBUG,
-                "[grpclb %p] ... retry LB call after %" PRIuPTR "ms.",
-                this, timeout);
+                "[grpclb %p] ... retry LB call after %" PRIuPTR "ms.", this,
+                timeout);
       } else {
-        gpr_log(GPR_DEBUG, "[grpclb %p] ... retry LB call immediately.",
-                this);
+        gpr_log(GPR_DEBUG, "[grpclb %p] ... retry LB call immediately.", this);
       }
     }
     Ref(DEBUG_LOCATION, "grpclb_retry_timer");
@@ -1719,8 +1714,8 @@ void GrpcLb::UpdateLocked(const Args& args) {
   GPR_ASSERT(lb_channel_ != nullptr);
   // Propagate updates to the LB channel (pick_first) through the fake
   // resolver.
-  grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(
-      addresses, response_generator_.get(), args.args);
+  grpc_channel_args* lb_channel_args =
+      BuildBalancerChannelArgs(addresses, response_generator_.get(), args.args);
   response_generator_->SetResponse(lb_channel_args);
   grpc_channel_args_destroy(lb_channel_args);
   // Start watching the LB channel connectivity for connection, if not
