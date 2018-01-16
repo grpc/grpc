@@ -102,7 +102,7 @@ class RoundRobin : public LoadBalancingPolicy {
    * lists if they equal \a latest_pending_subchannel_list. In other words,
    * racing callbacks that reference outdated subchannel lists won't perform any
    * update. */
-  grpc_lb_subchannel_list* latest_pending_subchannel_list_;
+  grpc_lb_subchannel_list* latest_pending_subchannel_list_ = nullptr;
 };
 
 RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args.combiner) {
