@@ -210,6 +210,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
   void StartPickingLocked();
   void ScheduleNextClientLoadReportLocked();
+  void DoSendClientLoadReportLocked();
   void MaybeRestartBalancerCallLocked();
   void BalancerCallInitLocked();
   void BalancerCallDestroyLocked();
@@ -218,6 +219,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void UpdateConnectivityStateLocked(grpc_connectivity_state rr_state,
                                      grpc_error* rr_state_error);
 
+  static void OnSentInitialRequestLocked(void* arg, grpc_error* error);
   static void OnFallbackTimeoutLocked(void* arg, grpc_error* error);
   static void OnRetryTimeoutLocked(void* arg, grpc_error* error);
   static void OnClientLoadReportDoneLocked(void* arg, grpc_error* error);
@@ -1304,7 +1306,7 @@ void GrpcLb::DoSendClientLoadReportLocked() {
   op.op = GRPC_OP_SEND_MESSAGE;
   op.data.send_message.send_message = client_load_report_payload_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_,
-                    client_load_report_done_locked_, this,
+                    &GrpcLb::OnClientLoadReportDoneLocked, this,
                     grpc_combiner_scheduler(combiner()));
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       lb_call_, &op, 1, &client_load_report_closure_);
@@ -1461,10 +1463,9 @@ void GrpcLb::QueryForBackendsLocked() {
   op->reserved = nullptr;
   op++;
   /* take a ref to be released in lb_on_sent_initial_request_locked() */
-  GRPC_LB_POLICY_REF(&glb_policy->base, "lb_on_sent_initial_request_locked");
+  Ref(DEBUG_LOCATION, "lb_on_sent_initial_request_locked");
   call_error = grpc_call_start_batch_and_execute(
-      glb_policy->lb_call, ops, (size_t)(op - ops),
-      &glb_policy->lb_on_sent_initial_request);
+      lb_call_, ops, (size_t)(op - ops), &lb_on_sent_initial_request_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Start batch for receiving status.
   op = ops;
@@ -1495,7 +1496,7 @@ void GrpcLb::QueryForBackendsLocked() {
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-void GrpcLb::OnSendInitialMetadataLocked(void* arg, grpc_error* error) {
+void GrpcLb::OnSentInitialRequestLocked(void* arg, grpc_error* error) {
   GrpcLb* glb_policy = reinterpret_cast<GrpcLb*>(arg);
   glb_policy->initial_request_sent_ = true;
   // If we attempted to send a client load report before the initial request was
@@ -1503,7 +1504,7 @@ void GrpcLb::OnSendInitialMetadataLocked(void* arg, grpc_error* error) {
   if (glb_policy->client_load_report_payload_ != nullptr) {
     glb_policy->DoSendClientLoadReportLocked();
   }
-  Unref(DEBUG_LOCATION, "lb_on_sent_initial_request_locked");
+  glb_policy->Unref(DEBUG_LOCATION, "lb_on_sent_initial_request_locked");
 }
 
 void GrpcLb::OnBalancerReceivedMessageLocked(void* arg, grpc_error* error) {
