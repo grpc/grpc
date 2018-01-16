@@ -45,6 +45,7 @@ static void on_metadata_response(void* arg, grpc_error* error) {
   synchronizer* sync = static_cast<synchronizer*>(arg);
   if (error != GRPC_ERROR_NONE) {
     fprintf(stderr, "Fetching token failed: %s\n", grpc_error_string(error));
+    fflush(stderr);
   } else {
     char* token;
     GPR_ASSERT(sync->md_array.size == 1);
@@ -81,6 +82,7 @@ int main(int argc, char** argv) {
   creds = grpc_google_default_credentials_create();
   if (creds == nullptr) {
     fprintf(stderr, "\nCould not find default credentials.\n\n");
+    fflush(stderr);
     result = 1;
     goto end;
   }

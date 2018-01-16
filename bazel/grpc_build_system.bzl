@@ -30,9 +30,12 @@ def _get_external_deps(external_deps):
   ret = []
   for dep in external_deps:
     if dep == "nanopb":
-      ret.append("//third_party/nanopb")
+      ret += ["//third_party/nanopb"]
+    elif dep == "cares":
+      ret += select({"//:grpc_no_ares": [],
+                     "//conditions:default": ["//external:cares"],})
     else:
-      ret.append("//external:" + dep)
+      ret += ["//external:" + dep]
   return ret
 
 def _maybe_update_cc_library_hdrs(hdrs):
@@ -60,6 +63,10 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     defines = select({"//:grpc_no_ares": ["GRPC_ARES=0"],
                       "//conditions:default": [],}) +
               select({"//:remote_execution":  ["GRPC_PORT_ISOLATED_RUNTIME=1"],
+                      "//conditions:default": [],}) +
+              select({"//:grpc_allow_exceptions":  ["GRPC_ALLOW_EXCEPTIONS=1"],
+                      "//:grpc_disallow_exceptions":
+                      ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],}),
     hdrs = _maybe_update_cc_library_hdrs(hdrs + public_hdrs),
     deps = deps + _get_external_deps(external_deps),
