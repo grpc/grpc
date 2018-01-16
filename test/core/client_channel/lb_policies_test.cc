@@ -968,9 +968,16 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_tracer_set_enabled("round_robin", 1);
 
-  GPR_ASSERT(grpc_lb_policy_create("this-lb-policy-does-not-exist", nullptr) ==
-             nullptr);
-  GPR_ASSERT(grpc_lb_policy_create(nullptr, nullptr) == nullptr);
+  grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> lb_policy =
+      grpc_core::LoadBalancingPolicyRegistry::Global()
+          ->CreateLoadBalancingPolicy("this-lb-policy-does-not-exist",
+                                      grpc_core::LoadBalancingPolicy::Args());
+  GPR_ASSERT(lb_policy == nullptr);
+  lb_policy =
+      grpc_core::LoadBalancingPolicyRegistry::Global()
+          ->CreateLoadBalancingPolicy(nullptr,
+                                      grpc_core::LoadBalancingPolicy::Args());
+  GPR_ASSERT(lb_policy == nullptr);
 
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);
   /* everything is fine, all servers stay up the whole time and life's peachy
