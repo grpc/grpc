@@ -77,7 +77,6 @@ CC_opt = $(DEFAULT_CC)
 CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
-CXXFLAGS_opt = -fno-exceptions
 CPPFLAGS_opt = -O2
 DEFINES_opt = NDEBUG
 
@@ -95,7 +94,6 @@ CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
 LD_dbg = $(DEFAULT_CC)
 LDXX_dbg = $(DEFAULT_CXX)
-CXXFLAGS_dbg = -fno-exceptions
 CPPFLAGS_dbg = -O0
 DEFINES_dbg = _DEBUG DEBUG
 
@@ -144,14 +142,14 @@ LDXX_asan-noleaks = clang++
 CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-noleaks = -fsanitize=address
 
-VALID_CONFIG_c++-compat = 1
-CC_c++-compat = $(DEFAULT_CC)
-CXX_c++-compat = $(DEFAULT_CXX)
-LD_c++-compat = $(DEFAULT_CC)
-LDXX_c++-compat = $(DEFAULT_CXX)
-CFLAGS_c++-compat = -Wc++-compat
-CPPFLAGS_c++-compat = -O0
-DEFINES_c++-compat = _DEBUG DEBUG
+VALID_CONFIG_noexcept = 1
+CC_noexcept = $(DEFAULT_CC)
+CXX_noexcept = $(DEFAULT_CXX)
+LD_noexcept = $(DEFAULT_CC)
+LDXX_noexcept = $(DEFAULT_CXX)
+CXXFLAGS_noexcept = -fno-exceptions
+CPPFLAGS_noexcept = -O2
+DEFINES_noexcept = NDEBUG
 
 VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
@@ -206,6 +204,15 @@ LD_lto = $(DEFAULT_CC)
 LDXX_lto = $(DEFAULT_CXX)
 CPPFLAGS_lto = -O2
 DEFINES_lto = NDEBUG
+
+VALID_CONFIG_c++-compat = 1
+CC_c++-compat = $(DEFAULT_CC)
+CXX_c++-compat = $(DEFAULT_CXX)
+LD_c++-compat = $(DEFAULT_CC)
+LDXX_c++-compat = $(DEFAULT_CXX)
+CFLAGS_c++-compat = -Wc++-compat
+CPPFLAGS_c++-compat = -O0
+DEFINES_c++-compat = _DEBUG DEBUG
 
 VALID_CONFIG_mutrace = 1
 CC_mutrace = $(DEFAULT_CC)
@@ -643,7 +650,6 @@ ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
 ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
 ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
 CPPFLAGS += -Ithird_party/zlib
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
 else
 ifeq ($(HAS_PKG_CONFIG),true)
 CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -674,7 +680,6 @@ CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
 CARES_MERGE_OBJS = $(LIBARES_OBJS)
 CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
 CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
-LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
 else
 ifeq ($(HAS_PKG_CONFIG),true)
 PC_REQUIRES_GRPC += libcares
@@ -1126,6 +1131,7 @@ cxx_string_ref_test: $(BINDIR)/$(CONFIG)/cxx_string_ref_test
 cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
+exception_test: $(BINDIR)/$(CONFIG)/exception_test
 filter_end2end_test: $(BINDIR)/$(CONFIG)/filter_end2end_test
 generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
@@ -1303,10 +1309,10 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
+	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
 	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
-	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
 	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
 	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
 	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
@@ -1575,6 +1581,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
@@ -1706,6 +1713,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
@@ -2107,6 +2115,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing error_details_test"
 	$(Q) $(BINDIR)/$(CONFIG)/error_details_test || ( echo test error_details_test failed ; exit 1 )
+	$(E) "[RUN]     Testing exception_test"
+	$(Q) $(BINDIR)/$(CONFIG)/exception_test || ( echo test exception_test failed ; exit 1 )
 	$(E) "[RUN]     Testing filter_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/filter_end2end_test || ( echo test filter_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing generic_end2end_test"
@@ -14979,6 +14989,49 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/util/error_details_test.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+
+
+EXCEPTION_TEST_SRC = \
+    test/cpp/end2end/exception_test.cc \
+
+EXCEPTION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EXCEPTION_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/exception_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/exception_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/exception_test: $(PROTOBUF_DEP) $(EXCEPTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(EXCEPTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/exception_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/exception_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_exception_test: $(EXCEPTION_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(EXCEPTION_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 FILTER_END2END_TEST_SRC = \

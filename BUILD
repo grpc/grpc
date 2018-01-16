@@ -39,6 +39,16 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_allow_exceptions",
+    values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
+)
+
+config_setting(
+    name = "grpc_disallow_exceptions",
+    values = {"define": "GRPC_ALLOW_EXCEPTIONS=0"},
+)
+
+config_setting(
     name = "remote_execution",
     values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
 )
@@ -544,8 +554,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "debug_location",
-    public_hdrs = ["src/core/lib/support/debug_location.h"],
     language = "c++",
+    public_hdrs = ["src/core/lib/support/debug_location.h"],
 )
 
 grpc_cc_library(
@@ -560,18 +570,18 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "ref_counted",
-    public_hdrs = ["src/core/lib/support/ref_counted.h"],
     language = "c++",
+    public_hdrs = ["src/core/lib/support/ref_counted.h"],
     deps = [
-        "grpc_trace",
         "debug_location",
+        "grpc_trace",
     ],
 )
 
 grpc_cc_library(
     name = "ref_counted_ptr",
-    public_hdrs = ["src/core/lib/support/ref_counted_ptr.h"],
     language = "c++",
+    public_hdrs = ["src/core/lib/support/ref_counted_ptr.h"],
 )
 
 grpc_cc_library(

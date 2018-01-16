@@ -42,7 +42,7 @@
     }
   }, 
   {
-    "config": "c++-compat"
+    "config": "noexcept"
   }, 
   {
     "config": "ubsan", 
@@ -72,6 +72,9 @@
   }, 
   {
     "config": "lto"
+  }, 
+  {
+    "config": "c++-compat"
   }, 
   {
     "config": "mutrace"
