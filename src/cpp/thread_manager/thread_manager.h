@@ -21,9 +21,9 @@
 
 #include <condition_variable>
 #include <functional>
-#include <list>
 #include <memory>
 #include <mutex>
+#include <vector>
 
 #include <grpc++/support/config.h>
 #include <grpc/support/thd.h>
@@ -130,8 +130,8 @@ class ThreadManager {
   int num_pollers_;
 
   // The minimum and maximum number of threads that should be doing polling
-  int min_pollers_;
-  int max_pollers_;
+  const int min_pollers_;
+  const int max_pollers_;
 
   // The total number of threads (includes threads includes the threads that are
   // currently polling i.e num_pollers_)
@@ -144,8 +144,7 @@ class ThreadManager {
       thread_creator_;
   std::function<void(gpr_thd_id)> thread_joiner_;
 
-  std::mutex list_mu_;
-  std::list<WorkerThread*> completed_threads_;
+  std::vector<std::unique_ptr<WorkerThread>> completed_threads_;
 };
 
 }  // namespace grpc

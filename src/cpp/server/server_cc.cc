@@ -338,28 +338,27 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   }
 
   void Shutdown() override {
-    ThreadManager::Shutdown();
     server_cq_->Shutdown();
+    ThreadManager::Shutdown();
   }
 
   void Wait() override {
-    ThreadManager::Wait();
     // Drain any pending items from the queue
     void* tag;
     bool ok;
     while (server_cq_->Next(&tag, &ok)) {
       // Do nothing
     }
+    ThreadManager::Wait();
   }
 
   void Start() {
     if (!sync_requests_.empty()) {
+      Initialize();  // ThreadManager's Initialize()
       for (auto m = sync_requests_.begin(); m != sync_requests_.end(); m++) {
         (*m)->SetupRequest();
         (*m)->Request(server_->c_server(), server_cq_->cq());
       }
-
-      Initialize();  // ThreadManager's Initialize()
     }
   }
 
@@ -432,9 +431,12 @@ Server::~Server() {
       lock.unlock();
       Shutdown();
     } else if (!started_) {
-      // Shutdown the completion queues
-      for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->Shutdown();
+      // Shutdown and wait for all ThreadManagers
+      for (auto&& mgr : sync_req_mgrs_) {
+        mgr->Shutdown();
+      }
+      for (auto&& mgr : sync_req_mgrs_) {
+        mgr->Wait();
       }
     }
   }
@@ -602,13 +604,13 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
     // Shutdown all ThreadManagers. This will try to gracefully stop all the
     // threads in the ThreadManagers (once they process any inflight requests)
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Shutdown();  // ThreadManager's Shutdown()
+    for (auto&& mgr : sync_req_mgrs_) {
+      mgr->Shutdown();
     }
 
-    // Wait for threads in all ThreadManagers to terminate
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Wait();
+    // Wait for threads in manager to actually terminate
+    for (auto&& mgr : sync_req_mgrs_) {
+      mgr->Wait();
     }
 
     // Drain the shutdown queue (if the previous call to AsyncNext() timed out

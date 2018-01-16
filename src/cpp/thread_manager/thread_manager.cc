@@ -31,9 +31,6 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr, bool* valid)
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
 
-  // Make thread creation exclusive with respect to its join happening in
-  // ~WorkerThread().
-  std::lock_guard<std::mutex> lock(wt_mu_);
   *valid = valid_ = thd_mgr->thread_creator_(
       &thd_, "worker thread",
       [](void* th) {
@@ -48,8 +45,14 @@ void ThreadManager::WorkerThread::Run() {
 }
 
 ThreadManager::WorkerThread::~WorkerThread() {
-  // Don't join until the thread is fully constructed.
-  std::lock_guard<std::mutex> lock(wt_mu_);
+  // the thread will always be fully constructed by now because the destructor
+  // is only ever called if:
+  //    1. valid_ was false (in which case an asynchronous thread never ran)
+  // OR 2. valid_ was true AND the thread function completed AND locked the
+  //       thread manager's lock on completion AND either the cleanup function
+  //       also grabbed the lock before causing destruction or the thread
+  //       manager itself is being destroyed after having gone through a lock
+  //       on the call to Wait
   if (valid_) {
     thd_mgr_->thread_joiner_(thd_);
   }
@@ -70,12 +73,9 @@ ThreadManager::ThreadManager(
       thread_joiner_(thread_joiner) {}
 
 ThreadManager::~ThreadManager() {
-  {
-    std::lock_guard<std::mutex> lock(mu_);
-    GPR_ASSERT(num_threads_ == 0);
-  }
-
-  CleanupCompletedThreads();
+  // Do not hold a lock here since threads should all be Wait'ed
+  // before reaching destructor
+  GPR_ASSERT(num_threads_ == 0);
 }
 
 void ThreadManager::Wait() {
@@ -96,12 +96,8 @@ bool ThreadManager::IsShutdown() {
 }
 
 void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
-  {
-    std::lock_guard<std::mutex> list_lock(list_mu_);
-    completed_threads_.push_back(thd);
-  }
-
   std::lock_guard<std::mutex> lock(mu_);
+  completed_threads_.emplace_back(thd);
   num_threads_--;
   if (num_threads_ == 0) {
     shutdown_cv_.notify_one();
@@ -109,22 +105,19 @@ void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
 }
 
 void ThreadManager::CleanupCompletedThreads() {
-  std::list<WorkerThread*> completed_threads;
+  std::vector<std::unique_ptr<WorkerThread>> completed_threads;
+  // swap out the completed threads collection
+  // and let it get destroyed outside the lock
   {
-    // swap out the completed threads list: allows other threads to clean up
-    // more quickly
-    std::unique_lock<std::mutex> lock(list_mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     completed_threads.swap(completed_threads_);
   }
-  for (auto thd : completed_threads) delete thd;
 }
 
 void ThreadManager::Initialize() {
-  {
-    std::unique_lock<std::mutex> lock(mu_);
-    num_pollers_ = min_pollers_;
-    num_threads_ = min_pollers_;
-  }
+  // When called, there are no threads yet in the thread manager
+  num_pollers_ = min_pollers_;
+  num_threads_ = min_pollers_;
 
   for (int i = 0; i < min_pollers_; i++) {
     // Create a new thread (which ends up calling the MainWorkLoop() function
