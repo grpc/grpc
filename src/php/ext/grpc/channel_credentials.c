@@ -35,6 +35,7 @@
 #include <zend_hash.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
@@ -46,10 +47,11 @@ static char *default_pem_root_certs = NULL;
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(
     char **pem_root_certs) {
-  *pem_root_certs = default_pem_root_certs;
-  if (default_pem_root_certs == NULL) {
+  if (!default_pem_root_certs) {
+    *pem_root_certs = NULL;
     return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   }
+  *pem_root_certs = gpr_strdup(default_pem_root_certs);
   return GRPC_SSL_ROOTS_OVERRIDE_OK;
 }
 
@@ -101,7 +103,7 @@ PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
                          "setDefaultRootsPem expects 1 string", 1 TSRMLS_CC);
     return;
   }
-  default_pem_root_certs = gpr_malloc((pem_roots_length + 1) * sizeof(char));
+  default_pem_root_certs = gpr_realloc(default_pem_root_certs, (pem_roots_length + 1) * sizeof(char));
   memcpy(default_pem_root_certs, pem_roots, pem_roots_length + 1);
 }
 
