@@ -208,8 +208,8 @@ Object HHVM_METHOD(Server, requestCall)
 
     callDetails.method_text = grpc_slice_to_c_string(callDetails.details.method);
     callDetails.host_text = grpc_slice_to_c_string(callDetails.details.host);
-    resultObj.o_set("method_text", String{ callDetails.method_text, CopyString });
-    resultObj.o_set("host_text", String{ callDetails.host_text, CopyString });
+    resultObj->o_set("method_text", String{ callDetails.method_text, CopyString });
+    resultObj->o_set("host_text", String{ callDetails.host_text, CopyString });
 
     Object callObj{ CallData::getClass() };
     CallData* const pCallData{ Native::data<CallData>(callObj) };
@@ -219,9 +219,9 @@ Object HHVM_METHOD(Server, requestCall)
     TimevalData* const pTimevalData{ Native::data<TimevalData>(timevalObj) };
     pTimevalData->init(callDetails.details.deadline);
 
-    resultObj.o_set("call", callObj);
-    resultObj.o_set("absolute_deadline", timevalObj);
-    resultObj.o_set("metadata", callDetails.metadata.phpData());
+    resultObj->o_set("call", callObj);
+    resultObj->o_set("absolute_deadline", timevalObj);
+    resultObj->o_set("metadata", callDetails.metadata.phpData());
 
     return resultObj;
 }
