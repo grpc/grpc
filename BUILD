@@ -43,7 +43,7 @@ g_stands_for = "generous"
 
 core_version = "5.0.0"
 
-version = "1.8.4"
+version = "1.8.5"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
