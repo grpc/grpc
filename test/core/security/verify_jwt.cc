@@ -39,6 +39,7 @@ typedef struct {
 static void print_usage_and_exit(gpr_cmdline* cl, const char* argv0) {
   char* usage = gpr_cmdline_usage_string(cl, argv0);
   fprintf(stderr, "%s", usage);
+  fflush(stderr);
   gpr_free(usage);
   gpr_cmdline_destroy(cl);
   exit(1);
@@ -62,6 +63,7 @@ static void on_jwt_verification_done(void* user_data,
     GPR_ASSERT(claims == nullptr);
     fprintf(stderr, "Verification failed with error %s\n",
             grpc_jwt_verifier_status_to_string(status));
+    fflush(stderr);
   }
 
   gpr_mu_lock(sync->mu);

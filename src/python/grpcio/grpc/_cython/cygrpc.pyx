@@ -32,6 +32,7 @@ include "_cygrpc/records.pyx.pxi"
 include "_cygrpc/security.pyx.pxi"
 include "_cygrpc/server.pyx.pxi"
 include "_cygrpc/tag.pyx.pxi"
+include "_cygrpc/time.pyx.pxi"
 
 #
 # initialize gRPC

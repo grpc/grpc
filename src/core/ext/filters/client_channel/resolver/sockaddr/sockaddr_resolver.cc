@@ -72,7 +72,8 @@ class SockaddrResolver : public Resolver {
 
 SockaddrResolver::SockaddrResolver(const ResolverArgs& args,
                                    grpc_lb_addresses* addresses)
-    : Resolver(args.combiner), addresses_(addresses),
+    : Resolver(args.combiner),
+      addresses_(addresses),
       channel_args_(grpc_channel_args_copy(args.args)) {}
 
 SockaddrResolver::~SockaddrResolver() {
@@ -96,9 +97,8 @@ void SockaddrResolver::ChannelSawErrorLocked() {
 void SockaddrResolver::ShutdownLocked() {
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(
-        next_completion_,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
+    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                             "Resolver Shutdown"));
     next_completion_ = nullptr;
   }
 }
@@ -107,8 +107,7 @@ void SockaddrResolver::MaybeFinishNextLocked() {
   if (next_completion_ != nullptr && !published_) {
     published_ = true;
     grpc_arg arg = grpc_lb_addresses_create_channel_arg(addresses_);
-    *target_result_ =
-        grpc_channel_args_copy_and_add(channel_args_, &arg, 1);
+    *target_result_ = grpc_channel_args_copy_and_add(channel_args_, &arg, 1);
     GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_NONE);
     next_completion_ = nullptr;
   }
@@ -159,8 +158,8 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
 
 class IPv4ResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
-      const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      const ResolverArgs& args) const override {
     return CreateSockaddrResolver(args, grpc_parse_ipv4);
   }
 
@@ -169,8 +168,8 @@ class IPv4ResolverFactory : public ResolverFactory {
 
 class IPv6ResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
-      const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      const ResolverArgs& args) const override {
     return CreateSockaddrResolver(args, grpc_parse_ipv6);
   }
 
@@ -180,8 +179,8 @@ class IPv6ResolverFactory : public ResolverFactory {
 #ifdef GRPC_HAVE_UNIX_SOCKET
 class UnixResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
-      const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      const ResolverArgs& args) const override {
     return CreateSockaddrResolver(args, grpc_parse_unix);
   }
 

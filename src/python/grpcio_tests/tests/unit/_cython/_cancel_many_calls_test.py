@@ -20,7 +20,6 @@ from grpc._cython import cygrpc
 from grpc.framework.foundation import logging_pool
 from tests.unit.framework.common import test_constants
 
-_INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
 _EMPTY_FLAGS = 0
 _EMPTY_METADATA = ()
 
@@ -171,9 +170,9 @@ class CancelManyCallsTest(unittest.TestCase):
         with client_condition:
             client_calls = []
             for index in range(test_constants.RPC_CONCURRENCY):
-                client_call = channel.create_call(
-                    None, _EMPTY_FLAGS, client_completion_queue, b'/twinkies',
-                    None, _INFINITE_FUTURE)
+                client_call = channel.create_call(None, _EMPTY_FLAGS,
+                                                  client_completion_queue,
+                                                  b'/twinkies', None, None)
                 operations = (
                     cygrpc.SendInitialMetadataOperation(_EMPTY_METADATA,
                                                         _EMPTY_FLAGS),

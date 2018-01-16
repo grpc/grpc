@@ -78,8 +78,7 @@ class FakeResolver : public Resolver {
   grpc_channel_args** target_result_ = nullptr;
 };
 
-FakeResolver::FakeResolver(const ResolverArgs& args)
-    : Resolver(args.combiner) {
+FakeResolver::FakeResolver(const ResolverArgs& args) : Resolver(args.combiner) {
   channel_args_ = grpc_channel_args_copy(args.args);
   FakeResolverResponseGenerator* response_generator =
       FakeResolverResponseGenerator::GetFromArgs(args.args);
@@ -110,8 +109,7 @@ void FakeResolver::ChannelSawErrorLocked() {
 
 void FakeResolver::MaybeFinishNextLocked() {
   if (next_completion_ != nullptr && next_results_ != nullptr) {
-    *target_result_ =
-        grpc_channel_args_union(next_results_, channel_args_);
+    *target_result_ = grpc_channel_args_union(next_results_, channel_args_);
     grpc_channel_args_destroy(next_results_);
     next_results_ = nullptr;
     GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_NONE);
@@ -122,9 +120,8 @@ void FakeResolver::MaybeFinishNextLocked() {
 void FakeResolver::ShutdownLocked() {
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(
-        next_completion_,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
+    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                             "Resolver Shutdown"));
     next_completion_ = nullptr;
   }
 }
@@ -163,11 +160,11 @@ void FakeResolverResponseGenerator::SetResponse(
       static_cast<SetResponseClosureArg*>(gpr_zalloc(sizeof(*closure_arg)));
   closure_arg->generator = this;
   closure_arg->next_response = grpc_channel_args_copy(next_response);
-  GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
-                                       SetResponseLocked, closure_arg,
-                                       grpc_combiner_scheduler(
-                                           resolver_->combiner())),
-                     GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
+                        closure_arg,
+                        grpc_combiner_scheduler(resolver_->combiner())),
+      GRPC_ERROR_NONE);
 }
 
 namespace {
@@ -219,8 +216,8 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
-      const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      const ResolverArgs& args) const override {
     return OrphanablePtr<Resolver>(New<FakeResolver>(args));
   }
 

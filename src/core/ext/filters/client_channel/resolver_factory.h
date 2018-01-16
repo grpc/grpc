@@ -44,8 +44,8 @@ struct ResolverArgs {
 class ResolverFactory {
  public:
   /// Returns a new resolver instance.
-  virtual OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args)
-      const GRPC_ABSTRACT;
+  virtual OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args) const
+      GRPC_ABSTRACT;
 
   /// Returns a string representing the default authority to use for this
   /// scheme.
@@ -58,6 +58,8 @@ class ResolverFactory {
   /// Returns the URI scheme that this factory implements.
   /// Caller does NOT take ownership of result.
   virtual const char* scheme() const GRPC_ABSTRACT;
+
+  virtual ~ResolverFactory() {}
 
   GRPC_ABSTRACT_BASE_CLASS
 };

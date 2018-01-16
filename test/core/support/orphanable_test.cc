@@ -78,10 +78,15 @@ TEST(OrphanablePtr, InternallyRefCounted) {
   bar->FinishWork();
 }
 
+// Note: We use DebugOnlyTraceFlag instead of TraceFlag to ensure that
+// things build properly in both debug and non-debug cases.
+DebugOnlyTraceFlag baz_tracer(true, "baz");
+
 class Baz : public InternallyRefCountedWithTracing {
  public:
   Baz() : Baz(0) {}
-  explicit Baz(int value) : value_(value) {}
+  explicit Baz(int value)
+      : InternallyRefCountedWithTracing(&baz_tracer), value_(value) {}
   void Orphan() override { Unref(); }
   int value() const { return value_; }
 

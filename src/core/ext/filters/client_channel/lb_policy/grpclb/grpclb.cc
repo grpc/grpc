@@ -112,8 +112,8 @@
 #include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
 #include "src/core/lib/support/manual_constructor.h"
+#include "src/core/lib/support/ref_counted_ptr.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -614,7 +614,9 @@ void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
     pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
         DestroyClientStats;
   } else {
-    grpc_grpclb_client_stats_unref(pp->client_stats);
+    if (pp->client_stats != nullptr) {
+      grpc_grpclb_client_stats_unref(pp->client_stats);
+    }
   }
 }
 
@@ -1014,7 +1016,7 @@ void GrpcLb::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
       // Synchronous return, schedule closure.
       GRPC_CLOSURE_SCHED(pp->pick->on_complete, GRPC_ERROR_NONE);
     }
-    gpr_free(pp);
+    Delete(pp);
   }
 }
 
@@ -1056,6 +1058,7 @@ void GrpcLb::ShutdownLocked() {
     pending_picks_ = pp->next;
     pp->pick->connected_subchannel = nullptr;
     GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
+    Delete(pp);
   }
   // Clear pending pings.
   PendingPing* pping;

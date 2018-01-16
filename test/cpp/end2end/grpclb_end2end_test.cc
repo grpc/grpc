@@ -36,6 +36,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/support/env.h"
+#include "src/core/lib/support/ref_counted_ptr.h"
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -338,7 +339,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   void SetUp() override {
-    response_generator_ = grpc_fake_resolver_response_generator_create();
+    response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     // Start the backends.
     for (size_t i = 0; i < num_backends_; ++i) {
       backends_.emplace_back(new BackendServiceImpl());
@@ -362,7 +364,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < balancers_.size(); ++i) {
       if (balancers_[i]->Shutdown()) balancer_servers_[i].Shutdown();
     }
-    grpc_fake_resolver_response_generator_unref(response_generator_);
   }
 
   void SetNextResolutionAllBalancers() {
@@ -377,7 +378,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     ChannelArguments args;
     args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator_);
+                    response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
     channel_ =
@@ -470,8 +471,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
-    grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                       &fake_result);
+    response_generator_->SetResponse(&fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
 
@@ -573,7 +573,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
   std::vector<std::unique_ptr<BalancerServiceImpl>> balancers_;
   std::vector<ServerThread<BackendService>> backend_servers_;
   std::vector<ServerThread<BalancerService>> balancer_servers_;
-  grpc_fake_resolver_response_generator* response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+      response_generator_;
   const grpc::string kRequestMessage_ = "Live long and prosper.";
 };
 

@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <assert.h>
-#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <stdbool.h>

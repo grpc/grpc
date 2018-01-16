@@ -84,7 +84,7 @@ class AresDnsResolver : public Resolver {
   bool request_service_config_;
   /// pollset_set to drive the name resolution process
   grpc_pollset_set* interested_parties_;
-  /// Closures used by the combiner
+  /// closures used by the combiner
   grpc_closure dns_ares_on_retry_timer_locked_;
   grpc_closure dns_ares_on_resolved_locked_;
   /// are we currently resolving?

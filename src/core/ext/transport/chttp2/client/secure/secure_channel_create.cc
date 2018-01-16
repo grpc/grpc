@@ -163,8 +163,8 @@ static grpc_channel* client_channel_factory_create_channel(
   // Add channel arg containing the server URI.
   grpc_core::UniquePtr<char> canonical_target =
       grpc_core::ResolverRegistry::Global()->AddDefaultPrefixIfNeeded(target);
-  grpc_arg arg = grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_SERVER_URI, canonical_target.get());
+  grpc_arg arg = grpc_channel_arg_string_create((char*)GRPC_ARG_SERVER_URI,
+                                                canonical_target.get());
   const char* to_remove[] = {GRPC_ARG_SERVER_URI};
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
