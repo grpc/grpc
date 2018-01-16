@@ -322,17 +322,16 @@ typedef struct glb_lb_call_data {
   /** The message sent to the LB server. It's used to query for backends (the
    * value may vary if the LB server indicates a redirect) or send client load
    * report. */
-  grpc_byte_buffer* lb_request_payload;
+  grpc_byte_buffer* send_message_payload;
   /** The callback after the initial request is sent. */
   grpc_closure lb_on_sent_initial_request;
   bool initial_request_sent;
 
   /** The response received from the LB server, if any. */
-  grpc_byte_buffer* lb_response_payload;
+  grpc_byte_buffer* recv_message_payload;
   /** The callback to process the response received from the LB server. */
   grpc_closure lb_on_response_received;
   bool seen_initial_response;
-  bool has_received_serverlist;
 
   /** The callback to process the status received from the LB server, which
    * signals the end of the LB call. */
@@ -343,7 +342,8 @@ typedef struct glb_lb_call_data {
   grpc_status_code lb_call_status;
   grpc_slice lb_call_status_details;
 
-  /** The stats for client-side load reporting associated with this LB call. */
+  /** The stats for client-side load reporting associated with this LB call.
+   * Created after the first serverlist is received. */
   grpc_grpclb_client_stats* client_stats;
   /** The interval and timer for next client load report. */
   grpc_millis client_stats_report_interval;
@@ -482,8 +482,8 @@ static void glb_lb_call_data_unref(glb_lb_call_data* lb_calld,
     grpc_call_unref(lb_calld->lb_call);
     grpc_metadata_array_destroy(&lb_calld->lb_initial_metadata_recv);
     grpc_metadata_array_destroy(&lb_calld->lb_trailing_metadata_recv);
-    grpc_byte_buffer_destroy(lb_calld->lb_request_payload);
-    grpc_byte_buffer_destroy(lb_calld->lb_response_payload);
+    grpc_byte_buffer_destroy(lb_calld->send_message_payload);
+    grpc_byte_buffer_destroy(lb_calld->recv_message_payload);
     grpc_slice_unref_internal(lb_calld->lb_call_status_details);
     grpc_grpclb_client_stats_unref(lb_calld->client_stats);
     GRPC_LB_POLICY_WEAK_UNREF(&lb_calld->glb_policy->base, "lb_calld");
@@ -867,7 +867,7 @@ static void create_rr_locked(glb_lb_policy* glb_policy,
     GPR_ASSERT(glb_policy->lb_calld != nullptr);
     // Collect client load stats only when we are using the serverlist returned
     // from the current LB call.
-    if (glb_policy->lb_calld->has_received_serverlist) {
+    if (glb_policy->lb_calld->client_stats != nullptr) {
       pp->wrapped_on_complete_arg.client_stats =
           grpc_grpclb_client_stats_ref(glb_policy->lb_calld->client_stats);
     }
@@ -1275,7 +1275,7 @@ static int glb_pick_locked(grpc_lb_policy* pol,
       // Collect client load stats only when we are using the serverlist
       // returned from the current LB call.
       if (glb_policy->lb_calld != nullptr &&
-          glb_policy->lb_calld->has_received_serverlist) {
+          glb_policy->lb_calld->client_stats != nullptr) {
         wc_arg->client_stats =
             grpc_grpclb_client_stats_ref(glb_policy->lb_calld->client_stats);
       }
@@ -1385,8 +1385,8 @@ static void schedule_next_client_load_report(glb_lb_call_data* lb_calld) {
 static void client_load_report_done_locked(void* arg, grpc_error* error) {
   glb_lb_call_data* lb_calld = (glb_lb_call_data*)arg;
   glb_lb_policy* glb_policy = lb_calld->glb_policy;
-  grpc_byte_buffer_destroy(lb_calld->lb_request_payload);
-  lb_calld->lb_request_payload = nullptr;
+  grpc_byte_buffer_destroy(lb_calld->send_message_payload);
+  lb_calld->send_message_payload = nullptr;
   if (error != GRPC_ERROR_NONE || lb_calld != glb_policy->lb_calld) {
     glb_lb_call_data_unref(lb_calld, "client_load_report");
     return;
@@ -1409,7 +1409,7 @@ static bool load_report_counters_are_zero(grpc_grpclb_request* request) {
 static void send_client_load_report_locked(glb_lb_call_data* lb_calld) {
   glb_lb_policy* glb_policy = lb_calld->glb_policy;
   // Construct message payload.
-  GPR_ASSERT(lb_calld->lb_request_payload == nullptr);
+  GPR_ASSERT(lb_calld->send_message_payload == nullptr);
   grpc_grpclb_request* request =
       grpc_grpclb_load_report_request_create_locked(lb_calld->client_stats);
   // Skip client load report if the counters were all zero in the last
@@ -1425,7 +1425,7 @@ static void send_client_load_report_locked(glb_lb_call_data* lb_calld) {
     lb_calld->last_client_load_report_counters_were_zero = false;
   }
   grpc_slice request_payload_slice = grpc_grpclb_request_encode(request);
-  lb_calld->lb_request_payload =
+  lb_calld->send_message_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
   grpc_grpclb_request_destroy(request);
@@ -1433,7 +1433,7 @@ static void send_client_load_report_locked(glb_lb_call_data* lb_calld) {
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_MESSAGE;
-  op.data.send_message.send_message = lb_calld->lb_request_payload;
+  op.data.send_message.send_message = lb_calld->send_message_payload;
   GRPC_CLOSURE_INIT(&lb_calld->client_load_report_closure,
                     client_load_report_done_locked, lb_calld,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
@@ -1488,13 +1488,12 @@ static glb_lb_call_data* lb_call_data_create_locked(glb_lb_policy* glb_policy) {
   grpc_grpclb_request* request =
       grpc_grpclb_request_create(glb_policy->server_name);
   grpc_slice request_payload_slice = grpc_grpclb_request_encode(request);
-  lb_calld->lb_request_payload =
+  lb_calld->send_message_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
   grpc_grpclb_request_destroy(request);
   // Init other data associated with the LB call.
   lb_calld->glb_policy = glb_policy;
-  lb_calld->client_stats = grpc_grpclb_client_stats_create();
   grpc_metadata_array_init(&lb_calld->lb_initial_metadata_recv);
   grpc_metadata_array_init(&lb_calld->lb_trailing_metadata_recv);
   GRPC_CLOSURE_INIT(&lb_calld->lb_on_sent_initial_request,
@@ -1543,9 +1542,10 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy) {
   op->reserved = nullptr;
   op++;
   // Op: send request message.
-  GPR_ASSERT(glb_policy->lb_calld->lb_request_payload != nullptr);
+  GPR_ASSERT(glb_policy->lb_calld->send_message_payload != nullptr);
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = glb_policy->lb_calld->lb_request_payload;
+  op->data.send_message.send_message =
+      glb_policy->lb_calld->send_message_payload;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -1566,7 +1566,7 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy) {
   // Op: recv response.
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message =
-      &glb_policy->lb_calld->lb_response_payload;
+      &glb_policy->lb_calld->recv_message_payload;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -1614,7 +1614,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
   glb_lb_policy* glb_policy = lb_calld->glb_policy;
   // Empty payload means the LB call was cancelled.
   if (lb_calld != glb_policy->lb_calld ||
-      lb_calld->lb_response_payload == nullptr) {
+      lb_calld->recv_message_payload == nullptr) {
     glb_lb_call_data_unref(lb_calld, "lb_on_response_received_locked");
     return;
   }
@@ -1623,11 +1623,11 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
   grpc_op* op = ops;
   glb_policy->lb_call_backoff->Reset();
   grpc_byte_buffer_reader bbr;
-  grpc_byte_buffer_reader_init(&bbr, lb_calld->lb_response_payload);
+  grpc_byte_buffer_reader_init(&bbr, lb_calld->recv_message_payload);
   grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
   grpc_byte_buffer_reader_destroy(&bbr);
-  grpc_byte_buffer_destroy(lb_calld->lb_response_payload);
-  lb_calld->lb_response_payload = nullptr;
+  grpc_byte_buffer_destroy(lb_calld->recv_message_payload);
+  lb_calld->recv_message_payload = nullptr;
   grpc_grpclb_initial_response* initial_response;
   grpc_grpclb_serverlist* serverlist;
   if (!lb_calld->seen_initial_response &&
@@ -1674,8 +1674,8 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
     if (serverlist->num_servers > 0) {
       // Start sending client load report only after we start using the
       // serverlist returned from the current LB call.
-      if (!lb_calld->has_received_serverlist) {
-        lb_calld->has_received_serverlist = true;
+      if (lb_calld->client_stats == nullptr) {
+        lb_calld->client_stats = grpc_grpclb_client_stats_create();
         glb_lb_call_data_ref(lb_calld, "client_load_report");
         schedule_next_client_load_report(lb_calld);
       }
@@ -1725,7 +1725,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
   if (!glb_policy->shutting_down) {
     // Keep listening for serverlist updates.
     op->op = GRPC_OP_RECV_MESSAGE;
-    op->data.recv_message.recv_message = &lb_calld->lb_response_payload;
+    op->data.recv_message.recv_message = &lb_calld->recv_message_payload;
     op->flags = 0;
     op->reserved = nullptr;
     op++;
