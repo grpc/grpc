@@ -10,7 +10,7 @@ def generate_cc_impl(ctx):
   includes = [f for src in ctx.attr.srcs for f in src.proto.transitive_imports]
   outs = []
   # label_len is length of the path from WORKSPACE root to the location of this build file
-  label_len = len(ctx.label.package) + 1
+  label_len = len(ctx.label.package)
   if ctx.executable.plugin:
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
@@ -19,7 +19,7 @@ def generate_cc_impl(ctx):
   else:
     outs += [proto.path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".pb.cc" for proto in protos]
-  out_files = [ctx.new_file(out) for out in outs]
+  out_files = [ctx.new_file(out.strip('/')) for out in outs]
   dir_out = str(ctx.genfiles_dir.path)
 
   arguments = []
