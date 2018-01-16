@@ -490,7 +490,7 @@ void RoundRobin::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
                   : 0;
           gpr_log(GPR_DEBUG,
                   "[RR %p] phasing out subchannel list %p (size %" PRIuPTR
-                  ") in favor of %p (size %lu)",
+                  ") in favor of %p (size %" PRIuPTR ")",
                   p, p->subchannel_list_, num_subchannels, sd->subchannel_list,
                   num_subchannels);
         }
