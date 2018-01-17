@@ -1239,7 +1239,7 @@ static void schedule_next_client_load_report(glb_lb_call_data* lb_calld) {
   grpc_timer_init(&lb_calld->client_load_report_timer,
                   next_client_load_report_time,
                   &lb_calld->client_load_report_closure);
-  lb_calld->client_load_report_timer_callback_pending = false;
+  lb_calld->client_load_report_timer_callback_pending = true;
 }
 
 static void client_load_report_done_locked(void* arg, grpc_error* error) {
