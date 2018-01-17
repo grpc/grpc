@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 
 # clang format command
 CLANG_TIDY=${CLANG_TIDY:-clang-tidy-5.0}

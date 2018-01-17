@@ -27,5 +27,5 @@ then
   # run clang-tidy against the checked out codebase
   docker run -e TEST=$TEST -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_TIDY_ROOT="/local-code" --rm=true -v "${REPO_ROOT}":/local-code -t grpc_clang_tidy /clang_tidy_all_the_things.sh "$@"
 else
-  CLANG_tidy_ROOT="${REPO_ROOT}" tools/dockerfile/grpc_clang_tidy/clang_tidy_all_the_things.sh
+  CLANG_TIDY_ROOT="${REPO_ROOT}" tools/dockerfile/grpc_clang_tidy/clang_tidy_all_the_things.sh
 fi
