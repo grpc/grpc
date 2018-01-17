@@ -169,7 +169,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   } else {
     /* Give up faster when failure is expected.
        BUG: Setting this to 1000 reveals a memory leak (b/18608927). */
-    deadline = ms_from_now(1500);
+    deadline = ms_from_now(3000);
   }
 
   /* Send a trivial request. */
