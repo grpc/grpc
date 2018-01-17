@@ -22,7 +22,7 @@
 
 /* This polling engine is only relevant on linux kernels supporting epoll
    epoll_create() or epoll_create1() */
-#ifdef GRPC_LINUX_LEGACY_EPOLL
+#ifdef GRPC_LINUX_EPOLL
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 
 #include <assert.h>
@@ -1245,7 +1245,7 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
   return &vtable;
 }
 
-#else /* defined(GRPC_LINUX_LEGACY_EPOLL) */
+#else /* defined(GRPC_LINUX_EPOLL) */
 #if defined(GRPC_POSIX_SOCKET)
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
@@ -1254,4 +1254,4 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
-#endif /* !defined(GRPC_LINUX_LEGACY_EPOLL) */
+#endif /* !defined(GRPC_LINUX_EPOLL) */
