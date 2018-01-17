@@ -44,7 +44,9 @@ TEST(RefCounted, ExtraRef) {
   foo->Unref();
 }
 
-TraceFlag foo_tracer(true, "foo");
+// Note: We use DebugOnlyTraceFlag instead of TraceFlag to ensure that
+// things build properly in both debug and non-debug cases.
+DebugOnlyTraceFlag foo_tracer(true, "foo");
 
 class FooWithTracing : public RefCountedWithTracing {
  public:

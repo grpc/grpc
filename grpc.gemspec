@@ -346,6 +346,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/slice/slice_internal.h )
   s.files += %w( src/core/lib/slice/slice_string_helpers.h )
   s.files += %w( src/core/lib/support/debug_location.h )
+  s.files += %w( src/core/lib/support/orphanable.h )
   s.files += %w( src/core/lib/support/ref_counted.h )
   s.files += %w( src/core/lib/support/ref_counted_ptr.h )
   s.files += %w( src/core/lib/support/vector.h )
