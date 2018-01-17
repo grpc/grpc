@@ -20,7 +20,6 @@
 
 #include <gtest/gtest.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 namespace {
@@ -41,12 +40,10 @@ TEST(GetStatusCodeFromMetadata, UNKNOWN) {
 }
 
 TEST(GetStatusCodeFromMetadata, Other) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_mdelem status_md = grpc_mdelem_from_slices(
-      &exec_ctx, GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_static_string("10"));
+      GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_static_string("10"));
   EXPECT_EQ(GRPC_STATUS_ABORTED, grpc_get_status_code_from_metadata(status_md));
-  GRPC_MDELEM_UNREF(&exec_ctx, status_md);
-  grpc_exec_ctx_finish(&exec_ctx);
+  GRPC_MDELEM_UNREF(status_md);
 }
 
 }  // namespace
