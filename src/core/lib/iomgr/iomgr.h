@@ -19,7 +19,6 @@
 #ifndef GRPC_CORE_LIB_IOMGR_IOMGR_H
 #define GRPC_CORE_LIB_IOMGR_IOMGR_H
 
-#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include "src/core/lib/iomgr/port.h"
 
 /** Initializes the iomgr. */

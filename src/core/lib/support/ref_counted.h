@@ -47,6 +47,8 @@ class RefCounted {
   RefCounted& operator=(const RefCounted&) = delete;
   GRPC_ABSTRACT_BASE_CLASS
 
+  GRPC_ABSTRACT_BASE_CLASS
+
  protected:
   // Allow Delete() to access destructor.
   template <typename T>
@@ -99,6 +101,8 @@ class RefCountedWithTracing {
   // Not copyable nor movable.
   RefCountedWithTracing(const RefCountedWithTracing&) = delete;
   RefCountedWithTracing& operator=(const RefCountedWithTracing&) = delete;
+  GRPC_ABSTRACT_BASE_CLASS
+
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:

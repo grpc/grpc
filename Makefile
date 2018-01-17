@@ -77,7 +77,6 @@ CC_opt = $(DEFAULT_CC)
 CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
-CXXFLAGS_opt = -fno-exceptions
 CPPFLAGS_opt = -O2
 DEFINES_opt = NDEBUG
 
@@ -95,7 +94,6 @@ CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
 LD_dbg = $(DEFAULT_CC)
 LDXX_dbg = $(DEFAULT_CXX)
-CXXFLAGS_dbg = -fno-exceptions
 CPPFLAGS_dbg = -O0
 DEFINES_dbg = _DEBUG DEBUG
 
@@ -144,14 +142,14 @@ LDXX_asan-noleaks = clang++
 CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-noleaks = -fsanitize=address
 
-VALID_CONFIG_c++-compat = 1
-CC_c++-compat = $(DEFAULT_CC)
-CXX_c++-compat = $(DEFAULT_CXX)
-LD_c++-compat = $(DEFAULT_CC)
-LDXX_c++-compat = $(DEFAULT_CXX)
-CFLAGS_c++-compat = -Wc++-compat
-CPPFLAGS_c++-compat = -O0
-DEFINES_c++-compat = _DEBUG DEBUG
+VALID_CONFIG_noexcept = 1
+CC_noexcept = $(DEFAULT_CC)
+CXX_noexcept = $(DEFAULT_CXX)
+LD_noexcept = $(DEFAULT_CC)
+LDXX_noexcept = $(DEFAULT_CXX)
+CXXFLAGS_noexcept = -fno-exceptions
+CPPFLAGS_noexcept = -O2
+DEFINES_noexcept = NDEBUG
 
 VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
@@ -206,6 +204,15 @@ LD_lto = $(DEFAULT_CC)
 LDXX_lto = $(DEFAULT_CXX)
 CPPFLAGS_lto = -O2
 DEFINES_lto = NDEBUG
+
+VALID_CONFIG_c++-compat = 1
+CC_c++-compat = $(DEFAULT_CC)
+CXX_c++-compat = $(DEFAULT_CXX)
+LD_c++-compat = $(DEFAULT_CC)
+LDXX_c++-compat = $(DEFAULT_CXX)
+CFLAGS_c++-compat = -Wc++-compat
+CPPFLAGS_c++-compat = -O0
+DEFINES_c++-compat = _DEBUG DEBUG
 
 VALID_CONFIG_mutrace = 1
 CC_mutrace = $(DEFAULT_CC)
@@ -643,7 +650,6 @@ ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
 ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
 ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
 CPPFLAGS += -Ithird_party/zlib
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
 else
 ifeq ($(HAS_PKG_CONFIG),true)
 CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -674,7 +680,6 @@ CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
 CARES_MERGE_OBJS = $(LIBARES_OBJS)
 CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
 CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
-LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
 else
 ifeq ($(HAS_PKG_CONFIG),true)
 PC_REQUIRES_GRPC += libcares
@@ -1126,6 +1131,7 @@ cxx_string_ref_test: $(BINDIR)/$(CONFIG)/cxx_string_ref_test
 cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
+exception_test: $(BINDIR)/$(CONFIG)/exception_test
 filter_end2end_test: $(BINDIR)/$(CONFIG)/filter_end2end_test
 generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
@@ -1154,6 +1160,7 @@ memory_test: $(BINDIR)/$(CONFIG)/memory_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
 noop-benchmark: $(BINDIR)/$(CONFIG)/noop-benchmark
+orphanable_test: $(BINDIR)/$(CONFIG)/orphanable_test
 proto_server_reflection_test: $(BINDIR)/$(CONFIG)/proto_server_reflection_test
 proto_utils_test: $(BINDIR)/$(CONFIG)/proto_utils_test
 qps_interarrival_test: $(BINDIR)/$(CONFIG)/qps_interarrival_test
@@ -1180,6 +1187,7 @@ stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
+vector_test: $(BINDIR)/$(CONFIG)/vector_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
@@ -1301,10 +1309,10 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
+	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
 	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
-	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
 	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
 	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
 	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
@@ -1573,6 +1581,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
@@ -1594,6 +1603,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
+  $(BINDIR)/$(CONFIG)/orphanable_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
@@ -1620,6 +1630,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
+  $(BINDIR)/$(CONFIG)/vector_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/boringssl_aes_test \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
@@ -1702,6 +1713,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
@@ -1723,6 +1735,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
+  $(BINDIR)/$(CONFIG)/orphanable_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
@@ -1749,6 +1762,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
+  $(BINDIR)/$(CONFIG)/vector_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
@@ -2101,6 +2115,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing error_details_test"
 	$(Q) $(BINDIR)/$(CONFIG)/error_details_test || ( echo test error_details_test failed ; exit 1 )
+	$(E) "[RUN]     Testing exception_test"
+	$(Q) $(BINDIR)/$(CONFIG)/exception_test || ( echo test exception_test failed ; exit 1 )
 	$(E) "[RUN]     Testing filter_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/filter_end2end_test || ( echo test filter_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing generic_end2end_test"
@@ -2129,6 +2145,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/mock_test || ( echo test mock_test failed ; exit 1 )
 	$(E) "[RUN]     Testing noop-benchmark"
 	$(Q) $(BINDIR)/$(CONFIG)/noop-benchmark || ( echo test noop-benchmark failed ; exit 1 )
+	$(E) "[RUN]     Testing orphanable_test"
+	$(Q) $(BINDIR)/$(CONFIG)/orphanable_test || ( echo test orphanable_test failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_server_reflection_test"
 	$(Q) $(BINDIR)/$(CONFIG)/proto_server_reflection_test || ( echo test proto_server_reflection_test failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_utils_test"
@@ -2167,6 +2185,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_pid_controller_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
+	$(E) "[RUN]     Testing vector_test"
+	$(Q) $(BINDIR)/$(CONFIG)/vector_test || ( echo test vector_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker_unsecure"
@@ -3226,7 +3246,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -3540,7 +3559,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -3827,7 +3845,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -4088,7 +4105,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -4354,7 +4370,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -4646,7 +4661,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -5133,7 +5147,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -5526,7 +5539,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -5644,7 +5656,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -5854,7 +5865,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -14981,6 +14991,49 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/util/error_details_test.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 
 
+EXCEPTION_TEST_SRC = \
+    test/cpp/end2end/exception_test.cc \
+
+EXCEPTION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EXCEPTION_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/exception_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/exception_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/exception_test: $(PROTOBUF_DEP) $(EXCEPTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(EXCEPTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/exception_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/exception_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_exception_test: $(EXCEPTION_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(EXCEPTION_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 FILTER_END2END_TEST_SRC = \
     test/cpp/end2end/filter_end2end_test.cc \
 
@@ -16089,6 +16142,49 @@ deps_noop-benchmark: $(NOOP-BENCHMARK_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(NOOP-BENCHMARK_OBJS:.o=.dep)
+endif
+endif
+
+
+ORPHANABLE_TEST_SRC = \
+    test/core/support/orphanable_test.cc \
+
+ORPHANABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ORPHANABLE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/orphanable_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/orphanable_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/orphanable_test: $(PROTOBUF_DEP) $(ORPHANABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ORPHANABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/orphanable_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/orphanable_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_orphanable_test: $(ORPHANABLE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ORPHANABLE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -17266,6 +17362,49 @@ deps_transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+VECTOR_TEST_SRC = \
+    test/core/support/vector_test.cc \
+
+VECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(VECTOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/vector_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/vector_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/vector_test: $(PROTOBUF_DEP) $(VECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(VECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/vector_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/vector_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_vector_test: $(VECTOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(VECTOR_TEST_OBJS:.o=.dep)
 endif
 endif
 

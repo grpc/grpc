@@ -18,18 +18,50 @@
 
 #include "src/core/lib/support/vector.h"
 #include <gtest/gtest.h>
+#include "src/core/lib/support/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 
 TEST(InlinedVectorTest, CreateAndIterate) {
-  InlinedVector<int, 1> v{1, 2, 3};
-  int sum = 0;
-  for (auto i : v) {
-    sum += i;
+  const int kNumElements = 9;
+  InlinedVector<int, 2> v;
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(i);
   }
-  EXPECT_EQ(6, sum);
+  EXPECT_EQ(static_cast<size_t>(kNumElements), v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    EXPECT_EQ(i, v[i]);
+  }
+}
+
+TEST(InlinedVectorTest, ValuesAreInlined) {
+  const int kNumElements = 5;
+  InlinedVector<int, 10> v;
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(i);
+  }
+  EXPECT_EQ(static_cast<size_t>(kNumElements), v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    EXPECT_EQ(i, v[i]);
+  }
+}
+
+TEST(InlinedVectorTest, PushBackWithMove) {
+  InlinedVector<UniquePtr<int>, 1> v;
+  UniquePtr<int> i = MakeUnique<int>(3);
+  v.push_back(std::move(i));
+  EXPECT_EQ(nullptr, i.get());
+  EXPECT_EQ(1UL, v.size());
+  EXPECT_EQ(3, *v[0]);
+}
+
+TEST(InlinedVectorTest, EmplaceBack) {
+  InlinedVector<UniquePtr<int>, 1> v;
+  v.emplace_back(New<int>(3));
+  EXPECT_EQ(1UL, v.size());
+  EXPECT_EQ(3, *v[0]);
 }
 
 }  // namespace testing

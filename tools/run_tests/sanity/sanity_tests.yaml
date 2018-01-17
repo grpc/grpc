@@ -14,11 +14,11 @@
   cpu_cost: 3
 - script: tools/distrib/check_copyright.py
 - script: tools/distrib/clang_format_code.sh
+- script: tools/distrib/clang_tidy_code.sh
 - script: tools/distrib/check_trailing_newlines.sh
 - script: tools/distrib/check_nanopb_output.sh
 - script: tools/distrib/check_include_guards.py
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/yapf_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
-- script: tools/run_tests/sanity/check_clang_tidy.sh
   cpu_cost: 1000

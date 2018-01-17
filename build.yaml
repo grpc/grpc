@@ -397,8 +397,10 @@ filegroups:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/support/debug_location.h
+  - src/core/lib/support/orphanable.h
   - src/core/lib/support/ref_counted.h
   - src/core/lib/support/ref_counted_ptr.h
+  - src/core/lib/support/vector.h
   - src/core/lib/surface/alarm_internal.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
@@ -485,7 +487,6 @@ filegroups:
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
-  - include/grpc/impl/codegen/exec_ctx_fwd.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -4007,6 +4008,19 @@ targets:
   deps:
   - grpc++_error_details
   - grpc++
+- name: exception_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/exception_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -4390,6 +4404,20 @@ targets:
   deps:
   - benchmark
   defaults: benchmark
+- name: orphanable_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/orphanable_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -4798,6 +4826,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: vector_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/vector_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5
@@ -4913,7 +4955,6 @@ configs:
     DEFINES: NDEBUG
   dbg:
     CPPFLAGS: -O0
-    CXXFLAGS: -fno-exceptions
     DEFINES: _DEBUG DEBUG
   gcov:
     CC: gcc
@@ -4954,9 +4995,12 @@ configs:
     CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
     LDFLAGS: -rdynamic
-  opt:
+  noexcept:
     CPPFLAGS: -O2
     CXXFLAGS: -fno-exceptions
+    DEFINES: NDEBUG
+  opt:
+    CPPFLAGS: -O2
     DEFINES: NDEBUG
   stapprof:
     CPPFLAGS: -O2 -DGRPC_STAP_PROFILER

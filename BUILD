@@ -39,6 +39,16 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_allow_exceptions",
+    values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
+)
+
+config_setting(
+    name = "grpc_disallow_exceptions",
+    values = {"define": "GRPC_ALLOW_EXCEPTIONS=0"},
+)
+
+config_setting(
     name = "remote_execution",
     values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
 )
@@ -549,6 +559,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "orphanable",
+    language = "c++",
+    public_hdrs = ["src/core/lib/support/orphanable.h"],
+    deps = [
+        "debug_location",
+        "grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/support/ref_counted.h"],
@@ -1007,7 +1027,6 @@ grpc_cc_library(
         "include/grpc/impl/codegen/byte_buffer_reader.h",
         "include/grpc/impl/codegen/compression_types.h",
         "include/grpc/impl/codegen/connectivity_state.h",
-        "include/grpc/impl/codegen/exec_ctx_fwd.h",
         "include/grpc/impl/codegen/grpc_types.h",
         "include/grpc/impl/codegen/propagation_bits.h",
         "include/grpc/impl/codegen/status.h",
