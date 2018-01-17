@@ -129,9 +129,10 @@ void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
       map->count = compact(map->keys, map->values, map->count);
       map->free = 0;
       map->capacity = 3 * map->count / 2;
-      map->keys = gpr_realloc(map->keys, map->capacity * sizeof(*map->keys));
-      map->values =
-          gpr_realloc(map->values, map->capacity * sizeof(*map->values));
+      map->keys =
+          (uint32_t*)gpr_realloc(map->keys, map->capacity * sizeof(*map->keys));
+      map->values = (void**)gpr_realloc(map->values,
+                                        map->capacity * sizeof(*map->values));
     }
 
     GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
