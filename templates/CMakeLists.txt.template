@@ -48,7 +48,10 @@
       deps.append("${_gRPC_CARES_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
-      deps.append(d)
+      if d == 'benchmark':
+        deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
+      else:
+        deps.append(d)
     if target_dict.build == 'test' and target_dict.language == 'c++':
       deps.append("${_gRPC_GFLAGS_LIBRARIES}")
     return deps
@@ -90,6 +93,10 @@
   set(gRPC_INSTALL <%text>${gRPC_INSTALL_default}</%text> CACHE BOOL
       "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
 
+  # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
+  # "module": build the dependency using sources from git submodule (under third_party)
+  # "package": use cmake's find_package functionality to locate a pre-installed dependency
+  
   set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
   set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -190,7 +197,7 @@
       return()
     endif()
 
-    set(_protobuf_include_path -I . -I <%text>${PROTOBUF_WELLKNOWN_IMPORT_DIR}</%text>)
+    set(_protobuf_include_path -I . -I <%text>${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR}</%text>)
     foreach(FIL <%text>${ARGN}</%text>)
       get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
       get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
@@ -346,13 +353,11 @@
     PUBLIC <%text>$<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
     PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
-    PRIVATE <%text>${ZLIB_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${BENCHMARK}</%text>/include
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
-    PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
+    PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
@@ -417,13 +422,11 @@
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
     PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
-    PRIVATE <%text>${BENCHMARK_ROOT_DIR}</%text>/include
-    PRIVATE <%text>${ZLIB_ROOT_DIR}</%text>
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
-    PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
+    PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
