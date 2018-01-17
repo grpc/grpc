@@ -260,8 +260,8 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
     Object returnObj{ SystemLib::AllocStdClassObject() };
-    returnObj.o_set("service_url", String(serviceURL, CopyString));
-    returnObj.o_set("method_name", String(methodName, CopyString));
+    returnObj->o_set("service_url", String(serviceURL, CopyString));
+    returnObj->o_set("method_name", String(methodName, CopyString));
     Variant params{ make_packed_array(returnObj) };
 
     auto failCredentials = [&async, &cb, &num_creds_md, &status, &user_data, &error_details]

@@ -689,19 +689,19 @@ Object HHVM_METHOD(Call, startBatch,
         switch(ops[i].op)
         {
         case GRPC_OP_SEND_INITIAL_METADATA:
-            resultObj.o_set("send_metadata", Variant{ true });
+            resultObj->o_set("send_metadata", Variant{ true });
             break;
         case GRPC_OP_SEND_MESSAGE:
-            resultObj.o_set("send_message", Variant{ true });
+            resultObj->o_set("send_message", Variant{ true });
             break;
         case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-            resultObj.o_set("send_close", Variant{ true });
+            resultObj->o_set("send_close", Variant{ true });
             break;
         case GRPC_OP_SEND_STATUS_FROM_SERVER:
-            resultObj.o_set("send_status", Variant{ true });
+            resultObj->o_set("send_status", Variant{ true });
             break;
         case GRPC_OP_RECV_INITIAL_METADATA:
-            resultObj.o_set("metadata", opsManaged.recv_metadata.phpData());
+            resultObj->o_set("metadata", opsManaged.recv_metadata.phpData());
             break;
         case GRPC_OP_RECV_MESSAGE:
         {
@@ -709,12 +709,12 @@ Object HHVM_METHOD(Call, startBatch,
             if (callFailed || (opsManaged.recv_messages.size() <= recvMsgCount) ||
                 !opsManaged.recv_messages[recvMsgCount])
             {
-                resultObj.o_set("message", Variant());
+                resultObj->o_set("message", Variant());
             }
             else
             {
                 Slice slice{ opsManaged.recv_messages[recvMsgCount] };
-                resultObj.o_set("message",
+                resultObj->o_set("message",
                                 Variant{ String{ reinterpret_cast<const char*>(slice.data()),
                                                  slice.length(), CopyString } });
             }
@@ -726,24 +726,24 @@ Object HHVM_METHOD(Call, startBatch,
             Object recvStatusObj{ SystemLib::AllocStdClassObject() };
             if (callFailed)
             {
-                recvStatusObj.o_set("metadata", Variant{});
-                recvStatusObj.o_set("code", Variant{ static_cast<int64_t>(failCode) });
-                recvStatusObj.o_set("details",Variant{ String{ "Error occured" } });
-                resultObj.o_set("status", std::move(Variant{ recvStatusObj }));
+                recvStatusObj->o_set("metadata", Variant{});
+                recvStatusObj->o_set("code", Variant{ static_cast<int64_t>(failCode) });
+                recvStatusObj->o_set("details",Variant{ String{ "Error occured" } });
+                resultObj->o_set("status", std::move(Variant{ recvStatusObj }));
             }
             else
             {
-                recvStatusObj.o_set("metadata", opsManaged.recv_trailing_metadata.phpData());
-                recvStatusObj.o_set("code", Variant{ static_cast<int64_t>(opsManaged.status) });
-                recvStatusObj.o_set("details",
+                recvStatusObj->o_set("metadata", opsManaged.recv_trailing_metadata.phpData());
+                recvStatusObj->o_set("code", Variant{ static_cast<int64_t>(opsManaged.status) });
+                recvStatusObj->o_set("details",
                                     Variant{ String{ reinterpret_cast<const char*>(opsManaged.recv_status_details.data()),
                                                      opsManaged.recv_status_details.length(), CopyString } });
-                resultObj.o_set("status", std::move(Variant{ recvStatusObj }));
+                resultObj->o_set("status", std::move(Variant{ recvStatusObj }));
             }
             break;
         }
         case GRPC_OP_RECV_CLOSE_ON_SERVER:
-            resultObj.o_set("cancelled", callFailed ? true : (opsManaged.cancelled != 0));
+            resultObj->o_set("cancelled", callFailed ? true : (opsManaged.cancelled != 0));
             break;
         default:
             break;
