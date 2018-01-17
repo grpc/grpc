@@ -2,6 +2,6 @@
 # Uses OWNERS files in different modules throughout the
 # repository as the source of truth for module ownership.
 /**/OWNERS @markdroth @nicolasnoble @a11r
-/bazel/** @nicolasnoble @dgquintas @a11r
+/bazel/** @nicolasnoble @dgquintas @a11r @vjpai
 /src/core/ext/filters/client_channel/** @markdroth @dgquintas @a11r
 /tools/run_tests/performance/** @ncteisen @matt-kwong @ctiller

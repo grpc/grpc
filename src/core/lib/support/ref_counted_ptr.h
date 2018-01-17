@@ -79,11 +79,11 @@ class RefCountedPtr {
   bool operator==(const RefCountedPtr& other) const {
     return value_ == other.value_;
   }
-  bool operator==(T* other) const { return value_ == other; }
+  bool operator==(const T* other) const { return value_ == other; }
   bool operator!=(const RefCountedPtr& other) const {
     return value_ != other.value_;
   }
-  bool operator!=(T* other) const { return value_ != other; }
+  bool operator!=(const T* other) const { return value_ != other; }
 
  private:
   T* value_ = nullptr;
