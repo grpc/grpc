@@ -31,13 +31,13 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 
 namespace grpc_core {
 
-// FIXME: find a place for this comment
-/// Any IO should be done under the \a interested_parties \a grpc_pollset_set
-/// in the \a grpc_lb_policy struct.
-
 /// Interface for load balancing policies.
+///
 /// Note: All methods with a "Locked" suffix must be called from the
 /// combiner passed to the constructor.
+///
+/// Any I/O done by the LB policy should be done under the pollset_set
+/// returned by \a interested_parties().
 class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
  public:
   struct Args {
@@ -156,8 +156,9 @@ class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
   /// failed.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
-  // FIXME: reconsider whether any of this request_reresolution code
-  // belongs in the base class
+  // TODO(roth): Reconsider whether any of this request_reresolution code
+  // belongs in the base class.  It may be cleaner to move it to
+  // the individual subclasses, even if that means duplicating some code.
 
   /// Tries to request a re-resolution.
   void TryReresolution(grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error);
