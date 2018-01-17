@@ -21,4 +21,4 @@ CLANG_TIDY=${CLANG_TIDY:-clang-tidy-5.0}
 cd ${CLANG_TIDY_ROOT}
 
 find src/core src/cpp test/core test/cpp -name '*.h' -or -name '*.cc' -print0 \
-  | xargs -0 tools/distrib/run_clang_tidy.py --fix
+  | xargs -0 tools/distrib/run_clang_tidy.py "$@"
