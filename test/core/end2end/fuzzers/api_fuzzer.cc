@@ -280,7 +280,12 @@ static grpc_channel_credentials* read_ssl_channel_creds(input_stream* inp) {
   return creds;
 }
 
-static grpc_call_credentials* read_call_creds(input_stream* inp) {
+static grpc_call_credentials* read_call_creds(input_stream* inp, int depth) {
+  if (depth > 64) {
+    // prevent creating infinitely deep call creds
+    end(inp);
+    return nullptr;
+  }
   switch (next_byte(inp)) {
     default:
       end(inp);
@@ -288,8 +293,8 @@ static grpc_call_credentials* read_call_creds(input_stream* inp) {
     case 0:
       return nullptr;
     case 1: {
-      grpc_call_credentials* c1 = read_call_creds(inp);
-      grpc_call_credentials* c2 = read_call_creds(inp);
+      grpc_call_credentials* c1 = read_call_creds(inp, depth + 1);
+      grpc_call_credentials* c2 = read_call_creds(inp, depth + 1);
       if (c1 != nullptr && c2 != nullptr) {
         grpc_call_credentials* out =
             grpc_composite_call_credentials_create(c1, c2, nullptr);
@@ -338,7 +343,7 @@ static grpc_channel_credentials* read_channel_creds(input_stream* inp) {
       break;
     case 1: {
       grpc_channel_credentials* c1 = read_channel_creds(inp);
-      grpc_call_credentials* c2 = read_call_creds(inp);
+      grpc_call_credentials* c2 = read_call_creds(inp, 0);
       if (c1 != nullptr && c2 != nullptr) {
         grpc_channel_credentials* out =
             grpc_composite_channel_credentials_create(c1, c2, nullptr);

@@ -31,11 +31,16 @@
 
 namespace grpc_core {
 
-// A base class for orphanable objects.
+// A base class for orphanable objects, which have one external owner
+// but are not necessarily destroyed immediately when the external owner
+// gives up ownership.  Instead, the owner calls the object's Orphan()
+// method, and the object then takes responsibility for its own cleanup
+// and destruction.
 class Orphanable {
  public:
   // Gives up ownership of the object.  The implementation must arrange
-  // to destroy the object without further interaction from the caller.
+  // to eventually destroy the object without further interaction from the
+  // caller.
   virtual void Orphan() GRPC_ABSTRACT;
 
   // Not copyable or movable.
