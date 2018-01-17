@@ -186,7 +186,6 @@ typedef struct glb_lb_call_data {
   grpc_byte_buffer* send_message_payload;
   /** The callback after the initial request is sent. */
   grpc_closure lb_on_sent_initial_request;
-  bool initial_request_sent;
 
   /** The response received from the LB server, if any. */
   grpc_byte_buffer* recv_message_payload;
@@ -379,11 +378,12 @@ static void pending_pick_set_metadata_and_context(pending_pick* pp) {
       abort();
     }
     // Pass on client stats via context. Passes ownership of the reference.
-    GPR_ASSERT(pp->client_stats != nullptr);
-    pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-        pp->client_stats;
-    pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
-        destroy_client_stats;
+    if (pp->client_stats != nullptr) {
+      pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
+          pp->client_stats;
+      pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
+          destroy_client_stats;
+    }
   } else {
     if (pp->client_stats != nullptr) {
       grpc_grpclb_client_stats_unref(pp->client_stats);
@@ -935,20 +935,24 @@ static void glb_destroy(grpc_lb_policy* pol) {
   gpr_free(glb_policy);
 }
 
+static void lb_call_data_shutdown(glb_lb_policy* glb_policy) {
+  GPR_ASSERT(glb_policy->lb_calld != nullptr);
+  GPR_ASSERT(glb_policy->lb_calld->lb_call != nullptr);
+  // lb_on_server_status_received will complete the cancellation and clean up.
+  grpc_call_cancel(glb_policy->lb_calld->lb_call, nullptr);
+  if (glb_policy->lb_calld->client_load_report_timer_callback_pending) {
+    grpc_timer_cancel(&glb_policy->lb_calld->client_load_report_timer);
+  }
+  glb_policy->lb_calld = nullptr;
+}
+
 static void glb_shutdown_locked(grpc_lb_policy* pol,
                                 grpc_lb_policy* new_policy) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)pol;
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   glb_policy->shutting_down = true;
-  // todo
   if (glb_policy->lb_calld != nullptr) {
-    GPR_ASSERT(glb_policy->lb_calld->lb_call != nullptr);
-    // lb_on_server_status_received will complete the cancellation and clean up.
-    grpc_call_cancel(glb_policy->lb_calld->lb_call, nullptr);
-    if (glb_policy->lb_calld->client_load_report_timer_callback_pending) {
-      grpc_timer_cancel(&glb_policy->lb_calld->client_load_report_timer);
-    }
-    glb_policy->lb_calld = nullptr;
+    lb_call_data_shutdown(glb_policy);
   }
   if (glb_policy->retry_timer_callback_pending) {
     grpc_timer_cancel(&glb_policy->lb_call_retry_timer);
@@ -1312,7 +1316,7 @@ static void maybe_send_client_load_report_locked(void* arg, grpc_error* error) {
   // If we've already sent the initial request, then we can go ahead and send
   // the load report. Otherwise, we need to wait until the initial request has
   // been sent to send this (see lb_on_sent_initial_request_locked()).
-  if (lb_calld->initial_request_sent) {
+  if (lb_calld->send_message_payload == nullptr) {
     send_client_load_report_locked(lb_calld);
   } else {
     lb_calld->client_load_report_is_due = true;
@@ -1351,6 +1355,7 @@ static glb_lb_call_data* lb_call_data_create_locked(glb_lb_policy* glb_policy) {
   grpc_grpclb_request_destroy(request);
   // Init other data associated with the LB call.
   lb_calld->glb_policy = glb_policy;
+  gpr_ref_init(&lb_calld->refs, 1);
   grpc_metadata_array_init(&lb_calld->lb_initial_metadata_recv);
   grpc_metadata_array_init(&lb_calld->lb_trailing_metadata_recv);
   GRPC_CLOSURE_INIT(&lb_calld->lb_on_sent_initial_request,
@@ -1453,7 +1458,8 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy) {
 // todo initial?
 static void lb_on_sent_initial_request_locked(void* arg, grpc_error* error) {
   glb_lb_call_data* lb_calld = (glb_lb_call_data*)arg;
-  lb_calld->initial_request_sent = true;
+  grpc_byte_buffer_destroy(lb_calld->send_message_payload);
+  lb_calld->send_message_payload = nullptr;
   // If we attempted to send a client load report before the initial request was
   // sent (and this lb_calld is still in use), send the load report now.
   if (lb_calld->client_load_report_is_due &&
@@ -1742,15 +1748,9 @@ static void glb_lb_channel_on_connectivity_changed_cb(void* arg,
     case GRPC_CHANNEL_IDLE:
     case GRPC_CHANNEL_READY:
       if (glb_policy->lb_calld != nullptr) {
-        GPR_ASSERT(glb_policy->lb_calld->lb_call != nullptr);
-        grpc_call_cancel(glb_policy->lb_calld->lb_call, nullptr);
-        if (glb_policy->lb_calld->client_load_report_timer_callback_pending) {
-          grpc_timer_cancel(&glb_policy->lb_calld->client_load_report_timer);
-        }
-        glb_policy->lb_calld = nullptr;
-        // todo
-        query_for_backends_locked(glb_policy);
-      } else if (glb_policy->started_picking) {
+        lb_call_data_shutdown(glb_policy);
+      }
+      if (glb_policy->started_picking) {
         if (glb_policy->retry_timer_callback_pending) {
           grpc_timer_cancel(&glb_policy->lb_call_retry_timer);
         }
