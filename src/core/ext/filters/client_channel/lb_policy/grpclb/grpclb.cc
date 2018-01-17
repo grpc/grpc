@@ -266,7 +266,7 @@ class GrpcLb : public LoadBalancingPolicy {
   /** Index into serverlist for next pick.
    * If the server at this index is a drop, we return a drop.
    * Otherwise, we delegate to the RR policy. */
-  size_t serverlist_index_;
+  size_t serverlist_index_ = 0;
 
   /** stores the backend addresses from the resolver */
   grpc_lb_addresses* fallback_backend_addresses_ = nullptr;
@@ -286,10 +286,10 @@ class GrpcLb : public LoadBalancingPolicy {
   bool watching_lb_channel_ = false;
 
   /** is the callback associated with \a lb_call_retry_timer_ pending? */
-  bool retry_timer_callback_pending_;
+  bool retry_timer_callback_pending_ = false;
 
   /** is the callback associated with \a lb_fallback_timer_ pending? */
-  bool fallback_timer_callback_pending_;
+  bool fallback_timer_callback_pending_ = false;
 
   /** called upon changes to the LB channel's connectivity. */
   grpc_closure lb_channel_on_connectivity_changed_;
