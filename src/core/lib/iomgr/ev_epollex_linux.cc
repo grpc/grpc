@@ -23,6 +23,7 @@
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
 
+#include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 
 #include <assert.h>
@@ -436,7 +437,7 @@ static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
 static grpc_error* pollable_create(pollable_type type, pollable** p) {
   *p = nullptr;
 
-  int epfd = epoll_create1(EPOLL_CLOEXEC);
+  int epfd = epoll_create_and_set_cloexec();
   if (epfd == -1) {
     return GRPC_OS_ERROR(errno, "epoll_create1");
   }

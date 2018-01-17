@@ -24,6 +24,7 @@
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
 
+#include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
 
 #include <assert.h>
@@ -482,7 +483,7 @@ static polling_island* polling_island_create(grpc_fd* initial_fd,
   gpr_atm_rel_store(&pi->poller_count, 0);
   gpr_atm_rel_store(&pi->merged_to, (gpr_atm) nullptr);
 
-  pi->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+  pi->epoll_fd = epoll_create_and_set_cloexec();
 
   if (pi->epoll_fd < 0) {
     append_error(error, GRPC_OS_ERROR(errno, "epoll_create1"), err_desc);
@@ -1671,7 +1672,7 @@ static const grpc_event_engine_vtable vtable = {
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create a dummy epoll_fd to make sure epoll support is available */
 static bool is_epoll_available() {
-  int fd = epoll_create1(EPOLL_CLOEXEC);
+  int fd = epoll_create_and_set_cloexec();
   if (fd < 0) {
     gpr_log(
         GPR_ERROR,
