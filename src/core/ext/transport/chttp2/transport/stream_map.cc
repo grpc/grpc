@@ -119,11 +119,21 @@ void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
     out = *pvalue;
     *pvalue = nullptr;
     map->free += (out != nullptr);
-    /* recognize complete emptyness and ensure we can skip
-     * defragmentation later */
     if (map->free == map->count) {
+      /* recognize complete emptiness and ensure we can skip
+       * defragmentation later */
       map->free = map->count = 0;
+    } else if (map->count > 8 && map->free > 3 * map->count / 4) {
+      /* if we've significantly shrunk, reallocate to avoid stranding memory
+       * after a usage spike */
+      map->count = compact(map->keys, map->values, map->count);
+      map->free = 0;
+      map->capacity = 3 * map->count / 2;
+      map->keys = gpr_realloc(map->keys, map->capacity * sizeof(*map->keys));
+      map->values =
+          gpr_realloc(map->values, map->capacity * sizeof(*map->values));
     }
+
     GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
   }
   return out;
