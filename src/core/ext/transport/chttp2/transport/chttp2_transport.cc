@@ -152,6 +152,10 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error);
 
 static void reset_byte_stream(void* arg, grpc_error* error);
 
+// Flow control default enabled. Can be disabled by setting
+// GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
+bool g_flow_control_enabled = true;
+
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -517,7 +521,13 @@ static void init_transport(grpc_chttp2_transport* t,
     }
   }
 
-  t->flow_control.Init(t, enable_bdp);
+  if (g_flow_control_enabled) {
+    t->flow_control.Init<grpc_core::chttp2::TransportFlowControl>(t,
+                                                                  enable_bdp);
+  } else {
+    t->flow_control.Init<grpc_core::chttp2::TransportFlowControlDisabled>(t);
+    enable_bdp = false;
+  }
 
   /* No pings allowed before receiving a header or data frame. */
   t->ping_state.pings_before_data_required = 0;
@@ -682,7 +692,14 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
     post_destructive_reclaimer(t);
   }
 
-  s->flow_control.Init(t->flow_control.get(), s);
+  if (t->flow_control->flow_control_enabled()) {
+    s->flow_control.Init<grpc_core::chttp2::StreamFlowControl>(
+        static_cast<grpc_core::chttp2::TransportFlowControl*>(
+            t->flow_control.get()),
+        s);
+  } else {
+    s->flow_control.Init<grpc_core::chttp2::StreamFlowControlDisabled>();
+  }
   GPR_TIMER_END("init_stream", 0);
 
   return 0;
@@ -2402,8 +2419,11 @@ static void read_action_locked(void* tp, grpc_error* error) {
     grpc_error* errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
                              GRPC_ERROR_NONE};
     for (; i < t->read_buffer.count && errors[1] == GRPC_ERROR_NONE; i++) {
-      t->flow_control->bdp_estimator()->AddIncomingBytes(
-          (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
+      grpc_core::BdpEstimator* bdp_est = t->flow_control->bdp_estimator();
+      if (bdp_est) {
+        bdp_est->AddIncomingBytes(
+            (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
+      }
       errors[1] = grpc_chttp2_perform_read(t, t->read_buffer.slices[i]);
     }
     if (errors[1] != GRPC_ERROR_NONE) {

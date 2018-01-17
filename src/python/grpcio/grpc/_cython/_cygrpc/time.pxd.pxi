@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2018 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,17 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include "_cygrpc/grpc.pxi"
 
-include "_cygrpc/call.pxd.pxi"
-include "_cygrpc/channel.pxd.pxi"
-include "_cygrpc/credentials.pxd.pxi"
-include "_cygrpc/completion_queue.pxd.pxi"
-include "_cygrpc/event.pxd.pxi"
-include "_cygrpc/metadata.pxd.pxi"
-include "_cygrpc/operation.pxd.pxi"
-include "_cygrpc/records.pxd.pxi"
-include "_cygrpc/security.pxd.pxi"
-include "_cygrpc/server.pxd.pxi"
-include "_cygrpc/tag.pxd.pxi"
-include "_cygrpc/time.pxd.pxi"
+cdef gpr_timespec _timespec_from_time(object time)
+
+
+cdef double _time_from_timespec(gpr_timespec timespec)
