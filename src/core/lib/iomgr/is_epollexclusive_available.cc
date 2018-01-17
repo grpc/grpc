@@ -28,13 +28,14 @@
 #include <sys/eventfd.h>
 #include <unistd.h>
 
+#include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/sys_epoll_wrapper.h"
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 bool grpc_is_epollexclusive_available(void) {
   static bool logged_why_not = false;
 
-  int fd = epoll_create1(EPOLL_CLOEXEC);
+  int fd = epoll_create_and_set_cloexec();
   if (fd < 0) {
     if (!logged_why_not) {
       gpr_log(GPR_ERROR,
