@@ -1074,7 +1074,7 @@ static void pick_callback_cancel_locked(void* arg, grpc_error* error) {
   GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback_cancel");
 }
 
-// Callback invoked by LoadBalancingPolicy::PickLocked()() for async picks.
+// Callback invoked by LoadBalancingPolicy::PickLocked() for async picks.
 // Unrefs the LB policy and invokes async_pick_done_locked().
 static void pick_callback_done_locked(void* arg, grpc_error* error) {
   grpc_call_element* elem = (grpc_call_element*)arg;
