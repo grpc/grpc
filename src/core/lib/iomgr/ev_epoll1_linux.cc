@@ -20,8 +20,9 @@
 
 #include <grpc/support/log.h>
 
-/* This polling engine is only relevant on linux kernels supporting epoll() */
-#ifdef GRPC_LINUX_EPOLL
+/* This polling engine is only relevant on linux kernels supporting epoll
+   epoll_create() or epoll_create1() */
+#ifdef GRPC_LINUX_LEGACY_EPOLL
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 
 #include <assert.h>
@@ -85,31 +86,27 @@ typedef struct epoll_set {
 /* The global singleton epoll set */
 static epoll_set g_epoll_set;
 
-static int epoll_create_and_set_flag() {
+static int epoll_create_and_cloexec() {
 #ifdef GRPC_LINUX_EPOLL_CREATE1
   int fd = epoll_create1(EPOLL_CLOEXEC);
-  if (fd >= 0) {
-    return fd;
+  if (fd < 0) {
+    gpr_log(GPR_ERROR, "epoll_create1 unavailable");
   }
-  gpr_log(GPR_ERROR, "epoll_create1 unavailable");
-  return -1;
 #else
   int fd = epoll_create(MAX_EPOLL_EVENTS);
   if (fd < 0) {
     gpr_log(GPR_ERROR, "epoll_create unavailable");
+  } else if (fcntl(fd, F_SETFD, FD_CLOEXEC) != 0) {
+    gpr_log(GPR_ERROR, "fcntl following epoll_create failed");
     return -1;
   }
-  if (fcntl(fd, F_SETFD, FD_CLOEXEC) == 0) {
-    return fd;
-  }
-  gpr_log(GPR_ERROR, "fcntl following epoll_create failed");
-  return -1;
 #endif
+  return fd;
 }
 
 /* Must be called *only* once */
 static bool epoll_set_init() {
-  g_epoll_set.epfd = epoll_create_and_set_flag();
+  g_epoll_set.epfd = epoll_create_and_cloexec();
   if (g_epoll_set.epfd < 0) {
     return false;
   }
@@ -1248,7 +1245,7 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
   return &vtable;
 }
 
-#else /* defined(GRPC_LINUX_EPOLL) */
+#else /* defined(GRPC_LINUX_LEGACY_EPOLL) */
 #if defined(GRPC_POSIX_SOCKET)
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
@@ -1257,4 +1254,4 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
-#endif /* !defined(GRPC_LINUX_EPOLL) */
+#endif /* !defined(GRPC_LINUX_LEGACY_EPOLL) */
