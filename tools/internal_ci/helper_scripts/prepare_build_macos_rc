@@ -50,7 +50,8 @@ fi
 set +ex  # rvm script is very verbose and exits with errorcode
 source $HOME/.rvm/scripts/rvm
 set -e  # rvm commands are very verbose
-rvm use ruby-2.4
+rvm install 2.5.0
+rvm use 2.5.0 --default
 rvm osx-ssl-certs status all
 rvm osx-ssl-certs update all
 set -ex
