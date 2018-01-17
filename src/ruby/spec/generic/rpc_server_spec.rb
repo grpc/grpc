@@ -325,6 +325,11 @@ describe GRPC::RpcServer do
       @srv.handle(EchoService)
       expect { r.handle(EchoService) }.to raise_error
     end
+
+    it 'raises if service is instance and new_instance_per_rpc is true' do
+      expect { @srv.handle(EchoService.new, new_instance_per_rpc: true) }
+        .to raise_error
+    end
   end
 
   describe '#run' do
@@ -388,8 +393,9 @@ describe GRPC::RpcServer do
         t.join
       end
 
-      it 'should handle multiple requests isolatedly', server: true do
-        @srv.handle(SimpleCountService)
+      it 'should handle multiple requests isolatedly when new_instance_per_rpc' \
+        'option is true', server: true do
+        @srv.handle(SimpleCountService, new_instance_per_rpc: true)
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
@@ -397,6 +403,20 @@ describe GRPC::RpcServer do
         stub = SimpleCountStub.new(@host, :this_channel_is_insecure, **client_opts)
         responses = n.times.map { stub.an_rpc(req).count.to_i }
         expect(responses).to all(be responses.first)
+        @srv.stop
+        t.join
+      end
+
+      it 'should not handle multiple requests isolatedly when new_instance_per_rpc' \
+        'option is not specified', server: true do
+        @srv.handle(SimpleCountService)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        n = 5  # arbitrary
+        stub = SimpleCountStub.new(@host, :this_channel_is_insecure, **client_opts)
+        responses = n.times.map { stub.an_rpc(req).count.to_i }
+        expect(responses.size).to equal responses.uniq.size
         @srv.stop
         t.join
       end
