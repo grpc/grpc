@@ -279,9 +279,6 @@ typedef struct glb_lb_policy {
 
   bool shutting_down;
 
-  /** are we currently updating lb_call? */
-  bool updating_lb_call;
-
   /** are we already watching the LB channel's connectivity? */
   bool watching_lb_channel;
 
@@ -343,7 +340,9 @@ static void glb_lb_call_data_unref(glb_lb_call_data* lb_calld,
     grpc_byte_buffer_destroy(lb_calld->send_message_payload);
     grpc_byte_buffer_destroy(lb_calld->recv_message_payload);
     grpc_slice_unref_internal(lb_calld->lb_call_status_details);
-    grpc_grpclb_client_stats_unref(lb_calld->client_stats);
+    if (lb_calld->client_stats != nullptr) {
+      grpc_grpclb_client_stats_unref(lb_calld->client_stats);
+    }
     GRPC_LB_POLICY_UNREF(&lb_calld->glb_policy->base, "lb_calld");
     gpr_free(lb_calld);
   }
@@ -946,6 +945,9 @@ static void glb_shutdown_locked(grpc_lb_policy* pol,
     GPR_ASSERT(glb_policy->lb_calld->lb_call != nullptr);
     // lb_on_server_status_received will complete the cancellation and clean up.
     grpc_call_cancel(glb_policy->lb_calld->lb_call, nullptr);
+    if (glb_policy->lb_calld->client_load_report_timer_callback_pending) {
+      grpc_timer_cancel(&glb_policy->lb_calld->client_load_report_timer);
+    }
     glb_policy->lb_calld = nullptr;
   }
   if (glb_policy->retry_timer_callback_pending) {
@@ -1221,14 +1223,15 @@ static void start_lb_call_retry_timer(glb_lb_policy* glb_policy) {
                   &glb_policy->lb_on_call_retry);
 }
 
-static void client_load_report_due_locked(void* arg, grpc_error* error);
+static void maybe_send_client_load_report_locked(void* arg, grpc_error* error);
 
 static void schedule_next_client_load_report(glb_lb_call_data* lb_calld) {
   const grpc_millis next_client_load_report_time =
       grpc_core::ExecCtx::Get()->Now() + lb_calld->client_stats_report_interval;
   GRPC_CLOSURE_INIT(
-      &lb_calld->client_load_report_closure, client_load_report_due_locked,
-      lb_calld, grpc_combiner_scheduler(lb_calld->glb_policy->base.combiner));
+      &lb_calld->client_load_report_closure,
+      maybe_send_client_load_report_locked, lb_calld,
+      grpc_combiner_scheduler(lb_calld->glb_policy->base.combiner));
   grpc_timer_init(&lb_calld->client_load_report_timer,
                   next_client_load_report_time,
                   &lb_calld->client_load_report_closure);
@@ -1298,7 +1301,7 @@ static void send_client_load_report_locked(glb_lb_call_data* lb_calld) {
   }
 }
 
-static void client_load_report_due_locked(void* arg, grpc_error* error) {
+static void maybe_send_client_load_report_locked(void* arg, grpc_error* error) {
   glb_lb_call_data* lb_calld = (glb_lb_call_data*)arg;
   glb_lb_policy* glb_policy = lb_calld->glb_policy;
   lb_calld->client_load_report_timer_callback_pending = false;
@@ -1359,8 +1362,6 @@ static glb_lb_call_data* lb_call_data_create_locked(glb_lb_policy* glb_policy) {
   GRPC_CLOSURE_INIT(&lb_calld->lb_on_server_status_received,
                     lb_on_server_status_received_locked, lb_calld,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
-  // todo
-  glb_policy->lb_call_backoff->Reset();
   // Hold a ref to the glb_policy.
   GRPC_LB_POLICY_REF(&glb_policy->base, "lb_calld");
   return lb_calld;
@@ -1616,6 +1617,9 @@ static void lb_on_server_status_received_locked(void* arg, grpc_error* error) {
   // call and no further action is required.
   if (lb_calld == glb_policy->lb_calld) {
     glb_policy->lb_calld = nullptr;
+    if (lb_calld->client_load_report_timer_callback_pending) {
+      grpc_timer_cancel(&lb_calld->client_load_report_timer);
+    }
     start_lb_call_retry_timer(glb_policy);
   }
 }
@@ -1740,14 +1744,18 @@ static void glb_lb_channel_on_connectivity_changed_cb(void* arg,
       if (glb_policy->lb_calld != nullptr) {
         GPR_ASSERT(glb_policy->lb_calld->lb_call != nullptr);
         grpc_call_cancel(glb_policy->lb_calld->lb_call, nullptr);
-        // glb_policy->lb_calld will point to a new location.
-        start_picking_locked(glb_policy);
+        if (glb_policy->lb_calld->client_load_report_timer_callback_pending) {
+          grpc_timer_cancel(&glb_policy->lb_calld->client_load_report_timer);
+        }
+        glb_policy->lb_calld = nullptr;
+        // todo
+        query_for_backends_locked(glb_policy);
       } else if (glb_policy->started_picking) {
         if (glb_policy->retry_timer_callback_pending) {
           grpc_timer_cancel(&glb_policy->lb_call_retry_timer);
         }
-        start_picking_locked(glb_policy);
-      }  // todo retry?
+        query_for_backends_locked(glb_policy);
+      }
     // Fall through.
     case GRPC_CHANNEL_SHUTDOWN:
     done:
