@@ -21,53 +21,69 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-typedef struct {
-  /// const:  how long to wait after the first failure before retrying
-  grpc_millis initial_backoff;
+namespace grpc_core {
 
-  /// const: factor with which to multiply backoff after a failed retry
-  double multiplier;
+/// Implementation of the backoff mechanism described in
+/// doc/connection-backoff.md
+class BackOff {
+ public:
+  class Options;
 
-  /// const: amount to randomize backoffs
-  double jitter;
+  /// Initialize backoff machinery - does not need to be destroyed
+  explicit BackOff(const Options& options);
 
-  /// const: minimum time between retries
-  grpc_millis min_connect_timeout;
+  /// Begin retry loop: returns the deadline to be used for the next attempt,
+  /// following the backoff strategy.
+  grpc_millis Begin();
+  /// Step a retry loop: returns the deadline to be used for the next attempt,
+  /// following the backoff strategy.
+  grpc_millis Step();
+  /// Reset the backoff, so the next grpc_backoff_step will be a
+  /// grpc_backoff_begin.
+  void Reset();
 
-  /// const: maximum time between retries
-  grpc_millis max_backoff;
+  void SetRandomSeed(unsigned int seed);
 
+  class Options {
+   public:
+    Options& set_initial_backoff(grpc_millis initial_backoff) {
+      initial_backoff_ = initial_backoff;
+      return *this;
+    }
+    Options& set_multiplier(double multiplier) {
+      multiplier_ = multiplier;
+      return *this;
+    }
+    Options& set_jitter(double jitter) {
+      jitter_ = jitter;
+      return *this;
+    }
+    Options& set_max_backoff(grpc_millis max_backoff) {
+      max_backoff_ = max_backoff;
+      return *this;
+    }
+    /// how long to wait after the first failure before retrying
+    grpc_millis initial_backoff() const { return initial_backoff_; }
+    /// factor with which to multiply backoff after a failed retry
+    double multiplier() const { return multiplier_; }
+    /// amount to randomize backoffs
+    double jitter() const { return jitter_; }
+    /// maximum time between retries
+    grpc_millis max_backoff() const { return max_backoff_; }
+
+   private:
+    grpc_millis initial_backoff_;
+    double multiplier_;
+    double jitter_;
+    grpc_millis max_backoff_;
+  };  // class Options
+
+ private:
+  const Options options_;
   /// current delay before retries
-  grpc_millis current_backoff;
+  grpc_millis current_backoff_;
+  uint32_t rng_state_;
+};
 
-  /// random number generator
-  uint32_t rng_state;
-} grpc_backoff;
-
-typedef struct {
-  /// Deadline to be used for the current attempt.
-  grpc_millis current_deadline;
-
-  /// Deadline to be used for the next attempt, following the backoff strategy.
-  grpc_millis next_attempt_start_time;
-} grpc_backoff_result;
-
-/// Initialize backoff machinery - does not need to be destroyed
-void grpc_backoff_init(grpc_backoff* backoff, grpc_millis initial_backoff,
-                       double multiplier, double jitter,
-                       grpc_millis min_connect_timeout,
-                       grpc_millis max_backoff);
-
-/// Begin retry loop: returns the deadlines to be used for the current attempt
-/// and the subsequent retry, if any.
-grpc_backoff_result grpc_backoff_begin(grpc_backoff* backoff);
-
-/// Step a retry loop: returns the deadlines to be used for the current attempt
-/// and the subsequent retry, if any.
-grpc_backoff_result grpc_backoff_step(grpc_backoff* backoff);
-
-/// Reset the backoff, so the next grpc_backoff_step will be a
-/// grpc_backoff_begin.
-void grpc_backoff_reset(grpc_backoff* backoff);
-
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_BACKOFF_BACKOFF_H */

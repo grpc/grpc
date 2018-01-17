@@ -186,8 +186,10 @@ int main(int argc, char** argv) {
   }
   if (!sc.name) {
     fprintf(stderr, "unsupported scenario '%s'. Valid are:", scenario_name);
+    fflush(stderr);
     for (i = 0; i < GPR_ARRAY_SIZE(scenarios); i++) {
       fprintf(stderr, " %s", scenarios[i].name);
+      fflush(stderr);
     }
     return 1;
   }

@@ -888,7 +888,6 @@ include/grpc/impl/codegen/byte_buffer.h \
 include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
-include/grpc/impl/codegen/exec_ctx_fwd.h \
 include/grpc/impl/codegen/fork.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
@@ -1039,6 +1038,7 @@ src/core/lib/support/manual_constructor.h \
 src/core/lib/support/memory.h \
 src/core/lib/support/mpscq.h \
 src/core/lib/support/murmur_hash.h \
+src/core/lib/support/orphanable.h \
 src/core/lib/support/ref_counted.h \
 src/core/lib/support/ref_counted_ptr.h \
 src/core/lib/support/spinlock.h \

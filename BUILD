@@ -39,16 +39,26 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_allow_exceptions",
+    values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
+)
+
+config_setting(
+    name = "grpc_disallow_exceptions",
+    values = {"define": "GRPC_ALLOW_EXCEPTIONS=0"},
+)
+
+config_setting(
     name = "remote_execution",
     values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "generous"
+g_stands_for = "glossy"
 
 core_version = "5.0.0-dev"
 
-version = "1.8.0-dev"
+version = "1.9.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -544,13 +554,13 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "debug_location",
-    public_hdrs = ["src/core/lib/support/debug_location.h"],
     language = "c++",
+    public_hdrs = ["src/core/lib/support/debug_location.h"],
 )
 
 grpc_cc_library(
-    name = "ref_counted",
-    public_hdrs = ["src/core/lib/support/ref_counted.h"],
+    name = "orphanable",
+    public_hdrs = ["src/core/lib/support/orphanable.h"],
     language = "c++",
     deps = [
         "grpc_trace",
@@ -559,9 +569,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "ref_counted_ptr",
-    public_hdrs = ["src/core/lib/support/ref_counted_ptr.h"],
+    name = "ref_counted",
     language = "c++",
+    public_hdrs = ["src/core/lib/support/ref_counted.h"],
+    deps = [
+        "debug_location",
+        "grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "ref_counted_ptr",
+    language = "c++",
+    public_hdrs = ["src/core/lib/support/ref_counted_ptr.h"],
 )
 
 grpc_cc_library(
@@ -1012,7 +1032,6 @@ grpc_cc_library(
         "include/grpc/impl/codegen/byte_buffer_reader.h",
         "include/grpc/impl/codegen/compression_types.h",
         "include/grpc/impl/codegen/connectivity_state.h",
-        "include/grpc/impl/codegen/exec_ctx_fwd.h",
         "include/grpc/impl/codegen/grpc_types.h",
         "include/grpc/impl/codegen/propagation_bits.h",
         "include/grpc/impl/codegen/status.h",

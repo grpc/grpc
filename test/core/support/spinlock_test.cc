@@ -95,15 +95,18 @@ static void test(const char* name, void (*body)(void* m), int timeout_s,
   gpr_timespec deadline = gpr_time_add(
       start, gpr_time_from_micros((int64_t)timeout_s * 1000000, GPR_TIMESPAN));
   fprintf(stderr, "%s:", name);
+  fflush(stderr);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
     if (iterations < INT64_MAX / 2) iterations <<= 1;
     fprintf(stderr, " %ld", (long)iterations);
+    fflush(stderr);
     m = test_new(10, iterations, incr_step);
     test_create_threads(m, body);
     test_wait(m);
     if (m->counter != m->thread_count * m->iterations * m->incr_step) {
       fprintf(stderr, "counter %ld  threads %d  iterations %ld\n",
               (long)m->counter, m->thread_count, (long)m->iterations);
+      fflush(stderr);
       GPR_ASSERT(0);
     }
     test_destroy(m);
@@ -111,6 +114,7 @@ static void test(const char* name, void (*body)(void* m), int timeout_s,
   time_taken = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start);
   fprintf(stderr, " done %lld.%09d s\n", (long long)time_taken.tv_sec,
           (int)time_taken.tv_nsec);
+  fflush(stderr);
 }
 
 /* Increment m->counter on each iteration; then mark thread as done.  */

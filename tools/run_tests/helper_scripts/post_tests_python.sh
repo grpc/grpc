@@ -18,7 +18,7 @@ set -ex
 if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
 # change to directory of Python coverage files
-cd $(dirname $0)/../../../src/python/grpcio_tests/
+cd "$(dirname "$0")/../../../src/python/grpcio_tests/"
 
 coverage combine .
 coverage html -i -d ./../../../reports/python

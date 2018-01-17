@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package", "grpc_cc_binary", "grpc_sh_test")
 
 grpc_package(name = "test/cpp/codegen")
 
@@ -55,14 +55,10 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "golden_file_test",
+    testonly = True,
     srcs = ["golden_file_test.cc"],
-    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/"],
-    data = [
-        ":compiler_test_golden",
-        "//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen",
-    ],
     deps = [
         "//:grpc++",
         "//src/proto/grpc/testing:compiler_test_proto",
@@ -71,5 +67,16 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "gflags",
+    ],
+)
+
+grpc_sh_test(
+    name = "run_golden_file_test",
+    srcs = ["run_golden_file_test.sh"],
+    data = [
+        ":golden_file_test",
+        ":compiler_test_golden",
+        ":compiler_test_mock_golden",
+        "//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen",
     ],
 )

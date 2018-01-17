@@ -51,8 +51,10 @@ class InlinedVector {
       T& value = *reinterpret_cast<T*>(inline_ + i);
       value.~T();
     }
-    for (size_t i = 0; i < size_ - N; ++i) {
-      dynamic_[i].~T();
+    if (size_ > N) {  // Avoid subtracting two signed values.
+      for (size_t i = 0; i < size_ - N; ++i) {
+        dynamic_[i].~T();
+      }
     }
     gpr_free(dynamic_);
   }
@@ -70,9 +72,10 @@ class InlinedVector {
     }
   }
 
-  void push_back(const T& value) {
+  template <typename... Args>
+  void emplace_back(Args&&... args) {
     if (size_ < N) {
-      new (&inline_[size_]) T(std::move(value));
+      new (&inline_[size_]) T(std::forward<Args>(args)...);
     } else {
       if (size_ - N == dynamic_capacity_) {
         size_t new_capacity =
@@ -86,10 +89,14 @@ class InlinedVector {
         dynamic_ = new_dynamic;
         dynamic_capacity_ = new_capacity;
       }
-      new (&dynamic_[size_ - N]) T(std::move(value));
+      new (&dynamic_[size_ - N]) T(std::forward<Args>(args)...);
     }
     ++size_;
   }
+
+  void push_back(const T& value) { emplace_back(value); }
+
+  void push_back(T&& value) { emplace_back(std::move(value)); }
 
   size_t size() const { return size_; }
 

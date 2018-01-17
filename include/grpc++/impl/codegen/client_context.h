@@ -348,6 +348,13 @@ class ClientContext {
   /// Applications never need to call this method.
   grpc_call* c_call() { return call_; }
 
+  /// EXPERIMENTAL debugging API
+  ///
+  /// if status is not ok() for an RPC, this will return a detailed string
+  /// of the gRPC Core error that led to the failure. It should not be relied
+  /// upon for anything other than gaining more debug data in failure cases.
+  grpc::string debug_error_string() const { return debug_error_string_; }
+
  private:
   // Disallow copy and assign.
   ClientContext(const ClientContext&);
@@ -373,6 +380,11 @@ class ClientContext {
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
+
+  // Used by friend class CallOpClientRecvStatus
+  void set_debug_error_string(const grpc::string& debug_error_string) {
+    debug_error_string_ = debug_error_string;
+  }
 
   grpc_call* call() const { return call_; }
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
@@ -412,6 +424,8 @@ class ClientContext {
 
   grpc_compression_algorithm compression_algorithm_;
   bool initial_metadata_corked_;
+
+  grpc::string debug_error_string_;
 };
 
 }  // namespace grpc

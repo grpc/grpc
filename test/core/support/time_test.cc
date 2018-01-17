@@ -66,21 +66,28 @@ static void test_values(void) {
 
   x = gpr_inf_future(GPR_CLOCK_REALTIME);
   fprintf(stderr, "far future ");
+  fflush(stderr);
   i_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
   GPR_ASSERT(x.tv_sec == INT64_MAX);
   fprintf(stderr, "far future ");
+  fflush(stderr);
   ts_to_s(x, &to_fp, stderr);
   fprintf(stderr, "\n");
+  fflush(stderr);
 
   x = gpr_inf_past(GPR_CLOCK_REALTIME);
   fprintf(stderr, "far past   ");
+  fflush(stderr);
   i_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
+  fflush(stderr);
   GPR_ASSERT(x.tv_sec == INT64_MIN);
   fprintf(stderr, "far past   ");
+  fflush(stderr);
   ts_to_s(x, &to_fp, stderr);
   fprintf(stderr, "\n");
+  fflush(stderr);
 
   for (i = 1; i != 1000 * 1000 * 1000; i *= 10) {
     x = gpr_time_from_micros(i, GPR_TIMESPAN);
@@ -135,15 +142,19 @@ static void test_add_sub(void) {
         if (gpr_time_cmp(gpr_time_from_micros(sum * k, GPR_TIMESPAN), sumt) !=
             0) {
           fprintf(stderr, "i %d  j %d  sum %d    sumt ", i, j, sum);
+          fflush(stderr);
           ts_to_s(sumt, &to_fp, stderr);
           fprintf(stderr, "\n");
+          fflush(stderr);
           GPR_ASSERT(0);
         }
         if (gpr_time_cmp(gpr_time_from_micros(diff * k, GPR_TIMESPAN), difft) !=
             0) {
           fprintf(stderr, "i %d  j %d  diff %d    diff ", i, j, diff);
+          fflush(stderr);
           ts_to_s(sumt, &to_fp, stderr);
           fprintf(stderr, "\n");
+          fflush(stderr);
           GPR_ASSERT(0);
         }
       }

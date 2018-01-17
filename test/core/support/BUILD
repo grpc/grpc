@@ -215,6 +215,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "orphanable_test",
+    srcs = ["orphanable_test.cc"],
+    language = "C++",
+    deps = [
+        "//:orphanable",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
     name = "ref_counted_test",
     srcs = ["ref_counted_test.cc"],
     language = "C++",

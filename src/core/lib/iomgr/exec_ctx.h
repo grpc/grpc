@@ -111,7 +111,7 @@ class ExecCtx {
 
   /** Checks if there is work to be done */
   bool HasWork() {
-    return combiner_data_.active_combiner != NULL ||
+    return combiner_data_.active_combiner != nullptr ||
            !grpc_closure_list_empty(closure_list_);
   }
 

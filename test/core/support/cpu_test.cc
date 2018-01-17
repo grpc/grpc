@@ -115,17 +115,20 @@ static void cpu_test(void) {
   }
   gpr_mu_lock(&ct.mu);
   while (!ct.is_done) {
-    gpr_cv_wait(&ct.done_cv, &ct.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&ct.done_cv, &ct.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(&ct.mu);
   fprintf(stderr, "Saw cores [");
+  fflush(stderr);
   for (i = 0; i < ct.ncores; i++) {
     if (ct.used[i]) {
       fprintf(stderr, "%d,", i);
+      fflush(stderr);
       cores_seen++;
     }
   }
   fprintf(stderr, "] (%d/%d)\n", cores_seen, ct.ncores);
+  fflush(stderr);
   gpr_free(ct.used);
 }
 

@@ -61,6 +61,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_request_call_context_host_delegate grpcsharp_request_call_context_host;
         public readonly Delegates.grpcsharp_request_call_context_deadline_delegate grpcsharp_request_call_context_deadline;
         public readonly Delegates.grpcsharp_request_call_context_request_metadata_delegate grpcsharp_request_call_context_request_metadata;
+        public readonly Delegates.grpcsharp_request_call_context_reset_delegate grpcsharp_request_call_context_reset;
         public readonly Delegates.grpcsharp_request_call_context_destroy_delegate grpcsharp_request_call_context_destroy;
 
         public readonly Delegates.grpcsharp_composite_call_credentials_create_delegate grpcsharp_composite_call_credentials_create;
@@ -179,6 +180,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_request_call_context_host = GetMethodDelegate<Delegates.grpcsharp_request_call_context_host_delegate>(library);
             this.grpcsharp_request_call_context_deadline = GetMethodDelegate<Delegates.grpcsharp_request_call_context_deadline_delegate>(library);
             this.grpcsharp_request_call_context_request_metadata = GetMethodDelegate<Delegates.grpcsharp_request_call_context_request_metadata_delegate>(library);
+            this.grpcsharp_request_call_context_reset = GetMethodDelegate<Delegates.grpcsharp_request_call_context_reset_delegate>(library);
             this.grpcsharp_request_call_context_destroy = GetMethodDelegate<Delegates.grpcsharp_request_call_context_destroy_delegate>(library);
 
             this.grpcsharp_composite_call_credentials_create = GetMethodDelegate<Delegates.grpcsharp_composite_call_credentials_create_delegate>(library);
@@ -322,6 +324,7 @@ namespace Grpc.Core.Internal
             public delegate IntPtr grpcsharp_request_call_context_host_delegate(RequestCallContextSafeHandle ctx, out UIntPtr hostLength);
             public delegate Timespec grpcsharp_request_call_context_deadline_delegate(RequestCallContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_request_call_context_request_metadata_delegate(RequestCallContextSafeHandle ctx);
+            public delegate void grpcsharp_request_call_context_reset_delegate(RequestCallContextSafeHandle ctx);
             public delegate void grpcsharp_request_call_context_destroy_delegate(IntPtr ctx);
 
             public delegate CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create_delegate(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2);

@@ -130,15 +130,8 @@ namespace Grpc.Core
         // cached handler for watch connectivity state
         static readonly BatchCompletionDelegate WatchConnectivityStateHandler = (success, ctx, state) =>
         {
-            var tcs = (TaskCompletionSource<object>) state;
-            if (success)
-            {
-                tcs.SetResult(null);
-            }
-            else
-            {
-                tcs.SetCanceled();
-            }
+            var tcs = (TaskCompletionSource<bool>) state;
+            tcs.SetResult(success);
         };
 
         /// <summary>
@@ -146,14 +139,30 @@ namespace Grpc.Core
         /// given lastObservedState. 
         /// If deadline is reached or and error occurs, returned task is cancelled.
         /// </summary>
-        public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
+        public async Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
+        {
+            var result = await WaitForStateChangedInternalAsync(lastObservedState, deadline).ConfigureAwait(false);
+            if (!result)
+            {
+                throw new TaskCanceledException("Reached deadline.");
+            }
+        }
+
+        /// <summary>
+        /// Returned tasks completes once channel state has become different from
+        /// given lastObservedState (<c>true</c> is returned) or if the wait has timed out (<c>false</c> is returned).
+        /// </summary>
+        internal Task<bool> WaitForStateChangedInternalAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
             GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.Shutdown,
                 "Shutdown is a terminal state. No further state changes can occur.");
-            var tcs = new TaskCompletionSource<object>();
+            var tcs = new TaskCompletionSource<bool>();
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
-            // pass "tcs" as "state" for WatchConnectivityStateHandler.
-            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+            lock (myLock)
+            {
+                // pass "tcs" as "state" for WatchConnectivityStateHandler.
+                handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+            }
             return tcs.Task;
         }
 
@@ -236,7 +245,10 @@ namespace Grpc.Core
                 Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
             }
 
-            handle.Dispose();
+            lock (myLock)
+            {
+                handle.Dispose();
+            }
 
             await Task.WhenAll(GrpcEnvironment.ReleaseAsync(), connectivityWatcherTask).ConfigureAwait(false);
         }
@@ -285,7 +297,10 @@ namespace Grpc.Core
         {
             try
             {
-                return handle.CheckConnectivityState(tryToConnect);
+                lock (myLock)
+                {
+                    return handle.CheckConnectivityState(tryToConnect);
+                }
             }
             catch (ObjectDisposedException)
             {
@@ -311,14 +326,8 @@ namespace Grpc.Core
                         }
                     }
 
-                    try
-                    {
-                        await WaitForStateChangedAsync(lastState, DateTime.UtcNow.AddSeconds(1)).ConfigureAwait(false);
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        // ignore timeout
-                    }
+                    // ignore the result
+                    await WaitForStateChangedInternalAsync(lastState, DateTime.UtcNow.AddSeconds(1)).ConfigureAwait(false);
                     lastState = State;
                 }
             }

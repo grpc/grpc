@@ -30,9 +30,13 @@ cdef int _get_metadata(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t *num_creds_md, grpc_status_code *status,
     const char **error_details) with gil:
-  def callback(Metadata metadata, grpc_status_code status, bytes error_details):
+  cdef size_t metadata_count
+  cdef grpc_metadata *c_metadata
+  def callback(metadata, grpc_status_code status, bytes error_details):
     if status is StatusCode.ok:
-      cb(user_data, metadata.c_metadata, metadata.c_count, status, NULL)
+      _store_c_metadata(metadata, &c_metadata, &metadata_count)
+      cb(user_data, c_metadata, metadata_count, status, NULL)
+      _release_c_metadata(c_metadata, metadata_count)
     else:
       cb(user_data, NULL, 0, status, error_details)
   args = context.service_url, context.method_name, callback,

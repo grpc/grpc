@@ -81,7 +81,8 @@ RUN apt-get update && apt-get install -y \
       libtool \
       curl \
       python-virtualenv \
-      python-lxml
+      python-lxml \
+      shellcheck
 RUN pip install simplejson mako
 
 #======================================
@@ -109,6 +110,8 @@ RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.0
 RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
 RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-format /usr/local/bin/clang-format
 ENV CLANG_FORMAT=clang-format
+RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/bin/clang-tidy
+ENV CLANG_TIDY=clang-tidy
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc

@@ -26,6 +26,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <poll.h>
 #include <pthread.h>
@@ -84,11 +85,32 @@ typedef struct epoll_set {
 /* The global singleton epoll set */
 static epoll_set g_epoll_set;
 
+static int epoll_create_and_set_flag() {
+#ifdef GRPC_LINUX_EPOLL_CREATE1
+  int fd = epoll_create1(EPOLL_CLOEXEC);
+  if (fd >= 0) {
+    return fd;
+  }
+  gpr_log(GPR_ERROR, "epoll_create1 unavailable");
+  return -1;
+#else
+  int fd = epoll_create(MAX_EPOLL_EVENTS);
+  if (fd < 0) {
+    gpr_log(GPR_ERROR, "epoll_create unavailable");
+    return -1;
+  }
+  if (fcntl(fd, F_SETFD, FD_CLOEXEC) == 0) {
+    return fd;
+  }
+  gpr_log(GPR_ERROR, "fcntl following epoll_create failed");
+  return -1;
+#endif
+}
+
 /* Must be called *only* once */
 static bool epoll_set_init() {
-  g_epoll_set.epfd = epoll_create1(EPOLL_CLOEXEC);
+  g_epoll_set.epfd = epoll_create_and_set_flag();
   if (g_epoll_set.epfd < 0) {
-    gpr_log(GPR_ERROR, "epoll unavailable");
     return false;
   }
 
@@ -738,7 +760,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
       }
 
       if (gpr_cv_wait(&worker->cv, &pollset->mu,
-                      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)) &&
+                      grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC)) &&
           worker->state == UNKICKED) {
         /* If gpr_cv_wait returns true (i.e a timeout), pretend that the worker
            received a kick */
@@ -1232,8 +1254,6 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
 const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
-  gpr_log(GPR_ERROR,
-          "Skipping epoll1 becuase GRPC_LINUX_EPOLL is not defined.");
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
