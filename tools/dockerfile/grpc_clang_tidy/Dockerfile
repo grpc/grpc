@@ -17,6 +17,10 @@ FROM debian:jessie
 RUN apt-get update && apt-get -y install wget xz-utils
 RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
 RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-format /usr/local/bin/clang-format
+ENV CLANG_FORMAT=clang-format
+RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/bin/clang-tidy
+ENV CLANG_TIDY=clang-tidy
 
 #====================
 # Python dependencies
@@ -33,7 +37,5 @@ RUN pip install --upgrade pip==9.0.1
 RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.10.0 twisted==17.5.0
 
-RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/bin/clang-tidy
-ENV CLANG_TIDY=clang-tidy
 ADD clang_tidy_all_the_things.sh /
 CMD ["echo 'Run with tools/distrib/clang_tidy_code.sh'"]
