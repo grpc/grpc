@@ -22,7 +22,7 @@
 #include <grpc/support/log.h>
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
-#ifdef GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
 
@@ -1725,11 +1725,11 @@ const grpc_event_engine_vtable* grpc_init_epollsig_linux(
   return &vtable;
 }
 
-#else /* defined(GRPC_LINUX_EPOLL) */
+#else /* defined(GRPC_LINUX_EPOLL_CREATE1) */
 #if defined(GRPC_POSIX_SOCKET)
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
-/* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
- * NULL */
+/* If GRPC_LINUX_EPOLL_CREATE1 is not defined, it means
+   epoll_create1 is not available. Return NULL */
 const grpc_event_engine_vtable* grpc_init_epollsig_linux(
     bool explicit_request) {
   return nullptr;
@@ -1737,4 +1737,4 @@ const grpc_event_engine_vtable* grpc_init_epollsig_linux(
 #endif /* defined(GRPC_POSIX_SOCKET) */
 
 void grpc_use_signal(int signum) {}
-#endif /* !defined(GRPC_LINUX_EPOLL) */
+#endif /* !defined(GRPC_LINUX_EPOLL_CREATE1) */
