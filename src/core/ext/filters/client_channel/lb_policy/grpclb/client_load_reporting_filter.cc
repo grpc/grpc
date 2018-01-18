@@ -69,7 +69,8 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   call_data* calld = (call_data*)elem->call_data;
   // Get stats object from context and take a ref.
   GPR_ASSERT(args->context != nullptr);
-  GPR_ASSERT(args->context[GRPC_GRPCLB_CLIENT_STATS].value != nullptr);
+  if (args->context[GRPC_GRPCLB_CLIENT_STATS].value == nullptr)
+    return GRPC_ERROR_NONE;
   calld->client_stats = grpc_grpclb_client_stats_ref(
       (grpc_grpclb_client_stats*)args->context[GRPC_GRPCLB_CLIENT_STATS].value);
   // Record call started.
@@ -81,6 +82,7 @@ static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
   call_data* calld = (call_data*)elem->call_data;
+  if (calld->client_stats == nullptr) return;
   // Record call finished, optionally setting client_failed_to_send and
   // received.
   grpc_grpclb_client_stats_add_call_finished(
