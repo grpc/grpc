@@ -37,7 +37,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"

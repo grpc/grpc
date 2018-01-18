@@ -31,10 +31,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

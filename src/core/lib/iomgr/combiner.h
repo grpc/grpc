@@ -23,8 +23,8 @@
 
 #include <grpc/support/atm.h>
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/support/mpscq.h"
 
 // Provides serialized access to some resource.
 // Each action queued on a combiner is executed serially in a borrowed thread.

@@ -37,8 +37,8 @@
 #include "test/core/util/port.h"
 #include "test/cpp/util/test_config.h"
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/lib/support/string.h"
 
 DEFINE_string(extra_server_flags, "", "Extra flags to pass to server.");
 

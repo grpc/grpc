@@ -34,14 +34,14 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr++/manual_constructor.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/manual_constructor.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/service_config.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1

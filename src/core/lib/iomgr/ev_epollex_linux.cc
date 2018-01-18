@@ -41,6 +41,8 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr++/manual_constructor.h"
+#include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
@@ -49,8 +51,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/manual_constructor.h"
-#include "src/core/lib/support/spinlock.h"
 
 // debug aid: create workers on the heap (allows asan to spot
 // use-after-destruction)

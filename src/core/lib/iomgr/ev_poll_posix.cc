@@ -38,12 +38,12 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/wakeup_fd_cv.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/murmur_hash.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 
