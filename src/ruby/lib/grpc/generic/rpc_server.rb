@@ -323,14 +323,17 @@ module GRPC
     #
     # @param service [Object|Class] a service class or object as described
     #        above
-    def handle(service)
+    def handle(service, new_instance_per_rpc: false)
+      if new_instance_per_rpc && !service.is_a?(Class)
+        fail 'service must be Class if new_instance_per_rpc option is true'
+      end
       @run_mutex.synchronize do
         unless @running_state == :not_started
           fail 'cannot add services if the server has been started'
         end
         cls = service.is_a?(Class) ? service : service.class
         assert_valid_service_class(cls)
-        add_rpc_descs_for(service)
+        add_rpc_descs_for(service, new_instance_per_rpc: new_instance_per_rpc)
       end
     end
 
@@ -455,7 +458,7 @@ module GRPC
     end
 
     def rpc_handlers
-      @rpc_handlers ||= {}
+      @rpc_handlers ||= RpcHandlers.new
     end
 
     def assert_valid_service_class(cls)
@@ -467,20 +470,42 @@ module GRPC
     end
 
     # This should be called while holding @run_mutex
-    def add_rpc_descs_for(service)
+    def add_rpc_descs_for(service, new_instance_per_rpc:)
       cls = service.is_a?(Class) ? service : service.class
-      specs, handlers = (@rpc_descs ||= {}), (@rpc_handlers ||= {})
+      specs, handlers = (@rpc_descs ||= {}), rpc_handlers
       cls.rpc_descs.each_pair do |name, spec|
         route = "/#{cls.service_name}/#{name}".to_sym
         fail "already registered: rpc #{route} from #{spec}" if specs.key? route
         specs[route] = spec
         rpc_name = GenericService.underscore(name.to_s).to_sym
-        if service.is_a?(Class)
-          handlers[route] = cls.new.method(rpc_name)
+        if new_instance_per_rpc
+          handlers[route] = -> { cls.new.method(rpc_name) }
         else
-          handlers[route] = service.method(rpc_name)
+          service_instance = service.is_a?(Class) ? service.new : service
+          handlers[route] = service_instance.method(rpc_name)
         end
         GRPC.logger.info("handling #{route} with #{handlers[route]}")
+      end
+    end
+
+    # RpcHandlers is a simple hash-like collection.
+    # Getter method #[] evaluates and returns when value is a Proc.
+    class RpcHandlers
+      def initialize
+        @all = {}
+      end
+
+      def []=(route, handler)
+        @all[route] = handler
+      end
+
+      def [](route)
+        registration = @all[route]
+        registration.is_a?(Proc) ? registration.call : registration
+      end
+
+      def inspect
+        @all.inspect
       end
     end
   end

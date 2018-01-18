@@ -157,6 +157,40 @@ end
 
 BidiStub = BidiService.rpc_stub_class
 
+class CountMsg
+  attr_reader :count
+
+  def initialize(o)
+    @count = o
+  end
+
+  def to_s
+    @count.to_s
+  end
+
+  def self.marshal(o)
+    o.to_s
+  end
+
+  def self.unmarshal(o)
+    new(o)
+  end
+end
+
+# A test service that use not dirty instance variable
+class SimpleCountService
+  include GRPC::GenericService
+  rpc :an_rpc, EchoMsg, CountMsg
+
+  def an_rpc(_req, _call)
+    @count = 0 unless @count
+    @count += 1
+    CountMsg.new(@count)
+  end
+end
+
+SimpleCountStub = SimpleCountService.rpc_stub_class
+
 describe GRPC::RpcServer do
   RpcServer = GRPC::RpcServer
   StatusCodes = GRPC::Core::StatusCodes
@@ -291,6 +325,11 @@ describe GRPC::RpcServer do
       @srv.handle(EchoService)
       expect { r.handle(EchoService) }.to raise_error
     end
+
+    it 'raises if service is instance and new_instance_per_rpc is true' do
+      expect { @srv.handle(EchoService.new, new_instance_per_rpc: true) }
+        .to raise_error
+    end
   end
 
   describe '#run' do
@@ -350,6 +389,34 @@ describe GRPC::RpcServer do
         n = 5  # arbitrary
         stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
         n.times { expect(stub.an_rpc(req)).to be_a(EchoMsg) }
+        @srv.stop
+        t.join
+      end
+
+      it 'should handle multiple requests isolatedly when new_instance_per_rpc' \
+        'option is true', server: true do
+        @srv.handle(SimpleCountService, new_instance_per_rpc: true)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        n = 5  # arbitrary
+        stub = SimpleCountStub.new(@host, :this_channel_is_insecure, **client_opts)
+        responses = Array.new(n) { stub.an_rpc(req).count.to_i }
+        expect(responses).to all(be responses.first)
+        @srv.stop
+        t.join
+      end
+
+      it 'should not handle multiple requests isolatedly when new_instance_per_rpc' \
+        'option is not specified', server: true do
+        @srv.handle(SimpleCountService)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        n = 5  # arbitrary
+        stub = SimpleCountStub.new(@host, :this_channel_is_insecure, **client_opts)
+        responses = Array.new(n) { stub.an_rpc(req).count.to_i }
+        expect(responses.size).to equal responses.uniq.size
         @srv.stop
         t.join
       end
