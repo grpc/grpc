@@ -220,7 +220,7 @@ typedef struct glb_lb_policy {
   /** Base policy: must be first. */
   grpc_lb_policy base;
 
-  /** Who the client is trying to communicate with? */
+  /** Who the client is trying to communicate with. */
   const char* server_name;
 
   /** Channel related data that will be propagated to the internal RR policy. */
@@ -345,6 +345,17 @@ static void glb_lb_call_data_unref(glb_lb_call_data* lb_calld,
     GRPC_LB_POLICY_UNREF(&lb_calld->glb_policy->base, "lb_calld");
     gpr_free(lb_calld);
   }
+}
+
+static void lb_call_data_shutdown(glb_lb_policy* glb_policy) {
+  GPR_ASSERT(glb_policy->lb_calld != nullptr);
+  GPR_ASSERT(glb_policy->lb_calld->lb_call != nullptr);
+  // lb_on_server_status_received will complete the cancellation and clean up.
+  grpc_call_cancel(glb_policy->lb_calld->lb_call, nullptr);
+  if (glb_policy->lb_calld->client_load_report_timer_callback_pending) {
+    grpc_timer_cancel(&glb_policy->lb_calld->client_load_report_timer);
+  }
+  glb_policy->lb_calld = nullptr;
 }
 
 /* add lb_token of selected subchannel (address) to the call's initial
@@ -935,17 +946,6 @@ static void glb_destroy(grpc_lb_policy* pol) {
   gpr_free(glb_policy);
 }
 
-static void lb_call_data_shutdown(glb_lb_policy* glb_policy) {
-  GPR_ASSERT(glb_policy->lb_calld != nullptr);
-  GPR_ASSERT(glb_policy->lb_calld->lb_call != nullptr);
-  // lb_on_server_status_received will complete the cancellation and clean up.
-  grpc_call_cancel(glb_policy->lb_calld->lb_call, nullptr);
-  if (glb_policy->lb_calld->client_load_report_timer_callback_pending) {
-    grpc_timer_cancel(&glb_policy->lb_calld->client_load_report_timer);
-  }
-  glb_policy->lb_calld = nullptr;
-}
-
 static void glb_shutdown_locked(grpc_lb_policy* pol,
                                 grpc_lb_policy* new_policy) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)pol;
@@ -1102,7 +1102,6 @@ static void start_picking_locked(glb_lb_policy* glb_policy) {
     grpc_timer_init(&glb_policy->lb_fallback_timer, deadline,
                     &glb_policy->lb_on_fallback);
   }
-
   glb_policy->started_picking = true;
   glb_policy->lb_call_backoff->Reset();
   query_for_backends_locked(glb_policy);
@@ -1202,8 +1201,7 @@ static void lb_call_on_retry_timer_locked(void* arg, grpc_error* error) {
   GRPC_LB_POLICY_UNREF(&glb_policy->base, "grpclb_retry_timer");
 }
 
-static void start_lb_call_retry_timer(glb_lb_policy* glb_policy) {
-  if (glb_policy->shutting_down) return;
+static void start_lb_call_retry_timer_locked(glb_lb_policy* glb_policy) {
   grpc_millis next_try = glb_policy->lb_call_backoff->Step();
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
@@ -1610,14 +1608,12 @@ static void lb_on_server_status_received_locked(void* arg, grpc_error* error) {
     char* status_details =
         grpc_slice_to_c_string(lb_calld->lb_call_status_details);
     gpr_log(GPR_INFO,
-            "[grpclb %p] Status from LB server received. Status = "
-            "%d, Details "
-            "= '%s', (lb call %p, call: %p), error '%s'",
+            "[grpclb %p] Status from LB server received. Status = %d, details "
+            "= '%s', (lb_calld: %p, lb_call: %p), error '%s'",
             lb_calld->glb_policy, lb_calld->lb_call_status, status_details,
             lb_calld, lb_calld->lb_call, grpc_error_string(error));
     gpr_free(status_details);
   }
-  glb_lb_call_data_unref(lb_calld, "lb_call_ended");
   // If this lb_calld is still in use, this call ended because of a failure so
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
@@ -1626,8 +1622,19 @@ static void lb_on_server_status_received_locked(void* arg, grpc_error* error) {
     if (lb_calld->client_load_report_timer_callback_pending) {
       grpc_timer_cancel(&lb_calld->client_load_report_timer);
     }
-    start_lb_call_retry_timer(glb_policy);
+    GPR_ASSERT(!glb_policy->shutting_down);
+    if (lb_calld->seen_initial_response) {
+      // If we lose connection to the LB server, reset the backoff and restart
+      // the LB call immediately.
+      glb_policy->lb_call_backoff->Reset();
+      query_for_backends_locked(glb_policy);
+    } else {
+      // If this LB call fails establishing any connection to the LB server,
+      // retry later.
+      start_lb_call_retry_timer_locked(glb_policy);
+    }
   }
+  glb_lb_call_data_unref(lb_calld, "lb_call_ended");
 }
 
 static void lb_on_fallback_timer_locked(void* arg, grpc_error* error) {
@@ -1754,6 +1761,7 @@ static void glb_lb_channel_on_connectivity_changed_cb(void* arg,
         if (glb_policy->retry_timer_callback_pending) {
           grpc_timer_cancel(&glb_policy->lb_call_retry_timer);
         }
+        glb_policy->lb_call_backoff->Reset();
         query_for_backends_locked(glb_policy);
       }
     // Fall through.

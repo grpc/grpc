@@ -223,7 +223,7 @@ class BalancerServiceImpl : public BalancerService {
       stream->Read(&request);
       gpr_log(GPR_INFO, "LB[%p]: recv client load report msg: '%s'", this,
               request.DebugString().c_str());
-      GPR_ASSERT(request.has_client_stats());
+      if (!request.has_client_stats()) goto done;
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
       std::lock_guard<std::mutex> lock(mu_);
