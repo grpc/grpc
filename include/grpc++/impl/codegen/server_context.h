@@ -95,6 +95,8 @@ class ServerContextTestSpouse;
 /// \warning ServerContext instances should \em not be reused across rpcs.
 class ServerContext {
  public:
+
+  class CompletionOp;
   ServerContext();  // for async calls
   ~ServerContext();
 
@@ -261,8 +263,6 @@ class ServerContext {
   /// Prevent copying.
   ServerContext(const ServerContext&);
   ServerContext& operator=(const ServerContext&);
-
-  class CompletionOp;
 
   void BeginCompletionOp(internal::Call* call);
   /// Return the tag queued by BeginCompletionOp()
