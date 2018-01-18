@@ -18,7 +18,7 @@ source scl_source enable devtoolset-1.1
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 make plugins
 
