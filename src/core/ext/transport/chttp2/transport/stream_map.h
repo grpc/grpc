@@ -20,6 +20,7 @@
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_MAP_H
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 
 #include <stddef.h>
 
@@ -30,6 +31,8 @@
    Adds are restricted to strictly higher keys than previously seen (this is
    guaranteed by http2). */
 typedef struct {
+  // protects keys and values
+  gpr_mu mu;
   uint32_t* keys;
   void** values;
   size_t count;
