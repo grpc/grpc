@@ -25,8 +25,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/support/string.h"
 
 /* -- Fake transport security credentials. -- */
 

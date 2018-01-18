@@ -27,9 +27,9 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_posix.h"
-#include "src/core/lib/support/env.h"
 
 typedef struct poll_args {
   struct pollfd* fds;

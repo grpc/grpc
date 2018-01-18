@@ -22,7 +22,7 @@
 #include <string.h>
 
 #include <grpc/support/port_platform.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 static int64_t round_up(int64_t x, int64_t divisor) {
   return (x / divisor + (x % divisor != 0)) * divisor;
