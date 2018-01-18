@@ -560,11 +560,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "orphanable",
-    public_hdrs = ["src/core/lib/support/orphanable.h"],
     language = "c++",
+    public_hdrs = ["src/core/lib/support/orphanable.h"],
     deps = [
-        "grpc_trace",
         "debug_location",
+        "grpc_trace",
     ],
 )
 
@@ -939,6 +939,8 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_deadline_filter",
+        "ref_counted",
+        "ref_counted_ptr",
     ],
 )
 

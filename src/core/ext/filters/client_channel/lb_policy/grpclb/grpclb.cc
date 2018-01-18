@@ -939,7 +939,7 @@ static void glb_shutdown_locked(grpc_lb_policy* pol,
       }
       gpr_free(pp);
     } else {
-      pp->pick->connected_subchannel = nullptr;
+      pp->pick->connected_subchannel.reset();
       GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
     }
     pp = next;
@@ -976,7 +976,7 @@ static void glb_cancel_pick_locked(grpc_lb_policy* pol,
   while (pp != nullptr) {
     pending_pick* next = pp->next;
     if (pp->pick == pick) {
-      pick->connected_subchannel = nullptr;
+      pick->connected_subchannel.reset();
       GRPC_CLOSURE_SCHED(&pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick Cancelled", &error, 1));
