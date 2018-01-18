@@ -392,6 +392,7 @@ static void continue_connect_locked(grpc_subchannel* c) {
   args.interested_parties = c->pollset_set;
   const grpc_millis min_deadline =
       c->min_connect_timeout_ms + grpc_core::ExecCtx::Get()->Now();
+  c->next_attempt_deadline = c->backoff->NextAttemptTime();
   args.deadline = std::max(c->next_attempt_deadline, min_deadline);
   args.channel_args = c->args;
   grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
@@ -437,7 +438,6 @@ static void on_alarm(void* arg, grpc_error* error) {
   }
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
-    c->next_attempt_deadline = c->backoff->Step();
     continue_connect_locked(c);
     gpr_mu_unlock(&c->mu);
   } else {
@@ -473,7 +473,6 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
 
   if (!c->backoff_begun) {
     c->backoff_begun = true;
-    c->next_attempt_deadline = c->backoff->Begin();
     continue_connect_locked(c);
   } else {
     GPR_ASSERT(!c->have_alarm);

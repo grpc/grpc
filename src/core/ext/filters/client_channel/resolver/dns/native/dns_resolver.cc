@@ -161,7 +161,7 @@ static void dns_on_resolved_locked(void* arg, grpc_error* error) {
     grpc_resolved_addresses_destroy(r->addresses);
     grpc_lb_addresses_destroy(addresses);
   } else {
-    grpc_millis next_try = r->backoff->Step();
+    grpc_millis next_try = r->backoff->NextAttemptTime();
     grpc_millis timeout = next_try - grpc_core::ExecCtx::Get()->Now();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
