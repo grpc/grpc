@@ -280,8 +280,7 @@ static void parse_args_for_backoff_values(
             grpc_channel_arg_get_integer(
                 &args->args[i],
                 {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
-      } else if (0 ==
-                 strcmp(args->args[i].key, GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
+      } else if (0 == strcmp(args->args[i].key, GRPC_ARG_MIN_CONNECT_TIMEOUT)) {
         fixed_reconnect_backoff = false;
         *min_connect_timeout_ms = grpc_channel_arg_get_integer(
             &args->args[i],
