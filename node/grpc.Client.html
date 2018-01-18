@@ -1,70 +1,134 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>JSDoc: Class: Client</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Documentation Class: Client</title>
 
-    <script src="scripts/prettify/prettify.js"> </script>
-    <script src="scripts/prettify/lang-css.js"> </script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.simplex.css">
+
 </head>
 
 <body>
 
-<div id="main">
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">Documentation</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="grpc.html">grpc</a></li><li><a href="grpc.credentials.html">grpc.credentials</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="grpc.Client.html">grpc.Client</a></li><li><a href="grpc.credentials-CallCredentials.html">grpc.credentials~CallCredentials</a></li><li><a href="grpc.credentials-ChannelCredentials.html">grpc.credentials~ChannelCredentials</a></li><li><a href="grpc.Metadata.html">grpc.Metadata</a></li><li><a href="grpc.Server.html">grpc.Server</a></li><li><a href="grpc.ServerCredentials.html">grpc.ServerCredentials</a></li><li><a href="grpc-ClientDuplexStream.html">grpc~ClientDuplexStream</a></li><li><a href="grpc-ClientReadableStream.html">grpc~ClientReadableStream</a></li><li><a href="grpc-ClientUnaryCall.html">grpc~ClientUnaryCall</a></li><li><a href="grpc-ClientWritableStream.html">grpc~ClientWritableStream</a></li><li><a href="grpc-ServerDuplexStream.html">grpc~ServerDuplexStream</a></li><li><a href="grpc-ServerReadableStream.html">grpc~ServerReadableStream</a></li><li><a href="grpc-ServerUnaryCall.html">grpc~ServerUnaryCall</a></li><li><a href="grpc-ServerWritableStream.html">grpc~ServerWritableStream</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="grpc-ClientDuplexStream.html#event:metadata">grpc~ClientDuplexStream#metadata</a></li><li><a href="grpc-ClientDuplexStream.html#event:status">grpc~ClientDuplexStream#status</a></li><li><a href="grpc-ClientReadableStream.html#event:metadata">grpc~ClientReadableStream#metadata</a></li><li><a href="grpc-ClientReadableStream.html#event:status">grpc~ClientReadableStream#status</a></li><li><a href="grpc-ClientUnaryCall.html#event:metadata">grpc~ClientUnaryCall#event:metadata</a></li><li><a href="grpc-ClientUnaryCall.html#event:status">grpc~ClientUnaryCall#event:status</a></li><li><a href="grpc-ClientWritableStream.html#event:metadata">grpc~ClientWritableStream#metadata</a></li><li><a href="grpc-ClientWritableStream.html#event:status">grpc~ClientWritableStream#status</a></li><li><a href="grpc-ServerDuplexStream.html#~event:cancelled">grpc~ServerDuplexStream~event:cancelled</a></li><li><a href="grpc-ServerReadableStream.html#~event:cancelled">grpc~ServerReadableStream~event:cancelled</a></li><li><a href="grpc-ServerUnaryCall.html#~event:cancelled">grpc~ServerUnaryCall~event:cancelled</a></li><li><a href="grpc-ServerWritableStream.html#~event:cancelled">grpc~ServerWritableStream~event:cancelled</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="externals.list.html" class="dropdown-toggle" data-toggle="dropdown">Externals<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="external-Duplex.html">Duplex</a></li><li><a href="external-EventEmitter.html">EventEmitter</a></li><li><a href="external-GoogleCredential.html">GoogleCredential</a></li><li><a href="external-Readable.html">Readable</a></li><li><a href="external-Writable.html">Writable</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+            <div class="col-sm-3 col-md-3">
+                <form class="navbar-form" role="search">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        
+	</div>
 
-    <h1 class="page-title">Class: Client</h1>
-
-    
-
+</div>
+</div>
 
 
+<div class="container" id="toc-content">
+<div class="row">
 
+	
+	<div class="col-md-8">
+	
+		<div id="main">
+			
+
+	<h1 class="page-title">Class: Client</h1>
 <section>
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="grpc.html">grpc</a>.</span>Client<span class="signature">(address, credentials, options)</span><span class="type-signature"></span></h2>
+        <h2>
+            <span class="ancestors"><a href="grpc.html">grpc</a>.</span>
+        
+        Client
+        </h2>
         
     
 </header>
+
 
 <article>
     <div class="container-overview">
     
         
+<hr>
+<dt>
+    <h4 class="name" id="Client"><span class="type-signature"></span>new Client(address, credentials, options)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>A generic gRPC client. Primarily useful as a base class for generated clients</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="Client"><span class="type-signature"></span>new Client<span class="signature">(address, credentials, options)</span><span class="type-signature"></span></h4>
     
+        <h5>Parameters:</h5>
+        
 
-    
-
-
-
-<div class="description">
-    <p>A generic gRPC client. Primarily useful as a base class for generated clients</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -95,6 +159,7 @@
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -115,7 +180,8 @@
             <td class="type">
             
                 
-<span class="param-type">grpc~ChannelCredentials</span>
+<span class="param-type"><a href="grpc.credentials-ChannelCredentials.html">grpc.credentials~ChannelCredentials</a></span>
+
 
 
             
@@ -142,6 +208,7 @@
 <span class="param-type">Object</span>
 
 
+
             
             </td>
 
@@ -156,12 +223,17 @@
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -171,52 +243,42 @@
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line457">line 457</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
+</dd>
 
     
     </div>
@@ -234,40 +296,40 @@
     
 
     
-
-    
         <h3 class="subsection-title">Methods</h3>
 
-        
+        <dl>
             
+<hr>
+<dt>
+    <h4 class="name" id="close"><span class="type-signature"></span>close()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Close this client.</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="close"><span class="type-signature"></span>close<span class="signature">()</span><span class="type-signature"></span></h4>
     
 
     
-
-
-
-<div class="description">
-    <p>Close this client.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -277,83 +339,75 @@
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line765">line 765</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id="getChannel"><span class="type-signature"></span>getChannel()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Return the underlying channel object for the specified client</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="getChannel"><span class="type-signature"></span>getChannel<span class="signature">()</span><span class="type-signature"> &rarr; {Channel}</span></h4>
     
 
     
-
-
-
-<div class="description">
-    <p>Return the underlying channel object for the specified client</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -363,51 +417,42 @@
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line773">line 773</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>The channel</p>
 </div>
@@ -423,44 +468,42 @@
 <span class="param-type">Channel</span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id="makeBidiStreamRequest"><span class="type-signature"></span>makeBidiStreamRequest(method, serialize, deserialize [, metadata] [, options])</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Make a bidirectional stream request with this method on the given channel.</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="makeBidiStreamRequest"><span class="type-signature"></span>makeBidiStreamRequest<span class="signature">(method, serialize, deserialize, metadata<span class="signature-attributes">opt</span>, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="grpc-ClientDuplexStream.html">grpc~ClientDuplexStream</a>}</span></h4>
     
+        <h5>Parameters:</h5>
+        
 
-    
-
-
-
-<div class="description">
-    <p>Make a bidirectional stream request with this method on the given channel.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -470,7 +513,7 @@
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -491,6 +534,7 @@
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -524,6 +568,7 @@
 <span class="param-type"><a href="grpc.html#~serialize">grpc~serialize</a></span>
 
 
+
             
             </td>
 
@@ -553,6 +598,7 @@
             
                 
 <span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
+
 
 
             
@@ -585,6 +631,7 @@
             
                 
 <span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
 
 
             
@@ -621,6 +668,7 @@
 <span class="param-type"><a href="grpc.Client.html#~CallOptions">grpc.Client~CallOptions</a></span>
 
 
+
             
             </td>
 
@@ -645,12 +693,17 @@
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -660,51 +713,42 @@
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line722">line 722</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>An event emitter for stream related events</p>
 </div>
@@ -720,45 +764,43 @@
 <span class="param-type"><a href="grpc-ClientDuplexStream.html">grpc~ClientDuplexStream</a></span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id="makeClientStreamRequest"><span class="type-signature"></span>makeClientStreamRequest(method, serialize, deserialize [, metadata] [, options], callback)</h4>
+    
+    
+</dt>
+<dd>
 
     
-
-    
-    <h4 class="name" id="makeClientStreamRequest"><span class="type-signature"></span>makeClientStreamRequest<span class="signature">(method, serialize, deserialize, metadata<span class="signature-attributes">opt</span>, options<span class="signature-attributes">opt</span>, callback)</span><span class="type-signature"> &rarr; {<a href="grpc-ClientWritableStream.html">grpc~ClientWritableStream</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Make a client stream request to the given method, using the given serialize
+    <div class="description">
+        <p>Make a client stream request to the given method, using the given serialize
 and deserialize functions, with the given argument.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
+    </div>
     
 
-<table class="params">
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -768,7 +810,7 @@ and deserialize functions, with the given argument.</p>
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -789,6 +831,7 @@ and deserialize functions, with the given argument.</p>
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -820,6 +863,7 @@ and deserialize functions, with the given argument.</p>
             
                 
 <span class="param-type"><a href="grpc.html#~serialize">grpc~serialize</a></span>
+
 
 
             
@@ -854,6 +898,7 @@ and deserialize functions, with the given argument.</p>
 <span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
 
 
+
             
             </td>
 
@@ -884,6 +929,7 @@ and deserialize functions, with the given argument.</p>
             
                 
 <span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
 
 
             
@@ -918,6 +964,7 @@ and deserialize functions, with the given argument.</p>
             
                 
 <span class="param-type"><a href="grpc.Client.html#~CallOptions">grpc.Client~CallOptions</a></span>
+
 
 
             
@@ -953,6 +1000,7 @@ and deserialize functions, with the given argument.</p>
 <span class="param-type"><a href="grpc.Client.html#~requestCallback">grpc.Client~requestCallback</a></span>
 
 
+
             
             </td>
 
@@ -976,12 +1024,17 @@ and deserialize functions, with the given argument.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -991,51 +1044,42 @@ and deserialize functions, with the given argument.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line582">line 582</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>An event emitter for stream related
     events</p>
@@ -1052,45 +1096,43 @@ and deserialize functions, with the given argument.</p>
 <span class="param-type"><a href="grpc-ClientWritableStream.html">grpc~ClientWritableStream</a></span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id="makeServerStreamRequest"><span class="type-signature"></span>makeServerStreamRequest(method, serialize, deserialize, argument [, metadata] [, options])</h4>
+    
+    
+</dt>
+<dd>
 
     
-
-    
-    <h4 class="name" id="makeServerStreamRequest"><span class="type-signature"></span>makeServerStreamRequest<span class="signature">(method, serialize, deserialize, argument, metadata<span class="signature-attributes">opt</span>, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="grpc-ClientReadableStream.html">grpc~ClientReadableStream</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Make a server stream request to the given method, with the given serialize
+    <div class="description">
+        <p>Make a server stream request to the given method, with the given serialize
 and deserialize function, using the given argument</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
+    </div>
     
 
-<table class="params">
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -1100,7 +1142,7 @@ and deserialize function, using the given argument</p>
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -1121,6 +1163,7 @@ and deserialize function, using the given argument</p>
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -1154,6 +1197,7 @@ and deserialize function, using the given argument</p>
 <span class="param-type"><a href="grpc.html#~serialize">grpc~serialize</a></span>
 
 
+
             
             </td>
 
@@ -1183,6 +1227,7 @@ and deserialize function, using the given argument</p>
             
                 
 <span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
+
 
 
             
@@ -1217,6 +1262,7 @@ and deserialize function, using the given argument</p>
 <span class="param-type">*</span>
 
 
+
             
             </td>
 
@@ -1247,6 +1293,7 @@ and deserialize function, using the given argument</p>
             
                 
 <span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
 
 
             
@@ -1283,6 +1330,7 @@ and deserialize function, using the given argument</p>
 <span class="param-type"><a href="grpc.Client.html#~CallOptions">grpc.Client~CallOptions</a></span>
 
 
+
             
             </td>
 
@@ -1307,12 +1355,17 @@ and deserialize function, using the given argument</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -1322,51 +1375,42 @@ and deserialize function, using the given argument</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line664">line 664</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>An event emitter for stream related
     events</p>
@@ -1383,45 +1427,43 @@ and deserialize function, using the given argument</p>
 <span class="param-type"><a href="grpc-ClientReadableStream.html">grpc~ClientReadableStream</a></span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id="makeUnaryRequest"><span class="type-signature"></span>makeUnaryRequest(method, serialize, deserialize, argument [, metadata] [, options], callback)</h4>
+    
+    
+</dt>
+<dd>
 
     
-
-    
-    <h4 class="name" id="makeUnaryRequest"><span class="type-signature"></span>makeUnaryRequest<span class="signature">(method, serialize, deserialize, argument, metadata<span class="signature-attributes">opt</span>, options<span class="signature-attributes">opt</span>, callback)</span><span class="type-signature"> &rarr; {<a href="grpc-ClientUnaryCall.html">grpc~ClientUnaryCall</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Make a unary request to the given method, using the given serialize
+    <div class="description">
+        <p>Make a unary request to the given method, using the given serialize
 and deserialize functions, with the given argument.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
+    </div>
     
 
-<table class="params">
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -1431,7 +1473,7 @@ and deserialize functions, with the given argument.</p>
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -1452,6 +1494,7 @@ and deserialize functions, with the given argument.</p>
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -1483,6 +1526,7 @@ and deserialize functions, with the given argument.</p>
             
                 
 <span class="param-type"><a href="grpc.html#~serialize">grpc~serialize</a></span>
+
 
 
             
@@ -1517,6 +1561,7 @@ and deserialize functions, with the given argument.</p>
 <span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
 
 
+
             
             </td>
 
@@ -1549,6 +1594,7 @@ and deserialize functions, with the given argument.</p>
 <span class="param-type">*</span>
 
 
+
             
             </td>
 
@@ -1579,6 +1625,7 @@ and deserialize functions, with the given argument.</p>
             
                 
 <span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
 
 
             
@@ -1614,6 +1661,7 @@ and deserialize functions, with the given argument.</p>
 <span class="param-type"><a href="grpc.Client.html#~CallOptions">grpc.Client~CallOptions</a></span>
 
 
+
             
             </td>
 
@@ -1647,6 +1695,7 @@ and deserialize functions, with the given argument.</p>
 <span class="param-type"><a href="grpc.Client.html#~requestCallback">grpc.Client~requestCallback</a></span>
 
 
+
             
             </td>
 
@@ -1670,12 +1719,17 @@ and deserialize functions, with the given argument.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -1685,51 +1739,42 @@ and deserialize functions, with the given argument.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line500">line 500</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>An event emitter for stream related events</p>
 </div>
@@ -1745,48 +1790,46 @@ and deserialize functions, with the given argument.</p>
 <span class="param-type"><a href="grpc-ClientUnaryCall.html">grpc~ClientUnaryCall</a></span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id="waitForReady"><span class="type-signature"></span>waitForReady(deadline, callback)</h4>
+    
+    
+</dt>
+<dd>
 
     
-
-    
-    <h4 class="name" id="waitForReady"><span class="type-signature"></span>waitForReady<span class="signature">(deadline, callback)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Wait for the client to be ready. The callback will be called when the
+    <div class="description">
+        <p>Wait for the client to be ready. The callback will be called when the
 client has successfully connected to the server, and it will be called
 with an error if the attempt to connect to the server has unrecoverablly
 failed or if the deadline expires. This function will make the channel
 start connecting if it has not already done so.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
+    </div>
     
 
-<table class="params">
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -1815,6 +1858,7 @@ start connecting if it has not already done so.</p>
             
                 
 <span class="param-type"><a href="grpc.html#~Deadline">grpc~Deadline</a></span>
+
 
 
             
@@ -1840,6 +1884,7 @@ start connecting if it has not already done so.</p>
 <span class="param-type">function</span>
 
 
+
             
             </td>
 
@@ -1855,12 +1900,17 @@ start connecting if it has not already done so.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -1870,96 +1920,95 @@ start connecting if it has not already done so.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line787">line 787</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
+</dd>
 
-
-
-
-
-
-
-
-
-
-        
+        </dl>
     
 
     
         <h3 class="subsection-title">Type Definitions</h3>
 
-        
+        <dl>
                 
-<h4 class="name" id="~Call">Call</h4>
+<hr>
+<dt class="name" id="~Call">
+    <h4 id="~Call">Call</h4>
 
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Any client call type</p>
+    </div>
+    
 
-
-
-<div class="description">
-    <p>Any client call type</p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">ClientUnaryCall</span>
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
+<span class="param-type"><a href="grpc-ClientUnaryCall.html">grpc~ClientUnaryCall</a></span>
 |
 
-<span class="param-type">ClientReadableStream</span>
+<span class="param-type"><a href="grpc-ClientReadableStream.html">grpc~ClientReadableStream</a></span>
 |
 
-<span class="param-type">ClientWritableStream</span>
+<span class="param-type"><a href="grpc-ClientWritableStream.html">grpc~ClientWritableStream</a></span>
 |
 
-<span class="param-type">ClientDuplexStream</span>
-
-
-        </li>
-    </ul>
+<span class="param-type"><a href="grpc-ClientDuplexStream.html">grpc~ClientDuplexStream</a></span>
 
 
 
+            </li>
+        </ul>
+    
 
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -1969,73 +2018,68 @@ start connecting if it has not already done so.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line394">line 394</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
             
                 
-<h4 class="name" id="~CallOptions">CallOptions</h4>
+<hr>
+<dt class="name" id="~CallOptions">
+    <h4 id="~CallOptions">CallOptions</h4>
 
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Options that can be set on a call.</p>
+    </div>
+    
 
-
-
-<div class="description">
-    <p>Options that can be set on a call.</p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">Object</span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
+    
+<dl class="details">
+    
 
     <h5 class="subsection-title">Properties:</h5>
 
-    
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -2064,6 +2108,7 @@ start connecting if it has not already done so.</p>
             
                 
 <span class="param-type"><a href="grpc.html#~Deadline">grpc~Deadline</a></span>
+
 
 
             
@@ -2090,6 +2135,7 @@ start connecting if it has not already done so.</p>
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -2112,6 +2158,7 @@ start connecting if it has not already done so.</p>
             
                 
 <span class="param-type"><a href="grpc.Client.html#~Call">grpc.Client~Call</a></span>
+
 
 
             
@@ -2140,6 +2187,7 @@ start connecting if it has not already done so.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -2165,6 +2213,7 @@ start connecting if it has not already done so.</p>
 <span class="param-type"><a href="grpc.credentials-CallCredentials.html">grpc.credentials~CallCredentials</a></span>
 
 
+
             
             </td>
 
@@ -2179,11 +2228,15 @@ start connecting if it has not already done so.</p>
     
     </tbody>
 </table>
+</dl>
 
+    
 
+	
 
+	
 
-<dl class="details">
+	
 
     
 
@@ -2193,66 +2246,53 @@ start connecting if it has not already done so.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line401">line 401</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
             
                 
+<hr>
+<dt>
+    <h4 class="name" id="~requestCallback"><span class="type-signature"></span>requestCallback(error, value)</h4>
+    
+    
+</dt>
+<dd>
 
     
 
     
-    <h4 class="name" id="~requestCallback"><span class="type-signature"></span>requestCallback<span class="signature">(error<span class="signature-attributes">nullable</span>, value)</span><span class="type-signature"></span></h4>
-    
 
     
 
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
     
+    
+        <h5>Parameters:</h5>
+        
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -2262,7 +2302,7 @@ start connecting if it has not already done so.</p>
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -2283,6 +2323,7 @@ start connecting if it has not already done so.</p>
             
                 
 <span class="param-type"><a href="grpc.html#~ServiceError">grpc~ServiceError</a></span>
+
 
 
             
@@ -2319,6 +2360,7 @@ start connecting if it has not already done so.</p>
 <span class="param-type">*</span>
 
 
+
             
             </td>
 
@@ -2341,12 +2383,17 @@ start connecting if it has not already done so.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -2356,54 +2403,44 @@ start connecting if it has not already done so.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line477">line 477</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
+</dd>
 
-
-
-
-
-
-
-
-
-
-            
+            </dl>
     
 
     
@@ -2414,19 +2451,132 @@ start connecting if it has not already done so.</p>
 
 
 
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+		<div class="col-md-3">
+			<div id="toc" class="col-md-3 hidden-xs hidden-sm hidden-md"></div>
+		</div>
+	
+
+</div>
 </div>
 
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external-Duplex.html">Duplex</a></li><li><a href="external-EventEmitter.html">EventEmitter</a></li><li><a href="external-GoogleCredential.html">GoogleCredential</a></li><li><a href="external-Readable.html">Readable</a></li><li><a href="external-Writable.html">Writable</a></li></ul><h3>Classes</h3><ul><li><a href="grpc.Client.html">Client</a></li><li><a href="grpc.credentials-CallCredentials.html">CallCredentials</a></li><li><a href="grpc.credentials-ChannelCredentials.html">ChannelCredentials</a></li><li><a href="grpc.Metadata.html">Metadata</a></li><li><a href="grpc.Server.html">Server</a></li><li><a href="grpc.ServerCredentials.html">ServerCredentials</a></li><li><a href="grpc-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="grpc-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="grpc-ClientUnaryCall.html">ClientUnaryCall</a></li><li><a href="grpc-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="grpc-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="grpc-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="grpc-ServerUnaryCall.html">ServerUnaryCall</a></li><li><a href="grpc-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Events</h3><ul><li><a href="grpc-ClientDuplexStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientDuplexStream.html#event:status">status</a></li><li><a href="grpc-ClientReadableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientReadableStream.html#event:status">status</a></li><li><a href="grpc-ClientUnaryCall.html#event:metadata">metadata</a></li><li><a href="grpc-ClientUnaryCall.html#event:status">status</a></li><li><a href="grpc-ClientWritableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientWritableStream.html#event:status">status</a></li><li><a href="grpc-ServerDuplexStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerReadableStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerUnaryCall.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerWritableStream.html#~event:cancelled">cancelled</a></li></ul><h3>Namespaces</h3><ul><li><a href="grpc.html">grpc</a></li><li><a href="grpc.credentials.html">credentials</a></li></ul>
-</nav>
 
-<br class="clear">
+    <div class="modal fade" id="searchResults">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Search results</h4>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div>
+
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.3</a> on Fri Sep 08 2017 11:10:31 GMT-0700 (PDT)
+
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
+	
+		on 2018-01-16T12:05:13-05:00
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
 </footer>
 
-<script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"> </script>
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+    <script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : false,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            SearcherDisplay.init();
+        });
+    </script>
+
+
 </body>
 </html>

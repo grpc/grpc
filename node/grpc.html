@@ -1,37 +1,103 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>JSDoc: Namespace: grpc</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Documentation Namespace: grpc</title>
 
-    <script src="scripts/prettify/prettify.js"> </script>
-    <script src="scripts/prettify/lang-css.js"> </script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.simplex.css">
+
 </head>
 
 <body>
 
-<div id="main">
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">Documentation</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="grpc.html">grpc</a></li><li><a href="grpc.credentials.html">grpc.credentials</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="grpc.Client.html">grpc.Client</a></li><li><a href="grpc.credentials-CallCredentials.html">grpc.credentials~CallCredentials</a></li><li><a href="grpc.credentials-ChannelCredentials.html">grpc.credentials~ChannelCredentials</a></li><li><a href="grpc.Metadata.html">grpc.Metadata</a></li><li><a href="grpc.Server.html">grpc.Server</a></li><li><a href="grpc.ServerCredentials.html">grpc.ServerCredentials</a></li><li><a href="grpc-ClientDuplexStream.html">grpc~ClientDuplexStream</a></li><li><a href="grpc-ClientReadableStream.html">grpc~ClientReadableStream</a></li><li><a href="grpc-ClientUnaryCall.html">grpc~ClientUnaryCall</a></li><li><a href="grpc-ClientWritableStream.html">grpc~ClientWritableStream</a></li><li><a href="grpc-ServerDuplexStream.html">grpc~ServerDuplexStream</a></li><li><a href="grpc-ServerReadableStream.html">grpc~ServerReadableStream</a></li><li><a href="grpc-ServerUnaryCall.html">grpc~ServerUnaryCall</a></li><li><a href="grpc-ServerWritableStream.html">grpc~ServerWritableStream</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="grpc-ClientDuplexStream.html#event:metadata">grpc~ClientDuplexStream#metadata</a></li><li><a href="grpc-ClientDuplexStream.html#event:status">grpc~ClientDuplexStream#status</a></li><li><a href="grpc-ClientReadableStream.html#event:metadata">grpc~ClientReadableStream#metadata</a></li><li><a href="grpc-ClientReadableStream.html#event:status">grpc~ClientReadableStream#status</a></li><li><a href="grpc-ClientUnaryCall.html#event:metadata">grpc~ClientUnaryCall#event:metadata</a></li><li><a href="grpc-ClientUnaryCall.html#event:status">grpc~ClientUnaryCall#event:status</a></li><li><a href="grpc-ClientWritableStream.html#event:metadata">grpc~ClientWritableStream#metadata</a></li><li><a href="grpc-ClientWritableStream.html#event:status">grpc~ClientWritableStream#status</a></li><li><a href="grpc-ServerDuplexStream.html#~event:cancelled">grpc~ServerDuplexStream~event:cancelled</a></li><li><a href="grpc-ServerReadableStream.html#~event:cancelled">grpc~ServerReadableStream~event:cancelled</a></li><li><a href="grpc-ServerUnaryCall.html#~event:cancelled">grpc~ServerUnaryCall~event:cancelled</a></li><li><a href="grpc-ServerWritableStream.html#~event:cancelled">grpc~ServerWritableStream~event:cancelled</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="externals.list.html" class="dropdown-toggle" data-toggle="dropdown">Externals<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="external-Duplex.html">Duplex</a></li><li><a href="external-EventEmitter.html">EventEmitter</a></li><li><a href="external-GoogleCredential.html">GoogleCredential</a></li><li><a href="external-Readable.html">Readable</a></li><li><a href="external-Writable.html">Writable</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+            <div class="col-sm-3 col-md-3">
+                <form class="navbar-form" role="search">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        
+	</div>
 
-    <h1 class="page-title">Namespace: grpc</h1>
-
-    
-
+</div>
+</div>
 
 
+<div class="container" id="toc-content">
+<div class="row">
 
+	
+	<div class="col-md-8">
+	
+		<div id="main">
+			
+
+	<h1 class="page-title">Namespace: grpc</h1>
 <section>
 
 <header>
     
-        <h2>grpc</h2>
+        <h2>
+        grpc
+        </h2>
         
     
 </header>
+
 
 <article>
     <div class="container-overview">
@@ -39,9 +105,14 @@
         
 
         
-
-
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -51,34 +122,25 @@
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line47">line 47</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
@@ -135,12 +197,10 @@
     
 
     
-
-    
         <h3 class="subsection-title">Namespaces</h3>
 
         <dl>
-            <dt><a href="grpc.credentials.html">credentials</a></dt>
+            <dt><a href="namespaces.html#grpc.credentials"><a href="grpc.credentials.html">credentials</a></a></dt>
             <dd></dd>
         </dl>
     
@@ -148,39 +208,44 @@
     
         <h3 class="subsection-title">Members</h3>
 
-        
+        <dl>
             
-<h4 class="name" id=".callError"><span class="type-signature">(static, constant) </span>callError<span class="type-signature"> :number</span></h4>
+<hr>
+<dt class="name" id=".callError">
+    <h4 id=".callError"><span class="type-signature">&lt;static, constant> </span>callError<span class="type-signature"> :number</span></h4>
 
-
-
-
-<div class="description">
-    <p>Call error constants. Call errors almost always indicate bugs in the gRPC
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Call error constants. Call errors almost always indicate bugs in the gRPC
 library, and these error codes are mainly useful for finding those bugs.</p>
-</div>
+    </div>
+    
 
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">number</span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
+    
+<dl class="details">
+    
 
     <h5 class="subsection-title">Properties:</h5>
 
-    
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -191,6 +256,8 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 
         
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -211,11 +278,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    0
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -234,11 +308,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    1
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -257,11 +338,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    2
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -280,11 +368,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    3
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -303,11 +398,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    5
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -326,11 +428,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    6
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -349,11 +458,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    7
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -372,11 +488,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    8
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -395,11 +518,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    9
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -418,11 +548,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    10
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -441,11 +578,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    11
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -464,11 +608,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    12
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -487,11 +638,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    13
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -510,11 +668,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    14
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -523,11 +688,15 @@ library, and these error codes are mainly useful for finding those bugs.</p>
     
     </tbody>
 </table>
+</dl>
 
+    
 
+	
 
+	
 
-<dl class="details">
+	
 
     
 
@@ -537,69 +706,64 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line186">line 186</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id=".logVerbosity"><span class="type-signature">(static, readonly) </span>logVerbosity<span class="type-signature"> :number</span></h4>
+<hr>
+<dt class="name" id=".logVerbosity">
+    <h4 id=".logVerbosity"><span class="type-signature">&lt;static, readonly> </span>logVerbosity<span class="type-signature"> :number</span></h4>
 
+    
+</dt>
+<dd>
+    
 
-
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">number</span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
+    
+<dl class="details">
+    
 
     <h5 class="subsection-title">Properties:</h5>
 
-    
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -610,6 +774,8 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 
         
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -630,11 +796,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    0
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -653,11 +826,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    1
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -676,11 +856,18 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    2
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -689,11 +876,15 @@ library, and these error codes are mainly useful for finding those bugs.</p>
     
     </tbody>
 </table>
+</dl>
 
+    
 
+	
 
+	
 
-<dl class="details">
+	
 
     
 
@@ -703,77 +894,72 @@ library, and these error codes are mainly useful for finding those bugs.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line232">line 232</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id=".propagate"><span class="type-signature">(static) </span>propagate<span class="type-signature"> :number</span></h4>
+<hr>
+<dt class="name" id=".propagate">
+    <h4 id=".propagate"><span class="type-signature">&lt;static> </span>propagate<span class="type-signature"> :number</span></h4>
 
-
-
-
-<div class="description">
-    <p>Propagation flags: these can be bitwise or-ed to form the propagation option
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Propagation flags: these can be bitwise or-ed to form the propagation option
 for calls.</p>
 <p>Users are encouraged to write propagation masks as deltas from the default.
 i.e. write <code>grpc.propagate.DEFAULTS &amp; ~grpc.propagate.DEADLINE</code> to disable
 deadline propagation.</p>
-</div>
+    </div>
+    
 
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">number</span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
+    
+<dl class="details">
+    
 
     <h5 class="subsection-title">Properties:</h5>
 
-    
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -784,6 +970,8 @@ deadline propagation.</p>
 
         
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -804,11 +992,18 @@ deadline propagation.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    1
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -827,11 +1022,18 @@ deadline propagation.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    2
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -850,11 +1052,18 @@ deadline propagation.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    4
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -873,11 +1082,18 @@ deadline propagation.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    8
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -896,11 +1112,18 @@ deadline propagation.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    65535
+                
+                </td>
             
 
             <td class="description last"></td>
@@ -909,11 +1132,15 @@ deadline propagation.</p>
     
     </tbody>
 </table>
+</dl>
 
+    
 
+	
 
+	
 
-<dl class="details">
+	
 
     
 
@@ -923,73 +1150,68 @@ deadline propagation.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line168">line 168</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id=".status"><span class="type-signature">(static, readonly) </span>status<span class="type-signature"> :number</span></h4>
+<hr>
+<dt class="name" id=".status">
+    <h4 id=".status"><span class="type-signature">&lt;static, readonly> </span>status<span class="type-signature"> :number</span></h4>
 
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Enum of status codes that gRPC can return</p>
+    </div>
+    
 
-
-
-<div class="description">
-    <p>Enum of status codes that gRPC can return</p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">number</span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
+    
+<dl class="details">
+    
 
     <h5 class="subsection-title">Properties:</h5>
 
-    
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -1000,6 +1222,8 @@ deadline propagation.</p>
 
         
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -1020,11 +1244,18 @@ deadline propagation.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    0
+                
+                </td>
             
 
             <td class="description last"><p>Not an error; returned on success</p></td>
@@ -1043,11 +1274,18 @@ deadline propagation.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    1
+                
+                </td>
             
 
             <td class="description last"><p>The operation was cancelled (typically by the caller).</p></td>
@@ -1066,11 +1304,18 @@ deadline propagation.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    2
+                
+                </td>
             
 
             <td class="description last"><p>Unknown error.  An example of where this error may be returned is
@@ -1093,11 +1338,18 @@ may be converted to this error.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    3
+                
+                </td>
             
 
             <td class="description last"><p>Client specified an invalid argument.  Note that this differs
@@ -1119,11 +1371,18 @@ that are problematic regardless of the state of the system
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    4
+                
+                </td>
             
 
             <td class="description last"><p>Deadline expired before operation could complete.  For operations
@@ -1146,11 +1405,18 @@ enough for the deadline to expire.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    5
+                
+                </td>
             
 
             <td class="description last"><p>Some requested entity (e.g., file or directory) was not found.</p></td>
@@ -1169,11 +1435,18 @@ enough for the deadline to expire.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    6
+                
+                </td>
             
 
             <td class="description last"><p>Some entity that we attempted to create (e.g., file or directory)
@@ -1193,11 +1466,18 @@ already exists.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    7
+                
+                </td>
             
 
             <td class="description last"><p>The caller does not have permission to execute the specified
@@ -1221,11 +1501,18 @@ instead for those errors).</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    8
+                
+                </td>
             
 
             <td class="description last"><p>Some resource has been exhausted, perhaps a per-user quota, or
@@ -1245,11 +1532,18 @@ perhaps the entire file system is out of space.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    9
+                
+                </td>
             
 
             <td class="description last"><p>Operation was rejected because the system is not in a state
@@ -1287,11 +1581,18 @@ read-modify-write on the same resource.</li>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    10
+                
+                </td>
             
 
             <td class="description last"><p>The operation was aborted, typically due to a concurrency issue
@@ -1313,11 +1614,18 @@ ABORTED, and UNAVAILABLE.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    11
+                
+                </td>
             
 
             <td class="description last"><p>Operation was attempted past the valid range.  E.g., seeking or
@@ -1348,11 +1656,18 @@ they are done.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    12
+                
+                </td>
             
 
             <td class="description last"><p>Operation is not implemented or not supported/enabled in this service.</p></td>
@@ -1371,11 +1686,18 @@ they are done.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    13
+                
+                </td>
             
 
             <td class="description last"><p>Internal errors.  Means some invariants expected by underlying
@@ -1396,11 +1718,18 @@ something is very broken.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    14
+                
+                </td>
             
 
             <td class="description last"><p>The service is currently unavailable.  This is a most likely a
@@ -1423,11 +1752,18 @@ ABORTED, and UNAVAILABLE.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    15
+                
+                </td>
             
 
             <td class="description last"><p>Unrecoverable data loss or corruption.</p></td>
@@ -1446,11 +1782,18 @@ ABORTED, and UNAVAILABLE.</p></td>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    16
+                
+                </td>
             
 
             <td class="description last"><p>The request does not have valid authentication credentials for the
@@ -1460,11 +1803,15 @@ operation.</p></td>
     
     </tbody>
 </table>
+</dl>
 
+    
 
+	
 
+	
 
-<dl class="details">
+	
 
     
 
@@ -1474,74 +1821,69 @@ operation.</p></td>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line30">line 30</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id=".writeFlags"><span class="type-signature">(static, readonly) </span>writeFlags<span class="type-signature"> :number</span></h4>
+<hr>
+<dt class="name" id=".writeFlags">
+    <h4 id=".writeFlags"><span class="type-signature">&lt;static, readonly> </span>writeFlags<span class="type-signature"> :number</span></h4>
 
-
-
-
-<div class="description">
-    <p>Write flags: these can be bitwise or-ed to form write options that modify
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Write flags: these can be bitwise or-ed to form write options that modify
 how data is written.</p>
-</div>
+    </div>
+    
 
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">number</span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
+    
+<dl class="details">
+    
 
     <h5 class="subsection-title">Properties:</h5>
 
-    
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -1552,6 +1894,8 @@ how data is written.</p>
 
         
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -1572,11 +1916,18 @@ how data is written.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    1
+                
+                </td>
             
 
             <td class="description last"><p>Hint that the write may be buffered and need not go out on the wire
@@ -1597,11 +1948,18 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
             
 
+            
+                <td class="default">
+                
+                    2
+                
+                </td>
             
 
             <td class="description last"><p>Force compression to be disabled for a particular write</p></td>
@@ -1610,11 +1968,15 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
     
     </tbody>
 </table>
+</dl>
 
+    
 
+	
 
+	
 
-<dl class="details">
+	
 
     
 
@@ -1624,59 +1986,57 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_constants.js.html">src/constants.js</a>, <a href="src_constants.js.html#line213">line 213</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id="~defaultLoadOptions"><span class="type-signature">(inner) </span>defaultLoadOptions<span class="type-signature"></span></h4>
+<hr>
+<dt class="name" id="~defaultLoadOptions">
+    <h4 id="~defaultLoadOptions"><span class="type-signature">&lt;inner> </span>defaultLoadOptions<span class="type-signature"></span></h4>
 
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Default options for loading proto files into gRPC</p>
+    </div>
+    
 
+    
 
-
-<div class="description">
-    <p>Default options for loading proto files into gRPC</p>
-</div>
-
-
-
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -1686,72 +2046,59 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line70">line 70</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
+</dd>
 
-
-
-
-        
+        </dl>
     
 
     
         <h3 class="subsection-title">Methods</h3>
 
-        
+        <dl>
             
+<hr>
+<dt>
+    <h4 class="name" id=".closeClient"><span class="type-signature">&lt;static> </span>closeClient(client_obj)</h4>
+    
+    
+</dt>
+<dd>
 
     
 
     
-    <h4 class="name" id=".closeClient"><span class="type-signature">(static) </span>closeClient<span class="signature">(client_obj)</span><span class="type-signature"></span></h4>
-    
 
     
 
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
     
+    
+        <h5>Parameters:</h5>
+        
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -1782,6 +2129,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type"><a href="grpc.Client.html">grpc.Client</a></span>
 
 
+
             
             </td>
 
@@ -1796,12 +2144,17 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -1811,82 +2164,69 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line251">line 251</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id=".load"><span class="type-signature">&lt;static> </span>load(filename [, format] [, options])</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Load a gRPC object from a .proto file.</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id=".load"><span class="type-signature">(static) </span>load<span class="signature">(filename, format<span class="signature-attributes">opt</span>, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object.&lt;string, *>}</span></h4>
     
+        <h5>Parameters:</h5>
+        
 
-    
-
-
-
-<div class="description">
-    <p>Load a gRPC object from a .proto file.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -1896,7 +2236,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -1920,6 +2260,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 |
 
 <span class="param-type">Object</span>
+
 
 
             
@@ -1951,6 +2292,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -1987,6 +2329,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">Object</span>
 
 
+
             
             </td>
 
@@ -2005,10 +2348,10 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
             
 
             <td class="description last"><p>Options to apply to the loaded file</p>
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -2018,7 +2361,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -2041,6 +2384,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
             
                 
 <span class="param-type">bool</span>
+
 
 
             
@@ -2083,6 +2427,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">bool</span>
 
 
+
             
             </td>
 
@@ -2123,6 +2468,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">bool</span>
 
 
+
             
             </td>
 
@@ -2161,6 +2507,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
             
                 
 <span class="param-type">bool</span>
+
 
 
             
@@ -2203,12 +2550,17 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -2218,51 +2570,42 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line121">line 121</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>The resulting gRPC object</p>
 </div>
@@ -2278,44 +2621,42 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">Object.&lt;string, *></span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id=".loadObject"><span class="type-signature">&lt;static> </span>loadObject(value [, options])</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Load a ProtoBuf.js object as a gRPC object.</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id=".loadObject"><span class="type-signature">(static) </span>loadObject<span class="signature">(value, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object.&lt;string, *>}</span></h4>
     
+        <h5>Parameters:</h5>
+        
 
-    
-
-
-
-<div class="description">
-    <p>Load a ProtoBuf.js object as a gRPC object.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -2325,7 +2666,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -2346,6 +2687,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
             
                 
 <span class="param-type">Object</span>
+
 
 
             
@@ -2379,6 +2721,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">Object</span>
 
 
+
             
             </td>
 
@@ -2397,10 +2740,10 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
             
 
             <td class="description last"><p>Options to apply to the loaded file</p>
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -2410,7 +2753,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -2433,6 +2776,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
             
                 
 <span class="param-type">bool</span>
+
 
 
             
@@ -2475,6 +2819,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">bool</span>
 
 
+
             
             </td>
 
@@ -2515,6 +2860,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">bool</span>
 
 
+
             
             </td>
 
@@ -2553,6 +2899,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
             
                 
 <span class="param-type">bool</span>
+
 
 
             
@@ -2600,6 +2947,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -2626,7 +2974,7 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
             <td class="description last"><p>5 and 6
     respectively indicate that an object from the corresponding version of
     Protobuf.js is provided in the value argument. If the option is 'detect',
-    gRPC wll guess what the version is based on the structure of the value.</p></td>
+    gRPC will guess what the version is based on the structure of the value.</p></td>
         </tr>
 
     
@@ -2640,12 +2988,17 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -2655,51 +3008,42 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line73">line 73</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>The resulting gRPC object.</p>
 </div>
@@ -2715,48 +3059,46 @@ write, or until writes_done, but it need not buffer completely or at all.</p></t
 <span class="param-type">Object.&lt;string, *></span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id=".setLogger"><span class="type-signature">&lt;static> </span>setLogger(logger)</h4>
+    
+    
+</dt>
+<dd>
 
     
-
-    
-    <h4 class="name" id=".setLogger"><span class="type-signature">(static) </span>setLogger<span class="signature">(logger)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Sets the logger function for the gRPC module. For debugging purposes, the C
+    <div class="description">
+        <p>Sets the logger function for the gRPC module. For debugging purposes, the C
 core will log synchronously directly to stdout unless this function is
 called. Note: the output format here is intended to be informational, and
 is not guaranteed to stay the same in the future.
 Logs will be directed to logger.error.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
+    </div>
     
 
-<table class="params">
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -2787,6 +3129,7 @@ Logs will be directed to logger.error.</p>
 <span class="param-type">Console</span>
 
 
+
             
             </td>
 
@@ -2801,12 +3144,17 @@ Logs will be directed to logger.error.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -2816,83 +3164,70 @@ Logs will be directed to logger.error.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line163">line 163</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id=".setLogVerbosity"><span class="type-signature">&lt;static> </span>setLogVerbosity(verbosity)</h4>
+    
+    
+</dt>
+<dd>
 
     
-
-    
-    <h4 class="name" id=".setLogVerbosity"><span class="type-signature">(static) </span>setLogVerbosity<span class="signature">(verbosity)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Sets the logger verbosity for gRPC module logging. The options are members
+    <div class="description">
+        <p>Sets the logger verbosity for gRPC module logging. The options are members
 of the grpc.logVerbosity map.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
+    </div>
     
 
-<table class="params">
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -2923,6 +3258,7 @@ of the grpc.logVerbosity map.</p>
 <span class="param-type">Number</span>
 
 
+
             
             </td>
 
@@ -2937,12 +3273,17 @@ of the grpc.logVerbosity map.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -2952,82 +3293,69 @@ of the grpc.logVerbosity map.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line184">line 184</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id="~getClientChannel"><span class="type-signature">&lt;inner> </span>getClientChannel(client)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Return the underlying channel object for the specified client</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="~getClientChannel"><span class="type-signature">(inner) </span>getClientChannel<span class="signature">(client)</span><span class="type-signature"> &rarr; {Channel}</span></h4>
     
+        <h5>Parameters:</h5>
+        
 
-    
-
-
-
-<div class="description">
-    <p>Return the underlying channel object for the specified client</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -3055,7 +3383,8 @@ of the grpc.logVerbosity map.</p>
             <td class="type">
             
                 
-<span class="param-type">Client</span>
+<span class="param-type"><a href="grpc.Client.html">grpc.Client</a></span>
+
 
 
             
@@ -3065,19 +3394,24 @@ of the grpc.logVerbosity map.</p>
 
             
 
-            <td class="description last"></td>
+            <td class="description last"><p>The client</p></td>
         </tr>
 
     
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -3087,58 +3421,49 @@ of the grpc.logVerbosity map.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line930">line 930</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
+	<dt class="tag-see method-doc-label method-doc-details-label">See:</dt>
+	<dd class="tag-see">
+		<ul>
+			<li><a href="grpc.Client.html#getChannel">grpc.Client#getChannel</a></li>
+			</ul>
+	</dd>
+	
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="grpc.Client.html#getChannel">grpc.Client#getChannel</a></li>
-        </ul>
-    </dd>
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>The channel</p>
 </div>
@@ -3154,49 +3479,47 @@ of the grpc.logVerbosity map.</p>
 <span class="param-type">Channel</span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id="~makeGenericClientConstructor"><span class="type-signature">&lt;inner> </span>makeGenericClientConstructor(methods, serviceName, class_options)</h4>
+    
+    
+</dt>
+<dd>
 
     
-
-    
-    <h4 class="name" id="~makeGenericClientConstructor"><span class="type-signature">(inner) </span>makeGenericClientConstructor<span class="signature">(methods, serviceName, class_options)</span><span class="type-signature"> &rarr; {function}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Creates a constructor for a client with the given methods, as specified in
+    <div class="description">
+        <p>Creates a constructor for a client with the given methods, as specified in
 the methods argument. The resulting class will have an instance method for
 each method in the service, which is a partial application of one of the
 <a href="grpc.Client.html">Client</a> request methods, depending on <code>requestSerialize</code>
 and <code>responseSerialize</code>, with the <code>method</code>, <code>serialize</code>, and <code>deserialize</code>
 arguments predefined.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
+    </div>
     
 
-<table class="params">
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -3227,6 +3550,7 @@ arguments predefined.</p>
 <span class="param-type"><a href="grpc.html#~ServiceDefinition">grpc~ServiceDefinition</a></span>
 
 
+
             
             </td>
 
@@ -3249,6 +3573,7 @@ arguments predefined.</p>
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -3274,6 +3599,7 @@ arguments predefined.</p>
 <span class="param-type">Object</span>
 
 
+
             
             </td>
 
@@ -3282,10 +3608,10 @@ arguments predefined.</p>
             
 
             <td class="description last"><p>An options object.</p>
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -3295,7 +3621,7 @@ arguments predefined.</p>
         <th>Type</th>
 
         
-        <th>Attributes</th>
+        <th>Argument</th>
         
 
         
@@ -3318,6 +3644,7 @@ arguments predefined.</p>
             
                 
 <span class="param-type">boolean</span>
+
 
 
             
@@ -3361,12 +3688,17 @@ arguments predefined.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -3376,51 +3708,42 @@ arguments predefined.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line874">line 874</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>New client constructor, which is a subclass of
     <a href="grpc.Client.html">grpc.Client</a>, and has the same arguments as that constructor.</p>
@@ -3437,48 +3760,46 @@ arguments predefined.</p>
 <span class="param-type">function</span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
         
             
+<hr>
+<dt>
+    <h4 class="name" id="~waitForClientReady"><span class="type-signature">&lt;inner> </span>waitForClientReady(client, deadline, callback)</h4>
+    
+    
+</dt>
+<dd>
 
     
-
-    
-    <h4 class="name" id="~waitForClientReady"><span class="type-signature">(inner) </span>waitForClientReady<span class="signature">(client, deadline, callback)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Wait for the client to be ready. The callback will be called when the
+    <div class="description">
+        <p>Wait for the client to be ready. The callback will be called when the
 client has successfully connected to the server, and it will be called
 with an error if the attempt to connect to the server has unrecoverablly
 failed or if the deadline expires. This function will make the channel
 start connecting if it has not already done so.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
+    </div>
     
 
-<table class="params">
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -3506,7 +3827,8 @@ start connecting if it has not already done so.</p>
             <td class="type">
             
                 
-<span class="param-type">Client</span>
+<span class="param-type"><a href="grpc.Client.html">grpc.Client</a></span>
+
 
 
             
@@ -3530,6 +3852,7 @@ start connecting if it has not already done so.</p>
             
                 
 <span class="param-type"><a href="grpc.html#~Deadline">grpc~Deadline</a></span>
+
 
 
             
@@ -3556,6 +3879,7 @@ start connecting if it has not already done so.</p>
 <span class="param-type">function</span>
 
 
+
             
             </td>
 
@@ -3571,12 +3895,17 @@ start connecting if it has not already done so.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -3586,101 +3915,100 @@ start connecting if it has not already done so.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line949">line 949</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
+	<dt class="tag-see method-doc-label method-doc-details-label">See:</dt>
+	<dd class="tag-see">
+		<ul>
+			<li><a href="grpc.Client.html#waitForReady">grpc.Client#waitForReady</a></li>
+			</ul>
+	</dd>
+	
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="grpc.Client.html#waitForReady">grpc.Client#waitForReady</a></li>
-        </ul>
-    </dd>
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
 
+    
+</dd>
 
-
-
-
-
-
-
-
-
-
-        
+        </dl>
     
 
     
         <h3 class="subsection-title">Type Definitions</h3>
 
-        
+        <dl>
                 
-<h4 class="name" id="~Deadline">Deadline</h4>
+<hr>
+<dt class="name" id="~Deadline">
+    <h4 id="~Deadline">Deadline</h4>
 
-
-
-
-<div class="description">
-    <p>The deadline of an operation. If it is a date, the deadline is reached at
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>The deadline of an operation. If it is a date, the deadline is reached at
 the date and time specified. If it is a finite number, it is treated as
 a number of milliseconds since the Unix Epoch. If it is Infinity, the
 deadline will never be reached. If it is -Infinity, the deadline has already
 passed.</p>
-</div>
+    </div>
+    
 
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">number</span>
 |
 
-<span class="param-type">date</span>
-
-
-        </li>
-    </ul>
+<span class="param-type">Date</span>
 
 
 
+            </li>
+        </ul>
+    
 
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -3690,70 +4018,57 @@ passed.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line142">line 142</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
             
                 
+<hr>
+<dt>
+    <h4 class="name" id="~deserialize"><span class="type-signature"></span>deserialize(data)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>A deserialization function</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="~deserialize"><span class="type-signature"></span>deserialize<span class="signature">(data)</span><span class="type-signature"> &rarr; {*}</span></h4>
     
+        <h5>Parameters:</h5>
+        
 
-    
-
-
-
-<div class="description">
-    <p>A deserialization function</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -3784,6 +4099,7 @@ passed.</p>
 <span class="param-type">Buffer</span>
 
 
+
             
             </td>
 
@@ -3798,12 +4114,17 @@ passed.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -3813,51 +4134,42 @@ passed.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line135">line 135</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>The data deserialized as a value</p>
 </div>
@@ -3873,47 +4185,53 @@ passed.</p>
 <span class="param-type">*</span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
             
                 
-<h4 class="name" id="~MethodDefinition">MethodDefinition</h4>
+<hr>
+<dt class="name" id="~MethodDefinition">
+    <h4 id="~MethodDefinition">MethodDefinition</h4>
 
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>An object that completely defines a service method signature.</p>
+    </div>
+    
 
-
-
-<div class="description">
-    <p>An object that completely defines a service method signature.</p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">Object</span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
+    
+<dl class="details">
+    
 
     <h5 class="subsection-title">Properties:</h5>
 
-    
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -3944,6 +4262,7 @@ passed.</p>
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -3965,6 +4284,7 @@ passed.</p>
             
                 
 <span class="param-type">boolean</span>
+
 
 
             
@@ -3991,6 +4311,7 @@ passed.</p>
 <span class="param-type">boolean</span>
 
 
+
             
             </td>
 
@@ -4013,6 +4334,7 @@ passed.</p>
             
                 
 <span class="param-type"><a href="grpc.html#~serialize">grpc~serialize</a></span>
+
 
 
             
@@ -4039,6 +4361,7 @@ passed.</p>
 <span class="param-type"><a href="grpc.html#~serialize">grpc~serialize</a></span>
 
 
+
             
             </td>
 
@@ -4061,6 +4384,7 @@ passed.</p>
             
                 
 <span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
+
 
 
             
@@ -4087,6 +4411,7 @@ passed.</p>
 <span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
 
 
+
             
             </td>
 
@@ -4101,11 +4426,15 @@ passed.</p>
     
     </tbody>
 </table>
+</dl>
 
+    
 
+	
 
+	
 
-<dl class="details">
+	
 
     
 
@@ -4115,70 +4444,57 @@ passed.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line151">line 151</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
             
                 
+<hr>
+<dt>
+    <h4 class="name" id="~serialize"><span class="type-signature"></span>serialize(value)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>A serialization function</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="~serialize"><span class="type-signature"></span>serialize<span class="signature">(value)</span><span class="type-signature"> &rarr; {Buffer}</span></h4>
     
+        <h5>Parameters:</h5>
+        
 
-    
-
-
-
-<div class="description">
-    <p>A serialization function</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -4209,6 +4525,7 @@ passed.</p>
 <span class="param-type">*</span>
 
 
+
             
             </td>
 
@@ -4223,12 +4540,17 @@ passed.</p>
     </tbody>
 </table>
 
+    
 
-
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -4238,51 +4560,42 @@ passed.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line128">line 128</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
+    
+    <h5>Returns:</h5>
+    
+            
 <div class="param-desc">
     <p>The value serialized as a byte sequence</p>
 </div>
@@ -4298,43 +4611,53 @@ passed.</p>
 <span class="param-type">Buffer</span>
 
 
+
     </dd>
 </dl>
 
+
+        
+
     
-
-
-
-
+</dd>
 
             
                 
-<h4 class="name" id="~ServiceDefinition">ServiceDefinition</h4>
+<hr>
+<dt class="name" id="~ServiceDefinition">
+    <h4 id="~ServiceDefinition">ServiceDefinition</h4>
 
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>An object that completely defines a service.</p>
+    </div>
+    
 
-
-
-<div class="description">
-    <p>An object that completely defines a service.</p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">Object.&lt;string, <a href="grpc.html#~MethodDefinition">grpc~MethodDefinition</a>></span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
-
+    
 <dl class="details">
+    
+
+	
+
+	
+
+	
 
     
 
@@ -4344,75 +4667,70 @@ passed.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line169">line 169</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
             
                 
-<h4 class="name" id="~ServiceError">ServiceError</h4>
+<hr>
+<dt class="name" id="~ServiceError">
+    <h4 id="~ServiceError">ServiceError</h4>
 
-
-
-
-<div class="description">
-    <p>Describes how a request has failed. The member <code>message</code> will be the same as
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Describes how a request has failed. The member <code>message</code> will be the same as
 <code>details</code> in <a href="grpc.html#~StatusObject">grpc~StatusObject</a>, and <code>code</code> and <code>metadata</code> are the
 same as in that object.</p>
-</div>
+    </div>
+    
 
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">Error</span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
+    
+<dl class="details">
+    
 
     <h5 class="subsection-title">Properties:</h5>
 
-    
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -4441,6 +4759,7 @@ same as in that object.</p>
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -4467,6 +4786,7 @@ same as in that object.</p>
 <span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
 
 
+
             
             </td>
 
@@ -4481,11 +4801,15 @@ same as in that object.</p>
     
     </tbody>
 </table>
+</dl>
 
+    
 
+	
 
+	
 
-<dl class="details">
+	
 
     
 
@@ -4495,77 +4819,72 @@ same as in that object.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line93">line 93</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
-
-
-
+    
+</dd>
 
             
                 
-<h4 class="name" id="~StatusObject">StatusObject</h4>
+<hr>
+<dt class="name" id="~StatusObject">
+    <h4 id="~StatusObject">StatusObject</h4>
 
-
-
-
-<div class="description">
-    <p>Represents the status of a completed request. If <code>code</code> is
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Represents the status of a completed request. If <code>code</code> is
 <a href="grpc.html#.status">grpc.status</a>.OK, then the request has completed successfully.
 Otherwise, the request has failed, <code>details</code> will contain a description of
 the error. Either way, <code>metadata</code> contains the trailing response metadata
 sent by the server when it finishes processing the call.</p>
-</div>
+    </div>
+    
 
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">object</span>
 
 
-        </li>
-    </ul>
 
+            </li>
+        </ul>
+    
 
-
-
+    
+<dl class="details">
+    
 
     <h5 class="subsection-title">Properties:</h5>
 
-    
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -4596,6 +4915,7 @@ sent by the server when it finishes processing the call.</p>
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -4617,6 +4937,7 @@ sent by the server when it finishes processing the call.</p>
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -4642,6 +4963,7 @@ sent by the server when it finishes processing the call.</p>
 <span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
 
 
+
             
             </td>
 
@@ -4656,11 +4978,15 @@ sent by the server when it finishes processing the call.</p>
     
     </tbody>
 </table>
+</dl>
 
+    
 
+	
 
+	
 
-<dl class="details">
+	
 
     
 
@@ -4670,42 +4996,32 @@ sent by the server when it finishes processing the call.</p>
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
 
-    
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line80">line 80</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-
-    
+	
 </dl>
 
 
+    
+</dd>
 
-
-
-
-            
+            </dl>
     
 
     
@@ -4716,19 +5032,132 @@ sent by the server when it finishes processing the call.</p>
 
 
 
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+		<div class="col-md-3">
+			<div id="toc" class="col-md-3 hidden-xs hidden-sm hidden-md"></div>
+		</div>
+	
+
+</div>
 </div>
 
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external-Duplex.html">Duplex</a></li><li><a href="external-EventEmitter.html">EventEmitter</a></li><li><a href="external-GoogleCredential.html">GoogleCredential</a></li><li><a href="external-Readable.html">Readable</a></li><li><a href="external-Writable.html">Writable</a></li></ul><h3>Classes</h3><ul><li><a href="grpc.Client.html">Client</a></li><li><a href="grpc.credentials-CallCredentials.html">CallCredentials</a></li><li><a href="grpc.credentials-ChannelCredentials.html">ChannelCredentials</a></li><li><a href="grpc.Metadata.html">Metadata</a></li><li><a href="grpc.Server.html">Server</a></li><li><a href="grpc.ServerCredentials.html">ServerCredentials</a></li><li><a href="grpc-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="grpc-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="grpc-ClientUnaryCall.html">ClientUnaryCall</a></li><li><a href="grpc-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="grpc-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="grpc-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="grpc-ServerUnaryCall.html">ServerUnaryCall</a></li><li><a href="grpc-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Events</h3><ul><li><a href="grpc-ClientDuplexStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientDuplexStream.html#event:status">status</a></li><li><a href="grpc-ClientReadableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientReadableStream.html#event:status">status</a></li><li><a href="grpc-ClientUnaryCall.html#event:metadata">metadata</a></li><li><a href="grpc-ClientUnaryCall.html#event:status">status</a></li><li><a href="grpc-ClientWritableStream.html#event:metadata">metadata</a></li><li><a href="grpc-ClientWritableStream.html#event:status">status</a></li><li><a href="grpc-ServerDuplexStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerReadableStream.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerUnaryCall.html#~event:cancelled">cancelled</a></li><li><a href="grpc-ServerWritableStream.html#~event:cancelled">cancelled</a></li></ul><h3>Namespaces</h3><ul><li><a href="grpc.html">grpc</a></li><li><a href="grpc.credentials.html">credentials</a></li></ul>
-</nav>
 
-<br class="clear">
+    <div class="modal fade" id="searchResults">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Search results</h4>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div>
+
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.3</a> on Fri Sep 08 2017 11:10:31 GMT-0700 (PDT)
+
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
+	
+		on 2018-01-16T12:05:13-05:00
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
 </footer>
 
-<script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"> </script>
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+    <script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : false,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            SearcherDisplay.init();
+        });
+    </script>
+
+
 </body>
 </html>
