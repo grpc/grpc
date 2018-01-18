@@ -401,7 +401,7 @@ describe GRPC::RpcServer do
         req = EchoMsg.new
         n = 5  # arbitrary
         stub = SimpleCountStub.new(@host, :this_channel_is_insecure, **client_opts)
-        responses = n.times.map { stub.an_rpc(req).count.to_i }
+        responses = Array.new(n) { stub.an_rpc(req).count.to_i }
         expect(responses).to all(be responses.first)
         @srv.stop
         t.join
@@ -415,7 +415,7 @@ describe GRPC::RpcServer do
         req = EchoMsg.new
         n = 5  # arbitrary
         stub = SimpleCountStub.new(@host, :this_channel_is_insecure, **client_opts)
-        responses = n.times.map { stub.an_rpc(req).count.to_i }
+        responses = Array.new(n) { stub.an_rpc(req).count.to_i }
         expect(responses.size).to equal responses.uniq.size
         @srv.stop
         t.join

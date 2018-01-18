@@ -488,6 +488,8 @@ module GRPC
       end
     end
 
+    # RpcHandlers is a simple hash-like collection.
+    # Getter method #[] evaluates and returns when value is a Proc.
     class RpcHandlers
       def initialize
         @all = {}
