@@ -401,6 +401,10 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
                                                       &args->closure);
         }
       }
+      // Before we clean up, save a copy of lb_policy_name, since it might
+      // be pointing to data inside chand->resolver_result.
+      // The copy will be saved in chand->lb_policy_name below.
+      lb_policy_name_dup = gpr_strdup(lb_policy_name);
       // Find service config.
       channel_arg = grpc_channel_args_find(chand->resolver_result,
                                            GRPC_ARG_SERVICE_CONFIG);
@@ -432,10 +436,6 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
               method_parameters_unref_wrapper);
           grpc_service_config_destroy(service_config);
         }
-        // Before we clean up, save a copy of lb_policy_name, since it might
-        // be pointing to data inside chand->resolver_result.
-        // The copy will be saved in chand->lb_policy_name below.
-        lb_policy_name_dup = gpr_strdup(lb_policy_name);
       }
     }
     grpc_channel_args_destroy(chand->resolver_result);
