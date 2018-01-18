@@ -20,7 +20,7 @@
 
 #include <string.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 #define MAX_POLICIES 10
 

@@ -25,8 +25,8 @@
 #include <grpc/support/useful.h>
 #include <gtest/gtest.h>
 #include <limits.h>
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
