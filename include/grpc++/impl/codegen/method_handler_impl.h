@@ -27,6 +27,27 @@
 namespace grpc {
 
 namespace internal {
+
+// Invoke the method handler, fill in the status, and
+// return whether or not we finished safely (without an exception).
+// Note that exception handling is 0-cost in most compiler/library
+// implementations (except when an exception is actually thrown),
+// so this process doesn't require additional overhead in the common case.
+// Additionally, we don't need to return if we caught an exception or not;
+// the handling is the same in either case.
+template <class Callable>
+Status CatchingFunctionHandler(Callable&& handler) {
+#if GRPC_ALLOW_EXCEPTIONS
+  try {
+    return handler();
+  } catch (...) {
+    return Status(StatusCode::UNKNOWN, "Unexpected error in RPC handling");
+  }
+#else   // GRPC_ALLOW_EXCEPTIONS
+  return handler();
+#endif  // GRPC_ALLOW_EXCEPTIONS
+}
+
 /// A wrapper class of an application provided rpc method handler.
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler : public MethodHandler {
@@ -43,7 +64,9 @@ class RpcMethodHandler : public MethodHandler {
         param.request.bbuf_ptr(), &req);
     ResponseType rsp;
     if (status.ok()) {
-      status = func_(service_, param.server_context, &req, &rsp);
+      status = CatchingFunctionHandler([this, &param, &req, &rsp] {
+        return func_(service_, param.server_context, &req, &rsp);
+      });
     }
 
     GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
@@ -86,7 +109,9 @@ class ClientStreamingHandler : public MethodHandler {
   void RunHandler(const HandlerParameter& param) final {
     ServerReader<RequestType> reader(param.call, param.server_context);
     ResponseType rsp;
-    Status status = func_(service_, param.server_context, &reader, &rsp);
+    Status status = CatchingFunctionHandler([this, &param, &reader, &rsp] {
+      return func_(service_, param.server_context, &reader, &rsp);
+    });
 
     GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
@@ -130,7 +155,9 @@ class ServerStreamingHandler : public MethodHandler {
 
     if (status.ok()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);
-      status = func_(service_, param.server_context, &req, &writer);
+      status = CatchingFunctionHandler([this, &param, &req, &writer] {
+        return func_(service_, param.server_context, &req, &writer);
+      });
     }
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
@@ -172,7 +199,9 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     Streamer stream(param.call, param.server_context);
-    Status status = func_(param.server_context, &stream);
+    Status status = CatchingFunctionHandler([this, &param, &stream] {
+      return func_(param.server_context, &stream);
+    });
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     if (!param.server_context->sent_initial_metadata_) {
@@ -242,14 +271,12 @@ class SplitServerStreamingHandler
             ServerSplitStreamer<RequestType, ResponseType>, false>(func) {}
 };
 
-/// General method handler class for errors that prevent real method use
-/// e.g., handle unknown method by returning UNIMPLEMENTED error.
-template <StatusCode code>
-class ErrorMethodHandler : public MethodHandler {
+/// Handle unknown method by returning UNIMPLEMENTED error.
+class UnknownMethodHandler : public MethodHandler {
  public:
   template <class T>
   static void FillOps(ServerContext* context, T* ops) {
-    Status status(code, "");
+    Status status(StatusCode::UNIMPLEMENTED, "");
     if (!context->sent_initial_metadata_) {
       ops->SendInitialMetadata(context->initial_metadata_,
                                context->initial_metadata_flags());
@@ -266,17 +293,8 @@ class ErrorMethodHandler : public MethodHandler {
     FillOps(param.server_context, &ops);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
-    // We also have to destroy any request payload in the handler parameter
-    ByteBuffer* payload = param.request.bbuf_ptr();
-    if (payload != nullptr) {
-      payload->Clear();
-    }
   }
 };
-
-typedef ErrorMethodHandler<StatusCode::UNIMPLEMENTED> UnknownMethodHandler;
-typedef ErrorMethodHandler<StatusCode::RESOURCE_EXHAUSTED>
-    ResourceExhaustedHandler;
 
 }  // namespace internal
 }  // namespace grpc

@@ -420,6 +420,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/support/debug_location.h',
+                      'src/core/lib/support/orphanable.h',
                       'src/core/lib/support/ref_counted.h',
                       'src/core/lib/support/ref_counted_ptr.h',
                       'src/core/lib/support/vector.h',
@@ -901,6 +902,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/support/debug_location.h',
+                              'src/core/lib/support/orphanable.h',
                               'src/core/lib/support/ref_counted.h',
                               'src/core/lib/support/ref_counted_ptr.h',
                               'src/core/lib/support/vector.h',
@@ -1039,6 +1041,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/filter_call_init_fails.cc',
                       'test/core/end2end/tests/filter_causes_close.cc',
                       'test/core/end2end/tests/filter_latency.cc',
+                      'test/core/end2end/tests/filter_status_code.cc',
                       'test/core/end2end/tests/graceful_server_shutdown.cc',
                       'test/core/end2end/tests/high_initial_seqno.cc',
                       'test/core/end2end/tests/hpack_size.cc',
@@ -1084,6 +1087,6 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    find src/core/ -type f -exec sed -E -i '.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+    find src/core/ -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
   END_OF_COMMAND
 end

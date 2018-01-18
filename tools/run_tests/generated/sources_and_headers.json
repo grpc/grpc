@@ -3172,6 +3172,25 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "exception_test", 
+    "src": [
+      "test/cpp/end2end/exception_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "filter_end2end_test", 
     "src": [
       "test/cpp/end2end/filter_end2end_test.cc"
@@ -3684,6 +3703,25 @@
     "name": "noop-benchmark", 
     "src": [
       "test/cpp/microbenchmarks/noop-benchmark.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "orphanable_test", 
+    "src": [
+      "test/core/support/orphanable_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7635,6 +7673,7 @@
       "test/core/end2end/tests/filter_call_init_fails.cc", 
       "test/core/end2end/tests/filter_causes_close.cc", 
       "test/core/end2end/tests/filter_latency.cc", 
+      "test/core/end2end/tests/filter_status_code.cc", 
       "test/core/end2end/tests/graceful_server_shutdown.cc", 
       "test/core/end2end/tests/high_initial_seqno.cc", 
       "test/core/end2end/tests/hpack_size.cc", 
@@ -7716,6 +7755,7 @@
       "test/core/end2end/tests/filter_call_init_fails.cc", 
       "test/core/end2end/tests/filter_causes_close.cc", 
       "test/core/end2end/tests/filter_latency.cc", 
+      "test/core/end2end/tests/filter_status_code.cc", 
       "test/core/end2end/tests/graceful_server_shutdown.cc", 
       "test/core/end2end/tests/high_initial_seqno.cc", 
       "test/core/end2end/tests/hpack_size.cc", 
@@ -8265,6 +8305,7 @@
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/support/debug_location.h", 
+      "src/core/lib/support/orphanable.h", 
       "src/core/lib/support/ref_counted.h", 
       "src/core/lib/support/ref_counted_ptr.h", 
       "src/core/lib/support/vector.h", 
@@ -8405,6 +8446,7 @@
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
       "src/core/lib/support/debug_location.h", 
+      "src/core/lib/support/orphanable.h", 
       "src/core/lib/support/ref_counted.h", 
       "src/core/lib/support/ref_counted_ptr.h", 
       "src/core/lib/support/vector.h", 

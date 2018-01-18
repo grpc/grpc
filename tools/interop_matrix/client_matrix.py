@@ -77,6 +77,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.7.2': None
         },
+        {
+            'v1.8.0': None
+        },
     ],
     'go': [
         {
@@ -135,6 +138,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.8.0': None
         },
+        {
+            'v1.9.0': None
+        },
     ],
     'python': [
         {
@@ -157,6 +163,9 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.7.2': None
+        },
+        {
+            'v1.8.1': None  # first python 1.8 release is 1.8.1
         },
     ],
     'node': [
@@ -207,6 +216,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.7.2': None
         },
+        {
+            'v1.8.0': None
+        },
     ],
     'php': [
         {
@@ -230,6 +242,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.7.2': None
         },
+        {
+            'v1.8.0': None
+        },
     ],
     'csharp': [
         #{'v1.0.1': None},
@@ -250,6 +265,9 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.7.2': None
+        },
+        {
+            'v1.8.0': None
         },
     ],
 }

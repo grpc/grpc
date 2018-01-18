@@ -673,6 +673,42 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   GPR_ASSERT(gpr_time_cmp(deadline, now) > 0);
 }
 
+TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  const auto ports = GetServersPorts();
+  ResetStub(ports, "round_robin");
+  SetNextResolution(ports);
+  for (size_t i = 0; i < kNumServers; ++i) WaitForServer(i);
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    CheckRpcSendOk();
+    EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
+  }
+  // One request should have gone to each server.
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    EXPECT_EQ(1, servers_[i]->service_.request_count());
+  }
+  const auto pre_death = servers_[0]->service_.request_count();
+  // Kill the first server.
+  servers_[0]->Shutdown(true);
+  // Client request still succeed. May need retrying if RR had returned a pick
+  // before noticing the change in the server's connectivity.
+  while (!SendRpc())
+    ;  // Retry until success.
+  // Send a bunch of RPCs that should succeed.
+  for (int i = 0; i < 10 * kNumServers; ++i) CheckRpcSendOk();
+  const auto post_death = servers_[0]->service_.request_count();
+  // No requests have gone to the deceased server.
+  EXPECT_EQ(pre_death, post_death);
+  // Bring the first server back up.
+  servers_[0].reset(new ServerData(server_host_, ports[0]));
+  // Requests should start arriving at the first server either right away (if
+  // the server managed to start before the RR policy retried the subchannel) or
+  // after the subchannel retry delay otherwise (RR's subchannel retried before
+  // the server was fully back up).
+  WaitForServer(0);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

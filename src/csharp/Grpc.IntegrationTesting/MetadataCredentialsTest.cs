@@ -162,7 +162,7 @@ namespace Grpc.IntegrationTesting
             client = new TestService.TestServiceClient(channel);
 
             var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { }));
-            Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
+            Assert.AreEqual(StatusCode.Unavailable, ex.Status.StatusCode);
         }
 
         private class FakeTestService : TestService.TestServiceBase

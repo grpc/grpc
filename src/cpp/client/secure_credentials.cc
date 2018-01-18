@@ -189,16 +189,10 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
   }
   if (w->plugin_->IsBlocking()) {
     // Asynchronous return.
-    if (w->thread_pool_->Add(std::bind(
-            &MetadataCredentialsPluginWrapper::InvokePlugin, w, context, cb,
-            user_data, nullptr, nullptr, nullptr, nullptr))) {
-      return 0;
-    } else {
-      *num_creds_md = 0;
-      *status = GRPC_STATUS_RESOURCE_EXHAUSTED;
-      *error_details = nullptr;
-      return true;
-    }
+    w->thread_pool_->Add(
+        std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w, context,
+                  cb, user_data, nullptr, nullptr, nullptr, nullptr));
+    return 0;
   } else {
     // Synchronous return.
     w->InvokePlugin(context, cb, user_data, creds_md, num_creds_md, status,

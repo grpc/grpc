@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,20 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+set -ex
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-grpc_package(name = "test/cpp/thread_manager")
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-grpc_cc_test(
-    name = "thread_manager_test",
-    srcs = ["thread_manager_test.cc"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//test/cpp/util:test_config",
-    ],
-)
-
+tools/run_tests/task_runner.py -f distribtest linux cpp -j 6

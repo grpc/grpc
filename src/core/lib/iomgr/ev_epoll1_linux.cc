@@ -20,12 +20,14 @@
 
 #include <grpc/support/log.h>
 
-/* This polling engine is only relevant on linux kernels supporting epoll() */
+/* This polling engine is only relevant on linux kernels supporting epoll
+   epoll_create() or epoll_create1() */
 #ifdef GRPC_LINUX_EPOLL
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <poll.h>
 #include <pthread.h>
@@ -84,11 +86,28 @@ typedef struct epoll_set {
 /* The global singleton epoll set */
 static epoll_set g_epoll_set;
 
+static int epoll_create_and_cloexec() {
+#ifdef GRPC_LINUX_EPOLL_CREATE1
+  int fd = epoll_create1(EPOLL_CLOEXEC);
+  if (fd < 0) {
+    gpr_log(GPR_ERROR, "epoll_create1 unavailable");
+  }
+#else
+  int fd = epoll_create(MAX_EPOLL_EVENTS);
+  if (fd < 0) {
+    gpr_log(GPR_ERROR, "epoll_create unavailable");
+  } else if (fcntl(fd, F_SETFD, FD_CLOEXEC) != 0) {
+    gpr_log(GPR_ERROR, "fcntl following epoll_create failed");
+    return -1;
+  }
+#endif
+  return fd;
+}
+
 /* Must be called *only* once */
 static bool epoll_set_init() {
-  g_epoll_set.epfd = epoll_create1(EPOLL_CLOEXEC);
+  g_epoll_set.epfd = epoll_create_and_cloexec();
   if (g_epoll_set.epfd < 0) {
-    gpr_log(GPR_ERROR, "epoll unavailable");
     return false;
   }
 

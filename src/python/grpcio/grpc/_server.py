@@ -277,6 +277,12 @@ class _Context(grpc.ServicerContext):
             self._state.trailing_metadata = trailing_metadata
 
     def abort(self, code, details):
+        # treat OK like other invalid arguments: fail the RPC
+        if code == grpc.StatusCode.OK:
+            logging.error(
+                'abort() called with StatusCode.OK; returning UNKNOWN')
+            code = grpc.StatusCode.UNKNOWN
+            details = ''
         with self._state.condition:
             self._state.code = code
             self._state.details = _common.encode(details)

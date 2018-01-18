@@ -20,10 +20,10 @@
 #include <memory>
 #include <string>
 
+#include <gflags/gflags.h>
 #include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/thd.h>
 
 #include "src/cpp/thread_manager/thread_manager.h"
 #include "test/cpp/util/test_config.h"
@@ -32,13 +32,13 @@ namespace grpc {
 class ThreadManagerTest final : public grpc::ThreadManager {
  public:
   ThreadManagerTest()
-      : ThreadManager(kMinPollers, kMaxPollers, gpr_thd_new, gpr_thd_join),
+      : ThreadManager(kMinPollers, kMaxPollers),
         num_do_work_(0),
         num_poll_for_work_(0),
         num_work_found_(0) {}
 
   grpc::ThreadManager::WorkStatus PollForWork(void** tag, bool* ok) override;
-  void DoWork(void* tag, bool ok, bool resources) override;
+  void DoWork(void* tag, bool ok) override;
   void PerformTest();
 
  private:
@@ -89,7 +89,7 @@ grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void** tag,
   }
 }
 
-void ThreadManagerTest::DoWork(void* tag, bool ok, bool resources) {
+void ThreadManagerTest::DoWork(void* tag, bool ok) {
   gpr_atm_no_barrier_fetch_add(&num_do_work_, 1);
   SleepForMs(kDoWorkDurationMsec);  // Simulate doing work by sleeping
 }
