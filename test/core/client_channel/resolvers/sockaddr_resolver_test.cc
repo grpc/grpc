@@ -65,7 +65,7 @@ static void test_succeeds(grpc_resolver_factory* factory, const char* string) {
   GRPC_RESOLVER_UNREF(resolver, "test_succeeds");
   grpc_uri_destroy(uri);
   /* Flush ExecCtx to avoid stack-use-after-scope on on_res_arg which is
-   * accessed in the closure on_resolition_cb */
+   * accessed in the closure on_resolution_cb */
   grpc_core::ExecCtx::Get()->Flush();
 }
 
