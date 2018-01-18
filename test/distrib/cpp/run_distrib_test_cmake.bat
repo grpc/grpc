@@ -64,7 +64,7 @@ mkdir cmake
 cd cmake
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ../.. || goto :error
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% -DOPENSSL_INCLUDE_DIR=%OPENSSL_DIR%/include ../.. || goto :error
 cmake --build . --config Release || goto :error
 cd ../../../../..
 
