@@ -63,8 +63,10 @@ static void test_succeeds(grpc_resolver_factory* factory, const char* string) {
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
   GRPC_RESOLVER_UNREF(resolver, "test_succeeds");
-
   grpc_uri_destroy(uri);
+  /* Flush ExecCtx to avoid stack-use-after-scope on on_res_arg which is
+   * accessed in the closure on_resolition_cb */
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void test_fails(grpc_resolver_factory* factory, const char* string) {
