@@ -484,7 +484,7 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
       break;
     }
     case GRPC_CHANNEL_SHUTDOWN:
-      GPR_UNREACHABLE_CODE();
+      GPR_UNREACHABLE_CODE(return );
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:;  // fallthrough
   }
