@@ -16,15 +16,22 @@ endif()
 find_package(Protobuf REQUIRED)
 message(STATUS "Using protobuf ${protobuf_VERSION}")
 
-if(Protobuf_FOUND)
-  # Protobuf_FOUND is set for package type "CONFIG"
-  set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
-  set(_PROTOBUF_PROTOC protobuf::protoc)
-elseif(PROTOBUF_FOUND)
-  # PROTOBUF_FOUND is set for package type "MODULE"
-  set(_PROTOBUF_LIBPROTOBUF ${PROTOBUF_LIBRARIES})
-  set(_PROTOBUF_PROTOC ${PROTOBUF_PROTOC_EXECUTABLE})
-  include_directories(${PROTOBUF_INCLUDE_DIRS})
+# {Protobuf,PROTOBUF}_FOUND is defined based on find_package type ("MODULE" vs "CONFIG").
+# For "MODULE", the case has also changed between cmake 3.5 and 3.6.
+# We use the legacy uppercase version for *_LIBRARIES AND *_INCLUDE_DIRS variables
+# as newer cmake versions provide them too for backward compatibility.
+if(Protobuf_FOUND OR PROTOBUF_FOUND)
+  if(TARGET protobuf::libprotobuf)
+    set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
+  else()
+    set(_PROTOBUF_LIBPROTOBUF ${PROTOBUF_LIBRARIES})
+    include_directories(${PROTOBUF_INCLUDE_DIRS})
+  endif()
+  if(TARGET protobuf::protoc)
+    set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
+  else()
+    set(_PROTOBUF_PROTOC ${PROTOBUF_PROTOC_EXECUTABLE})
+  endif()
 else()
   message(WARNING "Failed to locate libprotobuf and protoc!")
 endif()

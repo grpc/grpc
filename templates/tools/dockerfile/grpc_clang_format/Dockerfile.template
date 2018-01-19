@@ -16,7 +16,7 @@
   
   FROM debian:jessie
   
-  <%include file="../clang_format.include"/>
+  <%include file="../clang5.include"/>
   ADD clang_format_all_the_things.sh /
   CMD ["echo 'Run with tools/distrib/clang_format_code.sh'"]
   

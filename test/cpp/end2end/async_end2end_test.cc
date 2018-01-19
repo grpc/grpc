@@ -34,8 +34,8 @@
 #include <grpc/support/time.h>
 #include <grpc/support/tls.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/support/env.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

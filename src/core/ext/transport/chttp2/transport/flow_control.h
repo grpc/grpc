@@ -24,8 +24,8 @@
 
 #include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/lib/support/abstract.h"
-#include "src/core/lib/support/manual_constructor.h"
+#include "src/core/lib/gpr++/abstract.h"
+#include "src/core/lib/gpr++/manual_constructor.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/pid_controller.h"
 

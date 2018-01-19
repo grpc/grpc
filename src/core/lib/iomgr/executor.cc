@@ -29,8 +29,8 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/support/spinlock.h"
 
 #define MAX_DEPTH 2
 

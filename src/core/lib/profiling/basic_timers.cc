@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
