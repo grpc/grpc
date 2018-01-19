@@ -26,6 +26,9 @@ import jobset
 
 GRPC_CHECKS = [
     'modernize-use-nullptr',
+    'google-build-namespaces',
+    'google-build-explicit-make-pair',
+    'google-readability-namespace-comments',
 ]
 
 extra_args = [
