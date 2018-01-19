@@ -39,6 +39,7 @@ void grpc_fork_support_init() {
 #else
   fork_support_enabled = 0;
 #endif
+  bool env_var_set = false;
   char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
   if (env != nullptr) {
     static const char* truthy[] = {"yes",  "Yes",  "YES", "true",
@@ -48,11 +49,17 @@ void grpc_fork_support_init() {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
       if (0 == strcmp(env, truthy[i])) {
         fork_support_enabled = 1;
+        env_var_set = true;
+        break;
       }
     }
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(falsey); i++) {
-      if (0 == strcmp(env, falsey[i])) {
-        fork_support_enabled = 0;
+    if (!env_var_set) {
+      for (size_t i = 0; i < GPR_ARRAY_SIZE(falsey); i++) {
+        if (0 == strcmp(env, falsey[i])) {
+          fork_support_enabled = 0;
+          env_var_set = true;
+          break;
+        }
       }
     }
     gpr_free(env);
