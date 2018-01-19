@@ -155,8 +155,8 @@ static bool parse_json_method_config(
     grpc_json* json,
     void* (*create_value)(const grpc_json* method_config_json, void* user_data),
     void* user_data, void* (*ref_value)(void* value),
-    void (*unref_value)(void* value),
-    grpc_slice_hash_table_entry* entries, size_t* idx) {
+    void (*unref_value)(void* value), grpc_slice_hash_table_entry* entries,
+    size_t* idx) {
   // Construct value.
   void* method_config = create_value(json, user_data);
   if (method_config == nullptr) return false;

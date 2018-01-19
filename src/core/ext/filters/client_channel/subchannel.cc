@@ -782,9 +782,8 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
 grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
                                             grpc_subchannel_call** call) {
   *call = (grpc_subchannel_call*)gpr_arena_alloc(
-      args.arena,
-      sizeof(grpc_subchannel_call) + channel_stack_->call_stack_size +
-          args.parent_data_size);
+      args.arena, sizeof(grpc_subchannel_call) +
+                      channel_stack_->call_stack_size + args.parent_data_size);
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   Ref(DEBUG_LOCATION, "subchannel_call");
   (*call)->connection = this;

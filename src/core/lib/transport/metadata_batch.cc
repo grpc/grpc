@@ -310,8 +310,8 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
   size_t i = 0;
   for (grpc_linked_mdelem* elem = src->list.head; elem != nullptr;
        elem = elem->next) {
-    grpc_error* error = grpc_metadata_batch_add_tail(
-        dst, &storage[i++], GRPC_MDELEM_REF(elem->md));
+    grpc_error* error = grpc_metadata_batch_add_tail(dst, &storage[i++],
+                                                     GRPC_MDELEM_REF(elem->md));
     // The only way that grpc_metadata_batch_add_tail() can fail is if
     // there's a duplicate entry for a callout.  However, that can't be
     // the case here, because we would not have been allowed to create
