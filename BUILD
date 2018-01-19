@@ -56,9 +56,9 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "glossy"
 
-core_version = "5.0.0-dev"
+core_version = "5.0.0-pre1"
 
-version = "1.9.0-dev"
+version = "1.9.0-pre1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
