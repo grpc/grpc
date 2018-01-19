@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_ORPHANABLE_H
-#define GRPC_CORE_LIB_GPRXX_ORPHANABLE_H
+#ifndef GRPC_CORE_LIB_GPRPP_ORPHANABLE_H
+#define GRPC_CORE_LIB_GPRPP_ORPHANABLE_H
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -25,9 +25,9 @@
 #include <memory>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr++/abstract.h"
-#include "src/core/lib/gpr++/debug_location.h"
-#include "src/core/lib/gpr++/memory.h"
+#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
@@ -168,4 +168,4 @@ class InternallyRefCountedWithTracing : public Orphanable {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRXX_ORPHANABLE_H */
+#endif /* GRPC_CORE_LIB_GPRPP_ORPHANABLE_H */

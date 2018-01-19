@@ -101,12 +101,6 @@ filegroups:
   - include/grpc/support/tls_pthread.h
   - include/grpc/support/useful.h
   headers:
-  - src/core/lib/gpr++/abstract.h
-  - src/core/lib/gpr++/atomic.h
-  - src/core/lib/gpr++/atomic_with_atm.h
-  - src/core/lib/gpr++/atomic_with_std.h
-  - src/core/lib/gpr++/manual_constructor.h
-  - src/core/lib/gpr++/memory.h
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/fork.h
@@ -118,6 +112,12 @@ filegroups:
   - src/core/lib/gpr/thd_internal.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gprpp/abstract.h
+  - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/atomic_with_atm.h
+  - src/core/lib/gprpp/atomic_with_std.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
   - src/core/lib/profiling/timers.h
   uses:
   - gpr_codegen
@@ -321,11 +321,11 @@ filegroups:
   - src/core/lib/compression/stream_compression_identity.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
-  - src/core/lib/gpr++/debug_location.h
-  - src/core/lib/gpr++/inlined_vector.h
-  - src/core/lib/gpr++/orphanable.h
-  - src/core/lib/gpr++/ref_counted.h
-  - src/core/lib/gpr++/ref_counted_ptr.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/inlined_vector.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -2188,7 +2188,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/gpr++/manual_constructor_test.cc
+  - test/core/gprpp/manual_constructor_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -4265,7 +4265,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/gpr++/inlined_vector_test.cc
+  - test/core/gprpp/inlined_vector_test.cc
   deps:
   - grpc_test_util
   - grpc++
@@ -4371,7 +4371,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/gpr++/memory_test.cc
+  - test/core/gprpp/memory_test.cc
   deps:
   - grpc_test_util
   - grpc++
@@ -4423,7 +4423,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/gpr++/orphanable_test.cc
+  - test/core/gprpp/orphanable_test.cc
   deps:
   - grpc_test_util
   - grpc++
@@ -4576,7 +4576,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/gpr++/ref_counted_ptr_test.cc
+  - test/core/gprpp/ref_counted_ptr_test.cc
   deps:
   - grpc_test_util
   - grpc++
@@ -4590,7 +4590,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/gpr++/ref_counted_test.cc
+  - test/core/gprpp/ref_counted_test.cc
   deps:
   - grpc_test_util
   - grpc++

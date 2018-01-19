@@ -20,7 +20,7 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/lib/gpr++/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 

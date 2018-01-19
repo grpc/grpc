@@ -16,11 +16,11 @@
  *
  */
 
-#include "src/core/lib/gpr++/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 
 #include <gtest/gtest.h>
 
-#include "src/core/lib/gpr++/memory.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

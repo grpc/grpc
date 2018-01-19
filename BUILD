@@ -548,9 +548,9 @@ grpc_cc_library(
     name = "gpr++_base",
     language = "c++",
     public_hdrs = [
-        "src/core/lib/gpr++/abstract.h",
-        "src/core/lib/gpr++/manual_constructor.h",
-        "src/core/lib/gpr++/memory.h",
+        "src/core/lib/gprpp/abstract.h",
+        "src/core/lib/gprpp/manual_constructor.h",
+        "src/core/lib/gprpp/memory.h",
     ],
 )
 
@@ -558,11 +558,11 @@ grpc_cc_library(
     name = "atomic",
     language = "c++",
     public_hdrs = [
-        "src/core/lib/gpr++/atomic.h",
+        "src/core/lib/gprpp/atomic.h",
     ],
     hdrs = [
-        "src/core/lib/gpr++/atomic_with_atm.h",
-        "src/core/lib/gpr++/atomic_with_std.h",
+        "src/core/lib/gprpp/atomic_with_atm.h",
+        "src/core/lib/gprpp/atomic_with_std.h",
     ],
     deps = [
         "gpr",
@@ -573,22 +573,26 @@ grpc_cc_library(
     name = "inlined_vector",
     language = "c++",
     public_hdrs = [
-        "src/core/lib/gpr++/inlined_vector.h",
+        "src/core/lib/gprpp/inlined_vector.h",
+    ],
+    deps = [
+        "gpr++_base",
     ],
 )
 
 grpc_cc_library(
     name = "debug_location",
     language = "c++",
-    public_hdrs = ["src/core/lib/gpr++/debug_location.h"],
+    public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
 )
 
 grpc_cc_library(
     name = "orphanable",
     language = "c++",
-    public_hdrs = ["src/core/lib/gpr++/orphanable.h"],
+    public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
     deps = [
         "debug_location",
+        "gpr++_base",
         "grpc_trace",
     ],
 )
@@ -596,9 +600,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "ref_counted",
     language = "c++",
-    public_hdrs = ["src/core/lib/gpr++/ref_counted.h"],
+    public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
         "debug_location",
+        "gpr++_base",
         "grpc_trace",
     ],
 )
@@ -606,7 +611,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "ref_counted_ptr",
     language = "c++",
-    public_hdrs = ["src/core/lib/gpr++/ref_counted_ptr.h"],
+    public_hdrs = ["src/core/lib/gprpp/ref_counted_ptr.h"],
+    deps = [
+        "gpr++_base",
+    ],
 )
 
 grpc_cc_library(
