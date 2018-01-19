@@ -1453,7 +1453,6 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy) {
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-// todo initial?
 static void lb_on_sent_initial_request_locked(void* arg, grpc_error* error) {
   glb_lb_call_data* lb_calld = (glb_lb_call_data*)arg;
   grpc_byte_buffer_destroy(lb_calld->send_message_payload);
