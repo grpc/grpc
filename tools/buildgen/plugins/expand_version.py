@@ -84,6 +84,13 @@ class Version:
                     % self.tag)
         return s
 
+    def php_stability(self):
+        """stability string for PHP PECL package.xml file"""
+        if self.tag:
+            return 'beta'
+        else:
+            return 'stable'
+
     def php_composer(self):
         """Version string for PHP Composer package"""
         return '%d.%d.%d' % (self.major, self.minor, self.patch)
