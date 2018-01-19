@@ -1,8 +1,6 @@
 source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
-source 'https://github.com/muxi/grpc-pod.git'
-
 install! 'cocoapods', :deterministic_uuids => false
 
 target 'HelloWorldCpp' do

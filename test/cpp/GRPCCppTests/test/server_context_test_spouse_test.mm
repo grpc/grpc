@@ -16,6 +16,8 @@
  *
  */
 
+// Hack TEST macro of gTest and make they conform XCTest style. We only
+// need test name (b), not test case name (a).
 #define TEST(a,b) - (void)test ## b
 #define ASSERT_TRUE XCTAssert
 #define ASSERT_EQ XCTAssertEqual
@@ -93,14 +95,6 @@ TEST(ServerContextTestSpouseTest, TrailingMetadata) {
   context.AddTrailingMetadata(key2, val2);
   metadata.insert(std::pair<grpc::string, grpc::string>(key2, val2));
   ASSERT_EQ(metadata, spouse.GetTrailingMetadata());
-}
-
-- (void)setUp {
-    [super setUp];
-}
-
-- (void)tearDown {
-    [super tearDown];
 }
 
 @end

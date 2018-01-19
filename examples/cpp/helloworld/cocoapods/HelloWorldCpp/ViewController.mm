@@ -21,10 +21,10 @@
 #include <grpc++/generic/generic_stub.h>
 #include <grpc++/generic/async_generic_service.h>
 
-void* tag(int i) { return (void*)(intptr_t)i; }
+static void* tag(int i) { return (void*)(intptr_t)i; }
 
 // Serialized Proto bytes of Hello World example
-const uint8_t message[] =
+const uint8_t kMessage[] =
     {0x0A, 0x0B, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x2D, 0x43};
 
 @interface ViewController ()
@@ -32,7 +32,7 @@ const uint8_t message[] =
 @end
 
 @implementation ViewController {
-  grpc::CompletionQueue cli_cq_;
+  grpc::CompletionQueue cq_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
 }
 
@@ -50,23 +50,23 @@ const uint8_t message[] =
 
   grpc::ClientContext cli_ctx;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call =
-      generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
-  cli_cq_.Next(&got_tag, &ok);
+      generic_stub_->Call(&cli_ctx, kMethodName, &cq_, tag(1));
+  cq_.Next(&got_tag, &ok);
   if (!ok || got_tag != tag(1)) {
     NSLog(@"Failed to create call.");
     abort();
   }
-  grpc::Slice send_slice = grpc::Slice(message, sizeof(message) / sizeof(message[0]));
+  grpc::Slice send_slice = grpc::Slice(kMessage, sizeof(kMessage) / sizeof(kMessage[0]));
       std::unique_ptr<grpc::ByteBuffer> send_buffer(new grpc::ByteBuffer(&send_slice, 1));
   call->Write(*send_buffer, tag(2));
-  cli_cq_.Next(&got_tag, &ok);
+  cq_.Next(&got_tag, &ok);
   if (!ok || got_tag != tag(2)) {
     NSLog(@"Failed to send message.");
     abort();
   }
   grpc::ByteBuffer recv_buffer;
   call->Read(&recv_buffer, tag(3));
-  cli_cq_.Next(&got_tag, &ok);
+  cq_.Next(&got_tag, &ok);
   if (!ok || got_tag != tag(3)) {
     NSLog(@"Failed to receive message.");
     abort();
@@ -74,7 +74,7 @@ const uint8_t message[] =
 
   grpc::Status status;
   call->Finish(&status, tag(4));
-  cli_cq_.Next(&got_tag, &ok);
+  cq_.Next(&got_tag, &ok);
   if (!ok || got_tag != tag(4)) {
     NSLog(@"Failed to finish call.");
     abort();
@@ -97,11 +97,5 @@ const uint8_t message[] =
   NSLog(@"Hello World succeeded.\nReceived bytes: %@\n"
         "Expected bytes: 0a 11 48 65 6c 6c 6f 20 4f 62 6a 65 63 74 69 76 65 2d 43", recvBytes);
 }
-
-
-- (void)didReceiveMemoryWarning {
-  [super didReceiveMemoryWarning];
-}
-
 
 @end
