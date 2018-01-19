@@ -1158,7 +1158,7 @@ static void maybe_restart_lb_call(glb_lb_policy* glb_policy) {
     glb_policy->updating_lb_call = false;
   } else if (!glb_policy->shutting_down) {
     /* if we aren't shutting down, restart the LB client call after some time */
-    grpc_millis next_try = glb_policy->lb_call_backoff->Step();
+    grpc_millis next_try = glb_policy->lb_call_backoff->NextAttemptTime();
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
               glb_policy);
