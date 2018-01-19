@@ -42,10 +42,7 @@ void grpc_lb_subchannel_data_unref_subchannel(grpc_lb_subchannel_data* sd,
     }
     GRPC_SUBCHANNEL_UNREF(sd->subchannel, reason);
     sd->subchannel = nullptr;
-    if (sd->connected_subchannel != nullptr) {
-      GRPC_CONNECTED_SUBCHANNEL_UNREF(sd->connected_subchannel, reason);
-      sd->connected_subchannel = nullptr;
-    }
+    sd->connected_subchannel.reset();
     if (sd->user_data != nullptr) {
       GPR_ASSERT(sd->user_data_vtable != nullptr);
       sd->user_data_vtable->destroy(sd->user_data);

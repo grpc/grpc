@@ -45,15 +45,15 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr++/inlined_vector.h"
+#include "src/core/lib/gpr++/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/manual_constructor.h"
-#include "src/core/lib/support/string.h"
-#include "src/core/lib/support/vector.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -1302,9 +1302,7 @@ static void do_retry(grpc_call_element* elem,
     calld->subchannel_call = nullptr;
   }
   if (calld->pick.connected_subchannel != nullptr) {
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(calld->pick.connected_subchannel,
-                                    "client_channel_call_retry");
-    calld->pick.connected_subchannel = nullptr;
+    calld->pick.connected_subchannel.reset();
   }
   // Compute backoff delay.
   grpc_millis next_attempt_time;
@@ -2293,7 +2291,7 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
   call_data* calld = (call_data*)elem->call_data;
   const size_t parent_data_size =
       calld->enable_retries ? sizeof(subchannel_call_retry_state) : 0;
-  const grpc_connected_subchannel_call_args call_args = {
+  const grpc_core::ConnectedSubchannel::CallArgs call_args = {
       calld->pollent,                       // pollent
       calld->path,                          // path
       calld->call_start_time,               // start_time
@@ -2303,8 +2301,8 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
       calld->call_combiner,                 // call_combiner
       parent_data_size                      // parent_data_size
   };
-  grpc_error* new_error = grpc_connected_subchannel_create_call(
-      calld->pick.connected_subchannel, &call_args, &calld->subchannel_call);
+  grpc_error* new_error = calld->pick.connected_subchannel->CreateCall(
+      call_args, &calld->subchannel_call);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
             chand, calld, calld->subchannel_call, grpc_error_string(new_error));
@@ -2769,7 +2767,7 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
     GPR_ASSERT(calld->pending_batches[i].batch == nullptr);
   }
   if (calld->pick.connected_subchannel != nullptr) {
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(calld->pick.connected_subchannel, "picked");
+    calld->pick.connected_subchannel.reset();
   }
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
     if (calld->pick.subchannel_call_context[i].value != nullptr) {

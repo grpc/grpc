@@ -27,13 +27,13 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/fork.h"
+#include "src/core/lib/gpr/thd_internal.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/fork.h"
-#include "src/core/lib/support/thd_internal.h"
 #include "src/core/lib/surface/init.h"
 
 /*

@@ -18,7 +18,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 /* This test only relevant on linux systems where epoll() is available */
-#ifdef GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -319,6 +319,6 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return 0;
 }
-#else  /* defined(GRPC_LINUX_EPOLL) */
+#else  /* defined(GRPC_LINUX_EPOLL_CREATE1) */
 int main(int argc, char** argv) { return 0; }
-#endif /* !defined(GRPC_LINUX_EPOLL) */
+#endif /* !defined(GRPC_LINUX_EPOLL_CREATE1) */

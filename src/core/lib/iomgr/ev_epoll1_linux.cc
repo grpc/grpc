@@ -20,7 +20,8 @@
 
 #include <grpc/support/log.h>
 
-/* This polling engine is only relevant on linux kernels supporting epoll() */
+/* This polling engine is only relevant on linux kernels supporting epoll
+   epoll_create() or epoll_create1() */
 #ifdef GRPC_LINUX_EPOLL
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 
@@ -42,14 +43,14 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr++/manual_constructor.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/manual_constructor.h"
-#include "src/core/lib/support/string.h"
 
 static grpc_wakeup_fd global_wakeup_fd;
 
@@ -85,31 +86,27 @@ typedef struct epoll_set {
 /* The global singleton epoll set */
 static epoll_set g_epoll_set;
 
-static int epoll_create_and_set_flag() {
+static int epoll_create_and_cloexec() {
 #ifdef GRPC_LINUX_EPOLL_CREATE1
   int fd = epoll_create1(EPOLL_CLOEXEC);
-  if (fd >= 0) {
-    return fd;
+  if (fd < 0) {
+    gpr_log(GPR_ERROR, "epoll_create1 unavailable");
   }
-  gpr_log(GPR_ERROR, "epoll_create1 unavailable");
-  return -1;
 #else
   int fd = epoll_create(MAX_EPOLL_EVENTS);
   if (fd < 0) {
     gpr_log(GPR_ERROR, "epoll_create unavailable");
+  } else if (fcntl(fd, F_SETFD, FD_CLOEXEC) != 0) {
+    gpr_log(GPR_ERROR, "fcntl following epoll_create failed");
     return -1;
   }
-  if (fcntl(fd, F_SETFD, FD_CLOEXEC) == 0) {
-    return fd;
-  }
-  gpr_log(GPR_ERROR, "fcntl following epoll_create failed");
-  return -1;
 #endif
+  return fd;
 }
 
 /* Must be called *only* once */
 static bool epoll_set_init() {
-  g_epoll_set.epfd = epoll_create_and_set_flag();
+  g_epoll_set.epfd = epoll_create_and_cloexec();
   if (g_epoll_set.epfd < 0) {
     return false;
   }

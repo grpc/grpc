@@ -24,10 +24,10 @@
 
 const grpc_event_engine_vtable* grpc_init_epollsig_linux(bool explicit_request);
 
-#ifdef GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 void* grpc_fd_get_polling_island(grpc_fd* fd);
 void* grpc_pollset_get_polling_island(grpc_pollset* ps);
 bool grpc_are_polling_islands_equal(void* p, void* q);
-#endif /* defined(GRPC_LINUX_EPOLL) */
+#endif /* defined(GRPC_LINUX_EPOLL_CREATE1) */
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLLSIG_LINUX_H */

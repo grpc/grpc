@@ -18,7 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/transport/metadata.h"
 
 void grpc_chttp2_plugin_init(void) {
