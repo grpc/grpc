@@ -41,13 +41,13 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -165,7 +165,7 @@ void OverrideAddressSortingSourceAddrFactory(
 }
 
 grpc_lb_addresses* BuildLbAddrInputs(std::vector<TestAddress> test_addrs) {
-  grpc_lb_addresses* lb_addrs = grpc_lb_addresses_create(0, NULL);
+  grpc_lb_addresses* lb_addrs = grpc_lb_addresses_create(0, nullptr);
   lb_addrs->addresses =
       (grpc_lb_address*)gpr_zalloc(sizeof(grpc_lb_address) * test_addrs.size());
   lb_addrs->num_addresses = test_addrs.size();
@@ -723,7 +723,7 @@ TEST(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
 
 int main(int argc, char** argv) {
   const char* resolver = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (resolver == NULL || strlen(resolver) == 0) {
+  if (resolver == nullptr || strlen(resolver) == 0) {
     gpr_setenv("GRPC_DNS_RESOLVER", "ares");
   } else if (strcmp("ares", resolver)) {
     gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver);
