@@ -16,12 +16,12 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_REF_COUNTED_PTR_H
-#define GRPC_CORE_LIB_GPRXX_REF_COUNTED_PTR_H
+#ifndef GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
+#define GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
 
 #include <utility>
 
-#include "src/core/lib/gpr++/memory.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
@@ -96,4 +96,4 @@ inline RefCountedPtr<T> MakeRefCounted(Args&&... args) {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRXX_REF_COUNTED_PTR_H */
+#endif /* GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H */

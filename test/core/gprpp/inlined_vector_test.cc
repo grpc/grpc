@@ -16,9 +16,9 @@
  *
  */
 
-#include "src/core/lib/gpr++/inlined_vector.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include <gtest/gtest.h>
-#include "src/core/lib/gpr++/memory.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

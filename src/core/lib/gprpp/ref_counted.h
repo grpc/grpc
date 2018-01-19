@@ -16,16 +16,16 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_REF_COUNTED_H
-#define GRPC_CORE_LIB_GPRXX_REF_COUNTED_H
+#ifndef GRPC_CORE_LIB_GPRPP_REF_COUNTED_H
+#define GRPC_CORE_LIB_GPRPP_REF_COUNTED_H
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr++/abstract.h"
-#include "src/core/lib/gpr++/debug_location.h"
-#include "src/core/lib/gpr++/memory.h"
+#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
@@ -130,4 +130,4 @@ class RefCountedWithTracing {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRXX_REF_COUNTED_H */
+#endif /* GRPC_CORE_LIB_GPRPP_REF_COUNTED_H */

@@ -18,7 +18,7 @@
 
 /* Test of gpr synchronization support. */
 
-#include "src/core/lib/gpr++/manual_constructor.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
-#include "src/core/lib/gpr++/abstract.h"
+#include "src/core/lib/gprpp/abstract.h"
 #include "test/core/util/test_config.h"
 
 class A {

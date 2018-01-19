@@ -16,12 +16,12 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_INLINED_VECTOR_H
-#define GRPC_CORE_LIB_GPRXX_INLINED_VECTOR_H
+#ifndef GRPC_CORE_LIB_GPRPP_INLINED_VECTOR_H
+#define GRPC_CORE_LIB_GPRPP_INLINED_VECTOR_H
 
 #include <cassert>
 
-#include "src/core/lib/gpr++/memory.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
@@ -109,4 +109,4 @@ class InlinedVector {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRXX_INLINED_VECTOR_H */
+#endif /* GRPC_CORE_LIB_GPRPP_INLINED_VECTOR_H */

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_ATOMIC_WITH_STD_H
-#define GRPC_CORE_LIB_GPRXX_ATOMIC_WITH_STD_H
+#ifndef GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_STD_H
+#define GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_STD_H
 
 #include <atomic>
 
@@ -30,4 +30,4 @@ typedef std::memory_order memory_order;
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRXX_ATOMIC_WITH_STD_H */
+#endif /* GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_STD_H */

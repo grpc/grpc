@@ -5785,7 +5785,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_manual_constructor_test
-  test/core/gpr++/manual_constructor_test.cc
+  test/core/gprpp/manual_constructor_test.cc
 )
 
 
@@ -10556,7 +10556,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(inlined_vector_test
-  test/core/gpr++/inlined_vector_test.cc
+  test/core/gprpp/inlined_vector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -10801,7 +10801,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(memory_test
-  test/core/gpr++/memory_test.cc
+  test/core/gprpp/memory_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -10952,7 +10952,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(orphanable_test
-  test/core/gpr++/orphanable_test.cc
+  test/core/gprpp/orphanable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11352,7 +11352,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_ptr_test
-  test/core/gpr++/ref_counted_ptr_test.cc
+  test/core/gprpp/ref_counted_ptr_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11389,7 +11389,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_test
-  test/core/gpr++/ref_counted_test.cc
+  test/core/gprpp/ref_counted_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )

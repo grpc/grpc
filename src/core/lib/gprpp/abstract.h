@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_ABSTRACT_H
-#define GRPC_CORE_LIB_GPRXX_ABSTRACT_H
+#ifndef GRPC_CORE_LIB_GPRPP_ABSTRACT_H
+#define GRPC_CORE_LIB_GPRPP_ABSTRACT_H
 
 // This is needed to support abstract base classes in the c core. Since gRPC
 // doesn't have a c++ runtime, it will hit a linker error on delete unless
@@ -31,4 +31,4 @@
 #define GRPC_ABSTRACT \
   { GPR_ASSERT(false); }
 
-#endif /* GRPC_CORE_LIB_GPRXX_ABSTRACT_H */
+#endif /* GRPC_CORE_LIB_GPRPP_ABSTRACT_H */

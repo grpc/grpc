@@ -16,11 +16,11 @@
  *
  */
 
-#include "src/core/lib/gpr++/orphanable.h"
+#include "src/core/lib/gprpp/orphanable.h"
 
 #include <gtest/gtest.h>
 
-#include "src/core/lib/gpr++/memory.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
