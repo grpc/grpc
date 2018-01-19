@@ -19,6 +19,12 @@
 
 #include <AvailabilityMacros.h>
 
+typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
+  GRPCCompressNone,
+  GRPCCompressDeflate,
+  GRPCCompressGzip,
+};
+
 /**
  * Methods to configure GRPC channel options.
  */
@@ -36,4 +42,8 @@
 + (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE("The API for this feature is experimental, "
                                                       "and might be removed or modified at any "
                                                       "time.");
+
++ (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm
+                         forhost:(nonnull NSString *)host;
+
 @end

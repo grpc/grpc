@@ -39,50 +39,50 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
+    src/core/lib/gpr/alloc.cc \
+    src/core/lib/gpr/arena.cc \
+    src/core/lib/gpr/atm.cc \
+    src/core/lib/gpr/avl.cc \
+    src/core/lib/gpr/cmdline.cc \
+    src/core/lib/gpr/cpu_iphone.cc \
+    src/core/lib/gpr/cpu_linux.cc \
+    src/core/lib/gpr/cpu_posix.cc \
+    src/core/lib/gpr/cpu_windows.cc \
+    src/core/lib/gpr/env_linux.cc \
+    src/core/lib/gpr/env_posix.cc \
+    src/core/lib/gpr/env_windows.cc \
+    src/core/lib/gpr/fork.cc \
+    src/core/lib/gpr/host_port.cc \
+    src/core/lib/gpr/log.cc \
+    src/core/lib/gpr/log_android.cc \
+    src/core/lib/gpr/log_linux.cc \
+    src/core/lib/gpr/log_posix.cc \
+    src/core/lib/gpr/log_windows.cc \
+    src/core/lib/gpr/mpscq.cc \
+    src/core/lib/gpr/murmur_hash.cc \
+    src/core/lib/gpr/string.cc \
+    src/core/lib/gpr/string_posix.cc \
+    src/core/lib/gpr/string_util_windows.cc \
+    src/core/lib/gpr/string_windows.cc \
+    src/core/lib/gpr/subprocess_posix.cc \
+    src/core/lib/gpr/subprocess_windows.cc \
+    src/core/lib/gpr/sync.cc \
+    src/core/lib/gpr/sync_posix.cc \
+    src/core/lib/gpr/sync_windows.cc \
+    src/core/lib/gpr/thd.cc \
+    src/core/lib/gpr/thd_posix.cc \
+    src/core/lib/gpr/thd_windows.cc \
+    src/core/lib/gpr/time.cc \
+    src/core/lib/gpr/time_posix.cc \
+    src/core/lib/gpr/time_precise.cc \
+    src/core/lib/gpr/time_windows.cc \
+    src/core/lib/gpr/tls_pthread.cc \
+    src/core/lib/gpr/tmpfile_msys.cc \
+    src/core/lib/gpr/tmpfile_posix.cc \
+    src/core/lib/gpr/tmpfile_windows.cc \
+    src/core/lib/gpr/wrap_memcpy.cc \
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
-    src/core/lib/support/alloc.cc \
-    src/core/lib/support/arena.cc \
-    src/core/lib/support/atm.cc \
-    src/core/lib/support/avl.cc \
-    src/core/lib/support/cmdline.cc \
-    src/core/lib/support/cpu_iphone.cc \
-    src/core/lib/support/cpu_linux.cc \
-    src/core/lib/support/cpu_posix.cc \
-    src/core/lib/support/cpu_windows.cc \
-    src/core/lib/support/env_linux.cc \
-    src/core/lib/support/env_posix.cc \
-    src/core/lib/support/env_windows.cc \
-    src/core/lib/support/fork.cc \
-    src/core/lib/support/host_port.cc \
-    src/core/lib/support/log.cc \
-    src/core/lib/support/log_android.cc \
-    src/core/lib/support/log_linux.cc \
-    src/core/lib/support/log_posix.cc \
-    src/core/lib/support/log_windows.cc \
-    src/core/lib/support/mpscq.cc \
-    src/core/lib/support/murmur_hash.cc \
-    src/core/lib/support/string.cc \
-    src/core/lib/support/string_posix.cc \
-    src/core/lib/support/string_util_windows.cc \
-    src/core/lib/support/string_windows.cc \
-    src/core/lib/support/subprocess_posix.cc \
-    src/core/lib/support/subprocess_windows.cc \
-    src/core/lib/support/sync.cc \
-    src/core/lib/support/sync_posix.cc \
-    src/core/lib/support/sync_windows.cc \
-    src/core/lib/support/thd.cc \
-    src/core/lib/support/thd_posix.cc \
-    src/core/lib/support/thd_windows.cc \
-    src/core/lib/support/time.cc \
-    src/core/lib/support/time_posix.cc \
-    src/core/lib/support/time_precise.cc \
-    src/core/lib/support/time_windows.cc \
-    src/core/lib/support/tls_pthread.cc \
-    src/core/lib/support/tmpfile_msys.cc \
-    src/core/lib/support/tmpfile_posix.cc \
-    src/core/lib/support/tmpfile_windows.cc \
-    src/core/lib/support/wrap_memcpy.cc \
     src/core/lib/surface/init.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
@@ -680,6 +680,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
@@ -697,7 +698,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)

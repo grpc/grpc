@@ -749,7 +749,7 @@ const char* grpc_error_string(grpc_error* err) {
 
   if (!gpr_atm_rel_cas(&err->atomics.error_string, 0, (gpr_atm)out)) {
     gpr_free(out);
-    out = (char*)gpr_atm_no_barrier_load(&err->atomics.error_string);
+    out = (char*)gpr_atm_acq_load(&err->atomics.error_string);
   }
 
   GPR_TIMER_END("grpc_error_string", 0);

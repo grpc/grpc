@@ -42,7 +42,7 @@ cdef class Channel:
 
   def create_call(self, Call parent, int flags,
                   CompletionQueue queue not None,
-                  method, host, Timespec deadline not None):
+                  method, host, object deadline):
     if queue.is_shutting_down:
       raise ValueError("queue must not be shutting down or shutdown")
     cdef grpc_slice method_slice = _slice_from_bytes(method)
@@ -56,14 +56,13 @@ cdef class Channel:
     cdef grpc_call *parent_call = NULL
     if parent is not None:
       parent_call = parent.c_call
-    with nogil:
-      operation_call.c_call = grpc_channel_create_call(
-          self.c_channel, parent_call, flags,
-          queue.c_completion_queue, method_slice, host_slice_ptr,
-          deadline.c_time, NULL)
-      grpc_slice_unref(method_slice)
-      if host_slice_ptr:
-        grpc_slice_unref(host_slice)
+    operation_call.c_call = grpc_channel_create_call(
+        self.c_channel, parent_call, flags,
+        queue.c_completion_queue, method_slice, host_slice_ptr,
+        _timespec_from_time(deadline), NULL)
+    grpc_slice_unref(method_slice)
+    if host_slice_ptr:
+      grpc_slice_unref(host_slice)
     return operation_call
 
   def check_connectivity_state(self, bint try_to_connect):
@@ -75,13 +74,12 @@ cdef class Channel:
 
   def watch_connectivity_state(
       self, grpc_connectivity_state last_observed_state,
-      Timespec deadline not None, CompletionQueue queue not None, tag):
-    cdef OperationTag operation_tag = OperationTag(tag, None)
-    cpython.Py_INCREF(operation_tag)
-    with nogil:
-      grpc_channel_watch_connectivity_state(
-          self.c_channel, last_observed_state, deadline.c_time,
-          queue.c_completion_queue, <cpython.PyObject *>operation_tag)
+      object deadline, CompletionQueue queue not None, tag):
+    cdef _ConnectivityTag connectivity_tag = _ConnectivityTag(tag)
+    cpython.Py_INCREF(connectivity_tag)
+    grpc_channel_watch_connectivity_state(
+        self.c_channel, last_observed_state, _timespec_from_time(deadline),
+        queue.c_completion_queue, <cpython.PyObject *>connectivity_tag)
 
   def target(self):
     cdef char *target = NULL

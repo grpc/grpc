@@ -21,6 +21,10 @@
 #define _GNU_SOURCE
 #endif
 
+#ifndef SO_RXQ_OVFL
+#define SO_RXQ_OVFL 40
+#endif
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET
@@ -45,6 +49,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -54,7 +59,6 @@
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/support/string.h"
 
 /* one listening port */
 typedef struct grpc_udp_listener grpc_udp_listener;
@@ -72,6 +76,7 @@ struct grpc_udp_listener {
   grpc_udp_server_read_cb read_cb;
   grpc_udp_server_write_cb write_cb;
   grpc_udp_server_orphan_cb orphan_cb;
+  grpc_udp_server_start_cb start_cb;
   // To be scheduled on another thread to actually read/write.
   grpc_closure do_read_closure;
   grpc_closure do_write_closure;
@@ -279,11 +284,10 @@ static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
 
 /* Prepare a recently-created socket for listening. */
 static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
-                          const grpc_resolved_address* addr) {
+                          const grpc_resolved_address* addr, int rcv_buf_size,
+                          int snd_buf_size) {
   grpc_resolved_address sockname_temp;
   struct sockaddr* addr_ptr = (struct sockaddr*)addr->addr;
-  /* Set send/receive socket buffers to 1 MB */
-  int buffer_size_bytes = 1024 * 1024;
 
   if (fd < 0) {
     goto error;
@@ -324,18 +328,25 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
     goto error;
   }
 
-  if (grpc_set_socket_sndbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
+  if (grpc_set_socket_sndbuf(fd, snd_buf_size) != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
-            buffer_size_bytes);
+            snd_buf_size);
     goto error;
   }
 
-  if (grpc_set_socket_rcvbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
+  if (grpc_set_socket_rcvbuf(fd, rcv_buf_size) != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes",
-            buffer_size_bytes);
+            rcv_buf_size);
     goto error;
   }
 
+  {
+    int get_overflow = 1;
+    if (0 != setsockopt(fd, SOL_SOCKET, SO_RXQ_OVFL, &get_overflow,
+                        sizeof(get_overflow))) {
+      gpr_log(GPR_INFO, "Failed to set socket overflow support");
+    }
+  }
   return grpc_sockaddr_get_port(&sockname_temp);
 
 error:
@@ -353,7 +364,7 @@ static void do_read(void* arg, grpc_error* error) {
    * read lock if available. */
   gpr_mu_lock(&sp->server->mu);
   /* Tell the registered callback that data is available to read. */
-  if (!sp->already_shutdown && sp->read_cb(sp->emfd, sp->server->user_data)) {
+  if (!sp->already_shutdown && sp->read_cb(sp->emfd)) {
     /* There maybe more packets to read. Schedule read_more_cb_ closure to run
      * after finishing this event loop. */
     GRPC_CLOSURE_SCHED(&sp->do_read_closure, GRPC_ERROR_NONE);
@@ -383,7 +394,7 @@ static void on_read(void* arg, grpc_error* error) {
   /* Read once. If there is more data to read, off load the work to another
    * thread to finish. */
   GPR_ASSERT(sp->read_cb);
-  if (sp->read_cb(sp->emfd, sp->server->user_data)) {
+  if (sp->read_cb(sp->emfd)) {
     /* There maybe more packets to read. Schedule read_more_cb_ closure to run
      * after finishing this event loop. */
     GRPC_CLOSURE_INIT(&sp->do_read_closure, do_read, arg,
@@ -411,7 +422,7 @@ void fd_notify_on_write_wrapper(void* arg, grpc_error* error) {
 
 static void do_write(void* arg, grpc_error* error) {
   grpc_udp_listener* sp = reinterpret_cast<grpc_udp_listener*>(arg);
-  gpr_mu_lock(&(sp->server->mu));
+  gpr_mu_lock(&sp->server->mu);
   if (sp->already_shutdown) {
     // If fd has been shutdown, don't write any more and re-arm notification.
     grpc_fd_notify_on_write(sp->emfd, &sp->write_closure);
@@ -429,7 +440,7 @@ static void do_write(void* arg, grpc_error* error) {
 static void on_write(void* arg, grpc_error* error) {
   grpc_udp_listener* sp = (grpc_udp_listener*)arg;
 
-  gpr_mu_lock(&(sp->server->mu));
+  gpr_mu_lock(&sp->server->mu);
   if (error != GRPC_ERROR_NONE) {
     if (0 == --sp->server->active_ports && sp->server->shutdown) {
       gpr_mu_unlock(&sp->server->mu);
@@ -450,6 +461,8 @@ static void on_write(void* arg, grpc_error* error) {
 
 static int add_socket_to_server(grpc_udp_server* s, int fd,
                                 const grpc_resolved_address* addr,
+                                int rcv_buf_size, int snd_buf_size,
+                                grpc_udp_server_start_cb start_cb,
                                 grpc_udp_server_read_cb read_cb,
                                 grpc_udp_server_write_cb write_cb,
                                 grpc_udp_server_orphan_cb orphan_cb) {
@@ -458,7 +471,8 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
   char* addr_str;
   char* name;
 
-  port = prepare_socket(s->socket_factory, fd, addr);
+  port =
+      prepare_socket(s->socket_factory, fd, addr, rcv_buf_size, snd_buf_size);
   if (port >= 0) {
     grpc_sockaddr_to_string(&addr_str, addr, 1);
     gpr_asprintf(&name, "udp-server-listener:%s", addr_str);
@@ -480,6 +494,7 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
     sp->read_cb = read_cb;
     sp->write_cb = write_cb;
     sp->orphan_cb = orphan_cb;
+    sp->start_cb = start_cb;
     sp->orphan_notified = false;
     sp->already_shutdown = false;
     GPR_ASSERT(sp->emfd);
@@ -492,6 +507,8 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
 
 int grpc_udp_server_add_port(grpc_udp_server* s,
                              const grpc_resolved_address* addr,
+                             int rcv_buf_size, int snd_buf_size,
+                             grpc_udp_server_start_cb start_cb,
                              grpc_udp_server_read_cb read_cb,
                              grpc_udp_server_write_cb write_cb,
                              grpc_udp_server_orphan_cb orphan_cb) {
@@ -542,7 +559,8 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
     GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
         s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
     allocated_port1 =
-        add_socket_to_server(s, fd, addr, read_cb, write_cb, orphan_cb);
+        add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size, start_cb,
+                             read_cb, write_cb, orphan_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
     }
@@ -565,7 +583,8 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
     addr = &addr4_copy;
   }
   allocated_port2 =
-      add_socket_to_server(s, fd, addr, read_cb, write_cb, orphan_cb);
+      add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size, start_cb,
+                           read_cb, write_cb, orphan_cb);
 
 done:
   gpr_free(allocated_addr);
@@ -587,6 +606,7 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index) {
 
 void grpc_udp_server_start(grpc_udp_server* s, grpc_pollset** pollsets,
                            size_t pollset_count, void* user_data) {
+  gpr_log(GPR_DEBUG, "grpc_udp_server_start");
   size_t i;
   gpr_mu_lock(&s->mu);
   grpc_udp_listener* sp;
@@ -596,6 +616,7 @@ void grpc_udp_server_start(grpc_udp_server* s, grpc_pollset** pollsets,
 
   sp = s->head;
   while (sp != nullptr) {
+    sp->start_cb(sp->emfd, sp->server->user_data);
     for (i = 0; i < pollset_count; i++) {
       grpc_pollset_add_fd(pollsets[i], sp->emfd);
     }

@@ -70,7 +70,7 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
   }
   if (code != nullptr) *code = status;
 
-  if (error_string != NULL && status != GRPC_STATUS_OK) {
+  if (error_string != nullptr && status != GRPC_STATUS_OK) {
     *error_string = gpr_strdup(grpc_error_string(error));
   }
 

@@ -42,12 +42,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 
 #ifdef GRPC_HAVE_MSG_NOSIGNAL
 #define SENDMSG_FLAGS MSG_NOSIGNAL
@@ -63,7 +63,8 @@ typedef size_t msg_iovlen_type;
 
 grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
 
-typedef struct {
+namespace {
+struct grpc_tcp {
   grpc_endpoint base;
   grpc_fd* em_fd;
   int fd;
@@ -96,12 +97,13 @@ typedef struct {
 
   grpc_resource_user* resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
-} grpc_tcp;
+};
 
-typedef struct backup_poller {
+struct backup_poller {
   gpr_mu* pollset_mu;
   grpc_closure run_poller;
-} backup_poller;
+};
+}  // namespace
 
 #define BACKUP_POLLER_POLLSET(b) ((grpc_pollset*)((b) + 1))
 
@@ -270,7 +272,11 @@ static size_t get_target_read_size(grpc_tcp* tcp) {
 
 static grpc_error* tcp_annotate_error(grpc_error* src_error, grpc_tcp* tcp) {
   return grpc_error_set_str(
-      grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+      grpc_error_set_int(
+          grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+          /* All tcp errors are marked with UNAVAILABLE so that application may
+           * choose to retry. */
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
       GRPC_ERROR_STR_TARGET_ADDRESS,
       grpc_slice_from_copied_string(tcp->peer_string));
 }
@@ -565,9 +571,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
         }
         return false;
       } else if (errno == EPIPE) {
-        *error = grpc_error_set_int(GRPC_OS_ERROR(errno, "sendmsg"),
-                                    GRPC_ERROR_INT_GRPC_STATUS,
-                                    GRPC_STATUS_UNAVAILABLE);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
         return true;
       } else {

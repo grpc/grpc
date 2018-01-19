@@ -22,6 +22,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr++/ref_counted_ptr.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // TODO(roth): This code is intended to be shared between pick_first and
@@ -43,7 +44,7 @@ typedef struct {
   grpc_lb_subchannel_list* subchannel_list;
   /** subchannel itself */
   grpc_subchannel* subchannel;
-  grpc_connected_subchannel* connected_subchannel;
+  grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel> connected_subchannel;
   /** Is a connectivity notification pending? */
   bool connectivity_notification_pending;
   /** notification that connectivity has changed on subchannel */

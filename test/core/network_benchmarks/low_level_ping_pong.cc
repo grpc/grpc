@@ -535,6 +535,7 @@ void print_usage(char* argv0) {
   fprintf(stderr, "  tcp: fds are endpoints of a TCP connection\n");
   fprintf(stderr, "  socketpair: fds come from socketpair()\n");
   fprintf(stderr, "  pipe: fds come from pipe()\n");
+  fflush(stderr);
 }
 
 typedef struct test_strategy {
@@ -565,6 +566,7 @@ int create_socket(const char* socket_type, fd_pair* client_fds,
     create_sockets_pipe(client_fds, server_fds);
   } else {
     fprintf(stderr, "Invalid socket type %s\n", socket_type);
+    fflush(stderr);
     return -1;
   }
   return 0;
@@ -657,6 +659,7 @@ int main(int argc, char** argv) {
   }
   if (msg_size <= 0) {
     fprintf(stderr, "msg_size must be > 0\n");
+    fflush(stderr);
     print_usage(argv[0]);
     return -1;
   }
@@ -668,6 +671,7 @@ int main(int argc, char** argv) {
   }
   if (strategy == nullptr) {
     fprintf(stderr, "Invalid read strategy %s\n", read_strategy);
+    fflush(stderr);
     return -1;
   }
 

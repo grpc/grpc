@@ -30,12 +30,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/mpscq.h"
+#include "src/core/lib/gpr/spinlock.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/mpscq.h"
-#include "src/core/lib/support/spinlock.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -44,24 +44,23 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-typedef struct listener {
+grpc_core::TraceFlag grpc_server_channel_trace(false, "server_channel");
+
+namespace {
+struct listener {
   void* arg;
   void (*start)(grpc_server* server, void* arg, grpc_pollset** pollsets,
                 size_t pollset_count);
   void (*destroy)(grpc_server* server, void* arg, grpc_closure* closure);
   struct listener* next;
   grpc_closure destroy_done;
-} listener;
+};
 
-typedef struct call_data call_data;
-typedef struct channel_data channel_data;
-typedef struct registered_method registered_method;
+enum requested_call_type { BATCH_CALL, REGISTERED_CALL };
 
-typedef enum { BATCH_CALL, REGISTERED_CALL } requested_call_type;
+struct registered_method;
 
-grpc_core::TraceFlag grpc_server_channel_trace(false, "server_channel");
-
-typedef struct requested_call {
+struct requested_call {
   gpr_mpscq_node request_link; /* must be first */
   requested_call_type type;
   size_t cq_idx;
@@ -81,15 +80,15 @@ typedef struct requested_call {
       grpc_byte_buffer** optional_payload;
     } registered;
   } data;
-} requested_call;
+};
 
-typedef struct channel_registered_method {
+struct channel_registered_method {
   registered_method* server_registered_method;
   uint32_t flags;
   bool has_host;
   grpc_slice method;
   grpc_slice host;
-} channel_registered_method;
+};
 
 struct channel_data {
   grpc_server* server;
@@ -176,6 +175,7 @@ typedef struct {
   grpc_channel** channels;
   size_t num_channels;
 } channel_broadcaster;
+}  // namespace
 
 struct grpc_server {
   grpc_channel_args* channel_args;

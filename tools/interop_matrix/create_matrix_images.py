@@ -173,8 +173,8 @@ def build_all_images_for_lang(lang):
             releases = client_matrix.get_release_tags(lang)
         else:
             # Build a particular release.
-            if args.release not in ['master'] + client_matrix.get_release_tags(
-                    lang):
+            if args.release not in ['master'
+                                   ] + client_matrix.get_release_tags(lang):
                 jobset.message(
                     'SKIPPED',
                     '%s for %s is not defined' % (args.release, lang),
@@ -254,8 +254,9 @@ def maybe_apply_patches_on_git_tag(stack_base, lang, release):
     files_to_patch = []
     for release_info in client_matrix.LANG_RELEASE_MATRIX[lang]:
         if client_matrix.get_release_tag_name(release_info) == release:
-            files_to_patch = release_info[release].get('patch')
-            break
+            if release_info[release] is not None:
+                files_to_patch = release_info[release].get('patch')
+                break
     if not files_to_patch:
         return
     patch_file_relative_path = 'patches/%s_%s/git_repo.patch' % (lang, release)

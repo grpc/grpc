@@ -54,7 +54,8 @@ argp.set_defaults(fix=False)
 args = argp.parse_args()
 
 cmdline = [
-    clang_tidy, '--checks=-*,%s' % ','.join(GRPC_CHECKS),
+    clang_tidy,
+    '--checks=-*,%s' % ','.join(GRPC_CHECKS),
     '--warnings-as-errors=%s' % ','.join(GRPC_CHECKS)
 ] + ['--extra-arg-before=%s' % arg for arg in extra_args]
 
@@ -65,6 +66,8 @@ jobs = []
 for filename in args.files:
     jobs.append(jobset.JobSpec(
         cmdline + [filename],
-        shortname=filename,))  #verbose_success=True))
+        shortname=filename,
+    ))  #verbose_success=True))
 
-jobset.run(jobs, maxjobs=args.jobs)
+num_fails, res_set = jobset.run(jobs, maxjobs=args.jobs)
+sys.exit(num_fails)

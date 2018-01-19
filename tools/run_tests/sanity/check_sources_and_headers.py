@@ -69,13 +69,10 @@ target_headers_transitive = get_headers_transitive()
 
 
 def target_has_header(target, name):
-    if name.startswith('absl/'): return True
-    # print target['name'], name
-    if name in target['headers']:
+    if name in target_headers_transitive[target['name']]:
         return True
-    for dep in target['deps']:
-        if target_has_header(get_target(dep), name):
-            return True
+    if name.startswith('absl/'):
+        return True
     if name in [
             'src/core/lib/profiling/stap_probes.h',
             'src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h'

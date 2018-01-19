@@ -54,5 +54,5 @@ def mako_plugin(dictionary):
                 target['transitive_deps'] = transitive_deps(target, libs)
 
     python_dependencies = dictionary.get('python_dependencies')
-    python_dependencies['transitive_deps'] = (
-        transitive_deps(python_dependencies, libs))
+    python_dependencies['transitive_deps'] = (transitive_deps(
+        python_dependencies, libs))

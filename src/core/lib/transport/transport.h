@@ -22,16 +22,23 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
+/* Minimum and maximum protocol accepted versions. */
+#define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
+#define GRPC_PROTOCOL_VERSION_MAX_MINOR 1
+#define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
+#define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
+
 /* forward declarations */
+
 typedef struct grpc_transport grpc_transport;
 
 /* grpc_stream doesn't actually exist. It's used as a typesafe

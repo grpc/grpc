@@ -110,14 +110,19 @@ class FirstServiceServicerTest(unittest.TestCase):
         second_termination = rpc.termination()
         third_termination = rpc.termination()
 
-        for later_initial_metadata in (second_initial_metadata,
-                                       third_initial_metadata,):
+        for later_initial_metadata in (
+                second_initial_metadata,
+                third_initial_metadata,
+        ):
             self.assertEqual(first_initial_metadata, later_initial_metadata)
         response = first_termination[0]
         terminal_metadata = first_termination[1]
         code = first_termination[2]
         details = first_termination[3]
-        for later_termination in (second_termination, third_termination,):
+        for later_termination in (
+                second_termination,
+                third_termination,
+        ):
             self.assertEqual(response, later_termination[0])
             self.assertEqual(terminal_metadata, later_termination[1])
             self.assertIs(code, later_termination[2])

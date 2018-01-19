@@ -106,8 +106,8 @@ class CSharpDistribTest(object):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/distribtest/csharp_%s_%s' % (
-                    self.docker_suffix, self.arch),
+                'tools/dockerfile/distribtest/csharp_%s_%s' %
+                (self.docker_suffix, self.arch),
                 'test/distrib/csharp/run_distrib_test%s.sh' %
                 self.script_suffix,
                 copy_rel_path='test/distrib')
@@ -174,25 +174,35 @@ class PythonDistribTest(object):
 class RubyDistribTest(object):
     """Tests Ruby package"""
 
-    def __init__(self, platform, arch, docker_suffix):
-        self.name = 'ruby_%s_%s_%s' % (platform, arch, docker_suffix)
+    def __init__(self, platform, arch, docker_suffix, ruby_version=None):
+        self.name = 'ruby_%s_%s_%s_version_%s' % (platform, arch, docker_suffix,
+                                                  ruby_version or 'unspecified')
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
+        self.ruby_version = ruby_version
         self.labels = ['distribtest', 'ruby', platform, arch, docker_suffix]
 
     def pre_build_jobspecs(self):
         return []
 
     def build_jobspec(self):
+        arch_to_gem_arch = {
+            'x64': 'x86_64',
+            'x86': 'x86',
+        }
         if not self.platform == 'linux':
             raise Exception("Not supported yet.")
 
+        dockerfile_name = 'tools/dockerfile/distribtest/ruby_%s_%s' % (
+            self.docker_suffix, self.arch)
+        if self.ruby_version is not None:
+            dockerfile_name += '_%s' % self.ruby_version
         return create_docker_jobspec(
             self.name,
-            'tools/dockerfile/distribtest/ruby_%s_%s' % (self.docker_suffix,
-                                                         self.arch),
-            'test/distrib/ruby/run_distrib_test.sh',
+            dockerfile_name,
+            'test/distrib/ruby/run_distrib_test.sh %s %s' %
+            (arch_to_gem_arch[self.arch], self.platform),
             copy_rel_path='test/distrib')
 
     def __str__(self):
@@ -255,8 +265,8 @@ class CppDistribTest(object):
     def build_jobspec(self):
         if self.platform == 'linux':
             return create_docker_jobspec(
-                self.name, 'tools/dockerfile/distribtest/cpp_%s_%s' % (
-                    self.docker_suffix, self.arch),
+                self.name, 'tools/dockerfile/distribtest/cpp_%s_%s' %
+                (self.docker_suffix, self.arch),
                 'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase)
         elif self.platform == 'windows':
             return create_jobspec(
@@ -309,6 +319,7 @@ def targets():
         RubyDistribTest('linux', 'x64', 'wheezy'),
         RubyDistribTest('linux', 'x64', 'jessie'),
         RubyDistribTest('linux', 'x86', 'jessie'),
+        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_0_0'),
         RubyDistribTest('linux', 'x64', 'centos6'),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'fedora20'),

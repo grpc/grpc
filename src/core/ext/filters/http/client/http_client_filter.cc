@@ -20,12 +20,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <string.h>
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -35,7 +35,8 @@
 /* default maximum size of payload eligable for GET request */
 static const size_t kMaxPayloadSizeForGet = 2048;
 
-typedef struct call_data {
+namespace {
+struct call_data {
   grpc_call_combiner* call_combiner;
   // State for handling send_initial_metadata ops.
   grpc_linked_mdelem method;
@@ -60,13 +61,14 @@ typedef struct call_data {
   grpc_closure on_send_message_next_done;
   grpc_closure* original_send_message_on_complete;
   grpc_closure send_message_on_complete;
-} call_data;
+};
 
-typedef struct channel_data {
+struct channel_data {
   grpc_mdelem static_scheme;
   grpc_mdelem user_agent;
   size_t max_payload_size_for_get;
-} channel_data;
+};
+}  // namespace
 
 static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
                                                    grpc_metadata_batch* b) {

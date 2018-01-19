@@ -26,50 +26,50 @@ filegroups:
   - nanopb
 - name: gpr_base
   src:
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/arena.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/avl.cc
+  - src/core/lib/gpr/cmdline.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/fork.cc
+  - src/core/lib/gpr/host_port.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/mpscq.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/thd.cc
+  - src/core/lib/gpr/thd_posix.cc
+  - src/core/lib/gpr/thd_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tls_pthread.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
-  - src/core/lib/support/alloc.cc
-  - src/core/lib/support/arena.cc
-  - src/core/lib/support/atm.cc
-  - src/core/lib/support/avl.cc
-  - src/core/lib/support/cmdline.cc
-  - src/core/lib/support/cpu_iphone.cc
-  - src/core/lib/support/cpu_linux.cc
-  - src/core/lib/support/cpu_posix.cc
-  - src/core/lib/support/cpu_windows.cc
-  - src/core/lib/support/env_linux.cc
-  - src/core/lib/support/env_posix.cc
-  - src/core/lib/support/env_windows.cc
-  - src/core/lib/support/fork.cc
-  - src/core/lib/support/host_port.cc
-  - src/core/lib/support/log.cc
-  - src/core/lib/support/log_android.cc
-  - src/core/lib/support/log_linux.cc
-  - src/core/lib/support/log_posix.cc
-  - src/core/lib/support/log_windows.cc
-  - src/core/lib/support/mpscq.cc
-  - src/core/lib/support/murmur_hash.cc
-  - src/core/lib/support/string.cc
-  - src/core/lib/support/string_posix.cc
-  - src/core/lib/support/string_util_windows.cc
-  - src/core/lib/support/string_windows.cc
-  - src/core/lib/support/subprocess_posix.cc
-  - src/core/lib/support/subprocess_windows.cc
-  - src/core/lib/support/sync.cc
-  - src/core/lib/support/sync_posix.cc
-  - src/core/lib/support/sync_windows.cc
-  - src/core/lib/support/thd.cc
-  - src/core/lib/support/thd_posix.cc
-  - src/core/lib/support/thd_windows.cc
-  - src/core/lib/support/time.cc
-  - src/core/lib/support/time_posix.cc
-  - src/core/lib/support/time_precise.cc
-  - src/core/lib/support/time_windows.cc
-  - src/core/lib/support/tls_pthread.cc
-  - src/core/lib/support/tmpfile_msys.cc
-  - src/core/lib/support/tmpfile_posix.cc
-  - src/core/lib/support/tmpfile_windows.cc
-  - src/core/lib/support/wrap_memcpy.cc
   uses:
   - gpr_base_headers
 - name: gpr_base_headers
@@ -101,24 +101,24 @@ filegroups:
   - include/grpc/support/tls_pthread.h
   - include/grpc/support/useful.h
   headers:
+  - src/core/lib/gpr++/abstract.h
+  - src/core/lib/gpr++/atomic.h
+  - src/core/lib/gpr++/atomic_with_atm.h
+  - src/core/lib/gpr++/atomic_with_std.h
+  - src/core/lib/gpr++/manual_constructor.h
+  - src/core/lib/gpr++/memory.h
+  - src/core/lib/gpr/arena.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/fork.h
+  - src/core/lib/gpr/mpscq.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/thd_internal.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tmpfile.h
   - src/core/lib/profiling/timers.h
-  - src/core/lib/support/abstract.h
-  - src/core/lib/support/arena.h
-  - src/core/lib/support/atomic.h
-  - src/core/lib/support/atomic_with_atm.h
-  - src/core/lib/support/atomic_with_std.h
-  - src/core/lib/support/env.h
-  - src/core/lib/support/fork.h
-  - src/core/lib/support/manual_constructor.h
-  - src/core/lib/support/memory.h
-  - src/core/lib/support/mpscq.h
-  - src/core/lib/support/murmur_hash.h
-  - src/core/lib/support/spinlock.h
-  - src/core/lib/support/string.h
-  - src/core/lib/support/string_windows.h
-  - src/core/lib/support/thd_internal.h
-  - src/core/lib/support/time_precise.h
-  - src/core/lib/support/tmpfile.h
   uses:
   - gpr_codegen
 - name: gpr_codegen
@@ -325,6 +325,11 @@ filegroups:
   - src/core/lib/compression/stream_compression_identity.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
+  - src/core/lib/gpr++/debug_location.h
+  - src/core/lib/gpr++/inlined_vector.h
+  - src/core/lib/gpr++/orphanable.h
+  - src/core/lib/gpr++/ref_counted.h
+  - src/core/lib/gpr++/ref_counted_ptr.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -400,9 +405,6 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/support/debug_location.h
-  - src/core/lib/support/ref_counted.h
-  - src/core/lib/support/ref_counted_ptr.h
   - src/core/lib/surface/alarm_internal.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
@@ -489,7 +491,6 @@ filegroups:
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
-  - include/grpc/impl/codegen/exec_ctx_fwd.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -1735,7 +1736,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/alloc_test.cc
+  - test/core/gpr/alloc_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -1768,19 +1769,8 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/arena_test.cc
+  - test/core/gpr/arena_test.cc
   deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: backoff_test
-  build: test
-  language: c
-  src:
-  - test/core/backoff/backoff_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
   - gpr_test_util
   - gpr
   uses_polling: false
@@ -2146,7 +2136,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/avl_test.cc
+  - test/core/gpr/avl_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2155,7 +2145,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/cmdline_test.cc
+  - test/core/gpr/cmdline_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2165,7 +2155,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/cpu_test.cc
+  - test/core/gpr/cpu_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2174,7 +2164,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/env_test.cc
+  - test/core/gpr/env_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2183,7 +2173,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/host_port_test.cc
+  - test/core/gpr/host_port_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2192,7 +2182,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/log_test.cc
+  - test/core/gpr/log_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2202,7 +2192,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/manual_constructor_test.cc
+  - test/core/gpr++/manual_constructor_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2212,7 +2202,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/mpscq_test.cc
+  - test/core/gpr/mpscq_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2222,7 +2212,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/spinlock_test.cc
+  - test/core/gpr/spinlock_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2231,7 +2221,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/string_test.cc
+  - test/core/gpr/string_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2241,7 +2231,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/sync_test.cc
+  - test/core/gpr/sync_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2251,7 +2241,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/thd_test.cc
+  - test/core/gpr/thd_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2260,7 +2250,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/time_test.cc
+  - test/core/gpr/time_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2269,7 +2259,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/tls_test.cc
+  - test/core/gpr/tls_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2278,7 +2268,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/useful_test.cc
+  - test/core/gpr/useful_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -2847,7 +2837,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/support/murmur_hash_test.cc
+  - test/core/gpr/murmur_hash_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -3461,6 +3451,17 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: backoff_test
+  build: test
+  language: c++
+  src:
+  - test/core/backoff/backoff_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: bdp_estimator_test
   build: test
   language: c++
@@ -4011,6 +4012,19 @@ targets:
   deps:
   - grpc++_error_details
   - grpc++
+- name: exception_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/exception_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -4250,6 +4264,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: inlined_vector_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/gpr++/inlined_vector_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: inproc_sync_unary_ping_pong_test
   build: test
   language: c++
@@ -4347,7 +4375,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/support/memory_test.cc
+  - test/core/gpr++/memory_test.cc
   deps:
   - grpc_test_util
   - grpc++
@@ -4394,6 +4422,20 @@ targets:
   deps:
   - benchmark
   defaults: benchmark
+- name: orphanable_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/gpr++/orphanable_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -4538,7 +4580,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/support/ref_counted_ptr_test.cc
+  - test/core/gpr++/ref_counted_ptr_test.cc
   deps:
   - grpc_test_util
   - grpc++
@@ -4552,7 +4594,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/support/ref_counted_test.cc
+  - test/core/gpr++/ref_counted_test.cc
   deps:
   - grpc_test_util
   - grpc++
@@ -4917,7 +4959,6 @@ configs:
     DEFINES: NDEBUG
   dbg:
     CPPFLAGS: -O0
-    CXXFLAGS: -fno-exceptions
     DEFINES: _DEBUG DEBUG
   gcov:
     CC: gcc
@@ -4958,9 +4999,12 @@ configs:
     CPPFLAGS: -O3 -fno-omit-frame-pointer
     DEFINES: NDEBUG
     LDFLAGS: -rdynamic
-  opt:
+  noexcept:
     CPPFLAGS: -O2
     CXXFLAGS: -fno-exceptions
+    DEFINES: NDEBUG
+  opt:
+    CPPFLAGS: -O2
     DEFINES: NDEBUG
   stapprof:
     CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
@@ -5008,6 +5052,7 @@ defaults:
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
+      -Wno-deprecated-declarations
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

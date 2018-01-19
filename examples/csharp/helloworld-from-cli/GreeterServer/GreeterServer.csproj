@@ -7,7 +7,6 @@
     <AssemblyName>GreeterServer</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>GreeterServer</PackageId>
-    <RuntimeFrameworkVersion Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">1.0.4</RuntimeFrameworkVersion>
   </PropertyGroup>
 
   <ItemGroup>

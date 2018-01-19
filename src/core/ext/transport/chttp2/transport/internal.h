@@ -35,10 +35,10 @@
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/compression/stream_compression.h"
+#include "src/core/lib/gpr++/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -351,7 +351,10 @@ struct grpc_chttp2_transport {
   /** parser for goaway frames */
   grpc_chttp2_goaway_parser goaway_parser;
 
-  grpc_core::ManualConstructor<grpc_core::chttp2::TransportFlowControl>
+  grpc_core::PolymorphicManualConstructor<
+      grpc_core::chttp2::TransportFlowControlBase,
+      grpc_core::chttp2::TransportFlowControl,
+      grpc_core::chttp2::TransportFlowControlDisabled>
       flow_control;
   /** initial window change. This is tracked as we parse settings frames from
    * the remote peer. If there is a positive delta, then we will make all
@@ -525,7 +528,10 @@ struct grpc_chttp2_stream {
   bool sent_initial_metadata;
   bool sent_trailing_metadata;
 
-  grpc_core::ManualConstructor<grpc_core::chttp2::StreamFlowControl>
+  grpc_core::PolymorphicManualConstructor<
+      grpc_core::chttp2::StreamFlowControlBase,
+      grpc_core::chttp2::StreamFlowControl,
+      grpc_core::chttp2::StreamFlowControlDisabled>
       flow_control;
 
   grpc_slice_buffer flow_controlled_buffer;

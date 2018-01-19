@@ -22,8 +22,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/string.h"
 
 char* grpc_dump_slice(grpc_slice s, uint32_t flags) {
   return gpr_dump((const char*)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),

@@ -26,7 +26,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/service_config.h"
 
@@ -86,7 +86,8 @@ static void* refcounted_message_size_limits_create_from_json(
   return value;
 }
 
-typedef struct call_data {
+namespace {
+struct call_data {
   grpc_call_combiner* call_combiner;
   message_size_limits limits;
   // Receive closures are chained: we inject this closure as the
@@ -97,13 +98,14 @@ typedef struct call_data {
   grpc_byte_stream** recv_message;
   // Original recv_message_ready callback, invoked after our own.
   grpc_closure* next_recv_message_ready;
-} call_data;
+};
 
-typedef struct channel_data {
+struct channel_data {
   message_size_limits limits;
   // Maps path names to refcounted_message_size_limits structs.
   grpc_slice_hash_table* method_limit_table;
-} channel_data;
+};
+}  // namespace
 
 // Callback invoked when we receive a message.  Here we check the max
 // receive message size.

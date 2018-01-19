@@ -29,23 +29,24 @@
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-typedef enum {
+namespace {
+enum initial_metadata_state {
   // Initial metadata not yet seen.
   INITIAL_METADATA_UNSEEN = 0,
   // Initial metadata seen; compression algorithm set.
   HAS_COMPRESSION_ALGORITHM,
   // Initial metadata seen; no compression algorithm set.
   NO_COMPRESSION_ALGORITHM,
-} initial_metadata_state;
+};
 
-typedef struct call_data {
+struct call_data {
   grpc_call_combiner* call_combiner;
   grpc_linked_mdelem compression_algorithm_storage;
   grpc_linked_mdelem stream_compression_algorithm_storage;
@@ -63,9 +64,9 @@ typedef struct call_data {
   grpc_closure* original_send_message_on_complete;
   grpc_closure send_message_on_complete;
   grpc_closure on_send_message_next_done;
-} call_data;
+};
 
-typedef struct channel_data {
+struct channel_data {
   /** The default, channel-level, compression algorithm */
   grpc_compression_algorithm default_compression_algorithm;
   /** Bitset of enabled compression algorithms */
@@ -74,7 +75,8 @@ typedef struct channel_data {
   uint32_t supported_message_compression_algorithms;
   /** Supported stream compression algorithms */
   uint32_t supported_stream_compression_algorithms;
-} channel_data;
+};
+}  // namespace
 
 static bool skip_compression(grpc_call_element* elem, uint32_t flags,
                              bool has_compression_algorithm) {

@@ -34,7 +34,7 @@ virtualenv $VIRTUALENV
 PYTHON=$(realpath "${VIRTUALENV}/bin/python")
 $PYTHON -m pip install --upgrade pip==9.0.1
 $PYTHON -m pip install --upgrade futures
-$PYTHON -m pip install yapf==0.16.0
+$PYTHON -m pip install yapf==0.20.0
 
 yapf() {
     local exclusion exclusion_args=()
@@ -54,7 +54,7 @@ else
 	tempdir=$(mktemp -d)
 	cp -RT "${dir}" "${tempdir}"
 	yapf "${tempdir}"
-	diff -ru "${dir}" "${tempdir}" || ok=no
+	diff -x '*.pyc' -ru "${dir}" "${tempdir}" || ok=no
 	rm -rf "${tempdir}"
     done
     if [[ ${ok} == no ]]; then

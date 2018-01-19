@@ -28,9 +28,9 @@ import subprocess
 columns = []
 
 for row in json.loads(
-        subprocess.check_output([
-            'bq', '--format=json', 'show', 'microbenchmarks.microbenchmarks'
-        ]))['schema']['fields']:
+        subprocess.check_output(
+            ['bq', '--format=json', 'show',
+             'microbenchmarks.microbenchmarks']))['schema']['fields']:
     columns.append((row['name'], row['type'].lower()))
 
 SANITIZE = {

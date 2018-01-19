@@ -29,7 +29,8 @@
         libtool ${"\\"}
         curl ${"\\"}
         python-virtualenv ${"\\"}
-        python-lxml
+        python-lxml ${"\\"}
+        shellcheck
   RUN pip install simplejson mako
   
   #======================================
@@ -52,7 +53,7 @@
   RUN chmod +x ./bazel-0.4.4-installer-linux-x86_64.sh
   RUN ./bazel-0.4.4-installer-linux-x86_64.sh
   
-  <%include file="../../clang_format.include"/>
+  <%include file="../../clang5.include"/>
   <%include file="../../run_tests_addons.include"/>
   
   # Define the default command.

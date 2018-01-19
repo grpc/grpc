@@ -29,8 +29,8 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/support/spinlock.h"
 
 #define MAX_DEPTH 2
 
@@ -242,7 +242,7 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
         }
         continue;
       }
-      if (grpc_closure_list_empty(ts->elems)) {
+      if (grpc_closure_list_empty(ts->elems) && !ts->shutdown) {
         GRPC_STATS_INC_EXECUTOR_WAKEUP_INITIATED();
         gpr_cv_signal(&ts->cv);
       }

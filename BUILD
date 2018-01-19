@@ -39,6 +39,16 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_allow_exceptions",
+    values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
+)
+
+config_setting(
+    name = "grpc_disallow_exceptions",
+    values = {"define": "GRPC_ALLOW_EXCEPTIONS=0"},
+)
+
+config_setting(
     name = "remote_execution",
     values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
 )
@@ -439,75 +449,67 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/profiling/basic_timers.cc",
         "src/core/lib/profiling/stap_timers.cc",
-        "src/core/lib/support/alloc.cc",
-        "src/core/lib/support/arena.cc",
-        "src/core/lib/support/atm.cc",
-        "src/core/lib/support/avl.cc",
-        "src/core/lib/support/cmdline.cc",
-        "src/core/lib/support/cpu_iphone.cc",
-        "src/core/lib/support/cpu_linux.cc",
-        "src/core/lib/support/cpu_posix.cc",
-        "src/core/lib/support/cpu_windows.cc",
-        "src/core/lib/support/env_linux.cc",
-        "src/core/lib/support/env_posix.cc",
-        "src/core/lib/support/env_windows.cc",
-        "src/core/lib/support/fork.cc",
-        "src/core/lib/support/host_port.cc",
-        "src/core/lib/support/log.cc",
-        "src/core/lib/support/log_android.cc",
-        "src/core/lib/support/log_linux.cc",
-        "src/core/lib/support/log_posix.cc",
-        "src/core/lib/support/log_windows.cc",
-        "src/core/lib/support/mpscq.cc",
-        "src/core/lib/support/murmur_hash.cc",
-        "src/core/lib/support/string.cc",
-        "src/core/lib/support/string_posix.cc",
-        "src/core/lib/support/string_util_windows.cc",
-        "src/core/lib/support/string_windows.cc",
-        "src/core/lib/support/subprocess_posix.cc",
-        "src/core/lib/support/subprocess_windows.cc",
-        "src/core/lib/support/sync.cc",
-        "src/core/lib/support/sync_posix.cc",
-        "src/core/lib/support/sync_windows.cc",
-        "src/core/lib/support/thd.cc",
-        "src/core/lib/support/thd_posix.cc",
-        "src/core/lib/support/thd_windows.cc",
-        "src/core/lib/support/time.cc",
-        "src/core/lib/support/time_posix.cc",
-        "src/core/lib/support/time_precise.cc",
-        "src/core/lib/support/time_windows.cc",
-        "src/core/lib/support/tls_pthread.cc",
-        "src/core/lib/support/tmpfile_msys.cc",
-        "src/core/lib/support/tmpfile_posix.cc",
-        "src/core/lib/support/tmpfile_windows.cc",
-        "src/core/lib/support/wrap_memcpy.cc",
+        "src/core/lib/gpr/alloc.cc",
+        "src/core/lib/gpr/arena.cc",
+        "src/core/lib/gpr/atm.cc",
+        "src/core/lib/gpr/avl.cc",
+        "src/core/lib/gpr/cmdline.cc",
+        "src/core/lib/gpr/cpu_iphone.cc",
+        "src/core/lib/gpr/cpu_linux.cc",
+        "src/core/lib/gpr/cpu_posix.cc",
+        "src/core/lib/gpr/cpu_windows.cc",
+        "src/core/lib/gpr/env_linux.cc",
+        "src/core/lib/gpr/env_posix.cc",
+        "src/core/lib/gpr/env_windows.cc",
+        "src/core/lib/gpr/fork.cc",
+        "src/core/lib/gpr/host_port.cc",
+        "src/core/lib/gpr/log.cc",
+        "src/core/lib/gpr/log_android.cc",
+        "src/core/lib/gpr/log_linux.cc",
+        "src/core/lib/gpr/log_posix.cc",
+        "src/core/lib/gpr/log_windows.cc",
+        "src/core/lib/gpr/mpscq.cc",
+        "src/core/lib/gpr/murmur_hash.cc",
+        "src/core/lib/gpr/string.cc",
+        "src/core/lib/gpr/string_posix.cc",
+        "src/core/lib/gpr/string_util_windows.cc",
+        "src/core/lib/gpr/string_windows.cc",
+        "src/core/lib/gpr/subprocess_posix.cc",
+        "src/core/lib/gpr/subprocess_windows.cc",
+        "src/core/lib/gpr/sync.cc",
+        "src/core/lib/gpr/sync_posix.cc",
+        "src/core/lib/gpr/sync_windows.cc",
+        "src/core/lib/gpr/thd.cc",
+        "src/core/lib/gpr/thd_posix.cc",
+        "src/core/lib/gpr/thd_windows.cc",
+        "src/core/lib/gpr/time.cc",
+        "src/core/lib/gpr/time_posix.cc",
+        "src/core/lib/gpr/time_precise.cc",
+        "src/core/lib/gpr/time_windows.cc",
+        "src/core/lib/gpr/tls_pthread.cc",
+        "src/core/lib/gpr/tmpfile_msys.cc",
+        "src/core/lib/gpr/tmpfile_posix.cc",
+        "src/core/lib/gpr/tmpfile_windows.cc",
+        "src/core/lib/gpr/wrap_memcpy.cc",
     ],
     hdrs = [
         "src/core/lib/profiling/timers.h",
-        "src/core/lib/support/abstract.h",
-        "src/core/lib/support/arena.h",
-        "src/core/lib/support/atomic.h",
-        "src/core/lib/support/atomic_with_atm.h",
-        "src/core/lib/support/atomic_with_std.h",
-        "src/core/lib/support/env.h",
-        "src/core/lib/support/fork.h",
-        "src/core/lib/support/manual_constructor.h",
-        "src/core/lib/support/memory.h",
-        "src/core/lib/support/mpscq.h",
-        "src/core/lib/support/murmur_hash.h",
-        "src/core/lib/support/spinlock.h",
-        "src/core/lib/support/string.h",
-        "src/core/lib/support/string_windows.h",
-        "src/core/lib/support/thd_internal.h",
-        "src/core/lib/support/time_precise.h",
-        "src/core/lib/support/tmpfile.h",
-        "src/core/lib/support/vector.h",
+        "src/core/lib/gpr/arena.h",
+        "src/core/lib/gpr/env.h",
+        "src/core/lib/gpr/fork.h",
+        "src/core/lib/gpr/mpscq.h",
+        "src/core/lib/gpr/murmur_hash.h",
+        "src/core/lib/gpr/spinlock.h",
+        "src/core/lib/gpr/string.h",
+        "src/core/lib/gpr/string_windows.h",
+        "src/core/lib/gpr/thd_internal.h",
+        "src/core/lib/gpr/time_precise.h",
+        "src/core/lib/gpr/tmpfile.h",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
-        "@com_google_absl//absl/container:inlined_vector",
     ],
 )
 
@@ -544,25 +546,68 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "debug_location",
-    public_hdrs = ["src/core/lib/support/debug_location.h"],
+    name = "gpr++_base",
     language = "c++",
+    public_hdrs = [
+        "src/core/lib/gpr++/abstract.h",
+        "src/core/lib/gpr++/manual_constructor.h",
+        "src/core/lib/gpr++/memory.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "atomic",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/gpr++/atomic.h",
+    ],
+    hdrs = [
+        "src/core/lib/gpr++/atomic_with_atm.h",
+        "src/core/lib/gpr++/atomic_with_std.h",
+    ],
+    deps = [
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "inlined_vector",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/gpr++/inlined_vector.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "debug_location",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gpr++/debug_location.h"],
+)
+
+grpc_cc_library(
+    name = "orphanable",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gpr++/orphanable.h"],
+    deps = [
+        "debug_location",
+        "grpc_trace",
+    ],
 )
 
 grpc_cc_library(
     name = "ref_counted",
-    public_hdrs = ["src/core/lib/support/ref_counted.h"],
     language = "c++",
+    public_hdrs = ["src/core/lib/gpr++/ref_counted.h"],
     deps = [
-        "grpc_trace",
         "debug_location",
+        "grpc_trace",
     ],
 )
 
 grpc_cc_library(
     name = "ref_counted_ptr",
-    public_hdrs = ["src/core/lib/support/ref_counted_ptr.h"],
     language = "c++",
+    public_hdrs = ["src/core/lib/gpr++/ref_counted_ptr.h"],
 )
 
 grpc_cc_library(
@@ -832,6 +877,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
         "gpr_base",
+        "gpr++_base",
         "grpc_codegen",
         "grpc_trace",
     ],
@@ -844,6 +890,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "atomic",
         "grpc_base_c",
     ],
 )
@@ -923,6 +970,8 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_deadline_filter",
+        "ref_counted",
+        "ref_counted_ptr",
     ],
 )
 
@@ -1010,7 +1059,6 @@ grpc_cc_library(
         "include/grpc/impl/codegen/byte_buffer_reader.h",
         "include/grpc/impl/codegen/compression_types.h",
         "include/grpc/impl/codegen/connectivity_state.h",
-        "include/grpc/impl/codegen/exec_ctx_fwd.h",
         "include/grpc/impl/codegen/grpc_types.h",
         "include/grpc/impl/codegen/propagation_bits.h",
         "include/grpc/impl/codegen/status.h",
@@ -1303,6 +1351,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "gpr++_base",
         "grpc_base",
         "grpc_http_filters",
         "grpc_transport_chttp2_alpn",

@@ -49,8 +49,14 @@ static int g_number_of_reads = 0;
 static int g_number_of_writes = 0;
 static int g_number_of_bytes_read = 0;
 static int g_number_of_orphan_calls = 0;
+static int g_number_of_starts = 0;
 
-static bool on_read(grpc_fd* emfd, void* user_data) {
+int rcv_buf_size = 1024;
+int snd_buf_size = 1024;
+
+static void on_start(grpc_fd* emfd, void* user_data) { g_number_of_starts++; }
+
+static bool on_read(grpc_fd* emfd) {
   char read_buffer[512];
   ssize_t byte_count;
 
@@ -129,21 +135,41 @@ static test_socket_factory* test_socket_factory_create(void) {
   return factory;
 }
 
+static void destroy_pollset(void* p, grpc_error* error) {
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
+}
+
+static void shutdown_and_destroy_pollset() {
+  gpr_mu_lock(g_mu);
+  auto closure = GRPC_CLOSURE_CREATE(destroy_pollset, g_pollset,
+                                     grpc_schedule_on_exec_ctx);
+  grpc_pollset_shutdown(g_pollset, closure);
+  gpr_mu_unlock(g_mu);
+  /* Flush exec_ctx to run |destroyed| */
+  grpc_core::ExecCtx::Get()->Flush();
+}
+
 static void test_no_op(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
+  LOG_TEST("test_no_op");
   grpc_udp_server_destroy(s, nullptr);
+  shutdown_and_destroy_pollset();
 }
 
 static void test_no_op_with_start(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_start");
   grpc_udp_server_start(s, nullptr, 0, nullptr);
   grpc_udp_server_destroy(s, nullptr);
+  shutdown_and_destroy_pollset();
 }
 
 static void test_no_op_with_port(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
@@ -154,16 +180,19 @@ static void test_no_op_with_port(void) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, on_read, on_write,
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
+                                      snd_buf_size, on_start, on_read, on_write,
                                       on_fd_orphaned));
 
   grpc_udp_server_destroy(s, nullptr);
 
   /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
+  shutdown_and_destroy_pollset();
 }
 
 static void test_no_op_with_port_and_socket_factory(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
@@ -182,7 +211,8 @@ static void test_no_op_with_port_and_socket_factory(void) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, on_read, on_write,
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
+                                      snd_buf_size, on_start, on_read, on_write,
                                       on_fd_orphaned));
   GPR_ASSERT(socket_factory->number_of_socket_calls == 1);
   GPR_ASSERT(socket_factory->number_of_bind_calls == 1);
@@ -193,9 +223,11 @@ static void test_no_op_with_port_and_socket_factory(void) {
 
   /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
+  shutdown_and_destroy_pollset();
 }
 
 static void test_no_op_with_port_and_start(void) {
+  grpc_pollset_init(g_pollset, &g_mu);
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
@@ -206,19 +238,22 @@ static void test_no_op_with_port_and_start(void) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, on_read, on_write,
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
+                                      snd_buf_size, on_start, on_read, on_write,
                                       on_fd_orphaned));
 
   grpc_udp_server_start(s, nullptr, 0, nullptr);
-
+  GPR_ASSERT(g_number_of_starts == 1);
   grpc_udp_server_destroy(s, nullptr);
 
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
+  shutdown_and_destroy_pollset();
 }
 
 static void test_receive(int number_of_clients) {
+  grpc_pollset_init(g_pollset, &g_mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
@@ -236,7 +271,8 @@ static void test_receive(int number_of_clients) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = sizeof(struct sockaddr_storage);
   addr->ss_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, on_read, on_write,
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
+                                      snd_buf_size, on_start, on_read, on_write,
                                       on_fd_orphaned));
 
   svrfd = grpc_udp_server_get_fd(s, 0);
@@ -281,20 +317,15 @@ static void test_receive(int number_of_clients) {
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
-}
-
-static void destroy_pollset(void* p, grpc_error* error) {
-  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
+  shutdown_and_destroy_pollset();
 }
 
 int main(int argc, char** argv) {
-  grpc_closure destroyed;
   grpc_test_init(argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-    grpc_pollset_init(g_pollset, &g_mu);
 
     test_no_op();
     test_no_op_with_start();
@@ -304,10 +335,6 @@ int main(int argc, char** argv) {
     test_receive(1);
     test_receive(10);
 
-    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                      grpc_schedule_on_exec_ctx);
-    grpc_pollset_shutdown(g_pollset, &destroyed);
-    grpc_core::ExecCtx::Get()->Flush();
     gpr_free(g_pollset);
   }
   grpc_shutdown();

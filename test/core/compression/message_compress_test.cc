@@ -25,8 +25,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/support/murmur_hash.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 

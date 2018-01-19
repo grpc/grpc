@@ -134,8 +134,8 @@ class TestCase(
         self._digest_pool.shutdown(wait=True)
 
     def testSuccessfulUnaryRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
                 callback = _Callback()
@@ -151,8 +151,8 @@ class TestCase(
                 self.assertIsNone(response_future.traceback())
 
     def testSuccessfulUnaryRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -163,8 +163,8 @@ class TestCase(
                 test_messages.verify(request, responses, self)
 
     def testSuccessfulStreamRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
                 request_iterator = _PauseableIterator(iter(requests))
@@ -185,8 +185,8 @@ class TestCase(
                 self.assertIsNone(response_future.traceback())
 
     def testSuccessfulStreamRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
                 request_iterator = _PauseableIterator(iter(requests))
@@ -201,8 +201,8 @@ class TestCase(
                 test_messages.verify(requests, responses, self)
 
     def testSequentialInvocations(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 first_request = test_messages.request()
                 second_request = test_messages.request()
@@ -220,8 +220,8 @@ class TestCase(
                 test_messages.verify(second_request, second_response, self)
 
     def testParallelInvocations(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 first_request = test_messages.request()
                 second_request = test_messages.request()
@@ -236,8 +236,8 @@ class TestCase(
                 test_messages.verify(first_request, first_response, self)
                 test_messages.verify(second_request, second_response, self)
 
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = []
                 response_futures = []
@@ -258,8 +258,8 @@ class TestCase(
 
     def testWaitingForSomeButNotAllParallelInvocations(self):
         pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = []
                 response_futures_to_indices = {}
@@ -282,8 +282,8 @@ class TestCase(
         pool.shutdown(wait=True)
 
     def testCancelledUnaryRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
                 callback = _Callback()
@@ -305,8 +305,8 @@ class TestCase(
                     response_future.traceback()
 
     def testCancelledUnaryRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -319,8 +319,8 @@ class TestCase(
                     next(response_iterator)
 
     def testCancelledStreamRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
                 callback = _Callback()
@@ -342,8 +342,8 @@ class TestCase(
                     response_future.traceback()
 
     def testCancelledStreamRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
 
@@ -356,8 +356,8 @@ class TestCase(
                     next(response_iterator)
 
     def testExpiredUnaryRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
                 callback = _Callback()
@@ -376,8 +376,8 @@ class TestCase(
                     self.assertIsNotNone(response_future.traceback())
 
     def testExpiredUnaryRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -388,16 +388,16 @@ class TestCase(
                         list(response_iterator)
 
     def testExpiredStreamRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
                 callback = _Callback()
 
                 with self._control.pause():
-                    response_future = self._invoker.future(group, method)(
-                        iter(requests),
-                        _3069_test_constant.REALLY_SHORT_TIMEOUT)
+                    response_future = self._invoker.future(
+                        group, method)(iter(requests),
+                                       _3069_test_constant.REALLY_SHORT_TIMEOUT)
                     response_future.add_done_callback(callback)
                     self.assertIs(callback.future(), response_future)
                     self.assertIsInstance(response_future.exception(),
@@ -409,21 +409,21 @@ class TestCase(
                     self.assertIsNotNone(response_future.traceback())
 
     def testExpiredStreamRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
 
                 with self._control.pause():
-                    response_iterator = self._invoker.future(group, method)(
-                        iter(requests),
-                        _3069_test_constant.REALLY_SHORT_TIMEOUT)
+                    response_iterator = self._invoker.future(
+                        group, method)(iter(requests),
+                                       _3069_test_constant.REALLY_SHORT_TIMEOUT)
                     with self.assertRaises(face.ExpirationError):
                         list(response_iterator)
 
     def testFailedUnaryRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
                 callback = _Callback()
@@ -448,8 +448,8 @@ class TestCase(
                     self.assertIsNotNone(abortion_callback.future())
 
     def testFailedUnaryRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.unary_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.unary_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 request = test_messages.request()
 
@@ -464,17 +464,17 @@ class TestCase(
                     list(response_iterator)
 
     def testFailedStreamRequestUnaryResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_unary_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_unary_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
                 callback = _Callback()
                 abortion_callback = _Callback()
 
                 with self._control.fail():
-                    response_future = self._invoker.future(group, method)(
-                        iter(requests),
-                        _3069_test_constant.REALLY_SHORT_TIMEOUT)
+                    response_future = self._invoker.future(
+                        group, method)(iter(requests),
+                                       _3069_test_constant.REALLY_SHORT_TIMEOUT)
                     response_future.add_done_callback(callback)
                     response_future.add_abortion_callback(abortion_callback)
 
@@ -491,8 +491,8 @@ class TestCase(
                     self.assertIsNotNone(abortion_callback.future())
 
     def testFailedStreamRequestStreamResponse(self):
-        for (group, method), test_messages_sequence in (
-                six.iteritems(self._digest.stream_stream_messages_sequences)):
+        for (group, method), test_messages_sequence in (six.iteritems(
+                self._digest.stream_stream_messages_sequences)):
             for test_messages in test_messages_sequence:
                 requests = test_messages.requests()
 
@@ -502,7 +502,7 @@ class TestCase(
                 # expiration of the RPC.
                 with self._control.fail(), self.assertRaises(
                         face.ExpirationError):
-                    response_iterator = self._invoker.future(group, method)(
-                        iter(requests),
-                        _3069_test_constant.REALLY_SHORT_TIMEOUT)
+                    response_iterator = self._invoker.future(
+                        group, method)(iter(requests),
+                                       _3069_test_constant.REALLY_SHORT_TIMEOUT)
                     list(response_iterator)

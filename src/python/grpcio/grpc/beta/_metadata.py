@@ -15,7 +15,10 @@
 
 import collections
 
-_Metadatum = collections.namedtuple('_Metadatum', ('key', 'value',))
+_Metadatum = collections.namedtuple('_Metadatum', (
+    'key',
+    'value',
+))
 
 
 def _beta_metadatum(key, value):

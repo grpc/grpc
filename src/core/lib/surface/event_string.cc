@@ -22,7 +22,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/support/string_util.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 static void addhdr(gpr_strvec* buf, grpc_event* ev) {
   char* tmp;

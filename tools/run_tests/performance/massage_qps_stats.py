@@ -18,8 +18,7 @@ import massage_qps_stats_helpers
 
 
 def massage_qps_stats(scenario_result):
-    for stats in scenario_result["serverStats"] + scenario_result[
-            "clientStats"]:
+    for stats in scenario_result["serverStats"] + scenario_result["clientStats"]:
         if "coreStats" not in stats: return
         core_stats = stats["coreStats"]
         del stats["coreStats"]
@@ -294,8 +293,8 @@ def massage_qps_stats(scenario_result):
                 core_stats, "cq_ev_queue_transient_pop_failures")
         h = massage_qps_stats_helpers.histogram(core_stats, "call_initial_size")
         stats["core_call_initial_size"] = ",".join("%f" % x for x in h.buckets)
-        stats["core_call_initial_size_bkts"] = ",".join("%f" % x
-                                                        for x in h.boundaries)
+        stats["core_call_initial_size_bkts"] = ",".join(
+            "%f" % x for x in h.boundaries)
         stats[
             "core_call_initial_size_50p"] = massage_qps_stats_helpers.percentile(
                 h.buckets, 50, h.boundaries)
@@ -307,8 +306,8 @@ def massage_qps_stats(scenario_result):
                 h.buckets, 99, h.boundaries)
         h = massage_qps_stats_helpers.histogram(core_stats,
                                                 "poll_events_returned")
-        stats["core_poll_events_returned"] = ",".join("%f" % x
-                                                      for x in h.buckets)
+        stats["core_poll_events_returned"] = ",".join(
+            "%f" % x for x in h.buckets)
         stats["core_poll_events_returned_bkts"] = ",".join(
             "%f" % x for x in h.boundaries)
         stats[
@@ -322,8 +321,8 @@ def massage_qps_stats(scenario_result):
                 h.buckets, 99, h.boundaries)
         h = massage_qps_stats_helpers.histogram(core_stats, "tcp_write_size")
         stats["core_tcp_write_size"] = ",".join("%f" % x for x in h.buckets)
-        stats["core_tcp_write_size_bkts"] = ",".join("%f" % x
-                                                     for x in h.boundaries)
+        stats["core_tcp_write_size_bkts"] = ",".join(
+            "%f" % x for x in h.boundaries)
         stats["core_tcp_write_size_50p"] = massage_qps_stats_helpers.percentile(
             h.buckets, 50, h.boundaries)
         stats["core_tcp_write_size_95p"] = massage_qps_stats_helpers.percentile(
@@ -333,8 +332,8 @@ def massage_qps_stats(scenario_result):
         h = massage_qps_stats_helpers.histogram(core_stats,
                                                 "tcp_write_iov_size")
         stats["core_tcp_write_iov_size"] = ",".join("%f" % x for x in h.buckets)
-        stats["core_tcp_write_iov_size_bkts"] = ",".join("%f" % x
-                                                         for x in h.boundaries)
+        stats["core_tcp_write_iov_size_bkts"] = ",".join(
+            "%f" % x for x in h.boundaries)
         stats[
             "core_tcp_write_iov_size_50p"] = massage_qps_stats_helpers.percentile(
                 h.buckets, 50, h.boundaries)
@@ -346,8 +345,8 @@ def massage_qps_stats(scenario_result):
                 h.buckets, 99, h.boundaries)
         h = massage_qps_stats_helpers.histogram(core_stats, "tcp_read_size")
         stats["core_tcp_read_size"] = ",".join("%f" % x for x in h.buckets)
-        stats["core_tcp_read_size_bkts"] = ",".join("%f" % x
-                                                    for x in h.boundaries)
+        stats["core_tcp_read_size_bkts"] = ",".join(
+            "%f" % x for x in h.boundaries)
         stats["core_tcp_read_size_50p"] = massage_qps_stats_helpers.percentile(
             h.buckets, 50, h.boundaries)
         stats["core_tcp_read_size_95p"] = massage_qps_stats_helpers.percentile(
@@ -356,8 +355,8 @@ def massage_qps_stats(scenario_result):
             h.buckets, 99, h.boundaries)
         h = massage_qps_stats_helpers.histogram(core_stats, "tcp_read_offer")
         stats["core_tcp_read_offer"] = ",".join("%f" % x for x in h.buckets)
-        stats["core_tcp_read_offer_bkts"] = ",".join("%f" % x
-                                                     for x in h.boundaries)
+        stats["core_tcp_read_offer_bkts"] = ",".join(
+            "%f" % x for x in h.boundaries)
         stats["core_tcp_read_offer_50p"] = massage_qps_stats_helpers.percentile(
             h.buckets, 50, h.boundaries)
         stats["core_tcp_read_offer_95p"] = massage_qps_stats_helpers.percentile(
@@ -366,8 +365,8 @@ def massage_qps_stats(scenario_result):
             h.buckets, 99, h.boundaries)
         h = massage_qps_stats_helpers.histogram(core_stats,
                                                 "tcp_read_offer_iov_size")
-        stats["core_tcp_read_offer_iov_size"] = ",".join("%f" % x
-                                                         for x in h.buckets)
+        stats["core_tcp_read_offer_iov_size"] = ",".join(
+            "%f" % x for x in h.buckets)
         stats["core_tcp_read_offer_iov_size_bkts"] = ",".join(
             "%f" % x for x in h.boundaries)
         stats[
@@ -381,8 +380,8 @@ def massage_qps_stats(scenario_result):
                 h.buckets, 99, h.boundaries)
         h = massage_qps_stats_helpers.histogram(core_stats,
                                                 "http2_send_message_size")
-        stats["core_http2_send_message_size"] = ",".join("%f" % x
-                                                         for x in h.buckets)
+        stats["core_http2_send_message_size"] = ",".join(
+            "%f" % x for x in h.buckets)
         stats["core_http2_send_message_size_bkts"] = ",".join(
             "%f" % x for x in h.boundaries)
         stats[
@@ -457,8 +456,8 @@ def massage_qps_stats(scenario_result):
         h = massage_qps_stats_helpers.histogram(core_stats,
                                                 "server_cqs_checked")
         stats["core_server_cqs_checked"] = ",".join("%f" % x for x in h.buckets)
-        stats["core_server_cqs_checked_bkts"] = ",".join("%f" % x
-                                                         for x in h.boundaries)
+        stats["core_server_cqs_checked_bkts"] = ",".join(
+            "%f" % x for x in h.boundaries)
         stats[
             "core_server_cqs_checked_50p"] = massage_qps_stats_helpers.percentile(
                 h.buckets, 50, h.boundaries)

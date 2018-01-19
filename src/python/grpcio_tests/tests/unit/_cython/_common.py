@@ -20,17 +20,22 @@ from grpc._cython import cygrpc
 
 RPC_COUNT = 4000
 
-INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
 EMPTY_FLAGS = 0
 
-INVOCATION_METADATA = (('client-md-key', 'client-md-key'),
-                       ('client-md-key-bin', b'\x00\x01' * 3000),)
+INVOCATION_METADATA = (
+    ('client-md-key', 'client-md-key'),
+    ('client-md-key-bin', b'\x00\x01' * 3000),
+)
 
-INITIAL_METADATA = (('server-initial-md-key', 'server-initial-md-value'),
-                    ('server-initial-md-key-bin', b'\x00\x02' * 3000),)
+INITIAL_METADATA = (
+    ('server-initial-md-key', 'server-initial-md-value'),
+    ('server-initial-md-key-bin', b'\x00\x02' * 3000),
+)
 
-TRAILING_METADATA = (('server-trailing-md-key', 'server-trailing-md-value'),
-                     ('server-trailing-md-key-bin', b'\x00\x03' * 3000),)
+TRAILING_METADATA = (
+    ('server-trailing-md-key', 'server-trailing-md-value'),
+    ('server-trailing-md-key-bin', b'\x00\x03' * 3000),
+)
 
 
 class QueueDriver(object):
@@ -76,7 +81,10 @@ def execute_many_times(behavior):
 
 class OperationResult(
         collections.namedtuple('OperationResult', (
-            'start_batch_result', 'completion_type', 'success',))):
+            'start_batch_result',
+            'completion_type',
+            'success',
+        ))):
     pass
 
 
@@ -88,7 +96,8 @@ class RpcTest(object):
 
     def setUp(self):
         self.server_completion_queue = cygrpc.CompletionQueue()
-        self.server = cygrpc.Server(cygrpc.ChannelArgs([]))
+        self.server = cygrpc.Server(
+            cygrpc.ChannelArgs([cygrpc.ChannelArg(b'grpc.so_reuseport', 0)]))
         self.server.register_completion_queue(self.server_completion_queue)
         port = self.server.add_http2_port(b'[::]:0')
         self.server.start()

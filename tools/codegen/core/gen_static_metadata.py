@@ -391,8 +391,8 @@ for i, elem in enumerate(all_strs):
     print >> H, '#define %s (grpc_static_slice_table[%d])' % (
         mangle(elem).upper(), i)
 print >> H
-print >> C, 'static uint8_t g_bytes[] = {%s};' % (
-    ','.join('%d' % ord(c) for c in ''.join(all_strs)))
+print >> C, 'static uint8_t g_bytes[] = {%s};' % (','.join(
+    '%d' % ord(c) for c in ''.join(all_strs)))
 print >> C
 print >> C, 'static void static_ref(void *unused) {}'
 print >> C, 'static void static_unref(void *unused) {}'
@@ -448,8 +448,8 @@ for i, elem in enumerate(all_elems):
 print >> H
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
              '= {')
-print >> C, '  %s' % ','.join('%d' % static_userdata.get(elem, 0)
-                              for elem in all_elems)
+print >> C, '  %s' % ','.join(
+    '%d' % static_userdata.get(elem, 0) for elem in all_elems)
 print >> C, '};'
 print >> C
 
@@ -524,8 +524,8 @@ for i, k in enumerate(elem_keys):
     idxs[h] = i
 print >> C, 'static const uint16_t elem_keys[] = {%s};' % ','.join(
     '%d' % k for k in keys)
-print >> C, 'static const uint8_t elem_idxs[] = {%s};' % ','.join('%d' % i
-                                                                  for i in idxs)
+print >> C, 'static const uint8_t elem_idxs[] = {%s};' % ','.join(
+    '%d' % i for i in idxs)
 print >> C
 
 print >> H, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);'
@@ -583,8 +583,8 @@ print >> H, 'extern const uint8_t grpc_static_accept_stream_encoding_metadata[%d
     1 << len(STREAM_COMPRESSION_ALGORITHMS))
 print >> C, 'const uint8_t grpc_static_accept_stream_encoding_metadata[%d] = {' % (
     1 << len(STREAM_COMPRESSION_ALGORITHMS))
-print >> C, '0,%s' % ','.join('%d' % md_idx(elem)
-                              for elem in stream_compression_elems)
+print >> C, '0,%s' % ','.join(
+    '%d' % md_idx(elem) for elem in stream_compression_elems)
 print >> C, '};'
 
 print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
