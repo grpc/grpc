@@ -23,58 +23,52 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
-/* Forward declaration */
-typedef struct grpc_channel_tracer grpc_channel_tracer;
+namespace grpc_core {
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_channel_tracer_refcount;
 
-/* Creates a new tracer. The caller owns a reference to the returned tracer. */
-#ifndef NDEBUG
-grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes,
-                                                const char* file, int line,
-                                                const char* func);
-#define GRPC_CHANNEL_TRACER_CREATE(max_nodes) \
-  grpc_channel_tracer_create(max_nodes, __FILE__, __LINE__, __func__)
-#else
-grpc_channel_tracer* grpc_channel_tracer_create(size_t max_nodes);
-#define GRPC_CHANNEL_TRACER_CREATE(max_nodes) \
-  grpc_channel_tracer_create(max_nodes)
-#endif
+typedef struct grpc_trace_node grpc_trace_node;
 
-#ifndef NDEBUG
-grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer,
-                                             const char* file, int line,
-                                             const char* func);
-void grpc_channel_tracer_unref(grpc_channel_tracer* tracer, const char* file,
-                               int line, const char* func);
-#define GRPC_CHANNEL_TRACER_REF(tracer) \
-  grpc_channel_tracer_ref(tracer, __FILE__, __LINE__, __func__)
-#define GRPC_CHANNEL_TRACER_UNREF(tracer) \
-  grpc_channel_tracer_unref(tracer, __FILE__, __LINE__, __func__)
-#else
-grpc_channel_tracer* grpc_channel_tracer_ref(grpc_channel_tracer* tracer);
-void grpc_channel_tracer_unref(grpc_channel_tracer* tracer);
-#define GRPC_CHANNEL_TRACER_REF(tracer) grpc_channel_tracer_ref(tracer)
-#define GRPC_CHANNEL_TRACER_UNREF(tracer) grpc_channel_tracer_unref(tracer)
-#endif
+class ChannelTracer {
+ public:
+  ChannelTracer(size_t max_nodes);
+  ~ChannelTracer() {}
 
-/* returns the tracers uuid */
-intptr_t grpc_channel_tracer_get_uuid(grpc_channel_tracer* tracer);
+  // TODO(ncteisen): incorporate RefCounted class
+  ChannelTracer* Ref();
+  void Unref();
 
-/* Adds a new trace node to the tracing object */
-void grpc_channel_tracer_add_trace(grpc_channel_tracer* tracer, grpc_slice data,
-                                   grpc_error* error,
-                                   grpc_connectivity_state connectivity_state,
-                                   grpc_channel_tracer* subchannel);
+  /* returns the tracers uuid */
+  intptr_t GetUuid();
 
-/* Returns the tracing data rendered as a grpc json string.
-   The string is owned by the caller and must be freed. If recursive
-   is true, then the string will include the recursive trace for all
-   subtracing objects. */
-char* grpc_channel_tracer_render_trace(grpc_channel_tracer* tracer,
-                                       bool recursive);
-/* util functions that perform the uuid -> tracer step for you, and then
+  /* Adds a new trace node to the tracing object */
+  void AddTrace(grpc_slice data, grpc_error* error,
+                grpc_connectivity_state connectivity_state,
+                ChannelTracer* subchannel);
+
+  /* Returns the tracing data rendered as a grpc json string.
+     The string is owned by the caller and must be freed. If recursive
+     is true, then the string will include the recursive trace for all
+     subtracing objects. */
+  char* RenderTrace(bool recursive);
+
+  /* util functions that perform the uuid -> tracer step for you, and then
    returns the trace for the uuid given. */
-char* grpc_channel_tracer_get_trace(intptr_t uuid, bool recursive);
+  static char* GetChannelTraceFromUuid(intptr_t uuid, bool recursive);
+
+ private:
+  friend class ChannelTracerRenderer;
+  gpr_refcount refs;
+  gpr_mu tracer_mu;
+  intptr_t channel_uuid;
+  uint64_t num_nodes_logged;
+  size_t list_size;
+  size_t max_list_size;
+  grpc_trace_node* head_trace;
+  grpc_trace_node* tail_trace;
+  gpr_timespec time_created;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACER_H */

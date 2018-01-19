@@ -32,6 +32,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/memory.h"
 #include "src/core/lib/support/object_registry.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -63,7 +64,7 @@ struct grpc_channel {
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
 
-  grpc_channel_tracer* tracer;
+  grpc_core::ChannelTracer* tracer;
 
   char* target;
 };
@@ -202,23 +203,21 @@ grpc_channel* grpc_channel_create_with_builder(
       size_t max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
       if (max_nodes > 0) {
-        channel->tracer = GRPC_CHANNEL_TRACER_CREATE(max_nodes);
-        channel->uuid = grpc_channel_tracer_get_uuid(channel->tracer);
+        channel->tracer = grpc_core::New<grpc_core::ChannelTracer>(
+            max_nodes);  // TODO(ncteisen): leaky yo
+        channel->uuid = channel->tracer->GetUuid();
       }
     }
   }
 
   grpc_channel_args_destroy(args);
-  grpc_channel_tracer_add_trace(
-      channel->tracer, grpc_slice_from_static_string("Channel created"),
-      GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, nullptr);
+  channel->tracer->AddTrace(grpc_slice_from_static_string("Channel created"),
+                            GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, nullptr);
   return channel;
 }
 
 char* grpc_channel_get_trace(grpc_channel* channel, bool recursive) {
-  return channel->tracer
-             ? grpc_channel_tracer_render_trace(channel->tracer, recursive)
-             : nullptr;
+  return channel->tracer ? channel->tracer->RenderTrace(recursive) : nullptr;
 }
 
 intptr_t grpc_channel_get_uuid(grpc_channel* channel) { return channel->uuid; }

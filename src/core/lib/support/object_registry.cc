@@ -37,7 +37,7 @@ typedef struct {
 static void destroy_intptr(void* not_used, void* user_data) {}
 static void* copy_intptr(void* key, void* user_data) { return key; }
 static long compare_intptr(void* key1, void* key2, void* user_data) {
-  return key1 > key2;
+  return (intptr_t)key1 - (intptr_t)key2;
 }
 
 static void destroy_tracker(void* tracker, void* user_data) {
