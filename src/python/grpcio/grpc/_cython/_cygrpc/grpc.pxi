@@ -276,15 +276,10 @@ cdef extern from "grpc/grpc.h":
     uint8_t is_set
     grpc_compression_level level
 
-  ctypedef struct grpc_op_send_initial_metadata_maybe_stream_compression_level:
-    uint8_t is_set
-    grpc_stream_compression_level level
-
   ctypedef struct grpc_op_data_send_initial_metadata:
     size_t count
     grpc_metadata *metadata
     grpc_op_send_initial_metadata_maybe_compression_level maybe_compression_level
-    grpc_op_send_initial_metadata_maybe_stream_compression_level maybe_stream_compression_level
 
   ctypedef struct grpc_op_data_send_status_from_server:
     size_t trailing_metadata_count
