@@ -16,15 +16,15 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_ATOMIC_H
-#define GRPC_CORE_LIB_GPRXX_ATOMIC_H
+#ifndef GRPC_CORE_LIB_GPRPP_ATOMIC_H
+#define GRPC_CORE_LIB_GPRPP_ATOMIC_H
 
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_HAS_CXX11_ATOMIC
-#include "src/core/lib/gpr++/atomic_with_std.h"
+#include "src/core/lib/gprpp/atomic_with_std.h"
 #else
-#include "src/core/lib/gpr++/atomic_with_atm.h"
+#include "src/core/lib/gprpp/atomic_with_atm.h"
 #endif
 
-#endif /* GRPC_CORE_LIB_GPRXX_ATOMIC_H */
+#endif /* GRPC_CORE_LIB_GPRPP_ATOMIC_H */

@@ -10107,7 +10107,7 @@ endif
 
 
 GPR_MANUAL_CONSTRUCTOR_TEST_SRC = \
-    test/core/gpr++/manual_constructor_test.cc \
+    test/core/gprpp/manual_constructor_test.cc \
 
 GPR_MANUAL_CONSTRUCTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_MANUAL_CONSTRUCTOR_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10127,7 +10127,7 @@ $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test: $(GPR_MANUAL_CONSTRUCTOR_TEST_O
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/gpr++/manual_constructor_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/manual_constructor_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_manual_constructor_test: $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS:.o=.dep)
 
@@ -15837,7 +15837,7 @@ endif
 
 
 INLINED_VECTOR_TEST_SRC = \
-    test/core/gpr++/inlined_vector_test.cc \
+    test/core/gprpp/inlined_vector_test.cc \
 
 INLINED_VECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INLINED_VECTOR_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -15868,7 +15868,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/gpr++/inlined_vector_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/inlined_vector_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_inlined_vector_test: $(INLINED_VECTOR_TEST_OBJS:.o=.dep)
 
@@ -16071,7 +16071,7 @@ endif
 
 
 MEMORY_TEST_SRC = \
-    test/core/gpr++/memory_test.cc \
+    test/core/gprpp/memory_test.cc \
 
 MEMORY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MEMORY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -16102,7 +16102,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/gpr++/memory_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/memory_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_memory_test: $(MEMORY_TEST_OBJS:.o=.dep)
 
@@ -16248,7 +16248,7 @@ endif
 
 
 ORPHANABLE_TEST_SRC = \
-    test/core/gpr++/orphanable_test.cc \
+    test/core/gprpp/orphanable_test.cc \
 
 ORPHANABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ORPHANABLE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -16279,7 +16279,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/gpr++/orphanable_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/orphanable_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_orphanable_test: $(ORPHANABLE_TEST_OBJS:.o=.dep)
 
@@ -16655,7 +16655,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o: $(GENDIR)/src/p
 
 
 REF_COUNTED_PTR_TEST_SRC = \
-    test/core/gpr++/ref_counted_ptr_test.cc \
+    test/core/gprpp/ref_counted_ptr_test.cc \
 
 REF_COUNTED_PTR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(REF_COUNTED_PTR_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -16686,7 +16686,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/gpr++/ref_counted_ptr_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/ref_counted_ptr_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_ref_counted_ptr_test: $(REF_COUNTED_PTR_TEST_OBJS:.o=.dep)
 
@@ -16698,7 +16698,7 @@ endif
 
 
 REF_COUNTED_TEST_SRC = \
-    test/core/gpr++/ref_counted_test.cc \
+    test/core/gprpp/ref_counted_test.cc \
 
 REF_COUNTED_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(REF_COUNTED_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -16729,7 +16729,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/gpr++/ref_counted_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/ref_counted_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_ref_counted_test: $(REF_COUNTED_TEST_OBJS:.o=.dep)
 

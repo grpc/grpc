@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/gpr++/memory.h"
+#include "src/core/lib/gprpp/memory.h"
 #include <gtest/gtest.h>
 #include "test/core/util/test_config.h"
 

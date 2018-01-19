@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_DEBUG_LOCATION_H
-#define GRPC_CORE_LIB_GPRXX_DEBUG_LOCATION_H
+#ifndef GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
+#define GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
 
 namespace grpc_core {
 
@@ -49,4 +49,4 @@ class DebugLocation {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRXX_DEBUG_LOCATION_H */
+#endif /* GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H */

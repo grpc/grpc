@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_MEMORY_H
-#define GRPC_CORE_LIB_GPRXX_MEMORY_H
+#ifndef GRPC_CORE_LIB_GPRPP_MEMORY_H
+#define GRPC_CORE_LIB_GPRPP_MEMORY_H
 
 #include <grpc/support/alloc.h>
 
@@ -97,4 +97,4 @@ class Allocator {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRXX_MEMORY_H */
+#endif /* GRPC_CORE_LIB_GPRPP_MEMORY_H */

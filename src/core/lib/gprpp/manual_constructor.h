@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_MANUAL_CONSTRUCTOR_H
-#define GRPC_CORE_LIB_GPRXX_MANUAL_CONSTRUCTOR_H
+#ifndef GRPC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H
+#define GRPC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H
 
 // manually construct a region of memory with some type
 

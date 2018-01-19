@@ -43,7 +43,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr++/manual_constructor.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"

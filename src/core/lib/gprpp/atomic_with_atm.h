@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRXX_ATOMIC_WITH_ATM_H
-#define GRPC_CORE_LIB_GPRXX_ATOMIC_WITH_ATM_H
+#ifndef GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_ATM_H
+#define GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_ATM_H
 
 #include <grpc/support/atm.h>
 
@@ -52,4 +52,4 @@ class atomic<bool> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRXX_ATOMIC_WITH_ATM_H */
+#endif /* GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_ATM_H */
