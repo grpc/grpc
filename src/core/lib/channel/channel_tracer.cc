@@ -35,9 +35,6 @@
 
 namespace grpc_core {
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_channel_tracer_refcount(
-    false, "channel_tracer_refcount");
-
 class TraceNode {
  public:
   TraceNode(grpc_slice data, grpc_error* error,
@@ -65,21 +62,21 @@ class TraceNode {
 };
 
 ChannelTracer::ChannelTracer(size_t max_nodes)
-    : num_nodes_logged(0),
-      list_size(0),
-      max_list_size(max_nodes),
-      head_trace(0),
-      tail_trace(0) {
-  gpr_mu_init(&tracer_mu);
-  gpr_ref_init(&refs, 1);
-  channel_uuid = grpc_object_registry_register_object(
+    : num_nodes_logged_(0),
+      list_size_(0),
+      max_list_size_(max_nodes),
+      head_trace_(0),
+      tail_trace_(0) {
+  gpr_mu_init(&tracer_mu_);
+  gpr_ref_init(&refs_, 1);
+  channel_uuid_ = grpc_object_registry_register_object(
       this, GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
-  max_list_size = max_nodes;
-  time_created = gpr_now(GPR_CLOCK_REALTIME);
+  max_list_size_ = max_nodes;
+  time_created_ = gpr_now(GPR_CLOCK_REALTIME);
 }
 
 ChannelTracer* ChannelTracer::Ref() {
-  gpr_ref(&refs);
+  gpr_ref(&refs_);
   return this;
 }
 
@@ -93,42 +90,42 @@ void ChannelTracer::FreeNode(TraceNode* node) {
 }
 
 void ChannelTracer::Unref() {
-  if (gpr_unref(&refs)) {
-    TraceNode* it = head_trace;
+  if (gpr_unref(&refs_)) {
+    TraceNode* it = head_trace_;
     while (it != nullptr) {
       TraceNode* to_free = it;
       it = it->next_;
       FreeNode(to_free);
     }
-    gpr_mu_destroy(&tracer_mu);
+    gpr_mu_destroy(&tracer_mu_);
   }
 }
 
-intptr_t ChannelTracer::GetUuid() { return channel_uuid; }
+intptr_t ChannelTracer::GetUuid() { return channel_uuid_; }
 
 void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
                              grpc_connectivity_state connectivity_state,
                              ChannelTracer* referenced_tracer) {
-  ++num_nodes_logged;
+  ++num_nodes_logged_;
   // create and fill up the new node
   TraceNode* new_trace_node =
       New<TraceNode>(data, error, connectivity_state, referenced_tracer);
   // first node case
-  if (head_trace == nullptr) {
-    head_trace = tail_trace = new_trace_node;
+  if (head_trace_ == nullptr) {
+    head_trace_ = tail_trace_ = new_trace_node;
   }
   // regular node add case
   else {
-    tail_trace->next_ = new_trace_node;
-    tail_trace = tail_trace->next_;
+    tail_trace_->next_ = new_trace_node;
+    tail_trace_ = tail_trace_->next_;
   }
-  ++list_size;
+  ++list_size_;
   // maybe garbage collect the end
-  if (list_size > max_list_size) {
-    TraceNode* to_free = head_trace;
-    head_trace = head_trace->next_;
+  if (list_size_ > max_list_size_) {
+    TraceNode* to_free = head_trace_;
+    head_trace_ = head_trace_->next_;
     FreeNode(to_free);
-    --list_size;
+    --list_size_;
   }
 }
 
@@ -192,17 +189,17 @@ class ChannelTracerRenderer {
     grpc_json* child = nullptr;
 
     char* uuid_str;
-    gpr_asprintf(&uuid_str, "%" PRIdPTR, current_tracer_->channel_uuid);
+    gpr_asprintf(&uuid_str, "%" PRIdPTR, current_tracer_->channel_uuid_);
     child = grpc_json_create_child(child, channel_data, "uuid", uuid_str,
                                    GRPC_JSON_NUMBER, true);
     char* num_nodes_logged_str;
     gpr_asprintf(&num_nodes_logged_str, "%" PRId64,
-                 current_tracer_->num_nodes_logged);
+                 current_tracer_->num_nodes_logged_);
     child =
         grpc_json_create_child(child, channel_data, "numNodesLogged",
                                num_nodes_logged_str, GRPC_JSON_NUMBER, true);
     child = grpc_json_create_child(child, channel_data, "startTime",
-                                   fmt_time(current_tracer_->time_created),
+                                   fmt_time(current_tracer_->time_created_),
                                    GRPC_JSON_STRING, true);
     child = grpc_json_create_child(child, channel_data, "nodes", nullptr,
                                    GRPC_JSON_ARRAY, false);
@@ -211,7 +208,7 @@ class ChannelTracerRenderer {
 
   void PopulateNodeList(grpc_json* nodes, grpc_json* children) {
     grpc_json* child = nullptr;
-    TraceNode* it = current_tracer_->head_trace;
+    TraceNode* it = current_tracer_->head_trace_;
     while (it != nullptr) {
       child = grpc_json_create_child(child, nodes, nullptr, nullptr,
                                      GRPC_JSON_OBJECT, false);
@@ -240,7 +237,7 @@ class ChannelTracerRenderer {
     if (node->referenced_tracer_ != nullptr) {
       char* uuid_str;
       gpr_asprintf(&uuid_str, "%" PRIdPTR,
-                   node->referenced_tracer_->channel_uuid);
+                   node->referenced_tracer_->channel_uuid_);
       child = grpc_json_create_child(child, json, "uuid", uuid_str,
                                      GRPC_JSON_NUMBER, true);
       if (children && !TracerAlreadySeen(node->referenced_tracer_)) {
