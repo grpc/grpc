@@ -972,6 +972,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_deadline_filter",
+        "inlined_vector",
         "ref_counted",
         "ref_counted_ptr",
     ],
