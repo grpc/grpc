@@ -41,6 +41,7 @@ static void add_simple_trace(ChannelTracer* tracer) {
 static void validate_tracer(ChannelTracer* tracer,
                             size_t expected_num_nodes_logged,
                             size_t max_nodes) {
+  if (!max_nodes) return;
   char* json_str = tracer->RenderTrace(true);
   grpc_json* json = grpc_json_parse_string(json_str);
   validate_channel_data(json, expected_num_nodes_logged,
@@ -51,6 +52,7 @@ static void validate_tracer(ChannelTracer* tracer,
 
 static void validate_tracer_data_matches_uuid_lookup(ChannelTracer* tracer) {
   intptr_t uuid = tracer->GetUuid();
+  if (uuid == -1) return;  // Doesn't make sense to lookup if tracing disabled
   char* tracer_json_str = tracer->RenderTrace(true);
   char* uuid_lookup_json_str =
       ChannelTracer::GetChannelTraceFromUuid(uuid, true);

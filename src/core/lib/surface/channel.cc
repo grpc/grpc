@@ -32,6 +32,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/support/memory.h"
 #include "src/core/lib/support/object_registry.h"
 #include "src/core/lib/support/string.h"
@@ -63,7 +64,7 @@ struct grpc_channel {
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
 
-  grpc_core::ChannelTracer* tracer;
+  grpc_core::ManualConstructor<grpc_core::ChannelTracer> tracer;
 
   char* target;
 };
@@ -103,7 +104,7 @@ grpc_channel* grpc_channel_create_with_builder(
   memset(channel, 0, sizeof(*channel));
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
-  channel->tracer = nullptr;
+  bool tracer_initialized = false;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
 
@@ -195,15 +196,13 @@ grpc_channel* grpc_channel_create_with_builder(
           0x1; /* always support no compression */
     } else if (0 ==
                strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING_MAX_NODES)) {
-      GPR_ASSERT(channel->tracer == nullptr);
+      GPR_ASSERT(!tracer_initialized);
+      tracer_initialized = true;
       // max_nodes defaults to 10, clamped between 0 and 100.
       const grpc_integer_options options = {10, 0, 100};
       size_t max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
-      if (max_nodes > 0) {
-        channel->tracer = grpc_core::New<grpc_core::ChannelTracer>(
-            max_nodes);  // TODO(ncteisen): leaky yo
-      }
+      channel->tracer.Init(max_nodes);
     }
   }
 
@@ -214,7 +213,7 @@ grpc_channel* grpc_channel_create_with_builder(
 }
 
 char* grpc_channel_get_trace(grpc_channel* channel, bool recursive) {
-  return channel->tracer ? channel->tracer->RenderTrace(recursive) : nullptr;
+  return channel->tracer->RenderTrace(recursive);
 }
 
 grpc_channel* grpc_channel_create(const char* target,
