@@ -177,6 +177,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security_constants.h',
+                      'include/grpc/grpc_tunnel.h',
                       'include/grpc/load_reporting.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
@@ -469,6 +470,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                       'src/core/ext/filters/workarounds/workaround_utils.h',
+                      'src/core/ext/tunnel/tunnel_endpoint.h',
                       'src/core/lib/surface/init.cc',
                       'src/core/lib/backoff/backoff.cc',
                       'src/core/lib/channel/channel_args.cc',
@@ -716,6 +718,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/message_size/message_size_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_utils.cc',
+                      'src/core/ext/tunnel/tunnel_client.cc',
+                      'src/core/ext/tunnel/tunnel_endpoint.cc',
+                      'src/core/ext/tunnel/tunnel_server.cc',
                       'src/core/plugin_registry/grpc_plugin_registry.cc'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
@@ -950,7 +955,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/max_age/max_age_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
-                              'src/core/ext/filters/workarounds/workaround_utils.h'
+                              'src/core/ext/filters/workarounds/workaround_utils.h',
+                              'src/core/ext/tunnel/tunnel_endpoint.h'
   end
 
   s.subspec 'Cronet-Interface' do |ss|

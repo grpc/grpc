@@ -5465,6 +5465,42 @@
   }, 
   {
     "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "tunnel_forward_test", 
+    "src": [
+      "test/core/end2end/fixtures/tunnel_forward.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "tunnel_reverse_test", 
+    "src": [
+      "test/core/end2end/fixtures/tunnel_reverse.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -5729,6 +5765,42 @@
     "name": "inproc_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/inproc.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "tunnel_forward_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/tunnel_forward.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "tunnel_reverse_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/tunnel_reverse.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6099,6 +6171,7 @@
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_chttp2_server_secure", 
       "grpc_transport_inproc", 
+      "grpc_tunnel", 
       "grpc_workaround_cronet_compression_filter"
     ], 
     "headers": [], 
@@ -8208,6 +8281,7 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/grpc_tunnel.h", 
       "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
@@ -8349,6 +8423,7 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
+      "include/grpc/grpc_tunnel.h", 
       "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
@@ -9356,6 +9431,27 @@
     "name": "grpc_transport_inproc_headers", 
     "src": [
       "src/core/ext/transport/inproc/inproc_transport.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_transport_chttp2"
+    ], 
+    "headers": [
+      "src/core/ext/tunnel/tunnel_endpoint.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_tunnel", 
+    "src": [
+      "src/core/ext/tunnel/tunnel_client.cc", 
+      "src/core/ext/tunnel/tunnel_endpoint.cc", 
+      "src/core/ext/tunnel/tunnel_endpoint.h", 
+      "src/core/ext/tunnel/tunnel_server.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

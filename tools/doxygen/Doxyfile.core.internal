@@ -806,6 +806,7 @@ include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
+include/grpc/grpc_tunnel.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -1029,6 +1030,10 @@ src/core/ext/transport/chttp2/transport/writing.cc \
 src/core/ext/transport/inproc/inproc_plugin.cc \
 src/core/ext/transport/inproc/inproc_transport.cc \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/ext/tunnel/tunnel_client.cc \
+src/core/ext/tunnel/tunnel_endpoint.cc \
+src/core/ext/tunnel/tunnel_endpoint.h \
+src/core/ext/tunnel/tunnel_server.cc \
 src/core/lib/README.md \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \

@@ -333,6 +333,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
+    src/core/ext/tunnel/tunnel_client.cc \
+    src/core/ext/tunnel/tunnel_endpoint.cc \
+    src/core/ext/tunnel/tunnel_server.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/boringssl/err_data.c \
     third_party/boringssl/crypto/aes/aes.c \
@@ -674,6 +677,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/tunnel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)

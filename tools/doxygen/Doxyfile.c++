@@ -879,6 +879,7 @@ include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security_constants.h \
+include/grpc/grpc_tunnel.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \

@@ -299,6 +299,7 @@ filegroups:
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/grpc_tunnel.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -899,6 +900,16 @@ filegroups:
   - src/core/ext/transport/inproc/inproc_transport.h
   uses:
   - grpc_base_headers
+- name: grpc_tunnel
+  headers:
+  - src/core/ext/tunnel/tunnel_endpoint.h
+  src:
+  - src/core/ext/tunnel/tunnel_client.cc
+  - src/core/ext/tunnel/tunnel_endpoint.cc
+  - src/core/ext/tunnel/tunnel_server.cc
+  uses:
+  - grpc_base
+  - grpc_transport_chttp2
 - name: grpc_workaround_cronet_compression_filter
   headers:
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
@@ -1171,6 +1182,7 @@ libs:
   - grpc_deadline_filter
   - grpc_workaround_cronet_compression_filter
   - grpc_server_backward_compatibility
+  - grpc_tunnel
   generate_plugin_registry: true
   secure: true
   vs_packages:

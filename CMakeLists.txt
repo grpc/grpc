@@ -427,6 +427,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_test)
 endif()
 add_dependencies(buildtests_c inproc_test)
+add_dependencies(buildtests_c tunnel_forward_test)
+add_dependencies(buildtests_c tunnel_reverse_test)
 add_dependencies(buildtests_c h2_census_nosec_test)
 add_dependencies(buildtests_c h2_compress_nosec_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -448,6 +450,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_nosec_test)
 endif()
 add_dependencies(buildtests_c inproc_nosec_test)
+add_dependencies(buildtests_c tunnel_forward_nosec_test)
+add_dependencies(buildtests_c tunnel_reverse_nosec_test)
 add_dependencies(buildtests_c api_fuzzer_one_entry)
 add_dependencies(buildtests_c client_fuzzer_one_entry)
 add_dependencies(buildtests_c hpack_parser_fuzzer_test_one_entry)
@@ -1041,6 +1045,9 @@ add_library(grpc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   src/core/ext/filters/workarounds/workaround_utils.cc
+  src/core/ext/tunnel/tunnel_client.cc
+  src/core/ext/tunnel/tunnel_endpoint.cc
+  src/core/ext/tunnel/tunnel_server.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
 )
 
@@ -1106,6 +1113,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/grpc_tunnel.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -2252,6 +2260,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/grpc_tunnel.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -2525,6 +2534,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/grpc_tunnel.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -3006,6 +3016,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/grpc_tunnel.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -3735,6 +3746,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/grpc_tunnel.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -13112,6 +13124,62 @@ target_link_libraries(inproc_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(tunnel_forward_test
+  test/core/end2end/fixtures/tunnel_forward.cc
+)
+
+
+target_include_directories(tunnel_forward_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(tunnel_forward_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(tunnel_reverse_test
+  test/core/end2end/fixtures/tunnel_reverse.cc
+)
+
+
+target_include_directories(tunnel_reverse_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(tunnel_reverse_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(h2_census_nosec_test
   test/core/end2end/fixtures/h2_census.cc
 )
@@ -13527,6 +13595,62 @@ target_include_directories(inproc_nosec_test
 )
 
 target_link_libraries(inproc_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_nosec_tests
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(tunnel_forward_nosec_test
+  test/core/end2end/fixtures/tunnel_forward.cc
+)
+
+
+target_include_directories(tunnel_forward_nosec_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(tunnel_forward_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_nosec_tests
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(tunnel_reverse_nosec_test
+  test/core/end2end/fixtures/tunnel_reverse.cc
+)
+
+
+target_include_directories(tunnel_reverse_nosec_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(tunnel_reverse_nosec_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
