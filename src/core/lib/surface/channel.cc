@@ -54,7 +54,6 @@ typedef struct registered_call {
 } registered_call;
 
 struct grpc_channel {
-  intptr_t uuid;
   int is_client;
   grpc_compression_options compression_options;
   grpc_mdelem default_authority;
@@ -104,7 +103,6 @@ grpc_channel* grpc_channel_create_with_builder(
   memset(channel, 0, sizeof(*channel));
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
-  channel->uuid = -1;
   channel->tracer = nullptr;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
@@ -205,7 +203,6 @@ grpc_channel* grpc_channel_create_with_builder(
       if (max_nodes > 0) {
         channel->tracer = grpc_core::New<grpc_core::ChannelTracer>(
             max_nodes);  // TODO(ncteisen): leaky yo
-        channel->uuid = channel->tracer->GetUuid();
       }
     }
   }
@@ -219,8 +216,6 @@ grpc_channel* grpc_channel_create_with_builder(
 char* grpc_channel_get_trace(grpc_channel* channel, bool recursive) {
   return channel->tracer ? channel->tracer->RenderTrace(recursive) : nullptr;
 }
-
-intptr_t grpc_channel_get_uuid(grpc_channel* channel) { return channel->uuid; }
 
 grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* input_args,
