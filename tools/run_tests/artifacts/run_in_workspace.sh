@@ -18,15 +18,19 @@
 # All cmdline args will be executed as a command.
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 export repo_root=$(pwd)
+
+# TODO: fix file to pass shellcheck
 
 rm -rf "${WORKSPACE_NAME}"
 git clone . "${WORKSPACE_NAME}"
 # clone gRPC submodules, use data from locally cloned submodules where possible
+# shellcheck disable=SC1004,SC2016
 git submodule foreach 'cd "${repo_root}/${WORKSPACE_NAME}" \
     && git submodule update --init --reference ${repo_root}/${name} ${name}'
 
 echo "Running in workspace ${WORKSPACE_NAME}"
-cd ${WORKSPACE_NAME}
+cd "${WORKSPACE_NAME}"
+# shellcheck disable=SC2068
 $@

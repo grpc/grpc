@@ -27,8 +27,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;

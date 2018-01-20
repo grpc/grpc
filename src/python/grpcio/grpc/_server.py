@@ -220,8 +220,7 @@ class _Context(grpc.ServicerContext):
             return self._state.client is not _CANCELLED and not self._state.statused
 
     def time_remaining(self):
-        return max(
-            float(self._rpc_event.call_details.deadline) - time.time(), 0)
+        return max(self._rpc_event.call_details.deadline - time.time(), 0)
 
     def cancel(self):
         self._rpc_event.call.cancel()
@@ -278,6 +277,12 @@ class _Context(grpc.ServicerContext):
             self._state.trailing_metadata = trailing_metadata
 
     def abort(self, code, details):
+        # treat OK like other invalid arguments: fail the RPC
+        if code == grpc.StatusCode.OK:
+            logging.error(
+                'abort() called with StatusCode.OK; returning UNKNOWN')
+            code = grpc.StatusCode.UNKNOWN
+            details = ''
         with self._state.condition:
             self._state.code = code
             self._state.details = _common.encode(details)

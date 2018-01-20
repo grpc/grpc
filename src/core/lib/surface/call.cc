@@ -33,12 +33,12 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/arena.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -1851,8 +1851,9 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         {
           grpc_error* override_error = GRPC_ERROR_NONE;
           if (op->data.send_status_from_server.status != GRPC_STATUS_OK) {
-            override_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Error from server send status");
+            override_error =
+                error_from_status(op->data.send_status_from_server.status,
+                                  "Returned non-ok status");
           }
           if (op->data.send_status_from_server.status_details != nullptr) {
             call->send_extra_metadata[1].md = grpc_mdelem_from_slices(

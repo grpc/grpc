@@ -111,7 +111,7 @@ class ExecCtx {
 
   /** Checks if there is work to be done */
   bool HasWork() {
-    return combiner_data_.active_combiner != NULL ||
+    return combiner_data_.active_combiner != nullptr ||
            !grpc_closure_list_empty(closure_list_);
   }
 
@@ -157,10 +157,6 @@ on outside context */
     now_ = new_val;
     now_is_valid_ = true;
   }
-
-  /** Finish any pending work for a grpc_exec_ctx. Must be called before
-   *  the instance is destroyed, or work may be lost. */
-  void Finish();
 
   /** Global initialization for ExecCtx. Called by iomgr */
   static void GlobalInit(void);

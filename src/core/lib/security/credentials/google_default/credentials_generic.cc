@@ -22,8 +22,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 
 char* grpc_get_well_known_google_credentials_file_path_impl(void) {
   char* result = nullptr;

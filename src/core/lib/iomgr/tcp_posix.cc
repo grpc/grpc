@@ -42,12 +42,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 
 #ifdef GRPC_HAVE_MSG_NOSIGNAL
 #define SENDMSG_FLAGS MSG_NOSIGNAL
@@ -63,7 +63,8 @@ typedef size_t msg_iovlen_type;
 
 grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
 
-typedef struct {
+namespace {
+struct grpc_tcp {
   grpc_endpoint base;
   grpc_fd* em_fd;
   int fd;
@@ -96,12 +97,13 @@ typedef struct {
 
   grpc_resource_user* resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
-} grpc_tcp;
+};
 
-typedef struct backup_poller {
+struct backup_poller {
   gpr_mu* pollset_mu;
   grpc_closure run_poller;
-} backup_poller;
+};
+}  // namespace
 
 #define BACKUP_POLLER_POLLSET(b) ((grpc_pollset*)((b) + 1))
 
