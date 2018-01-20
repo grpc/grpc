@@ -92,8 +92,8 @@ int main(int argc, char** argv) {
       addbuf(message, sizeof(message));
     }
   }
-  grpc_run_bad_client_test(verifier, nullptr, g_buffer, g_count,
-                           GRPC_BAD_CLIENT_LARGE_REQUEST);
+  grpc_bad_client_arg bca = {nullptr, g_buffer, g_count};
+  grpc_run_bad_client_test(verifier, &bca, 1, GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free(g_buffer);
   grpc_shutdown();
 
