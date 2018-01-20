@@ -1127,6 +1127,7 @@ class Sanity(object):
             environ = {'TEST': 'true'}
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
+                environ['CLANG_TIDY_SKIP_DOCKER'] = 'true'
             return [
                 self.config.job_spec(
                     cmd['script'].split(),

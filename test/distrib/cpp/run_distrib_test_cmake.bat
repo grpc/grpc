@@ -58,13 +58,13 @@ cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% -DOP
 cmake --build . --config Release --target install || goto :error
 cd ../..
 
-# Build helloworld example using cmake
+@rem Build helloworld example using cmake
 cd examples/cpp/helloworld
 mkdir cmake
 cd cmake
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ../.. || goto :error
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% -DOPENSSL_INCLUDE_DIR=%OPENSSL_DIR%/include ../.. || goto :error
 cmake --build . --config Release || goto :error
 cd ../../../../..
 

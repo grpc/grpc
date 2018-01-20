@@ -32,7 +32,7 @@
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "test/core/util/port.h"
 
 DEFINE_bool(

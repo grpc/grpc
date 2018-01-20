@@ -34,8 +34,15 @@ static void* create_test_tag(void) {
 static void shutdown_and_destroy(grpc_completion_queue* cc) {
   grpc_event ev;
   grpc_completion_queue_shutdown(cc);
-  ev =
-      grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
+  /* By the time grpc_completion_queue_shutdown runs, the cq's internal
+     pending event counter might not have been updated yet by a previous
+     cq_end_op_for_next (which releases a completed event first and only later
+     updates the pending event counter), so we can't rely on a no-polling
+     cq_next to never return GRPC_QUEUE_TIMEOUT. Using a deadline in the future
+     solves the problem. See https://github.com/grpc/grpc/issues/13693.
+     */
+  ev = grpc_completion_queue_next(cc, grpc_timeout_seconds_to_deadline(2),
+                                  nullptr);
   GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }

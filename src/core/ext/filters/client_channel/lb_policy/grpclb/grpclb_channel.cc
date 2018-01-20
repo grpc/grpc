@@ -22,8 +22,8 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/support/string.h"
 
 grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
     const char* lb_service_target_addresses,

@@ -69,4 +69,5 @@ for filename in args.files:
         shortname=filename,
     ))  #verbose_success=True))
 
-jobset.run(jobs, maxjobs=args.jobs)
+num_fails, res_set = jobset.run(jobs, maxjobs=args.jobs)
+sys.exit(num_fails)

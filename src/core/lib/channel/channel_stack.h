@@ -40,9 +40,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_channel_element grpc_channel_element;

@@ -381,6 +381,7 @@ namespace Grpc.Core
             await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
 
             await threadPool.StopAsync().ConfigureAwait(false);
+            requestCallContextPool.Dispose();
             batchContextPool.Dispose();
             GrpcNativeShutdown();
             isShutdown = true;
