@@ -1532,7 +1532,8 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
     if (serverlist->num_servers > 0) {
       // Start sending client load report only after we start using the
       // serverlist returned from the current LB call.
-      if (lb_calld->client_stats == nullptr) {
+      if (lb_calld->client_stats_report_interval > 0 &&
+          lb_calld->client_stats == nullptr) {
         lb_calld->client_stats = grpc_grpclb_client_stats_create();
         glb_lb_call_data_ref(lb_calld, "client_load_report");
         schedule_next_client_load_report(lb_calld);
