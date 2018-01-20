@@ -35,11 +35,10 @@
 
 namespace grpc_core {
 
-class TraceNode {
- public:
-  TraceNode(grpc_slice data, grpc_error* error,
-            grpc_connectivity_state connectivity_state,
-            ChannelTracer* referenced_tracer)
+struct TraceEvent {
+  TraceEvent(grpc_slice data, grpc_error* error,
+             grpc_connectivity_state connectivity_state,
+             ChannelTracer* referenced_tracer)
       : data_(data),
         error_(error),
         connectivity_state_(connectivity_state),
@@ -47,16 +46,11 @@ class TraceNode {
     referenced_tracer_ = referenced_tracer ? referenced_tracer->Ref() : nullptr;
     time_created_ = gpr_now(GPR_CLOCK_REALTIME);
   }
-
- private:
-  friend class ChannelTracer;
-  friend class ChannelTracerRenderer;
   grpc_slice data_;
   grpc_error* error_;
   gpr_timespec time_created_;
   grpc_connectivity_state connectivity_state_;
-  TraceNode* next_;
-
+  TraceEvent* next_;
   // the tracer object for the (sub)channel that this trace node refers to.
   ChannelTracer* referenced_tracer_;
 };
@@ -80,7 +74,7 @@ ChannelTracer* ChannelTracer::Ref() {
   return this;
 }
 
-void ChannelTracer::FreeNode(TraceNode* node) {
+void ChannelTracer::FreeNode(TraceEvent* node) {
   GRPC_ERROR_UNREF(node->error_);
   if (node->referenced_tracer_) {
     node->referenced_tracer_->Unref();
@@ -91,9 +85,9 @@ void ChannelTracer::FreeNode(TraceNode* node) {
 
 void ChannelTracer::Unref() {
   if (gpr_unref(&refs_)) {
-    TraceNode* it = head_trace_;
+    TraceEvent* it = head_trace_;
     while (it != nullptr) {
-      TraceNode* to_free = it;
+      TraceEvent* to_free = it;
       it = it->next_;
       FreeNode(to_free);
     }
@@ -108,8 +102,8 @@ void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
                              ChannelTracer* referenced_tracer) {
   ++num_nodes_logged_;
   // create and fill up the new node
-  TraceNode* new_trace_node =
-      New<TraceNode>(data, error, connectivity_state, referenced_tracer);
+  TraceEvent* new_trace_node =
+      New<TraceEvent>(data, error, connectivity_state, referenced_tracer);
   // first node case
   if (head_trace_ == nullptr) {
     head_trace_ = tail_trace_ = new_trace_node;
@@ -122,7 +116,7 @@ void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
   ++list_size_;
   // maybe garbage collect the end
   if (list_size_ > max_list_size_) {
-    TraceNode* to_free = head_trace_;
+    TraceEvent* to_free = head_trace_;
     head_trace_ = head_trace_->next_;
     FreeNode(to_free);
     --list_size_;
@@ -208,7 +202,7 @@ class ChannelTracerRenderer {
 
   void PopulateNodeList(grpc_json* nodes, grpc_json* children) {
     grpc_json* child = nullptr;
-    TraceNode* it = current_tracer_->head_trace_;
+    TraceEvent* it = current_tracer_->head_trace_;
     while (it != nullptr) {
       child = grpc_json_create_child(child, nodes, nullptr, nullptr,
                                      GRPC_JSON_OBJECT, false);
@@ -217,7 +211,7 @@ class ChannelTracerRenderer {
     }
   }
 
-  void PopulateNode(TraceNode* node, grpc_json* json, grpc_json* children) {
+  void PopulateNode(TraceEvent* node, grpc_json* json, grpc_json* children) {
     grpc_json* child = nullptr;
     child = grpc_json_create_child(child, json, "data",
                                    grpc_slice_to_c_string(node->data_),

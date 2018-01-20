@@ -25,7 +25,7 @@
 
 namespace grpc_core {
 
-class TraceNode;
+struct TraceEvent;
 
 class ChannelTracer {
  public:
@@ -55,7 +55,7 @@ class ChannelTracer {
   static char* GetChannelTraceFromUuid(intptr_t uuid, bool recursive);
 
  private:
-  void FreeNode(TraceNode* node);
+  void FreeNode(TraceEvent* node);
 
   friend class ChannelTracerRenderer;
   gpr_refcount refs_;
@@ -64,8 +64,8 @@ class ChannelTracer {
   uint64_t num_nodes_logged_;
   size_t list_size_;
   size_t max_list_size_;
-  TraceNode* head_trace_;
-  TraceNode* tail_trace_;
+  TraceEvent* head_trace_;
+  TraceEvent* tail_trace_;
   gpr_timespec time_created_;
 };
 
