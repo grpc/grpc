@@ -22,16 +22,18 @@
 #include <grpc++/impl/codegen/config_protobuf.h>
 #include <grpc++/support/config.h>
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-void ParseJson(const grpc::string& json, const grpc::string& type,
-               GRPC_CUSTOM_MESSAGE* msg);
+    void ParseJson (const grpc::string & json, const grpc::string & type,
+		    GRPC_CUSTOM_MESSAGE * msg);
 
-grpc::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
-                           const grpc::string& type);
+      grpc::string SerializeJson (const GRPC_CUSTOM_MESSAGE & msg,
+				  const grpc::string & type);
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // TEST_QPS_PARSE_JSON_H
+#endif				// TEST_QPS_PARSE_JSON_H

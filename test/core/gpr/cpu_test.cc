@@ -51,89 +51,106 @@
 */
 
 /* Status shared across threads */
-struct cpu_test {
+struct cpu_test
+{
   gpr_mu mu;
   int nthreads;
   uint32_t ncores;
   int is_done;
   gpr_cv done_cv;
-  int* used;  /* is this core used? */
-  unsigned r; /* random number */
+  int *used;			/* is this core used? */
+  unsigned r;			/* random number */
 };
 
-static void worker_thread(void* arg) {
-  struct cpu_test* ct = (struct cpu_test*)arg;
+static void
+worker_thread (void *arg)
+{
+  struct cpu_test *ct = (struct cpu_test *) arg;
   uint32_t cpu;
   unsigned r = 12345678;
   unsigned i, j;
   /* Avoid repetitive division calculations */
-  int64_t max_i = 1000 / grpc_test_slowdown_factor();
-  int64_t max_j = 1000 / grpc_test_slowdown_factor();
-  for (i = 0; i < max_i; i++) {
-    /* run for a bit - just calculate something random. */
-    for (j = 0; j < max_j; j++) {
-      r = (r * 17) & ((r - i) | (r * i));
+  int64_t max_i = 1000 / grpc_test_slowdown_factor ();
+  int64_t max_j = 1000 / grpc_test_slowdown_factor ();
+  for (i = 0; i < max_i; i++)
+    {
+      /* run for a bit - just calculate something random. */
+      for (j = 0; j < max_j; j++)
+	{
+	  r = (r * 17) & ((r - i) | (r * i));
+	}
+      cpu = gpr_cpu_current_cpu ();
+      GPR_ASSERT (cpu < ct->ncores);
+      gpr_mu_lock (&ct->mu);
+      ct->used[cpu] = 1;
+      for (j = 0; j < ct->ncores; j++)
+	{
+	  if (!ct->used[j])
+	    break;
+	}
+      gpr_mu_unlock (&ct->mu);
+      if (j == ct->ncores)
+	{
+	  break;		/* all cpus have been used - no further use in running this test */
+	}
     }
-    cpu = gpr_cpu_current_cpu();
-    GPR_ASSERT(cpu < ct->ncores);
-    gpr_mu_lock(&ct->mu);
-    ct->used[cpu] = 1;
-    for (j = 0; j < ct->ncores; j++) {
-      if (!ct->used[j]) break;
-    }
-    gpr_mu_unlock(&ct->mu);
-    if (j == ct->ncores) {
-      break; /* all cpus have been used - no further use in running this test */
-    }
-  }
-  gpr_mu_lock(&ct->mu);
-  ct->r = r; /* make it look like we care about r's value... */
+  gpr_mu_lock (&ct->mu);
+  ct->r = r;			/* make it look like we care about r's value... */
   ct->nthreads--;
-  if (ct->nthreads == 0) {
-    ct->is_done = 1;
-    gpr_cv_signal(&ct->done_cv);
-  }
-  gpr_mu_unlock(&ct->mu);
+  if (ct->nthreads == 0)
+    {
+      ct->is_done = 1;
+      gpr_cv_signal (&ct->done_cv);
+    }
+  gpr_mu_unlock (&ct->mu);
 }
 
-static void cpu_test(void) {
+static void
+cpu_test (void)
+{
   uint32_t i;
   int cores_seen = 0;
   struct cpu_test ct;
   gpr_thd_id thd;
-  ct.ncores = gpr_cpu_num_cores();
-  GPR_ASSERT(ct.ncores > 0);
-  ct.nthreads = (int)ct.ncores * 3;
-  ct.used = static_cast<int*>(gpr_malloc(ct.ncores * sizeof(int)));
-  memset(ct.used, 0, ct.ncores * sizeof(int));
-  gpr_mu_init(&ct.mu);
-  gpr_cv_init(&ct.done_cv);
+  ct.ncores = gpr_cpu_num_cores ();
+  GPR_ASSERT (ct.ncores > 0);
+  ct.nthreads = (int) ct.ncores * 3;
+  ct.used = static_cast < int *>(gpr_malloc (ct.ncores * sizeof (int)));
+  memset (ct.used, 0, ct.ncores * sizeof (int));
+  gpr_mu_init (&ct.mu);
+  gpr_cv_init (&ct.done_cv);
   ct.is_done = 0;
-  for (i = 0; i < ct.ncores * 3; i++) {
-    GPR_ASSERT(
-        gpr_thd_new(&thd, "grpc_cpu_test", &worker_thread, &ct, nullptr));
-  }
-  gpr_mu_lock(&ct.mu);
-  while (!ct.is_done) {
-    gpr_cv_wait(&ct.done_cv, &ct.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
-  }
-  gpr_mu_unlock(&ct.mu);
-  fprintf(stderr, "Saw cores [");
-  fflush(stderr);
-  for (i = 0; i < ct.ncores; i++) {
-    if (ct.used[i]) {
-      fprintf(stderr, "%d,", i);
-      fflush(stderr);
-      cores_seen++;
+  for (i = 0; i < ct.ncores * 3; i++)
+    {
+      GPR_ASSERT (gpr_thd_new
+		  (&thd, "grpc_cpu_test", &worker_thread, &ct, nullptr));
     }
-  }
-  fprintf(stderr, "] (%d/%d)\n", cores_seen, ct.ncores);
-  fflush(stderr);
-  gpr_free(ct.used);
+  gpr_mu_lock (&ct.mu);
+  while (!ct.is_done)
+    {
+      gpr_cv_wait (&ct.done_cv, &ct.mu, gpr_inf_future (GPR_CLOCK_MONOTONIC));
+    }
+  gpr_mu_unlock (&ct.mu);
+  fprintf (stderr, "Saw cores [");
+  fflush (stderr);
+  for (i = 0; i < ct.ncores; i++)
+    {
+      if (ct.used[i])
+	{
+	  fprintf (stderr, "%d,", i);
+	  fflush (stderr);
+	  cores_seen++;
+	}
+    }
+  fprintf (stderr, "] (%d/%d)\n", cores_seen, ct.ncores);
+  fflush (stderr);
+  gpr_free (ct.used);
 }
 
-int main(int argc, char* argv[]) {
-  grpc_test_init(argc, argv);
-  cpu_test();
+int
+main (int argc, char *argv[])
+{
+  grpc_test_init (argc, argv);
+  cpu_test ();
   return 0;
 }

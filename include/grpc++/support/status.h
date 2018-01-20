@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/status.h>
 
-#endif  // GRPCXX_SUPPORT_STATUS_H
+#endif // GRPCXX_SUPPORT_STATUS_H

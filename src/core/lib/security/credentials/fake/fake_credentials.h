@@ -24,11 +24,12 @@
 /* -- Fake transport security credentials. -- */
 
 /* Creates a fake transport security credentials object for testing. */
-grpc_channel_credentials* grpc_fake_transport_security_credentials_create(void);
+grpc_channel_credentials
+  *grpc_fake_transport_security_credentials_create (void);
 
 /* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
-    void);
+grpc_server_credentials
+  *grpc_fake_transport_security_server_credentials_create (void);
 
 /* Used to verify the target names given to the fake transport security
  * connector.
@@ -42,15 +43,16 @@ grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
  * That is to say, LB channels have a heading list of LB targets separated from
  * the list of backend targets by a semicolon. For non-LB channels, only the
  * latter is present. */
-grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets);
+grpc_arg grpc_fake_transport_expected_targets_arg (char *expected_targets);
 
 /* Return the value associated with the expected targets channel arg or NULL */
-const char* grpc_fake_transport_get_expected_targets(
-    const grpc_channel_args* args);
+const char *grpc_fake_transport_get_expected_targets (const grpc_channel_args
+						      * args);
 
 /* --  Metadata-only Test credentials. -- */
 
-typedef struct {
+typedef struct
+{
   grpc_call_credentials base;
   grpc_mdelem md;
   bool is_async;

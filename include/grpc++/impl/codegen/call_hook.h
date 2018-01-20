@@ -19,21 +19,27 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CALL_HOOK_H
 #define GRPCXX_IMPL_CODEGEN_CALL_HOOK_H
 
-namespace grpc {
+namespace grpc
+{
 
-namespace internal {
-class CallOpSetInterface;
-class Call;
+  namespace internal
+  {
+    class CallOpSetInterface;
+    class Call;
 
 /// This is an interface that Channel and Server implement to allow them to hook
 /// performing ops.
-class CallHook {
- public:
-  virtual ~CallHook() {}
-  virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
-};
-}  // namespace internal
+    class CallHook
+    {
+    public:
+      virtual ~ CallHook ()
+      {
+      }
+      virtual void PerformOpsOnCall (CallOpSetInterface * ops, Call * call) =
+	0;
+    };
+  }				// namespace internal
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_CALL_HOOK_H
+#endif				// GRPCXX_IMPL_CODEGEN_CALL_HOOK_H

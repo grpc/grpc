@@ -21,7 +21,8 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-typedef struct {
+typedef struct
+{
   grpc_call_credentials base;
   grpc_credentials_mdelem_array md_array;
 } grpc_google_iam_credentials;

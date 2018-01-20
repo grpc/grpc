@@ -22,12 +22,18 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
-unsigned gpr_cpu_num_cores(void) {
+unsigned
+gpr_cpu_num_cores (void)
+{
   SYSTEM_INFO si;
-  GetSystemInfo(&si);
+  GetSystemInfo (&si);
   return si.dwNumberOfProcessors;
 }
 
-unsigned gpr_cpu_current_cpu(void) { return GetCurrentProcessorNumber(); }
+unsigned
+gpr_cpu_current_cpu (void)
+{
+  return GetCurrentProcessorNumber ();
+}
 
 #endif /* GPR_WINDOWS */

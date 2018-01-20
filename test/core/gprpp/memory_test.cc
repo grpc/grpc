@@ -20,55 +20,76 @@
 #include <gtest/gtest.h>
 #include "test/core/util/test_config.h"
 
-namespace grpc_core {
-namespace testing {
-
-struct Foo {
-  Foo(int p, int q) : a(p), b(q) {}
-  int a;
-  int b;
-};
-
-TEST(MemoryTest, NewDeleteTest) { Delete(New<int>()); }
-
-TEST(MemoryTest, NewDeleteWithArgTest) {
-  int* i = New<int>(42);
-  EXPECT_EQ(42, *i);
-  Delete(i);
-}
-
-TEST(MemoryTest, NewDeleteWithArgsTest) {
-  Foo* p = New<Foo>(1, 2);
-  EXPECT_EQ(1, p->a);
-  EXPECT_EQ(2, p->b);
-  Delete(p);
-}
-
-TEST(MemoryTest, MakeUniqueTest) { MakeUnique<int>(); }
-
-TEST(MemoryTest, MakeUniqueWithArgTest) {
-  auto i = MakeUnique<int>(42);
-  EXPECT_EQ(42, *i);
-}
-
-TEST(MemoryTest, UniquePtrWithCustomDeleter) {
-  int n = 0;
-  class IncrementingDeleter {
-   public:
-    void operator()(int* p) { ++*p; }
-  };
+namespace grpc_core
+{
+  namespace testing
   {
-    UniquePtr<int, IncrementingDeleter> p(&n);
-    EXPECT_EQ(0, n);
-  }
-  EXPECT_EQ(1, n);
-}
 
-}  // namespace testing
-}  // namespace grpc_core
+    struct Foo
+    {
+      Foo (int p, int q):a (p), b (q)
+      {
+      }
+      int a;
+      int b;
+    };
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+      TEST (MemoryTest, NewDeleteTest)
+    {
+      Delete (New < int >());
+    }
+
+    TEST (MemoryTest, NewDeleteWithArgTest)
+    {
+      int *i = New < int >(42);
+      EXPECT_EQ (42, *i);
+      Delete (i);
+    }
+
+    TEST (MemoryTest, NewDeleteWithArgsTest)
+    {
+      Foo *p = New < Foo > (1, 2);
+      EXPECT_EQ (1, p->a);
+      EXPECT_EQ (2, p->b);
+      Delete (p);
+    }
+
+    TEST (MemoryTest, MakeUniqueTest)
+    {
+      MakeUnique < int >();
+    }
+
+    TEST (MemoryTest, MakeUniqueWithArgTest)
+    {
+      auto i = MakeUnique < int >(42);
+      EXPECT_EQ (42, *i);
+    }
+
+    TEST (MemoryTest, UniquePtrWithCustomDeleter)
+    {
+      int n = 0;
+      class IncrementingDeleter
+      {
+      public:
+	void operator () (int *p)
+	{
+	  ++*p;
+	}
+      };
+      {
+	UniquePtr < int, IncrementingDeleter > p (&n);
+	EXPECT_EQ (0, n);
+      }
+      EXPECT_EQ (1, n);
+    }
+
+  }				// namespace testing
+}				// namespace grpc_core
+
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  ::testing::InitGoogleTest (&argc, argv);
+  return RUN_ALL_TESTS ();
 }

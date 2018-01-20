@@ -40,12 +40,12 @@ typedef struct grpc_timer grpc_timer;
    application code should check the error to determine how it was invoked. The
    application callback is also responsible for maintaining information about
    when to free up any user-level state. */
-void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
-                     grpc_closure* closure);
+void grpc_timer_init (grpc_timer * timer, grpc_millis deadline,
+		      grpc_closure * closure);
 
 /* Initialize *timer without setting it. This can later be passed through
    the regular init or cancel */
-void grpc_timer_init_unset(grpc_timer* timer);
+void grpc_timer_init_unset (grpc_timer * timer);
 
 /* Note that there is no timer destroy function. This is because the
    timer is a one-time occurrence with a guarantee that the callback will
@@ -73,11 +73,12 @@ void grpc_timer_init_unset(grpc_timer* timer);
    matches this aim.
 
    Requires: cancel() must happen after init() on a given timer */
-void grpc_timer_cancel(grpc_timer* timer);
+void grpc_timer_cancel (grpc_timer * timer);
 
 /* iomgr internal api for dealing with timers */
 
-typedef enum {
+typedef enum
+{
   GRPC_TIMERS_NOT_CHECKED,
   GRPC_TIMERS_CHECKED_AND_EMPTY,
   GRPC_TIMERS_FIRED,
@@ -90,15 +91,15 @@ typedef enum {
    *next is never guaranteed to be updated on any given execution; however,
    with high probability at least one thread in the system will see an update
    at any time slice. */
-grpc_timer_check_result grpc_timer_check(grpc_millis* next);
-void grpc_timer_list_init();
-void grpc_timer_list_shutdown();
+grpc_timer_check_result grpc_timer_check (grpc_millis * next);
+void grpc_timer_list_init ();
+void grpc_timer_list_shutdown ();
 
 /* Consume a kick issued by grpc_kick_poller */
-void grpc_timer_consume_kick(void);
+void grpc_timer_consume_kick (void);
 
 /* the following must be implemented by each iomgr implementation */
 
-void grpc_kick_poller(void);
+void grpc_kick_poller (void);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_H */

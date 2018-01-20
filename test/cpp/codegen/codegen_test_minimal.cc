@@ -18,17 +18,25 @@
 
 #include <gtest/gtest.h>
 
-namespace grpc {
-namespace {
+namespace grpc
+{
+  namespace
+  {
 
-class CodegenTestMinimal : public ::testing::Test {};
+    class CodegenTestMinimal:public::testing::Test
+    {
+    };
 
-TEST_F(CodegenTestMinimal, Build) {}
+      TEST_F (CodegenTestMinimal, Build)
+    {
+    }
 
-}  // namespace
-}  // namespace grpc
+  }				// namespace
+}				// namespace grpc
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+int
+main (int argc, char **argv)
+{
+  ::testing::InitGoogleTest (&argc, argv);
+  return RUN_ALL_TESTS ();
 }

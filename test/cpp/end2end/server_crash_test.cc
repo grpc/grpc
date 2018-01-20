@@ -35,126 +35,209 @@
 
 #include <gtest/gtest.h>
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
+using
+  grpc::testing::EchoRequest;
+using
+  grpc::testing::EchoResponse;
+using
+  std::chrono::system_clock;
 
-static std::string g_root;
+static
+  std::string
+  g_root;
 
-namespace grpc {
-namespace testing {
+namespace
+  grpc
+{
+  namespace
+    testing
+  {
 
-namespace {
+    namespace
+    {
 
-class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
- public:
-  ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
+      class ServiceImpl
+	final:
+	public::grpc::testing::EchoTestService::Service
+      {
+      public:
+	ServiceImpl ():
+	bidi_stream_count_ (0),
+	response_stream_count_ (0)
+	{
+	}
 
-  Status BidiStream(
-      ServerContext* context,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
-    bidi_stream_count_++;
-    EchoRequest request;
-    EchoResponse response;
-    while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
-      response.set_message(request.message());
-      stream->Write(response);
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
-    }
-    return Status::OK;
-  }
+	Status
+	BidiStream (ServerContext * context,
+		    ServerReaderWriter < EchoResponse, EchoRequest > *stream)
+	  override
+	{
+	  bidi_stream_count_++;
+	  EchoRequest
+	    request;
+	  EchoResponse
+	    response;
+	  while (stream->Read (&request))
+	    {
+	      gpr_log (GPR_INFO, "recv msg %s", request.message ().c_str ());
+	      response.
+	      set_message (request.message ());
+	      stream->
+	      Write (response);
+	      gpr_sleep_until (gpr_time_add (gpr_now (GPR_CLOCK_REALTIME),
+					     gpr_time_from_seconds (1,
+								    GPR_TIMESPAN)));
+	    }
+	  return
+	    Status::OK;
+	}
 
-  Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) override {
-    EchoResponse response;
-    response_stream_count_++;
-    for (int i = 0;; i++) {
-      std::ostringstream msg;
-      msg << "Hello " << i;
-      response.set_message(msg.str());
-      if (!writer->Write(response)) break;
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
-    }
-    return Status::OK;
-  }
+	Status
+	ResponseStream (ServerContext * context, const EchoRequest * request,
+			ServerWriter < EchoResponse > *writer)
+	  override
+	{
+	  EchoResponse
+	    response;
+	  response_stream_count_++;
+	  for (int i = 0;; i++)
+	    {
+	      std::ostringstream msg;
+	      msg << "Hello " << i;
+	      response.set_message (msg.str ());
+	      if (!writer->Write (response))
+		break;
+	      gpr_sleep_until (gpr_time_add (gpr_now (GPR_CLOCK_REALTIME),
+					     gpr_time_from_seconds (1,
+								    GPR_TIMESPAN)));
+	    }
+	  return Status::OK;
+	}
 
-  int bidi_stream_count() { return bidi_stream_count_; }
+	int
+	bidi_stream_count ()
+	{
+	  return bidi_stream_count_;
+	}
 
-  int response_stream_count() { return response_stream_count_; }
+	int
+	response_stream_count ()
+	{
+	  return response_stream_count_;
+	}
 
- private:
-  int bidi_stream_count_;
-  int response_stream_count_;
-};
+      private:
+	int
+	  bidi_stream_count_;
+	int
+	  response_stream_count_;
+      };
 
-class CrashTest : public ::testing::Test {
- protected:
-  CrashTest() {}
+      class
+	CrashTest:
+	public::testing::Test
+      {
+      protected:
+	CrashTest ()
+	{
+	}
 
-  std::unique_ptr<Server> CreateServerAndClient(const std::string& mode) {
-    auto port = grpc_pick_unused_port_or_die();
-    std::ostringstream addr_stream;
-    addr_stream << "localhost:" << port;
-    auto addr = addr_stream.str();
-    client_.reset(new SubProcess({g_root + "/server_crash_test_client",
-                                  "--address=" + addr, "--mode=" + mode}));
-    GPR_ASSERT(client_);
+	std::unique_ptr <
+	  Server >
+	CreateServerAndClient (const std::string & mode)
+	{
+	  auto
+	    port = grpc_pick_unused_port_or_die ();
+	  std::ostringstream addr_stream;
+	  addr_stream << "localhost:" << port;
+	  auto
+	    addr = addr_stream.str ();
+	  client_.reset (new SubProcess (
+					  {
+					  g_root +
+					  "/server_crash_test_client",
+					  "--address=" + addr,
+					  "--mode=" + mode}));
+	  GPR_ASSERT (client_);
 
-    ServerBuilder builder;
-    builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    return builder.BuildAndStart();
-  }
+	  ServerBuilder
+	    builder;
+	  builder.AddListeningPort (addr, grpc::InsecureServerCredentials ());
+	  builder.RegisterService (&service_);
+	  return builder.BuildAndStart ();
+	}
 
-  void KillClient() { client_.reset(); }
+	void
+	KillClient ()
+	{
+	  client_.reset ();
+	}
 
-  bool HadOneBidiStream() { return service_.bidi_stream_count() == 1; }
+	bool
+	HadOneBidiStream ()
+	{
+	  return service_.bidi_stream_count () == 1;
+	}
 
-  bool HadOneResponseStream() { return service_.response_stream_count() == 1; }
+	bool
+	HadOneResponseStream ()
+	{
+	  return service_.response_stream_count () == 1;
+	}
 
- private:
-  std::unique_ptr<SubProcess> client_;
-  ServiceImpl service_;
-};
+      private:
+	std::unique_ptr < SubProcess > client_;
+	ServiceImpl
+	  service_;
+      };
 
-TEST_F(CrashTest, ResponseStream) {
-  auto server = CreateServerAndClient("response");
+      TEST_F (CrashTest, ResponseStream)
+      {
+	auto
+	  server = CreateServerAndClient ("response");
 
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_seconds(60, GPR_TIMESPAN)));
-  KillClient();
-  server->Shutdown();
-  GPR_ASSERT(HadOneResponseStream());
-}
+	gpr_sleep_until (gpr_time_add (gpr_now (GPR_CLOCK_REALTIME),
+				       gpr_time_from_seconds (60,
+							      GPR_TIMESPAN)));
+	KillClient ();
+	server->Shutdown ();
+	GPR_ASSERT (HadOneResponseStream ());
+      }
 
-TEST_F(CrashTest, BidiStream) {
-  auto server = CreateServerAndClient("bidi");
+      TEST_F (CrashTest, BidiStream)
+      {
+	auto
+	  server = CreateServerAndClient ("bidi");
 
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_seconds(60, GPR_TIMESPAN)));
-  KillClient();
-  server->Shutdown();
-  GPR_ASSERT(HadOneBidiStream());
-}
+	gpr_sleep_until (gpr_time_add (gpr_now (GPR_CLOCK_REALTIME),
+				       gpr_time_from_seconds (60,
+							      GPR_TIMESPAN)));
+	KillClient ();
+	server->Shutdown ();
+	GPR_ASSERT (HadOneBidiStream ());
+      }
 
-}  // namespace
+    }				// namespace
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-int main(int argc, char** argv) {
+int
+main (int argc, char **argv)
+{
   std::string me = argv[0];
-  auto lslash = me.rfind('/');
-  if (lslash != std::string::npos) {
-    g_root = me.substr(0, lslash);
-  } else {
-    g_root = ".";
-  }
+  auto
+    lslash = me.rfind ('/');
+  if (lslash != std::string::npos)
+    {
+      g_root = me.substr (0, lslash);
+    }
+  else
+    {
+      g_root = ".";
+    }
 
-  grpc_test_init(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_test_init (argc, argv);
+  ::testing::InitGoogleTest (&argc, argv);
+  return RUN_ALL_TESTS ();
 }

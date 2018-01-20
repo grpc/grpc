@@ -25,27 +25,40 @@
 #include <grpc/support/log.h>
 #include "src/cpp/client/create_channel_internal.h"
 
-namespace grpc {
+namespace grpc
+{
 
-namespace {
-class InsecureChannelCredentialsImpl final : public ChannelCredentials {
- public:
-  std::shared_ptr<grpc::Channel> CreateChannel(
-      const string& target, const grpc::ChannelArguments& args) override {
-    grpc_channel_args channel_args;
-    args.SetChannelArgs(&channel_args);
-    return CreateChannelInternal(
-        "",
-        grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr));
+  namespace
+  {
+    class InsecureChannelCredentialsImpl final:public ChannelCredentials
+    {
+    public:
+      std::shared_ptr < grpc::Channel > CreateChannel (const string & target,
+						       const grpc::
+						       ChannelArguments &
+						       args) override
+      {
+	grpc_channel_args channel_args;
+	  args.SetChannelArgs (&channel_args);
+	  return CreateChannelInternal ("",
+					grpc_insecure_channel_create (target.
+								      c_str
+								      (),
+								      &channel_args,
+								      nullptr));
+      }
+
+      SecureChannelCredentials *AsSecureCredentials () override
+      {
+	return nullptr;
+      }
+    };
+  }				// namespace
+
+  std::shared_ptr < ChannelCredentials > InsecureChannelCredentials ()
+  {
+    return std::shared_ptr < ChannelCredentials >
+      (new InsecureChannelCredentialsImpl ());
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
-};
-}  // namespace
-
-std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
-  return std::shared_ptr<ChannelCredentials>(
-      new InsecureChannelCredentialsImpl());
-}
-
-}  // namespace grpc
+}				// namespace grpc

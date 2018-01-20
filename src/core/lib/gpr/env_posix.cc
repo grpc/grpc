@@ -29,19 +29,25 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/gpr/string.h"
 
-const char* gpr_getenv_silent(const char* name, char** dst) {
-  *dst = gpr_getenv(name);
+const char *
+gpr_getenv_silent (const char *name, char **dst)
+{
+  *dst = gpr_getenv (name);
   return nullptr;
 }
 
-char* gpr_getenv(const char* name) {
-  char* result = getenv(name);
-  return result == nullptr ? result : gpr_strdup(result);
+char *
+gpr_getenv (const char *name)
+{
+  char *result = getenv (name);
+  return result == nullptr ? result : gpr_strdup (result);
 }
 
-void gpr_setenv(const char* name, const char* value) {
-  int res = setenv(name, value, 1);
-  GPR_ASSERT(res == 0);
+void
+gpr_setenv (const char *name, const char *value)
+{
+  int res = setenv (name, value, 1);
+  GPR_ASSERT (res == 0);
 }
 
 #endif /* GPR_POSIX_ENV */

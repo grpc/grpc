@@ -24,37 +24,49 @@
 #include "test/core/end2end/cq_verifier_internal.h"
 
 /* the verifier itself */
-struct cq_verifier {
+struct cq_verifier
+{
   /* bound completion queue */
-  grpc_completion_queue* cq;
+  grpc_completion_queue *cq;
   /* start of expectation list */
-  expectation* first_expectation;
+  expectation *first_expectation;
 };
 
-cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
-  cq_verifier* v = static_cast<cq_verifier*>(gpr_malloc(sizeof(cq_verifier)));
+cq_verifier *
+cq_verifier_create (grpc_completion_queue * cq)
+{
+  cq_verifier *v =
+    static_cast < cq_verifier * >(gpr_malloc (sizeof (cq_verifier)));
   v->cq = cq;
-  cq_verifier_set_first_expectation(v, nullptr);
+  cq_verifier_set_first_expectation (v, nullptr);
   return v;
 }
 
-void cq_verifier_destroy(cq_verifier* v) {
-  cq_verify(v);
-  gpr_free(v);
+void
+cq_verifier_destroy (cq_verifier * v)
+{
+  cq_verify (v);
+  gpr_free (v);
 }
 
-expectation* cq_verifier_get_first_expectation(cq_verifier* v) {
+expectation *
+cq_verifier_get_first_expectation (cq_verifier * v)
+{
   return v->first_expectation;
 }
 
-void cq_verifier_set_first_expectation(cq_verifier* v, expectation* e) {
+void
+cq_verifier_set_first_expectation (cq_verifier * v, expectation * e)
+{
   v->first_expectation = e;
 }
 
-grpc_event cq_verifier_next_event(cq_verifier* v, int timeout_seconds) {
+grpc_event
+cq_verifier_next_event (cq_verifier * v, int timeout_seconds)
+{
   const gpr_timespec deadline =
-      grpc_timeout_seconds_to_deadline(timeout_seconds);
-  return grpc_completion_queue_next(v->cq, deadline, nullptr);
+    grpc_timeout_seconds_to_deadline (timeout_seconds);
+  return grpc_completion_queue_next (v->cq, deadline, nullptr);
 }
 
 #endif /* GRPC_UV */

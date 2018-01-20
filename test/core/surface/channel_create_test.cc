@@ -26,27 +26,31 @@
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"
 
-void test_unknown_scheme_target(void) {
-  grpc_channel* chan;
+void
+test_unknown_scheme_target (void)
+{
+  grpc_channel *chan;
   /* avoid default prefix */
-  grpc_resolver_registry_shutdown();
-  grpc_resolver_registry_init();
+  grpc_resolver_registry_shutdown ();
+  grpc_resolver_registry_init ();
 
-  chan = grpc_insecure_channel_create("blah://blah", nullptr, nullptr);
-  GPR_ASSERT(chan != nullptr);
+  chan = grpc_insecure_channel_create ("blah://blah", nullptr, nullptr);
+  GPR_ASSERT (chan != nullptr);
 
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel_element* elem =
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
-  GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
+  grpc_channel_element *elem =
+    grpc_channel_stack_element (grpc_channel_get_channel_stack (chan), 0);
+  GPR_ASSERT (0 == strcmp (elem->filter->name, "lame-client"));
 
-  grpc_channel_destroy(chan);
+  grpc_channel_destroy (chan);
 }
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  grpc_init();
-  test_unknown_scheme_target();
-  grpc_shutdown();
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  grpc_init ();
+  test_unknown_scheme_target ();
+  grpc_shutdown ();
   return 0;
 }

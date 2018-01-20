@@ -19,34 +19,57 @@
 #ifndef GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
 #define GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
 
-namespace grpc_core {
+namespace grpc_core
+{
 
 // Used for tracking file and line where a call is made for debug builds.
 // No-op for non-debug builds.
 // Callers can use the DEBUG_LOCATION macro in either case.
 #ifndef NDEBUG
-class DebugLocation {
- public:
-  DebugLocation(const char* file, int line) : file_(file), line_(line) {}
-  bool Log() const { return true; }
-  const char* file() const { return file_; }
-  int line() const { return line_; }
+  class DebugLocation
+  {
+  public:
+    DebugLocation (const char *file, int line):file_ (file), line_ (line)
+    {
+    }
+    bool Log () const
+    {
+      return true;
+    }
+    const char *file () const
+    {
+      return file_;
+    }
+    int line () const
+    {
+      return line_;
+    }
 
- private:
-  const char* file_;
-  const int line_;
-};
+  private:
+    const char *file_;
+    const int line_;
+  };
 #define DEBUG_LOCATION ::grpc_core::DebugLocation(__FILE__, __LINE__)
 #else
-class DebugLocation {
- public:
-  bool Log() const { return false; }
-  const char* file() const { return nullptr; }
-  int line() const { return -1; }
-};
+  class DebugLocation
+  {
+  public:
+    bool Log () const
+    {
+      return false;
+    }
+    const char *file () const
+    {
+      return nullptr;
+    }
+    int line () const
+    {
+      return -1;
+    }
+  };
 #define DEBUG_LOCATION ::grpc_core::DebugLocation()
 #endif
 
-}  // namespace grpc_core
+}				// namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H */
+#endif				/* GRPC_CORE_LIB_GPRPP_DEBUG_LOCATION_H */

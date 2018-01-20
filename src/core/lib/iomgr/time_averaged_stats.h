@@ -24,7 +24,8 @@
    weighted mean.  It is designed for batch operations where we do many adds
    before updating the average. */
 
-typedef struct {
+typedef struct
+{
   /* The initial average value.  This is the reported average until the first
      grpc_time_averaged_stats_update_average call.  If a positive regress_weight
      is used, we also regress towards this value on each update. */
@@ -60,14 +61,15 @@ typedef struct {
 
 /* See the comments on the members above for an explanation of init_avg,
    regress_weight, and persistence_factor. */
-void grpc_time_averaged_stats_init(grpc_time_averaged_stats* stats,
-                                   double init_avg, double regress_weight,
-                                   double persistence_factor);
+void grpc_time_averaged_stats_init (grpc_time_averaged_stats * stats,
+				    double init_avg, double regress_weight,
+				    double persistence_factor);
 /* Add a sample to the current batch. */
-void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats* stats,
-                                         double value);
+void grpc_time_averaged_stats_add_sample (grpc_time_averaged_stats * stats,
+					  double value);
 /* Complete a batch and compute the new estimate of the average sample
    value. */
-double grpc_time_averaged_stats_update_average(grpc_time_averaged_stats* stats);
+double grpc_time_averaged_stats_update_average (grpc_time_averaged_stats *
+						stats);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIME_AVERAGED_STATS_H */

@@ -23,77 +23,94 @@
 
 #include <grpc++/impl/codegen/slice.h>
 
-namespace grpc {
+namespace grpc
+{
 
 // MetadataBatch
 
-grpc_linked_mdelem* MetadataBatch::AddMetadata(const string& key,
-                                               const string& value) {
-  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
-  memset(storage, 0, sizeof(grpc_linked_mdelem));
-  storage->md = grpc_mdelem_from_slices(SliceFromCopiedString(key),
-                                        SliceFromCopiedString(value));
-  GRPC_LOG_IF_ERROR("MetadataBatch::AddMetadata",
-                    grpc_metadata_batch_link_head(batch_, storage));
-  return storage;
-}
+  grpc_linked_mdelem *MetadataBatch::AddMetadata (const string & key,
+						  const string & value)
+  {
+    grpc_linked_mdelem *storage = new grpc_linked_mdelem;
+      memset (storage, 0, sizeof (grpc_linked_mdelem));
+      storage->md = grpc_mdelem_from_slices (SliceFromCopiedString (key),
+					     SliceFromCopiedString (value));
+      GRPC_LOG_IF_ERROR ("MetadataBatch::AddMetadata",
+			 grpc_metadata_batch_link_head (batch_, storage));
+      return storage;
+  }
 
 // ChannelData
 
-void ChannelData::StartTransportOp(grpc_channel_element* elem,
-                                   TransportOp* op) {
-  grpc_channel_next_op(elem, op->op());
-}
+  void ChannelData::StartTransportOp (grpc_channel_element * elem,
+				      TransportOp * op)
+  {
+    grpc_channel_next_op (elem, op->op ());
+  }
 
-void ChannelData::GetInfo(grpc_channel_element* elem,
-                          const grpc_channel_info* channel_info) {
-  grpc_channel_next_get_info(elem, channel_info);
-}
+  void ChannelData::GetInfo (grpc_channel_element * elem,
+			     const grpc_channel_info * channel_info)
+  {
+    grpc_channel_next_get_info (elem, channel_info);
+  }
 
 // CallData
 
-void CallData::StartTransportStreamOpBatch(grpc_call_element* elem,
-                                           TransportStreamOpBatch* op) {
-  grpc_call_next_op(elem, op->op());
-}
+  void CallData::StartTransportStreamOpBatch (grpc_call_element * elem,
+					      TransportStreamOpBatch * op)
+  {
+    grpc_call_next_op (elem, op->op ());
+  }
 
-void CallData::SetPollsetOrPollsetSet(grpc_call_element* elem,
-                                      grpc_polling_entity* pollent) {
-  grpc_call_stack_ignore_set_pollset_or_pollset_set(elem, pollent);
-}
+  void CallData::SetPollsetOrPollsetSet (grpc_call_element * elem,
+					 grpc_polling_entity * pollent)
+  {
+    grpc_call_stack_ignore_set_pollset_or_pollset_set (elem, pollent);
+  }
 
 // internal code used by RegisterChannelFilter()
 
-namespace internal {
+  namespace internal
+  {
 
 // Note: Implicitly initialized to nullptr due to static lifetime.
-std::vector<FilterRecord>* channel_filters;
+    std::vector < FilterRecord > *channel_filters;
 
-namespace {
+    namespace
+    {
 
-bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* arg) {
-  const FilterRecord& filter = *(FilterRecord*)arg;
-  if (filter.include_filter) {
-    const grpc_channel_args* args =
-        grpc_channel_stack_builder_get_channel_arguments(builder);
-    if (!filter.include_filter(*args)) return true;
-  }
-  return grpc_channel_stack_builder_prepend_filter(builder, &filter.filter,
-                                                   nullptr, nullptr);
-}
+      bool MaybeAddFilter (grpc_channel_stack_builder * builder, void *arg)
+      {
+	const FilterRecord & filter = *(FilterRecord *) arg;
+	if (filter.include_filter)
+	  {
+	    const grpc_channel_args *args =
+	      grpc_channel_stack_builder_get_channel_arguments (builder);
+	    if (!filter.include_filter (*args))
+	        return true;
+	  }
+	return grpc_channel_stack_builder_prepend_filter (builder,
+							  &filter.filter,
+							  nullptr, nullptr);
+      }
 
-}  // namespace
+    }				// namespace
 
-void ChannelFilterPluginInit() {
-  for (size_t i = 0; i < channel_filters->size(); ++i) {
-    FilterRecord& filter = (*channel_filters)[i];
-    grpc_channel_init_register_stage(filter.stack_type, filter.priority,
-                                     MaybeAddFilter, (void*)&filter);
-  }
-}
+    void ChannelFilterPluginInit ()
+    {
+      for (size_t i = 0; i < channel_filters->size (); ++i)
+	{
+	  FilterRecord & filter = (*channel_filters)[i];
+	  grpc_channel_init_register_stage (filter.stack_type,
+					    filter.priority, MaybeAddFilter,
+					    (void *) &filter);
+	}
+    }
 
-void ChannelFilterPluginShutdown() {}
+    void ChannelFilterPluginShutdown ()
+    {
+    }
 
-}  // namespace internal
+  }				// namespace internal
 
-}  // namespace grpc
+}				// namespace grpc

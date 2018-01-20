@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/async_stream.h>
 
-#endif  // GRPCXX_SUPPORT_ASYNC_STREAM_H
+#endif // GRPCXX_SUPPORT_ASYNC_STREAM_H

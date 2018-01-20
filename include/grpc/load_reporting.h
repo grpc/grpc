@@ -22,7 +22,8 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /** Metadata key for the gRPC LB load balancer token.
@@ -45,4 +46,4 @@ extern "C" {
 }
 #endif
 
-#endif /* GRPC_LOAD_REPORTING_H */
+#endif				/* GRPC_LOAD_REPORTING_H */

@@ -34,126 +34,164 @@
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-class Server {
- public:
-  explicit Server(const ServerConfig& config)
-      : timer_(new UsageTimer), last_reset_poll_count_(0) {
-    cores_ = gpr_cpu_num_cores();
-    if (config.port()) {  // positive for a fixed port, negative for inproc
-      port_ = config.port();
-    } else {  // zero for dynamic port
-      port_ = grpc_pick_unused_port_or_die();
-    }
-  }
-  virtual ~Server() {}
-
-  ServerStats Mark(bool reset) {
-    UsageTimer::Result timer_result;
-    int cur_poll_count = GetPollCount();
-    int poll_count = cur_poll_count - last_reset_poll_count_;
-    if (reset) {
-      std::unique_ptr<UsageTimer> timer(new UsageTimer);
-      timer.swap(timer_);
-      timer_result = timer->Mark();
-      last_reset_poll_count_ = cur_poll_count;
-    } else {
-      timer_result = timer_->Mark();
-    }
-
-    grpc_stats_data core_stats;
-    grpc_stats_collect(&core_stats);
-
-    ServerStats stats;
-    stats.set_time_elapsed(timer_result.wall);
-    stats.set_time_system(timer_result.system);
-    stats.set_time_user(timer_result.user);
-    stats.set_total_cpu_time(timer_result.total_cpu_time);
-    stats.set_idle_cpu_time(timer_result.idle_cpu_time);
-    stats.set_cq_poll_count(poll_count);
-    CoreStatsToProto(core_stats, stats.mutable_core_stats());
-    return stats;
-  }
-
-  static bool SetPayload(PayloadType type, int size, Payload* payload) {
-    // TODO(yangg): Support UNCOMPRESSABLE payload.
-    if (type != PayloadType::COMPRESSABLE) {
-      return false;
-    }
-    payload->set_type(type);
-    // Don't waste time creating a new payload of identical size.
-    if (payload->body().length() != (size_t)size) {
-      std::unique_ptr<char[]> body(new char[size]());
-      payload->set_body(body.get(), size);
-    }
-    return true;
-  }
-
-  int port() const { return port_; }
-  int cores() const { return cores_; }
-  static std::shared_ptr<ServerCredentials> CreateServerCredentials(
-      const ServerConfig& config) {
-    if (config.has_security_params()) {
-      grpc::string type;
-      if (config.security_params().cred_type().empty()) {
-        type = kTlsCredentialsType;
-      } else {
-        type = config.security_params().cred_type();
+    class Server
+    {
+    public:
+      explicit Server (const ServerConfig & config):timer_ (new UsageTimer),
+	last_reset_poll_count_ (0)
+      {
+	cores_ = gpr_cpu_num_cores ();
+	if (config.port ())
+	  {			// positive for a fixed port, negative for inproc
+	    port_ = config.port ();
+	  }
+	else
+	  {			// zero for dynamic port
+	    port_ = grpc_pick_unused_port_or_die ();
+	  }
+      }
+      virtual ~ Server ()
+      {
       }
 
-      return GetCredentialsProvider()->GetServerCredentials(type);
-    } else {
-      return InsecureServerCredentials();
-    }
-  }
+      ServerStats Mark (bool reset)
+      {
+	UsageTimer::Result timer_result;
+	int cur_poll_count = GetPollCount ();
+	int poll_count = cur_poll_count - last_reset_poll_count_;
+	if (reset)
+	  {
+	    std::unique_ptr < UsageTimer > timer (new UsageTimer);
+	    timer.swap (timer_);
+	    timer_result = timer->Mark ();
+	    last_reset_poll_count_ = cur_poll_count;
+	  }
+	else
+	  {
+	    timer_result = timer_->Mark ();
+	  }
 
-  virtual int GetPollCount() {
-    // For sync server.
-    return 0;
-  }
+	grpc_stats_data core_stats;
+	grpc_stats_collect (&core_stats);
 
-  virtual std::shared_ptr<Channel> InProcessChannel(
-      const ChannelArguments& args) = 0;
-
- protected:
-  static void ApplyConfigToBuilder(const ServerConfig& config,
-                                   ServerBuilder* builder) {
-    if (config.resource_quota_size() > 0) {
-      builder->SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
-                                    .Resize(config.resource_quota_size()));
-    }
-    for (const auto& channel_arg : config.channel_args()) {
-      switch (channel_arg.value_case()) {
-        case ChannelArg::kStrValue:
-          builder->AddChannelArgument(channel_arg.name(),
-                                      channel_arg.str_value());
-          break;
-        case ChannelArg::kIntValue:
-          builder->AddChannelArgument(channel_arg.name(),
-                                      channel_arg.int_value());
-          break;
-        case ChannelArg::VALUE_NOT_SET:
-          gpr_log(GPR_ERROR, "Channel arg '%s' does not have a value",
-                  channel_arg.name().c_str());
-          break;
+	ServerStats stats;
+	stats.set_time_elapsed (timer_result.wall);
+	stats.set_time_system (timer_result.system);
+	stats.set_time_user (timer_result.user);
+	stats.set_total_cpu_time (timer_result.total_cpu_time);
+	stats.set_idle_cpu_time (timer_result.idle_cpu_time);
+	stats.set_cq_poll_count (poll_count);
+	CoreStatsToProto (core_stats, stats.mutable_core_stats ());
+	return stats;
       }
-    }
-  }
 
- private:
-  int port_;
-  int cores_;
-  std::unique_ptr<UsageTimer> timer_;
-  int last_reset_poll_count_;
-};
+      static bool SetPayload (PayloadType type, int size, Payload * payload)
+      {
+	// TODO(yangg): Support UNCOMPRESSABLE payload.
+	if (type != PayloadType::COMPRESSABLE)
+	  {
+	    return false;
+	  }
+	payload->set_type (type);
+	// Don't waste time creating a new payload of identical size.
+	if (payload->body ().length () != (size_t) size)
+	  {
+	    std::unique_ptr < char[] > body (new char[size] ());
+	    payload->set_body (body.get (), size);
+	  }
+	return true;
+      }
 
-std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
-std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config);
-std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig& config);
+      int port () const
+      {
+	return port_;
+      }
+      int cores () const
+      {
+	return cores_;
+      }
+      static std::shared_ptr < ServerCredentials >
+	CreateServerCredentials (const ServerConfig & config)
+      {
+	if (config.has_security_params ())
+	  {
+	    grpc::string type;
+	    if (config.security_params ().cred_type ().empty ())
+	      {
+		type = kTlsCredentialsType;
+	      }
+	    else
+	      {
+		type = config.security_params ().cred_type ();
+	      }
 
-}  // namespace testing
-}  // namespace grpc
+	    return GetCredentialsProvider ()->GetServerCredentials (type);
+	  }
+	else
+	  {
+	    return InsecureServerCredentials ();
+	  }
+      }
+
+      virtual int GetPollCount ()
+      {
+	// For sync server.
+	return 0;
+      }
+
+      virtual std::shared_ptr < Channel >
+	InProcessChannel (const ChannelArguments & args) = 0;
+
+    protected:
+      static void ApplyConfigToBuilder (const ServerConfig & config,
+					ServerBuilder * builder)
+      {
+	if (config.resource_quota_size () > 0)
+	  {
+	    builder->SetResourceQuota (ResourceQuota ("AsyncQpsServerTest").
+				       Resize (config.
+					       resource_quota_size ()));
+	  }
+      for (const auto & channel_arg:config.channel_args ())
+	  {
+	    switch (channel_arg.value_case ())
+	      {
+	      case ChannelArg::kStrValue:
+		builder->AddChannelArgument (channel_arg.name (),
+					     channel_arg.str_value ());
+		break;
+	      case ChannelArg::kIntValue:
+		builder->AddChannelArgument (channel_arg.name (),
+					     channel_arg.int_value ());
+		break;
+	      case ChannelArg::VALUE_NOT_SET:
+		gpr_log (GPR_ERROR, "Channel arg '%s' does not have a value",
+			 channel_arg.name ().c_str ());
+		break;
+	      }
+	  }
+      }
+
+    private:
+      int port_;
+      int cores_;
+      std::unique_ptr < UsageTimer > timer_;
+      int last_reset_poll_count_;
+    };
+
+    std::unique_ptr < Server >
+      CreateSynchronousServer (const ServerConfig & config);
+    std::unique_ptr < Server >
+      CreateAsyncServer (const ServerConfig & config);
+    std::unique_ptr < Server >
+      CreateAsyncGenericServer (const ServerConfig & config);
+
+  }				// namespace testing
+}				// namespace grpc
 
 #endif

@@ -24,169 +24,208 @@
 
 #include "test/core/util/test_config.h"
 
-namespace grpc {
-namespace {
+namespace grpc
+{
+  namespace
+  {
 
-TEST(AlarmTest, RegularExpiry) {
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  Alarm alarm;
-  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+    TEST (AlarmTest, RegularExpiry)
+    {
+      CompletionQueue cq;
+      void *junk = reinterpret_cast < void *>(1618033);
+      Alarm alarm;
+        alarm.Set (&cq, grpc_timeout_seconds_to_deadline (1), junk);
 
-  void* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+      void *output_tag;
+      bool ok;
+      const CompletionQueue::NextStatus status = cq.AsyncNext ((void **)
+							       &output_tag,
+							       &ok,
+							       grpc_timeout_seconds_to_deadline
+							       (2));
 
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
+        EXPECT_EQ (status, CompletionQueue::GOT_EVENT);
+        EXPECT_TRUE (ok);
+        EXPECT_EQ (junk, output_tag);
+    }
 
-TEST(AlarmTest, MultithreadedRegularExpiry) {
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  void* output_tag;
-  bool ok;
-  CompletionQueue::NextStatus status;
-  Alarm alarm;
+    TEST (AlarmTest, MultithreadedRegularExpiry)
+    {
+      CompletionQueue cq;
+      void *junk = reinterpret_cast < void *>(1618033);
+      void *output_tag;
+      bool ok;
+      CompletionQueue::NextStatus status;
+      Alarm alarm;
 
-  std::thread t1([&alarm, &cq, &junk] {
-    alarm.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
-  });
+      std::thread t1 ([&alarm, &cq, &junk]
+		      {
+		      alarm.Set (&cq, grpc_timeout_seconds_to_deadline (1),
+				 junk);});
 
-  std::thread t2([&cq, &ok, &output_tag, &status] {
-    status = cq.AsyncNext((void**)&output_tag, &ok,
-                          grpc_timeout_seconds_to_deadline(2));
-  });
+      std::thread t2 ([&cq, &ok, &output_tag, &status]
+		      {
+		      status = cq.AsyncNext ((void **) &output_tag, &ok,
+					     grpc_timeout_seconds_to_deadline
+					     (2));});
 
-  t1.join();
-  t2.join();
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
+      t1.join ();
+      t2.join ();
+      EXPECT_EQ (status, CompletionQueue::GOT_EVENT);
+      EXPECT_TRUE (ok);
+      EXPECT_EQ (junk, output_tag);
+    }
 
-TEST(AlarmTest, DeprecatedRegularExpiry) {
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  Alarm alarm(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+    TEST (AlarmTest, DeprecatedRegularExpiry)
+    {
+      CompletionQueue cq;
+      void *junk = reinterpret_cast < void *>(1618033);
+      Alarm alarm (&cq, grpc_timeout_seconds_to_deadline (1), junk);
 
-  void* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+      void *output_tag;
+      bool ok;
+      const CompletionQueue::NextStatus status = cq.AsyncNext ((void **)
+							       &output_tag,
+							       &ok,
+							       grpc_timeout_seconds_to_deadline
+							       (2));
 
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
+      EXPECT_EQ (status, CompletionQueue::GOT_EVENT);
+      EXPECT_TRUE (ok);
+      EXPECT_EQ (junk, output_tag);
+    }
 
-TEST(AlarmTest, MoveConstructor) {
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  Alarm first;
-  first.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
-  Alarm second(std::move(first));
-  void* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
+    TEST (AlarmTest, MoveConstructor)
+    {
+      CompletionQueue cq;
+      void *junk = reinterpret_cast < void *>(1618033);
+      Alarm first;
+      first.Set (&cq, grpc_timeout_seconds_to_deadline (1), junk);
+      Alarm second (std::move (first));
+      void *output_tag;
+      bool ok;
+      const CompletionQueue::NextStatus status = cq.AsyncNext ((void **)
+							       &output_tag,
+							       &ok,
+							       grpc_timeout_seconds_to_deadline
+							       (2));
+      EXPECT_EQ (status, CompletionQueue::GOT_EVENT);
+      EXPECT_TRUE (ok);
+      EXPECT_EQ (junk, output_tag);
+    }
 
-TEST(AlarmTest, MoveAssignment) {
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  Alarm first;
-  first.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
-  Alarm second(std::move(first));
-  first = std::move(second);
+    TEST (AlarmTest, MoveAssignment)
+    {
+      CompletionQueue cq;
+      void *junk = reinterpret_cast < void *>(1618033);
+      Alarm first;
+      first.Set (&cq, grpc_timeout_seconds_to_deadline (1), junk);
+      Alarm second (std::move (first));
+      first = std::move (second);
 
-  void* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+      void *output_tag;
+      bool ok;
+      const CompletionQueue::NextStatus status = cq.AsyncNext ((void **)
+							       &output_tag,
+							       &ok,
+							       grpc_timeout_seconds_to_deadline
+							       (2));
 
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
+      EXPECT_EQ (status, CompletionQueue::GOT_EVENT);
+      EXPECT_TRUE (ok);
+      EXPECT_EQ (junk, output_tag);
+    }
 
-TEST(AlarmTest, RegularExpiryChrono) {
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  std::chrono::system_clock::time_point one_sec_deadline =
-      std::chrono::system_clock::now() + std::chrono::seconds(1);
-  Alarm alarm;
-  alarm.Set(&cq, one_sec_deadline, junk);
+    TEST (AlarmTest, RegularExpiryChrono)
+    {
+      CompletionQueue cq;
+      void *junk = reinterpret_cast < void *>(1618033);
+      std::chrono::system_clock::time_point one_sec_deadline =
+	std::chrono::system_clock::now () + std::chrono::seconds (1);
+      Alarm alarm;
+      alarm.Set (&cq, one_sec_deadline, junk);
 
-  void* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+      void *output_tag;
+      bool ok;
+      const CompletionQueue::NextStatus status = cq.AsyncNext ((void **)
+							       &output_tag,
+							       &ok,
+							       grpc_timeout_seconds_to_deadline
+							       (2));
 
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
+      EXPECT_EQ (status, CompletionQueue::GOT_EVENT);
+      EXPECT_TRUE (ok);
+      EXPECT_EQ (junk, output_tag);
+    }
 
-TEST(AlarmTest, ZeroExpiry) {
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  Alarm alarm;
-  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(0), junk);
+    TEST (AlarmTest, ZeroExpiry)
+    {
+      CompletionQueue cq;
+      void *junk = reinterpret_cast < void *>(1618033);
+      Alarm alarm;
+      alarm.Set (&cq, grpc_timeout_seconds_to_deadline (0), junk);
 
-  void* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+      void *output_tag;
+      bool ok;
+      const CompletionQueue::NextStatus status = cq.AsyncNext ((void **)
+							       &output_tag,
+							       &ok,
+							       grpc_timeout_seconds_to_deadline
+							       (1));
 
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
+      EXPECT_EQ (status, CompletionQueue::GOT_EVENT);
+      EXPECT_TRUE (ok);
+      EXPECT_EQ (junk, output_tag);
+    }
 
-TEST(AlarmTest, NegativeExpiry) {
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  Alarm alarm;
-  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(-1), junk);
+    TEST (AlarmTest, NegativeExpiry)
+    {
+      CompletionQueue cq;
+      void *junk = reinterpret_cast < void *>(1618033);
+      Alarm alarm;
+      alarm.Set (&cq, grpc_timeout_seconds_to_deadline (-1), junk);
 
-  void* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+      void *output_tag;
+      bool ok;
+      const CompletionQueue::NextStatus status = cq.AsyncNext ((void **)
+							       &output_tag,
+							       &ok,
+							       grpc_timeout_seconds_to_deadline
+							       (1));
 
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
+      EXPECT_EQ (status, CompletionQueue::GOT_EVENT);
+      EXPECT_TRUE (ok);
+      EXPECT_EQ (junk, output_tag);
+    }
 
-TEST(AlarmTest, Cancellation) {
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  Alarm alarm;
-  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(2), junk);
-  alarm.Cancel();
+    TEST (AlarmTest, Cancellation)
+    {
+      CompletionQueue cq;
+      void *junk = reinterpret_cast < void *>(1618033);
+      Alarm alarm;
+      alarm.Set (&cq, grpc_timeout_seconds_to_deadline (2), junk);
+      alarm.Cancel ();
 
-  void* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+      void *output_tag;
+      bool ok;
+      const CompletionQueue::NextStatus status = cq.AsyncNext ((void **)
+							       &output_tag,
+							       &ok,
+							       grpc_timeout_seconds_to_deadline
+							       (1));
 
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_FALSE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
+      EXPECT_EQ (status, CompletionQueue::GOT_EVENT);
+      EXPECT_FALSE (ok);
+      EXPECT_EQ (junk, output_tag);
+    }
 
-}  // namespace
-}  // namespace grpc
+  }				// namespace
+}				// namespace grpc
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  ::testing::InitGoogleTest (&argc, argv);
+  return RUN_ALL_TESTS ();
 }

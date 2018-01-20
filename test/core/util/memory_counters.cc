@@ -27,9 +27,9 @@
 static struct grpc_memory_counters g_memory_counters;
 static gpr_allocation_functions g_old_allocs;
 
-static void* guard_malloc(size_t size);
-static void* guard_realloc(void* vptr, size_t size);
-static void guard_free(void* vptr);
+static void *guard_malloc (size_t size);
+static void *guard_realloc (void *vptr, size_t size);
+static void guard_free (void *vptr);
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
 /* hide these from the microbenchmark atomic stats */
@@ -41,68 +41,95 @@ static void guard_free(void* vptr);
 #define NO_BARRIER_LOAD(x) gpr_atm_no_barrier_load(x)
 #endif
 
-static void* guard_malloc(size_t size) {
-  size_t* ptr;
-  if (!size) return nullptr;
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  ptr = (size_t*)g_old_allocs.malloc_fn(size + sizeof(size));
-  *ptr++ = size;
-  return ptr;
-}
-
-static void* guard_realloc(void* vptr, size_t size) {
-  size_t* ptr = (size_t*)vptr;
-  if (vptr == nullptr) {
-    return guard_malloc(size);
-  }
-  if (size == 0) {
-    guard_free(vptr);
+static void *
+guard_malloc (size_t size)
+{
+  size_t *ptr;
+  if (!size)
     return nullptr;
-  }
-  --ptr;
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
-  ptr = (size_t*)g_old_allocs.realloc_fn(ptr, size + sizeof(size));
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_size_absolute,
+			(gpr_atm) size);
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_size_relative,
+			(gpr_atm) size);
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_allocs_absolute,
+			(gpr_atm) 1);
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_allocs_relative,
+			(gpr_atm) 1);
+  ptr = (size_t *) g_old_allocs.malloc_fn (size + sizeof (size));
   *ptr++ = size;
   return ptr;
 }
 
-static void guard_free(void* vptr) {
-  size_t* ptr = (size_t*)vptr;
-  if (!vptr) return;
+static void *
+guard_realloc (void *vptr, size_t size)
+{
+  size_t *ptr = (size_t *) vptr;
+  if (vptr == nullptr)
+    {
+      return guard_malloc (size);
+    }
+  if (size == 0)
+    {
+      guard_free (vptr);
+      return nullptr;
+    }
   --ptr;
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, -(gpr_atm)1);
-  g_old_allocs.free_fn(ptr);
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_size_absolute,
+			(gpr_atm) size);
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_size_relative,
+			-(gpr_atm) * ptr);
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_size_relative,
+			(gpr_atm) size);
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_allocs_absolute,
+			(gpr_atm) 1);
+  ptr = (size_t *) g_old_allocs.realloc_fn (ptr, size + sizeof (size));
+  *ptr++ = size;
+  return ptr;
 }
 
-struct gpr_allocation_functions g_guard_allocs = {guard_malloc, nullptr,
-                                                  guard_realloc, guard_free};
-
-void grpc_memory_counters_init() {
-  memset(&g_memory_counters, 0, sizeof(g_memory_counters));
-  g_old_allocs = gpr_get_allocation_functions();
-  gpr_set_allocation_functions(g_guard_allocs);
+static void
+guard_free (void *vptr)
+{
+  size_t *ptr = (size_t *) vptr;
+  if (!vptr)
+    return;
+  --ptr;
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_size_relative,
+			-(gpr_atm) * ptr);
+  NO_BARRIER_FETCH_ADD (&g_memory_counters.total_allocs_relative,
+			-(gpr_atm) 1);
+  g_old_allocs.free_fn (ptr);
 }
 
-void grpc_memory_counters_destroy() {
-  gpr_set_allocation_functions(g_old_allocs);
+struct gpr_allocation_functions g_guard_allocs = { guard_malloc, nullptr,
+  guard_realloc, guard_free
+};
+
+void
+grpc_memory_counters_init ()
+{
+  memset (&g_memory_counters, 0, sizeof (g_memory_counters));
+  g_old_allocs = gpr_get_allocation_functions ();
+  gpr_set_allocation_functions (g_guard_allocs);
 }
 
-struct grpc_memory_counters grpc_memory_counters_snapshot() {
+void
+grpc_memory_counters_destroy ()
+{
+  gpr_set_allocation_functions (g_old_allocs);
+}
+
+struct grpc_memory_counters
+grpc_memory_counters_snapshot ()
+{
   struct grpc_memory_counters counters;
   counters.total_size_relative =
-      NO_BARRIER_LOAD(&g_memory_counters.total_size_relative);
+    NO_BARRIER_LOAD (&g_memory_counters.total_size_relative);
   counters.total_size_absolute =
-      NO_BARRIER_LOAD(&g_memory_counters.total_size_absolute);
+    NO_BARRIER_LOAD (&g_memory_counters.total_size_absolute);
   counters.total_allocs_relative =
-      NO_BARRIER_LOAD(&g_memory_counters.total_allocs_relative);
+    NO_BARRIER_LOAD (&g_memory_counters.total_allocs_relative);
   counters.total_allocs_absolute =
-      NO_BARRIER_LOAD(&g_memory_counters.total_allocs_absolute);
+    NO_BARRIER_LOAD (&g_memory_counters.total_allocs_absolute);
   return counters;
 }

@@ -29,23 +29,26 @@
 bool squelch = true;
 bool leak_check = true;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  char* s = static_cast<char*>(gpr_malloc(size + 1));
-  memcpy(s, data, size);
+extern "C" int
+LLVMFuzzerTestOneInput (const uint8_t * data, size_t size)
+{
+  char *s = static_cast < char *>(gpr_malloc (size + 1));
+  memcpy (s, data, size);
   s[size] = 0;
 
-  grpc_init();
+  grpc_init ();
 
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_uri* x;
-    if ((x = grpc_uri_parse(s, 1))) {
-      grpc_uri_destroy(x);
-    }
+    grpc_uri *x;
+    if ((x = grpc_uri_parse (s, 1)))
+      {
+	grpc_uri_destroy (x);
+      }
 
-    gpr_free(s);
+    gpr_free (s);
   }
 
-  grpc_shutdown();
+  grpc_shutdown ();
   return 0;
 }

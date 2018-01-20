@@ -239,7 +239,7 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 
 extern const grpc_slice_refcount_vtable grpc_static_metadata_vtable;
 extern grpc_slice_refcount
-    grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];
+  grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_IS_STATIC_METADATA_STRING(slice) \
   ((slice).refcount != NULL &&                \
    (slice).refcount->vtable == &grpc_static_metadata_vtable)
@@ -509,8 +509,9 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 #define GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
   (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[85], GRPC_MDELEM_STORAGE_STATIC))
 
-grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);
-typedef enum {
+grpc_mdelem grpc_static_mdelem_for_static_strings (int a, int b);
+typedef enum
+{
   GRPC_BATCH_PATH,
   GRPC_BATCH_METHOD,
   GRPC_BATCH_STATUS,
@@ -536,31 +537,33 @@ typedef enum {
   GRPC_BATCH_CALLOUTS_COUNT
 } grpc_metadata_batch_callouts_index;
 
-typedef union {
-  struct grpc_linked_mdelem* array[GRPC_BATCH_CALLOUTS_COUNT];
-  struct {
-    struct grpc_linked_mdelem* path;
-    struct grpc_linked_mdelem* method;
-    struct grpc_linked_mdelem* status;
-    struct grpc_linked_mdelem* authority;
-    struct grpc_linked_mdelem* scheme;
-    struct grpc_linked_mdelem* te;
-    struct grpc_linked_mdelem* grpc_message;
-    struct grpc_linked_mdelem* grpc_status;
-    struct grpc_linked_mdelem* grpc_payload_bin;
-    struct grpc_linked_mdelem* grpc_encoding;
-    struct grpc_linked_mdelem* grpc_accept_encoding;
-    struct grpc_linked_mdelem* grpc_server_stats_bin;
-    struct grpc_linked_mdelem* grpc_tags_bin;
-    struct grpc_linked_mdelem* grpc_trace_bin;
-    struct grpc_linked_mdelem* content_type;
-    struct grpc_linked_mdelem* content_encoding;
-    struct grpc_linked_mdelem* accept_encoding;
-    struct grpc_linked_mdelem* grpc_internal_encoding_request;
-    struct grpc_linked_mdelem* grpc_internal_stream_encoding_request;
-    struct grpc_linked_mdelem* user_agent;
-    struct grpc_linked_mdelem* host;
-    struct grpc_linked_mdelem* lb_token;
+typedef union
+{
+  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];
+  struct
+  {
+    struct grpc_linked_mdelem *path;
+    struct grpc_linked_mdelem *method;
+    struct grpc_linked_mdelem *status;
+    struct grpc_linked_mdelem *authority;
+    struct grpc_linked_mdelem *scheme;
+    struct grpc_linked_mdelem *te;
+    struct grpc_linked_mdelem *grpc_message;
+    struct grpc_linked_mdelem *grpc_status;
+    struct grpc_linked_mdelem *grpc_payload_bin;
+    struct grpc_linked_mdelem *grpc_encoding;
+    struct grpc_linked_mdelem *grpc_accept_encoding;
+    struct grpc_linked_mdelem *grpc_server_stats_bin;
+    struct grpc_linked_mdelem *grpc_tags_bin;
+    struct grpc_linked_mdelem *grpc_trace_bin;
+    struct grpc_linked_mdelem *content_type;
+    struct grpc_linked_mdelem *content_encoding;
+    struct grpc_linked_mdelem *accept_encoding;
+    struct grpc_linked_mdelem *grpc_internal_encoding_request;
+    struct grpc_linked_mdelem *grpc_internal_stream_encoding_request;
+    struct grpc_linked_mdelem *user_agent;
+    struct grpc_linked_mdelem *host;
+    struct grpc_linked_mdelem *lb_token;
   } named;
 } grpc_metadata_batch_callouts;
 

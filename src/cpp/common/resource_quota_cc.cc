@@ -19,18 +19,30 @@
 #include <grpc++/resource_quota.h>
 #include <grpc/grpc.h>
 
-namespace grpc {
+namespace grpc
+{
 
-ResourceQuota::ResourceQuota() : impl_(grpc_resource_quota_create(nullptr)) {}
+  ResourceQuota::ResourceQuota ():impl_ (grpc_resource_quota_create (nullptr))
+  {
+  }
 
-ResourceQuota::ResourceQuota(const grpc::string& name)
-    : impl_(grpc_resource_quota_create(name.c_str())) {}
+  ResourceQuota::ResourceQuota (const grpc::
+				string &
+				name):impl_ (grpc_resource_quota_create (name.
+									 c_str
+									 ()))
+  {
+  }
 
-ResourceQuota::~ResourceQuota() { grpc_resource_quota_unref(impl_); }
+  ResourceQuota::~ResourceQuota ()
+  {
+    grpc_resource_quota_unref (impl_);
+  }
 
-ResourceQuota& ResourceQuota::Resize(size_t new_size) {
-  grpc_resource_quota_resize(impl_, new_size);
-  return *this;
-}
+  ResourceQuota & ResourceQuota::Resize (size_t new_size)
+  {
+    grpc_resource_quota_resize (impl_, new_size);
+    return *this;
+  }
 
-}  // namespace grpc
+}				// namespace grpc

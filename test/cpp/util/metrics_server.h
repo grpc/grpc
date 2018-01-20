@@ -45,52 +45,59 @@
  *    std::unique_ptr<grpc::Server> server = metricsImpl.StartServer(port);
  *    server->Wait(); // Note: This is blocking.
  */
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-class QpsGauge {
- public:
-  QpsGauge();
+    class QpsGauge
+    {
+    public:
+      QpsGauge ();
 
-  // Initialize the internal timer and reset the query count to 0
-  void Reset();
+      // Initialize the internal timer and reset the query count to 0
+      void Reset ();
 
-  // Increment the query count by 1
-  void Incr();
+      // Increment the query count by 1
+      void Incr ();
 
-  // Return the current qps (i.e query count divided by the time since this
-  // QpsGauge object created (or Reset() was called))
-  long Get();
+      // Return the current qps (i.e query count divided by the time since this
+      // QpsGauge object created (or Reset() was called))
+      long Get ();
 
- private:
-  gpr_timespec start_time_;
-  long num_queries_;
-  std::mutex num_queries_mu_;
-};
+    private:
+        gpr_timespec start_time_;
+      long num_queries_;
+        std::mutex num_queries_mu_;
+    };
 
-class MetricsServiceImpl final : public MetricsService::Service {
- public:
-  grpc::Status GetAllGauges(ServerContext* context, const EmptyMessage* request,
-                            ServerWriter<GaugeResponse>* writer) override;
+    class MetricsServiceImpl final:public MetricsService::Service
+    {
+    public:
+      grpc::Status GetAllGauges (ServerContext * context,
+				 const EmptyMessage * request,
+				 ServerWriter < GaugeResponse >
+				 *writer) override;
 
-  grpc::Status GetGauge(ServerContext* context, const GaugeRequest* request,
-                        GaugeResponse* response) override;
+        grpc::Status GetGauge (ServerContext * context,
+			       const GaugeRequest * request,
+			       GaugeResponse * response) override;
 
-  // Create a QpsGauge with name 'name'. is_present is set to true if the Gauge
-  // is already present in the map.
-  // NOTE: CreateQpsGauge can be called anytime (i.e before or after calling
-  // StartServer).
-  std::shared_ptr<QpsGauge> CreateQpsGauge(const grpc::string& name,
-                                           bool* already_present);
+      // Create a QpsGauge with name 'name'. is_present is set to true if the Gauge
+      // is already present in the map.
+      // NOTE: CreateQpsGauge can be called anytime (i.e before or after calling
+      // StartServer).
+        std::shared_ptr < QpsGauge >
+	CreateQpsGauge (const grpc::string & name, bool * already_present);
 
-  std::unique_ptr<grpc::Server> StartServer(int port);
+        std::unique_ptr < grpc::Server > StartServer (int port);
 
- private:
-  std::map<string, std::shared_ptr<QpsGauge>> qps_gauges_;
-  std::mutex mu_;
-};
+    private:
+        std::map < string, std::shared_ptr < QpsGauge >> qps_gauges_;
+        std::mutex mu_;
+    };
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_METRICS_SERVER_H
+#endif				// GRPC_TEST_CPP_METRICS_SERVER_H

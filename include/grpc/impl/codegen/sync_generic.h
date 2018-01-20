@@ -23,7 +23,8 @@
 #include <grpc/impl/codegen/atm.h>
 
 /* gpr_event */
-typedef struct {
+typedef struct
+{
   gpr_atm state;
 } gpr_event;
 
@@ -31,12 +32,14 @@ typedef struct {
   { 0 }
 
 /* gpr_refcount */
-typedef struct {
+typedef struct
+{
   gpr_atm count;
 } gpr_refcount;
 
 /* gpr_stats_counter */
-typedef struct {
+typedef struct
+{
   gpr_atm value;
 } gpr_stats_counter;
 

@@ -36,69 +36,88 @@
 
 extern grpc_cv_fd_table g_cvfds;
 
-static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
+static grpc_error *
+cv_fd_init (grpc_wakeup_fd * fd_info)
+{
   unsigned int i, newsize;
   int idx;
-  gpr_mu_lock(&g_cvfds.mu);
-  if (!g_cvfds.free_fds) {
-    newsize = GPR_MIN(g_cvfds.size * 2, g_cvfds.size + MAX_TABLE_RESIZE);
-    g_cvfds.cvfds = (grpc_fd_node*)gpr_realloc(g_cvfds.cvfds,
-                                               sizeof(grpc_fd_node) * newsize);
-    for (i = g_cvfds.size; i < newsize; i++) {
-      g_cvfds.cvfds[i].is_set = 0;
-      g_cvfds.cvfds[i].cvs = nullptr;
-      g_cvfds.cvfds[i].next_free = g_cvfds.free_fds;
-      g_cvfds.free_fds = &g_cvfds.cvfds[i];
+  gpr_mu_lock (&g_cvfds.mu);
+  if (!g_cvfds.free_fds)
+    {
+      newsize = GPR_MIN (g_cvfds.size * 2, g_cvfds.size + MAX_TABLE_RESIZE);
+      g_cvfds.cvfds = (grpc_fd_node *) gpr_realloc (g_cvfds.cvfds,
+						    sizeof (grpc_fd_node) *
+						    newsize);
+      for (i = g_cvfds.size; i < newsize; i++)
+	{
+	  g_cvfds.cvfds[i].is_set = 0;
+	  g_cvfds.cvfds[i].cvs = nullptr;
+	  g_cvfds.cvfds[i].next_free = g_cvfds.free_fds;
+	  g_cvfds.free_fds = &g_cvfds.cvfds[i];
+	}
+      g_cvfds.size = newsize;
     }
-    g_cvfds.size = newsize;
-  }
 
-  idx = (int)(g_cvfds.free_fds - g_cvfds.cvfds);
+  idx = (int) (g_cvfds.free_fds - g_cvfds.cvfds);
   g_cvfds.free_fds = g_cvfds.free_fds->next_free;
   g_cvfds.cvfds[idx].cvs = nullptr;
   g_cvfds.cvfds[idx].is_set = 0;
-  fd_info->read_fd = GRPC_IDX_TO_FD(idx);
+  fd_info->read_fd = GRPC_IDX_TO_FD (idx);
   fd_info->write_fd = -1;
-  gpr_mu_unlock(&g_cvfds.mu);
+  gpr_mu_unlock (&g_cvfds.mu);
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* cv_fd_wakeup(grpc_wakeup_fd* fd_info) {
-  grpc_cv_node* cvn;
-  gpr_mu_lock(&g_cvfds.mu);
-  g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].is_set = 1;
-  cvn = g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].cvs;
-  while (cvn) {
-    gpr_cv_signal(cvn->cv);
-    cvn = cvn->next;
-  }
-  gpr_mu_unlock(&g_cvfds.mu);
+static grpc_error *
+cv_fd_wakeup (grpc_wakeup_fd * fd_info)
+{
+  grpc_cv_node *cvn;
+  gpr_mu_lock (&g_cvfds.mu);
+  g_cvfds.cvfds[GRPC_FD_TO_IDX (fd_info->read_fd)].is_set = 1;
+  cvn = g_cvfds.cvfds[GRPC_FD_TO_IDX (fd_info->read_fd)].cvs;
+  while (cvn)
+    {
+      gpr_cv_signal (cvn->cv);
+      cvn = cvn->next;
+    }
+  gpr_mu_unlock (&g_cvfds.mu);
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* cv_fd_consume(grpc_wakeup_fd* fd_info) {
-  gpr_mu_lock(&g_cvfds.mu);
-  g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].is_set = 0;
-  gpr_mu_unlock(&g_cvfds.mu);
+static grpc_error *
+cv_fd_consume (grpc_wakeup_fd * fd_info)
+{
+  gpr_mu_lock (&g_cvfds.mu);
+  g_cvfds.cvfds[GRPC_FD_TO_IDX (fd_info->read_fd)].is_set = 0;
+  gpr_mu_unlock (&g_cvfds.mu);
   return GRPC_ERROR_NONE;
 }
 
-static void cv_fd_destroy(grpc_wakeup_fd* fd_info) {
-  if (fd_info->read_fd == 0) {
-    return;
-  }
-  gpr_mu_lock(&g_cvfds.mu);
+static void
+cv_fd_destroy (grpc_wakeup_fd * fd_info)
+{
+  if (fd_info->read_fd == 0)
+    {
+      return;
+    }
+  gpr_mu_lock (&g_cvfds.mu);
   // Assert that there are no active pollers
-  GPR_ASSERT(!g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].cvs);
-  g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].next_free = g_cvfds.free_fds;
-  g_cvfds.free_fds = &g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)];
-  gpr_mu_unlock(&g_cvfds.mu);
+  GPR_ASSERT (!g_cvfds.cvfds[GRPC_FD_TO_IDX (fd_info->read_fd)].cvs);
+  g_cvfds.cvfds[GRPC_FD_TO_IDX (fd_info->read_fd)].next_free =
+    g_cvfds.free_fds;
+  g_cvfds.free_fds = &g_cvfds.cvfds[GRPC_FD_TO_IDX (fd_info->read_fd)];
+  gpr_mu_unlock (&g_cvfds.mu);
 }
 
-static int cv_check_availability(void) { return 1; }
+static int
+cv_check_availability (void)
+{
+  return 1;
+}
 
 const grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable = {
-    cv_fd_init, cv_fd_consume, cv_fd_wakeup, cv_fd_destroy,
-    cv_check_availability};
+  cv_fd_init, cv_fd_consume, cv_fd_wakeup, cv_fd_destroy,
+  cv_check_availability
+};
 
 #endif /* GRPC_POSIX_WAKUP_FD */

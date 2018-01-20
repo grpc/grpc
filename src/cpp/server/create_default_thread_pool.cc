@@ -22,23 +22,33 @@
 
 #ifndef GRPC_CUSTOM_DEFAULT_THREAD_POOL
 
-namespace grpc {
-namespace {
+namespace grpc
+{
+  namespace
+  {
 
-ThreadPoolInterface* CreateDefaultThreadPoolImpl() {
-  int cores = gpr_cpu_num_cores();
-  if (!cores) cores = 4;
-  return new DynamicThreadPool(cores);
-}
+    ThreadPoolInterface *CreateDefaultThreadPoolImpl ()
+    {
+      int cores = gpr_cpu_num_cores ();
+      if (!cores)
+	  cores = 4;
+        return new DynamicThreadPool (cores);
+    }
 
-CreateThreadPoolFunc g_ctp_impl = CreateDefaultThreadPoolImpl;
+    CreateThreadPoolFunc g_ctp_impl = CreateDefaultThreadPoolImpl;
 
-}  // namespace
+  }				// namespace
 
-ThreadPoolInterface* CreateDefaultThreadPool() { return g_ctp_impl(); }
+  ThreadPoolInterface *CreateDefaultThreadPool ()
+  {
+    return g_ctp_impl ();
+  }
 
-void SetCreateThreadPool(CreateThreadPoolFunc func) { g_ctp_impl = func; }
+  void SetCreateThreadPool (CreateThreadPoolFunc func)
+  {
+    g_ctp_impl = func;
+  }
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // !GRPC_CUSTOM_DEFAULT_THREAD_POOL
+#endif // !GRPC_CUSTOM_DEFAULT_THREAD_POOL

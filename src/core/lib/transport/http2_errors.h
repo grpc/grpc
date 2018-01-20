@@ -20,7 +20,8 @@
 #define GRPC_CORE_LIB_TRANSPORT_HTTP2_ERRORS_H
 
 /* error codes for RST_STREAM from http2 draft 14 section 7 */
-typedef enum {
+typedef enum
+{
   GRPC_HTTP2_NO_ERROR = 0x0,
   GRPC_HTTP2_PROTOCOL_ERROR = 0x1,
   GRPC_HTTP2_INTERNAL_ERROR = 0x2,

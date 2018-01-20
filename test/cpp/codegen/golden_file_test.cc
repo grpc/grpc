@@ -24,54 +24,65 @@
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
+namespace google
+{
+}
+namespace gflags
+{
+}
 using namespace google;
 using namespace gflags;
 
-DEFINE_string(
-    generated_file_path, "",
-    "path to the directory containing generated files compiler_test.grpc.pb.h"
-    "and compiler_test_mock.grpc.pb.h");
+DEFINE_string (generated_file_path, "",
+	       "path to the directory containing generated files compiler_test.grpc.pb.h"
+	       "and compiler_test_mock.grpc.pb.h");
 
 const char kGoldenFilePath[] = "test/cpp/codegen/compiler_test_golden";
-const char kMockGoldenFilePath[] = "test/cpp/codegen/compiler_test_mock_golden";
+const char kMockGoldenFilePath[] =
+  "test/cpp/codegen/compiler_test_mock_golden";
 
-void run_test(std::basic_string<char> generated_file,
-              std::basic_string<char> golden_file) {
-  std::ifstream generated(generated_file);
-  std::ifstream golden(golden_file);
+void
+run_test (std::basic_string < char >generated_file,
+	  std::basic_string < char >golden_file)
+{
+  std::ifstream generated (generated_file);
+  std::ifstream golden (golden_file);
 
-  ASSERT_TRUE(generated.good());
-  ASSERT_TRUE(golden.good());
+  ASSERT_TRUE (generated.good ());
+  ASSERT_TRUE (golden.good ());
 
   std::ostringstream gen_oss;
   std::ostringstream gold_oss;
-  gen_oss << generated.rdbuf();
-  gold_oss << golden.rdbuf();
-  EXPECT_EQ(gold_oss.str(), gen_oss.str());
+  gen_oss << generated.rdbuf ();
+  gold_oss << golden.rdbuf ();
+  EXPECT_EQ (gold_oss.str (), gen_oss.str ());
 
-  generated.close();
-  golden.close();
+  generated.close ();
+  golden.close ();
 }
 
-TEST(GoldenFileTest, TestGeneratedFile) {
-  run_test(FLAGS_generated_file_path + "compiler_test.grpc.pb.h",
-           kGoldenFilePath);
+TEST (GoldenFileTest, TestGeneratedFile)
+{
+  run_test (FLAGS_generated_file_path + "compiler_test.grpc.pb.h",
+	    kGoldenFilePath);
 }
 
-TEST(GoldenMockFileTest, TestGeneratedMockFile) {
-  run_test(FLAGS_generated_file_path + "compiler_test_mock.grpc.pb.h",
-           kMockGoldenFilePath);
+TEST (GoldenMockFileTest, TestGeneratedMockFile)
+{
+  run_test (FLAGS_generated_file_path + "compiler_test_mock.grpc.pb.h",
+	    kMockGoldenFilePath);
 }
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  ParseCommandLineFlags(&argc, &argv, true);
-  if (FLAGS_generated_file_path.empty()) {
-    FLAGS_generated_file_path = "gens/src/proto/grpc/testing/";
-  }
-  if (FLAGS_generated_file_path.back() != '/')
-    FLAGS_generated_file_path.append("/");
-  return RUN_ALL_TESTS();
+int
+main (int argc, char **argv)
+{
+  ::testing::InitGoogleTest (&argc, argv);
+  ParseCommandLineFlags (&argc, &argv, true);
+  if (FLAGS_generated_file_path.empty ())
+    {
+      FLAGS_generated_file_path = "gens/src/proto/grpc/testing/";
+    }
+  if (FLAGS_generated_file_path.back () != '/')
+    FLAGS_generated_file_path.append ("/");
+  return RUN_ALL_TESTS ();
 }

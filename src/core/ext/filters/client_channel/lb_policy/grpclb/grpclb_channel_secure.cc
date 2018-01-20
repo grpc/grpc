@@ -28,46 +28,62 @@
 #include "src/core/lib/security/transport/lb_targets_info.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
-    const char* lb_service_target_addresses,
-    grpc_client_channel_factory* client_channel_factory,
-    grpc_channel_args* args) {
-  grpc_channel_args* new_args = args;
-  grpc_channel_credentials* channel_credentials =
-      grpc_channel_credentials_find_in_args(args);
-  if (channel_credentials != nullptr) {
-    /* Substitute the channel credentials with a version without call
-     * credentials: the load balancer is not necessarily trusted to handle
-     * bearer token credentials */
-    static const char* keys_to_remove[] = {GRPC_ARG_CHANNEL_CREDENTIALS};
-    grpc_channel_credentials* creds_sans_call_creds =
-        grpc_channel_credentials_duplicate_without_call_credentials(
-            channel_credentials);
-    GPR_ASSERT(creds_sans_call_creds != nullptr);
-    grpc_arg args_to_add[] = {
-        grpc_channel_credentials_to_arg(creds_sans_call_creds)};
-    /* Create the new set of channel args */
-    new_args = grpc_channel_args_copy_and_add_and_remove(
-        args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
-        GPR_ARRAY_SIZE(args_to_add));
-    grpc_channel_credentials_unref(creds_sans_call_creds);
-  }
-  grpc_channel* lb_channel = grpc_client_channel_factory_create_channel(
-      client_channel_factory, lb_service_target_addresses,
-      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, new_args);
-  if (channel_credentials != nullptr) {
-    grpc_channel_args_destroy(new_args);
-  }
+grpc_channel *
+grpc_lb_policy_grpclb_create_lb_channel (const char
+					 *lb_service_target_addresses,
+					 grpc_client_channel_factory *
+					 client_channel_factory,
+					 grpc_channel_args * args)
+{
+  grpc_channel_args *new_args = args;
+  grpc_channel_credentials *channel_credentials =
+    grpc_channel_credentials_find_in_args (args);
+  if (channel_credentials != nullptr)
+    {
+      /* Substitute the channel credentials with a version without call
+       * credentials: the load balancer is not necessarily trusted to handle
+       * bearer token credentials */
+      static const char *keys_to_remove[] = { GRPC_ARG_CHANNEL_CREDENTIALS };
+      grpc_channel_credentials *creds_sans_call_creds =
+	grpc_channel_credentials_duplicate_without_call_credentials
+	(channel_credentials);
+      GPR_ASSERT (creds_sans_call_creds != nullptr);
+      grpc_arg args_to_add[] = {
+	grpc_channel_credentials_to_arg (creds_sans_call_creds)
+      };
+      /* Create the new set of channel args */
+      new_args =
+	grpc_channel_args_copy_and_add_and_remove (args, keys_to_remove,
+						   GPR_ARRAY_SIZE
+						   (keys_to_remove),
+						   args_to_add,
+						   GPR_ARRAY_SIZE
+						   (args_to_add));
+      grpc_channel_credentials_unref (creds_sans_call_creds);
+    }
+  grpc_channel *lb_channel =
+    grpc_client_channel_factory_create_channel (client_channel_factory,
+						lb_service_target_addresses,
+						GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING,
+						new_args);
+  if (channel_credentials != nullptr)
+    {
+      grpc_channel_args_destroy (new_args);
+    }
   return lb_channel;
 }
 
-grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
-    grpc_slice_hash_table* targets_info,
-    grpc_fake_resolver_response_generator* response_generator,
-    const grpc_channel_args* args) {
+grpc_channel_args *
+grpc_lb_policy_grpclb_build_lb_channel_args (grpc_slice_hash_table *
+					     targets_info,
+					     grpc_fake_resolver_response_generator
+					     * response_generator,
+					     const grpc_channel_args * args)
+{
   const grpc_arg to_add[] = {
-      grpc_lb_targets_info_create_channel_arg(targets_info),
-      grpc_fake_resolver_response_generator_arg(response_generator)};
+    grpc_lb_targets_info_create_channel_arg (targets_info),
+    grpc_fake_resolver_response_generator_arg (response_generator)
+  };
   /* We remove:
    *
    * - The channel arg for the LB policy name, since we want to use the default
@@ -89,11 +105,13 @@ grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
    *
    * - The fake resolver generator, because we are replacing it with the one
    *   from the grpclb policy, used to propagate updates to the LB channel. */
-  static const char* keys_to_remove[] = {
-      GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES, GRPC_ARG_SERVER_URI,
-      GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR};
+  static const char *keys_to_remove[] = {
+    GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES, GRPC_ARG_SERVER_URI,
+    GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR
+  };
   /* Add the targets info table to be used for secure naming */
-  return grpc_channel_args_copy_and_add_and_remove(
-      args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), to_add,
-      GPR_ARRAY_SIZE(to_add));
+  return grpc_channel_args_copy_and_add_and_remove (args, keys_to_remove,
+						    GPR_ARRAY_SIZE
+						    (keys_to_remove), to_add,
+						    GPR_ARRAY_SIZE (to_add));
 }

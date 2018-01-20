@@ -25,37 +25,45 @@
 #include <grpc++/support/status.h>
 #include <grpc++/support/string_ref.h>
 
-namespace grpc {
+namespace grpc
+{
 
 /// Interface allowing custom server-side authorization based on credentials
 /// encoded in metadata.  Objects of this type can be passed to
 /// \a ServerCredentials::SetAuthMetadataProcessor().
-class AuthMetadataProcessor {
- public:
-  typedef std::multimap<grpc::string_ref, grpc::string_ref> InputMetadata;
-  typedef std::multimap<grpc::string, grpc::string> OutputMetadata;
+  class AuthMetadataProcessor
+  {
+  public:
+    typedef std::multimap < grpc::string_ref,
+      grpc::string_ref > InputMetadata;
+    typedef std::multimap < grpc::string, grpc::string > OutputMetadata;
 
-  virtual ~AuthMetadataProcessor() {}
+      virtual ~ AuthMetadataProcessor ()
+    {
+    }
 
-  /// If this method returns true, the \a Process function will be scheduled in
-  /// a different thread from the one processing the call.
-  virtual bool IsBlocking() const { return true; }
+    /// If this method returns true, the \a Process function will be scheduled in
+    /// a different thread from the one processing the call.
+    virtual bool IsBlocking () const
+    {
+      return true;
+    }
 
-  /// context is read/write: it contains the properties of the channel peer and
-  /// it is the job of the Process method to augment it with properties derived
-  /// from the passed-in auth_metadata.
-  /// consumed_auth_metadata needs to be filled with metadata that has been
-  /// consumed by the processor and will be removed from the call.
-  /// response_metadata is the metadata that will be sent as part of the
-  /// response.
-  /// If the return value is not Status::OK, the rpc call will be aborted with
-  /// the error code and error message sent back to the client.
-  virtual Status Process(const InputMetadata& auth_metadata,
-                         AuthContext* context,
-                         OutputMetadata* consumed_auth_metadata,
-                         OutputMetadata* response_metadata) = 0;
-};
+    /// context is read/write: it contains the properties of the channel peer and
+    /// it is the job of the Process method to augment it with properties derived
+    /// from the passed-in auth_metadata.
+    /// consumed_auth_metadata needs to be filled with metadata that has been
+    /// consumed by the processor and will be removed from the call.
+    /// response_metadata is the metadata that will be sent as part of the
+    /// response.
+    /// If the return value is not Status::OK, the rpc call will be aborted with
+    /// the error code and error message sent back to the client.
+    virtual Status Process (const InputMetadata & auth_metadata,
+			    AuthContext * context,
+			    OutputMetadata * consumed_auth_metadata,
+			    OutputMetadata * response_metadata) = 0;
+  };
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_SECURITY_AUTH_METADATA_PROCESSOR_H
+#endif // GRPCXX_SECURITY_AUTH_METADATA_PROCESSOR_H

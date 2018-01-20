@@ -25,16 +25,23 @@
 #include "src/core/lib/iomgr/iomgr_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 
-void grpc_iomgr_platform_init(void) {
-  grpc_wakeup_fd_global_init();
-  grpc_event_engine_init();
+void
+grpc_iomgr_platform_init (void)
+{
+  grpc_wakeup_fd_global_init ();
+  grpc_event_engine_init ();
 }
 
-void grpc_iomgr_platform_flush(void) {}
+void
+grpc_iomgr_platform_flush (void)
+{
+}
 
-void grpc_iomgr_platform_shutdown(void) {
-  grpc_event_engine_shutdown();
-  grpc_wakeup_fd_global_destroy();
+void
+grpc_iomgr_platform_shutdown (void)
+{
+  grpc_event_engine_shutdown ();
+  grpc_wakeup_fd_global_destroy ();
 }
 
 #endif /* GRPC_POSIX_SOCKET */

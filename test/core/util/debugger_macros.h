@@ -19,6 +19,6 @@
 #ifndef GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H
 #define GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H
 
-void grpc_summon_debugger_macros();
+void grpc_summon_debugger_macros ();
 
 #endif /* GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H */

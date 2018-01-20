@@ -24,15 +24,18 @@
 #include <grpc++/impl/codegen/config_protobuf.h>
 #include <grpc++/support/byte_buffer.h>
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message);
+    bool ParseFromByteBuffer (ByteBuffer * buffer,
+			      grpc::protobuf::Message * message);
 
-std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
-    grpc::protobuf::Message* message);
+      std::unique_ptr < ByteBuffer >
+      SerializeToByteBuffer (grpc::protobuf::Message * message);
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_BYTE_BUFFER_PROTO_HELPER_H
+#endif				// GRPC_TEST_CPP_UTIL_BYTE_BUFFER_PROTO_HELPER_H

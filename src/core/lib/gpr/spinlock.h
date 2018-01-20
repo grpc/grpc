@@ -23,7 +23,8 @@
 
 /* Simple spinlock. No backoff strategy, gpr_spinlock_lock is almost always
    a concurrency code smell. */
-typedef struct {
+typedef struct
+{
   gpr_atm atm;
 } gpr_spinlock;
 

@@ -27,67 +27,89 @@
 
 /* Singleton context used for all identity streams. */
 static grpc_stream_compression_context identity_ctx = {
-    &grpc_stream_compression_identity_vtable};
+  &grpc_stream_compression_identity_vtable
+};
 
-static void grpc_stream_compression_pass_through(grpc_slice_buffer* in,
-                                                 grpc_slice_buffer* out,
-                                                 size_t* output_size,
-                                                 size_t max_output_size) {
-  if (max_output_size >= in->length) {
-    if (output_size) {
-      *output_size = in->length;
+static void
+grpc_stream_compression_pass_through (grpc_slice_buffer * in,
+				      grpc_slice_buffer * out,
+				      size_t * output_size,
+				      size_t max_output_size)
+{
+  if (max_output_size >= in->length)
+    {
+      if (output_size)
+	{
+	  *output_size = in->length;
+	}
+      grpc_slice_buffer_move_into (in, out);
     }
-    grpc_slice_buffer_move_into(in, out);
-  } else {
-    if (output_size) {
-      *output_size = max_output_size;
+  else
+    {
+      if (output_size)
+	{
+	  *output_size = max_output_size;
+	}
+      grpc_slice_buffer_move_first (in, max_output_size, out);
     }
-    grpc_slice_buffer_move_first(in, max_output_size, out);
-  }
 }
 
-static bool grpc_stream_compress_identity(grpc_stream_compression_context* ctx,
-                                          grpc_slice_buffer* in,
-                                          grpc_slice_buffer* out,
-                                          size_t* output_size,
-                                          size_t max_output_size,
-                                          grpc_stream_compression_flush flush) {
-  if (ctx == nullptr) {
-    return false;
-  }
-  grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
+static bool
+grpc_stream_compress_identity (grpc_stream_compression_context * ctx,
+			       grpc_slice_buffer * in,
+			       grpc_slice_buffer * out,
+			       size_t * output_size,
+			       size_t max_output_size,
+			       grpc_stream_compression_flush flush)
+{
+  if (ctx == nullptr)
+    {
+      return false;
+    }
+  grpc_stream_compression_pass_through (in, out, output_size,
+					max_output_size);
   return true;
 }
 
-static bool grpc_stream_decompress_identity(
-    grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
-    grpc_slice_buffer* out, size_t* output_size, size_t max_output_size,
-    bool* end_of_context) {
-  if (ctx == nullptr) {
-    return false;
-  }
-  grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
-  if (end_of_context) {
-    *end_of_context = false;
-  }
+static bool
+grpc_stream_decompress_identity (grpc_stream_compression_context * ctx,
+				 grpc_slice_buffer * in,
+				 grpc_slice_buffer * out,
+				 size_t * output_size, size_t max_output_size,
+				 bool * end_of_context)
+{
+  if (ctx == nullptr)
+    {
+      return false;
+    }
+  grpc_stream_compression_pass_through (in, out, output_size,
+					max_output_size);
+  if (end_of_context)
+    {
+      *end_of_context = false;
+    }
   return true;
 }
 
-static grpc_stream_compression_context*
-grpc_stream_compression_context_create_identity(
-    grpc_stream_compression_method method) {
-  GPR_ASSERT(method == GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS ||
-             method == GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS);
+static grpc_stream_compression_context *
+grpc_stream_compression_context_create_identity
+  (grpc_stream_compression_method method)
+{
+  GPR_ASSERT (method == GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS ||
+	      method == GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS);
   /* No context needed in this case. Use fake context instead. */
-  return (grpc_stream_compression_context*)&identity_ctx;
+  return (grpc_stream_compression_context *) & identity_ctx;
 }
 
-static void grpc_stream_compression_context_destroy_identity(
-    grpc_stream_compression_context* ctx) {
+static void
+grpc_stream_compression_context_destroy_identity
+  (grpc_stream_compression_context * ctx)
+{
   return;
 }
 
 const grpc_stream_compression_vtable grpc_stream_compression_identity_vtable = {
-    grpc_stream_compress_identity, grpc_stream_decompress_identity,
-    grpc_stream_compression_context_create_identity,
-    grpc_stream_compression_context_destroy_identity};
+  grpc_stream_compress_identity, grpc_stream_decompress_identity,
+  grpc_stream_compression_context_create_identity,
+  grpc_stream_compression_context_destroy_identity
+};

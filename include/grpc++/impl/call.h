@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/call.h>
 
-#endif  // GRPCXX_IMPL_CALL_H
+#endif // GRPCXX_IMPL_CALL_H

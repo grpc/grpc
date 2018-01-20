@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/serialization_traits.h>
 
-#endif  // GRPCXX_IMPL_SERIALIZATION_TRAITS_H
+#endif // GRPCXX_IMPL_SERIALIZATION_TRAITS_H

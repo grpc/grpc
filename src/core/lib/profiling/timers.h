@@ -19,19 +19,19 @@
 #ifndef GRPC_CORE_LIB_PROFILING_TIMERS_H
 #define GRPC_CORE_LIB_PROFILING_TIMERS_H
 
-void gpr_timers_global_init(void);
-void gpr_timers_global_destroy(void);
+void gpr_timers_global_init (void);
+void gpr_timers_global_destroy (void);
 
-void gpr_timer_add_mark(const char* tagstr, int important, const char* file,
-                        int line);
-void gpr_timer_begin(const char* tagstr, int important, const char* file,
-                     int line);
-void gpr_timer_end(const char* tagstr, int important, const char* file,
-                   int line);
+void gpr_timer_add_mark (const char *tagstr, int important, const char *file,
+			 int line);
+void gpr_timer_begin (const char *tagstr, int important, const char *file,
+		      int line);
+void gpr_timer_end (const char *tagstr, int important, const char *file,
+		    int line);
 
-void gpr_timers_set_log_filename(const char* filename);
+void gpr_timers_set_log_filename (const char *filename);
 
-void gpr_timer_set_enabled(int enabled);
+void gpr_timer_set_enabled (int enabled);
 
 #if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER) + \
       defined(GRPC_CUSTOM_PROFILER))
@@ -82,19 +82,25 @@ void gpr_timer_set_enabled(int enabled);
 
 #if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER) + \
      defined(GRPC_CUSTOM_PROFILER))
-namespace grpc {
-class ProfileScope {
- public:
-  ProfileScope(const char* desc, bool important, const char* file, int line)
-      : desc_(desc) {
-    gpr_timer_begin(desc_, important ? 1 : 0, file, line);
-  }
-  ~ProfileScope() { gpr_timer_end(desc_, 0, "n/a", 0); }
+namespace grpc
+{
+  class ProfileScope
+  {
+  public:
+    ProfileScope (const char *desc, bool important, const char *file,
+		  int line):desc_ (desc)
+    {
+      gpr_timer_begin (desc_, important ? 1 : 0, file, line);
+    }
+     ~ProfileScope ()
+    {
+      gpr_timer_end (desc_, 0, "n/a", 0);
+    }
 
- private:
-  const char* const desc_;
-};
-}  // namespace grpc
+  private:
+    const char *const desc_;
+  };
+}				// namespace grpc
 
 #define GPR_TIMER_SCOPE(tag, important)                                        \
   ::grpc::ProfileScope _profile_scope_##__LINE__((tag), (important), __FILE__, \

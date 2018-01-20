@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/status_code_enum.h>
 
-#endif  // GRPCXX_SUPPORT_STATUS_CODE_ENUM_H
+#endif // GRPCXX_SUPPORT_STATUS_CODE_ENUM_H

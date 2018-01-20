@@ -26,8 +26,10 @@
 
 #include <grpc/support/log.h>
 
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
-  uv_inet_ntop(af, src, dst, size);
+const char *
+grpc_inet_ntop (int af, const void *src, char *dst, size_t size)
+{
+  uv_inet_ntop (af, src, dst, size);
   return dst;
 }
 

@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/config.h>
 
-#endif  // GRPCXX_SUPPORT_CONFIG_H
+#endif // GRPCXX_SUPPORT_CONFIG_H

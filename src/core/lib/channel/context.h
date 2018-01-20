@@ -24,7 +24,8 @@
 /// Call context is represented as an array of \a grpc_call_context_elements.
 /// This enum represents the indexes into the array, where each index
 /// contains a different type of value.
-typedef enum {
+typedef enum
+{
   /// Value is either a \a grpc_client_security_context or a
   /// \a grpc_server_security_context.
   GRPC_CONTEXT_SECURITY = 0,
@@ -41,9 +42,10 @@ typedef enum {
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
-typedef struct {
-  void* value;
-  void (*destroy)(void*);
+typedef struct
+{
+  void *value;
+  void (*destroy) (void *);
 } grpc_call_context_element;
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CONTEXT_H */

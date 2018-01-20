@@ -20,84 +20,114 @@
 
 #include <grpc/grpc_security.h>
 
-namespace grpc {
+namespace grpc
+{
 
-SecureAuthContext::SecureAuthContext(grpc_auth_context* ctx,
-                                     bool take_ownership)
-    : ctx_(ctx), take_ownership_(take_ownership) {}
-
-SecureAuthContext::~SecureAuthContext() {
-  if (take_ownership_) grpc_auth_context_release(ctx_);
-}
-
-std::vector<grpc::string_ref> SecureAuthContext::GetPeerIdentity() const {
-  if (!ctx_) {
-    return std::vector<grpc::string_ref>();
+  SecureAuthContext::SecureAuthContext (grpc_auth_context * ctx,
+					bool take_ownership):ctx_ (ctx),
+    take_ownership_ (take_ownership)
+  {
   }
-  grpc_auth_property_iterator iter = grpc_auth_context_peer_identity(ctx_);
-  std::vector<grpc::string_ref> identity;
-  const grpc_auth_property* property = nullptr;
-  while ((property = grpc_auth_property_iterator_next(&iter))) {
-    identity.push_back(
-        grpc::string_ref(property->value, property->value_length));
-  }
-  return identity;
-}
 
-grpc::string SecureAuthContext::GetPeerIdentityPropertyName() const {
-  if (!ctx_) {
-    return "";
+  SecureAuthContext::~SecureAuthContext ()
+  {
+    if (take_ownership_)
+      grpc_auth_context_release (ctx_);
   }
-  const char* name = grpc_auth_context_peer_identity_property_name(ctx_);
-  return name == nullptr ? "" : name;
-}
 
-std::vector<grpc::string_ref> SecureAuthContext::FindPropertyValues(
-    const grpc::string& name) const {
-  if (!ctx_) {
-    return std::vector<grpc::string_ref>();
+  std::vector < grpc::string_ref > SecureAuthContext::GetPeerIdentity ()const
+  {
+    if (!ctx_)
+      {
+	return std::vector < grpc::string_ref > ();
+      }
+    grpc_auth_property_iterator iter = grpc_auth_context_peer_identity (ctx_);
+    std::vector < grpc::string_ref > identity;
+    const grpc_auth_property *property = nullptr;
+    while ((property = grpc_auth_property_iterator_next (&iter)))
+      {
+	identity.
+	  push_back (grpc::
+		     string_ref (property->value, property->value_length));
+      }
+    return identity;
   }
-  grpc_auth_property_iterator iter =
-      grpc_auth_context_find_properties_by_name(ctx_, name.c_str());
-  const grpc_auth_property* property = nullptr;
-  std::vector<grpc::string_ref> values;
-  while ((property = grpc_auth_property_iterator_next(&iter))) {
-    values.push_back(grpc::string_ref(property->value, property->value_length));
-  }
-  return values;
-}
 
-AuthPropertyIterator SecureAuthContext::begin() const {
-  if (ctx_) {
+  grpc::string SecureAuthContext::GetPeerIdentityPropertyName ()const
+  {
+    if (!ctx_)
+      {
+	return "";
+      }
+    const char *name = grpc_auth_context_peer_identity_property_name (ctx_);
+    return name == nullptr ? "" : name;
+  }
+
+  std::vector < grpc::string_ref >
+    SecureAuthContext::FindPropertyValues (const grpc::string & name) const
+  {
+    if (!ctx_)
+      {
+	return std::vector < grpc::string_ref > ();
+      }
     grpc_auth_property_iterator iter =
-        grpc_auth_context_property_iterator(ctx_);
-    const grpc_auth_property* property =
-        grpc_auth_property_iterator_next(&iter);
-    return AuthPropertyIterator(property, &iter);
-  } else {
-    return end();
+      grpc_auth_context_find_properties_by_name (ctx_, name.c_str ());
+    const grpc_auth_property *property = nullptr;
+    std::vector < grpc::string_ref > values;
+    while ((property = grpc_auth_property_iterator_next (&iter)))
+      {
+	values.
+	  push_back (grpc::
+		     string_ref (property->value, property->value_length));
+      }
+    return values;
   }
-}
 
-AuthPropertyIterator SecureAuthContext::end() const {
-  return AuthPropertyIterator();
-}
+  AuthPropertyIterator SecureAuthContext::begin () const
+  {
+    if (ctx_)
+      {
+	grpc_auth_property_iterator iter =
+	  grpc_auth_context_property_iterator (ctx_);
+	const grpc_auth_property *property =
+	  grpc_auth_property_iterator_next (&iter);
+	  return AuthPropertyIterator (property, &iter);
+      }
+    else
+      {
+	return end ();
+      }
+  }
 
-void SecureAuthContext::AddProperty(const grpc::string& key,
-                                    const grpc::string_ref& value) {
-  if (!ctx_) return;
-  grpc_auth_context_add_property(ctx_, key.c_str(), value.data(), value.size());
-}
+  AuthPropertyIterator SecureAuthContext::end () const
+  {
+    return AuthPropertyIterator ();
+  }
 
-bool SecureAuthContext::SetPeerIdentityPropertyName(const grpc::string& name) {
-  if (!ctx_) return false;
-  return grpc_auth_context_set_peer_identity_property_name(ctx_,
-                                                           name.c_str()) != 0;
-}
+  void SecureAuthContext::AddProperty (const grpc::string & key,
+				       const grpc::string_ref & value)
+  {
+    if (!ctx_)
+      return;
+    grpc_auth_context_add_property (ctx_, key.c_str (), value.data (),
+				    value.size ());
+  }
 
-bool SecureAuthContext::IsPeerAuthenticated() const {
-  if (!ctx_) return false;
-  return grpc_auth_context_peer_is_authenticated(ctx_) != 0;
-}
+  bool SecureAuthContext::SetPeerIdentityPropertyName (const grpc::
+						       string & name)
+  {
+    if (!ctx_)
+      return false;
+    return grpc_auth_context_set_peer_identity_property_name (ctx_,
+							      name.
+							      c_str ()) != 0;
+  }
 
-}  // namespace grpc
+  bool SecureAuthContext::IsPeerAuthenticated () const
+  {
+    if (!ctx_)
+      return false;
+    return grpc_auth_context_peer_is_authenticated (ctx_) != 0;
+  }
+
+}				// namespace grpc

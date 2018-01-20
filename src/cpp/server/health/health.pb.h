@@ -10,31 +10,35 @@
 #endif
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Enum definitions */
-typedef enum _grpc_health_v1_HealthCheckResponse_ServingStatus {
+  typedef enum _grpc_health_v1_HealthCheckResponse_ServingStatus
+  {
     grpc_health_v1_HealthCheckResponse_ServingStatus_UNKNOWN = 0,
     grpc_health_v1_HealthCheckResponse_ServingStatus_SERVING = 1,
     grpc_health_v1_HealthCheckResponse_ServingStatus_NOT_SERVING = 2
-} grpc_health_v1_HealthCheckResponse_ServingStatus;
+  } grpc_health_v1_HealthCheckResponse_ServingStatus;
 #define _grpc_health_v1_HealthCheckResponse_ServingStatus_MIN grpc_health_v1_HealthCheckResponse_ServingStatus_UNKNOWN
 #define _grpc_health_v1_HealthCheckResponse_ServingStatus_MAX grpc_health_v1_HealthCheckResponse_ServingStatus_NOT_SERVING
 #define _grpc_health_v1_HealthCheckResponse_ServingStatus_ARRAYSIZE ((grpc_health_v1_HealthCheckResponse_ServingStatus)(grpc_health_v1_HealthCheckResponse_ServingStatus_NOT_SERVING+1))
 
 /* Struct definitions */
-typedef struct _grpc_health_v1_HealthCheckRequest {
+  typedef struct _grpc_health_v1_HealthCheckRequest
+  {
     bool has_service;
     char service[200];
 /* @@protoc_insertion_point(struct:grpc_health_v1_HealthCheckRequest) */
-} grpc_health_v1_HealthCheckRequest;
+  } grpc_health_v1_HealthCheckRequest;
 
-typedef struct _grpc_health_v1_HealthCheckResponse {
+  typedef struct _grpc_health_v1_HealthCheckResponse
+  {
     bool has_status;
     grpc_health_v1_HealthCheckResponse_ServingStatus status;
 /* @@protoc_insertion_point(struct:grpc_health_v1_HealthCheckResponse) */
-} grpc_health_v1_HealthCheckResponse;
+  } grpc_health_v1_HealthCheckResponse;
 
 /* Default values for struct fields */
 
@@ -49,8 +53,8 @@ typedef struct _grpc_health_v1_HealthCheckResponse {
 #define grpc_health_v1_HealthCheckResponse_status_tag 1
 
 /* Struct field encoding specification for nanopb */
-extern const pb_field_t grpc_health_v1_HealthCheckRequest_fields[2];
-extern const pb_field_t grpc_health_v1_HealthCheckResponse_fields[2];
+  extern const pb_field_t grpc_health_v1_HealthCheckRequest_fields[2];
+  extern const pb_field_t grpc_health_v1_HealthCheckResponse_fields[2];
 
 /* Maximum encoded size of messages (where known) */
 #define grpc_health_v1_HealthCheckRequest_size   203
@@ -65,7 +69,7 @@ extern const pb_field_t grpc_health_v1_HealthCheckResponse_fields[2];
 #endif
 
 #ifdef __cplusplus
-} /* extern "C" */
+}				/* extern "C" */
 #endif
 /* @@protoc_insertion_point(eof) */
 

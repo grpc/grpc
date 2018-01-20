@@ -20,20 +20,27 @@
 
 #include <grpc/support/log.h>
 
-void grpc_handshaker_factory_add_handshakers(
-    grpc_handshaker_factory* handshaker_factory, const grpc_channel_args* args,
-    grpc_handshake_manager* handshake_mgr) {
-  if (handshaker_factory != nullptr) {
-    GPR_ASSERT(handshaker_factory->vtable != nullptr);
-    handshaker_factory->vtable->add_handshakers(handshaker_factory, args,
-                                                handshake_mgr);
-  }
+void
+grpc_handshaker_factory_add_handshakers (grpc_handshaker_factory *
+					 handshaker_factory,
+					 const grpc_channel_args * args,
+					 grpc_handshake_manager *
+					 handshake_mgr)
+{
+  if (handshaker_factory != nullptr)
+    {
+      GPR_ASSERT (handshaker_factory->vtable != nullptr);
+      handshaker_factory->vtable->add_handshakers (handshaker_factory, args,
+						   handshake_mgr);
+    }
 }
 
-void grpc_handshaker_factory_destroy(
-    grpc_handshaker_factory* handshaker_factory) {
-  if (handshaker_factory != nullptr) {
-    GPR_ASSERT(handshaker_factory->vtable != nullptr);
-    handshaker_factory->vtable->destroy(handshaker_factory);
-  }
+void
+grpc_handshaker_factory_destroy (grpc_handshaker_factory * handshaker_factory)
+{
+  if (handshaker_factory != nullptr)
+    {
+      GPR_ASSERT (handshaker_factory->vtable != nullptr);
+      handshaker_factory->vtable->destroy (handshaker_factory);
+    }
 }

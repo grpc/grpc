@@ -28,4 +28,4 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#endif  // GRPCXX_SUPPORT_BYTE_BUFFER_H
+#endif // GRPCXX_SUPPORT_BYTE_BUFFER_H

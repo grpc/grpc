@@ -25,23 +25,25 @@
 
 struct gpr_subprocess;
 
-namespace grpc {
+namespace grpc
+{
 
-class SubProcess {
- public:
-  SubProcess(const std::vector<std::string>& args);
-  ~SubProcess();
+  class SubProcess
+  {
+  public:
+    SubProcess (const std::vector < std::string > &args);
+     ~SubProcess ();
 
-  int Join();
-  void Interrupt();
+    int Join ();
+    void Interrupt ();
 
- private:
-  SubProcess(const SubProcess& other);
-  SubProcess& operator=(const SubProcess& other);
+  private:
+      SubProcess (const SubProcess & other);
+      SubProcess & operator= (const SubProcess & other);
 
-  gpr_subprocess* const subprocess_;
-};
+    gpr_subprocess *const subprocess_;
+  };
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_SUBPROCESS_H
+#endif				// GRPC_TEST_CPP_UTIL_SUBPROCESS_H

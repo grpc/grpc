@@ -30,43 +30,51 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-const char* gpr_getenv_silent(const char* name, char** dst) {
-  *dst = gpr_getenv(name);
+const char *
+gpr_getenv_silent (const char *name, char **dst)
+{
+  *dst = gpr_getenv (name);
   return NULL;
 }
 
-char* gpr_getenv(const char* name) {
-  char* result = NULL;
+char *
+gpr_getenv (const char *name)
+{
+  char *result = NULL;
   DWORD size;
   LPTSTR tresult = NULL;
-  LPTSTR tname = gpr_char_to_tchar(name);
+  LPTSTR tname = gpr_char_to_tchar (name);
   DWORD ret;
 
-  ret = GetEnvironmentVariable(tname, NULL, 0);
-  if (ret == 0) {
-    gpr_free(tname);
-    return NULL;
-  }
-  size = ret * (DWORD)sizeof(TCHAR);
-  tresult = (LPTSTR)gpr_malloc(size);
-  ret = GetEnvironmentVariable(tname, tresult, size);
-  gpr_free(tname);
-  if (ret == 0) {
-    gpr_free(tresult);
-    return NULL;
-  }
-  result = gpr_tchar_to_char(tresult);
-  gpr_free(tresult);
+  ret = GetEnvironmentVariable (tname, NULL, 0);
+  if (ret == 0)
+    {
+      gpr_free (tname);
+      return NULL;
+    }
+  size = ret * (DWORD) sizeof (TCHAR);
+  tresult = (LPTSTR) gpr_malloc (size);
+  ret = GetEnvironmentVariable (tname, tresult, size);
+  gpr_free (tname);
+  if (ret == 0)
+    {
+      gpr_free (tresult);
+      return NULL;
+    }
+  result = gpr_tchar_to_char (tresult);
+  gpr_free (tresult);
   return result;
 }
 
-void gpr_setenv(const char* name, const char* value) {
-  LPTSTR tname = gpr_char_to_tchar(name);
-  LPTSTR tvalue = gpr_char_to_tchar(value);
-  BOOL res = SetEnvironmentVariable(tname, tvalue);
-  gpr_free(tname);
-  gpr_free(tvalue);
-  GPR_ASSERT(res);
+void
+gpr_setenv (const char *name, const char *value)
+{
+  LPTSTR tname = gpr_char_to_tchar (name);
+  LPTSTR tvalue = gpr_char_to_tchar (value);
+  BOOL res = SetEnvironmentVariable (tname, tvalue);
+  gpr_free (tname);
+  gpr_free (tvalue);
+  GPR_ASSERT (res);
 }
 
 #endif /* GPR_WINDOWS_ENV */

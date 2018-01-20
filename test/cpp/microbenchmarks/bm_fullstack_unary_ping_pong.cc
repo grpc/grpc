@@ -20,148 +20,227 @@
 
 #include "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
 // force library initialization
-auto& force_library_initialization = Library::get();
+    auto & force_library_initialization = Library::get ();
 
 /*******************************************************************************
  * CONFIGURATIONS
  */
 
-static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
-  b->Args({0, 0});
-  for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
-    b->Args({i, 0});
-    b->Args({0, i});
-    b->Args({i, i});
-  }
-}
+    static void SweepSizesArgs (benchmark::internal::Benchmark * b)
+    {
+      b->Args (
+		{
+		0, 0});
+      for (int i = 1; i <= 128 * 1024 * 1024; i *= 8)
+	{
+	  b->Args (
+		    {
+		    i, 0});
+	  b->Args (
+		    {
+		    0, i});
+	  b->Args (
+		    {
+		    i, i});
+	}
+    }
 
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, TCP, NoOpMutator, NoOpMutator)
-    ->Apply(SweepSizesArgs);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinTCP, NoOpMutator, NoOpMutator)
-    ->Apply(SweepSizesArgs);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinUDS, NoOpMutator, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess, NoOpMutator, NoOpMutator)
-    ->Apply(SweepSizesArgs);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinInProcess, NoOpMutator, NoOpMutator)
-    ->Apply(SweepSizesArgs);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, SockPair, NoOpMutator, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinSockPair, NoOpMutator, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator, NoOpMutator)
-    ->Apply(SweepSizesArgs);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, MinInProcessCHTTP2, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(SweepSizesArgs);
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 1>,
-                   NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 2>,
-                   NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 100>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 1>,
-                   NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 2>,
-                   NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>, NoOpMutator)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>)
-    ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 100>)
-    ->Args({0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, TCP, NoOpMutator,
+			NoOpMutator)->Apply (SweepSizesArgs);
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, MinTCP, NoOpMutator,
+			NoOpMutator)->Apply (SweepSizesArgs);
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, UDS, NoOpMutator, NoOpMutator)->Args (
+										 {
+										 0,
+										 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, MinUDS, NoOpMutator,
+			NoOpMutator)->Args (
+					      {
+					      0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess, NoOpMutator,
+			NoOpMutator)->Apply (SweepSizesArgs);
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, MinInProcess, NoOpMutator,
+			NoOpMutator)->Apply (SweepSizesArgs);
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, SockPair, NoOpMutator,
+			NoOpMutator)->Args (
+					      {
+					      0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, MinSockPair, NoOpMutator,
+			NoOpMutator)->Args (
+					      {
+					      0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+			NoOpMutator)->Apply (SweepSizesArgs);
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, MinInProcessCHTTP2, NoOpMutator,
+			NoOpMutator)->Apply (SweepSizesArgs);
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2,
+			Client_AddMetadata < RandomBinaryMetadata < 10 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2,
+			Client_AddMetadata < RandomBinaryMetadata < 31 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2,
+			Client_AddMetadata < RandomBinaryMetadata < 100 >,
+			1 >, NoOpMutator)->Args (
+						    {
+						    0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2,
+			Client_AddMetadata < RandomBinaryMetadata < 10 >, 2 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2,
+			Client_AddMetadata < RandomBinaryMetadata < 31 >, 2 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2,
+			Client_AddMetadata < RandomBinaryMetadata < 100 >,
+			2 >, NoOpMutator)->Args (
+						    {
+						    0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+			Server_AddInitialMetadata < RandomBinaryMetadata <
+			10 >, 1 >)->Args (
+					     {
+					     0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+			Server_AddInitialMetadata < RandomBinaryMetadata <
+			31 >, 1 >)->Args (
+					     {
+					     0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+			Server_AddInitialMetadata < RandomBinaryMetadata <
+			100 >, 1 >)->Args (
+					      {
+					      0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2,
+			Client_AddMetadata < RandomAsciiMetadata < 10 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2,
+			Client_AddMetadata < RandomAsciiMetadata < 31 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2,
+			Client_AddMetadata < RandomAsciiMetadata < 100 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+			Server_AddInitialMetadata < RandomAsciiMetadata <
+			10 >, 1 >)->Args (
+					     {
+					     0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+			Server_AddInitialMetadata < RandomAsciiMetadata <
+			31 >, 1 >)->Args (
+					     {
+					     0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+			Server_AddInitialMetadata < RandomAsciiMetadata <
+			100 >, 1 >)->Args (
+					      {
+					      0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcessCHTTP2, NoOpMutator,
+			Server_AddInitialMetadata < RandomAsciiMetadata <
+			10 >, 100 >)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess,
+			Client_AddMetadata < RandomBinaryMetadata < 10 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess,
+			Client_AddMetadata < RandomBinaryMetadata < 31 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess,
+			Client_AddMetadata < RandomBinaryMetadata < 100 >,
+			1 >, NoOpMutator)->Args (
+						    {
+						    0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess,
+			Client_AddMetadata < RandomBinaryMetadata < 10 >, 2 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess,
+			Client_AddMetadata < RandomBinaryMetadata < 31 >, 2 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess,
+			Client_AddMetadata < RandomBinaryMetadata < 100 >,
+			2 >, NoOpMutator)->Args (
+						    {
+						    0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess, NoOpMutator,
+			Server_AddInitialMetadata < RandomBinaryMetadata <
+			10 >, 1 >)->Args (
+					     {
+					     0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess, NoOpMutator,
+			Server_AddInitialMetadata < RandomBinaryMetadata <
+			31 >, 1 >)->Args (
+					     {
+					     0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess, NoOpMutator,
+			Server_AddInitialMetadata < RandomBinaryMetadata <
+			100 >, 1 >)->Args (
+					      {
+					      0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess,
+			Client_AddMetadata < RandomAsciiMetadata < 10 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess,
+			Client_AddMetadata < RandomAsciiMetadata < 31 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess,
+			Client_AddMetadata < RandomAsciiMetadata < 100 >, 1 >,
+			NoOpMutator)->Args (
+					       {
+					       0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess, NoOpMutator,
+			Server_AddInitialMetadata < RandomAsciiMetadata <
+			10 >, 1 >)->Args (
+					     {
+					     0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess, NoOpMutator,
+			Server_AddInitialMetadata < RandomAsciiMetadata <
+			31 >, 1 >)->Args (
+					     {
+					     0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess, NoOpMutator,
+			Server_AddInitialMetadata < RandomAsciiMetadata <
+			100 >, 1 >)->Args (
+					      {
+					      0, 0});
+    BENCHMARK_TEMPLATE (BM_UnaryPingPong, InProcess, NoOpMutator,
+			Server_AddInitialMetadata < RandomAsciiMetadata <
+			10 >, 100 >)->Args (
+					       {
+					       0, 0});
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-BENCHMARK_MAIN();
+BENCHMARK_MAIN ();

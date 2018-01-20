@@ -35,114 +35,163 @@
 
 #include <gtest/gtest.h>
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
+using
+  grpc::testing::EchoRequest;
+using
+  grpc::testing::EchoResponse;
+using
+  std::chrono::system_clock;
 
-static std::string g_root;
+static
+  std::string
+  g_root;
 
-namespace grpc {
-namespace testing {
+namespace
+  grpc
+{
+  namespace
+    testing
+  {
 
-namespace {
+    namespace
+    {
 
-class CrashTest : public ::testing::Test {
- protected:
-  CrashTest() {}
+      class
+	CrashTest:
+	public::testing::Test
+      {
+      protected:
+	CrashTest ()
+	{
+	}
 
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> CreateServerAndStub() {
-    auto port = grpc_pick_unused_port_or_die();
-    std::ostringstream addr_stream;
-    addr_stream << "localhost:" << port;
-    auto addr = addr_stream.str();
-    server_.reset(new SubProcess({
-        g_root + "/client_crash_test_server",
-        "--address=" + addr,
-    }));
-    GPR_ASSERT(server_);
-    return grpc::testing::EchoTestService::NewStub(
-        CreateChannel(addr, InsecureChannelCredentials()));
-  }
+	std::unique_ptr <
+	  grpc::testing::EchoTestService::Stub >
+	CreateServerAndStub ()
+	{
+	  auto
+	    port = grpc_pick_unused_port_or_die ();
+	  std::ostringstream
+	    addr_stream;
+	  addr_stream <<
+	    "localhost:" <<
+	    port;
+	  auto
+	    addr = addr_stream.str ();
+	  server_.
+	  reset (new SubProcess (
+				  {
+				  g_root + "/client_crash_test_server",
+				  "--address=" + addr,}));
+	  GPR_ASSERT (server_);
+	  return
+	  grpc::testing::EchoTestService::
+	    NewStub (CreateChannel (addr, InsecureChannelCredentials ()));
+	}
 
-  void KillServer() { server_.reset(); }
+	void
+	KillServer ()
+	{
+	  server_.reset ();
+	}
 
- private:
-  std::unique_ptr<SubProcess> server_;
-};
+      private:
+	std::unique_ptr < SubProcess > server_;
+      };
 
-TEST_F(CrashTest, KillBeforeWrite) {
-  auto stub = CreateServerAndStub();
+      TEST_F (CrashTest, KillBeforeWrite)
+      {
+	auto
+	  stub = CreateServerAndStub ();
 
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  context.set_wait_for_ready(true);
+	EchoRequest
+	  request;
+	EchoResponse
+	  response;
+	ClientContext
+	  context;
+	context.set_wait_for_ready (true);
 
-  auto stream = stub->BidiStream(&context);
+	auto
+	  stream = stub->BidiStream (&context);
 
-  request.set_message("Hello");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message());
+	request.set_message ("Hello");
+	EXPECT_TRUE (stream->Write (request));
+	EXPECT_TRUE (stream->Read (&response));
+	EXPECT_EQ (response.message (), request.message ());
 
-  KillServer();
+	KillServer ();
 
-  request.set_message("You should be dead");
-  // This may succeed or fail depending on the state of the TCP connection
-  stream->Write(request);
-  // But the read will definitely fail
-  EXPECT_FALSE(stream->Read(&response));
+	request.set_message ("You should be dead");
+	// This may succeed or fail depending on the state of the TCP connection
+	stream->Write (request);
+	// But the read will definitely fail
+	EXPECT_FALSE (stream->Read (&response));
 
-  EXPECT_FALSE(stream->Finish().ok());
-}
+	EXPECT_FALSE (stream->Finish ().ok ());
+      }
 
-TEST_F(CrashTest, KillAfterWrite) {
-  auto stub = CreateServerAndStub();
+      TEST_F (CrashTest, KillAfterWrite)
+      {
+	auto
+	  stub = CreateServerAndStub ();
 
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  context.set_wait_for_ready(true);
+	EchoRequest
+	  request;
+	EchoResponse
+	  response;
+	ClientContext
+	  context;
+	context.set_wait_for_ready (true);
 
-  auto stream = stub->BidiStream(&context);
+	auto
+	  stream = stub->BidiStream (&context);
 
-  request.set_message("Hello");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message());
+	request.set_message ("Hello");
+	EXPECT_TRUE (stream->Write (request));
+	EXPECT_TRUE (stream->Read (&response));
+	EXPECT_EQ (response.message (), request.message ());
 
-  request.set_message("I'm going to kill you");
-  EXPECT_TRUE(stream->Write(request));
+	request.set_message ("I'm going to kill you");
+	EXPECT_TRUE (stream->Write (request));
 
-  KillServer();
+	KillServer ();
 
-  // This may succeed or fail depending on how quick the server was
-  stream->Read(&response);
+	// This may succeed or fail depending on how quick the server was
+	stream->Read (&response);
 
-  EXPECT_FALSE(stream->Finish().ok());
-}
+	EXPECT_FALSE (stream->Finish ().ok ());
+      }
 
-}  // namespace
+    }				// namespace
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-int main(int argc, char** argv) {
+int
+main (int argc, char **argv)
+{
   std::string me = argv[0];
-  auto lslash = me.rfind('/');
-  if (lslash != std::string::npos) {
-    g_root = me.substr(0, lslash);
-  } else {
-    g_root = ".";
-  }
-
-  grpc_test_init(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  // Order seems to matter on these tests: run three times to eliminate that
-  for (int i = 0; i < 3; i++) {
-    if (RUN_ALL_TESTS() != 0) {
-      return 1;
+  auto
+    lslash = me.rfind ('/');
+  if (lslash != std::string::npos)
+    {
+      g_root = me.substr (0, lslash);
     }
-  }
+  else
+    {
+      g_root = ".";
+    }
+
+  grpc_test_init (argc, argv);
+  ::testing::InitGoogleTest (&argc, argv);
+  // Order seems to matter on these tests: run three times to eliminate that
+  for (int i = 0; i < 3; i++)
+    {
+      if (RUN_ALL_TESTS () != 0)
+	{
+	  return 1;
+	}
+    }
   return 0;
 }

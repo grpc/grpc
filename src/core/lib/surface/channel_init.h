@@ -32,27 +32,27 @@
 
 /// One stage of mutation: call functions against \a builder to influence the
 /// finally constructed channel stack
-typedef bool (*grpc_channel_init_stage)(grpc_channel_stack_builder* builder,
-                                        void* arg);
+typedef bool (*grpc_channel_init_stage) (grpc_channel_stack_builder * builder,
+					 void *arg);
 
 /// Global initialization of the system
-void grpc_channel_init_init(void);
+void grpc_channel_init_init (void);
 
 /// Register one stage of mutators.
 /// Stages are run in priority order (lowest to highest), and then in
 /// registration order (in the case of a tie).
 /// Stages are registered against one of the pre-determined channel stack
 /// types.
-void grpc_channel_init_register_stage(grpc_channel_stack_type type,
-                                      int priority,
-                                      grpc_channel_init_stage stage_fn,
-                                      void* stage_arg);
+void grpc_channel_init_register_stage (grpc_channel_stack_type type,
+				       int priority,
+				       grpc_channel_init_stage stage_fn,
+				       void *stage_arg);
 
 /// Finalize registration. No more calls to grpc_channel_init_register_stage are
 /// allowed.
-void grpc_channel_init_finalize(void);
+void grpc_channel_init_finalize (void);
 /// Shutdown the channel init system
-void grpc_channel_init_shutdown(void);
+void grpc_channel_init_shutdown (void);
 
 /// Construct a channel stack of some sort: see channel_stack.h for details
 /// \a type is the type of channel stack to create
@@ -65,7 +65,7 @@ void grpc_channel_init_shutdown(void);
 /// \a optional_transport is either NULL or a constructed transport object
 /// Returns a pointer to the base of the memory allocated (the actual channel
 /// stack object will be prefix_bytes past that pointer)
-bool grpc_channel_init_create_stack(grpc_channel_stack_builder* builder,
-                                    grpc_channel_stack_type type);
+bool grpc_channel_init_create_stack (grpc_channel_stack_builder * builder,
+				     grpc_channel_stack_type type);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H */

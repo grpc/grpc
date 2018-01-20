@@ -29,98 +29,118 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/completion_queue.h"
 
-struct grpc_pollset {
+struct grpc_pollset
+{
   gpr_mu mu;
 };
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-auto& force_library_initialization = Library::get();
+    auto & force_library_initialization = Library::get ();
 
-static void* g_tag = (void*)(intptr_t)10;  // Some random number
-static grpc_completion_queue* g_cq;
-static grpc_event_engine_vtable g_vtable;
-static const grpc_event_engine_vtable* g_old_vtable;
+    static void *g_tag = (void *) (intptr_t) 10;	// Some random number
+    static grpc_completion_queue *g_cq;
+    static grpc_event_engine_vtable g_vtable;
+    static const grpc_event_engine_vtable *g_old_vtable;
 
-static void pollset_shutdown(grpc_pollset* ps, grpc_closure* closure) {
-  GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
-}
+    static void pollset_shutdown (grpc_pollset * ps, grpc_closure * closure)
+    {
+      GRPC_CLOSURE_SCHED (closure, GRPC_ERROR_NONE);
+    }
 
-static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {
-  gpr_mu_init(&ps->mu);
-  *mu = &ps->mu;
-}
+    static void pollset_init (grpc_pollset * ps, gpr_mu ** mu)
+    {
+      gpr_mu_init (&ps->mu);
+      *mu = &ps->mu;
+    }
 
-static void pollset_destroy(grpc_pollset* ps) { gpr_mu_destroy(&ps->mu); }
+    static void pollset_destroy (grpc_pollset * ps)
+    {
+      gpr_mu_destroy (&ps->mu);
+    }
 
-static grpc_error* pollset_kick(grpc_pollset* p, grpc_pollset_worker* worker) {
-  return GRPC_ERROR_NONE;
-}
+    static grpc_error *pollset_kick (grpc_pollset * p,
+				     grpc_pollset_worker * worker)
+    {
+      return GRPC_ERROR_NONE;
+    }
 
 /* Callback when the tag is dequeued from the completion queue. Does nothing */
-static void cq_done_cb(void* done_arg, grpc_cq_completion* cq_completion) {
-  gpr_free(cq_completion);
-}
+    static void cq_done_cb (void *done_arg,
+			    grpc_cq_completion * cq_completion)
+    {
+      gpr_free (cq_completion);
+    }
 
 /* Queues a completion tag if deadline is > 0.
  * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
-static grpc_error* pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker,
-                                grpc_millis deadline) {
-  if (deadline == 0) {
-    gpr_log(GPR_DEBUG, "no-op");
-    return GRPC_ERROR_NONE;
-  }
+    static grpc_error *pollset_work (grpc_pollset * ps,
+				     grpc_pollset_worker ** worker,
+				     grpc_millis deadline)
+    {
+      if (deadline == 0)
+	{
+	  gpr_log (GPR_DEBUG, "no-op");
+	  return GRPC_ERROR_NONE;
+	}
 
-  gpr_mu_unlock(&ps->mu);
-  GPR_ASSERT(grpc_cq_begin_op(g_cq, g_tag));
-  grpc_cq_end_op(g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
-                 (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
-  grpc_core::ExecCtx::Get()->Flush();
-  gpr_mu_lock(&ps->mu);
-  return GRPC_ERROR_NONE;
-}
+      gpr_mu_unlock (&ps->mu);
+      GPR_ASSERT (grpc_cq_begin_op (g_cq, g_tag));
+      grpc_cq_end_op (g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
+		      (grpc_cq_completion *)
+		      gpr_malloc (sizeof (grpc_cq_completion)));
+      grpc_core::ExecCtx::Get ()->Flush ();
+      gpr_mu_lock (&ps->mu);
+      return GRPC_ERROR_NONE;
+    }
 
-static void init_engine_vtable() {
-  memset(&g_vtable, 0, sizeof(g_vtable));
+    static void init_engine_vtable ()
+    {
+      memset (&g_vtable, 0, sizeof (g_vtable));
 
-  g_vtable.pollset_size = sizeof(grpc_pollset);
-  g_vtable.pollset_init = pollset_init;
-  g_vtable.pollset_shutdown = pollset_shutdown;
-  g_vtable.pollset_destroy = pollset_destroy;
-  g_vtable.pollset_work = pollset_work;
-  g_vtable.pollset_kick = pollset_kick;
-}
+      g_vtable.pollset_size = sizeof (grpc_pollset);
+      g_vtable.pollset_init = pollset_init;
+      g_vtable.pollset_shutdown = pollset_shutdown;
+      g_vtable.pollset_destroy = pollset_destroy;
+      g_vtable.pollset_work = pollset_work;
+      g_vtable.pollset_kick = pollset_kick;
+    }
 
-static void setup() {
-  grpc_init();
+    static void setup ()
+    {
+      grpc_init ();
 
-  /* Override the event engine with our test event engine (g_vtable); but before
-   * that, save the current event engine in g_old_vtable. We will have to set
-   * g_old_vtable back before calling grpc_shutdown() */
-  init_engine_vtable();
-  g_old_vtable = grpc_get_event_engine_test_only();
-  grpc_set_event_engine_test_only(&g_vtable);
+      /* Override the event engine with our test event engine (g_vtable); but before
+       * that, save the current event engine in g_old_vtable. We will have to set
+       * g_old_vtable back before calling grpc_shutdown() */
+      init_engine_vtable ();
+      g_old_vtable = grpc_get_event_engine_test_only ();
+      grpc_set_event_engine_test_only (&g_vtable);
 
-  g_cq = grpc_completion_queue_create_for_next(nullptr);
-}
+      g_cq = grpc_completion_queue_create_for_next (nullptr);
+    }
 
-static void teardown() {
-  grpc_completion_queue_shutdown(g_cq);
+    static void teardown ()
+    {
+      grpc_completion_queue_shutdown (g_cq);
 
-  /* Drain any events */
-  gpr_timespec deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
-  while (grpc_completion_queue_next(g_cq, deadline, nullptr).type !=
-         GRPC_QUEUE_SHUTDOWN) {
-    /* Do nothing */
-  }
+      /* Drain any events */
+      gpr_timespec deadline = gpr_time_0 (GPR_CLOCK_MONOTONIC);
+      while (grpc_completion_queue_next (g_cq, deadline, nullptr).type !=
+	     GRPC_QUEUE_SHUTDOWN)
+	{
+	  /* Do nothing */
+	}
 
-  grpc_completion_queue_destroy(g_cq);
+      grpc_completion_queue_destroy (g_cq);
 
-  /* Restore the old event engine before calling grpc_shutdown */
-  grpc_set_event_engine_test_only(g_old_vtable);
-  grpc_shutdown();
-}
+      /* Restore the old event engine before calling grpc_shutdown */
+      grpc_set_event_engine_test_only (g_old_vtable);
+      grpc_shutdown ();
+    }
 
 /* A few notes about Multi-threaded benchmarks:
 
@@ -136,31 +156,35 @@ static void teardown() {
   state.KeepRunning() returns false. So it is safe to do the teardown in one
   of the threads after state.keepRunning() returns false.
 */
-static void BM_Cq_Throughput(benchmark::State& state) {
-  TrackCounters track_counters;
-  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+    static void BM_Cq_Throughput (benchmark::State & state)
+    {
+      TrackCounters track_counters;
+      gpr_timespec deadline = gpr_inf_future (GPR_CLOCK_MONOTONIC);
 
-  if (state.thread_index == 0) {
-    setup();
-  }
+      if (state.thread_index == 0)
+	{
+	  setup ();
+	}
 
-  while (state.KeepRunning()) {
-    GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
-               GRPC_OP_COMPLETE);
-  }
+      while (state.KeepRunning ())
+	{
+	  GPR_ASSERT (grpc_completion_queue_next (g_cq, deadline, nullptr).
+		      type == GRPC_OP_COMPLETE);
+	}
 
-  state.SetItemsProcessed(state.iterations());
+      state.SetItemsProcessed (state.iterations ());
 
-  if (state.thread_index == 0) {
-    teardown();
-  }
+      if (state.thread_index == 0)
+	{
+	  teardown ();
+	}
 
-  track_counters.Finish(state);
-}
+      track_counters.Finish (state);
+    }
 
-BENCHMARK(BM_Cq_Throughput)->ThreadRange(1, 16)->UseRealTime();
+    BENCHMARK (BM_Cq_Throughput)->ThreadRange (1, 16)->UseRealTime ();
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-BENCHMARK_MAIN();
+BENCHMARK_MAIN ();

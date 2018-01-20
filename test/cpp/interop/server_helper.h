@@ -28,40 +28,45 @@
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server_context.h>
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-std::shared_ptr<ServerCredentials> CreateInteropServerCredentials();
+    std::shared_ptr < ServerCredentials > CreateInteropServerCredentials ();
 
-class InteropServerContextInspector {
- public:
-  InteropServerContextInspector(const ::grpc::ServerContext& context);
+    class InteropServerContextInspector
+    {
+    public:
+      InteropServerContextInspector (const::grpc::ServerContext & context);
 
-  // Inspector methods, able to peek inside ServerContext, follow.
-  std::shared_ptr<const AuthContext> GetAuthContext() const;
-  bool IsCancelled() const;
-  grpc_compression_algorithm GetCallCompressionAlgorithm() const;
-  uint32_t GetEncodingsAcceptedByClient() const;
-  uint32_t GetMessageFlags() const;
+      // Inspector methods, able to peek inside ServerContext, follow.
+        std::shared_ptr < const AuthContext > GetAuthContext () const;
+      bool IsCancelled () const;
+      grpc_compression_algorithm GetCallCompressionAlgorithm () const;
+      uint32_t GetEncodingsAcceptedByClient () const;
+      uint32_t GetMessageFlags () const;
 
- private:
-  const ::grpc::ServerContext& context_;
-};
+    private:
+      const::grpc::ServerContext & context_;
+    };
 
-namespace interop {
+    namespace interop
+    {
 
-extern gpr_atm g_got_sigint;
+      extern gpr_atm g_got_sigint;
 
-struct ServerStartedCondition {
-  std::mutex mutex;
-  std::condition_variable condition;
-  bool server_started = false;
-};
+      struct ServerStartedCondition
+      {
+	std::mutex mutex;
+	std::condition_variable condition;
+	bool server_started = false;
+      };
 
 /// Run gRPC interop server using port FLAGS_port.
 ///
 /// \param creds The credentials associated with the server.
-void RunServer(std::shared_ptr<ServerCredentials> creds);
+      void RunServer (std::shared_ptr < ServerCredentials > creds);
 
 /// Run gRPC interop server.
 ///
@@ -69,11 +74,11 @@ void RunServer(std::shared_ptr<ServerCredentials> creds);
 /// \param port Port to use for the server.
 /// \param server_started_condition (optional) Struct holding mutex, condition
 ///     variable, and condition used to notify when the server has started.
-void RunServer(std::shared_ptr<ServerCredentials> creds, int port,
-               ServerStartedCondition* server_started_condition);
+      void RunServer (std::shared_ptr < ServerCredentials > creds, int port,
+		      ServerStartedCondition * server_started_condition);
 
-}  // namespace interop
-}  // namespace testing
-}  // namespace grpc
+    }				// namespace interop
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
+#endif				// GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H

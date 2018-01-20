@@ -43,256 +43,328 @@
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
-  gpr_log(GPR_INFO, "Starting client of type %s %s %d",
-          ClientType_Name(config.client_type()).c_str(),
-          RpcType_Name(config.rpc_type()).c_str(),
-          config.payload_config().has_bytebuf_params());
+    static std::unique_ptr < Client >
+      CreateClient (const ClientConfig & config)
+    {
+      gpr_log (GPR_INFO, "Starting client of type %s %s %d",
+	       ClientType_Name (config.client_type ()).c_str (),
+	       RpcType_Name (config.rpc_type ()).c_str (),
+	       config.payload_config ().has_bytebuf_params ());
 
-  switch (config.client_type()) {
-    case ClientType::SYNC_CLIENT:
-      return CreateSynchronousClient(config);
-    case ClientType::ASYNC_CLIENT:
-      return config.payload_config().has_bytebuf_params()
-                 ? CreateGenericAsyncStreamingClient(config)
-                 : CreateAsyncClient(config);
-    default:
-      abort();
-  }
-  abort();
-}
-
-static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
-  gpr_log(GPR_INFO, "Starting server of type %s",
-          ServerType_Name(config.server_type()).c_str());
-
-  switch (config.server_type()) {
-    case ServerType::SYNC_SERVER:
-      return CreateSynchronousServer(config);
-    case ServerType::ASYNC_SERVER:
-      return CreateAsyncServer(config);
-    case ServerType::ASYNC_GENERIC_SERVER:
-      return CreateAsyncGenericServer(config);
-    default:
-      abort();
-  }
-  abort();
-}
-
-class ScopedProfile final {
- public:
-  ScopedProfile(const char* filename, bool enable) : enable_(enable) {
-    if (enable_) grpc_profiler_start(filename);
-  }
-  ~ScopedProfile() {
-    if (enable_) grpc_profiler_stop();
-  }
-
- private:
-  const bool enable_;
-};
-
-class WorkerServiceImpl final : public WorkerService::Service {
- public:
-  WorkerServiceImpl(int server_port, QpsWorker* worker)
-      : acquired_(false), server_port_(server_port), worker_(worker) {}
-
-  Status RunClient(
-      ServerContext* ctx,
-      ServerReaderWriter<ClientStatus, ClientArgs>* stream) override {
-    InstanceGuard g(this);
-    if (!g.Acquired()) {
-      return Status(StatusCode::RESOURCE_EXHAUSTED, "Client worker busy");
+      switch (config.client_type ())
+	{
+	case ClientType::SYNC_CLIENT:
+	  return CreateSynchronousClient (config);
+	  case ClientType::ASYNC_CLIENT:return config.payload_config ().
+	    has_bytebuf_params () ? CreateGenericAsyncStreamingClient (config)
+	    : CreateAsyncClient (config);
+	  default:abort ();
+	}
+      abort ();
     }
 
-    ScopedProfile profile("qps_client.prof", false);
-    Status ret = RunClientBody(ctx, stream);
-    gpr_log(GPR_INFO, "RunClient: Returning");
-    return ret;
-  }
+    static std::unique_ptr < Server >
+      CreateServer (const ServerConfig & config)
+    {
+      gpr_log (GPR_INFO, "Starting server of type %s",
+	       ServerType_Name (config.server_type ()).c_str ());
 
-  Status RunServer(
-      ServerContext* ctx,
-      ServerReaderWriter<ServerStatus, ServerArgs>* stream) override {
-    InstanceGuard g(this);
-    if (!g.Acquired()) {
-      return Status(StatusCode::RESOURCE_EXHAUSTED, "Server worker busy");
+      switch (config.server_type ())
+	{
+	case ServerType::SYNC_SERVER:
+	  return CreateSynchronousServer (config);
+	case ServerType::ASYNC_SERVER:
+	  return CreateAsyncServer (config);
+	case ServerType::ASYNC_GENERIC_SERVER:
+	  return CreateAsyncGenericServer (config);
+	default:
+	  abort ();
+	}
+      abort ();
     }
 
-    ScopedProfile profile("qps_server.prof", false);
-    Status ret = RunServerBody(ctx, stream);
-    gpr_log(GPR_INFO, "RunServer: Returning");
-    return ret;
-  }
-
-  Status CoreCount(ServerContext* ctx, const CoreRequest*,
-                   CoreResponse* resp) override {
-    resp->set_cores(gpr_cpu_num_cores());
-    return Status::OK;
-  }
-
-  Status QuitWorker(ServerContext* ctx, const Void*, Void*) override {
-    InstanceGuard g(this);
-    if (!g.Acquired()) {
-      return Status(StatusCode::RESOURCE_EXHAUSTED, "Quitting worker busy");
-    }
-
-    worker_->MarkDone();
-    return Status::OK;
-  }
-
- private:
-  // Protect against multiple clients using this worker at once.
-  class InstanceGuard {
-   public:
-    InstanceGuard(WorkerServiceImpl* impl)
-        : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
-    ~InstanceGuard() {
-      if (acquired_) {
-        impl_->ReleaseInstance();
+    class ScopedProfile final
+    {
+    public:
+      ScopedProfile (const char *filename, bool enable):enable_ (enable)
+      {
+	if (enable_)
+	  grpc_profiler_start (filename);
       }
-    }
-
-    bool Acquired() const { return acquired_; }
-
-   private:
-    WorkerServiceImpl* const impl_;
-    const bool acquired_;
-  };
-
-  bool TryAcquireInstance() {
-    std::lock_guard<std::mutex> g(mu_);
-    if (acquired_) return false;
-    acquired_ = true;
-    return true;
-  }
-
-  void ReleaseInstance() {
-    std::lock_guard<std::mutex> g(mu_);
-    GPR_ASSERT(acquired_);
-    acquired_ = false;
-  }
-
-  Status RunClientBody(ServerContext* ctx,
-                       ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
-    ClientArgs args;
-    if (!stream->Read(&args)) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read args");
-    }
-    if (!args.has_setup()) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Invalid setup arg");
-    }
-    gpr_log(GPR_INFO, "RunClientBody: about to create client");
-    auto client = CreateClient(args.setup());
-    if (!client) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create client");
-    }
-    gpr_log(GPR_INFO, "RunClientBody: client created");
-    ClientStatus status;
-    if (!stream->Write(status)) {
-      return Status(StatusCode::UNKNOWN, "Client couldn't report init status");
-    }
-    gpr_log(GPR_INFO, "RunClientBody: creation status reported");
-    while (stream->Read(&args)) {
-      gpr_log(GPR_INFO, "RunClientBody: Message read");
-      if (!args.has_mark()) {
-        gpr_log(GPR_INFO, "RunClientBody: Message is not a mark!");
-        return Status(StatusCode::INVALID_ARGUMENT, "Invalid mark");
+       ~ScopedProfile ()
+      {
+	if (enable_)
+	  grpc_profiler_stop ();
       }
-      *status.mutable_stats() = client->Mark(args.mark().reset());
-      if (!stream->Write(status)) {
-        return Status(StatusCode::UNKNOWN, "Client couldn't respond to mark");
+
+    private:
+      const bool enable_;
+    };
+
+    class WorkerServiceImpl final:public WorkerService::Service
+    {
+    public:
+      WorkerServiceImpl (int server_port,
+			 QpsWorker * worker):acquired_ (false),
+	server_port_ (server_port), worker_ (worker)
+      {
       }
-      gpr_log(GPR_INFO, "RunClientBody: Mark response given");
-    }
 
-    gpr_log(GPR_INFO, "RunClientBody: Awaiting Threads Completion");
-    client->AwaitThreadsCompletion();
+      Status RunClient (ServerContext * ctx,
+			ServerReaderWriter < ClientStatus,
+			ClientArgs > *stream) override
+      {
+	InstanceGuard g (this);
+	if (!g.Acquired ())
+	  {
+	    return Status (StatusCode::RESOURCE_EXHAUSTED,
+			   "Client worker busy");
+	  }
 
-    gpr_log(GPR_INFO, "RunClientBody: Returning");
-    return Status::OK;
-  }
-
-  Status RunServerBody(ServerContext* ctx,
-                       ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
-    ServerArgs args;
-    if (!stream->Read(&args)) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read server args");
-    }
-    if (!args.has_setup()) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Bad server creation args");
-    }
-    if (server_port_ > 0) {
-      args.mutable_setup()->set_port(server_port_);
-    }
-    gpr_log(GPR_INFO, "RunServerBody: about to create server");
-    auto server = CreateServer(args.setup());
-    if (g_inproc_servers != nullptr) {
-      g_inproc_servers->push_back(server.get());
-    }
-    if (!server) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create server");
-    }
-    gpr_log(GPR_INFO, "RunServerBody: server created");
-    ServerStatus status;
-    status.set_port(server->port());
-    status.set_cores(server->cores());
-    if (!stream->Write(status)) {
-      return Status(StatusCode::UNKNOWN, "Server couldn't report init status");
-    }
-    gpr_log(GPR_INFO, "RunServerBody: creation status reported");
-    while (stream->Read(&args)) {
-      gpr_log(GPR_INFO, "RunServerBody: Message read");
-      if (!args.has_mark()) {
-        gpr_log(GPR_INFO, "RunServerBody: Message not a mark!");
-        return Status(StatusCode::INVALID_ARGUMENT, "Invalid mark");
+	ScopedProfile profile ("qps_client.prof", false);
+	Status ret = RunClientBody (ctx, stream);
+	gpr_log (GPR_INFO, "RunClient: Returning");
+	return ret;
       }
-      *status.mutable_stats() = server->Mark(args.mark().reset());
-      if (!stream->Write(status)) {
-        return Status(StatusCode::UNKNOWN, "Server couldn't respond to mark");
+
+      Status RunServer (ServerContext * ctx,
+			ServerReaderWriter < ServerStatus,
+			ServerArgs > *stream) override
+      {
+	InstanceGuard g (this);
+	if (!g.Acquired ())
+	  {
+	    return Status (StatusCode::RESOURCE_EXHAUSTED,
+			   "Server worker busy");
+	  }
+
+	ScopedProfile profile ("qps_server.prof", false);
+	Status ret = RunServerBody (ctx, stream);
+	gpr_log (GPR_INFO, "RunServer: Returning");
+	return ret;
       }
-      gpr_log(GPR_INFO, "RunServerBody: Mark response given");
+
+      Status CoreCount (ServerContext * ctx, const CoreRequest *,
+			CoreResponse * resp) override
+      {
+	resp->set_cores (gpr_cpu_num_cores ());
+	return Status::OK;
+      }
+
+      Status QuitWorker (ServerContext * ctx, const Void *, Void *) override
+      {
+	InstanceGuard g (this);
+	if (!g.Acquired ())
+	  {
+	    return Status (StatusCode::RESOURCE_EXHAUSTED,
+			   "Quitting worker busy");
+	  }
+
+	worker_->MarkDone ();
+	return Status::OK;
+      }
+
+    private:
+      // Protect against multiple clients using this worker at once.
+      class InstanceGuard
+      {
+      public:
+      InstanceGuard (WorkerServiceImpl * impl):impl_ (impl),
+	  acquired_ (impl->
+		     TryAcquireInstance ())
+	{
+	}
+	~InstanceGuard ()
+	{
+	  if (acquired_)
+	    {
+	      impl_->ReleaseInstance ();
+	    }
+	}
+
+	bool Acquired () const
+	{
+	  return acquired_;
+	}
+
+      private:
+	  WorkerServiceImpl * const impl_;
+	const bool acquired_;
+      };
+
+      bool TryAcquireInstance ()
+      {
+	std::lock_guard < std::mutex > g (mu_);
+	if (acquired_)
+	  return false;
+	acquired_ = true;
+	return true;
+      }
+
+      void ReleaseInstance ()
+      {
+	std::lock_guard < std::mutex > g (mu_);
+	GPR_ASSERT (acquired_);
+	acquired_ = false;
+      }
+
+      Status RunClientBody (ServerContext * ctx,
+			    ServerReaderWriter < ClientStatus,
+			    ClientArgs > *stream)
+      {
+	ClientArgs args;
+	if (!stream->Read (&args))
+	  {
+	    return Status (StatusCode::INVALID_ARGUMENT,
+			   "Couldn't read args");
+	  }
+	if (!args.has_setup ())
+	  {
+	    return Status (StatusCode::INVALID_ARGUMENT, "Invalid setup arg");
+	  }
+	gpr_log (GPR_INFO, "RunClientBody: about to create client");
+	auto client = CreateClient (args.setup ());
+	if (!client)
+	  {
+	    return Status (StatusCode::INVALID_ARGUMENT,
+			   "Couldn't create client");
+	  }
+	gpr_log (GPR_INFO, "RunClientBody: client created");
+	ClientStatus status;
+	if (!stream->Write (status))
+	  {
+	    return Status (StatusCode::UNKNOWN,
+			   "Client couldn't report init status");
+	  }
+	gpr_log (GPR_INFO, "RunClientBody: creation status reported");
+	while (stream->Read (&args))
+	  {
+	    gpr_log (GPR_INFO, "RunClientBody: Message read");
+	    if (!args.has_mark ())
+	      {
+		gpr_log (GPR_INFO, "RunClientBody: Message is not a mark!");
+		return Status (StatusCode::INVALID_ARGUMENT, "Invalid mark");
+	      }
+	    *status.mutable_stats () = client->Mark (args.mark ().reset ());
+	    if (!stream->Write (status))
+	      {
+		return Status (StatusCode::UNKNOWN,
+			       "Client couldn't respond to mark");
+	      }
+	    gpr_log (GPR_INFO, "RunClientBody: Mark response given");
+	  }
+
+	gpr_log (GPR_INFO, "RunClientBody: Awaiting Threads Completion");
+	client->AwaitThreadsCompletion ();
+
+	gpr_log (GPR_INFO, "RunClientBody: Returning");
+	return Status::OK;
+      }
+
+      Status RunServerBody (ServerContext * ctx,
+			    ServerReaderWriter < ServerStatus,
+			    ServerArgs > *stream)
+      {
+	ServerArgs args;
+	if (!stream->Read (&args))
+	  {
+	    return Status (StatusCode::INVALID_ARGUMENT,
+			   "Couldn't read server args");
+	  }
+	if (!args.has_setup ())
+	  {
+	    return Status (StatusCode::INVALID_ARGUMENT,
+			   "Bad server creation args");
+	  }
+	if (server_port_ > 0)
+	  {
+	    args.mutable_setup ()->set_port (server_port_);
+	  }
+	gpr_log (GPR_INFO, "RunServerBody: about to create server");
+	auto server = CreateServer (args.setup ());
+	if (g_inproc_servers != nullptr)
+	  {
+	    g_inproc_servers->push_back (server.get ());
+	  }
+	if (!server)
+	  {
+	    return Status (StatusCode::INVALID_ARGUMENT,
+			   "Couldn't create server");
+	  }
+	gpr_log (GPR_INFO, "RunServerBody: server created");
+	ServerStatus status;
+	status.set_port (server->port ());
+	status.set_cores (server->cores ());
+	if (!stream->Write (status))
+	  {
+	    return Status (StatusCode::UNKNOWN,
+			   "Server couldn't report init status");
+	  }
+	gpr_log (GPR_INFO, "RunServerBody: creation status reported");
+	while (stream->Read (&args))
+	  {
+	    gpr_log (GPR_INFO, "RunServerBody: Message read");
+	    if (!args.has_mark ())
+	      {
+		gpr_log (GPR_INFO, "RunServerBody: Message not a mark!");
+		return Status (StatusCode::INVALID_ARGUMENT, "Invalid mark");
+	      }
+	    *status.mutable_stats () = server->Mark (args.mark ().reset ());
+	    if (!stream->Write (status))
+	      {
+		return Status (StatusCode::UNKNOWN,
+			       "Server couldn't respond to mark");
+	      }
+	    gpr_log (GPR_INFO, "RunServerBody: Mark response given");
+	  }
+
+	gpr_log (GPR_INFO, "RunServerBody: Returning");
+	return Status::OK;
+      }
+
+      std::mutex mu_;
+      bool acquired_;
+      int server_port_;
+      QpsWorker *worker_;
+    };
+
+    QpsWorker::QpsWorker (int driver_port, int server_port,
+			  const grpc::string & credential_type)
+    {
+      impl_.reset (new WorkerServiceImpl (server_port, this));
+      gpr_atm_rel_store (&done_, static_cast < gpr_atm > (0));
+
+      ServerBuilder builder;
+      if (driver_port >= 0)
+	{
+	  char *server_address = nullptr;
+	  gpr_join_host_port (&server_address, "::", driver_port);
+	  builder.AddListeningPort (server_address,
+				    GetCredentialsProvider ()->
+				    GetServerCredentials (credential_type));
+	  gpr_free (server_address);
+	}
+      builder.RegisterService (impl_.get ());
+
+      server_ = builder.BuildAndStart ();
     }
 
-    gpr_log(GPR_INFO, "RunServerBody: Returning");
-    return Status::OK;
-  }
+    QpsWorker::~QpsWorker ()
+    {
+    }
 
-  std::mutex mu_;
-  bool acquired_;
-  int server_port_;
-  QpsWorker* worker_;
-};
-
-QpsWorker::QpsWorker(int driver_port, int server_port,
-                     const grpc::string& credential_type) {
-  impl_.reset(new WorkerServiceImpl(server_port, this));
-  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
-
-  ServerBuilder builder;
-  if (driver_port >= 0) {
-    char* server_address = nullptr;
-    gpr_join_host_port(&server_address, "::", driver_port);
-    builder.AddListeningPort(
-        server_address,
-        GetCredentialsProvider()->GetServerCredentials(credential_type));
-    gpr_free(server_address);
-  }
-  builder.RegisterService(impl_.get());
-
-  server_ = builder.BuildAndStart();
-}
-
-QpsWorker::~QpsWorker() {}
-
-bool QpsWorker::Done() const {
-  return (gpr_atm_acq_load(&done_) != static_cast<gpr_atm>(0));
-}
-void QpsWorker::MarkDone() {
-  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(1));
-}
-}  // namespace testing
-}  // namespace grpc
+    bool QpsWorker::Done () const
+    {
+      return (gpr_atm_acq_load (&done_) != static_cast < gpr_atm > (0));
+    }
+    void QpsWorker::MarkDone ()
+    {
+      gpr_atm_rel_store (&done_, static_cast < gpr_atm > (1));
+    }
+  }				// namespace testing
+}				// namespace grpc

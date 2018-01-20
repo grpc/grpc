@@ -25,35 +25,39 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-namespace grpc_core {
+namespace grpc_core
+{
 
-class LockfreeEvent {
- public:
-  LockfreeEvent();
+  class LockfreeEvent
+  {
+  public:
+    LockfreeEvent ();
 
-  LockfreeEvent(const LockfreeEvent&) = delete;
-  LockfreeEvent& operator=(const LockfreeEvent&) = delete;
+    LockfreeEvent (const LockfreeEvent &) = delete;
+      LockfreeEvent & operator= (const LockfreeEvent &) = delete;
 
-  // These methods are used to initialize and destroy the internal state. These
-  // cannot be done in constructor and destructor because SetReady may be called
-  // when the event is destroyed and put in a freelist.
-  void InitEvent();
-  void DestroyEvent();
+    // These methods are used to initialize and destroy the internal state. These
+    // cannot be done in constructor and destructor because SetReady may be called
+    // when the event is destroyed and put in a freelist.
+    void InitEvent ();
+    void DestroyEvent ();
 
-  bool IsShutdown() const {
-    return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
-  }
+    bool IsShutdown () const
+    {
+      return (gpr_atm_no_barrier_load (&state_) & kShutdownBit) != 0;
+    }
 
-  void NotifyOn(grpc_closure* closure);
-  bool SetShutdown(grpc_error* error);
-  void SetReady();
+    void NotifyOn (grpc_closure * closure);
+    bool SetShutdown (grpc_error * error);
+    void SetReady ();
 
- private:
-  enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
+  private:
+    enum State
+    { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
 
-  gpr_atm state_;
-};
+    gpr_atm state_;
+  };
 
-}  // namespace grpc_core
+}				// namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H */
+#endif				/* GRPC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H */

@@ -24,6 +24,6 @@
 #include <stddef.h>
 
 /* compute the hash of key (length len) */
-uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed);
+uint32_t gpr_murmur_hash3 (const void *key, size_t len, uint32_t seed);
 
 #endif /* GRPC_CORE_LIB_GPR_MURMUR_HASH_H */

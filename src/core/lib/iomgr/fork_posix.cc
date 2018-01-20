@@ -41,49 +41,64 @@
  *       AROUND VERY SPECIFIC USE CASES.
  */
 
-void grpc_prefork() {
-  if (!grpc_fork_support_enabled()) {
-    gpr_log(GPR_ERROR,
-            "Fork support not enabled; try running with the "
-            "environment variable GRPC_ENABLE_FORK_SUPPORT=1");
-    return;
-  }
-  if (grpc_is_initialized()) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_timer_manager_set_threading(false);
-    grpc_executor_set_threading(false);
-    grpc_core::ExecCtx::Get()->Flush();
-    if (!gpr_await_threads(
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_seconds(3, GPR_TIMESPAN)))) {
-      gpr_log(GPR_ERROR, "gRPC thread still active! Cannot fork!");
+void
+grpc_prefork ()
+{
+  if (!grpc_fork_support_enabled ())
+    {
+      gpr_log (GPR_ERROR,
+	       "Fork support not enabled; try running with the "
+	       "environment variable GRPC_ENABLE_FORK_SUPPORT=1");
+      return;
     }
-  }
+  if (grpc_is_initialized ())
+    {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_timer_manager_set_threading (false);
+      grpc_executor_set_threading (false);
+      grpc_core::ExecCtx::Get ()->Flush ();
+      if (!gpr_await_threads (gpr_time_add (gpr_now (GPR_CLOCK_REALTIME),
+					    gpr_time_from_seconds (3,
+								   GPR_TIMESPAN))))
+	{
+	  gpr_log (GPR_ERROR, "gRPC thread still active! Cannot fork!");
+	}
+    }
 }
 
-void grpc_postfork_parent() {
-  if (grpc_is_initialized()) {
-    grpc_timer_manager_set_threading(true);
-    grpc_core::ExecCtx exec_ctx;
-    grpc_executor_set_threading(true);
-  }
+void
+grpc_postfork_parent ()
+{
+  if (grpc_is_initialized ())
+    {
+      grpc_timer_manager_set_threading (true);
+      grpc_core::ExecCtx exec_ctx;
+      grpc_executor_set_threading (true);
+    }
 }
 
-void grpc_postfork_child() {
-  if (grpc_is_initialized()) {
-    grpc_timer_manager_set_threading(true);
-    grpc_core::ExecCtx exec_ctx;
-    grpc_executor_set_threading(true);
-    grpc_core::ExecCtx::Get()->Flush();
-  }
+void
+grpc_postfork_child ()
+{
+  if (grpc_is_initialized ())
+    {
+      grpc_timer_manager_set_threading (true);
+      grpc_core::ExecCtx exec_ctx;
+      grpc_executor_set_threading (true);
+      grpc_core::ExecCtx::Get ()->Flush ();
+    }
 }
 
-void grpc_fork_handlers_auto_register() {
-  if (grpc_fork_support_enabled()) {
+void
+grpc_fork_handlers_auto_register ()
+{
+  if (grpc_fork_support_enabled ())
+    {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-    pthread_atfork(grpc_prefork, grpc_postfork_parent, grpc_postfork_child);
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-  }
+      pthread_atfork (grpc_prefork, grpc_postfork_parent,
+		      grpc_postfork_child);
+#endif // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+    }
 }
 
-#endif  // GRPC_POSIX_FORK
+#endif // GRPC_POSIX_FORK

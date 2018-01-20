@@ -25,39 +25,43 @@
 #include <grpc++/impl/codegen/service_type.h>
 #include <grpc++/support/byte_buffer.h>
 
-namespace grpc {
+namespace grpc
+{
 
 // Default implementation of HealthCheckServiceInterface. Server will create and
 // own it.
-class DefaultHealthCheckService final : public HealthCheckServiceInterface {
- public:
-  // The service impl to register with the server.
-  class HealthCheckServiceImpl : public Service {
-   public:
-    explicit HealthCheckServiceImpl(DefaultHealthCheckService* service);
+  class DefaultHealthCheckService final:public HealthCheckServiceInterface
+  {
+  public:
+    // The service impl to register with the server.
+    class HealthCheckServiceImpl:public Service
+    {
+    public:
+      explicit HealthCheckServiceImpl (DefaultHealthCheckService * service);
 
-    Status Check(ServerContext* context, const ByteBuffer* request,
-                 ByteBuffer* response);
+      Status Check (ServerContext * context, const ByteBuffer * request,
+		    ByteBuffer * response);
 
-   private:
-    const DefaultHealthCheckService* const service_;
-    internal::RpcServiceMethod* method_;
+    private:
+      const DefaultHealthCheckService *const service_;
+        internal::RpcServiceMethod * method_;
+    };
+
+      DefaultHealthCheckService ();
+    void SetServingStatus (const grpc::string & service_name,
+			   bool serving) override;
+    void SetServingStatus (bool serving) override;
+    enum ServingStatus
+    { NOT_FOUND, SERVING, NOT_SERVING };
+    ServingStatus GetServingStatus (const grpc::string & service_name) const;
+    HealthCheckServiceImpl *GetHealthCheckService ();
+
+  private:
+      mutable std::mutex mu_;
+      std::map < grpc::string, bool > services_map_;
+      std::unique_ptr < HealthCheckServiceImpl > impl_;
   };
 
-  DefaultHealthCheckService();
-  void SetServingStatus(const grpc::string& service_name,
-                        bool serving) override;
-  void SetServingStatus(bool serving) override;
-  enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
-  ServingStatus GetServingStatus(const grpc::string& service_name) const;
-  HealthCheckServiceImpl* GetHealthCheckService();
+}				// namespace grpc
 
- private:
-  mutable std::mutex mu_;
-  std::map<grpc::string, bool> services_map_;
-  std::unique_ptr<HealthCheckServiceImpl> impl_;
-};
-
-}  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
+#endif // GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H

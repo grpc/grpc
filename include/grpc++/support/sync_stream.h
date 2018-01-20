@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/sync_stream.h>
 
-#endif  // GRPCXX_SUPPORT_SYNC_STREAM_H
+#endif // GRPCXX_SUPPORT_SYNC_STREAM_H

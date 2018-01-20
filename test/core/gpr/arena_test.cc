@@ -30,38 +30,47 @@
 #include "src/core/lib/gpr/string.h"
 #include "test/core/util/test_config.h"
 
-static void test_noop(void) { gpr_arena_destroy(gpr_arena_create(1)); }
+static void
+test_noop (void)
+{
+  gpr_arena_destroy (gpr_arena_create (1));
+}
 
-static void test(const char* name, size_t init_size, const size_t* allocs,
-                 size_t nallocs) {
+static void
+test (const char *name, size_t init_size, const size_t * allocs,
+      size_t nallocs)
+{
   gpr_strvec v;
-  char* s;
-  gpr_strvec_init(&v);
-  gpr_asprintf(&s, "test '%s': %" PRIdPTR " <- {", name, init_size);
-  gpr_strvec_add(&v, s);
-  for (size_t i = 0; i < nallocs; i++) {
-    gpr_asprintf(&s, "%" PRIdPTR ",", allocs[i]);
-    gpr_strvec_add(&v, s);
-  }
-  gpr_strvec_add(&v, gpr_strdup("}"));
-  s = gpr_strvec_flatten(&v, nullptr);
-  gpr_strvec_destroy(&v);
-  gpr_log(GPR_INFO, "%s", s);
-  gpr_free(s);
-
-  gpr_arena* a = gpr_arena_create(init_size);
-  void** ps = static_cast<void**>(gpr_zalloc(sizeof(*ps) * nallocs));
-  for (size_t i = 0; i < nallocs; i++) {
-    ps[i] = gpr_arena_alloc(a, allocs[i]);
-    // ensure no duplicate results
-    for (size_t j = 0; j < i; j++) {
-      GPR_ASSERT(ps[i] != ps[j]);
+  char *s;
+  gpr_strvec_init (&v);
+  gpr_asprintf (&s, "test '%s': %" PRIdPTR " <- {", name, init_size);
+  gpr_strvec_add (&v, s);
+  for (size_t i = 0; i < nallocs; i++)
+    {
+      gpr_asprintf (&s, "%" PRIdPTR ",", allocs[i]);
+      gpr_strvec_add (&v, s);
     }
-    // ensure writable
-    memset(ps[i], 1, allocs[i]);
-  }
-  gpr_arena_destroy(a);
-  gpr_free(ps);
+  gpr_strvec_add (&v, gpr_strdup ("}"));
+  s = gpr_strvec_flatten (&v, nullptr);
+  gpr_strvec_destroy (&v);
+  gpr_log (GPR_INFO, "%s", s);
+  gpr_free (s);
+
+  gpr_arena *a = gpr_arena_create (init_size);
+  void **ps = static_cast < void **>(gpr_zalloc (sizeof (*ps) * nallocs));
+  for (size_t i = 0; i < nallocs; i++)
+    {
+      ps[i] = gpr_arena_alloc (a, allocs[i]);
+      // ensure no duplicate results
+      for (size_t j = 0; j < i; j++)
+	{
+	  GPR_ASSERT (ps[i] != ps[j]);
+	}
+      // ensure writable
+      memset (ps[i], 1, allocs[i]);
+    }
+  gpr_arena_destroy (a);
+  gpr_free (ps);
 }
 
 #define TEST(name, init_size, ...)                     \
@@ -70,60 +79,73 @@ static void test(const char* name, size_t init_size, const size_t* allocs,
 
 #define CONCURRENT_TEST_THREADS 100
 
-size_t concurrent_test_iterations() {
-  if (sizeof(void*) < 8) return 1000;
+size_t
+concurrent_test_iterations ()
+{
+  if (sizeof (void *) < 8)
+    return 1000;
   return 100000;
 }
 
-typedef struct {
+typedef struct
+{
   gpr_event ev_start;
-  gpr_arena* arena;
+  gpr_arena *arena;
 } concurrent_test_args;
 
-static void concurrent_test_body(void* arg) {
-  concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
-  gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
-  for (size_t i = 0; i < concurrent_test_iterations(); i++) {
-    *(char*)gpr_arena_alloc(a->arena, 1) = (char)i;
-  }
+static void
+concurrent_test_body (void *arg)
+{
+  concurrent_test_args *a = static_cast < concurrent_test_args * >(arg);
+  gpr_event_wait (&a->ev_start, gpr_inf_future (GPR_CLOCK_REALTIME));
+  for (size_t i = 0; i < concurrent_test_iterations (); i++)
+    {
+      *(char *) gpr_arena_alloc (a->arena, 1) = (char) i;
+    }
 }
 
-static void concurrent_test(void) {
-  gpr_log(GPR_DEBUG, "concurrent_test");
+static void
+concurrent_test (void)
+{
+  gpr_log (GPR_DEBUG, "concurrent_test");
 
   concurrent_test_args args;
-  gpr_event_init(&args.ev_start);
-  args.arena = gpr_arena_create(1024);
+  gpr_event_init (&args.ev_start);
+  args.arena = gpr_arena_create (1024);
 
   gpr_thd_id thds[CONCURRENT_TEST_THREADS];
 
-  for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
-    gpr_thd_options opt = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&opt);
-    gpr_thd_new(&thds[i], "grpc_concurrent_test", concurrent_test_body, &args,
-                &opt);
-  }
+  for (int i = 0; i < CONCURRENT_TEST_THREADS; i++)
+    {
+      gpr_thd_options opt = gpr_thd_options_default ();
+      gpr_thd_options_set_joinable (&opt);
+      gpr_thd_new (&thds[i], "grpc_concurrent_test", concurrent_test_body,
+		   &args, &opt);
+    }
 
-  gpr_event_set(&args.ev_start, (void*)1);
+  gpr_event_set (&args.ev_start, (void *) 1);
 
-  for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
-    gpr_thd_join(thds[i]);
-  }
+  for (int i = 0; i < CONCURRENT_TEST_THREADS; i++)
+    {
+      gpr_thd_join (thds[i]);
+    }
 
-  gpr_arena_destroy(args.arena);
+  gpr_arena_destroy (args.arena);
 }
 
-int main(int argc, char* argv[]) {
-  grpc_test_init(argc, argv);
+int
+main (int argc, char *argv[])
+{
+  grpc_test_init (argc, argv);
 
-  test_noop();
-  TEST(0_1, 0, 1);
-  TEST(1_1, 1, 1);
-  TEST(1_2, 1, 2);
-  TEST(1_3, 1, 3);
-  TEST(1_inc, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
-  TEST(6_123, 6, 1, 2, 3);
-  concurrent_test();
+  test_noop ();
+  TEST (0 _1, 0, 1);
+  TEST (1 _1, 1, 1);
+  TEST (1 _2, 1, 2);
+  TEST (1 _3, 1, 3);
+  TEST (1 _inc, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+  TEST (6 _123, 6, 1, 2, 3);
+  concurrent_test ();
 
   return 0;
 }

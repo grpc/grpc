@@ -29,63 +29,82 @@
 #include "src/core/lib/gpr/string.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc_core {
-namespace testing {
+namespace grpc_core
+{
+  namespace testing
+  {
 
-TEST(PidController, NoOp) {
-  PidController pid(PidController::Args()
-                        .set_gain_p(1)
-                        .set_gain_i(1)
-                        .set_gain_d(1)
-                        .set_initial_control_value(1));
-}
+    TEST (PidController, NoOp)
+    {
+      PidController pid (PidController::Args ().set_gain_p (1).set_gain_i (1).
+			 set_gain_d (1).set_initial_control_value (1));
+    }
 
-struct SimpleConvergenceTestArgs {
-  double gain_p;
-  double gain_i;
-  double gain_d;
-  double dt;
-  double set_point;
-  double start;
-};
+    struct SimpleConvergenceTestArgs
+    {
+      double gain_p;
+      double gain_i;
+      double gain_d;
+      double dt;
+      double set_point;
+      double start;
+    };
 
-std::ostream& operator<<(std::ostream& out, SimpleConvergenceTestArgs args) {
-  return out << "gain_p:" << args.gain_p << " gain_i:" << args.gain_i
-             << " gain_d:" << args.gain_d << " dt:" << args.dt
-             << " set_point:" << args.set_point << " start:" << args.start;
-}
+      std::ostream & operator<< (std::ostream & out,
+				 SimpleConvergenceTestArgs args)
+    {
+      return out << "gain_p:" << args.gain_p << " gain_i:" << args.gain_i
+	<< " gain_d:" << args.gain_d << " dt:" << args.dt
+	<< " set_point:" << args.set_point << " start:" << args.start;
+    }
 
-class SimpleConvergenceTest
-    : public ::testing::TestWithParam<SimpleConvergenceTestArgs> {};
+    class SimpleConvergenceTest:public::testing::TestWithParam <
+      SimpleConvergenceTestArgs >
+    {
+    };
 
-TEST_P(SimpleConvergenceTest, Converges) {
-  PidController pid(PidController::Args()
-                        .set_gain_p(GetParam().gain_p)
-                        .set_gain_i(GetParam().gain_i)
-                        .set_gain_d(GetParam().gain_d)
-                        .set_initial_control_value(GetParam().start));
+    TEST_P (SimpleConvergenceTest, Converges)
+    {
+      PidController pid (PidController::Args ().
+			 set_gain_p (GetParam ().gain_p).
+			 set_gain_i (GetParam ().gain_i).
+			 set_gain_d (GetParam ().gain_d).
+			 set_initial_control_value (GetParam ().start));
 
-  for (int i = 0; i < 100000; i++) {
-    pid.Update(GetParam().set_point - pid.last_control_value(), GetParam().dt);
-  }
+      for (int i = 0; i < 100000; i++)
+	{
+	  pid.Update (GetParam ().set_point - pid.last_control_value (),
+		      GetParam ().dt);
+	}
 
-  EXPECT_LT(fabs(GetParam().set_point - pid.last_control_value()), 0.1);
-  if (GetParam().gain_i > 0) {
-    EXPECT_LT(fabs(pid.error_integral()), 0.1);
-  }
-}
+      EXPECT_LT (fabs (GetParam ().set_point - pid.last_control_value ()),
+		 0.1);
+      if (GetParam ().gain_i > 0)
+	{
+	  EXPECT_LT (fabs (pid.error_integral ()), 0.1);
+	}
+    }
 
-INSTANTIATE_TEST_CASE_P(
-    X, SimpleConvergenceTest,
-    ::testing::Values(SimpleConvergenceTestArgs{0.2, 0, 0, 1, 100, 0},
-                      SimpleConvergenceTestArgs{0.2, 0.1, 0, 1, 100, 0},
-                      SimpleConvergenceTestArgs{0.2, 0.1, 0.1, 1, 100, 0}));
+    INSTANTIATE_TEST_CASE_P (X,
+			     SimpleConvergenceTest,::testing::
+			     Values (SimpleConvergenceTestArgs
+				     {
+				     0.2, 0, 0, 1, 100, 0}
+				     , SimpleConvergenceTestArgs
+				     {
+				     0.2, 0.1, 0, 1, 100, 0}
+				     , SimpleConvergenceTestArgs
+				     {
+				     0.2, 0.1, 0.1, 1, 100, 0}
+			     ));
 
-}  // namespace testing
-}  // namespace grpc_core
+  }				// namespace testing
+}				// namespace grpc_core
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  ::testing::InitGoogleTest (&argc, argv);
+  return RUN_ALL_TESTS ();
 }

@@ -18,22 +18,30 @@
 
 #include "src/core/ext/filters/client_channel/connector.h"
 
-grpc_connector* grpc_connector_ref(grpc_connector* connector) {
-  connector->vtable->ref(connector);
+grpc_connector *
+grpc_connector_ref (grpc_connector * connector)
+{
+  connector->vtable->ref (connector);
   return connector;
 }
 
-void grpc_connector_unref(grpc_connector* connector) {
-  connector->vtable->unref(connector);
+void
+grpc_connector_unref (grpc_connector * connector)
+{
+  connector->vtable->unref (connector);
 }
 
-void grpc_connector_connect(grpc_connector* connector,
-                            const grpc_connect_in_args* in_args,
-                            grpc_connect_out_args* out_args,
-                            grpc_closure* notify) {
-  connector->vtable->connect(connector, in_args, out_args, notify);
+void
+grpc_connector_connect (grpc_connector * connector,
+			const grpc_connect_in_args * in_args,
+			grpc_connect_out_args * out_args,
+			grpc_closure * notify)
+{
+  connector->vtable->connect (connector, in_args, out_args, notify);
 }
 
-void grpc_connector_shutdown(grpc_connector* connector, grpc_error* why) {
-  connector->vtable->shutdown(connector, why);
+void
+grpc_connector_shutdown (grpc_connector * connector, grpc_error * why)
+{
+  connector->vtable->shutdown (connector, why);
 }

@@ -33,131 +33,139 @@
 
 #include <gtest/gtest.h>
 
-namespace grpc {
-namespace {
-
-TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
-  std::mutex mu;
-  bool shutting_down = false;
-
-  // grpc server config.
-  std::ostringstream s;
-  int p = grpc_pick_unused_port_or_die();
-  s << "[::1]:" << p;
-  const string address = s.str();
-  testing::EchoTestService::AsyncService service;
-  ServerBuilder builder;
-  builder.AddListeningPort(address, InsecureServerCredentials());
-  auto cq = builder.AddCompletionQueue();
-  builder.RegisterService(&service);
-  auto server = builder.BuildAndStart();
-
-  // server thread.
-  std::thread t([address, &service, &cq, &mu, &shutting_down] {
-    for (int n = 0; true; n++) {
-      ServerContext ctx;
-      testing::EchoRequest req;
-      ServerAsyncResponseWriter<testing::EchoResponse> responder(&ctx);
-
-      // if shutting down, don't enqueue a new request.
-      {
-        std::lock_guard<std::mutex> lock(mu);
-        if (!shutting_down) {
-          service.RequestEcho(&ctx, &req, &responder, cq.get(), cq.get(),
-                              (void*)1);
-        }
-      }
-
-      bool ok;
-      void* tag;
-      if (!cq->Next(&tag, &ok)) {
-        break;
-      }
-
-      EXPECT_EQ((void*)1, tag);
-      // If not shutting down, ok must be true for new requests.
-      {
-        std::lock_guard<std::mutex> lock(mu);
-        if (!shutting_down && !ok) {
-          gpr_log(GPR_INFO, "!ok on request %d", n);
-          abort();
-        }
-        if (shutting_down && !ok) {
-          // Failed connection due to shutdown, continue flushing the CQ.
-          continue;
-        }
-      }
-
-      // Send a simple response after a small delay that would ensure the client
-      // deadline is exceeded.
-      gpr_log(GPR_INFO, "Got request %d", n);
-      testing::EchoResponse response;
-      response.set_message("foobar");
-      // A bit of sleep to make sure the deadline elapses.
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                   gpr_time_from_millis(50, GPR_TIMESPAN)));
-      {
-        std::lock_guard<std::mutex> lock(mu);
-        if (shutting_down) {
-          gpr_log(GPR_INFO,
-                  "shut down while processing call, not calling Finish()");
-          // Continue flushing the CQ.
-          continue;
-        }
-        gpr_log(GPR_INFO, "Finishing request %d", n);
-        responder.Finish(response, grpc::Status::OK, (void*)2);
-        if (!cq->Next(&tag, &ok)) {
-          break;
-        }
-        EXPECT_EQ((void*)2, tag);
-      }
-    }
-  });
-
-  auto stub = testing::EchoTestService::NewStub(
-      CreateChannel(address, InsecureChannelCredentials()));
-
-  for (int i = 0; i < 100; i++) {
-    gpr_log(GPR_INFO, "Sending %d.", i);
-    testing::EchoRequest request;
-
-    /////////
-    // Comment out the following line to get ok=false due to invalid request.
-    // Otherwise, ok=false due to deadline being exceeded.
-    /////////
-    request.set_message("foobar");
-
-    // A simple request with a short deadline. The server will always exceed the
-    // deadline, whether due to the sleep or because the server was unable to
-    // even fetch the request from the CQ before the deadline elapsed.
-    testing::EchoResponse response;
-    ::grpc::ClientContext ctx;
-    ctx.set_fail_fast(false);
-    ctx.set_deadline(std::chrono::system_clock::now() +
-                     std::chrono::milliseconds(1));
-    grpc::Status status = stub->Echo(&ctx, request, &response);
-    EXPECT_EQ(DEADLINE_EXCEEDED, status.error_code());
-    gpr_log(GPR_INFO, "Success.");
-  }
-  gpr_log(GPR_INFO, "Done sending RPCs.");
-
-  // Shut down everything properly.
-  gpr_log(GPR_INFO, "Shutting down.");
+namespace grpc
+{
+  namespace
   {
-    std::lock_guard<std::mutex> lock(mu);
-    shutting_down = true;
-  }
-  server->Shutdown();
-  cq->Shutdown();
-  server->Wait();
 
-  t.join();
-}
+    TEST (ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse)
+    {
+      std::mutex mu;
+      bool shutting_down = false;
 
-}  // namespace
-}  // namespace grpc
+      // grpc server config.
+        std::ostringstream s;
+      int p = grpc_pick_unused_port_or_die ();
+        s << "[::1]:" << p;
+      const string address = s.str ();
+        testing::EchoTestService::AsyncService service;
+      ServerBuilder builder;
+        builder.AddListeningPort (address, InsecureServerCredentials ());
+      auto cq = builder.AddCompletionQueue ();
+        builder.RegisterService (&service);
+      auto server = builder.BuildAndStart ();
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+      // server thread.
+        std::thread t ([address, &service, &cq, &mu, &shutting_down]
+		       {
+		       for (int n = 0; true; n++)
+		       {
+		       ServerContext ctx;
+		       testing::EchoRequest req;
+		       ServerAsyncResponseWriter < testing::EchoResponse >
+		       responder (&ctx);
+		       // if shutting down, don't enqueue a new request.
+		       {
+		       std::lock_guard < std::mutex > lock (mu);
+		       if (!shutting_down)
+		       {
+		       service.RequestEcho (&ctx, &req, &responder, cq.get (),
+					    cq.get (), (void *) 1);}
+		       }
+
+		       bool ok; void *tag; if (!cq->Next (&tag, &ok))
+		       {
+		       break;}
+
+		       EXPECT_EQ ((void *) 1, tag);
+		       // If not shutting down, ok must be true for new requests.
+		       {
+		       std::lock_guard < std::mutex > lock (mu);
+		       if (!shutting_down && !ok)
+		       {
+		       gpr_log (GPR_INFO, "!ok on request %d", n); abort ();}
+		       if (shutting_down && !ok)
+		       {
+		       // Failed connection due to shutdown, continue flushing the CQ.
+		       continue;}
+		       }
+
+		       // Send a simple response after a small delay that would ensure the client
+		       // deadline is exceeded.
+		       gpr_log (GPR_INFO, "Got request %d", n);
+		       testing::EchoResponse response;
+		       response.set_message ("foobar");
+		       // A bit of sleep to make sure the deadline elapses.
+		       gpr_sleep_until (gpr_time_add
+					(gpr_now (GPR_CLOCK_MONOTONIC),
+					 gpr_time_from_millis (50,
+							       GPR_TIMESPAN)));
+		       {
+		       std::lock_guard < std::mutex > lock (mu);
+		       if (shutting_down)
+		       {
+		       gpr_log (GPR_INFO,
+				"shut down while processing call, not calling Finish()");
+		       // Continue flushing the CQ.
+		       continue;}
+		       gpr_log (GPR_INFO, "Finishing request %d", n);
+		       responder.Finish (response, grpc::Status::OK,
+					 (void *) 2);
+		       if (!cq->Next (&tag, &ok))
+		       {
+		       break;}
+		       EXPECT_EQ ((void *) 2, tag);}
+		       }
+		       });
+
+      auto stub =
+	testing::EchoTestService::
+	NewStub (CreateChannel (address, InsecureChannelCredentials ()));
+
+      for (int i = 0; i < 100; i++)
+	{
+	  gpr_log (GPR_INFO, "Sending %d.", i);
+	  testing::EchoRequest request;
+
+	  /////////
+	  // Comment out the following line to get ok=false due to invalid request.
+	  // Otherwise, ok=false due to deadline being exceeded.
+	  /////////
+	  request.set_message ("foobar");
+
+	  // A simple request with a short deadline. The server will always exceed the
+	  // deadline, whether due to the sleep or because the server was unable to
+	  // even fetch the request from the CQ before the deadline elapsed.
+	  testing::EchoResponse response;
+	  ::grpc::ClientContext ctx;
+	  ctx.set_fail_fast (false);
+	  ctx.set_deadline (std::chrono::system_clock::now () +
+			    std::chrono::milliseconds (1));
+	  grpc::Status status = stub->Echo (&ctx, request, &response);
+	  EXPECT_EQ (DEADLINE_EXCEEDED, status.error_code ());
+	  gpr_log (GPR_INFO, "Success.");
+	}
+      gpr_log (GPR_INFO, "Done sending RPCs.");
+
+      // Shut down everything properly.
+      gpr_log (GPR_INFO, "Shutting down.");
+      {
+	std::lock_guard < std::mutex > lock (mu);
+	shutting_down = true;
+      }
+      server->Shutdown ();
+      cq->Shutdown ();
+      server->Wait ();
+
+      t.join ();
+    }
+
+  }				// namespace
+}				// namespace grpc
+
+int
+main (int argc, char **argv)
+{
+  ::testing::InitGoogleTest (&argc, argv);
+  return RUN_ALL_TESTS ();
 }

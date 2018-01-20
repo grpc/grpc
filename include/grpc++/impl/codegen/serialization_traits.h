@@ -19,7 +19,8 @@
 #ifndef GRPCXX_IMPL_CODEGEN_SERIALIZATION_TRAITS_H
 #define GRPCXX_IMPL_CODEGEN_SERIALIZATION_TRAITS_H
 
-namespace grpc {
+namespace grpc
+{
 
 /// Defines how to serialize and deserialize some type.
 ///
@@ -53,10 +54,10 @@ namespace grpc {
 ///
 /// Both functions return a Status, allowing them to explain what went
 /// wrong if required.
-template <class Message,
-          class UnusedButHereForPartialTemplateSpecialization = void>
-class SerializationTraits;
+  template < class Message,
+    class UnusedButHereForPartialTemplateSpecialization =
+    void >class SerializationTraits;
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_SERIALIZATION_TRAITS_H
+#endif				// GRPCXX_IMPL_CODEGEN_SERIALIZATION_TRAITS_H

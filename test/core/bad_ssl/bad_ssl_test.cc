@@ -32,45 +32,52 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void *
+tag (intptr_t t)
+{
+  return (void *) t;
+}
 
-static void run_test(const char* target, size_t nops) {
-  grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(nullptr, nullptr, nullptr);
-  grpc_channel* channel;
-  grpc_call* c;
+static void
+run_test (const char *target, size_t nops)
+{
+  grpc_channel_credentials *ssl_creds =
+    grpc_ssl_credentials_create (nullptr, nullptr, nullptr);
+  grpc_channel *channel;
+  grpc_call *c;
 
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_slice details;
   grpc_status_code status;
   grpc_call_error error;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline (5);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next (nullptr);
+  cq_verifier *cqv = cq_verifier_create (cq);
 
   grpc_op ops[6];
-  grpc_op* op;
+  grpc_op *op;
 
   grpc_arg ssl_name_override = {
-      GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.fr")}};
+    GRPC_ARG_STRING,
+    const_cast < char *>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+    {const_cast < char *>("foo.test.google.fr")}
+  };
   grpc_channel_args args;
 
   args.num_args = 1;
   args.args = &ssl_name_override;
 
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init (&initial_metadata_recv);
+  grpc_metadata_array_init (&trailing_metadata_recv);
 
-  channel = grpc_secure_channel_create(ssl_creds, target, &args, nullptr);
-  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
-  c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, nullptr);
+  channel = grpc_secure_channel_create (ssl_creds, target, &args, nullptr);
+  grpc_slice host = grpc_slice_from_static_string ("foo.test.google.fr:1234");
+  c = grpc_channel_create_call (channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+				grpc_slice_from_static_string ("/foo"), &host,
+				deadline, nullptr);
 
-  memset(ops, 0, sizeof(ops));
+  memset (ops, 0, sizeof (ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -85,7 +92,8 @@ static void run_test(const char* target, size_t nops) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+    &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -93,69 +101,77 @@ static void run_test(const char* target, size_t nops) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, nops, tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  error = grpc_call_start_batch (c, ops, nops, tag (1), nullptr);
+  GPR_ASSERT (GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  CQ_EXPECT_COMPLETION (cqv, tag (1), 1);
+  cq_verify (cqv);
 
-  GPR_ASSERT(status != GRPC_STATUS_OK);
+  GPR_ASSERT (status != GRPC_STATUS_OK);
 
-  grpc_call_unref(c);
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_call_unref (c);
+  grpc_slice_unref (details);
+  grpc_metadata_array_destroy (&initial_metadata_recv);
+  grpc_metadata_array_destroy (&trailing_metadata_recv);
 
-  grpc_channel_destroy(channel);
-  grpc_completion_queue_destroy(cq);
-  cq_verifier_destroy(cqv);
-  grpc_channel_credentials_release(ssl_creds);
+  grpc_channel_destroy (channel);
+  grpc_completion_queue_destroy (cq);
+  cq_verifier_destroy (cqv);
+  grpc_channel_credentials_release (ssl_creds);
 }
 
-int main(int argc, char** argv) {
-  char* me = argv[0];
-  char* lslash = strrchr(me, '/');
-  char* lunder = strrchr(me, '_');
-  char* tmp;
+int
+main (int argc, char **argv)
+{
+  char *me = argv[0];
+  char *lslash = strrchr (me, '/');
+  char *lunder = strrchr (me, '_');
+  char *tmp;
   char root[1024];
   char test[64];
-  int port = grpc_pick_unused_port_or_die();
-  char* args[10];
+  int port = grpc_pick_unused_port_or_die ();
+  char *args[10];
   int status;
   size_t i;
-  gpr_subprocess* svr;
+  gpr_subprocess *svr;
   /* figure out where we are */
-  if (lslash) {
-    memcpy(root, me, (size_t)(lslash - me));
-    root[lslash - me] = 0;
-  } else {
-    strcpy(root, ".");
-  }
-  if (argc == 2) {
-    gpr_setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", argv[1]);
-  }
+  if (lslash)
+    {
+      memcpy (root, me, (size_t) (lslash - me));
+      root[lslash - me] = 0;
+    }
+  else
+    {
+      strcpy (root, ".");
+    }
+  if (argc == 2)
+    {
+      gpr_setenv ("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", argv[1]);
+    }
   /* figure out our test name */
   tmp = lunder - 1;
-  while (*tmp != '_') tmp--;
+  while (*tmp != '_')
+    tmp--;
   tmp++;
-  memcpy(test, tmp, (size_t)(lunder - tmp));
+  memcpy (test, tmp, (size_t) (lunder - tmp));
   /* start the server */
-  gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test,
-               gpr_subprocess_binary_extension());
-  args[1] = const_cast<char*>("--bind");
-  gpr_join_host_port(&args[2], "::", port);
-  svr = gpr_subprocess_create(4, (const char**)args);
-  gpr_free(args[0]);
+  gpr_asprintf (&args[0], "%s/bad_ssl_%s_server%s", root, test,
+		gpr_subprocess_binary_extension ());
+  args[1] = const_cast < char *>("--bind");
+  gpr_join_host_port (&args[2], "::", port);
+  svr = gpr_subprocess_create (4, (const char **) args);
+  gpr_free (args[0]);
 
-  for (i = 3; i <= 4; i++) {
-    grpc_init();
-    run_test(args[2], i);
-    grpc_shutdown();
-  }
-  gpr_free(args[2]);
+  for (i = 3; i <= 4; i++)
+    {
+      grpc_init ();
+      run_test (args[2], i);
+      grpc_shutdown ();
+    }
+  gpr_free (args[2]);
 
-  gpr_subprocess_interrupt(svr);
-  status = gpr_subprocess_join(svr);
-  gpr_subprocess_destroy(svr);
+  gpr_subprocess_interrupt (svr);
+  status = gpr_subprocess_join (svr);
+  gpr_subprocess_destroy (svr);
   return status;
 }

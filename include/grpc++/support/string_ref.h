@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/string_ref.h>
 
-#endif  // GRPCXX_SUPPORT_STRING_REF_H
+#endif // GRPCXX_SUPPORT_STRING_REF_H

@@ -27,68 +27,91 @@
 #include <stdio.h>
 #include <string.h>
 
-void gpr_default_log(gpr_log_func_args* args);
-static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
+void gpr_default_log (gpr_log_func_args * args);
+static gpr_atm g_log_func = (gpr_atm) gpr_default_log;
 static gpr_atm g_min_severity_to_print = GPR_LOG_VERBOSITY_UNSET;
 
-const char* gpr_log_severity_string(gpr_log_severity severity) {
-  switch (severity) {
+const char *
+gpr_log_severity_string (gpr_log_severity severity)
+{
+  switch (severity)
+    {
     case GPR_LOG_SEVERITY_DEBUG:
       return "D";
     case GPR_LOG_SEVERITY_INFO:
       return "I";
     case GPR_LOG_SEVERITY_ERROR:
       return "E";
-  }
-  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+    }
+  GPR_UNREACHABLE_CODE (return "UNKNOWN");
 }
 
-void gpr_log_message(const char* file, int line, gpr_log_severity severity,
-                     const char* message) {
-  if ((gpr_atm)severity < gpr_atm_no_barrier_load(&g_min_severity_to_print)) {
-    return;
-  }
+void
+gpr_log_message (const char *file, int line, gpr_log_severity severity,
+		 const char *message)
+{
+  if ((gpr_atm) severity < gpr_atm_no_barrier_load (&g_min_severity_to_print))
+    {
+      return;
+    }
 
   gpr_log_func_args lfargs;
-  memset(&lfargs, 0, sizeof(lfargs));
+  memset (&lfargs, 0, sizeof (lfargs));
   lfargs.file = file;
   lfargs.line = line;
   lfargs.severity = severity;
   lfargs.message = message;
-  ((gpr_log_func)gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
+  ((gpr_log_func) gpr_atm_no_barrier_load (&g_log_func)) (&lfargs);
 }
 
-void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
-  gpr_atm_no_barrier_store(&g_min_severity_to_print,
-                           (gpr_atm)min_severity_to_print);
+void
+gpr_set_log_verbosity (gpr_log_severity min_severity_to_print)
+{
+  gpr_atm_no_barrier_store (&g_min_severity_to_print,
+			    (gpr_atm) min_severity_to_print);
 }
 
-void gpr_log_verbosity_init() {
-  char* verbosity = nullptr;
-  const char* insecure_getenv = gpr_getenv_silent("GRPC_VERBOSITY", &verbosity);
+void
+gpr_log_verbosity_init ()
+{
+  char *verbosity = nullptr;
+  const char *insecure_getenv =
+    gpr_getenv_silent ("GRPC_VERBOSITY", &verbosity);
 
   gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
-  if (verbosity != nullptr) {
-    if (gpr_stricmp(verbosity, "DEBUG") == 0) {
-      min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_DEBUG;
-    } else if (gpr_stricmp(verbosity, "INFO") == 0) {
-      min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_INFO;
-    } else if (gpr_stricmp(verbosity, "ERROR") == 0) {
-      min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_ERROR;
+  if (verbosity != nullptr)
+    {
+      if (gpr_stricmp (verbosity, "DEBUG") == 0)
+	{
+	  min_severity_to_print = (gpr_atm) GPR_LOG_SEVERITY_DEBUG;
+	}
+      else if (gpr_stricmp (verbosity, "INFO") == 0)
+	{
+	  min_severity_to_print = (gpr_atm) GPR_LOG_SEVERITY_INFO;
+	}
+      else if (gpr_stricmp (verbosity, "ERROR") == 0)
+	{
+	  min_severity_to_print = (gpr_atm) GPR_LOG_SEVERITY_ERROR;
+	}
+      gpr_free (verbosity);
     }
-    gpr_free(verbosity);
-  }
-  if ((gpr_atm_no_barrier_load(&g_min_severity_to_print)) ==
-      GPR_LOG_VERBOSITY_UNSET) {
-    gpr_atm_no_barrier_store(&g_min_severity_to_print, min_severity_to_print);
-  }
+  if ((gpr_atm_no_barrier_load (&g_min_severity_to_print)) ==
+      GPR_LOG_VERBOSITY_UNSET)
+    {
+      gpr_atm_no_barrier_store (&g_min_severity_to_print,
+				min_severity_to_print);
+    }
 
-  if (insecure_getenv != nullptr) {
-    gpr_log(GPR_DEBUG, "Warning: insecure environment read function '%s' used",
-            insecure_getenv);
-  }
+  if (insecure_getenv != nullptr)
+    {
+      gpr_log (GPR_DEBUG,
+	       "Warning: insecure environment read function '%s' used",
+	       insecure_getenv);
+    }
 }
 
-void gpr_set_log_function(gpr_log_func f) {
-  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
+void
+gpr_set_log_function (gpr_log_func f)
+{
+  gpr_atm_no_barrier_store (&g_log_func, (gpr_atm) (f ? f : gpr_default_log));
 }

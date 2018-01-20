@@ -21,26 +21,29 @@
 
 #include <grpc++/support/status.h>
 
-namespace google {
-namespace rpc {
-class Status;
-}  // namespace rpc
-}  // namespace google
+namespace google
+{
+  namespace rpc
+  {
+    class Status;
+  }				// namespace rpc
+}				// namespace google
 
-namespace grpc {
+namespace grpc
+{
 
 /// Map a \a grpc::Status to a \a google::rpc::Status.
 /// The given \a to object will be cleared.
 /// On success, returns status with OK.
 /// Returns status with \a INVALID_ARGUMENT, if failed to deserialize.
 /// Returns status with \a FAILED_PRECONDITION, if \a to is nullptr.
-Status ExtractErrorDetails(const Status& from, ::google::rpc::Status* to);
+  Status ExtractErrorDetails (const Status & from,::google::rpc::Status * to);
 
 /// Map \a google::rpc::Status to a \a grpc::Status.
 /// Returns OK on success.
 /// Returns status with \a FAILED_PRECONDITION if \a to is nullptr.
-Status SetErrorDetails(const ::google::rpc::Status& from, Status* to);
+  Status SetErrorDetails (const::google::rpc::Status & from, Status * to);
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_SUPPORT_ERROR_DETAILS_H
+#endif				// GRPCXX_SUPPORT_ERROR_DETAILS_H

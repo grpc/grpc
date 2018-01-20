@@ -35,153 +35,208 @@
 #include "src/core/lib/gpr/env.h"
 #include "test/core/util/port.h"
 
-DEFINE_bool(
-    running_under_bazel, false,
-    "True if this test is running under bazel. "
-    "False indicates that this test is running under run_tests.py. "
-    "Child process test binaries are located differently based on this flag. ");
+DEFINE_bool (running_under_bazel, false,
+	     "True if this test is running under bazel. "
+	     "False indicates that this test is running under run_tests.py. "
+	     "Child process test binaries are located differently based on this flag. ");
 
-DEFINE_string(test_bin_name, "",
-              "Name, without the preceding path, of the test binary");
+DEFINE_string (test_bin_name, "",
+	       "Name, without the preceding path, of the test binary");
 
-DEFINE_string(grpc_test_directory_relative_to_test_srcdir, "/__main__",
-              "This flag only applies if runner_under_bazel is true. This "
-              "flag is ignored if runner_under_bazel is false. "
-              "Directory of the <repo-root>/test directory relative to bazel's "
-              "TEST_SRCDIR environment variable");
+DEFINE_string (grpc_test_directory_relative_to_test_srcdir, "/__main__",
+	       "This flag only applies if runner_under_bazel is true. This "
+	       "flag is ignored if runner_under_bazel is false. "
+	       "Directory of the <repo-root>/test directory relative to bazel's "
+	       "TEST_SRCDIR environment variable");
 
-using grpc::SubProcess;
+using
+  grpc::SubProcess;
 
-static volatile sig_atomic_t abort_wait_for_child = 0;
+static volatile sig_atomic_t
+  abort_wait_for_child = 0;
 
-static void sighandler(int sig) { abort_wait_for_child = 1; }
+static void
+sighandler (int sig)
+{
+  abort_wait_for_child = 1;
+}
 
-static void register_sighandler() {
-  struct sigaction act;
-  memset(&act, 0, sizeof(act));
+static void
+register_sighandler ()
+{
+  struct sigaction
+    act;
+  memset (&act, 0, sizeof (act));
   act.sa_handler = sighandler;
-  sigaction(SIGINT, &act, nullptr);
-  sigaction(SIGTERM, &act, nullptr);
+  sigaction (SIGINT, &act, nullptr);
+  sigaction (SIGTERM, &act, nullptr);
 }
 
-namespace {
+namespace
+{
 
-const int kTestTimeoutSeconds = 60 * 2;
+  const int
+    kTestTimeoutSeconds = 60 * 2;
 
-void RunSigHandlingThread(SubProcess* test_driver, gpr_mu* test_driver_mu,
-                          gpr_cv* test_driver_cv, int* test_driver_done) {
-  gpr_timespec overall_deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_seconds(kTestTimeoutSeconds, GPR_TIMESPAN));
-  while (true) {
-    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    if (gpr_time_cmp(now, overall_deadline) > 0 || abort_wait_for_child) break;
-    gpr_mu_lock(test_driver_mu);
-    if (*test_driver_done) {
-      gpr_mu_unlock(test_driver_mu);
-      return;
-    }
-    gpr_timespec wait_deadline = gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(1, GPR_TIMESPAN));
-    gpr_cv_wait(test_driver_cv, test_driver_mu, wait_deadline);
-    gpr_mu_unlock(test_driver_mu);
+  void
+  RunSigHandlingThread (SubProcess * test_driver, gpr_mu * test_driver_mu,
+			gpr_cv * test_driver_cv, int *test_driver_done)
+  {
+    gpr_timespec
+      overall_deadline = gpr_time_add (gpr_now (GPR_CLOCK_MONOTONIC),
+				       gpr_time_from_seconds
+				       (kTestTimeoutSeconds, GPR_TIMESPAN));
+    while (true)
+      {
+	gpr_timespec
+	  now = gpr_now (GPR_CLOCK_MONOTONIC);
+	if (gpr_time_cmp (now, overall_deadline) > 0 || abort_wait_for_child)
+	  break;
+	gpr_mu_lock (test_driver_mu);
+	if (*test_driver_done)
+	  {
+	    gpr_mu_unlock (test_driver_mu);
+	    return;
+	  }
+	gpr_timespec
+	  wait_deadline =
+	  gpr_time_add (gpr_now (GPR_CLOCK_MONOTONIC),
+			gpr_time_from_seconds (1, GPR_TIMESPAN));
+	gpr_cv_wait (test_driver_cv, test_driver_mu, wait_deadline);
+	gpr_mu_unlock (test_driver_mu);
+      }
+    gpr_log (GPR_DEBUG,
+	     "Test timeout reached or received signal. Interrupting test driver "
+	     "child process.");
+    test_driver->Interrupt ();
+    return;
   }
-  gpr_log(GPR_DEBUG,
-          "Test timeout reached or received signal. Interrupting test driver "
-          "child process.");
-  test_driver->Interrupt();
-  return;
-}
-}  // namespace
+}				// namespace
 
-namespace grpc {
+namespace
+  grpc
+{
 
-namespace testing {
+  namespace
+    testing
+  {
 
-void InvokeResolverComponentTestsRunner(std::string test_runner_bin_path,
-                                        std::string test_bin_path,
-                                        std::string dns_server_bin_path,
-                                        std::string records_config_path) {
-  int test_dns_server_port = grpc_pick_unused_port_or_die();
+    void
+    InvokeResolverComponentTestsRunner (std::string test_runner_bin_path,
+					std::string test_bin_path,
+					std::string dns_server_bin_path,
+					std::string records_config_path)
+    {
+      int
+	test_dns_server_port = grpc_pick_unused_port_or_die ();
 
-  SubProcess* test_driver = new SubProcess(
-      {test_runner_bin_path, "--test_bin_path=" + test_bin_path,
-       "--dns_server_bin_path=" + dns_server_bin_path,
-       "--records_config_path=" + records_config_path,
-       "--test_dns_server_port=" + std::to_string(test_dns_server_port)});
-  gpr_mu test_driver_mu;
-  gpr_mu_init(&test_driver_mu);
-  gpr_cv test_driver_cv;
-  gpr_cv_init(&test_driver_cv);
-  int test_driver_done = 0;
-  register_sighandler();
-  std::thread sig_handling_thread(RunSigHandlingThread, test_driver,
-                                  &test_driver_mu, &test_driver_cv,
-                                  &test_driver_done);
-  int status = test_driver->Join();
-  if (WIFEXITED(status)) {
-    if (WEXITSTATUS(status)) {
-      gpr_log(GPR_INFO,
-              "Resolver component test test-runner exited with code %d",
-              WEXITSTATUS(status));
-      abort();
+      SubProcess *
+	test_driver = new SubProcess ({ test_runner_bin_path,
+				      "--test_bin_path=" + test_bin_path,
+				      "--dns_server_bin_path=" +
+				      dns_server_bin_path,
+				      "--records_config_path=" +
+				      records_config_path,
+				      "--test_dns_server_port=" +
+				      std::to_string (test_dns_server_port)
+				      });
+      gpr_mu
+	test_driver_mu;
+      gpr_mu_init (&test_driver_mu);
+      gpr_cv
+	test_driver_cv;
+      gpr_cv_init (&test_driver_cv);
+      int
+	test_driver_done = 0;
+      register_sighandler ();
+      std::thread
+      sig_handling_thread (RunSigHandlingThread, test_driver,
+			   &test_driver_mu, &test_driver_cv,
+			   &test_driver_done);
+      int
+	status = test_driver->Join ();
+      if (WIFEXITED (status))
+	{
+	  if (WEXITSTATUS (status))
+	    {
+	      gpr_log (GPR_INFO,
+		       "Resolver component test test-runner exited with code %d",
+		       WEXITSTATUS (status));
+	      abort ();
+	    }
+	}
+      else if (WIFSIGNALED (status))
+	{
+	  gpr_log (GPR_INFO,
+		   "Resolver component test test-runner ended from signal %d",
+		   WTERMSIG (status));
+	  abort ();
+	}
+      else
+	{
+	  gpr_log (GPR_INFO,
+		   "Resolver component test test-runner ended with unknown status %d",
+		   status);
+	  abort ();
+	}
+      gpr_mu_lock (&test_driver_mu);
+      test_driver_done = 1;
+      gpr_cv_signal (&test_driver_cv);
+      gpr_mu_unlock (&test_driver_mu);
+      sig_handling_thread.join ();
+      delete
+	test_driver;
+      gpr_mu_destroy (&test_driver_mu);
+      gpr_cv_destroy (&test_driver_cv);
     }
-  } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_INFO,
-            "Resolver component test test-runner ended from signal %d",
-            WTERMSIG(status));
-    abort();
-  } else {
-    gpr_log(GPR_INFO,
-            "Resolver component test test-runner ended with unknown status %d",
-            status);
-    abort();
-  }
-  gpr_mu_lock(&test_driver_mu);
-  test_driver_done = 1;
-  gpr_cv_signal(&test_driver_cv);
-  gpr_mu_unlock(&test_driver_mu);
-  sig_handling_thread.join();
-  delete test_driver;
-  gpr_mu_destroy(&test_driver_mu);
-  gpr_cv_destroy(&test_driver_cv);
-}
 
-}  // namespace testing
+  }				// namespace testing
 
-}  // namespace grpc
+}				// namespace grpc
 
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-  grpc_init();
-  GPR_ASSERT(FLAGS_test_bin_name != "");
+int
+main (int argc, char **argv)
+{
+  grpc::testing::InitTest (&argc, &argv, true);
+  grpc_init ();
+  GPR_ASSERT (FLAGS_test_bin_name != "");
   std::string my_bin = argv[0];
-  if (FLAGS_running_under_bazel) {
-    GPR_ASSERT(FLAGS_grpc_test_directory_relative_to_test_srcdir != "");
-    // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
-    // binaries.
-    std::string const bin_dir =
-        gpr_getenv("TEST_SRCDIR") +
-        FLAGS_grpc_test_directory_relative_to_test_srcdir +
-        std::string("/test/cpp/naming");
-    // Invoke bazel's executeable links to the .sh and .py scripts (don't use
-    // the .sh and .py suffixes) to make
-    // sure that we're using bazel's test environment.
-    grpc::testing::InvokeResolverComponentTestsRunner(
-        bin_dir + "/resolver_component_tests_runner",
-        bin_dir + "/" + FLAGS_test_bin_name, bin_dir + "/test_dns_server",
-        bin_dir + "/resolver_test_record_groups.yaml");
-  } else {
-    // Get the current binary's directory relative to repo root to invoke the
-    // correct build config (asan/tsan/dbg, etc.).
-    std::string const bin_dir = my_bin.substr(0, my_bin.rfind('/'));
-    // Invoke the .sh and .py scripts directly where they are in source code.
-    grpc::testing::InvokeResolverComponentTestsRunner(
-        "test/cpp/naming/resolver_component_tests_runner.sh",
-        bin_dir + "/" + FLAGS_test_bin_name,
-        "test/cpp/naming/test_dns_server.py",
-        "test/cpp/naming/resolver_test_record_groups.yaml");
-  }
-  grpc_shutdown();
+  if (FLAGS_running_under_bazel)
+    {
+      GPR_ASSERT (FLAGS_grpc_test_directory_relative_to_test_srcdir != "");
+      // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
+      // binaries.
+      std::string const
+	bin_dir =
+	gpr_getenv ("TEST_SRCDIR") +
+	FLAGS_grpc_test_directory_relative_to_test_srcdir +
+	std::string ("/test/cpp/naming");
+      // Invoke bazel's executeable links to the .sh and .py scripts (don't use
+      // the .sh and .py suffixes) to make
+      // sure that we're using bazel's test environment.
+      grpc::testing::InvokeResolverComponentTestsRunner (bin_dir +
+							 "/resolver_component_tests_runner",
+							 bin_dir + "/" +
+							 FLAGS_test_bin_name,
+							 bin_dir +
+							 "/test_dns_server",
+							 bin_dir +
+							 "/resolver_test_record_groups.yaml");
+    }
+  else
+    {
+      // Get the current binary's directory relative to repo root to invoke the
+      // correct build config (asan/tsan/dbg, etc.).
+      std::string const
+	bin_dir = my_bin.substr (0, my_bin.rfind ('/'));
+      // Invoke the .sh and .py scripts directly where they are in source code.
+      grpc::testing::
+	InvokeResolverComponentTestsRunner
+	("test/cpp/naming/resolver_component_tests_runner.sh",
+	 bin_dir + "/" + FLAGS_test_bin_name,
+	 "test/cpp/naming/test_dns_server.py",
+	 "test/cpp/naming/resolver_test_record_groups.yaml");
+    }
+  grpc_shutdown ();
   return 0;
 }

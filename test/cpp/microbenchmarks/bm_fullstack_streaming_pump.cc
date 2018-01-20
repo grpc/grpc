@@ -20,48 +20,64 @@
 
 #include "test/cpp/microbenchmarks/fullstack_streaming_pump.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
 /*******************************************************************************
  * CONFIGURATIONS
  */
 
 // force library initialization
-auto& force_library_initialization = Library::get();
+    auto & force_library_initialization = Library::get ();
 
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, TCP)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, UDS)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, InProcess)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, SockPair)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, InProcessCHTTP2)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, TCP)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, UDS)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcess)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, SockPair)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, InProcessCHTTP2)
-    ->Range(0, 128 * 1024 * 1024);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, MinTCP)->Arg(0);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, MinUDS)->Arg(0);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, MinInProcess)->Arg(0);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, MinSockPair)->Arg(0);
-BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, MinInProcessCHTTP2)->Arg(0);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, MinTCP)->Arg(0);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, MinUDS)->Arg(0);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, MinInProcess)->Arg(0);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, MinSockPair)->Arg(0);
-BENCHMARK_TEMPLATE(BM_PumpStreamServerToClient, MinInProcessCHTTP2)->Arg(0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer, TCP)->Range (0,
+								  128 * 1024 *
+								  1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer, UDS)->Range (0,
+								  128 * 1024 *
+								  1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer, InProcess)->Range (0,
+									128 *
+									1024 *
+									1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer, SockPair)->Range (0,
+								       128 *
+								       1024 *
+								       1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer,
+			InProcessCHTTP2)->Range (0, 128 * 1024 * 1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient, TCP)->Range (0,
+								  128 * 1024 *
+								  1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient, UDS)->Range (0,
+								  128 * 1024 *
+								  1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient, InProcess)->Range (0,
+									128 *
+									1024 *
+									1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient, SockPair)->Range (0,
+								       128 *
+								       1024 *
+								       1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient,
+			InProcessCHTTP2)->Range (0, 128 * 1024 * 1024);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer, MinTCP)->Arg (0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer, MinUDS)->Arg (0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer, MinInProcess)->Arg (0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer, MinSockPair)->Arg (0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamClientToServer,
+			MinInProcessCHTTP2)->Arg (0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient, MinTCP)->Arg (0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient, MinUDS)->Arg (0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient, MinInProcess)->Arg (0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient, MinSockPair)->Arg (0);
+    BENCHMARK_TEMPLATE (BM_PumpStreamServerToClient,
+			MinInProcessCHTTP2)->Arg (0);
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-BENCHMARK_MAIN();
+BENCHMARK_MAIN ();

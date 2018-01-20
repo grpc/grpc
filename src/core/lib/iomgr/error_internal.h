@@ -20,24 +20,27 @@
 #define GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H
 
 #include <inttypes.h>
-#include <stdbool.h>  // TODO, do we need this?
+#include <stdbool.h>		// TODO, do we need this?
 
 #include <grpc/support/sync.h>
 #include "src/core/lib/iomgr/error.h"
 
 typedef struct grpc_linked_error grpc_linked_error;
 
-struct grpc_linked_error {
-  grpc_error* err;
+struct grpc_linked_error
+{
+  grpc_error *err;
   uint8_t next;
 };
 
 // c core representation of an error. See error.h for high level description of
 // this object.
-struct grpc_error {
+struct grpc_error
+{
   // All atomics in grpc_error must be stored in this nested struct. The rest of
   // the object is memcpy-ed in bulk in copy_and_unref.
-  struct atomics {
+  struct atomics
+  {
     gpr_refcount refs;
     gpr_atm error_string;
   } atomics;
@@ -56,6 +59,6 @@ struct grpc_error {
   intptr_t arena[0];
 };
 
-bool grpc_error_is_special(struct grpc_error* err);
+bool grpc_error_is_special (struct grpc_error *err);
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H */

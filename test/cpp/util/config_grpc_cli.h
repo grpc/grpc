@@ -48,23 +48,26 @@
   ::google::protobuf::compiler::MultiFileErrorCollector
 #endif
 
-namespace grpc {
-namespace protobuf {
+namespace grpc
+{
+  namespace protobuf
+  {
 
-typedef GRPC_CUSTOM_DYNAMICMESSAGEFACTORY DynamicMessageFactory;
+    typedef GRPC_CUSTOM_DYNAMICMESSAGEFACTORY DynamicMessageFactory;
 
-typedef GRPC_CUSTOM_DESCRIPTORPOOLDATABASE DescriptorPoolDatabase;
-typedef GRPC_CUSTOM_MERGEDDESCRIPTORDATABASE MergedDescriptorDatabase;
+    typedef GRPC_CUSTOM_DESCRIPTORPOOLDATABASE DescriptorPoolDatabase;
+    typedef GRPC_CUSTOM_MERGEDDESCRIPTORDATABASE MergedDescriptorDatabase;
 
-typedef GRPC_CUSTOM_TEXTFORMAT TextFormat;
+    typedef GRPC_CUSTOM_TEXTFORMAT TextFormat;
 
-namespace compiler {
-typedef GRPC_CUSTOM_DISKSOURCETREE DiskSourceTree;
-typedef GRPC_CUSTOM_IMPORTER Importer;
-typedef GRPC_CUSTOM_MULTIFILEERRORCOLLECTOR MultiFileErrorCollector;
-}  // namespace compiler
+    namespace compiler
+    {
+      typedef GRPC_CUSTOM_DISKSOURCETREE DiskSourceTree;
+      typedef GRPC_CUSTOM_IMPORTER Importer;
+      typedef GRPC_CUSTOM_MULTIFILEERRORCOLLECTOR MultiFileErrorCollector;
+    }				// namespace compiler
 
-}  // namespace protobuf
-}  // namespace grpc
+  }				// namespace protobuf
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_CONFIG_GRPC_CLI_H
+#endif				// GRPC_TEST_CPP_UTIL_CONFIG_GRPC_CLI_H

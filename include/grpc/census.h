@@ -22,17 +22,18 @@
 #include <grpc/grpc.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /**
   A Census Context is a handle used by Census to represent the current tracing
   and stats collection information. Contexts should be propagated across RPC's
   (this is the responsibility of the local RPC system). */
-typedef struct census_context census_context;
+  typedef struct census_context census_context;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_CENSUS_H */
+#endif				/* GRPC_CENSUS_H */

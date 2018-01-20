@@ -22,17 +22,23 @@
 #include <grpc++/security/credentials.h>
 #include <grpc++/support/config.h>
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-class CliCredentials {
- public:
-  virtual ~CliCredentials() {}
-  virtual std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const;
-  virtual const grpc::string GetCredentialUsage() const;
-};
+    class CliCredentials
+    {
+    public:
+      virtual ~ CliCredentials ()
+      {
+      }
+      virtual std::shared_ptr < grpc::ChannelCredentials >
+	GetCredentials () const;
+      virtual const grpc::string GetCredentialUsage () const;
+    };
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H
+#endif				// GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H

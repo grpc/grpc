@@ -20,7 +20,8 @@
 #define GRPC_GRPC_SECURITY_CONSTANTS_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
@@ -42,24 +43,28 @@ extern "C" {
 #define GRPC_GOOGLE_CREDENTIALS_ENV_VAR "GOOGLE_APPLICATION_CREDENTIALS"
 
 /** Results for the SSL roots override callback. */
-typedef enum {
-  GRPC_SSL_ROOTS_OVERRIDE_OK,
-  GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY, /** Do not try fallback options. */
-  GRPC_SSL_ROOTS_OVERRIDE_FAIL
-} grpc_ssl_roots_override_result;
+  typedef enum
+  {
+    GRPC_SSL_ROOTS_OVERRIDE_OK,
+    GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY,
+					    /** Do not try fallback options. */
+    GRPC_SSL_ROOTS_OVERRIDE_FAIL
+  } grpc_ssl_roots_override_result;
 
 /** Callback results for dynamically loading a SSL certificate config. */
-typedef enum {
-  GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED,
-  GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW,
-  GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
-} grpc_ssl_certificate_config_reload_status;
+  typedef enum
+  {
+    GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED,
+    GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW,
+    GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+  } grpc_ssl_certificate_config_reload_status;
 
-typedef enum {
+  typedef enum
+  {
   /** Server does not request client certificate. A client can present a self
      signed or signed certificates if it wishes to do so and they would be
      accepted. */
-  GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
   /** Server requests client certificate but does not enforce that the client
      presents a certificate.
 
@@ -68,7 +73,7 @@ typedef enum {
 
      The key cert pair should still be valid for the SSL connection to be
      established. */
-  GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
   /** Server requests client certificate but does not enforce that the client
      presents a certificate.
 
@@ -78,7 +83,7 @@ typedef enum {
 
      The key cert pair should still be valid for the SSL connection to be
      established. */
-  GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
   /** Server requests client certificate but enforces that the client presents a
      certificate.
 
@@ -87,7 +92,7 @@ typedef enum {
 
      The key cert pair should still be valid for the SSL connection to be
      established. */
-  GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
   /** Server requests client certificate but enforces that the client presents a
      certificate.
 
@@ -96,11 +101,11 @@ typedef enum {
 
      The key cert pair should still be valid for the SSL connection to be
      established. */
-  GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
-} grpc_ssl_client_certificate_request_type;
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+  } grpc_ssl_client_certificate_request_type;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_GRPC_SECURITY_CONSTANTS_H */
+#endif				/* GRPC_GRPC_SECURITY_CONSTANTS_H */

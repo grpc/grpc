@@ -19,11 +19,13 @@
 #ifndef TEST_QPS_USAGE_TIMER_H
 #define TEST_QPS_USAGE_TIMER_H
 
-class UsageTimer {
- public:
-  UsageTimer();
+class UsageTimer
+{
+public:
+  UsageTimer ();
 
-  struct Result {
+  struct Result
+  {
     double wall;
     double user;
     double system;
@@ -31,14 +33,14 @@ class UsageTimer {
     unsigned long long idle_cpu_time;
   };
 
-  Result Mark() const;
+  Result Mark () const;
 
-  static double Now();
+  static double Now ();
 
- private:
-  static Result Sample();
+private:
+  static Result Sample ();
 
   const Result start_;
 };
 
-#endif  // TEST_QPS_TIMER_H
+#endif // TEST_QPS_TIMER_H

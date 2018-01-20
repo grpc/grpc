@@ -23,52 +23,66 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc_core {
-namespace testing {
-namespace {
+namespace grpc_core
+{
+  namespace testing
+  {
+    namespace
+    {
 
-class Foo : public RefCounted {
- public:
-  Foo() {}
-};
+      class Foo:public RefCounted
+      {
+      public:
+	Foo ()
+	{
+	}
+      };
 
-TEST(RefCounted, Basic) {
-  Foo* foo = New<Foo>();
-  foo->Unref();
-}
+        TEST (RefCounted, Basic)
+      {
+	Foo *foo = New < Foo > ();
+	  foo->Unref ();
+      }
 
-TEST(RefCounted, ExtraRef) {
-  Foo* foo = New<Foo>();
-  foo->Ref();
-  foo->Unref();
-  foo->Unref();
-}
+      TEST (RefCounted, ExtraRef)
+      {
+	Foo *foo = New < Foo > ();
+	foo->Ref ();
+	foo->Unref ();
+	foo->Unref ();
+      }
 
 // Note: We use DebugOnlyTraceFlag instead of TraceFlag to ensure that
 // things build properly in both debug and non-debug cases.
-DebugOnlyTraceFlag foo_tracer(true, "foo");
+      DebugOnlyTraceFlag foo_tracer (true, "foo");
 
-class FooWithTracing : public RefCountedWithTracing {
- public:
-  FooWithTracing() : RefCountedWithTracing(&foo_tracer) {}
-};
+      class FooWithTracing:public RefCountedWithTracing
+      {
+      public:
+	FooWithTracing ():RefCountedWithTracing (&foo_tracer)
+	{
+	}
+      };
 
-TEST(RefCountedWithTracing, Basic) {
-  FooWithTracing* foo = New<FooWithTracing>();
-  foo->Ref(DEBUG_LOCATION, "extra_ref");
-  foo->Unref(DEBUG_LOCATION, "extra_ref");
-  // Can use the no-argument methods, too.
-  foo->Ref();
-  foo->Unref();
-  foo->Unref(DEBUG_LOCATION, "original_ref");
-}
+      TEST (RefCountedWithTracing, Basic)
+      {
+	FooWithTracing *foo = New < FooWithTracing > ();
+	foo->Ref (DEBUG_LOCATION, "extra_ref");
+	foo->Unref (DEBUG_LOCATION, "extra_ref");
+	// Can use the no-argument methods, too.
+	foo->Ref ();
+	foo->Unref ();
+	foo->Unref (DEBUG_LOCATION, "original_ref");
+      }
 
-}  // namespace
-}  // namespace testing
-}  // namespace grpc_core
+    }				// namespace
+  }				// namespace testing
+}				// namespace grpc_core
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  ::testing::InitGoogleTest (&argc, argv);
+  return RUN_ALL_TESTS ();
 }

@@ -28,91 +28,100 @@
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/metrics_server.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-using std::pair;
-using std::vector;
+    using std::pair;
+    using std::vector;
 
-enum TestCaseType {
-  UNKNOWN_TEST = -1,
-  EMPTY_UNARY,
-  LARGE_UNARY,
-  CLIENT_COMPRESSED_UNARY,
-  CLIENT_COMPRESSED_STREAMING,
-  CLIENT_STREAMING,
-  SERVER_STREAMING,
-  SERVER_COMPRESSED_UNARY,
-  SERVER_COMPRESSED_STREAMING,
-  SLOW_CONSUMER,
-  HALF_DUPLEX,
-  PING_PONG,
-  CANCEL_AFTER_BEGIN,
-  CANCEL_AFTER_FIRST_RESPONSE,
-  TIMEOUT_ON_SLEEPING_SERVER,
-  EMPTY_STREAM,
-  STATUS_CODE_AND_MESSAGE,
-  CUSTOM_METADATA
-};
+    enum TestCaseType
+    {
+      UNKNOWN_TEST = -1,
+      EMPTY_UNARY,
+      LARGE_UNARY,
+      CLIENT_COMPRESSED_UNARY,
+      CLIENT_COMPRESSED_STREAMING,
+      CLIENT_STREAMING,
+      SERVER_STREAMING,
+      SERVER_COMPRESSED_UNARY,
+      SERVER_COMPRESSED_STREAMING,
+      SLOW_CONSUMER,
+      HALF_DUPLEX,
+      PING_PONG,
+      CANCEL_AFTER_BEGIN,
+      CANCEL_AFTER_FIRST_RESPONSE,
+      TIMEOUT_ON_SLEEPING_SERVER,
+      EMPTY_STREAM,
+      STATUS_CODE_AND_MESSAGE,
+      CUSTOM_METADATA
+    };
 
-const vector<pair<TestCaseType, grpc::string>> kTestCaseList = {
-    {EMPTY_UNARY, "empty_unary"},
-    {LARGE_UNARY, "large_unary"},
-    {CLIENT_COMPRESSED_UNARY, "client_compressed_unary"},
-    {CLIENT_COMPRESSED_STREAMING, "client_compressed_streaming"},
-    {CLIENT_STREAMING, "client_streaming"},
-    {SERVER_STREAMING, "server_streaming"},
-    {SERVER_COMPRESSED_UNARY, "server_compressed_unary"},
-    {SERVER_COMPRESSED_STREAMING, "server_compressed_streaming"},
-    {SLOW_CONSUMER, "slow_consumer"},
-    {HALF_DUPLEX, "half_duplex"},
-    {PING_PONG, "ping_pong"},
-    {CANCEL_AFTER_BEGIN, "cancel_after_begin"},
-    {CANCEL_AFTER_FIRST_RESPONSE, "cancel_after_first_response"},
-    {TIMEOUT_ON_SLEEPING_SERVER, "timeout_on_sleeping_server"},
-    {EMPTY_STREAM, "empty_stream"},
-    {STATUS_CODE_AND_MESSAGE, "status_code_and_message"},
-    {CUSTOM_METADATA, "custom_metadata"}};
+    const vector < pair < TestCaseType, grpc::string >> kTestCaseList = {
+      {EMPTY_UNARY, "empty_unary"},
+      {LARGE_UNARY, "large_unary"},
+      {CLIENT_COMPRESSED_UNARY, "client_compressed_unary"},
+      {CLIENT_COMPRESSED_STREAMING, "client_compressed_streaming"},
+      {CLIENT_STREAMING, "client_streaming"},
+      {SERVER_STREAMING, "server_streaming"},
+      {SERVER_COMPRESSED_UNARY, "server_compressed_unary"},
+      {SERVER_COMPRESSED_STREAMING, "server_compressed_streaming"},
+      {SLOW_CONSUMER, "slow_consumer"},
+      {HALF_DUPLEX, "half_duplex"},
+      {PING_PONG, "ping_pong"},
+      {CANCEL_AFTER_BEGIN, "cancel_after_begin"},
+      {CANCEL_AFTER_FIRST_RESPONSE, "cancel_after_first_response"},
+      {TIMEOUT_ON_SLEEPING_SERVER, "timeout_on_sleeping_server"},
+      {EMPTY_STREAM, "empty_stream"},
+      {STATUS_CODE_AND_MESSAGE, "status_code_and_message"},
+      {CUSTOM_METADATA, "custom_metadata"}
+    };
 
-class WeightedRandomTestSelector {
- public:
-  // Takes a vector of <test_case, weight> pairs as the input
-  WeightedRandomTestSelector(const vector<pair<TestCaseType, int>>& tests);
+    class WeightedRandomTestSelector
+    {
+    public:
+      // Takes a vector of <test_case, weight> pairs as the input
+      WeightedRandomTestSelector (const vector < pair < TestCaseType,
+				  int >>&tests);
 
-  // Returns a weighted-randomly chosen test case based on the test cases and
-  // weights passed in the constructor
-  TestCaseType GetNextTest() const;
+      // Returns a weighted-randomly chosen test case based on the test cases and
+      // weights passed in the constructor
+      TestCaseType GetNextTest () const;
 
- private:
-  const vector<pair<TestCaseType, int>> tests_;
-  int total_weight_;
-};
+    private:
+      const vector < pair < TestCaseType, int >>tests_;
+      int total_weight_;
+    };
 
-class StressTestInteropClient {
- public:
-  StressTestInteropClient(int test_id, const grpc::string& server_address,
-                          std::shared_ptr<Channel> channel,
-                          const WeightedRandomTestSelector& test_selector,
-                          long test_duration_secs, long sleep_duration_ms,
-                          bool do_not_abort_on_transient_failures);
+    class StressTestInteropClient
+    {
+    public:
+      StressTestInteropClient (int test_id,
+			       const grpc::string & server_address,
+			       std::shared_ptr < Channel > channel,
+			       const WeightedRandomTestSelector &
+			       test_selector, long test_duration_secs,
+			       long sleep_duration_ms,
+			       bool do_not_abort_on_transient_failures);
 
-  // The main function. Use this as the thread entry point.
-  // qps_gauge is the QpsGauge to record the requests per second metric
-  void MainLoop(std::shared_ptr<QpsGauge> qps_gauge);
+      // The main function. Use this as the thread entry point.
+      // qps_gauge is the QpsGauge to record the requests per second metric
+      void MainLoop (std::shared_ptr < QpsGauge > qps_gauge);
 
- private:
-  bool RunTest(TestCaseType test_case);
+    private:
+        bool RunTest (TestCaseType test_case);
 
-  int test_id_;
-  const grpc::string& server_address_;
-  std::shared_ptr<Channel> channel_;
-  std::unique_ptr<InteropClient> interop_client_;
-  const WeightedRandomTestSelector& test_selector_;
-  long test_duration_secs_;
-  long sleep_duration_ms_;
-};
+      int test_id_;
+      const grpc::string & server_address_;
+        std::shared_ptr < Channel > channel_;
+        std::unique_ptr < InteropClient > interop_client_;
+      const WeightedRandomTestSelector & test_selector_;
+      long test_duration_secs_;
+      long sleep_duration_ms_;
+    };
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_STRESS_INTEROP_CLIENT_H
+#endif				// GRPC_TEST_CPP_STRESS_INTEROP_CLIENT_H

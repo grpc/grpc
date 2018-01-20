@@ -63,24 +63,32 @@
 #include "test/cpp/util/grpc_tool.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_string(outfile, "", "Output file (default is stdout)");
+DEFINE_string (outfile, "", "Output file (default is stdout)");
 
-static bool SimplePrint(const grpc::string& outfile,
-                        const grpc::string& output) {
-  if (outfile.empty()) {
-    std::cout << output << std::endl;
-  } else {
-    std::ofstream output_file(outfile, std::ios::app | std::ios::binary);
-    output_file << output << std::endl;
-    output_file.close();
-  }
+static bool
+SimplePrint (const grpc::string & outfile, const grpc::string & output)
+{
+  if (outfile.empty ())
+    {
+      std::cout << output << std::endl;
+    }
+  else
+    {
+      std::ofstream output_file (outfile, std::ios::app | std::ios::binary);
+      output_file << output << std::endl;
+      output_file.close ();
+    }
   return true;
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
+int
+main (int argc, char **argv)
+{
+  grpc::testing::InitTest (&argc, &argv, true);
 
-  return grpc::testing::GrpcToolMainLib(
-      argc, (const char**)argv, grpc::testing::CliCredentials(),
-      std::bind(SimplePrint, FLAGS_outfile, std::placeholders::_1));
+  return grpc::testing::GrpcToolMainLib (argc, (const char **) argv,
+					 grpc::testing::CliCredentials (),
+					 std::bind (SimplePrint,
+						    FLAGS_outfile,
+						    std::placeholders::_1));
 }

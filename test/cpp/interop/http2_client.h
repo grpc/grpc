@@ -26,43 +26,49 @@
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-class Http2Client {
- public:
-  explicit Http2Client(std::shared_ptr<Channel> channel);
-  ~Http2Client() {}
+    class Http2Client
+    {
+    public:
+      explicit Http2Client (std::shared_ptr < Channel > channel);
+      ~Http2Client ()
+      {
+      }
 
-  bool DoRstAfterHeader();
-  bool DoRstAfterData();
-  bool DoRstDuringData();
-  bool DoGoaway();
-  bool DoPing();
-  bool DoMaxStreams();
+      bool DoRstAfterHeader ();
+      bool DoRstAfterData ();
+      bool DoRstDuringData ();
+      bool DoGoaway ();
+      bool DoPing ();
+      bool DoMaxStreams ();
 
- private:
-  class ServiceStub {
-   public:
-    ServiceStub(std::shared_ptr<Channel> channel);
+    private:
+        class ServiceStub
+      {
+      public:
+	ServiceStub (std::shared_ptr < Channel > channel);
 
-    TestService::Stub* Get();
+	TestService::Stub * Get ();
 
-   private:
-    std::unique_ptr<TestService::Stub> stub_;
-    std::shared_ptr<Channel> channel_;
-  };
+      private:
+	std::unique_ptr < TestService::Stub > stub_;
+	std::shared_ptr < Channel > channel_;
+      };
 
-  void MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel);
-  bool AssertStatusCode(const Status& s, StatusCode expected_code);
-  Status SendUnaryCall(SimpleResponse* response);
-  SimpleRequest BuildDefaultRequest();
-  ServiceStub serviceStub_;
-  std::shared_ptr<Channel> channel_;
-  SimpleRequest defaultRequest_;
-};
+      void MaxStreamsWorker (std::shared_ptr < grpc::Channel > channel);
+      bool AssertStatusCode (const Status & s, StatusCode expected_code);
+      Status SendUnaryCall (SimpleResponse * response);
+      SimpleRequest BuildDefaultRequest ();
+      ServiceStub serviceStub_;
+        std::shared_ptr < Channel > channel_;
+      SimpleRequest defaultRequest_;
+    };
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
+#endif // GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H

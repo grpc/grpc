@@ -19,11 +19,14 @@
 #ifndef GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H
 #define GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H
 
-namespace grpc {
+namespace grpc
+{
 
 /// Useful interface for generated stubs
-class StubOptions {};
+  class StubOptions
+  {
+  };
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H
+#endif				// GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H

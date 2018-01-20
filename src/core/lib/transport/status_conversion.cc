@@ -18,8 +18,11 @@
 
 #include "src/core/lib/transport/status_conversion.h"
 
-grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {
-  switch (status) {
+grpc_http2_error_code
+grpc_status_to_http2_error (grpc_status_code status)
+{
+  switch (status)
+    {
     case GRPC_STATUS_OK:
       return GRPC_HTTP2_NO_ERROR;
     case GRPC_STATUS_CANCELLED:
@@ -34,21 +37,23 @@ grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {
       return GRPC_HTTP2_REFUSED_STREAM;
     default:
       return GRPC_HTTP2_INTERNAL_ERROR;
-  }
+    }
 }
 
-grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
-                                                 grpc_millis deadline) {
-  switch (error) {
+grpc_status_code
+grpc_http2_error_to_grpc_status (grpc_http2_error_code error,
+				 grpc_millis deadline)
+{
+  switch (error)
+    {
     case GRPC_HTTP2_NO_ERROR:
       /* should never be received */
       return GRPC_STATUS_INTERNAL;
     case GRPC_HTTP2_CANCEL:
       /* http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
        * exceeded */
-      return grpc_core::ExecCtx::Get()->Now() > deadline
-                 ? GRPC_STATUS_DEADLINE_EXCEEDED
-                 : GRPC_STATUS_CANCELLED;
+      return grpc_core::ExecCtx::Get ()->Now () > deadline
+	? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_CANCELLED;
     case GRPC_HTTP2_ENHANCE_YOUR_CALM:
       return GRPC_STATUS_RESOURCE_EXHAUSTED;
     case GRPC_HTTP2_INADEQUATE_SECURITY:
@@ -57,12 +62,15 @@ grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
       return GRPC_STATUS_UNAVAILABLE;
     default:
       return GRPC_STATUS_INTERNAL;
-  }
+    }
 }
 
-grpc_status_code grpc_http2_status_to_grpc_status(int status) {
-  switch (status) {
-    /* these HTTP2 status codes are called out explicitly in status.proto */
+grpc_status_code
+grpc_http2_status_to_grpc_status (int status)
+{
+  switch (status)
+    {
+      /* these HTTP2 status codes are called out explicitly in status.proto */
     case 200:
       return GRPC_STATUS_OK;
     case 400:
@@ -89,10 +97,14 @@ grpc_status_code grpc_http2_status_to_grpc_status(int status) {
       return GRPC_STATUS_UNAVAILABLE;
     case 504:
       return GRPC_STATUS_DEADLINE_EXCEEDED;
-    /* everything else is unknown */
+      /* everything else is unknown */
     default:
       return GRPC_STATUS_UNKNOWN;
-  }
+    }
 }
 
-int grpc_status_to_http2_status(grpc_status_code status) { return 200; }
+int
+grpc_status_to_http2_status (grpc_status_code status)
+{
+  return 200;
+}

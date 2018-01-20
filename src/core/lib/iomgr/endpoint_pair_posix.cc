@@ -36,34 +36,39 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 
-static void create_sockets(int sv[2]) {
+static void
+create_sockets (int sv[2])
+{
   int flags;
-  grpc_create_socketpair_if_unix(sv);
-  flags = fcntl(sv[0], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
-  flags = fcntl(sv[1], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == GRPC_ERROR_NONE);
+  grpc_create_socketpair_if_unix (sv);
+  flags = fcntl (sv[0], F_GETFL, 0);
+  GPR_ASSERT (fcntl (sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
+  flags = fcntl (sv[1], F_GETFL, 0);
+  GPR_ASSERT (fcntl (sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
+  GPR_ASSERT (grpc_set_socket_no_sigpipe_if_possible (sv[0]) ==
+	      GRPC_ERROR_NONE);
+  GPR_ASSERT (grpc_set_socket_no_sigpipe_if_possible (sv[1]) ==
+	      GRPC_ERROR_NONE);
 }
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
-                                                   grpc_channel_args* args) {
+grpc_endpoint_pair
+grpc_iomgr_create_endpoint_pair (const char *name, grpc_channel_args * args)
+{
   int sv[2];
   grpc_endpoint_pair p;
-  char* final_name;
-  create_sockets(sv);
+  char *final_name;
+  create_sockets (sv);
 
   grpc_core::ExecCtx exec_ctx;
 
-  gpr_asprintf(&final_name, "%s:client", name);
-  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name), args,
-                             "socketpair-server");
-  gpr_free(final_name);
-  gpr_asprintf(&final_name, "%s:server", name);
-  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name), args,
-                             "socketpair-client");
-  gpr_free(final_name);
+  gpr_asprintf (&final_name, "%s:client", name);
+  p.client = grpc_tcp_create (grpc_fd_create (sv[1], final_name), args,
+			      "socketpair-server");
+  gpr_free (final_name);
+  gpr_asprintf (&final_name, "%s:server", name);
+  p.server = grpc_tcp_create (grpc_fd_create (sv[0], final_name), args,
+			      "socketpair-client");
+  gpr_free (final_name);
 
   return p;
 }
