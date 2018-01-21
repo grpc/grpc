@@ -89,5 +89,34 @@ How to get your contributions merged smoothly and quickly.
 - Exceptions to the rules can be made if there's a compelling reason for doing
   so.
 
+## Code Style: Avoiding Accidental Mistakes
 
+* Always use braces when nesting if/else statements to avoid dangling else (the else branch belongs to the innermost if statement).
+
+```cpp
+if ( var1 ) {
+	if ( var2 ) {
+		someMethod( var1 );
+	} 
+	else {
+		someOtherMethod( var1 );
+	}
+}
+```
+
+* Do not use logic as control flow. For instance: `var1 && someMethod( var1 );` Please use if statements for that purpose.
+
+```cpp
+if( var1 ) {
+	someMethod( var1 );
+}
+```
+
+* Avoid writing boolean expressions without specifying the operator precedences. For instance, add parentheses to make it explicit that && operators have precedence over || operators.
+
+```cpp
+if ( var1 || (var2 && var3) ) {
+	someMethod( var1 );
+}
+```
 
