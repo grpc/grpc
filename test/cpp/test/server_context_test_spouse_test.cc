@@ -24,73 +24,83 @@
 #include <grpc++/impl/grpc_library.h>
 #include <gtest/gtest.h>
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-static internal::GrpcLibraryInitializer g_initializer;
+    static internal::GrpcLibraryInitializer g_initializer;
 
-const char key1[] = "metadata-key1";
-const char key2[] = "metadata-key2";
-const char val1[] = "metadata-val1";
-const char val2[] = "metadata-val2";
+    const char key1[] = "metadata-key1";
+    const char key2[] = "metadata-key2";
+    const char val1[] = "metadata-val1";
+    const char val2[] = "metadata-val2";
 
-bool ClientMetadataContains(const ServerContext& context,
-                            const grpc::string_ref& key,
-                            const grpc::string_ref& value) {
-  const auto& client_metadata = context.client_metadata();
-  for (auto iter = client_metadata.begin(); iter != client_metadata.end();
-       ++iter) {
-    if (iter->first == key && iter->second == value) {
-      return true;
+    bool ClientMetadataContains (const ServerContext & context,
+				 const grpc::string_ref & key,
+				 const grpc::string_ref & value)
+    {
+      const auto & client_metadata = context.client_metadata ();
+      for (auto iter = client_metadata.begin ();
+	   iter != client_metadata.end (); ++iter)
+	{
+	  if (iter->first == key && iter->second == value)
+	    {
+	      return true;
+	    }
+	}
+      return false;
     }
-  }
-  return false;
-}
 
-TEST(ServerContextTestSpouseTest, ClientMetadata) {
-  ServerContext context;
-  ServerContextTestSpouse spouse(&context);
+    TEST (ServerContextTestSpouseTest, ClientMetadata)
+    {
+      ServerContext context;
+      ServerContextTestSpouse spouse (&context);
 
-  spouse.AddClientMetadata(key1, val1);
-  ASSERT_TRUE(ClientMetadataContains(context, key1, val1));
+      spouse.AddClientMetadata (key1, val1);
+      ASSERT_TRUE (ClientMetadataContains (context, key1, val1));
 
-  spouse.AddClientMetadata(key2, val2);
-  ASSERT_TRUE(ClientMetadataContains(context, key1, val1));
-  ASSERT_TRUE(ClientMetadataContains(context, key2, val2));
-}
+      spouse.AddClientMetadata (key2, val2);
+      ASSERT_TRUE (ClientMetadataContains (context, key1, val1));
+      ASSERT_TRUE (ClientMetadataContains (context, key2, val2));
+    }
 
-TEST(ServerContextTestSpouseTest, InitialMetadata) {
-  ServerContext context;
-  ServerContextTestSpouse spouse(&context);
-  std::multimap<grpc::string, grpc::string> metadata;
+    TEST (ServerContextTestSpouseTest, InitialMetadata)
+    {
+      ServerContext context;
+      ServerContextTestSpouse spouse (&context);
+      std::multimap < grpc::string, grpc::string > metadata;
 
-  context.AddInitialMetadata(key1, val1);
-  metadata.insert(std::pair<grpc::string, grpc::string>(key1, val1));
-  ASSERT_EQ(metadata, spouse.GetInitialMetadata());
+      context.AddInitialMetadata (key1, val1);
+      metadata.insert (std::pair < grpc::string, grpc::string > (key1, val1));
+      ASSERT_EQ (metadata, spouse.GetInitialMetadata ());
 
-  context.AddInitialMetadata(key2, val2);
-  metadata.insert(std::pair<grpc::string, grpc::string>(key2, val2));
-  ASSERT_EQ(metadata, spouse.GetInitialMetadata());
-}
+      context.AddInitialMetadata (key2, val2);
+      metadata.insert (std::pair < grpc::string, grpc::string > (key2, val2));
+      ASSERT_EQ (metadata, spouse.GetInitialMetadata ());
+    }
 
-TEST(ServerContextTestSpouseTest, TrailingMetadata) {
-  ServerContext context;
-  ServerContextTestSpouse spouse(&context);
-  std::multimap<grpc::string, grpc::string> metadata;
+    TEST (ServerContextTestSpouseTest, TrailingMetadata)
+    {
+      ServerContext context;
+      ServerContextTestSpouse spouse (&context);
+      std::multimap < grpc::string, grpc::string > metadata;
 
-  context.AddTrailingMetadata(key1, val1);
-  metadata.insert(std::pair<grpc::string, grpc::string>(key1, val1));
-  ASSERT_EQ(metadata, spouse.GetTrailingMetadata());
+      context.AddTrailingMetadata (key1, val1);
+      metadata.insert (std::pair < grpc::string, grpc::string > (key1, val1));
+      ASSERT_EQ (metadata, spouse.GetTrailingMetadata ());
 
-  context.AddTrailingMetadata(key2, val2);
-  metadata.insert(std::pair<grpc::string, grpc::string>(key2, val2));
-  ASSERT_EQ(metadata, spouse.GetTrailingMetadata());
-}
+      context.AddTrailingMetadata (key2, val2);
+      metadata.insert (std::pair < grpc::string, grpc::string > (key2, val2));
+      ASSERT_EQ (metadata, spouse.GetTrailingMetadata ());
+    }
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+int
+main (int argc, char **argv)
+{
+  ::testing::InitGoogleTest (&argc, argv);
+  return RUN_ALL_TESTS ();
 }

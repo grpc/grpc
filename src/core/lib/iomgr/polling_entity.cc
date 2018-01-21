@@ -21,65 +21,92 @@
 
 #include "src/core/lib/iomgr/polling_entity.h"
 
-grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
-    grpc_pollset_set* pollset_set) {
+grpc_polling_entity
+grpc_polling_entity_create_from_pollset_set (grpc_pollset_set * pollset_set)
+{
   grpc_polling_entity pollent;
   pollent.pollent.pollset_set = pollset_set;
   pollent.tag = GRPC_POLLS_POLLSET_SET;
   return pollent;
 }
 
-grpc_polling_entity grpc_polling_entity_create_from_pollset(
-    grpc_pollset* pollset) {
+grpc_polling_entity
+grpc_polling_entity_create_from_pollset (grpc_pollset * pollset)
+{
   grpc_polling_entity pollent;
   pollent.pollent.pollset = pollset;
   pollent.tag = GRPC_POLLS_POLLSET;
   return pollent;
 }
 
-grpc_pollset* grpc_polling_entity_pollset(grpc_polling_entity* pollent) {
-  if (pollent->tag == GRPC_POLLS_POLLSET) {
-    return pollent->pollent.pollset;
-  }
+grpc_pollset *
+grpc_polling_entity_pollset (grpc_polling_entity * pollent)
+{
+  if (pollent->tag == GRPC_POLLS_POLLSET)
+    {
+      return pollent->pollent.pollset;
+    }
   return nullptr;
 }
 
-grpc_pollset_set* grpc_polling_entity_pollset_set(
-    grpc_polling_entity* pollent) {
-  if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
-    return pollent->pollent.pollset_set;
-  }
+grpc_pollset_set *
+grpc_polling_entity_pollset_set (grpc_polling_entity * pollent)
+{
+  if (pollent->tag == GRPC_POLLS_POLLSET_SET)
+    {
+      return pollent->pollent.pollset_set;
+    }
   return nullptr;
 }
 
-bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent) {
+bool
+grpc_polling_entity_is_empty (const grpc_polling_entity * pollent)
+{
   return pollent->tag == GRPC_POLLS_NONE;
 }
 
-void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
-                                            grpc_pollset_set* pss_dst) {
-  if (pollent->tag == GRPC_POLLS_POLLSET) {
-    GPR_ASSERT(pollent->pollent.pollset != nullptr);
-    grpc_pollset_set_add_pollset(pss_dst, pollent->pollent.pollset);
-  } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
-    GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
-    grpc_pollset_set_add_pollset_set(pss_dst, pollent->pollent.pollset_set);
-  } else {
-    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'", pollent->tag);
-    abort();
-  }
+void
+grpc_polling_entity_add_to_pollset_set (grpc_polling_entity * pollent,
+					grpc_pollset_set * pss_dst)
+{
+  if (pollent->tag == GRPC_POLLS_POLLSET)
+    {
+      GPR_ASSERT (pollent->pollent.pollset != nullptr);
+      grpc_pollset_set_add_pollset (pss_dst, pollent->pollent.pollset);
+    }
+  else if (pollent->tag == GRPC_POLLS_POLLSET_SET)
+    {
+      GPR_ASSERT (pollent->pollent.pollset_set != nullptr);
+      grpc_pollset_set_add_pollset_set (pss_dst,
+					pollent->pollent.pollset_set);
+    }
+  else
+    {
+      gpr_log (GPR_ERROR, "Invalid grpc_polling_entity tag '%d'",
+	       pollent->tag);
+      abort ();
+    }
 }
 
-void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
-                                              grpc_pollset_set* pss_dst) {
-  if (pollent->tag == GRPC_POLLS_POLLSET) {
-    GPR_ASSERT(pollent->pollent.pollset != nullptr);
-    grpc_pollset_set_del_pollset(pss_dst, pollent->pollent.pollset);
-  } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
-    GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
-    grpc_pollset_set_del_pollset_set(pss_dst, pollent->pollent.pollset_set);
-  } else {
-    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'", pollent->tag);
-    abort();
-  }
+void
+grpc_polling_entity_del_from_pollset_set (grpc_polling_entity * pollent,
+					  grpc_pollset_set * pss_dst)
+{
+  if (pollent->tag == GRPC_POLLS_POLLSET)
+    {
+      GPR_ASSERT (pollent->pollent.pollset != nullptr);
+      grpc_pollset_set_del_pollset (pss_dst, pollent->pollent.pollset);
+    }
+  else if (pollent->tag == GRPC_POLLS_POLLSET_SET)
+    {
+      GPR_ASSERT (pollent->pollent.pollset_set != nullptr);
+      grpc_pollset_set_del_pollset_set (pss_dst,
+					pollent->pollent.pollset_set);
+    }
+  else
+    {
+      gpr_log (GPR_ERROR, "Invalid grpc_polling_entity tag '%d'",
+	       pollent->tag);
+      abort ();
+    }
 }

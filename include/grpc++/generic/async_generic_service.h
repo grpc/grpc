@@ -24,23 +24,31 @@
 
 struct grpc_server;
 
-namespace grpc {
+namespace grpc
+{
 
-typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
+  typedef ServerAsyncReaderWriter < ByteBuffer, ByteBuffer >
     GenericServerAsyncReaderWriter;
 
-class GenericServerContext final : public ServerContext {
- public:
-  const grpc::string& method() const { return method_; }
-  const grpc::string& host() const { return host_; }
+  class GenericServerContext final:public ServerContext
+  {
+  public:
+    const grpc::string & method () const
+    {
+      return method_;
+    }
+    const grpc::string & host () const
+    {
+      return host_;
+    }
 
- private:
-  friend class Server;
-  friend class ServerInterface;
+  private:
+      friend class Server;
+    friend class ServerInterface;
 
-  grpc::string method_;
-  grpc::string host_;
-};
+      grpc::string method_;
+      grpc::string host_;
+  };
 
 // A generic service at the server side accepts all RPC methods and hosts. It is
 // typically used in proxies. The generic service can be registered to a server
@@ -59,20 +67,23 @@ class GenericServerContext final : public ServerContext {
 //
 // When tag is retrieved from cq->Next(), context.method() can be used to look
 // at the method and the RPC can be handled accordingly.
-class AsyncGenericService final {
- public:
-  AsyncGenericService() : server_(nullptr) {}
+  class AsyncGenericService final
+  {
+  public:
+    AsyncGenericService ():server_ (nullptr)
+    {
+    }
 
-  void RequestCall(GenericServerContext* ctx,
-                   GenericServerAsyncReaderWriter* reader_writer,
-                   CompletionQueue* call_cq,
-                   ServerCompletionQueue* notification_cq, void* tag);
+    void RequestCall (GenericServerContext * ctx,
+		      GenericServerAsyncReaderWriter * reader_writer,
+		      CompletionQueue * call_cq,
+		      ServerCompletionQueue * notification_cq, void *tag);
 
- private:
-  friend class Server;
-  Server* server_;
-};
+  private:
+      friend class Server;
+    Server *server_;
+  };
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
+#endif // GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H

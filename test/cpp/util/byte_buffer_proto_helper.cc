@@ -18,27 +18,34 @@
 
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
-  std::vector<Slice> slices;
-  (void)buffer->Dump(&slices);
-  grpc::string buf;
-  buf.reserve(buffer->Length());
-  for (auto s = slices.begin(); s != slices.end(); s++) {
-    buf.append(reinterpret_cast<const char*>(s->begin()), s->size());
-  }
-  return message->ParseFromString(buf);
-}
+    bool ParseFromByteBuffer (ByteBuffer * buffer,
+			      grpc::protobuf::Message * message)
+    {
+      std::vector < Slice > slices;
+      (void) buffer->Dump (&slices);
+      grpc::string buf;
+      buf.reserve (buffer->Length ());
+      for (auto s = slices.begin (); s != slices.end (); s++)
+	{
+	  buf.append (reinterpret_cast < const char *>(s->begin ()),
+		      s->size ());
+	}
+      return message->ParseFromString (buf);
+    }
 
-std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
-    grpc::protobuf::Message* message) {
-  grpc::string buf;
-  message->SerializeToString(&buf);
-  Slice slice(buf);
-  return std::unique_ptr<ByteBuffer>(new ByteBuffer(&slice, 1));
-}
+    std::unique_ptr < ByteBuffer >
+      SerializeToByteBuffer (grpc::protobuf::Message * message)
+    {
+      grpc::string buf;
+      message->SerializeToString (&buf);
+      Slice slice (buf);
+      return std::unique_ptr < ByteBuffer > (new ByteBuffer (&slice, 1));
+    }
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc

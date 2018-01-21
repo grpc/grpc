@@ -24,18 +24,22 @@
 #include "src/proto/grpc/testing/control.pb.h"
 #include "test/cpp/qps/histogram.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-std::unique_ptr<ScenarioResult> RunScenario(
-    const grpc::testing::ClientConfig& client_config, size_t num_clients,
-    const grpc::testing::ServerConfig& server_config, size_t num_servers,
-    int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
-    const grpc::string& qps_server_target_override,
-    const grpc::string& credential_type, bool run_inproc);
+    std::unique_ptr < ScenarioResult >
+      RunScenario (const grpc::testing::ClientConfig & client_config,
+		   size_t num_clients,
+		   const grpc::testing::ServerConfig & server_config,
+		   size_t num_servers, int warmup_seconds,
+		   int benchmark_seconds, int spawn_local_worker_count,
+		   const grpc::string & qps_server_target_override,
+		   const grpc::string & credential_type, bool run_inproc);
 
-bool RunQuit(const grpc::string& credential_type);
-}  // namespace testing
-}  // namespace grpc
+    bool RunQuit (const grpc::string & credential_type);
+  }				// namespace testing
+}				// namespace grpc
 
 #endif

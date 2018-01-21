@@ -25,9 +25,14 @@
 /* This method creates a tsi_zero_copy_grpc_protector object. It return TSI_OK
    assuming there is no fatal error.
    The caller is responsible for destroying the protector.  */
-tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
-    tsi_zero_copy_grpc_protector** protector);
+tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector (const
+								  tsi_handshaker_result
+								  * self,
+								  size_t *
+								  max_output_protected_frame_size,
+								  tsi_zero_copy_grpc_protector
+								  **
+								  protector);
 
 /* -- tsi_zero_copy_grpc_protector object --  */
 
@@ -37,9 +42,12 @@ tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
      may be produced in this protect function.
    - This method returns TSI_OK in case of success or a specific error code in
      case of failure.  */
-tsi_result tsi_zero_copy_grpc_protector_protect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* unprotected_slices,
-    grpc_slice_buffer* protected_slices);
+tsi_result tsi_zero_copy_grpc_protector_protect (tsi_zero_copy_grpc_protector
+						 * self,
+						 grpc_slice_buffer *
+						 unprotected_slices,
+						 grpc_slice_buffer *
+						 protected_slices);
 
 /* Outputs unprotected bytes.
    - protected_slices is the bytes of protected frames.
@@ -47,26 +55,31 @@ tsi_result tsi_zero_copy_grpc_protector_protect(
    - This method returns TSI_OK in case of success. Success includes cases where
      there is not enough data to output in which case unprotected_slices has 0
      bytes.  */
-tsi_result tsi_zero_copy_grpc_protector_unprotect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices);
+tsi_result
+tsi_zero_copy_grpc_protector_unprotect (tsi_zero_copy_grpc_protector * self,
+					grpc_slice_buffer * protected_slices,
+					grpc_slice_buffer *
+					unprotected_slices);
 
 /* Destroys the tsi_zero_copy_grpc_protector object.  */
-void tsi_zero_copy_grpc_protector_destroy(tsi_zero_copy_grpc_protector* self);
+void tsi_zero_copy_grpc_protector_destroy (tsi_zero_copy_grpc_protector *
+					   self);
 
 /* Base for tsi_zero_copy_grpc_protector implementations.  */
-typedef struct {
-  tsi_result (*protect)(tsi_zero_copy_grpc_protector* self,
-                        grpc_slice_buffer* unprotected_slices,
-                        grpc_slice_buffer* protected_slices);
-  tsi_result (*unprotect)(tsi_zero_copy_grpc_protector* self,
-                          grpc_slice_buffer* protected_slices,
-                          grpc_slice_buffer* unprotected_slices);
-  void (*destroy)(tsi_zero_copy_grpc_protector* self);
+typedef struct
+{
+  tsi_result (*protect) (tsi_zero_copy_grpc_protector * self,
+			 grpc_slice_buffer * unprotected_slices,
+			 grpc_slice_buffer * protected_slices);
+  tsi_result (*unprotect) (tsi_zero_copy_grpc_protector * self,
+			   grpc_slice_buffer * protected_slices,
+			   grpc_slice_buffer * unprotected_slices);
+  void (*destroy) (tsi_zero_copy_grpc_protector * self);
 } tsi_zero_copy_grpc_protector_vtable;
 
-struct tsi_zero_copy_grpc_protector {
-  const tsi_zero_copy_grpc_protector_vtable* vtable;
+struct tsi_zero_copy_grpc_protector
+{
+  const tsi_zero_copy_grpc_protector_vtable *vtable;
 };
 
 #endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_GRPC_H */

@@ -24,43 +24,55 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/gpr/string.h"
 
-static void addhdr(gpr_strvec* buf, grpc_event* ev) {
-  char* tmp;
-  gpr_asprintf(&tmp, "tag:%p", ev->tag);
-  gpr_strvec_add(buf, tmp);
+static void
+addhdr (gpr_strvec * buf, grpc_event * ev)
+{
+  char *tmp;
+  gpr_asprintf (&tmp, "tag:%p", ev->tag);
+  gpr_strvec_add (buf, tmp);
 }
 
-static const char* errstr(int success) { return success ? "OK" : "ERROR"; }
-
-static void adderr(gpr_strvec* buf, int success) {
-  char* tmp;
-  gpr_asprintf(&tmp, " %s", errstr(success));
-  gpr_strvec_add(buf, tmp);
+static const char *
+errstr (int success)
+{
+  return success ? "OK" : "ERROR";
 }
 
-char* grpc_event_string(grpc_event* ev) {
-  char* out;
+static void
+adderr (gpr_strvec * buf, int success)
+{
+  char *tmp;
+  gpr_asprintf (&tmp, " %s", errstr (success));
+  gpr_strvec_add (buf, tmp);
+}
+
+char *
+grpc_event_string (grpc_event * ev)
+{
+  char *out;
   gpr_strvec buf;
 
-  if (ev == nullptr) return gpr_strdup("null");
+  if (ev == nullptr)
+    return gpr_strdup ("null");
 
-  gpr_strvec_init(&buf);
+  gpr_strvec_init (&buf);
 
-  switch (ev->type) {
+  switch (ev->type)
+    {
     case GRPC_QUEUE_TIMEOUT:
-      gpr_strvec_add(&buf, gpr_strdup("QUEUE_TIMEOUT"));
+      gpr_strvec_add (&buf, gpr_strdup ("QUEUE_TIMEOUT"));
       break;
     case GRPC_QUEUE_SHUTDOWN:
-      gpr_strvec_add(&buf, gpr_strdup("QUEUE_SHUTDOWN"));
+      gpr_strvec_add (&buf, gpr_strdup ("QUEUE_SHUTDOWN"));
       break;
     case GRPC_OP_COMPLETE:
-      gpr_strvec_add(&buf, gpr_strdup("OP_COMPLETE: "));
-      addhdr(&buf, ev);
-      adderr(&buf, ev->success);
+      gpr_strvec_add (&buf, gpr_strdup ("OP_COMPLETE: "));
+      addhdr (&buf, ev);
+      adderr (&buf, ev->success);
       break;
-  }
+    }
 
-  out = gpr_strvec_flatten(&buf, nullptr);
-  gpr_strvec_destroy(&buf);
+  out = gpr_strvec_flatten (&buf, nullptr);
+  gpr_strvec_destroy (&buf);
   return out;
 }

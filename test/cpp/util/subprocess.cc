@@ -22,23 +22,37 @@
 
 #include <grpc/support/subprocess.h>
 
-namespace grpc {
+namespace grpc
+{
 
-static gpr_subprocess* MakeProcess(const std::vector<std::string>& args) {
-  std::vector<const char*> vargs;
-  for (auto it = args.begin(); it != args.end(); ++it) {
-    vargs.push_back(it->c_str());
+  static gpr_subprocess *MakeProcess (const std::vector < std::string > &args)
+  {
+    std::vector < const char *>vargs;
+    for (auto it = args.begin (); it != args.end (); ++it)
+      {
+	vargs.push_back (it->c_str ());
+      }
+    return gpr_subprocess_create (vargs.size (), &vargs[0]);
   }
-  return gpr_subprocess_create(vargs.size(), &vargs[0]);
-}
 
-SubProcess::SubProcess(const std::vector<std::string>& args)
-    : subprocess_(MakeProcess(args)) {}
+SubProcess::SubProcess (const std::vector < std::string > &args):subprocess_ (MakeProcess
+	       (args))
+  {
+  }
 
-SubProcess::~SubProcess() { gpr_subprocess_destroy(subprocess_); }
+  SubProcess::~SubProcess ()
+  {
+    gpr_subprocess_destroy (subprocess_);
+  }
 
-int SubProcess::Join() { return gpr_subprocess_join(subprocess_); }
+  int SubProcess::Join ()
+  {
+    return gpr_subprocess_join (subprocess_);
+  }
 
-void SubProcess::Interrupt() { gpr_subprocess_interrupt(subprocess_); }
+  void SubProcess::Interrupt ()
+  {
+    gpr_subprocess_interrupt (subprocess_);
+  }
 
-}  // namespace grpc
+}				// namespace grpc

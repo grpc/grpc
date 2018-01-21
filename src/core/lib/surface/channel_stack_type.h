@@ -21,7 +21,8 @@
 
 #include <stdbool.h>
 
-typedef enum {
+typedef enum
+{
   // normal top-half client channel with load-balancing, connection management
   GRPC_CLIENT_CHANNEL,
   // bottom-half of a client channel: everything that happens post-load
@@ -38,8 +39,8 @@ typedef enum {
   GRPC_NUM_CHANNEL_STACK_TYPES
 } grpc_channel_stack_type;
 
-bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type);
+bool grpc_channel_stack_type_is_client (grpc_channel_stack_type type);
 
-const char* grpc_channel_stack_type_string(grpc_channel_stack_type type);
+const char *grpc_channel_stack_type_string (grpc_channel_stack_type type);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H */

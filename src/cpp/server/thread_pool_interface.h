@@ -21,23 +21,27 @@
 
 #include <functional>
 
-namespace grpc {
+namespace grpc
+{
 
 // A thread pool interface for running callbacks.
-class ThreadPoolInterface {
- public:
-  virtual ~ThreadPoolInterface() {}
+  class ThreadPoolInterface
+  {
+  public:
+    virtual ~ ThreadPoolInterface ()
+    {
+    }
 
-  // Schedule the given callback for execution.
-  virtual void Add(const std::function<void()>& callback) = 0;
-};
+    // Schedule the given callback for execution.
+    virtual void Add (const std::function < void () > &callback) = 0;
+  };
 
 // Allows different codebases to use their own thread pool impls
-typedef ThreadPoolInterface* (*CreateThreadPoolFunc)(void);
-void SetCreateThreadPool(CreateThreadPoolFunc func);
+  typedef ThreadPoolInterface *(*CreateThreadPoolFunc) (void);
+  void SetCreateThreadPool (CreateThreadPoolFunc func);
 
-ThreadPoolInterface* CreateDefaultThreadPool();
+  ThreadPoolInterface *CreateDefaultThreadPool ();
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_THREAD_POOL_INTERFACE_H
+#endif // GRPC_INTERNAL_CPP_THREAD_POOL_INTERFACE_H

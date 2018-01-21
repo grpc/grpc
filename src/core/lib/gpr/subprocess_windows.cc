@@ -30,96 +30,127 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
 
-struct gpr_subprocess {
+struct gpr_subprocess
+{
   PROCESS_INFORMATION pi;
   int joined;
   int interrupted;
 };
 
-const char* gpr_subprocess_binary_extension() { return ".exe"; }
+const char *
+gpr_subprocess_binary_extension ()
+{
+  return ".exe";
+}
 
-gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
-  gpr_subprocess* r;
+gpr_subprocess *
+gpr_subprocess_create (int argc, const char **argv)
+{
+  gpr_subprocess *r;
 
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
 
-  char* args = gpr_strjoin_sep(argv, (size_t)argc, " ", NULL);
-  TCHAR* args_tchar;
+  char *args = gpr_strjoin_sep (argv, (size_t) argc, " ", NULL);
+  TCHAR *args_tchar;
 
-  args_tchar = gpr_char_to_tchar(args);
-  gpr_free(args);
+  args_tchar = gpr_char_to_tchar (args);
+  gpr_free (args);
 
-  memset(&si, 0, sizeof(si));
-  si.cb = sizeof(si);
-  memset(&pi, 0, sizeof(pi));
+  memset (&si, 0, sizeof (si));
+  si.cb = sizeof (si);
+  memset (&pi, 0, sizeof (pi));
 
-  if (!CreateProcess(NULL, args_tchar, NULL, NULL, FALSE,
-                     CREATE_NEW_PROCESS_GROUP, NULL, NULL, &si, &pi)) {
-    gpr_free(args_tchar);
-    return NULL;
-  }
-  gpr_free(args_tchar);
+  if (!CreateProcess (NULL, args_tchar, NULL, NULL, FALSE,
+		      CREATE_NEW_PROCESS_GROUP, NULL, NULL, &si, &pi))
+    {
+      gpr_free (args_tchar);
+      return NULL;
+    }
+  gpr_free (args_tchar);
 
-  r = (gpr_subprocess*)gpr_malloc(sizeof(gpr_subprocess));
-  memset(r, 0, sizeof(*r));
+  r = (gpr_subprocess *) gpr_malloc (sizeof (gpr_subprocess));
+  memset (r, 0, sizeof (*r));
   r->pi = pi;
   return r;
 }
 
-void gpr_subprocess_destroy(gpr_subprocess* p) {
-  if (p) {
-    if (!p->joined) {
-      gpr_subprocess_interrupt(p);
-      gpr_subprocess_join(p);
+void
+gpr_subprocess_destroy (gpr_subprocess * p)
+{
+  if (p)
+    {
+      if (!p->joined)
+	{
+	  gpr_subprocess_interrupt (p);
+	  gpr_subprocess_join (p);
+	}
+      if (p->pi.hProcess)
+	{
+	  CloseHandle (p->pi.hProcess);
+	}
+      if (p->pi.hThread)
+	{
+	  CloseHandle (p->pi.hThread);
+	}
+      gpr_free (p);
     }
-    if (p->pi.hProcess) {
-      CloseHandle(p->pi.hProcess);
-    }
-    if (p->pi.hThread) {
-      CloseHandle(p->pi.hThread);
-    }
-    gpr_free(p);
-  }
 }
 
-int gpr_subprocess_join(gpr_subprocess* p) {
+int
+gpr_subprocess_join (gpr_subprocess * p)
+{
   DWORD dwExitCode;
-  if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {
-    if (dwExitCode == STILL_ACTIVE) {
-      if (WaitForSingleObject(p->pi.hProcess, INFINITE) == WAIT_OBJECT_0) {
-        p->joined = 1;
-        goto getExitCode;
-      }
-      return -1;  // failed to join
-    } else {
-      goto getExitCode;
+  if (GetExitCodeProcess (p->pi.hProcess, &dwExitCode))
+    {
+      if (dwExitCode == STILL_ACTIVE)
+	{
+	  if (WaitForSingleObject (p->pi.hProcess, INFINITE) == WAIT_OBJECT_0)
+	    {
+	      p->joined = 1;
+	      goto getExitCode;
+	    }
+	  return -1;		// failed to join
+	}
+      else
+	{
+	  goto getExitCode;
+	}
     }
-  } else {
-    return -1;  // failed to get exit code
-  }
+  else
+    {
+      return -1;		// failed to get exit code
+    }
 
 getExitCode:
-  if (p->interrupted) {
-    return 0;
-  }
-  if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {
-    return (int)dwExitCode;
-  } else {
-    return -1;  // failed to get exit code
-  }
+  if (p->interrupted)
+    {
+      return 0;
+    }
+  if (GetExitCodeProcess (p->pi.hProcess, &dwExitCode))
+    {
+      return (int) dwExitCode;
+    }
+  else
+    {
+      return -1;		// failed to get exit code
+    }
 }
 
-void gpr_subprocess_interrupt(gpr_subprocess* p) {
+void
+gpr_subprocess_interrupt (gpr_subprocess * p)
+{
   DWORD dwExitCode;
-  if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {
-    if (dwExitCode == STILL_ACTIVE) {
-      gpr_log(GPR_INFO, "sending ctrl-break");
-      GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, p->pi.dwProcessId);
-      p->joined = 1;
-      p->interrupted = 1;
+  if (GetExitCodeProcess (p->pi.hProcess, &dwExitCode))
+    {
+      if (dwExitCode == STILL_ACTIVE)
+	{
+	  gpr_log (GPR_INFO, "sending ctrl-break");
+	  GenerateConsoleCtrlEvent (CTRL_BREAK_EVENT, p->pi.dwProcessId);
+	  p->joined = 1;
+	  p->interrupted = 1;
+	}
     }
-  }
   return;
 }
 

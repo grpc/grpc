@@ -33,80 +33,100 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void on_server_destroyed(void* data, grpc_error* error) {
-  test_tcp_server* server = static_cast<test_tcp_server*>(data);
+static void
+on_server_destroyed (void *data, grpc_error * error)
+{
+  test_tcp_server *server = static_cast < test_tcp_server * >(data);
   server->shutdown = 1;
 }
 
-void test_tcp_server_init(test_tcp_server* server,
-                          grpc_tcp_server_cb on_connect, void* user_data) {
-  grpc_init();
+void
+test_tcp_server_init (test_tcp_server * server,
+		      grpc_tcp_server_cb on_connect, void *user_data)
+{
+  grpc_init ();
   server->tcp_server = nullptr;
-  GRPC_CLOSURE_INIT(&server->shutdown_complete, on_server_destroyed, server,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT (&server->shutdown_complete, on_server_destroyed, server,
+		     grpc_schedule_on_exec_ctx);
   server->shutdown = 0;
-  server->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(server->pollset, &server->mu);
+  server->pollset =
+    static_cast < grpc_pollset * >(gpr_zalloc (grpc_pollset_size ()));
+  grpc_pollset_init (server->pollset, &server->mu);
   server->on_connect = on_connect;
   server->cb_data = user_data;
 }
 
-void test_tcp_server_start(test_tcp_server* server, int port) {
+void
+test_tcp_server_start (test_tcp_server * server, int port)
+{
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
+  struct sockaddr_in *addr = (struct sockaddr_in *) resolved_addr.addr;
   int port_added;
   grpc_core::ExecCtx exec_ctx;
 
   addr->sin_family = AF_INET;
-  addr->sin_port = htons((uint16_t)port);
-  memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
+  addr->sin_port = htons ((uint16_t) port);
+  memset (&addr->sin_addr, 0, sizeof (addr->sin_addr));
 
-  grpc_error* error = grpc_tcp_server_create(&server->shutdown_complete,
-                                             nullptr, &server->tcp_server);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_error *error = grpc_tcp_server_create (&server->shutdown_complete,
+					      nullptr, &server->tcp_server);
+  GPR_ASSERT (error == GRPC_ERROR_NONE);
   error =
-      grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(port_added == port);
+    grpc_tcp_server_add_port (server->tcp_server, &resolved_addr,
+			      &port_added);
+  GPR_ASSERT (error == GRPC_ERROR_NONE);
+  GPR_ASSERT (port_added == port);
 
-  grpc_tcp_server_start(server->tcp_server, &server->pollset, 1,
-                        server->on_connect, server->cb_data);
-  gpr_log(GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);
+  grpc_tcp_server_start (server->tcp_server, &server->pollset, 1,
+			 server->on_connect, server->cb_data);
+  gpr_log (GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);
 }
 
-void test_tcp_server_poll(test_tcp_server* server, int seconds) {
-  grpc_pollset_worker* worker = nullptr;
+void
+test_tcp_server_poll (test_tcp_server * server, int seconds)
+{
+  grpc_pollset_worker *worker = nullptr;
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = grpc_timespec_to_millis_round_up(
-      grpc_timeout_seconds_to_deadline(seconds));
-  gpr_mu_lock(server->mu);
-  GRPC_LOG_IF_ERROR("pollset_work",
-                    grpc_pollset_work(server->pollset, &worker, deadline));
-  gpr_mu_unlock(server->mu);
+  grpc_millis deadline =
+    grpc_timespec_to_millis_round_up (grpc_timeout_seconds_to_deadline
+				      (seconds));
+  gpr_mu_lock (server->mu);
+  GRPC_LOG_IF_ERROR ("pollset_work",
+		     grpc_pollset_work (server->pollset, &worker, deadline));
+  gpr_mu_unlock (server->mu);
 }
 
-static void do_nothing(void* arg, grpc_error* error) {}
-static void finish_pollset(void* arg, grpc_error* error) {
-  grpc_pollset_destroy(static_cast<grpc_pollset*>(arg));
+static void
+do_nothing (void *arg, grpc_error * error)
+{
 }
 
-void test_tcp_server_destroy(test_tcp_server* server) {
+static void
+finish_pollset (void *arg, grpc_error * error)
+{
+  grpc_pollset_destroy (static_cast < grpc_pollset * >(arg));
+}
+
+void
+test_tcp_server_destroy (test_tcp_server * server)
+{
   grpc_core::ExecCtx exec_ctx;
   gpr_timespec shutdown_deadline;
   grpc_closure do_nothing_cb;
-  grpc_tcp_server_unref(server->tcp_server);
-  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
-  shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                   gpr_time_from_seconds(5, GPR_TIMESPAN));
+  grpc_tcp_server_unref (server->tcp_server);
+  GRPC_CLOSURE_INIT (&do_nothing_cb, do_nothing, nullptr,
+		     grpc_schedule_on_exec_ctx);
+  shutdown_deadline = gpr_time_add (gpr_now (GPR_CLOCK_MONOTONIC),
+				    gpr_time_from_seconds (5, GPR_TIMESPAN));
   while (!server->shutdown &&
-         gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
-    test_tcp_server_poll(server, 1);
-  }
-  grpc_pollset_shutdown(server->pollset,
-                        GRPC_CLOSURE_CREATE(finish_pollset, server->pollset,
-                                            grpc_schedule_on_exec_ctx));
-  grpc_core::ExecCtx::Get()->Flush();
-  gpr_free(server->pollset);
-  grpc_shutdown();
+	 gpr_time_cmp (gpr_now (GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0)
+    {
+      test_tcp_server_poll (server, 1);
+    }
+  grpc_pollset_shutdown (server->pollset,
+			 GRPC_CLOSURE_CREATE (finish_pollset, server->pollset,
+					      grpc_schedule_on_exec_ctx));
+  grpc_core::ExecCtx::Get ()->Flush ();
+  gpr_free (server->pollset);
+  grpc_shutdown ();
 }

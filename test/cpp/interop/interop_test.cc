@@ -40,92 +40,115 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
-DEFINE_string(extra_server_flags, "", "Extra flags to pass to server.");
+DEFINE_string (extra_server_flags, "", "Extra flags to pass to server.");
 
-int test_client(const char* root, const char* host, int port) {
+int
+test_client (const char *root, const char *host, int port)
+{
   int status;
   pid_t cli;
-  cli = fork();
-  if (cli == 0) {
-    char* binary_path;
-    char* port_arg;
-    gpr_asprintf(&binary_path, "%s/interop_client", root);
-    gpr_asprintf(&port_arg, "--server_port=%d", port);
+  cli = fork ();
+  if (cli == 0)
+    {
+      char *binary_path;
+      char *port_arg;
+      gpr_asprintf (&binary_path, "%s/interop_client", root);
+      gpr_asprintf (&port_arg, "--server_port=%d", port);
 
-    execl(binary_path, binary_path, port_arg, NULL);
+      execl (binary_path, binary_path, port_arg, NULL);
 
-    gpr_free(binary_path);
-    gpr_free(port_arg);
-    return 1;
-  }
+      gpr_free (binary_path);
+      gpr_free (port_arg);
+      return 1;
+    }
   /* wait for client */
-  gpr_log(GPR_INFO, "Waiting for client: %s", host);
-  if (waitpid(cli, &status, 0) == -1) return 2;
-  if (!WIFEXITED(status)) return 4;
-  if (WEXITSTATUS(status)) return WEXITSTATUS(status);
+  gpr_log (GPR_INFO, "Waiting for client: %s", host);
+  if (waitpid (cli, &status, 0) == -1)
+    return 2;
+  if (!WIFEXITED (status))
+    return 4;
+  if (WEXITSTATUS (status))
+    return WEXITSTATUS (status);
   return 0;
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-  char* me = argv[0];
-  char* lslash = strrchr(me, '/');
+int
+main (int argc, char **argv)
+{
+  grpc::testing::InitTest (&argc, &argv, true);
+  char *me = argv[0];
+  char *lslash = strrchr (me, '/');
   char root[1024];
-  int port = grpc_pick_unused_port_or_die();
+  int port = grpc_pick_unused_port_or_die ();
   int status;
   pid_t svr;
   int ret;
   int do_ipv6 = 1;
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
-  srand(getpid());
-  if (!grpc_ipv6_loopback_available()) {
-    gpr_log(GPR_INFO, "Can't bind to ::1.  Skipping IPv6 tests.");
-    do_ipv6 = 0;
-  }
+  srand (getpid ());
+  if (!grpc_ipv6_loopback_available ())
+    {
+      gpr_log (GPR_INFO, "Can't bind to ::1.  Skipping IPv6 tests.");
+      do_ipv6 = 0;
+    }
   /* figure out where we are */
-  if (lslash) {
-    memcpy(root, me, lslash - me);
-    root[lslash - me] = 0;
-  } else {
-    strcpy(root, ".");
-  }
+  if (lslash)
+    {
+      memcpy (root, me, lslash - me);
+      root[lslash - me] = 0;
+    }
+  else
+    {
+      strcpy (root, ".");
+    }
   /* start the server */
-  svr = fork();
-  if (svr == 0) {
-    const size_t num_args = 3 + !FLAGS_extra_server_flags.empty();
-    char** args = (char**)gpr_malloc(sizeof(char*) * num_args);
-    memset(args, 0, sizeof(char*) * num_args);
-    gpr_asprintf(&args[0], "%s/interop_server", root);
-    gpr_asprintf(&args[1], "--port=%d", port);
-    if (!FLAGS_extra_server_flags.empty()) {
-      args[2] = gpr_strdup(FLAGS_extra_server_flags.c_str());
+  svr = fork ();
+  if (svr == 0)
+    {
+      const size_t num_args = 3 + !FLAGS_extra_server_flags.empty ();
+      char **args = (char **) gpr_malloc (sizeof (char *) * num_args);
+      memset (args, 0, sizeof (char *) * num_args);
+      gpr_asprintf (&args[0], "%s/interop_server", root);
+      gpr_asprintf (&args[1], "--port=%d", port);
+      if (!FLAGS_extra_server_flags.empty ())
+	{
+	  args[2] = gpr_strdup (FLAGS_extra_server_flags.c_str ());
+	}
+      execv (args[0], args);
+      for (size_t i = 0; i < num_args - 1; ++i)
+	{
+	  gpr_free (args[i]);
+	}
+      gpr_free (args);
+      return 1;
     }
-    execv(args[0], args);
-    for (size_t i = 0; i < num_args - 1; ++i) {
-      gpr_free(args[i]);
-    }
-    gpr_free(args);
-    return 1;
-  }
   /* wait a little */
-  sleep(10);
+  sleep (10);
   /* start the clients */
-  ret = test_client(root, "127.0.0.1", port);
-  if (ret != 0) return ret;
-  ret = test_client(root, "::ffff:127.0.0.1", port);
-  if (ret != 0) return ret;
-  ret = test_client(root, "localhost", port);
-  if (ret != 0) return ret;
-  if (do_ipv6) {
-    ret = test_client(root, "::1", port);
-    if (ret != 0) return ret;
-  }
+  ret = test_client (root, "127.0.0.1", port);
+  if (ret != 0)
+    return ret;
+  ret = test_client (root, "::ffff:127.0.0.1", port);
+  if (ret != 0)
+    return ret;
+  ret = test_client (root, "localhost", port);
+  if (ret != 0)
+    return ret;
+  if (do_ipv6)
+    {
+      ret = test_client (root, "::1", port);
+      if (ret != 0)
+	return ret;
+    }
   /* wait for server */
-  gpr_log(GPR_INFO, "Waiting for server");
-  kill(svr, SIGINT);
-  if (waitpid(svr, &status, 0) == -1) return 2;
-  if (!WIFEXITED(status)) return 4;
-  if (WEXITSTATUS(status)) return WEXITSTATUS(status);
+  gpr_log (GPR_INFO, "Waiting for server");
+  kill (svr, SIGINT);
+  if (waitpid (svr, &status, 0) == -1)
+    return 2;
+  if (!WIFEXITED (status))
+    return 4;
+  if (WEXITSTATUS (status))
+    return WEXITSTATUS (status);
   return 0;
 }

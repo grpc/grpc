@@ -31,89 +31,113 @@
 
 #include <gtest/gtest.h>
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-const char* kErrorMessage = "This service caused an exception";
+    const char *kErrorMessage = "This service caused an exception";
 
 #if GRPC_ALLOW_EXCEPTIONS
-class ExceptingServiceImpl : public ::grpc::testing::EchoTestService::Service {
- public:
-  Status Echo(ServerContext* server_context, const EchoRequest* request,
-              EchoResponse* response) override {
-    throw - 1;
-  }
-  Status RequestStream(ServerContext* context,
-                       ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) override {
-    throw ServiceException();
-  }
+    class ExceptingServiceImpl:public::grpc::testing::EchoTestService::Service
+    {
+    public:
+      Status Echo (ServerContext * server_context,
+		   const EchoRequest * request,
+		   EchoResponse * response) override
+      {
+	throw - 1;
+      }
+      Status RequestStream (ServerContext * context,
+			    ServerReader < EchoRequest > *reader,
+			    EchoResponse * response) override
+      {
+	throw ServiceException ();
+      }
 
- private:
-  class ServiceException final : public std::exception {
-   public:
-    ServiceException() {}
+    private:
+        class ServiceException final:public std::exception
+      {
+      public:
+	ServiceException ()
+	{
+	}
 
-   private:
-    const char* what() const noexcept override { return kErrorMessage; }
-  };
-};
+      private:
+	const char *what () const noexcept override
+	{
+	  return kErrorMessage;
+	}
+      };
+    };
 
-class ExceptionTest : public ::testing::Test {
- protected:
-  ExceptionTest() {}
+    class ExceptionTest:public::testing::Test
+    {
+    protected:
+      ExceptionTest ()
+      {
+      }
 
-  void SetUp() override {
-    ServerBuilder builder;
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-  }
+      void SetUp () override
+      {
+	ServerBuilder builder;
+	builder.RegisterService (&service_);
+	server_ = builder.BuildAndStart ();
+      }
 
-  void TearDown() override { server_->Shutdown(); }
+      void TearDown () override
+      {
+	server_->Shutdown ();
+      }
 
-  void ResetStub() {
-    channel_ = server_->InProcessChannel(ChannelArguments());
-    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
-  }
+      void ResetStub ()
+      {
+	channel_ = server_->InProcessChannel (ChannelArguments ());
+	stub_ = grpc::testing::EchoTestService::NewStub (channel_);
+      }
 
-  std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
-  std::unique_ptr<Server> server_;
-  ExceptingServiceImpl service_;
-};
+      std::shared_ptr < Channel > channel_;
+      std::unique_ptr < grpc::testing::EchoTestService::Stub > stub_;
+      std::unique_ptr < Server > server_;
+      ExceptingServiceImpl service_;
+    };
 
-TEST_F(ExceptionTest, Unary) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("test");
-  ClientContext context;
+    TEST_F (ExceptionTest, Unary)
+    {
+      ResetStub ();
+      EchoRequest request;
+      EchoResponse response;
+      request.set_message ("test");
+      ClientContext context;
 
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_FALSE(s.ok());
-  EXPECT_EQ(s.error_code(), StatusCode::UNKNOWN);
-}
+      Status s = stub_->Echo (&context, request, &response);
+      EXPECT_FALSE (s.ok ());
+      EXPECT_EQ (s.error_code (), StatusCode::UNKNOWN);
+    }
 
-TEST_F(ExceptionTest, RequestStream) {
-  ResetStub();
-  EchoResponse response;
-  ClientContext context;
+    TEST_F (ExceptionTest, RequestStream)
+    {
+      ResetStub ();
+      EchoResponse response;
+      ClientContext context;
 
-  auto stream = stub_->RequestStream(&context, &response);
-  stream->WritesDone();
-  Status s = stream->Finish();
+      auto stream = stub_->RequestStream (&context, &response);
+      stream->WritesDone ();
+      Status s = stream->Finish ();
 
-  EXPECT_FALSE(s.ok());
-  EXPECT_EQ(s.error_code(), StatusCode::UNKNOWN);
-}
+      EXPECT_FALSE (s.ok ());
+      EXPECT_EQ (s.error_code (), StatusCode::UNKNOWN);
+    }
 
-#endif  // GRPC_ALLOW_EXCEPTIONS
+#endif // GRPC_ALLOW_EXCEPTIONS
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  ::testing::InitGoogleTest (&argc, argv);
+  return RUN_ALL_TESTS ();
 }

@@ -29,7 +29,7 @@
 
 /* Encode/decode timeouts to the GRPC over HTTP/2 format;
    encoding may round up arbitrarily */
-void grpc_http2_encode_timeout(grpc_millis timeout, char* buffer);
-int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout);
+void grpc_http2_encode_timeout (grpc_millis timeout, char *buffer);
+int grpc_http2_decode_timeout (grpc_slice text, grpc_millis * timeout);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H */

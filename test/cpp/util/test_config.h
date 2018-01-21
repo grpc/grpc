@@ -19,12 +19,14 @@
 #ifndef GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
 #define GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-void InitTest(int* argc, char*** argv, bool remove_flags);
+    void InitTest (int *argc, char ***argv, bool remove_flags);
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
+#endif				// GRPC_TEST_CPP_UTIL_TEST_CONFIG_H

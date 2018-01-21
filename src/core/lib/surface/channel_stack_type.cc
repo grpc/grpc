@@ -20,8 +20,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
-  switch (type) {
+bool
+grpc_channel_stack_type_is_client (grpc_channel_stack_type type)
+{
+  switch (type)
+    {
     case GRPC_CLIENT_CHANNEL:
       return true;
     case GRPC_CLIENT_SUBCHANNEL:
@@ -34,12 +37,16 @@ bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
       return false;
     case GRPC_NUM_CHANNEL_STACK_TYPES:
       break;
-  }
-  GPR_UNREACHABLE_CODE(return true;);
+    }
+  GPR_UNREACHABLE_CODE (return true;
+    );
 }
 
-const char* grpc_channel_stack_type_string(grpc_channel_stack_type type) {
-  switch (type) {
+const char *
+grpc_channel_stack_type_string (grpc_channel_stack_type type)
+{
+  switch (type)
+    {
     case GRPC_CLIENT_CHANNEL:
       return "CLIENT_CHANNEL";
     case GRPC_CLIENT_SUBCHANNEL:
@@ -52,6 +59,6 @@ const char* grpc_channel_stack_type_string(grpc_channel_stack_type type) {
       return "CLIENT_DIRECT_CHANNEL";
     case GRPC_NUM_CHANNEL_STACK_TYPES:
       break;
-  }
-  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+    }
+  GPR_UNREACHABLE_CODE (return "UNKNOWN");
 }

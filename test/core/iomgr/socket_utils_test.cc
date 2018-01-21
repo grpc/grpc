@@ -34,99 +34,122 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "test/core/util/test_config.h"
 
-struct test_socket_mutator {
+struct test_socket_mutator
+{
   grpc_socket_mutator base;
   int option_value;
 };
 
-static bool mutate_fd(int fd, grpc_socket_mutator* mutator) {
+static bool
+mutate_fd (int fd, grpc_socket_mutator * mutator)
+{
   int newval;
-  socklen_t intlen = sizeof(newval);
-  struct test_socket_mutator* m = (struct test_socket_mutator*)mutator;
+  socklen_t intlen = sizeof (newval);
+  struct test_socket_mutator *m = (struct test_socket_mutator *) mutator;
 
-  if (0 != setsockopt(fd, IPPROTO_IP, IP_TOS, &m->option_value,
-                      sizeof(m->option_value))) {
-    return false;
-  }
-  if (0 != getsockopt(fd, IPPROTO_IP, IP_TOS, &newval, &intlen)) {
-    return false;
-  }
-  if (newval != m->option_value) {
-    return false;
-  }
+  if (0 != setsockopt (fd, IPPROTO_IP, IP_TOS, &m->option_value,
+		       sizeof (m->option_value)))
+    {
+      return false;
+    }
+  if (0 != getsockopt (fd, IPPROTO_IP, IP_TOS, &newval, &intlen))
+    {
+      return false;
+    }
+  if (newval != m->option_value)
+    {
+      return false;
+    }
   return true;
 }
 
-static void destroy_test_mutator(grpc_socket_mutator* mutator) {
-  struct test_socket_mutator* m = (struct test_socket_mutator*)mutator;
-  gpr_free(m);
+static void
+destroy_test_mutator (grpc_socket_mutator * mutator)
+{
+  struct test_socket_mutator *m = (struct test_socket_mutator *) mutator;
+  gpr_free (m);
 }
 
-static int compare_test_mutator(grpc_socket_mutator* a,
-                                grpc_socket_mutator* b) {
-  struct test_socket_mutator* ma = (struct test_socket_mutator*)a;
-  struct test_socket_mutator* mb = (struct test_socket_mutator*)b;
-  return GPR_ICMP(ma->option_value, mb->option_value);
+static int
+compare_test_mutator (grpc_socket_mutator * a, grpc_socket_mutator * b)
+{
+  struct test_socket_mutator *ma = (struct test_socket_mutator *) a;
+  struct test_socket_mutator *mb = (struct test_socket_mutator *) b;
+  return GPR_ICMP (ma->option_value, mb->option_value);
 }
 
 static const grpc_socket_mutator_vtable mutator_vtable = {
-    mutate_fd, compare_test_mutator, destroy_test_mutator};
+  mutate_fd, compare_test_mutator, destroy_test_mutator
+};
 
-int main(int argc, char** argv) {
+int
+main (int argc, char **argv)
+{
   int sock;
-  grpc_error* err;
-  grpc_test_init(argc, argv);
+  grpc_error *err;
+  grpc_test_init (argc, argv);
 
-  sock = socket(PF_INET, SOCK_STREAM, 0);
-  GPR_ASSERT(sock > 0);
+  sock = socket (PF_INET, SOCK_STREAM, 0);
+  GPR_ASSERT (sock > 0);
 
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_nonblocking",
-                               grpc_set_socket_nonblocking(sock, 1)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_nonblocking",
-                               grpc_set_socket_nonblocking(sock, 0)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_cloexec",
-                               grpc_set_socket_cloexec(sock, 1)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_cloexec",
-                               grpc_set_socket_cloexec(sock, 0)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_reuse_addr",
-                               grpc_set_socket_reuse_addr(sock, 1)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_reuse_addr",
-                               grpc_set_socket_reuse_addr(sock, 0)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_low_latency",
-                               grpc_set_socket_low_latency(sock, 1)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_low_latency",
-                               grpc_set_socket_low_latency(sock, 0)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_nonblocking",
+				 grpc_set_socket_nonblocking (sock, 1)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_nonblocking",
+				 grpc_set_socket_nonblocking (sock, 0)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_cloexec",
+				 grpc_set_socket_cloexec (sock, 1)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_cloexec",
+				 grpc_set_socket_cloexec (sock, 0)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_reuse_addr",
+				 grpc_set_socket_reuse_addr (sock, 1)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_reuse_addr",
+				 grpc_set_socket_reuse_addr (sock, 0)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_low_latency",
+				 grpc_set_socket_low_latency (sock, 1)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_low_latency",
+				 grpc_set_socket_low_latency (sock, 0)));
 
   struct test_socket_mutator mutator;
-  grpc_socket_mutator_init(&mutator.base, &mutator_vtable);
+  grpc_socket_mutator_init (&mutator.base, &mutator_vtable);
 
   mutator.option_value = IPTOS_LOWDELAY;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "set_socket_with_mutator",
-      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_with_mutator",
+				 grpc_set_socket_with_mutator (sock,
+							       (grpc_socket_mutator
+								*) &
+							       mutator)));
 
   mutator.option_value = IPTOS_THROUGHPUT;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "set_socket_with_mutator",
-      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_with_mutator",
+				 grpc_set_socket_with_mutator (sock,
+							       (grpc_socket_mutator
+								*) &
+							       mutator)));
 
   mutator.option_value = IPTOS_RELIABILITY;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "set_socket_with_mutator",
-      grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator)));
+  GPR_ASSERT (GRPC_LOG_IF_ERROR ("set_socket_with_mutator",
+				 grpc_set_socket_with_mutator (sock,
+							       (grpc_socket_mutator
+								*) &
+							       mutator)));
 
   mutator.option_value = -1;
-  err = grpc_set_socket_with_mutator(sock, (grpc_socket_mutator*)&mutator);
-  GPR_ASSERT(err != GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(err);
+  err =
+    grpc_set_socket_with_mutator (sock, (grpc_socket_mutator *) & mutator);
+  GPR_ASSERT (err != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF (err);
 
-  close(sock);
+  close (sock);
 
   return 0;
 }
 
 #else /* GRPC_POSIX_SOCKET */
 
-int main(int argc, char** argv) { return 1; }
+int
+main (int argc, char **argv)
+{
+  return 1;
+}
 
 #endif /* GRPC_POSIX_SOCKET */

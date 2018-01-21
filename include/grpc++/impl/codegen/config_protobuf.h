@@ -66,30 +66,33 @@
 #define GRPC_CUSTOM_CODEDINPUTSTREAM ::google::protobuf::io::CodedInputStream
 #endif
 
-namespace grpc {
-namespace protobuf {
+namespace grpc
+{
+  namespace protobuf
+  {
 
-typedef GRPC_CUSTOM_MESSAGE Message;
-typedef GRPC_CUSTOM_PROTOBUF_INT64 int64;
+    typedef GRPC_CUSTOM_MESSAGE Message;
+    typedef GRPC_CUSTOM_PROTOBUF_INT64 int64;
 
-typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
-typedef GRPC_CUSTOM_DESCRIPTORPOOL DescriptorPool;
-typedef GRPC_CUSTOM_DESCRIPTORDATABASE DescriptorDatabase;
-typedef GRPC_CUSTOM_FIELDDESCRIPTOR FieldDescriptor;
-typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
-typedef GRPC_CUSTOM_FILEDESCRIPTORPROTO FileDescriptorProto;
-typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
-typedef GRPC_CUSTOM_SERVICEDESCRIPTOR ServiceDescriptor;
-typedef GRPC_CUSTOM_SIMPLEDESCRIPTORDATABASE SimpleDescriptorDatabase;
-typedef GRPC_CUSTOM_SOURCELOCATION SourceLocation;
+    typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
+    typedef GRPC_CUSTOM_DESCRIPTORPOOL DescriptorPool;
+    typedef GRPC_CUSTOM_DESCRIPTORDATABASE DescriptorDatabase;
+    typedef GRPC_CUSTOM_FIELDDESCRIPTOR FieldDescriptor;
+    typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
+    typedef GRPC_CUSTOM_FILEDESCRIPTORPROTO FileDescriptorProto;
+    typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
+    typedef GRPC_CUSTOM_SERVICEDESCRIPTOR ServiceDescriptor;
+    typedef GRPC_CUSTOM_SIMPLEDESCRIPTORDATABASE SimpleDescriptorDatabase;
+    typedef GRPC_CUSTOM_SOURCELOCATION SourceLocation;
 
-namespace io {
-typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;
-typedef GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ZeroCopyInputStream;
-typedef GRPC_CUSTOM_CODEDINPUTSTREAM CodedInputStream;
-}  // namespace io
+    namespace io
+    {
+      typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;
+      typedef GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ZeroCopyInputStream;
+      typedef GRPC_CUSTOM_CODEDINPUTSTREAM CodedInputStream;
+    }				// namespace io
 
-}  // namespace protobuf
-}  // namespace grpc
+  }				// namespace protobuf
+}				// namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_CONFIG_PROTOBUF_H
+#endif				// GRPCXX_IMPL_CODEGEN_CONFIG_PROTOBUF_H

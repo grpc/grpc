@@ -25,15 +25,19 @@
 
 #include "test/cpp/util/cli_credentials.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-typedef std::function<bool(const grpc::string&)> GrpcToolOutputCallback;
+    typedef std::function < bool (const grpc::string &) >
+      GrpcToolOutputCallback;
 
-int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
-                    GrpcToolOutputCallback callback);
+    int GrpcToolMainLib (int argc, const char **argv,
+			 const CliCredentials & cred,
+			 GrpcToolOutputCallback callback);
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
+#endif				// GRPC_TEST_CPP_UTIL_GRPC_TOOL_H

@@ -29,50 +29,54 @@
   (h) *= 0xc2b2ae35; \
   (h) ^= (h) >> 16;
 
-uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
+uint32_t
+gpr_murmur_hash3 (const void *key, size_t len, uint32_t seed)
+{
   uint32_t h1 = seed;
   uint32_t k1;
 
   const uint32_t c1 = 0xcc9e2d51;
   const uint32_t c2 = 0x1b873593;
 
-  const uint8_t* keyptr = (const uint8_t*)key;
-  const size_t bsize = sizeof(k1);
+  const uint8_t *keyptr = (const uint8_t *) key;
+  const size_t bsize = sizeof (k1);
   const size_t nblocks = len / bsize;
 
   /* body */
-  for (size_t i = 0; i < nblocks; i++, keyptr += bsize) {
-    memcpy(&k1, keyptr, bsize);
+  for (size_t i = 0; i < nblocks; i++, keyptr += bsize)
+    {
+      memcpy (&k1, keyptr, bsize);
 
-    k1 *= c1;
-    k1 = ROTL32(k1, 15);
-    k1 *= c2;
+      k1 *= c1;
+      k1 = ROTL32 (k1, 15);
+      k1 *= c2;
 
-    h1 ^= k1;
-    h1 = ROTL32(h1, 13);
-    h1 = h1 * 5 + 0xe6546b64;
-  }
+      h1 ^= k1;
+      h1 = ROTL32 (h1, 13);
+      h1 = h1 * 5 + 0xe6546b64;
+    }
 
   k1 = 0;
 
   /* tail */
-  switch (len & 3) {
+  switch (len & 3)
+    {
     case 3:
-      k1 ^= ((uint32_t)keyptr[2]) << 16;
-    /* fallthrough */
+      k1 ^= ((uint32_t) keyptr[2]) << 16;
+      /* fallthrough */
     case 2:
-      k1 ^= ((uint32_t)keyptr[1]) << 8;
-    /* fallthrough */
+      k1 ^= ((uint32_t) keyptr[1]) << 8;
+      /* fallthrough */
     case 1:
       k1 ^= keyptr[0];
       k1 *= c1;
-      k1 = ROTL32(k1, 15);
+      k1 = ROTL32 (k1, 15);
       k1 *= c2;
       h1 ^= k1;
-  };
+    };
 
   /* finalization */
-  h1 ^= (uint32_t)len;
-  FMIX32(h1);
+  h1 ^= (uint32_t) len;
+  FMIX32 (h1);
   return h1;
 }

@@ -32,66 +32,77 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
 
-void gpr_log(const char* file, int line, gpr_log_severity severity,
-             const char* format, ...) {
-  char* message = NULL;
+void
+gpr_log (const char *file, int line, gpr_log_severity severity,
+	 const char *format, ...)
+{
+  char *message = NULL;
   va_list args;
   int ret;
 
   /* Determine the length. */
-  va_start(args, format);
-  ret = _vscprintf(format, args);
-  va_end(args);
-  if (ret < 0) {
-    message = NULL;
-  } else {
-    /* Allocate a new buffer, with space for the NUL terminator. */
-    size_t strp_buflen = (size_t)ret + 1;
-    message = (char*)gpr_malloc(strp_buflen);
-
-    /* Print to the buffer. */
-    va_start(args, format);
-    ret = vsnprintf_s(message, strp_buflen, _TRUNCATE, format, args);
-    va_end(args);
-    if ((size_t)ret != strp_buflen - 1) {
-      /* This should never happen. */
-      gpr_free(message);
+  va_start (args, format);
+  ret = _vscprintf (format, args);
+  va_end (args);
+  if (ret < 0)
+    {
       message = NULL;
     }
-  }
+  else
+    {
+      /* Allocate a new buffer, with space for the NUL terminator. */
+      size_t strp_buflen = (size_t) ret + 1;
+      message = (char *) gpr_malloc (strp_buflen);
 
-  gpr_log_message(file, line, severity, message);
-  gpr_free(message);
+      /* Print to the buffer. */
+      va_start (args, format);
+      ret = vsnprintf_s (message, strp_buflen, _TRUNCATE, format, args);
+      va_end (args);
+      if ((size_t) ret != strp_buflen - 1)
+	{
+	  /* This should never happen. */
+	  gpr_free (message);
+	  message = NULL;
+	}
+    }
+
+  gpr_log_message (file, line, severity, message);
+  gpr_free (message);
 }
 
 /* Simple starter implementation */
-void gpr_default_log(gpr_log_func_args* args) {
-  const char* final_slash;
-  const char* display_file;
+void
+gpr_default_log (gpr_log_func_args * args)
+{
+  const char *final_slash;
+  const char *display_file;
   char time_buffer[64];
   time_t timer;
-  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+  gpr_timespec now = gpr_now (GPR_CLOCK_REALTIME);
   struct tm tm;
 
-  timer = (time_t)now.tv_sec;
-  final_slash = strrchr(args->file, '\\');
+  timer = (time_t) now.tv_sec;
+  final_slash = strrchr (args->file, '\\');
   if (final_slash == NULL)
     display_file = args->file;
   else
     display_file = final_slash + 1;
 
-  if (localtime_s(&tm, &timer)) {
-    strcpy(time_buffer, "error:localtime");
-  } else if (0 ==
-             strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
-    strcpy(time_buffer, "error:strftime");
-  }
+  if (localtime_s (&tm, &timer))
+    {
+      strcpy (time_buffer, "error:localtime");
+    }
+  else if (0 ==
+	   strftime (time_buffer, sizeof (time_buffer), "%m%d %H:%M:%S", &tm))
+    {
+      strcpy (time_buffer, "error:strftime");
+    }
 
-  fprintf(stderr, "%s%s.%09u %5lu %s:%d] %s\n",
-          gpr_log_severity_string(args->severity), time_buffer,
-          (int)(now.tv_nsec), GetCurrentThreadId(), display_file, args->line,
-          args->message);
-  fflush(stderr);
+  fprintf (stderr, "%s%s.%09u %5lu %s:%d] %s\n",
+	   gpr_log_severity_string (args->severity), time_buffer,
+	   (int) (now.tv_nsec), GetCurrentThreadId (), display_file,
+	   args->line, args->message);
+  fflush (stderr);
 }
 
 #endif /* GPR_WINDOWS_LOG */

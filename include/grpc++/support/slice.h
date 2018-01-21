@@ -23,4 +23,4 @@
 #include <grpc++/support/config.h>
 #include <grpc/slice.h>
 
-#endif  // GRPCXX_SUPPORT_SLICE_H
+#endif // GRPCXX_SUPPORT_SLICE_H

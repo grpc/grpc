@@ -25,60 +25,71 @@
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/support/channel_arguments.h>
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
+    const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
 
 // For real credentials, like tls/ssl, this name should match the AuthContext
 // property "transport_security_type".
-const char kTlsCredentialsType[] = "ssl";
+    const char kTlsCredentialsType[] = "ssl";
 
 // Provide test credentials of a particular type.
-class CredentialTypeProvider {
- public:
-  virtual ~CredentialTypeProvider() {}
+    class CredentialTypeProvider
+    {
+    public:
+      virtual ~ CredentialTypeProvider ()
+      {
+      }
 
-  virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      ChannelArguments* args) = 0;
-  virtual std::shared_ptr<ServerCredentials> GetServerCredentials() = 0;
-};
+      virtual std::shared_ptr < ChannelCredentials >
+	GetChannelCredentials (ChannelArguments * args) = 0;
+      virtual std::shared_ptr < ServerCredentials > GetServerCredentials () =
+	0;
+    };
 
 // Provide test credentials. Thread-safe.
-class CredentialsProvider {
- public:
-  virtual ~CredentialsProvider() {}
+    class CredentialsProvider
+    {
+    public:
+      virtual ~ CredentialsProvider ()
+      {
+      }
 
-  // Add a secure type in addition to the defaults. The default provider has
-  // (kInsecureCredentialsType, kTlsCredentialsType).
-  virtual void AddSecureType(
-      const grpc::string& type,
-      std::unique_ptr<CredentialTypeProvider> type_provider) = 0;
+      // Add a secure type in addition to the defaults. The default provider has
+      // (kInsecureCredentialsType, kTlsCredentialsType).
+      virtual void AddSecureType (const grpc::string & type,
+				  std::unique_ptr < CredentialTypeProvider >
+				  type_provider) = 0;
 
-  // Provide channel credentials according to the given type. Alter the channel
-  // arguments if needed. Return nullptr if type is not registered.
-  virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const grpc::string& type, ChannelArguments* args) = 0;
+      // Provide channel credentials according to the given type. Alter the channel
+      // arguments if needed. Return nullptr if type is not registered.
+      virtual std::shared_ptr < ChannelCredentials >
+	GetChannelCredentials (const grpc::string & type,
+			       ChannelArguments * args) = 0;
 
-  // Provide server credentials according to the given type.
-  // Return nullptr if type is not registered.
-  virtual std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const grpc::string& type) = 0;
+      // Provide server credentials according to the given type.
+      // Return nullptr if type is not registered.
+      virtual std::shared_ptr < ServerCredentials >
+	GetServerCredentials (const grpc::string & type) = 0;
 
-  // Provide a list of secure credentials type.
-  virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
-};
+      // Provide a list of secure credentials type.
+      virtual std::vector < grpc::string > GetSecureCredentialsTypeList () =
+	0;
+    };
 
 // Get the current provider. Create a default one if not set.
 // Not thread-safe.
-CredentialsProvider* GetCredentialsProvider();
+    CredentialsProvider *GetCredentialsProvider ();
 
 // Set the global provider. Takes ownership. The previous set provider will be
 // destroyed.
 // Not thread-safe.
-void SetCredentialsProvider(CredentialsProvider* provider);
+    void SetCredentialsProvider (CredentialsProvider * provider);
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_TEST_CREDENTIALS_PROVIDER_H
+#endif // GRPC_TEST_CPP_UTIL_TEST_CREDENTIALS_PROVIDER_H

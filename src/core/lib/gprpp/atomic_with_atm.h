@@ -21,35 +21,42 @@
 
 #include <grpc/support/atm.h>
 
-namespace grpc_core {
+namespace grpc_core
+{
 
-enum MemoryOrderRelaxed { memory_order_relaxed };
+  enum MemoryOrderRelaxed
+  { memory_order_relaxed };
 
-template <class T>
-class atomic;
+    template < class T > class atomic;
 
-template <>
-class atomic<bool> {
- public:
-  atomic() { gpr_atm_no_barrier_store(&x_, static_cast<gpr_atm>(false)); }
-  explicit atomic(bool x) {
-    gpr_atm_no_barrier_store(&x_, static_cast<gpr_atm>(x));
-  }
-
-  bool compare_exchange_strong(bool& expected, bool update, MemoryOrderRelaxed,
-                               MemoryOrderRelaxed) {
-    if (!gpr_atm_no_barrier_cas(&x_, static_cast<gpr_atm>(expected),
-                                static_cast<gpr_atm>(update))) {
-      expected = gpr_atm_no_barrier_load(&x_) != 0;
-      return false;
+    template <> class atomic < bool >
+  {
+  public:
+    atomic ()
+    {
+      gpr_atm_no_barrier_store (&x_, static_cast < gpr_atm > (false));
     }
-    return true;
-  }
+    explicit atomic (bool x)
+    {
+      gpr_atm_no_barrier_store (&x_, static_cast < gpr_atm > (x));
+    }
 
- private:
-  gpr_atm x_;
-};
+    bool compare_exchange_strong (bool & expected, bool update,
+				  MemoryOrderRelaxed, MemoryOrderRelaxed)
+    {
+      if (!gpr_atm_no_barrier_cas (&x_, static_cast < gpr_atm > (expected),
+				   static_cast < gpr_atm > (update)))
+	{
+	  expected = gpr_atm_no_barrier_load (&x_) != 0;
+	  return false;
+	}
+      return true;
+    }
 
-}  // namespace grpc_core
+  private:
+    gpr_atm x_;
+  };
+
+}				// namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_ATM_H */

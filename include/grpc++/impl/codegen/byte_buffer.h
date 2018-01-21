@@ -29,129 +29,166 @@
 
 #include <vector>
 
-namespace grpc {
+namespace grpc
+{
 
-namespace internal {
-class CallOpSendMessage;
-template <class R>
-class CallOpRecvMessage;
-class CallOpGenericRecvMessage;
-class MethodHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class RpcMethodHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ServerStreamingHandler;
-template <class R>
-class DeserializeFuncType;
-}  // namespace internal
+  namespace internal
+  {
+    class CallOpSendMessage;
+      template < class R > class CallOpRecvMessage;
+    class CallOpGenericRecvMessage;
+    class MethodHandler;
+      template < class ServiceType, class RequestType, class ResponseType >
+      class RpcMethodHandler;
+      template < class ServiceType, class RequestType, class ResponseType >
+      class ServerStreamingHandler;
+      template < class R > class DeserializeFuncType;
+  }				// namespace internal
 /// A sequence of bytes.
-class ByteBuffer final {
- public:
-  /// Constuct an empty buffer.
-  ByteBuffer() : buffer_(nullptr) {}
-
-  /// Construct buffer from \a slices, of which there are \a nslices.
-  ByteBuffer(const Slice* slices, size_t nslices);
-
-  /// Constuct a byte buffer by referencing elements of existing buffer
-  /// \a buf. Wrapper of core function grpc_byte_buffer_copy
-  ByteBuffer(const ByteBuffer& buf);
-
-  ~ByteBuffer() {
-    if (buffer_) {
-      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
+  class ByteBuffer final
+  {
+  public:
+    /// Constuct an empty buffer.
+    ByteBuffer ():buffer_ (nullptr)
+    {
     }
-  }
 
-  ByteBuffer& operator=(const ByteBuffer&);
+    /// Construct buffer from \a slices, of which there are \a nslices.
+    ByteBuffer (const Slice * slices, size_t nslices);
 
-  /// Dump (read) the buffer contents into \a slices.
-  Status Dump(std::vector<Slice>* slices) const;
+    /// Constuct a byte buffer by referencing elements of existing buffer
+    /// \a buf. Wrapper of core function grpc_byte_buffer_copy
+      ByteBuffer (const ByteBuffer & buf);
 
-  /// Remove all data.
-  void Clear() {
-    if (buffer_) {
-      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
+     ~ByteBuffer ()
+    {
+      if (buffer_)
+	{
+	  g_core_codegen_interface->grpc_byte_buffer_destroy (buffer_);
+	}
+    }
+
+    ByteBuffer & operator= (const ByteBuffer &);
+
+    /// Dump (read) the buffer contents into \a slices.
+    Status Dump (std::vector < Slice > *slices) const;
+
+    /// Remove all data.
+    void Clear ()
+    {
+      if (buffer_)
+	{
+	  g_core_codegen_interface->grpc_byte_buffer_destroy (buffer_);
+	  buffer_ = nullptr;
+	}
+    }
+
+    /// Make a duplicate copy of the internals of this byte
+    /// buffer so that we have our own owned version of it.
+    /// bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable
+    void Duplicate ()
+    {
+      buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy (buffer_);
+    }
+
+    /// Forget underlying byte buffer without destroying
+    /// Use this only for un-owned byte buffers
+    void Release ()
+    {
       buffer_ = nullptr;
     }
-  }
 
-  /// Make a duplicate copy of the internals of this byte
-  /// buffer so that we have our own owned version of it.
-  /// bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable
-  void Duplicate() {
-    buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buffer_);
-  }
+    /// Buffer size in bytes.
+    size_t Length () const;
 
-  /// Forget underlying byte buffer without destroying
-  /// Use this only for un-owned byte buffers
-  void Release() { buffer_ = nullptr; }
+    /// Swap the state of *this and *other.
+    void Swap (ByteBuffer * other);
 
-  /// Buffer size in bytes.
-  size_t Length() const;
-
-  /// Swap the state of *this and *other.
-  void Swap(ByteBuffer* other);
-
-  /// Is this ByteBuffer valid?
-  bool Valid() const { return (buffer_ != nullptr); }
-
- private:
-  friend class SerializationTraits<ByteBuffer, void>;
-  friend class internal::CallOpSendMessage;
-  template <class R>
-  friend class internal::CallOpRecvMessage;
-  friend class internal::CallOpGenericRecvMessage;
-  friend class internal::MethodHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class internal::RpcMethodHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class internal::ServerStreamingHandler;
-  template <class R>
-  friend class internal::DeserializeFuncType;
-
-  grpc_byte_buffer* buffer_;
-
-  // takes ownership
-  void set_buffer(grpc_byte_buffer* buf) {
-    if (buffer_) {
-      Clear();
+    /// Is this ByteBuffer valid?
+    bool Valid () const
+    {
+      return (buffer_ != nullptr);
     }
-    buffer_ = buf;
-  }
 
-  grpc_byte_buffer* c_buffer() { return buffer_; }
-  grpc_byte_buffer** c_buffer_ptr() { return &buffer_; }
+  private:
+      friend class SerializationTraits < ByteBuffer, void >;
+    friend class internal::CallOpSendMessage;
+    template < class R > friend class internal::CallOpRecvMessage;
+    friend class internal::CallOpGenericRecvMessage;
+    friend class internal::MethodHandler;
+    template < class ServiceType, class RequestType, class ResponseType >
+      friend class internal::RpcMethodHandler;
+    template < class ServiceType, class RequestType, class ResponseType >
+      friend class internal::ServerStreamingHandler;
+    template < class R > friend class internal::DeserializeFuncType;
 
-  class ByteBufferPointer {
-   public:
-    ByteBufferPointer(const ByteBuffer* b)
-        : bbuf_(const_cast<ByteBuffer*>(b)) {}
-    operator ByteBuffer*() { return bbuf_; }
-    operator grpc_byte_buffer*() { return bbuf_->buffer_; }
-    operator grpc_byte_buffer**() { return &bbuf_->buffer_; }
+    grpc_byte_buffer *buffer_;
 
-   private:
-    ByteBuffer* bbuf_;
+    // takes ownership
+    void set_buffer (grpc_byte_buffer * buf)
+    {
+      if (buffer_)
+	{
+	  Clear ();
+	}
+      buffer_ = buf;
+    }
+
+    grpc_byte_buffer *c_buffer ()
+    {
+      return buffer_;
+    }
+    grpc_byte_buffer **c_buffer_ptr ()
+    {
+      return &buffer_;
+    }
+
+    class ByteBufferPointer
+    {
+    public:
+      ByteBufferPointer (const ByteBuffer * b):bbuf_ (const_cast <
+						      ByteBuffer * >(b))
+      {
+      }
+      operator  ByteBuffer *()
+      {
+	return bbuf_;
+      }
+      operator  grpc_byte_buffer *()
+      {
+	return bbuf_->buffer_;
+      }
+      operator  grpc_byte_buffer **()
+      {
+	return &bbuf_->buffer_;
+      }
+
+    private:
+      ByteBuffer * bbuf_;
+    };
+    ByteBufferPointer bbuf_ptr () const
+    {
+      return ByteBufferPointer (this);
+    }
   };
-  ByteBufferPointer bbuf_ptr() const { return ByteBufferPointer(this); }
-};
 
-template <>
-class SerializationTraits<ByteBuffer, void> {
- public:
-  static Status Deserialize(ByteBuffer* byte_buffer, ByteBuffer* dest) {
-    dest->set_buffer(byte_buffer->buffer_);
-    return Status::OK;
-  }
-  static Status Serialize(const ByteBuffer& source, ByteBuffer* buffer,
-                          bool* own_buffer) {
-    *buffer = source;
-    *own_buffer = true;
-    return Status::OK;
-  }
-};
+  template <> class SerializationTraits < ByteBuffer, void >
+  {
+  public:
+    static Status Deserialize (ByteBuffer * byte_buffer, ByteBuffer * dest)
+    {
+      dest->set_buffer (byte_buffer->buffer_);
+      return Status::OK;
+    }
+    static Status Serialize (const ByteBuffer & source, ByteBuffer * buffer,
+			     bool * own_buffer)
+    {
+      *buffer = source;
+      *own_buffer = true;
+      return Status::OK;
+    }
+  };
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_BYTE_BUFFER_H
+#endif // GRPCXX_IMPL_CODEGEN_BYTE_BUFFER_H

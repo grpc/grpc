@@ -25,76 +25,99 @@
 #include <memory>
 #include <utility>
 
-namespace grpc_core {
+namespace grpc_core
+{
 
 // Alternative to new, since we cannot use it (for fear of libstdc++)
-template <typename T, typename... Args>
-inline T* New(Args&&... args) {
-  void* p = gpr_malloc(sizeof(T));
-  return new (p) T(std::forward<Args>(args)...);
-}
+  template < typename T, typename ... Args > inline T * New (Args && ... args)
+  {
+    void *p = gpr_malloc (sizeof (T));
+      return new (p) T (std::forward < Args > (args) ...);
+  }
 
 // Alternative to delete, since we cannot use it (for fear of libstdc++)
-template <typename T>
-inline void Delete(T* p) {
-  p->~T();
-  gpr_free(p);
-}
+  template < typename T > inline void Delete (T * p)
+  {
+    p->~T ();
+    gpr_free (p);
+  }
 
-template <typename T>
-class DefaultDelete {
- public:
-  void operator()(T* p) { Delete(p); }
-};
+  template < typename T > class DefaultDelete
+  {
+  public:
+    void operator () (T * p)
+    {
+      Delete (p);
+    }
+  };
 
-template <typename T, typename Deleter = DefaultDelete<T>>
-using UniquePtr = std::unique_ptr<T, Deleter>;
+  template < typename T, typename Deleter = DefaultDelete < T >>
+    using UniquePtr = std::unique_ptr < T, Deleter >;
 
-template <typename T, typename... Args>
-inline UniquePtr<T> MakeUnique(Args&&... args) {
-  return UniquePtr<T>(New<T>(std::forward<Args>(args)...));
-}
+  template < typename T, typename ... Args >
+    inline UniquePtr < T > MakeUnique (Args && ... args)
+  {
+    return UniquePtr < T > (New < T > (std::forward < Args > (args) ...));
+  }
 
 // an allocator that uses gpr_malloc/gpr_free
-template <class T>
-class Allocator {
- public:
-  typedef T value_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef std::size_t size_type;
-  typedef std::ptrdiff_t difference_type;
-  typedef std::false_type propagate_on_container_move_assignment;
-  template <class U>
-  struct rebind {
-    typedef Allocator<U> other;
+  template < class T > class Allocator
+  {
+  public:
+    typedef T value_type;
+    typedef T *pointer;
+    typedef const T *const_pointer;
+    typedef T & reference;
+    typedef const T & const_reference;
+    typedef std::size_t size_type;
+    typedef std::ptrdiff_t difference_type;
+    typedef std::false_type propagate_on_container_move_assignment;
+    template < class U > struct rebind
+    {
+      typedef Allocator < U > other;
+    };
+    typedef std::true_type is_always_equal;
+
+    pointer address (reference x) const
+    {
+      return &x;
+    }
+    const_pointer address (const_reference x) const
+    {
+      return &x;
+    }
+    pointer allocate (std::size_t n,
+		      std::allocator < void >::const_pointer hint = nullptr)
+    {
+      return static_cast < pointer > (gpr_malloc (n * sizeof (T)));
+    }
+    void deallocate (T * p, std::size_t n)
+    {
+      gpr_free (p);
+    }
+    size_t max_size () const
+    {
+      return std::numeric_limits < size_type >::max () / sizeof (value_type);
+    }
+    void construct (pointer p, const_reference val)
+    {
+      new ((void *) p) T (val);
+    }
+    template < class U, class ... Args >
+      void construct (U * p, Args && ... args)
+    {
+      ::new ((void *) p) U (std::forward < Args > (args) ...);
+    }
+    void destroy (pointer p)
+    {
+      p->~T ();
+    }
+    template < class U > void destroy (U * p)
+    {
+      p->~U ();
+    }
   };
-  typedef std::true_type is_always_equal;
 
-  pointer address(reference x) const { return &x; }
-  const_pointer address(const_reference x) const { return &x; }
-  pointer allocate(std::size_t n,
-                   std::allocator<void>::const_pointer hint = nullptr) {
-    return static_cast<pointer>(gpr_malloc(n * sizeof(T)));
-  }
-  void deallocate(T* p, std::size_t n) { gpr_free(p); }
-  size_t max_size() const {
-    return std::numeric_limits<size_type>::max() / sizeof(value_type);
-  }
-  void construct(pointer p, const_reference val) { new ((void*)p) T(val); }
-  template <class U, class... Args>
-  void construct(U* p, Args&&... args) {
-    ::new ((void*)p) U(std::forward<Args>(args)...);
-  }
-  void destroy(pointer p) { p->~T(); }
-  template <class U>
-  void destroy(U* p) {
-    p->~U();
-  }
-};
-
-}  // namespace grpc_core
+}				// namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_MEMORY_H */

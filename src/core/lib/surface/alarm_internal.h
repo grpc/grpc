@@ -22,7 +22,9 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_alarm_refcount;
+extern
+  grpc_core::DebugOnlyTraceFlag
+  grpc_trace_alarm_refcount;
 
 #ifndef NDEBUG
 

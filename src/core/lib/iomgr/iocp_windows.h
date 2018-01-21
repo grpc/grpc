@@ -27,18 +27,19 @@
 
 #include "src/core/lib/iomgr/socket_windows.h"
 
-typedef enum {
+typedef enum
+{
   GRPC_IOCP_WORK_WORK,
   GRPC_IOCP_WORK_TIMEOUT,
   GRPC_IOCP_WORK_KICK
 } grpc_iocp_work_status;
 
-grpc_iocp_work_status grpc_iocp_work(grpc_millis deadline);
-void grpc_iocp_init(void);
-void grpc_iocp_kick(void);
-void grpc_iocp_flush(void);
-void grpc_iocp_shutdown(void);
-void grpc_iocp_add_socket(grpc_winsocket*);
+grpc_iocp_work_status grpc_iocp_work (grpc_millis deadline);
+void grpc_iocp_init (void);
+void grpc_iocp_kick (void);
+void grpc_iocp_flush (void);
+void grpc_iocp_shutdown (void);
+void grpc_iocp_add_socket (grpc_winsocket *);
 
 #endif
 

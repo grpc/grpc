@@ -22,13 +22,18 @@
 
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
-grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
-                                                unsigned port_index,
-                                                int requested_port,
-                                                int* out_port) {
-  return GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ifaddrs available");
+grpc_error *
+grpc_tcp_server_add_all_local_addrs (grpc_tcp_server * s,
+				     unsigned port_index,
+				     int requested_port, int *out_port)
+{
+  return GRPC_ERROR_CREATE_FROM_STATIC_STRING ("no ifaddrs available");
 }
 
-bool grpc_tcp_server_have_ifaddrs(void) { return false; }
+bool
+grpc_tcp_server_have_ifaddrs (void)
+{
+  return false;
+}
 
 #endif /* defined(GRPC_POSIX_SOCKET) && !defined(GRPC_HAVE_IFADDRS) */

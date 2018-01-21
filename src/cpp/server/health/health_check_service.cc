@@ -18,17 +18,21 @@
 
 #include <grpc++/health_check_service_interface.h>
 
-namespace grpc {
-namespace {
-bool g_grpc_default_health_check_service_enabled = false;
-}  // namespace
+namespace grpc
+{
+  namespace
+  {
+    bool g_grpc_default_health_check_service_enabled = false;
+  }				// namespace
 
-bool DefaultHealthCheckServiceEnabled() {
-  return g_grpc_default_health_check_service_enabled;
-}
+  bool DefaultHealthCheckServiceEnabled ()
+  {
+    return g_grpc_default_health_check_service_enabled;
+  }
 
-void EnableDefaultHealthCheckService(bool enable) {
-  g_grpc_default_health_check_service_enabled = enable;
-}
+  void EnableDefaultHealthCheckService (bool enable)
+  {
+    g_grpc_default_health_check_service_enabled = enable;
+  }
 
-}  // namespace grpc
+}				// namespace grpc

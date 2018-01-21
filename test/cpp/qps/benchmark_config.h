@@ -23,17 +23,19 @@
 
 #include "test/cpp/qps/report.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
 /** Returns the benchmark Reporter instance.
  *
  * The returned instance will take care of generating reports for all the actual
  * reporters configured via the "enable_*_reporter" command line flags (see
  * benchmark_config.cc). */
-std::shared_ptr<Reporter> GetReporter();
+    std::shared_ptr < Reporter > GetReporter ();
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_BENCHMARK_CONFIG_H
+#endif				// GRPC_TEST_CPP_UTIL_BENCHMARK_CONFIG_H

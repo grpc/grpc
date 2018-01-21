@@ -36,21 +36,29 @@
 // when it is done with the action that was kicked off by the original
 // callback.
 
-extern grpc_core::TraceFlag grpc_call_combiner_trace;
+extern
+  grpc_core::TraceFlag
+  grpc_call_combiner_trace;
 
-typedef struct {
-  gpr_atm size;  // size_t, num closures in queue or currently executing
-  gpr_mpscq queue;
+typedef struct
+{
+  gpr_atm
+    size;			// size_t, num closures in queue or currently executing
+  gpr_mpscq
+    queue;
   // Either 0 (if not cancelled and no cancellation closure set),
   // a grpc_closure* (if the lowest bit is 0),
   // or a grpc_error* (if the lowest bit is 1).
-  gpr_atm cancel_state;
+  gpr_atm
+    cancel_state;
 } grpc_call_combiner;
 
 // Assumes memory was initialized to zero.
-void grpc_call_combiner_init(grpc_call_combiner* call_combiner);
+void
+grpc_call_combiner_init (grpc_call_combiner * call_combiner);
 
-void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner);
+void
+grpc_call_combiner_destroy (grpc_call_combiner * call_combiner);
 
 #ifndef NDEBUG
 #define GRPC_CALL_COMBINER_START(call_combiner, closure, error, reason)   \
@@ -59,24 +67,28 @@ void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner);
 #define GRPC_CALL_COMBINER_STOP(call_combiner, reason) \
   grpc_call_combiner_stop((call_combiner), __FILE__, __LINE__, (reason))
 /// Starts processing \a closure on \a call_combiner.
-void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
-                              grpc_closure* closure, grpc_error* error,
-                              const char* file, int line, const char* reason);
+void
+grpc_call_combiner_start (grpc_call_combiner * call_combiner,
+			  grpc_closure * closure, grpc_error * error,
+			  const char *file, int line, const char *reason);
 /// Yields the call combiner to the next closure in the queue, if any.
-void grpc_call_combiner_stop(grpc_call_combiner* call_combiner,
-                             const char* file, int line, const char* reason);
+void
+grpc_call_combiner_stop (grpc_call_combiner * call_combiner,
+			 const char *file, int line, const char *reason);
 #else
 #define GRPC_CALL_COMBINER_START(call_combiner, closure, error, reason) \
   grpc_call_combiner_start((call_combiner), (closure), (error), (reason))
 #define GRPC_CALL_COMBINER_STOP(call_combiner, reason) \
   grpc_call_combiner_stop((call_combiner), (reason))
 /// Starts processing \a closure on \a call_combiner.
-void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
-                              grpc_closure* closure, grpc_error* error,
-                              const char* reason);
+void
+grpc_call_combiner_start (grpc_call_combiner * call_combiner,
+			  grpc_closure * closure, grpc_error * error,
+			  const char *reason);
 /// Yields the call combiner to the next closure in the queue, if any.
-void grpc_call_combiner_stop(grpc_call_combiner* call_combiner,
-                             const char* reason);
+void
+grpc_call_combiner_stop (grpc_call_combiner * call_combiner,
+			 const char *reason);
 #endif
 
 /// Registers \a closure to be invoked by \a call_combiner when
@@ -101,11 +113,13 @@ void grpc_call_combiner_stop(grpc_call_combiner* call_combiner,
 /// cancellation; this effectively unregisters the previously set closure.
 /// However, most filters will not need to explicitly unregister their
 /// callbacks, as this is done automatically when the call is destroyed.
-void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
-                                             grpc_closure* closure);
+void
+grpc_call_combiner_set_notify_on_cancel (grpc_call_combiner * call_combiner,
+					 grpc_closure * closure);
 
 /// Indicates that the call has been cancelled.
-void grpc_call_combiner_cancel(grpc_call_combiner* call_combiner,
-                               grpc_error* error);
+void
+grpc_call_combiner_cancel (grpc_call_combiner * call_combiner,
+			   grpc_error * error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_CALL_COMBINER_H */

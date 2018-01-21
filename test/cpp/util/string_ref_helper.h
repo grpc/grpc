@@ -21,12 +21,14 @@
 
 #include <grpc++/support/string_ref.h>
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-grpc::string ToString(const grpc::string_ref& r);
+    grpc::string ToString (const grpc::string_ref & r);
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_STRING_REF_HELPER_H
+#endif				// GRPC_TEST_CPP_UTIL_STRING_REF_HELPER_H

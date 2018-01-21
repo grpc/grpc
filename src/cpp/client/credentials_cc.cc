@@ -19,15 +19,26 @@
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/security/credentials.h>
 
-namespace grpc {
+namespace grpc
+{
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
-ChannelCredentials::ChannelCredentials() { g_gli_initializer.summon(); }
+  static internal::GrpcLibraryInitializer g_gli_initializer;
+    ChannelCredentials::ChannelCredentials ()
+  {
+    g_gli_initializer.summon ();
+  }
 
-ChannelCredentials::~ChannelCredentials() {}
+  ChannelCredentials::~ChannelCredentials ()
+  {
+  }
 
-CallCredentials::CallCredentials() { g_gli_initializer.summon(); }
+  CallCredentials::CallCredentials ()
+  {
+    g_gli_initializer.summon ();
+  }
 
-CallCredentials::~CallCredentials() {}
+  CallCredentials::~CallCredentials ()
+  {
+  }
 
-}  // namespace grpc
+}				// namespace grpc

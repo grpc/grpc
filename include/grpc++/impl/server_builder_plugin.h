@@ -23,43 +23,57 @@
 
 #include <grpc++/support/config.h>
 
-namespace grpc {
+namespace grpc
+{
 
-class ServerBuilder;
-class ServerInitializer;
-class ChannelArguments;
+  class ServerBuilder;
+  class ServerInitializer;
+  class ChannelArguments;
 
 /// This interface is meant for internal usage only. Implementations of this
 /// interface should add themselves to a \a ServerBuilder instance through the
 /// \a InternalAddPluginFactory method.
-class ServerBuilderPlugin {
- public:
-  virtual ~ServerBuilderPlugin() {}
-  virtual grpc::string name() = 0;
+  class ServerBuilderPlugin
+  {
+  public:
+    virtual ~ ServerBuilderPlugin ()
+    {
+    }
+    virtual grpc::string name () = 0;
 
-  /// UpdateServerBuilder will be called at the beginning of
-  /// \a ServerBuilder::BuildAndStart().
-  virtual void UpdateServerBuilder(ServerBuilder* builder) {}
+    /// UpdateServerBuilder will be called at the beginning of
+    /// \a ServerBuilder::BuildAndStart().
+    virtual void UpdateServerBuilder (ServerBuilder * builder)
+    {
+    }
 
-  /// InitServer will be called in ServerBuilder::BuildAndStart(), after the
-  /// Server instance is created.
-  virtual void InitServer(ServerInitializer* si) = 0;
+    /// InitServer will be called in ServerBuilder::BuildAndStart(), after the
+    /// Server instance is created.
+    virtual void InitServer (ServerInitializer * si) = 0;
 
-  /// Finish will be called at the end of ServerBuilder::BuildAndStart().
-  virtual void Finish(ServerInitializer* si) = 0;
+    /// Finish will be called at the end of ServerBuilder::BuildAndStart().
+    virtual void Finish (ServerInitializer * si) = 0;
 
-  /// ChangeArguments is an interface that can be used in
-  /// ServerBuilderOption::UpdatePlugins
-  virtual void ChangeArguments(const grpc::string& name, void* value) = 0;
+    /// ChangeArguments is an interface that can be used in
+    /// ServerBuilderOption::UpdatePlugins
+    virtual void ChangeArguments (const grpc::string & name, void *value) = 0;
 
-  /// UpdateChannelArguments will be called in ServerBuilder::BuildAndStart(),
-  /// before the Server instance is created.
-  virtual void UpdateChannelArguments(ChannelArguments* args) {}
+    /// UpdateChannelArguments will be called in ServerBuilder::BuildAndStart(),
+    /// before the Server instance is created.
+    virtual void UpdateChannelArguments (ChannelArguments * args)
+    {
+    }
 
-  virtual bool has_sync_methods() const { return false; }
-  virtual bool has_async_methods() const { return false; }
-};
+    virtual bool has_sync_methods () const
+    {
+      return false;
+    }
+    virtual bool has_async_methods () const
+    {
+      return false;
+    }
+  };
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_IMPL_SERVER_BUILDER_PLUGIN_H
+#endif // GRPCXX_IMPL_SERVER_BUILDER_PLUGIN_H

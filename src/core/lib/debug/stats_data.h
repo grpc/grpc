@@ -24,7 +24,8 @@
 #include <inttypes.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-typedef enum {
+typedef enum
+{
   GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED,
   GRPC_STATS_COUNTER_SERVER_CALLS_CREATED,
   GRPC_STATS_COUNTER_CQS_CREATED,
@@ -123,9 +124,10 @@ typedef enum {
   GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES,
   GRPC_STATS_COUNTER_COUNT
 } grpc_stats_counters;
-extern const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
-extern const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT];
-typedef enum {
+extern const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
+extern const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT];
+typedef enum
+{
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,
   GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED,
   GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
@@ -141,9 +143,10 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED,
   GRPC_STATS_HISTOGRAM_COUNT
 } grpc_stats_histograms;
-extern const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
-extern const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT];
-typedef enum {
+extern const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
+extern const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT];
+typedef enum
+{
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_FIRST_SLOT = 0,
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED_FIRST_SLOT = 64,
@@ -164,7 +167,8 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_INITIAL_METADATA_PER_WRITE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_PER_WRITE_FIRST_SLOT = 640,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_PER_WRITE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE_FIRST_SLOT = 704,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE_FIRST_SLOT =
+    704,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE_FIRST_SLOT = 768,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE_BUCKETS = 64,
@@ -388,46 +392,46 @@ typedef enum {
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES)
 #define GRPC_STATS_INC_CALL_INITIAL_SIZE(value) \
   grpc_stats_inc_call_initial_size((int)(value))
-void grpc_stats_inc_call_initial_size(int x);
+void grpc_stats_inc_call_initial_size (int x);
 #define GRPC_STATS_INC_POLL_EVENTS_RETURNED(value) \
   grpc_stats_inc_poll_events_returned((int)(value))
-void grpc_stats_inc_poll_events_returned(int x);
+void grpc_stats_inc_poll_events_returned (int x);
 #define GRPC_STATS_INC_TCP_WRITE_SIZE(value) \
   grpc_stats_inc_tcp_write_size((int)(value))
-void grpc_stats_inc_tcp_write_size(int x);
+void grpc_stats_inc_tcp_write_size (int x);
 #define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(value) \
   grpc_stats_inc_tcp_write_iov_size((int)(value))
-void grpc_stats_inc_tcp_write_iov_size(int x);
+void grpc_stats_inc_tcp_write_iov_size (int x);
 #define GRPC_STATS_INC_TCP_READ_SIZE(value) \
   grpc_stats_inc_tcp_read_size((int)(value))
-void grpc_stats_inc_tcp_read_size(int x);
+void grpc_stats_inc_tcp_read_size (int x);
 #define GRPC_STATS_INC_TCP_READ_OFFER(value) \
   grpc_stats_inc_tcp_read_offer((int)(value))
-void grpc_stats_inc_tcp_read_offer(int x);
+void grpc_stats_inc_tcp_read_offer (int x);
 #define GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(value) \
   grpc_stats_inc_tcp_read_offer_iov_size((int)(value))
-void grpc_stats_inc_tcp_read_offer_iov_size(int x);
+void grpc_stats_inc_tcp_read_offer_iov_size (int x);
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(value) \
   grpc_stats_inc_http2_send_message_size((int)(value))
-void grpc_stats_inc_http2_send_message_size(int x);
+void grpc_stats_inc_http2_send_message_size (int x);
 #define GRPC_STATS_INC_HTTP2_SEND_INITIAL_METADATA_PER_WRITE(value) \
   grpc_stats_inc_http2_send_initial_metadata_per_write((int)(value))
-void grpc_stats_inc_http2_send_initial_metadata_per_write(int x);
+void grpc_stats_inc_http2_send_initial_metadata_per_write (int x);
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_PER_WRITE(value) \
   grpc_stats_inc_http2_send_message_per_write((int)(value))
-void grpc_stats_inc_http2_send_message_per_write(int x);
+void grpc_stats_inc_http2_send_message_per_write (int x);
 #define GRPC_STATS_INC_HTTP2_SEND_TRAILING_METADATA_PER_WRITE(value) \
   grpc_stats_inc_http2_send_trailing_metadata_per_write((int)(value))
-void grpc_stats_inc_http2_send_trailing_metadata_per_write(int x);
+void grpc_stats_inc_http2_send_trailing_metadata_per_write (int x);
 #define GRPC_STATS_INC_HTTP2_SEND_FLOWCTL_PER_WRITE(value) \
   grpc_stats_inc_http2_send_flowctl_per_write((int)(value))
-void grpc_stats_inc_http2_send_flowctl_per_write(int x);
+void grpc_stats_inc_http2_send_flowctl_per_write (int x);
 #define GRPC_STATS_INC_SERVER_CQS_CHECKED(value) \
   grpc_stats_inc_server_cqs_checked((int)(value))
-void grpc_stats_inc_server_cqs_checked(int x);
+void grpc_stats_inc_server_cqs_checked (int x);
 extern const int grpc_stats_histo_buckets[13];
 extern const int grpc_stats_histo_start[13];
-extern const int* const grpc_stats_histo_bucket_boundaries[13];
-extern void (*const grpc_stats_inc_histogram[13])(int x);
+extern const int *const grpc_stats_histo_bucket_boundaries[13];
+extern void (*const grpc_stats_inc_histogram[13]) (int x);
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

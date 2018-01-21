@@ -23,60 +23,84 @@
 
 #include "src/cpp/ext/proto_server_reflection.h"
 
-namespace grpc {
-namespace reflection {
+namespace grpc
+{
+  namespace reflection
+  {
 
-ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
-    : reflection_service_(new grpc::ProtoServerReflection()) {}
+    ProtoServerReflectionPlugin::
+      ProtoServerReflectionPlugin ():reflection_service_ (new grpc::
+							  ProtoServerReflection
+							  ())
+    {
+    }
 
-grpc::string ProtoServerReflectionPlugin::name() {
-  return "proto_server_reflection";
-}
+    grpc::string ProtoServerReflectionPlugin::name ()
+    {
+      return "proto_server_reflection";
+    }
 
-void ProtoServerReflectionPlugin::InitServer(grpc::ServerInitializer* si) {
-  si->RegisterService(reflection_service_);
-}
+    void ProtoServerReflectionPlugin::InitServer (grpc::ServerInitializer *
+						  si)
+    {
+      si->RegisterService (reflection_service_);
+    }
 
-void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
-  reflection_service_->SetServiceList(si->GetServiceList());
-}
+    void ProtoServerReflectionPlugin::Finish (grpc::ServerInitializer * si)
+    {
+      reflection_service_->SetServiceList (si->GetServiceList ());
+    }
 
-void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& name,
-                                                  void* value) {}
+    void ProtoServerReflectionPlugin::ChangeArguments (const grpc::
+						       string & name,
+						       void *value)
+    {
+    }
 
-bool ProtoServerReflectionPlugin::has_sync_methods() const {
-  if (reflection_service_) {
-    return reflection_service_->has_synchronous_methods();
-  }
-  return false;
-}
+    bool ProtoServerReflectionPlugin::has_sync_methods () const
+    {
+      if (reflection_service_)
+	{
+	  return reflection_service_->has_synchronous_methods ();
+	}
+      return false;
+    }
 
-bool ProtoServerReflectionPlugin::has_async_methods() const {
-  if (reflection_service_) {
-    return reflection_service_->has_async_methods();
-  }
-  return false;
-}
+    bool ProtoServerReflectionPlugin::has_async_methods () const
+    {
+      if (reflection_service_)
+	{
+	  return reflection_service_->has_async_methods ();
+	}
+      return false;
+    }
 
-static std::unique_ptr< ::grpc::ServerBuilderPlugin> CreateProtoReflection() {
-  return std::unique_ptr< ::grpc::ServerBuilderPlugin>(
-      new ProtoServerReflectionPlugin());
-}
+    static std::unique_ptr <::grpc::ServerBuilderPlugin >
+      CreateProtoReflection ()
+    {
+      return std::unique_ptr <::grpc::ServerBuilderPlugin >
+	(new ProtoServerReflectionPlugin ());
+    }
 
-void InitProtoReflectionServerBuilderPlugin() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
-}
+    void InitProtoReflectionServerBuilderPlugin ()
+    {
+      static bool already_here = false;
+      if (already_here)
+	return;
+      already_here = true;
+      ::grpc::ServerBuilder::
+	InternalAddPluginFactory (&CreateProtoReflection);
+    }
 
 // Force InitProtoReflectionServerBuilderPlugin() to be called at static
 // initialization time.
-struct StaticProtoReflectionPluginInitializer {
-  StaticProtoReflectionPluginInitializer() {
-    InitProtoReflectionServerBuilderPlugin();
-  }
-} static_proto_reflection_plugin_initializer;
+    struct StaticProtoReflectionPluginInitializer
+    {
+      StaticProtoReflectionPluginInitializer ()
+      {
+	InitProtoReflectionServerBuilderPlugin ();
+      }
+    } static_proto_reflection_plugin_initializer;
 
-}  // namespace reflection
-}  // namespace grpc
+  }				// namespace reflection
+}				// namespace grpc

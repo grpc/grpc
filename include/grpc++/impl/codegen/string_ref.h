@@ -28,7 +28,8 @@
 
 #include <grpc++/impl/codegen/config.h>
 
-namespace grpc {
+namespace grpc
+{
 
 /// This class is a non owning reference to a string.
 ///
@@ -38,109 +39,186 @@ namespace grpc {
 ///
 /// The constexpr is dropped or replaced with const for legacy compiler
 /// compatibility.
-class string_ref {
- public:
-  /// types
-  typedef const char* const_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+  class string_ref
+  {
+  public:
+    /// types
+    typedef const char *const_iterator;
+    typedef std::reverse_iterator < const_iterator > const_reverse_iterator;
 
-  /// constants
-  const static size_t npos;
+    /// constants
+    const static size_t npos;
 
-  /// construct/copy.
-  string_ref() : data_(nullptr), length_(0) {}
-  string_ref(const string_ref& other)
-      : data_(other.data_), length_(other.length_) {}
-  string_ref& operator=(const string_ref& rhs) {
-    data_ = rhs.data_;
-    length_ = rhs.length_;
-    return *this;
-  }
+    /// construct/copy.
+      string_ref ():data_ (nullptr), length_ (0)
+    {
+    }
+    string_ref (const string_ref & other):data_ (other.data_),
+      length_ (other.length_)
+    {
+    }
+    string_ref & operator= (const string_ref & rhs)
+    {
+      data_ = rhs.data_;
+      length_ = rhs.length_;
+      return *this;
+    }
 
-  string_ref(const char* s) : data_(s), length_(strlen(s)) {}
-  string_ref(const char* s, size_t l) : data_(s), length_(l) {}
-  string_ref(const grpc::string& s) : data_(s.data()), length_(s.length()) {}
+  string_ref (const char *s):data_ (s), length_ (strlen (s))
+    {
+    }
+    string_ref (const char *s, size_t l):data_ (s), length_ (l)
+    {
+    }
+    string_ref (const grpc::string & s):data_ (s.data ()),
+      length_ (s.length ())
+    {
+    }
 
-  /// iterators
-  const_iterator begin() const { return data_; }
-  const_iterator end() const { return data_ + length_; }
-  const_iterator cbegin() const { return data_; }
-  const_iterator cend() const { return data_ + length_; }
-  const_reverse_iterator rbegin() const {
-    return const_reverse_iterator(end());
-  }
-  const_reverse_iterator rend() const {
-    return const_reverse_iterator(begin());
-  }
-  const_reverse_iterator crbegin() const {
-    return const_reverse_iterator(end());
-  }
-  const_reverse_iterator crend() const {
-    return const_reverse_iterator(begin());
-  }
+    /// iterators
+    const_iterator begin () const
+    {
+      return data_;
+    }
+    const_iterator end () const
+    {
+      return data_ + length_;
+    }
+    const_iterator cbegin () const
+    {
+      return data_;
+    }
+    const_iterator cend () const
+    {
+      return data_ + length_;
+    }
+    const_reverse_iterator rbegin () const
+    {
+      return const_reverse_iterator (end ());
+    }
+    const_reverse_iterator rend () const
+    {
+      return const_reverse_iterator (begin ());
+    }
+    const_reverse_iterator crbegin () const
+    {
+      return const_reverse_iterator (end ());
+    }
+    const_reverse_iterator crend () const
+    {
+      return const_reverse_iterator (begin ());
+    }
 
-  /// capacity
-  size_t size() const { return length_; }
-  size_t length() const { return length_; }
-  size_t max_size() const { return length_; }
-  bool empty() const { return length_ == 0; }
+    /// capacity
+    size_t size () const
+    {
+      return length_;
+    }
+    size_t length () const
+    {
+      return length_;
+    }
+    size_t max_size () const
+    {
+      return length_;
+    }
+    bool empty () const
+    {
+      return length_ == 0;
+    }
 
-  /// element access
-  const char* data() const { return data_; }
+    /// element access
+    const char *data () const
+    {
+      return data_;
+    }
 
-  /// string operations
-  int compare(string_ref x) const {
-    size_t min_size = length_ < x.length_ ? length_ : x.length_;
-    int r = memcmp(data_, x.data_, min_size);
-    if (r < 0) return -1;
-    if (r > 0) return 1;
-    if (length_ < x.length_) return -1;
-    if (length_ > x.length_) return 1;
-    return 0;
-  }
+    /// string operations
+    int compare (string_ref x) const
+    {
+      size_t min_size = length_ < x.length_ ? length_ : x.length_;
+      int r = memcmp (data_, x.data_, min_size);
+      if (r < 0)
+	  return -1;
+      if (r > 0)
+	  return 1;
+      if (length_ < x.length_)
+	  return -1;
+      if (length_ > x.length_)
+	  return 1;
+        return 0;
+    }
 
-  bool starts_with(string_ref x) const {
-    return length_ >= x.length_ && (memcmp(data_, x.data_, x.length_) == 0);
-  }
+    bool starts_with (string_ref x) const
+    {
+      return length_ >= x.length_
+	&& (memcmp (data_, x.data_, x.length_) == 0);
+    }
 
-  bool ends_with(string_ref x) const {
-    return length_ >= x.length_ &&
-           (memcmp(data_ + (length_ - x.length_), x.data_, x.length_) == 0);
-  }
+    bool ends_with (string_ref x) const
+    {
+      return length_ >= x.length_ &&
+	(memcmp (data_ + (length_ - x.length_), x.data_, x.length_) == 0);
+    }
 
-  size_t find(string_ref s) const {
-    auto it = std::search(cbegin(), cend(), s.cbegin(), s.cend());
-    return it == cend() ? npos : std::distance(cbegin(), it);
-  }
+    size_t find (string_ref s) const
+    {
+      auto it = std::search (cbegin (), cend (), s.cbegin (), s.cend ());
+        return it == cend ()? npos : std::distance (cbegin (), it);
+    }
 
-  size_t find(char c) const {
-    auto it = std::find(cbegin(), cend(), c);
-    return it == cend() ? npos : std::distance(cbegin(), it);
-  }
+    size_t find (char c) const
+    {
+      auto it = std::find (cbegin (), cend (), c);
+        return it == cend ()? npos : std::distance (cbegin (), it);
+    }
 
-  string_ref substr(size_t pos, size_t n = npos) const {
-    if (pos > length_) pos = length_;
-    if (n > (length_ - pos)) n = length_ - pos;
-    return string_ref(data_ + pos, n);
-  }
+    string_ref substr (size_t pos, size_t n = npos) const
+    {
+      if (pos > length_)
+	pos = length_;
+      if (n > (length_ - pos))
+	n = length_ - pos;
+      return string_ref (data_ + pos, n);
+    }
 
- private:
-  const char* data_;
-  size_t length_;
-};
+  private:
+    const char *data_;
+    size_t length_;
+  };
 
 /// Comparison operators
-inline bool operator==(string_ref x, string_ref y) { return x.compare(y) == 0; }
-inline bool operator!=(string_ref x, string_ref y) { return x.compare(y) != 0; }
-inline bool operator<(string_ref x, string_ref y) { return x.compare(y) < 0; }
-inline bool operator<=(string_ref x, string_ref y) { return x.compare(y) <= 0; }
-inline bool operator>(string_ref x, string_ref y) { return x.compare(y) > 0; }
-inline bool operator>=(string_ref x, string_ref y) { return x.compare(y) >= 0; }
+  inline bool operator== (string_ref x, string_ref y)
+  {
+    return x.compare (y) == 0;
+  }
+  inline bool operator!= (string_ref x, string_ref y)
+  {
+    return x.compare (y) != 0;
+  }
+  inline bool operator< (string_ref x, string_ref y)
+  {
+    return x.compare (y) < 0;
+  }
+  inline bool operator<= (string_ref x, string_ref y)
+  {
+    return x.compare (y) <= 0;
+  }
+  inline bool operator> (string_ref x, string_ref y)
+  {
+    return x.compare (y) > 0;
+  }
+  inline bool operator>= (string_ref x, string_ref y)
+  {
+    return x.compare (y) >= 0;
+  }
 
-inline std::ostream& operator<<(std::ostream& out, const string_ref& string) {
-  return out << grpc::string(string.begin(), string.end());
-}
+  inline std::ostream & operator<< (std::ostream & out,
+				    const string_ref & string)
+  {
+    return out << grpc::string (string.begin (), string.end ());
+  }
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_STRING_REF_H
+#endif // GRPCXX_IMPL_CODEGEN_STRING_REF_H

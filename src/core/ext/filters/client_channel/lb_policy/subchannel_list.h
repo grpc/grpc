@@ -39,12 +39,14 @@
 
 typedef struct grpc_lb_subchannel_list grpc_lb_subchannel_list;
 
-typedef struct {
+typedef struct
+{
   /** backpointer to owning subchannel list */
-  grpc_lb_subchannel_list* subchannel_list;
+  grpc_lb_subchannel_list *subchannel_list;
   /** subchannel itself */
-  grpc_subchannel* subchannel;
-  grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel> connected_subchannel;
+  grpc_subchannel *subchannel;
+    grpc_core::RefCountedPtr < grpc_core::ConnectedSubchannel >
+    connected_subchannel;
   /** Is a connectivity notification pending? */
   bool connectivity_notification_pending;
   /** notification that connectivity has changed on subchannel */
@@ -60,35 +62,36 @@ typedef struct {
    * \a connectivity_changed_closure. */
   grpc_connectivity_state pending_connectivity_state_unsafe;
   /** the subchannel's target user data */
-  void* user_data;
+  void *user_data;
   /** vtable to operate over \a user_data */
-  const grpc_lb_user_data_vtable* user_data_vtable;
+  const grpc_lb_user_data_vtable *user_data_vtable;
 } grpc_lb_subchannel_data;
 
 /// Unrefs the subchannel contained in sd.
-void grpc_lb_subchannel_data_unref_subchannel(grpc_lb_subchannel_data* sd,
-                                              const char* reason);
+void grpc_lb_subchannel_data_unref_subchannel (grpc_lb_subchannel_data * sd,
+					       const char *reason);
 
 /// Starts watching the connectivity state of the subchannel.
 /// The connectivity_changed_cb callback must invoke either
 /// grpc_lb_subchannel_data_stop_connectivity_watch() or again call
 /// grpc_lb_subchannel_data_start_connectivity_watch().
-void grpc_lb_subchannel_data_start_connectivity_watch(
-    grpc_lb_subchannel_data* sd);
+void grpc_lb_subchannel_data_start_connectivity_watch (grpc_lb_subchannel_data
+						       * sd);
 
 /// Stops watching the connectivity state of the subchannel.
-void grpc_lb_subchannel_data_stop_connectivity_watch(
-    grpc_lb_subchannel_data* sd);
+void grpc_lb_subchannel_data_stop_connectivity_watch (grpc_lb_subchannel_data
+						      * sd);
 
-struct grpc_lb_subchannel_list {
+struct grpc_lb_subchannel_list
+{
   /** backpointer to owning policy */
-  grpc_lb_policy* policy;
+  grpc_lb_policy *policy;
 
-  grpc_core::TraceFlag* tracer;
+    grpc_core::TraceFlag * tracer;
 
   /** all our subchannels */
   size_t num_subchannels;
-  grpc_lb_subchannel_data* subchannels;
+  grpc_lb_subchannel_data *subchannels;
 
   /** Index into subchannels of the one we're currently checking.
    * Used when connecting to subchannels serially instead of in parallel. */
@@ -116,27 +119,39 @@ struct grpc_lb_subchannel_list {
   bool shutting_down;
 };
 
-grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
-    grpc_lb_policy* p, grpc_core::TraceFlag* tracer,
-    const grpc_lb_addresses* addresses, const grpc_lb_policy_args* args,
-    grpc_iomgr_cb_func connectivity_changed_cb);
+grpc_lb_subchannel_list *grpc_lb_subchannel_list_create (grpc_lb_policy * p,
+							 grpc_core::
+							 TraceFlag * tracer,
+							 const
+							 grpc_lb_addresses *
+							 addresses,
+							 const
+							 grpc_lb_policy_args *
+							 args,
+							 grpc_iomgr_cb_func
+							 connectivity_changed_cb);
 
-void grpc_lb_subchannel_list_ref(grpc_lb_subchannel_list* subchannel_list,
-                                 const char* reason);
+void grpc_lb_subchannel_list_ref (grpc_lb_subchannel_list * subchannel_list,
+				  const char *reason);
 
-void grpc_lb_subchannel_list_unref(grpc_lb_subchannel_list* subchannel_list,
-                                   const char* reason);
+void grpc_lb_subchannel_list_unref (grpc_lb_subchannel_list * subchannel_list,
+				    const char *reason);
 
 /// Takes and releases refs needed for a connectivity notification.
 /// This includes a ref to subchannel_list and a weak ref to the LB policy.
-void grpc_lb_subchannel_list_ref_for_connectivity_watch(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason);
-void grpc_lb_subchannel_list_unref_for_connectivity_watch(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason);
+void
+grpc_lb_subchannel_list_ref_for_connectivity_watch (grpc_lb_subchannel_list *
+						    subchannel_list,
+						    const char *reason);
+void
+grpc_lb_subchannel_list_unref_for_connectivity_watch (grpc_lb_subchannel_list
+						      * subchannel_list,
+						      const char *reason);
 
 /// Mark subchannel_list as discarded. Unsubscribes all its subchannels. The
 /// connectivity state notification callback will ultimately unref it.
-void grpc_lb_subchannel_list_shutdown_and_unref(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason);
+void grpc_lb_subchannel_list_shutdown_and_unref (grpc_lb_subchannel_list *
+						 subchannel_list,
+						 const char *reason);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H */

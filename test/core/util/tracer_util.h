@@ -19,14 +19,16 @@
 #ifndef GRPC_TEST_CORE_UTIL_TRACER_UTIL_H
 #define GRPC_TEST_CORE_UTIL_TRACER_UTIL_H
 
-namespace grpc_core {
-class TraceFlag;
+namespace grpc_core
+{
+  class TraceFlag;
 
-namespace testing {
+  namespace testing
+  {
 // enables the TraceFlag passed to it. Used for testing purposes.
-void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
+    void grpc_tracer_enable_flag (grpc_core::TraceFlag * flag);
 
-}  // namespace testing
-}  // namespace grpc_core
+  }				// namespace testing
+}				// namespace grpc_core
 
-#endif /* GRPC_TEST_CORE_UTIL_TRACER_UTIL_H */
+#endif				/* GRPC_TEST_CORE_UTIL_TRACER_UTIL_H */

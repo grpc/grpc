@@ -18,18 +18,27 @@
 
 #include <grpc++/ext/health_check_service_server_builder_option.h>
 
-namespace grpc {
+namespace grpc
+{
 
-HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
-    std::unique_ptr<HealthCheckServiceInterface> hc)
-    : hc_(std::move(hc)) {}
+  HealthCheckServiceServerBuilderOption::
+    HealthCheckServiceServerBuilderOption (std::unique_ptr <
+					   HealthCheckServiceInterface >
+					   hc):hc_ (std::move (hc))
+  {
+  }
 // Hand over hc_ to the server.
-void HealthCheckServiceServerBuilderOption::UpdateArguments(
-    ChannelArguments* args) {
-  args->SetPointer(kHealthCheckServiceInterfaceArg, hc_.release());
-}
+  void HealthCheckServiceServerBuilderOption::
+    UpdateArguments (ChannelArguments * args)
+  {
+    args->SetPointer (kHealthCheckServiceInterfaceArg, hc_.release ());
+  }
 
-void HealthCheckServiceServerBuilderOption::UpdatePlugins(
-    std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) {}
+  void HealthCheckServiceServerBuilderOption::UpdatePlugins (std::vector <
+							     std::unique_ptr <
+							     ServerBuilderPlugin
+							     >> *plugins)
+  {
+  }
 
-}  // namespace grpc
+}				// namespace grpc

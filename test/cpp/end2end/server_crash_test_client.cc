@@ -29,50 +29,79 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
-DEFINE_string(address, "", "Address to connect to");
-DEFINE_string(mode, "", "Test mode to use");
+DEFINE_string (address, "", "Address to connect to");
+DEFINE_string (mode, "", "Test mode to use");
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
+using
+  grpc::testing::EchoRequest;
+using
+  grpc::testing::EchoResponse;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
+namespace
+  google
+{
+}
+namespace
+  gflags
+{
+}
+using namespace
+  google;
+using namespace
+  gflags;
 
-int main(int argc, char** argv) {
-  ParseCommandLineFlags(&argc, &argv, true);
-  auto stub = grpc::testing::EchoTestService::NewStub(
-      grpc::CreateChannel(FLAGS_address, grpc::InsecureChannelCredentials()));
+int
+main (int argc, char **argv)
+{
+  ParseCommandLineFlags (&argc, &argv, true);
+  auto
+    stub =
+    grpc::testing::EchoTestService::NewStub (grpc::
+					     CreateChannel (FLAGS_address,
+							    grpc::
+							    InsecureChannelCredentials
+							    ()));
 
-  EchoRequest request;
-  EchoResponse response;
+  EchoRequest
+    request;
+  EchoResponse
+    response;
   grpc::ClientContext context;
-  context.set_wait_for_ready(true);
+  context.set_wait_for_ready (true);
 
-  if (FLAGS_mode == "bidi") {
-    auto stream = stub->BidiStream(&context);
-    for (int i = 0;; i++) {
-      std::ostringstream msg;
-      msg << "Hello " << i;
-      request.set_message(msg.str());
-      GPR_ASSERT(stream->Write(request));
-      GPR_ASSERT(stream->Read(&response));
-      GPR_ASSERT(response.message() == request.message());
+  if (FLAGS_mode == "bidi")
+    {
+      auto
+	stream = stub->BidiStream (&context);
+      for (int i = 0;; i++)
+	{
+	  std::ostringstream msg;
+	  msg << "Hello " << i;
+	  request.set_message (msg.str ());
+	  GPR_ASSERT (stream->Write (request));
+	  GPR_ASSERT (stream->Read (&response));
+	  GPR_ASSERT (response.message () == request.message ());
+	}
     }
-  } else if (FLAGS_mode == "response") {
-    EchoRequest request;
-    request.set_message("Hello");
-    auto stream = stub->ResponseStream(&context, request);
-    for (;;) {
-      GPR_ASSERT(stream->Read(&response));
+  else if (FLAGS_mode == "response")
+    {
+      EchoRequest
+	request;
+      request.set_message ("Hello");
+      auto
+	stream = stub->ResponseStream (&context, request);
+      for (;;)
+	{
+	  GPR_ASSERT (stream->Read (&response));
+	}
     }
-  } else {
-    gpr_log(GPR_ERROR, "invalid test mode '%s'", FLAGS_mode.c_str());
-    return 1;
-  }
+  else
+    {
+      gpr_log (GPR_ERROR, "invalid test mode '%s'", FLAGS_mode.c_str ());
+      return 1;
+    }
 
   return 0;
 }

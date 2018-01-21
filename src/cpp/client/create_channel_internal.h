@@ -25,12 +25,14 @@
 
 struct grpc_channel;
 
-namespace grpc {
-class Channel;
+namespace grpc
+{
+  class Channel;
 
-std::shared_ptr<Channel> CreateChannelInternal(const grpc::string& host,
-                                               grpc_channel* c_channel);
+    std::shared_ptr < Channel >
+    CreateChannelInternal (const grpc::string & host,
+			   grpc_channel * c_channel);
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H
+#endif				// GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H

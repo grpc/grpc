@@ -23,37 +23,40 @@
 
 struct grpc_auth_context;
 
-namespace grpc {
+namespace grpc
+{
 
-class SecureAuthContext final : public AuthContext {
- public:
-  SecureAuthContext(grpc_auth_context* ctx, bool take_ownership);
+  class SecureAuthContext final:public AuthContext
+  {
+  public:
+    SecureAuthContext (grpc_auth_context * ctx, bool take_ownership);
 
-  ~SecureAuthContext() override;
+    ~SecureAuthContext () override;
 
-  bool IsPeerAuthenticated() const override;
+    bool IsPeerAuthenticated () const override;
 
-  std::vector<grpc::string_ref> GetPeerIdentity() const override;
+      std::vector < grpc::string_ref > GetPeerIdentity () const override;
 
-  grpc::string GetPeerIdentityPropertyName() const override;
+      grpc::string GetPeerIdentityPropertyName () const override;
 
-  std::vector<grpc::string_ref> FindPropertyValues(
-      const grpc::string& name) const override;
+      std::vector < grpc::string_ref >
+      FindPropertyValues (const grpc::string & name) const override;
 
-  AuthPropertyIterator begin() const override;
+    AuthPropertyIterator begin () const override;
 
-  AuthPropertyIterator end() const override;
+    AuthPropertyIterator end () const override;
 
-  void AddProperty(const grpc::string& key,
-                   const grpc::string_ref& value) override;
+    void AddProperty (const grpc::string & key,
+		      const grpc::string_ref & value) override;
 
-  virtual bool SetPeerIdentityPropertyName(const grpc::string& name) override;
+    virtual bool SetPeerIdentityPropertyName (const grpc::
+					      string & name) override;
 
- private:
-  grpc_auth_context* ctx_;
-  bool take_ownership_;
-};
+  private:
+      grpc_auth_context * ctx_;
+    bool take_ownership_;
+  };
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#endif				// GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H

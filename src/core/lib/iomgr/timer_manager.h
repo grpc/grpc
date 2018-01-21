@@ -24,14 +24,14 @@
 /* Timer Manager tries to keep one thread waiting for the next timeout at all
    times */
 
-void grpc_timer_manager_init(void);
-void grpc_timer_manager_shutdown(void);
+void grpc_timer_manager_init (void);
+void grpc_timer_manager_shutdown (void);
 
 /* enable/disable threading - must be called after grpc_timer_manager_init and
  * before grpc_timer_manager_shutdown */
-void grpc_timer_manager_set_threading(bool enabled);
+void grpc_timer_manager_set_threading (bool enabled);
 /* explicitly perform one tick of the timer system - for when threading is
  * disabled */
-void grpc_timer_manager_tick(void);
+void grpc_timer_manager_tick (void);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H */

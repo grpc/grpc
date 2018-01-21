@@ -22,7 +22,8 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /** Propagation bits: this can be bitwise or-ed to form propagation_mask for
@@ -49,4 +50,4 @@ extern "C" {
 }
 #endif
 
-#endif /* GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H */
+#endif				/* GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H */

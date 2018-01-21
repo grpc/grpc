@@ -22,7 +22,8 @@
 /** Thread local storage based on ms visual c compiler primitives.
    #include tls.h to use this - and see that file for documentation */
 
-struct gpr_msvc_thread_local {
+struct gpr_msvc_thread_local
+{
   intptr_t value;
 };
 

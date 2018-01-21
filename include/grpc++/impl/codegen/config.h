@@ -27,15 +27,16 @@
 /// The following macros are deprecated and appear only for users
 /// with PB files generated using gRPC 1.0.x plugins. They should
 /// not be used in new code
-#define GRPC_OVERRIDE override  // deprecated
-#define GRPC_FINAL final        // deprecated
+#define GRPC_OVERRIDE override	// deprecated
+#define GRPC_FINAL final	// deprecated
 
-namespace grpc {
+namespace grpc
+{
 
-typedef GRPC_CUSTOM_STRING string;
+  typedef GRPC_CUSTOM_STRING string;
 
-using std::to_string;
+  using std::to_string;
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_CONFIG_H
+#endif				// GRPCXX_IMPL_CODEGEN_CONFIG_H

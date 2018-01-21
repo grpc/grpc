@@ -23,24 +23,29 @@
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 
-static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* registered_method) {
-  while (grpc_server_has_open_connections(server)) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
-  }
+static void
+verifier (grpc_server * server, grpc_completion_queue * cq,
+	  void *registered_method)
+{
+  while (grpc_server_has_open_connections (server))
+    {
+      GPR_ASSERT (grpc_completion_queue_next
+		  (cq, grpc_timeout_milliseconds_to_deadline (20),
+		   nullptr).type == GRPC_QUEUE_TIMEOUT);
+    }
 }
 
-int main(int argc, char** argv) {
-  grpc_init();
-  grpc_test_init(argc, argv);
+int
+main (int argc, char **argv)
+{
+  grpc_init ();
+  grpc_test_init (argc, argv);
 
   /* test adding prioritization data */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x88\x00\x00\x00\x00\x01",
-                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST (verifier, nullptr,
+			    PFX_STR "\x00\x00\x00\x88\x00\x00\x00\x00\x01",
+			    GRPC_BAD_CLIENT_DISCONNECT);
 
-  grpc_shutdown();
+  grpc_shutdown ();
   return 0;
 }

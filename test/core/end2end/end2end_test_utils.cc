@@ -22,29 +22,38 @@
 
 #include <grpc/support/log.h>
 
-const char* get_host_override_string(const char* str,
-                                     grpc_end2end_test_config config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
-    return str;
-  } else {
-    return nullptr;
-  }
+const char *
+get_host_override_string (const char *str, grpc_end2end_test_config config)
+{
+  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER)
+    {
+      return str;
+    }
+  else
+    {
+      return nullptr;
+    }
 }
 
-const grpc_slice* get_host_override_slice(const char* str,
-                                          grpc_end2end_test_config config) {
-  const char* r = get_host_override_string(str, config);
-  if (r != nullptr) {
-    static grpc_slice ret;
-    ret = grpc_slice_from_static_string(r);
-    return &ret;
-  }
+const grpc_slice *
+get_host_override_slice (const char *str, grpc_end2end_test_config config)
+{
+  const char *r = get_host_override_string (str, config);
+  if (r != nullptr)
+    {
+      static grpc_slice ret;
+      ret = grpc_slice_from_static_string (r);
+      return &ret;
+    }
   return nullptr;
 }
 
-void validate_host_override_string(const char* pattern, grpc_slice str,
-                                   grpc_end2end_test_config config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
-    GPR_ASSERT(0 == grpc_slice_str_cmp(str, pattern));
-  }
+void
+validate_host_override_string (const char *pattern, grpc_slice str,
+			       grpc_end2end_test_config config)
+{
+  if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER)
+    {
+      GPR_ASSERT (0 == grpc_slice_str_cmp (str, pattern));
+    }
 }

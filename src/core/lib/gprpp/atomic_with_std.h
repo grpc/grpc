@@ -21,13 +21,13 @@
 
 #include <atomic>
 
-namespace grpc_core {
+namespace grpc_core
+{
 
-template <class T>
-using atomic = std::atomic<T>;
+  template < class T > using atomic = std::atomic < T >;
 
-typedef std::memory_order memory_order;
+  typedef std::memory_order memory_order;
 
-}  // namespace grpc_core
+}				// namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_STD_H */
+#endif				/* GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_STD_H */

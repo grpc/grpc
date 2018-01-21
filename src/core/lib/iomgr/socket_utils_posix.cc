@@ -29,29 +29,38 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/iomgr/sockaddr.h"
 
-int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
-                 int cloexec) {
+int
+grpc_accept4 (int sockfd, grpc_resolved_address * resolved_addr, int nonblock,
+	      int cloexec)
+{
   int fd, flags;
-  GPR_ASSERT(sizeof(socklen_t) <= sizeof(size_t));
-  GPR_ASSERT(resolved_addr->len <= (socklen_t)-1);
-  fd = accept(sockfd, (struct sockaddr*)resolved_addr->addr,
-              (socklen_t*)&resolved_addr->len);
-  if (fd >= 0) {
-    if (nonblock) {
-      flags = fcntl(fd, F_GETFL, 0);
-      if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) goto close_and_error;
+  GPR_ASSERT (sizeof (socklen_t) <= sizeof (size_t));
+  GPR_ASSERT (resolved_addr->len <= (socklen_t) - 1);
+  fd = accept (sockfd, (struct sockaddr *) resolved_addr->addr,
+	       (socklen_t *) & resolved_addr->len);
+  if (fd >= 0)
+    {
+      if (nonblock)
+	{
+	  flags = fcntl (fd, F_GETFL, 0);
+	  if (flags < 0)
+	    goto close_and_error;
+	  if (fcntl (fd, F_SETFL, flags | O_NONBLOCK) != 0)
+	    goto close_and_error;
+	}
+      if (cloexec)
+	{
+	  flags = fcntl (fd, F_GETFD, 0);
+	  if (flags < 0)
+	    goto close_and_error;
+	  if (fcntl (fd, F_SETFD, flags | FD_CLOEXEC) != 0)
+	    goto close_and_error;
+	}
     }
-    if (cloexec) {
-      flags = fcntl(fd, F_GETFD, 0);
-      if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
-    }
-  }
   return fd;
 
 close_and_error:
-  close(fd);
+  close (fd);
   return -1;
 }
 

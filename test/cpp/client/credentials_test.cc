@@ -23,27 +23,35 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-class CredentialsTest : public ::testing::Test {
- protected:
-};
+    class CredentialsTest:public::testing::Test
+    {
+    protected:
+    };
 
-TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
-  std::shared_ptr<CallCredentials> bad1 = GoogleRefreshTokenCredentials("");
-  EXPECT_EQ(static_cast<CallCredentials*>(nullptr), bad1.get());
-}
+      TEST_F (CredentialsTest, InvalidGoogleRefreshToken)
+    {
+      std::shared_ptr < CallCredentials > bad1 =
+	GoogleRefreshTokenCredentials ("");
+      EXPECT_EQ (static_cast < CallCredentials * >(nullptr), bad1.get ());
+    }
 
-TEST_F(CredentialsTest, DefaultCredentials) {
-  auto creds = GoogleDefaultCredentials();
-}
+    TEST_F (CredentialsTest, DefaultCredentials)
+    {
+      auto creds = GoogleDefaultCredentials ();
+    }
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
+int
+main (int argc, char **argv)
+{
+  ::testing::InitGoogleTest (&argc, argv);
+  int ret = RUN_ALL_TESTS ();
   return ret;
 }

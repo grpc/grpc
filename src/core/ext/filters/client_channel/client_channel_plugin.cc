@@ -34,54 +34,69 @@
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/surface/channel_init.h"
 
-static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
-  return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
+static bool
+append_filter (grpc_channel_stack_builder * builder, void *arg)
+{
+  return grpc_channel_stack_builder_append_filter (builder,
+						   (const grpc_channel_filter
+						    *) arg, nullptr, nullptr);
 }
 
-static bool set_default_host_if_unset(grpc_channel_stack_builder* builder,
-                                      void* unused) {
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  for (size_t i = 0; i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY) ||
-        0 == strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
-      return true;
+static bool
+set_default_host_if_unset (grpc_channel_stack_builder * builder, void *unused)
+{
+  const grpc_channel_args *args =
+    grpc_channel_stack_builder_get_channel_arguments (builder);
+  for (size_t i = 0; i < args->num_args; i++)
+    {
+      if (0 == strcmp (args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY) ||
+	  0 == strcmp (args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG))
+	{
+	  return true;
+	}
     }
-  }
-  char* default_authority = grpc_get_default_authority(
-      grpc_channel_stack_builder_get_target(builder));
-  if (default_authority != nullptr) {
-    grpc_arg arg = grpc_channel_arg_string_create(
-        (char*)GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
-    grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
-    grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
-    gpr_free(default_authority);
-    grpc_channel_args_destroy(new_args);
-  }
+  char *default_authority =
+    grpc_get_default_authority (grpc_channel_stack_builder_get_target
+				(builder));
+  if (default_authority != nullptr)
+    {
+      grpc_arg arg = grpc_channel_arg_string_create ((char *)
+						     GRPC_ARG_DEFAULT_AUTHORITY,
+						     default_authority);
+      grpc_channel_args *new_args =
+	grpc_channel_args_copy_and_add (args, &arg, 1);
+      grpc_channel_stack_builder_set_channel_arguments (builder, new_args);
+      gpr_free (default_authority);
+      grpc_channel_args_destroy (new_args);
+    }
   return true;
 }
 
-void grpc_client_channel_init(void) {
-  grpc_lb_policy_registry_init();
-  grpc_resolver_registry_init();
-  grpc_retry_throttle_map_init();
-  grpc_proxy_mapper_registry_init();
-  grpc_register_http_proxy_mapper();
-  grpc_subchannel_index_init();
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
-                                   set_default_host_if_unset, nullptr);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
-      (void*)&grpc_client_channel_filter);
-  grpc_http_connect_register_handshaker_factory();
+void
+grpc_client_channel_init (void)
+{
+  grpc_lb_policy_registry_init ();
+  grpc_resolver_registry_init ();
+  grpc_retry_throttle_map_init ();
+  grpc_proxy_mapper_registry_init ();
+  grpc_register_http_proxy_mapper ();
+  grpc_subchannel_index_init ();
+  grpc_channel_init_register_stage (GRPC_CLIENT_CHANNEL, INT_MIN,
+				    set_default_host_if_unset, nullptr);
+  grpc_channel_init_register_stage (GRPC_CLIENT_CHANNEL,
+				    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+				    append_filter,
+				    (void *) &grpc_client_channel_filter);
+  grpc_http_connect_register_handshaker_factory ();
 }
 
-void grpc_client_channel_shutdown(void) {
-  grpc_subchannel_index_shutdown();
-  grpc_channel_init_shutdown();
-  grpc_proxy_mapper_registry_shutdown();
-  grpc_retry_throttle_map_shutdown();
-  grpc_resolver_registry_shutdown();
-  grpc_lb_policy_registry_shutdown();
+void
+grpc_client_channel_shutdown (void)
+{
+  grpc_subchannel_index_shutdown ();
+  grpc_channel_init_shutdown ();
+  grpc_proxy_mapper_registry_shutdown ();
+  grpc_retry_throttle_map_shutdown ();
+  grpc_resolver_registry_shutdown ();
+  grpc_lb_policy_registry_shutdown ();
 }

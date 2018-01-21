@@ -18,8 +18,9 @@
 
 #include <grpc++/support/string_ref.h>
 
-namespace grpc {
+namespace grpc
+{
 
-const size_t string_ref::npos = size_t(-1);
+  const size_t string_ref::npos = size_t (-1);
 
-}  // namespace grpc
+}				// namespace grpc

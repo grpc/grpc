@@ -18,12 +18,15 @@
 
 #include "test/cpp/util/string_ref_helper.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-grpc::string ToString(const grpc::string_ref& r) {
-  return grpc::string(r.data(), r.size());
-}
+    grpc::string ToString (const grpc::string_ref & r)
+    {
+      return grpc::string (r.data (), r.size ());
+    }
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc

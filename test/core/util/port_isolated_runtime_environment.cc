@@ -28,15 +28,22 @@
 #define LOWER_PORT 49152
 static int s_allocated_port = LOWER_PORT;
 
-int grpc_pick_unused_port_or_die(void) {
+int
+grpc_pick_unused_port_or_die (void)
+{
   int allocated_port = s_allocated_port++;
-  if (s_allocated_port == 65536) {
-    s_allocated_port = LOWER_PORT;
-  }
+  if (s_allocated_port == 65536)
+    {
+      s_allocated_port = LOWER_PORT;
+    }
 
   return allocated_port;
 }
 
-void grpc_recycle_unused_port(int port) { (void)port; }
+void
+grpc_recycle_unused_port (int port)
+{
+  (void) port;
+}
 
 #endif /* GRPC_PORT_ISOLATED_RUNTIME */

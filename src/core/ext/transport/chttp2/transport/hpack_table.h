@@ -44,7 +44,8 @@
 #endif
 
 /* hpack decoder table */
-typedef struct {
+typedef struct
+{
   /* the first used entry in ents */
   uint32_t first_ent;
   /* how many entries are in the table */
@@ -64,31 +65,35 @@ typedef struct {
   /* a circular buffer of headers - this is stored in the opposite order to
      what hpack specifies, in order to simplify table management a little...
      meaning lookups need to SUBTRACT from the end position */
-  grpc_mdelem* ents;
+  grpc_mdelem *ents;
   grpc_mdelem static_ents[GRPC_CHTTP2_LAST_STATIC_ENTRY];
 } grpc_chttp2_hptbl;
 
 /* initialize a hpack table */
-void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl* tbl);
-void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl* tbl);
-void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
-                                     uint32_t max_bytes);
-grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
-                                                     uint32_t bytes);
+void grpc_chttp2_hptbl_init (grpc_chttp2_hptbl * tbl);
+void grpc_chttp2_hptbl_destroy (grpc_chttp2_hptbl * tbl);
+void grpc_chttp2_hptbl_set_max_bytes (grpc_chttp2_hptbl * tbl,
+				      uint32_t max_bytes);
+grpc_error *grpc_chttp2_hptbl_set_current_table_size (grpc_chttp2_hptbl * tbl,
+						      uint32_t bytes);
 
 /* lookup a table entry based on its hpack index */
-grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
-                                     uint32_t index);
+grpc_mdelem grpc_chttp2_hptbl_lookup (const grpc_chttp2_hptbl * tbl,
+				      uint32_t index);
 /* add a table entry to the index */
-grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
-                                  grpc_mdelem md) GRPC_MUST_USE_RESULT;
+grpc_error *
+grpc_chttp2_hptbl_add (grpc_chttp2_hptbl * tbl, grpc_mdelem md)
+  GRPC_MUST_USE_RESULT;
 /* Find a key/value pair in the table... returns the index in the table of the
    most similar entry, or 0 if the value was not found */
-typedef struct {
-  uint32_t index;
-  int has_value;
-} grpc_chttp2_hptbl_find_result;
-grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
-    const grpc_chttp2_hptbl* tbl, grpc_mdelem md);
+     typedef struct
+     {
+       uint32_t index;
+       int has_value;
+     } grpc_chttp2_hptbl_find_result;
+     grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find (const
+							   grpc_chttp2_hptbl *
+							   tbl,
+							   grpc_mdelem md);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_TABLE_H */

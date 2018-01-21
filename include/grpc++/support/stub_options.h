@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/stub_options.h>
 
-#endif  // GRPCXX_SUPPORT_STUB_OPTIONS_H
+#endif // GRPCXX_SUPPORT_STUB_OPTIONS_H

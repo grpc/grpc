@@ -24,7 +24,7 @@
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"
 
-void grpc_resolver_fake_init();
+void grpc_resolver_fake_init ();
 
 // Instances of \a grpc_fake_resolver_response_generator are passed to the
 // fake resolver in a channel argument (see \a
@@ -32,29 +32,32 @@ void grpc_resolver_fake_init();
 // custom resolutions. See also \a
 // grpc_fake_resolver_response_generator_set_response.
 typedef struct grpc_fake_resolver_response_generator
-    grpc_fake_resolver_response_generator;
-grpc_fake_resolver_response_generator*
-grpc_fake_resolver_response_generator_create();
+  grpc_fake_resolver_response_generator;
+grpc_fake_resolver_response_generator
+  *grpc_fake_resolver_response_generator_create ();
 
 // Instruct the fake resolver associated with the \a response_generator instance
 // to trigger a new resolution for \a uri and \a args.
-void grpc_fake_resolver_response_generator_set_response(
-    grpc_fake_resolver_response_generator* generator,
-    grpc_channel_args* next_response);
+void
+grpc_fake_resolver_response_generator_set_response
+(grpc_fake_resolver_response_generator * generator,
+grpc_channel_args * next_response);
 
 // Return a \a grpc_arg for a \a grpc_fake_resolver_response_generator instance.
-grpc_arg grpc_fake_resolver_response_generator_arg(
-    grpc_fake_resolver_response_generator* generator);
+grpc_arg
+grpc_fake_resolver_response_generator_arg
+(grpc_fake_resolver_response_generator * generator);
 // Return the \a grpc_fake_resolver_response_generator instance in \a args or
 // NULL.
-grpc_fake_resolver_response_generator*
-grpc_fake_resolver_get_response_generator(const grpc_channel_args* args);
+grpc_fake_resolver_response_generator
+  *grpc_fake_resolver_get_response_generator (const grpc_channel_args * args);
 
-grpc_fake_resolver_response_generator*
-grpc_fake_resolver_response_generator_ref(
-    grpc_fake_resolver_response_generator* generator);
-void grpc_fake_resolver_response_generator_unref(
-    grpc_fake_resolver_response_generator* generator);
+grpc_fake_resolver_response_generator
+  *grpc_fake_resolver_response_generator_ref
+  (grpc_fake_resolver_response_generator * generator);
+void
+grpc_fake_resolver_response_generator_unref
+(grpc_fake_resolver_response_generator * generator);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H \
         */

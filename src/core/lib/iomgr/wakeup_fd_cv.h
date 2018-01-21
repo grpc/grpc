@@ -40,24 +40,27 @@
 #define GRPC_FD_TO_IDX(fd) (-(fd)-1)
 #define GRPC_IDX_TO_FD(idx) (-(idx)-1)
 
-typedef struct grpc_cv_node {
-  gpr_cv* cv;
-  struct grpc_cv_node* next;
-  struct grpc_cv_node* prev;
+typedef struct grpc_cv_node
+{
+  gpr_cv *cv;
+  struct grpc_cv_node *next;
+  struct grpc_cv_node *prev;
 } grpc_cv_node;
 
-typedef struct grpc_fd_node {
+typedef struct grpc_fd_node
+{
   int is_set;
-  grpc_cv_node* cvs;
-  struct grpc_fd_node* next_free;
+  grpc_cv_node *cvs;
+  struct grpc_fd_node *next_free;
 } grpc_fd_node;
 
-typedef struct grpc_cv_fd_table {
+typedef struct grpc_cv_fd_table
+{
   gpr_mu mu;
   gpr_refcount pollcount;
   gpr_cv shutdown_cv;
-  grpc_fd_node* cvfds;
-  grpc_fd_node* free_fds;
+  grpc_fd_node *cvfds;
+  grpc_fd_node *free_fds;
   unsigned int size;
   grpc_poll_function_type poll;
 } grpc_cv_fd_table;

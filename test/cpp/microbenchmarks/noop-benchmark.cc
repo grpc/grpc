@@ -21,10 +21,14 @@
 
 #include <benchmark/benchmark.h>
 
-static void BM_NoOp(benchmark::State& state) {
-  while (state.KeepRunning()) {
-  }
+static void
+BM_NoOp (benchmark::State & state)
+{
+  while (state.KeepRunning ())
+    {
+    }
 }
-BENCHMARK(BM_NoOp);
 
-BENCHMARK_MAIN();
+BENCHMARK (BM_NoOp);
+
+BENCHMARK_MAIN ();

@@ -29,6 +29,6 @@
 #define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
 
 /// Registers handshaker factory.
-void grpc_http_connect_register_handshaker_factory();
+void grpc_http_connect_register_handshaker_factory ();
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */

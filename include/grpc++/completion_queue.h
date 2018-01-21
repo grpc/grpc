@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/completion_queue.h>
 
-#endif  // GRPCXX_COMPLETION_QUEUE_H
+#endif // GRPCXX_COMPLETION_QUEUE_H

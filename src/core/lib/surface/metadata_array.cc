@@ -23,12 +23,16 @@
 
 #include "src/core/lib/surface/api_trace.h"
 
-void grpc_metadata_array_init(grpc_metadata_array* array) {
-  GRPC_API_TRACE("grpc_metadata_array_init(array=%p)", 1, (array));
-  memset(array, 0, sizeof(*array));
+void
+grpc_metadata_array_init (grpc_metadata_array * array)
+{
+  GRPC_API_TRACE ("grpc_metadata_array_init(array=%p)", 1, (array));
+  memset (array, 0, sizeof (*array));
 }
 
-void grpc_metadata_array_destroy(grpc_metadata_array* array) {
-  GRPC_API_TRACE("grpc_metadata_array_destroy(array=%p)", 1, (array));
-  gpr_free(array->metadata);
+void
+grpc_metadata_array_destroy (grpc_metadata_array * array)
+{
+  GRPC_API_TRACE ("grpc_metadata_array_destroy(array=%p)", 1, (array));
+  gpr_free (array->metadata);
 }

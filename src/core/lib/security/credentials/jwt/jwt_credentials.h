@@ -22,15 +22,17 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
-typedef struct {
+typedef struct
+{
   grpc_call_credentials base;
 
   // Have a simple cache for now with just 1 entry. We could have a map based on
   // the service_url for a more sophisticated one.
   gpr_mu cache_mu;
-  struct {
+  struct
+  {
     grpc_mdelem jwt_md;
-    char* service_url;
+    char *service_url;
     gpr_timespec jwt_expiration;
   } cached;
 
@@ -40,8 +42,8 @@ typedef struct {
 
 // Private constructor for jwt credentials from an already parsed json key.
 // Takes ownership of the key.
-grpc_call_credentials*
-grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
-    grpc_auth_json_key key, gpr_timespec token_lifetime);
+grpc_call_credentials
+  *grpc_service_account_jwt_access_credentials_create_from_auth_json_key
+  (grpc_auth_json_key key, gpr_timespec token_lifetime);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H */

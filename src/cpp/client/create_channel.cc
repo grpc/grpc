@@ -25,25 +25,28 @@
 
 #include "src/cpp/client/create_channel_internal.h"
 
-namespace grpc {
-class ChannelArguments;
+namespace grpc
+{
+  class ChannelArguments;
 
-std::shared_ptr<Channel> CreateChannel(
-    const grpc::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds) {
-  return CreateCustomChannel(target, creds, ChannelArguments());
-}
+    std::shared_ptr < Channel > CreateChannel (const grpc::string & target,
+					       const std::shared_ptr <
+					       ChannelCredentials > &creds)
+  {
+    return CreateCustomChannel (target, creds, ChannelArguments ());
+  }
 
-std::shared_ptr<Channel> CreateCustomChannel(
-    const grpc::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds,
-    const ChannelArguments& args) {
-  GrpcLibraryCodegen init_lib;  // We need to call init in case of a bad creds.
-  return creds ? creds->CreateChannel(target, args)
-               : CreateChannelInternal(
-                     "", grpc_lame_client_channel_create(
-                             nullptr, GRPC_STATUS_INVALID_ARGUMENT,
-                             "Invalid credentials."));
-}
+  std::shared_ptr < Channel >
+    CreateCustomChannel (const grpc::string & target,
+			 const std::shared_ptr < ChannelCredentials > &creds,
+			 const ChannelArguments & args)
+  {
+    GrpcLibraryCodegen init_lib;	// We need to call init in case of a bad creds.
+    return creds ? creds->CreateChannel (target, args)
+      : CreateChannelInternal ("",
+			       grpc_lame_client_channel_create (nullptr,
+								GRPC_STATUS_INVALID_ARGUMENT,
+								"Invalid credentials."));
+  }
 
-}  // namespace grpc
+}				// namespace grpc

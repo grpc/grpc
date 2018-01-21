@@ -25,18 +25,18 @@ extern int64_t g_fixture_slowdown_factor;
 extern int64_t g_poller_slowdown_factor;
 
 /* Returns an appropriate scaling factor for timeouts. */
-int64_t grpc_test_slowdown_factor();
+int64_t grpc_test_slowdown_factor ();
 
 /* Converts a given timeout (in seconds) to a deadline. */
-gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s);
+gpr_timespec grpc_timeout_seconds_to_deadline (int64_t time_s);
 
 /* Converts a given timeout (in milliseconds) to a deadline. */
-gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
+gpr_timespec grpc_timeout_milliseconds_to_deadline (int64_t time_ms);
 
 #if !defined(GRPC_TEST_CUSTOM_PICK_PORT) && !defined(GRPC_PORT_ISOLATED_RUNTIME)
 #define GRPC_TEST_PICK_PORT
 #endif
 
-void grpc_test_init(int argc, char** argv);
+void grpc_test_init (int argc, char **argv);
 
 #endif /* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */

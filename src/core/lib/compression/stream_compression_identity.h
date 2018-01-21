@@ -22,6 +22,6 @@
 #include "src/core/lib/compression/stream_compression.h"
 
 extern const grpc_stream_compression_vtable
-    grpc_stream_compression_identity_vtable;
+  grpc_stream_compression_identity_vtable;
 
 #endif

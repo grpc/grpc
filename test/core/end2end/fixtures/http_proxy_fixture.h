@@ -32,12 +32,12 @@
 
 typedef struct grpc_end2end_http_proxy grpc_end2end_http_proxy;
 
-grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
-    grpc_channel_args* args);
+grpc_end2end_http_proxy *grpc_end2end_http_proxy_create (grpc_channel_args *
+							 args);
 
-void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy);
+void grpc_end2end_http_proxy_destroy (grpc_end2end_http_proxy * proxy);
 
-const char* grpc_end2end_http_proxy_get_proxy_name(
-    grpc_end2end_http_proxy* proxy);
+const char *grpc_end2end_http_proxy_get_proxy_name (grpc_end2end_http_proxy *
+						    proxy);
 
 #endif /* GRPC_TEST_CORE_END2END_FIXTURES_HTTP_PROXY_FIXTURE_H */

@@ -49,29 +49,31 @@
 
 #include "src/core/lib/iomgr/error.h"
 
-void grpc_wakeup_fd_global_init(void);
-void grpc_wakeup_fd_global_destroy(void);
+void grpc_wakeup_fd_global_init (void);
+void grpc_wakeup_fd_global_destroy (void);
 
 /* Force using the fallback implementation. This is intended for testing
  * purposes only.*/
-void grpc_wakeup_fd_global_init_force_fallback(void);
+void grpc_wakeup_fd_global_init_force_fallback (void);
 
-int grpc_has_wakeup_fd(void);
-int grpc_cv_wakeup_fds_enabled(void);
-void grpc_enable_cv_wakeup_fds(int enable);
+int grpc_has_wakeup_fd (void);
+int grpc_cv_wakeup_fds_enabled (void);
+void grpc_enable_cv_wakeup_fds (int enable);
 
 typedef struct grpc_wakeup_fd grpc_wakeup_fd;
 
-typedef struct grpc_wakeup_fd_vtable {
-  grpc_error* (*init)(grpc_wakeup_fd* fd_info);
-  grpc_error* (*consume)(grpc_wakeup_fd* fd_info);
-  grpc_error* (*wakeup)(grpc_wakeup_fd* fd_info);
-  void (*destroy)(grpc_wakeup_fd* fd_info);
+typedef struct grpc_wakeup_fd_vtable
+{
+  grpc_error *(*init) (grpc_wakeup_fd * fd_info);
+  grpc_error *(*consume) (grpc_wakeup_fd * fd_info);
+  grpc_error *(*wakeup) (grpc_wakeup_fd * fd_info);
+  void (*destroy) (grpc_wakeup_fd * fd_info);
   /* Must be called before calling any other functions */
-  int (*check_availability)(void);
+  int (*check_availability) (void);
 } grpc_wakeup_fd_vtable;
 
-struct grpc_wakeup_fd {
+struct grpc_wakeup_fd
+{
   int read_fd;
   int write_fd;
 };
@@ -81,14 +83,17 @@ extern int grpc_allow_pipe_wakeup_fd;
 
 #define GRPC_WAKEUP_FD_GET_READ_FD(fd_info) ((fd_info)->read_fd)
 
-grpc_error* grpc_wakeup_fd_init(grpc_wakeup_fd* fd_info) GRPC_MUST_USE_RESULT;
-grpc_error* grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd* fd_info)
-    GRPC_MUST_USE_RESULT;
-grpc_error* grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info) GRPC_MUST_USE_RESULT;
-void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info);
+grpc_error *
+grpc_wakeup_fd_init (grpc_wakeup_fd * fd_info)
+  GRPC_MUST_USE_RESULT;
+     grpc_error *grpc_wakeup_fd_consume_wakeup (grpc_wakeup_fd * fd_info)
+  GRPC_MUST_USE_RESULT;
+     grpc_error *grpc_wakeup_fd_wakeup (grpc_wakeup_fd *
+					fd_info) GRPC_MUST_USE_RESULT;
+     void grpc_wakeup_fd_destroy (grpc_wakeup_fd * fd_info);
 
 /* Defined in some specialized implementation's .c file, or by
  * wakeup_fd_nospecial.c if no such implementation exists. */
-extern const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable;
+     extern const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable;
 
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H */

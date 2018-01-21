@@ -28,7 +28,8 @@
 
 #define NUM_THREADS 300
 
-struct test {
+struct test
+{
   gpr_mu mu;
   int n;
   int is_done;
@@ -36,67 +37,84 @@ struct test {
 };
 
 /* A Thread body.   Decrement t->n, and if is becomes zero, set t->done. */
-static void thd_body(void* v) {
-  struct test* t = static_cast<struct test*>(v);
-  gpr_mu_lock(&t->mu);
+static void
+thd_body (void *v)
+{
+  struct test *t = static_cast < struct test *>(v);
+  gpr_mu_lock (&t->mu);
   t->n--;
-  if (t->n == 0) {
-    t->is_done = 1;
-    gpr_cv_signal(&t->done_cv);
-  }
-  gpr_mu_unlock(&t->mu);
+  if (t->n == 0)
+    {
+      t->is_done = 1;
+      gpr_cv_signal (&t->done_cv);
+    }
+  gpr_mu_unlock (&t->mu);
 }
 
-static void thd_body_joinable(void* v) {}
+static void
+thd_body_joinable (void *v)
+{
+}
 
 /* Test thread options work as expected */
-static void test_options(void) {
-  gpr_thd_options options = gpr_thd_options_default();
-  GPR_ASSERT(!gpr_thd_options_is_joinable(&options));
-  GPR_ASSERT(gpr_thd_options_is_detached(&options));
-  gpr_thd_options_set_joinable(&options);
-  GPR_ASSERT(gpr_thd_options_is_joinable(&options));
-  GPR_ASSERT(!gpr_thd_options_is_detached(&options));
-  gpr_thd_options_set_detached(&options);
-  GPR_ASSERT(!gpr_thd_options_is_joinable(&options));
-  GPR_ASSERT(gpr_thd_options_is_detached(&options));
+static void
+test_options (void)
+{
+  gpr_thd_options options = gpr_thd_options_default ();
+  GPR_ASSERT (!gpr_thd_options_is_joinable (&options));
+  GPR_ASSERT (gpr_thd_options_is_detached (&options));
+  gpr_thd_options_set_joinable (&options);
+  GPR_ASSERT (gpr_thd_options_is_joinable (&options));
+  GPR_ASSERT (!gpr_thd_options_is_detached (&options));
+  gpr_thd_options_set_detached (&options);
+  GPR_ASSERT (!gpr_thd_options_is_joinable (&options));
+  GPR_ASSERT (gpr_thd_options_is_detached (&options));
 }
 
 /* Test that we can create a number of threads and wait for them. */
-static void test(void) {
+static void
+test (void)
+{
   int i;
   gpr_thd_id thd;
   gpr_thd_id thds[NUM_THREADS];
   struct test t;
-  gpr_thd_options options = gpr_thd_options_default();
-  gpr_mu_init(&t.mu);
-  gpr_cv_init(&t.done_cv);
+  gpr_thd_options options = gpr_thd_options_default ();
+  gpr_mu_init (&t.mu);
+  gpr_cv_init (&t.done_cv);
   t.n = NUM_THREADS;
   t.is_done = 0;
-  for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(gpr_thd_new(&thd, "grpc_thread_test", &thd_body, &t, nullptr));
-  }
-  gpr_mu_lock(&t.mu);
-  while (!t.is_done) {
-    gpr_cv_wait(&t.done_cv, &t.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
-  }
-  gpr_mu_unlock(&t.mu);
-  GPR_ASSERT(t.n == 0);
-  gpr_thd_options_set_joinable(&options);
-  for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_joinable_thread_test",
-                           &thd_body_joinable, nullptr, &options));
-  }
-  for (i = 0; i < NUM_THREADS; i++) {
-    gpr_thd_join(thds[i]);
-  }
+  for (i = 0; i < NUM_THREADS; i++)
+    {
+      GPR_ASSERT (gpr_thd_new
+		  (&thd, "grpc_thread_test", &thd_body, &t, nullptr));
+    }
+  gpr_mu_lock (&t.mu);
+  while (!t.is_done)
+    {
+      gpr_cv_wait (&t.done_cv, &t.mu, gpr_inf_future (GPR_CLOCK_REALTIME));
+    }
+  gpr_mu_unlock (&t.mu);
+  GPR_ASSERT (t.n == 0);
+  gpr_thd_options_set_joinable (&options);
+  for (i = 0; i < NUM_THREADS; i++)
+    {
+      GPR_ASSERT (gpr_thd_new (&thds[i], "grpc_joinable_thread_test",
+			       &thd_body_joinable, nullptr, &options));
+    }
+  for (i = 0; i < NUM_THREADS; i++)
+    {
+      gpr_thd_join (thds[i]);
+    }
 }
 
 /* ------------------------------------------------- */
 
-int main(int argc, char* argv[]) {
-  grpc_test_init(argc, argv);
-  test_options();
-  test();
+int
+main (int argc, char *argv[])
+{
+  grpc_test_init (argc, argv);
+  test_options ();
+  test ();
   return 0;
 }

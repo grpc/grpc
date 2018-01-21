@@ -21,15 +21,16 @@
 
 #include <grpc/support/atm.h>
 
-struct grpc_memory_counters {
+struct grpc_memory_counters
+{
   gpr_atm total_size_relative;
   gpr_atm total_size_absolute;
   gpr_atm total_allocs_relative;
   gpr_atm total_allocs_absolute;
 };
 
-void grpc_memory_counters_init();
-void grpc_memory_counters_destroy();
-struct grpc_memory_counters grpc_memory_counters_snapshot();
+void grpc_memory_counters_init ();
+void grpc_memory_counters_destroy ();
+struct grpc_memory_counters grpc_memory_counters_snapshot ();
 
 #endif

@@ -26,40 +26,58 @@
 // grpc_handshaker_factory_list
 //
 
-typedef struct {
-  grpc_handshaker_factory** list;
+typedef struct
+{
+  grpc_handshaker_factory **list;
   size_t num_factories;
 } grpc_handshaker_factory_list;
 
-static void grpc_handshaker_factory_list_register(
-    grpc_handshaker_factory_list* list, bool at_start,
-    grpc_handshaker_factory* factory) {
-  list->list = (grpc_handshaker_factory**)gpr_realloc(
-      list->list, (list->num_factories + 1) * sizeof(grpc_handshaker_factory*));
-  if (at_start) {
-    memmove(list->list + 1, list->list,
-            sizeof(grpc_handshaker_factory*) * list->num_factories);
-    list->list[0] = factory;
-  } else {
-    list->list[list->num_factories] = factory;
-  }
+static void
+grpc_handshaker_factory_list_register (grpc_handshaker_factory_list * list,
+				       bool at_start,
+				       grpc_handshaker_factory * factory)
+{
+  list->list =
+    (grpc_handshaker_factory **) gpr_realloc (list->list,
+					      (list->num_factories +
+					       1) *
+					      sizeof (grpc_handshaker_factory
+						      *));
+  if (at_start)
+    {
+      memmove (list->list + 1, list->list,
+	       sizeof (grpc_handshaker_factory *) * list->num_factories);
+      list->list[0] = factory;
+    }
+  else
+    {
+      list->list[list->num_factories] = factory;
+    }
   ++list->num_factories;
 }
 
-static void grpc_handshaker_factory_list_add_handshakers(
-    grpc_handshaker_factory_list* list, const grpc_channel_args* args,
-    grpc_handshake_manager* handshake_mgr) {
-  for (size_t i = 0; i < list->num_factories; ++i) {
-    grpc_handshaker_factory_add_handshakers(list->list[i], args, handshake_mgr);
-  }
+static void
+grpc_handshaker_factory_list_add_handshakers (grpc_handshaker_factory_list *
+					      list,
+					      const grpc_channel_args * args,
+					      grpc_handshake_manager *
+					      handshake_mgr)
+{
+  for (size_t i = 0; i < list->num_factories; ++i)
+    {
+      grpc_handshaker_factory_add_handshakers (list->list[i], args,
+					       handshake_mgr);
+    }
 }
 
-static void grpc_handshaker_factory_list_destroy(
-    grpc_handshaker_factory_list* list) {
-  for (size_t i = 0; i < list->num_factories; ++i) {
-    grpc_handshaker_factory_destroy(list->list[i]);
-  }
-  gpr_free(list->list);
+static void
+grpc_handshaker_factory_list_destroy (grpc_handshaker_factory_list * list)
+{
+  for (size_t i = 0; i < list->num_factories; ++i)
+    {
+      grpc_handshaker_factory_destroy (list->list[i]);
+    }
+  gpr_free (list->list);
 }
 
 //
@@ -67,28 +85,39 @@ static void grpc_handshaker_factory_list_destroy(
 //
 
 static grpc_handshaker_factory_list
-    g_handshaker_factory_lists[NUM_HANDSHAKER_TYPES];
+  g_handshaker_factory_lists[NUM_HANDSHAKER_TYPES];
 
-void grpc_handshaker_factory_registry_init() {
-  memset(g_handshaker_factory_lists, 0, sizeof(g_handshaker_factory_lists));
+void
+grpc_handshaker_factory_registry_init ()
+{
+  memset (g_handshaker_factory_lists, 0, sizeof (g_handshaker_factory_lists));
 }
 
-void grpc_handshaker_factory_registry_shutdown() {
-  for (size_t i = 0; i < NUM_HANDSHAKER_TYPES; ++i) {
-    grpc_handshaker_factory_list_destroy(&g_handshaker_factory_lists[i]);
-  }
+void
+grpc_handshaker_factory_registry_shutdown ()
+{
+  for (size_t i = 0; i < NUM_HANDSHAKER_TYPES; ++i)
+    {
+      grpc_handshaker_factory_list_destroy (&g_handshaker_factory_lists[i]);
+    }
 }
 
-void grpc_handshaker_factory_register(bool at_start,
-                                      grpc_handshaker_type handshaker_type,
-                                      grpc_handshaker_factory* factory) {
-  grpc_handshaker_factory_list_register(
-      &g_handshaker_factory_lists[handshaker_type], at_start, factory);
+void
+grpc_handshaker_factory_register (bool at_start,
+				  grpc_handshaker_type handshaker_type,
+				  grpc_handshaker_factory * factory)
+{
+  grpc_handshaker_factory_list_register (&g_handshaker_factory_lists
+					 [handshaker_type], at_start,
+					 factory);
 }
 
-void grpc_handshakers_add(grpc_handshaker_type handshaker_type,
-                          const grpc_channel_args* args,
-                          grpc_handshake_manager* handshake_mgr) {
-  grpc_handshaker_factory_list_add_handshakers(
-      &g_handshaker_factory_lists[handshaker_type], args, handshake_mgr);
+void
+grpc_handshakers_add (grpc_handshaker_type handshaker_type,
+		      const grpc_channel_args * args,
+		      grpc_handshake_manager * handshake_mgr)
+{
+  grpc_handshaker_factory_list_add_handshakers (&g_handshaker_factory_lists
+						[handshaker_type], args,
+						handshake_mgr);
 }

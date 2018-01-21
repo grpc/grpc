@@ -21,6 +21,10 @@
 
 #include <grpc++/grpc++.h>
 
-namespace grpc {
-grpc::string Version() { return "1.10.0-dev"; }
-}  // namespace grpc
+namespace grpc
+{
+  grpc::string Version ()
+  {
+    return "1.10.0-dev";
+  }
+}				// namespace grpc

@@ -31,37 +31,41 @@
    used to synchronize with the IOCP, and workers are condition variables
    used to block threads until work is ready. */
 
-typedef enum {
+typedef enum
+{
   GRPC_POLLSET_WORKER_LINK_POLLSET = 0,
   GRPC_POLLSET_WORKER_LINK_GLOBAL,
   GRPC_POLLSET_WORKER_LINK_TYPES
 } grpc_pollset_worker_link_type;
 
-typedef struct grpc_pollset_worker_link {
-  struct grpc_pollset_worker* next;
-  struct grpc_pollset_worker* prev;
+typedef struct grpc_pollset_worker_link
+{
+  struct grpc_pollset_worker *next;
+  struct grpc_pollset_worker *prev;
 } grpc_pollset_worker_link;
 
 struct grpc_pollset;
 typedef struct grpc_pollset grpc_pollset;
 
-typedef struct grpc_pollset_worker {
+typedef struct grpc_pollset_worker
+{
   gpr_cv cv;
   int kicked;
-  struct grpc_pollset* pollset;
+  struct grpc_pollset *pollset;
   grpc_pollset_worker_link links[GRPC_POLLSET_WORKER_LINK_TYPES];
 } grpc_pollset_worker;
 
-struct grpc_pollset {
+struct grpc_pollset
+{
   int shutting_down;
   int kicked_without_pollers;
   int is_iocp_worker;
   grpc_pollset_worker root_worker;
-  grpc_closure* on_shutdown;
+  grpc_closure *on_shutdown;
 };
 
-void grpc_pollset_global_init(void);
-void grpc_pollset_global_shutdown(void);
+void grpc_pollset_global_init (void);
+void grpc_pollset_global_shutdown (void);
 
 #endif
 

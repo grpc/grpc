@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/sync_no_cxx11.h>
 
-#endif  // GRPCXX_IMPL_SYNC_NO_CXX11_H
+#endif // GRPCXX_IMPL_SYNC_NO_CXX11_H

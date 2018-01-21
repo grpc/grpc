@@ -28,14 +28,25 @@
 
 gpr_thd_id g_init_thread;
 
-void grpc_iomgr_platform_init(void) {
+void
+grpc_iomgr_platform_init (void)
+{
   grpc_core::ExecCtx exec_ctx;
-  grpc_pollset_global_init();
+  grpc_pollset_global_init ();
 
-  grpc_executor_set_threading(false);
-  g_init_thread = gpr_thd_currentid();
+  grpc_executor_set_threading (false);
+  g_init_thread = gpr_thd_currentid ();
 }
-void grpc_iomgr_platform_flush(void) {}
-void grpc_iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }
+
+void
+grpc_iomgr_platform_flush (void)
+{
+}
+
+void
+grpc_iomgr_platform_shutdown (void)
+{
+  grpc_pollset_global_shutdown ();
+}
 
 #endif /* GRPC_UV */

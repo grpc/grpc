@@ -35,43 +35,55 @@
 
 static int ncpus = 0;
 
-static void init_num_cpus() {
+static void
+init_num_cpus ()
+{
 #ifndef GPR_MUSL_LIBC_COMPAT
-  if (sched_getcpu() < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
-    ncpus = 1;
-    return;
-  }
+  if (sched_getcpu () < 0)
+    {
+      gpr_log (GPR_ERROR, "Error determining current CPU: %s\n",
+	       strerror (errno));
+      ncpus = 1;
+      return;
+    }
 #endif
   /* This must be signed. sysconf returns -1 when the number cannot be
      determined */
-  ncpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
-  if (ncpus < 1) {
-    gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
-    ncpus = 1;
-  }
+  ncpus = (int) sysconf (_SC_NPROCESSORS_ONLN);
+  if (ncpus < 1)
+    {
+      gpr_log (GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
+      ncpus = 1;
+    }
 }
 
-unsigned gpr_cpu_num_cores(void) {
+unsigned
+gpr_cpu_num_cores (void)
+{
   static gpr_once once = GPR_ONCE_INIT;
-  gpr_once_init(&once, init_num_cpus);
-  return (unsigned)ncpus;
+  gpr_once_init (&once, init_num_cpus);
+  return (unsigned) ncpus;
 }
 
-unsigned gpr_cpu_current_cpu(void) {
+unsigned
+gpr_cpu_current_cpu (void)
+{
 #ifdef GPR_MUSL_LIBC_COMPAT
   // sched_getcpu() is undefined on musl
   return 0;
 #else
-  if (gpr_cpu_num_cores() == 1) {
-    return 0;
-  }
-  int cpu = sched_getcpu();
-  if (cpu < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
-    return 0;
-  }
-  return (unsigned)cpu;
+  if (gpr_cpu_num_cores () == 1)
+    {
+      return 0;
+    }
+  int cpu = sched_getcpu ();
+  if (cpu < 0)
+    {
+      gpr_log (GPR_ERROR, "Error determining current CPU: %s\n",
+	       strerror (errno));
+      return 0;
+    }
+  return (unsigned) cpu;
 #endif
 }
 

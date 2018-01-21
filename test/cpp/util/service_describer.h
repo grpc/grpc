@@ -22,21 +22,29 @@
 #include <grpc++/support/config.h>
 #include "test/cpp/util/config_grpc_cli.h"
 
-namespace grpc {
-namespace testing {
+namespace grpc
+{
+  namespace testing
+  {
 
-grpc::string DescribeServiceList(std::vector<grpc::string> service_list,
-                                 grpc::protobuf::DescriptorPool& desc_pool);
+    grpc::string DescribeServiceList (std::vector < grpc::string >
+				      service_list,
+				      grpc::protobuf::
+				      DescriptorPool & desc_pool);
 
-grpc::string DescribeService(const grpc::protobuf::ServiceDescriptor* service);
+    grpc::string DescribeService (const grpc::protobuf::ServiceDescriptor *
+				  service);
 
-grpc::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method);
+      grpc::string DescribeMethod (const grpc::protobuf::MethodDescriptor *
+				   method);
 
-grpc::string SummarizeService(const grpc::protobuf::ServiceDescriptor* service);
+      grpc::string SummarizeService (const grpc::protobuf::ServiceDescriptor *
+				     service);
 
-grpc::string SummarizeMethod(const grpc::protobuf::MethodDescriptor* method);
+      grpc::string SummarizeMethod (const grpc::protobuf::MethodDescriptor *
+				    method);
 
-}  // namespace testing
-}  // namespace grpc
+  }				// namespace testing
+}				// namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H
+#endif				// GRPC_TEST_CPP_UTIL_SERVICE_DESCRIBER_H

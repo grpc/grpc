@@ -22,19 +22,28 @@
 
 static gts_shared_resource g_gts_resource;
 
-gts_shared_resource* gts_get_shared_resource(void) { return &g_gts_resource; }
-
-void grpc_tsi_gts_init() {
-  memset(&g_gts_resource, 0, sizeof(gts_shared_resource));
-  gpr_mu_init(&g_gts_resource.mu);
+gts_shared_resource *
+gts_get_shared_resource (void)
+{
+  return &g_gts_resource;
 }
 
-void grpc_tsi_gts_shutdown() {
-  gpr_mu_destroy(&g_gts_resource.mu);
-  if (g_gts_resource.cq == nullptr) {
-    return;
-  }
-  grpc_completion_queue_destroy(g_gts_resource.cq);
-  grpc_channel_destroy(g_gts_resource.channel);
-  gpr_thd_join(g_gts_resource.thread_id);
+void
+grpc_tsi_gts_init ()
+{
+  memset (&g_gts_resource, 0, sizeof (gts_shared_resource));
+  gpr_mu_init (&g_gts_resource.mu);
+}
+
+void
+grpc_tsi_gts_shutdown ()
+{
+  gpr_mu_destroy (&g_gts_resource.mu);
+  if (g_gts_resource.cq == nullptr)
+    {
+      return;
+    }
+  grpc_completion_queue_destroy (g_gts_resource.cq);
+  grpc_channel_destroy (g_gts_resource.channel);
+  gpr_thd_join (g_gts_resource.thread_id);
 }

@@ -18,4 +18,6 @@
 
 #include <grpc++/impl/rpc_method.h>
 
-namespace grpc {}  // namespace grpc
+namespace grpc
+{
+}				// namespace grpc

@@ -30,61 +30,77 @@
 #include <string.h>
 #include <time.h>
 
-static intptr_t gettid(void) { return (intptr_t)pthread_self(); }
-
-void gpr_log(const char* file, int line, gpr_log_severity severity,
-             const char* format, ...) {
-  char buf[64];
-  char* allocated = nullptr;
-  char* message = nullptr;
-  int ret;
-  va_list args;
-  va_start(args, format);
-  ret = vsnprintf(buf, sizeof(buf), format, args);
-  va_end(args);
-  if (ret < 0) {
-    message = nullptr;
-  } else if ((size_t)ret <= sizeof(buf) - 1) {
-    message = buf;
-  } else {
-    message = allocated = (char*)gpr_malloc((size_t)ret + 1);
-    va_start(args, format);
-    vsnprintf(message, (size_t)(ret + 1), format, args);
-    va_end(args);
-  }
-  gpr_log_message(file, line, severity, message);
-  gpr_free(allocated);
+static intptr_t
+gettid (void)
+{
+  return (intptr_t) pthread_self ();
 }
 
-void gpr_default_log(gpr_log_func_args* args) {
-  const char* final_slash;
-  const char* display_file;
+void
+gpr_log (const char *file, int line, gpr_log_severity severity,
+	 const char *format, ...)
+{
+  char buf[64];
+  char *allocated = nullptr;
+  char *message = nullptr;
+  int ret;
+  va_list args;
+  va_start (args, format);
+  ret = vsnprintf (buf, sizeof (buf), format, args);
+  va_end (args);
+  if (ret < 0)
+    {
+      message = nullptr;
+    }
+  else if ((size_t) ret <= sizeof (buf) - 1)
+    {
+      message = buf;
+    }
+  else
+    {
+      message = allocated = (char *) gpr_malloc ((size_t) ret + 1);
+      va_start (args, format);
+      vsnprintf (message, (size_t) (ret + 1), format, args);
+      va_end (args);
+    }
+  gpr_log_message (file, line, severity, message);
+  gpr_free (allocated);
+}
+
+void
+gpr_default_log (gpr_log_func_args * args)
+{
+  const char *final_slash;
+  const char *display_file;
   char time_buffer[64];
   time_t timer;
-  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+  gpr_timespec now = gpr_now (GPR_CLOCK_REALTIME);
   struct tm tm;
 
-  timer = (time_t)now.tv_sec;
-  final_slash = strrchr(args->file, '/');
+  timer = (time_t) now.tv_sec;
+  final_slash = strrchr (args->file, '/');
   if (final_slash == nullptr)
     display_file = args->file;
   else
     display_file = final_slash + 1;
 
-  if (!localtime_r(&timer, &tm)) {
-    strcpy(time_buffer, "error:localtime");
-  } else if (0 ==
-             strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
-    strcpy(time_buffer, "error:strftime");
-  }
+  if (!localtime_r (&timer, &tm))
+    {
+      strcpy (time_buffer, "error:localtime");
+    }
+  else if (0 ==
+	   strftime (time_buffer, sizeof (time_buffer), "%m%d %H:%M:%S", &tm))
+    {
+      strcpy (time_buffer, "error:strftime");
+    }
 
-  char* prefix;
-  gpr_asprintf(&prefix, "%s%s.%09d %7tu %s:%d]",
-               gpr_log_severity_string(args->severity), time_buffer,
-               (int)(now.tv_nsec), gettid(), display_file, args->line);
+  char *prefix;
+  gpr_asprintf (&prefix, "%s%s.%09d %7tu %s:%d]",
+		gpr_log_severity_string (args->severity), time_buffer,
+		(int) (now.tv_nsec), gettid (), display_file, args->line);
 
-  fprintf(stderr, "%-70s %s\n", prefix, args->message);
-  gpr_free(prefix);
+  fprintf (stderr, "%-70s %s\n", prefix, args->message);
+  gpr_free (prefix);
 }
 
 #endif /* defined(GPR_POSIX_LOG) */

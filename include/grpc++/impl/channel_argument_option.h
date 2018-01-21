@@ -25,13 +25,15 @@
 #include <grpc++/impl/server_builder_option.h>
 #include <grpc++/support/channel_arguments.h>
 
-namespace grpc {
+namespace grpc
+{
 
-std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
-    const grpc::string& name, const grpc::string& value);
-std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
-    const grpc::string& name, int value);
+  std::unique_ptr < ServerBuilderOption >
+    MakeChannelArgumentOption (const grpc::string & name,
+			       const grpc::string & value);
+    std::unique_ptr < ServerBuilderOption >
+    MakeChannelArgumentOption (const grpc::string & name, int value);
 
-}  // namespace grpc
+}				// namespace grpc
 
-#endif  // GRPCXX_IMPL_CHANNEL_ARGUMENT_OPTION_H
+#endif				// GRPCXX_IMPL_CHANNEL_ARGUMENT_OPTION_H

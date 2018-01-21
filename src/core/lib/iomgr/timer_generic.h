@@ -22,15 +22,16 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-struct grpc_timer {
+struct grpc_timer
+{
   gpr_atm deadline;
-  uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
+  uint32_t heap_index;		/* INVALID_HEAP_INDEX if not in heap */
   bool pending;
-  struct grpc_timer* next;
-  struct grpc_timer* prev;
-  grpc_closure* closure;
+  struct grpc_timer *next;
+  struct grpc_timer *prev;
+  grpc_closure *closure;
 #ifndef NDEBUG
-  struct grpc_timer* hash_table_next;
+  struct grpc_timer *hash_table_next;
 #endif
 };
 

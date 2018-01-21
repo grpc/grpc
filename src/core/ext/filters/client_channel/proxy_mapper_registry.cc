@@ -26,58 +26,77 @@
 // grpc_proxy_mapper_list
 //
 
-typedef struct {
-  grpc_proxy_mapper** list;
+typedef struct
+{
+  grpc_proxy_mapper **list;
   size_t num_mappers;
 } grpc_proxy_mapper_list;
 
-static void grpc_proxy_mapper_list_register(grpc_proxy_mapper_list* list,
-                                            bool at_start,
-                                            grpc_proxy_mapper* mapper) {
-  list->list = (grpc_proxy_mapper**)gpr_realloc(
-      list->list, (list->num_mappers + 1) * sizeof(grpc_proxy_mapper*));
-  if (at_start) {
-    memmove(list->list + 1, list->list,
-            sizeof(grpc_proxy_mapper*) * list->num_mappers);
-    list->list[0] = mapper;
-  } else {
-    list->list[list->num_mappers] = mapper;
-  }
+static void
+grpc_proxy_mapper_list_register (grpc_proxy_mapper_list * list,
+				 bool at_start, grpc_proxy_mapper * mapper)
+{
+  list->list =
+    (grpc_proxy_mapper **) gpr_realloc (list->list,
+					(list->num_mappers +
+					 1) * sizeof (grpc_proxy_mapper *));
+  if (at_start)
+    {
+      memmove (list->list + 1, list->list,
+	       sizeof (grpc_proxy_mapper *) * list->num_mappers);
+      list->list[0] = mapper;
+    }
+  else
+    {
+      list->list[list->num_mappers] = mapper;
+    }
   ++list->num_mappers;
 }
 
-static bool grpc_proxy_mapper_list_map_name(grpc_proxy_mapper_list* list,
-                                            const char* server_uri,
-                                            const grpc_channel_args* args,
-                                            char** name_to_resolve,
-                                            grpc_channel_args** new_args) {
-  for (size_t i = 0; i < list->num_mappers; ++i) {
-    if (grpc_proxy_mapper_map_name(list->list[i], server_uri, args,
-                                   name_to_resolve, new_args)) {
-      return true;
+static bool
+grpc_proxy_mapper_list_map_name (grpc_proxy_mapper_list * list,
+				 const char *server_uri,
+				 const grpc_channel_args * args,
+				 char **name_to_resolve,
+				 grpc_channel_args ** new_args)
+{
+  for (size_t i = 0; i < list->num_mappers; ++i)
+    {
+      if (grpc_proxy_mapper_map_name (list->list[i], server_uri, args,
+				      name_to_resolve, new_args))
+	{
+	  return true;
+	}
     }
-  }
   return false;
 }
 
-static bool grpc_proxy_mapper_list_map_address(
-    grpc_proxy_mapper_list* list, const grpc_resolved_address* address,
-    const grpc_channel_args* args, grpc_resolved_address** new_address,
-    grpc_channel_args** new_args) {
-  for (size_t i = 0; i < list->num_mappers; ++i) {
-    if (grpc_proxy_mapper_map_address(list->list[i], address, args, new_address,
-                                      new_args)) {
-      return true;
+static bool
+grpc_proxy_mapper_list_map_address (grpc_proxy_mapper_list * list,
+				    const grpc_resolved_address * address,
+				    const grpc_channel_args * args,
+				    grpc_resolved_address ** new_address,
+				    grpc_channel_args ** new_args)
+{
+  for (size_t i = 0; i < list->num_mappers; ++i)
+    {
+      if (grpc_proxy_mapper_map_address
+	  (list->list[i], address, args, new_address, new_args))
+	{
+	  return true;
+	}
     }
-  }
   return false;
 }
 
-static void grpc_proxy_mapper_list_destroy(grpc_proxy_mapper_list* list) {
-  for (size_t i = 0; i < list->num_mappers; ++i) {
-    grpc_proxy_mapper_destroy(list->list[i]);
-  }
-  gpr_free(list->list);
+static void
+grpc_proxy_mapper_list_destroy (grpc_proxy_mapper_list * list)
+{
+  for (size_t i = 0; i < list->num_mappers; ++i)
+    {
+      grpc_proxy_mapper_destroy (list->list[i]);
+    }
+  gpr_free (list->list);
   // Clean up in case we re-initialze later.
   // TODO(ctiller): This should ideally live in
   // grpc_proxy_mapper_registry_init().  However, if we did this there,
@@ -85,7 +104,7 @@ static void grpc_proxy_mapper_list_destroy(grpc_proxy_mapper_list* list) {
   // third-party plugins, so they'd never show up (and would leak memory).
   // We probably need some sort of dependency system for plugins to fix
   // this.
-  memset(list, 0, sizeof(*list));
+  memset (list, 0, sizeof (*list));
 }
 
 //
@@ -94,27 +113,39 @@ static void grpc_proxy_mapper_list_destroy(grpc_proxy_mapper_list* list) {
 
 static grpc_proxy_mapper_list g_proxy_mapper_list;
 
-void grpc_proxy_mapper_registry_init() {}
-
-void grpc_proxy_mapper_registry_shutdown() {
-  grpc_proxy_mapper_list_destroy(&g_proxy_mapper_list);
+void
+grpc_proxy_mapper_registry_init ()
+{
 }
 
-void grpc_proxy_mapper_register(bool at_start, grpc_proxy_mapper* mapper) {
-  grpc_proxy_mapper_list_register(&g_proxy_mapper_list, at_start, mapper);
+void
+grpc_proxy_mapper_registry_shutdown ()
+{
+  grpc_proxy_mapper_list_destroy (&g_proxy_mapper_list);
 }
 
-bool grpc_proxy_mappers_map_name(const char* server_uri,
-                                 const grpc_channel_args* args,
-                                 char** name_to_resolve,
-                                 grpc_channel_args** new_args) {
-  return grpc_proxy_mapper_list_map_name(&g_proxy_mapper_list, server_uri, args,
-                                         name_to_resolve, new_args);
+void
+grpc_proxy_mapper_register (bool at_start, grpc_proxy_mapper * mapper)
+{
+  grpc_proxy_mapper_list_register (&g_proxy_mapper_list, at_start, mapper);
 }
-bool grpc_proxy_mappers_map_address(const grpc_resolved_address* address,
-                                    const grpc_channel_args* args,
-                                    grpc_resolved_address** new_address,
-                                    grpc_channel_args** new_args) {
-  return grpc_proxy_mapper_list_map_address(&g_proxy_mapper_list, address, args,
-                                            new_address, new_args);
+
+bool
+grpc_proxy_mappers_map_name (const char *server_uri,
+			     const grpc_channel_args * args,
+			     char **name_to_resolve,
+			     grpc_channel_args ** new_args)
+{
+  return grpc_proxy_mapper_list_map_name (&g_proxy_mapper_list, server_uri,
+					  args, name_to_resolve, new_args);
+}
+
+bool
+grpc_proxy_mappers_map_address (const grpc_resolved_address * address,
+				const grpc_channel_args * args,
+				grpc_resolved_address ** new_address,
+				grpc_channel_args ** new_args)
+{
+  return grpc_proxy_mapper_list_map_address (&g_proxy_mapper_list, address,
+					     args, new_address, new_args);
 }

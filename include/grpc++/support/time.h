@@ -21,4 +21,4 @@
 
 #include <grpc++/impl/codegen/time.h>
 
-#endif  // GRPCXX_SUPPORT_TIME_H
+#endif // GRPCXX_SUPPORT_TIME_H

@@ -24,7 +24,8 @@
 #include "src/core/lib/channel/channel_stack.h"
 
 /** Identifiers for the invocation point of the users LR callback */
-typedef enum grpc_load_reporting_source {
+typedef enum grpc_load_reporting_source
+{
   GRPC_LR_POINT_UNKNOWN = 0,
   GRPC_LR_POINT_CHANNEL_CREATION,
   GRPC_LR_POINT_CHANNEL_DESTRUCTION,
@@ -33,7 +34,8 @@ typedef enum grpc_load_reporting_source {
 } grpc_load_reporting_source;
 
 /** Call information to be passed to the provided LR callback. */
-typedef struct grpc_load_reporting_call_data {
+typedef struct grpc_load_reporting_call_data
+{
   const grpc_load_reporting_source source; /**< point of last data update. */
 
   /** Unique identifier for the channel associated with the data */
@@ -45,15 +47,15 @@ typedef struct grpc_load_reporting_call_data {
 
   /** Only valid when \a source is \a GRPC_LR_POINT_CALL_DESTRUCTION, that is,
    * once the call has completed */
-  const grpc_call_final_info* final_info;
+  const grpc_call_final_info *final_info;
 
-  const char* initial_md_string;  /**< value string for LR's initial md key */
-  const char* trailing_md_string; /**< value string for LR's trailing md key */
-  const char* method_name;        /**< Corresponds to :path header */
+  const char *initial_md_string;  /**< value string for LR's initial md key */
+  const char *trailing_md_string; /**< value string for LR's trailing md key */
+  const char *method_name;	  /**< Corresponds to :path header */
 } grpc_load_reporting_call_data;
 
 /** Return a \a grpc_arg enabling load reporting */
-grpc_arg grpc_load_reporting_enable_arg();
+grpc_arg grpc_load_reporting_enable_arg ();
 
 #endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_PLUGIN_H \
         */

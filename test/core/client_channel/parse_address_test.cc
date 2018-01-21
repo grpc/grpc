@@ -33,70 +33,84 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
+static void
+test_grpc_parse_unix (const char *uri_text, const char *pathname)
+{
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(uri_text, 0);
+  grpc_uri *uri = grpc_uri_parse (uri_text, 0);
   grpc_resolved_address addr;
 
-  GPR_ASSERT(1 == grpc_parse_unix(uri, &addr));
-  struct sockaddr_un* addr_un = (struct sockaddr_un*)addr.addr;
-  GPR_ASSERT(AF_UNIX == addr_un->sun_family);
-  GPR_ASSERT(0 == strcmp(addr_un->sun_path, pathname));
+  GPR_ASSERT (1 == grpc_parse_unix (uri, &addr));
+  struct sockaddr_un *addr_un = (struct sockaddr_un *) addr.addr;
+  GPR_ASSERT (AF_UNIX == addr_un->sun_family);
+  GPR_ASSERT (0 == strcmp (addr_un->sun_path, pathname));
 
-  grpc_uri_destroy(uri);
+  grpc_uri_destroy (uri);
 }
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
 
-static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {}
+static void
+test_grpc_parse_unix (const char *uri_text, const char *pathname)
+{
+}
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
-static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
-                                 unsigned short port) {
+static void
+test_grpc_parse_ipv4 (const char *uri_text, const char *host,
+		      unsigned short port)
+{
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(uri_text, 0);
+  grpc_uri *uri = grpc_uri_parse (uri_text, 0);
   grpc_resolved_address addr;
   char ntop_buf[INET_ADDRSTRLEN];
 
-  GPR_ASSERT(1 == grpc_parse_ipv4(uri, &addr));
-  struct sockaddr_in* addr_in = (struct sockaddr_in*)addr.addr;
-  GPR_ASSERT(AF_INET == addr_in->sin_family);
-  GPR_ASSERT(nullptr != grpc_inet_ntop(AF_INET, &addr_in->sin_addr, ntop_buf,
-                                       sizeof(ntop_buf)));
-  GPR_ASSERT(0 == strcmp(ntop_buf, host));
-  GPR_ASSERT(ntohs(addr_in->sin_port) == port);
+  GPR_ASSERT (1 == grpc_parse_ipv4 (uri, &addr));
+  struct sockaddr_in *addr_in = (struct sockaddr_in *) addr.addr;
+  GPR_ASSERT (AF_INET == addr_in->sin_family);
+  GPR_ASSERT (nullptr !=
+	      grpc_inet_ntop (AF_INET, &addr_in->sin_addr, ntop_buf,
+			      sizeof (ntop_buf)));
+  GPR_ASSERT (0 == strcmp (ntop_buf, host));
+  GPR_ASSERT (ntohs (addr_in->sin_port) == port);
 
-  grpc_uri_destroy(uri);
+  grpc_uri_destroy (uri);
 }
 
-static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
-                                 unsigned short port, uint32_t scope_id) {
+static void
+test_grpc_parse_ipv6 (const char *uri_text, const char *host,
+		      unsigned short port, uint32_t scope_id)
+{
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(uri_text, 0);
+  grpc_uri *uri = grpc_uri_parse (uri_text, 0);
   grpc_resolved_address addr;
   char ntop_buf[INET6_ADDRSTRLEN];
 
-  GPR_ASSERT(1 == grpc_parse_ipv6(uri, &addr));
-  struct sockaddr_in6* addr_in6 = (struct sockaddr_in6*)addr.addr;
-  GPR_ASSERT(AF_INET6 == addr_in6->sin6_family);
-  GPR_ASSERT(nullptr != grpc_inet_ntop(AF_INET6, &addr_in6->sin6_addr, ntop_buf,
-                                       sizeof(ntop_buf)));
-  GPR_ASSERT(0 == strcmp(ntop_buf, host));
-  GPR_ASSERT(ntohs(addr_in6->sin6_port) == port);
-  GPR_ASSERT(addr_in6->sin6_scope_id == scope_id);
+  GPR_ASSERT (1 == grpc_parse_ipv6 (uri, &addr));
+  struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *) addr.addr;
+  GPR_ASSERT (AF_INET6 == addr_in6->sin6_family);
+  GPR_ASSERT (nullptr !=
+	      grpc_inet_ntop (AF_INET6, &addr_in6->sin6_addr, ntop_buf,
+			      sizeof (ntop_buf)));
+  GPR_ASSERT (0 == strcmp (ntop_buf, host));
+  GPR_ASSERT (ntohs (addr_in6->sin6_port) == port);
+  GPR_ASSERT (addr_in6->sin6_scope_id == scope_id);
 
-  grpc_uri_destroy(uri);
+  grpc_uri_destroy (uri);
 }
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  grpc_init();
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  grpc_init ();
 
-  test_grpc_parse_unix("unix:/path/name", "/path/name");
-  test_grpc_parse_ipv4("ipv4:192.0.2.1:12345", "192.0.2.1", 12345);
-  test_grpc_parse_ipv6("ipv6:[2001:db8::1]:12345", "2001:db8::1", 12345, 0);
-  test_grpc_parse_ipv6("ipv6:[2001:db8::1%252]:12345", "2001:db8::1", 12345, 2);
+  test_grpc_parse_unix ("unix:/path/name", "/path/name");
+  test_grpc_parse_ipv4 ("ipv4:192.0.2.1:12345", "192.0.2.1", 12345);
+  test_grpc_parse_ipv6 ("ipv6:[2001:db8::1]:12345", "2001:db8::1", 12345, 0);
+  test_grpc_parse_ipv6 ("ipv6:[2001:db8::1%252]:12345", "2001:db8::1", 12345,
+			2);
 
-  grpc_shutdown();
+  grpc_shutdown ();
 }

@@ -23,51 +23,60 @@
 
 #include <string.h>
 
-typedef uint32_t (*hash_func)(const void* key, size_t len, uint32_t seed);
+typedef uint32_t (*hash_func) (const void *key, size_t len, uint32_t seed);
 
 /* From smhasher:
    This should hopefully be a thorough and uambiguous test of whether a hash
    is correctly implemented on a given platform */
 
-static void verification_test(hash_func hash, uint32_t expected) {
+static void
+verification_test (hash_func hash, uint32_t expected)
+{
   uint8_t key[256];
   uint32_t hashes[256];
   uint32_t final = 0;
   size_t i;
 
-  memset(key, 0, sizeof(key));
-  memset(hashes, 0, sizeof(hashes));
+  memset (key, 0, sizeof (key));
+  memset (hashes, 0, sizeof (hashes));
 
   /* Hash keys of the form {0}, {0,1}, {0,1,2}... up to N=255,using 256-N as
      the seed */
 
-  for (i = 0; i < 256; i++) {
-    key[i] = (uint8_t)i;
-    hashes[i] = hash(key, i, (uint32_t)(256u - i));
-  }
+  for (i = 0; i < 256; i++)
+    {
+      key[i] = (uint8_t) i;
+      hashes[i] = hash (key, i, (uint32_t) (256u - i));
+    }
 
   /* Then hash the result array */
 
-  final = hash(hashes, sizeof(hashes), 0);
+  final = hash (hashes, sizeof (hashes), 0);
 
   /* The first four bytes of that hash, interpreted as a little-endian integer,
      is our
      verification value */
 
-  if (expected != final) {
-    gpr_log(GPR_INFO, "Verification value 0x%08X : Failed! (Expected 0x%08x)",
-            final, expected);
-    abort();
-  } else {
-    gpr_log(GPR_INFO, "Verification value 0x%08X : Passed!", final);
-  }
+  if (expected != final)
+    {
+      gpr_log (GPR_INFO,
+	       "Verification value 0x%08X : Failed! (Expected 0x%08x)", final,
+	       expected);
+      abort ();
+    }
+  else
+    {
+      gpr_log (GPR_INFO, "Verification value 0x%08X : Passed!", final);
+    }
 }
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
   /* basic tests to verify that things don't crash */
-  gpr_murmur_hash3("", 0, 0);
-  gpr_murmur_hash3("xyz", 3, 0);
-  verification_test(gpr_murmur_hash3, 0xB0F57EE3);
+  gpr_murmur_hash3 ("", 0, 0);
+  gpr_murmur_hash3 ("xyz", 3, 0);
+  verification_test (gpr_murmur_hash3, 0xB0F57EE3);
   return 0;
 }

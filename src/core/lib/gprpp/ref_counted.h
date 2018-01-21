@@ -27,39 +27,48 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 
-namespace grpc_core {
+namespace grpc_core
+{
 
 // A base class for reference-counted objects.
 // New objects should be created via New() and start with a refcount of 1.
 // When the refcount reaches 0, the object will be deleted via Delete().
-class RefCounted {
- public:
-  void Ref() { gpr_ref(&refs_); }
-
-  void Unref() {
-    if (gpr_unref(&refs_)) {
-      Delete(this);
+  class RefCounted
+  {
+  public:
+    void Ref ()
+    {
+      gpr_ref (&refs_);
     }
-  }
 
-  // Not copyable nor movable.
-  RefCounted(const RefCounted&) = delete;
-  RefCounted& operator=(const RefCounted&) = delete;
+    void Unref ()
+    {
+      if (gpr_unref (&refs_))
+	{
+	  Delete (this);
+	}
+    }
 
-  GRPC_ABSTRACT_BASE_CLASS
+    // Not copyable nor movable.
+    RefCounted (const RefCounted &) = delete;
+    RefCounted & operator= (const RefCounted &) = delete;
 
- protected:
-  // Allow Delete() to access destructor.
-  template <typename T>
-  friend void Delete(T*);
+  GRPC_ABSTRACT_BASE_CLASS protected:
+    // Allow Delete() to access destructor.
+    template < typename T > friend void Delete (T *);
 
-  RefCounted() { gpr_ref_init(&refs_, 1); }
+    RefCounted ()
+    {
+      gpr_ref_init (&refs_, 1);
+    }
 
-  virtual ~RefCounted() {}
+    virtual ~ RefCounted ()
+    {
+    }
 
- private:
-  gpr_refcount refs_;
-};
+  private:
+    gpr_refcount refs_;
+  };
 
 // An alternative version of the RefCounted base class that
 // supports tracing.  This is intended to be used in cases where the
@@ -67,67 +76,86 @@ class RefCounted {
 // pointers and legacy code that is manually calling Ref() and Unref().
 // Once all of our code is converted to idiomatic C++, we may be able to
 // eliminate this class.
-class RefCountedWithTracing {
- public:
-  void Ref() { gpr_ref(&refs_); }
-
-  void Ref(const DebugLocation& location, const char* reason) {
-    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
-      gpr_log(GPR_DEBUG, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              old_refs, old_refs + 1, reason);
+  class RefCountedWithTracing
+  {
+  public:
+    void Ref ()
+    {
+      gpr_ref (&refs_);
     }
-    Ref();
-  }
 
-  void Unref() {
-    if (gpr_unref(&refs_)) {
-      Delete(this);
+    void Ref (const DebugLocation & location, const char *reason)
+    {
+      if (location.Log () && trace_flag_ != nullptr
+	  && trace_flag_->enabled ())
+	{
+	  gpr_atm old_refs = gpr_atm_no_barrier_load (&refs_.count);
+	  gpr_log (GPR_DEBUG,
+		   "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
+		   trace_flag_->name (), this, location.file (),
+		   location.line (), old_refs, old_refs + 1, reason);
+	}
+      Ref ();
     }
-  }
 
-  void Unref(const DebugLocation& location, const char* reason) {
-    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
-      gpr_log(GPR_DEBUG, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              old_refs, old_refs - 1, reason);
+    void Unref ()
+    {
+      if (gpr_unref (&refs_))
+	{
+	  Delete (this);
+	}
     }
-    Unref();
-  }
 
-  // Not copyable nor movable.
-  RefCountedWithTracing(const RefCountedWithTracing&) = delete;
-  RefCountedWithTracing& operator=(const RefCountedWithTracing&) = delete;
+    void Unref (const DebugLocation & location, const char *reason)
+    {
+      if (location.Log () && trace_flag_ != nullptr
+	  && trace_flag_->enabled ())
+	{
+	  gpr_atm old_refs = gpr_atm_no_barrier_load (&refs_.count);
+	  gpr_log (GPR_DEBUG,
+		   "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
+		   trace_flag_->name (), this, location.file (),
+		   location.line (), old_refs, old_refs - 1, reason);
+	}
+      Unref ();
+    }
 
-  GRPC_ABSTRACT_BASE_CLASS
+    // Not copyable nor movable.
+    RefCountedWithTracing (const RefCountedWithTracing &) = delete;
+    RefCountedWithTracing & operator= (const RefCountedWithTracing &) =
+      delete;
 
- protected:
-  // Allow Delete() to access destructor.
-  template <typename T>
-  friend void Delete(T*);
+  GRPC_ABSTRACT_BASE_CLASS protected:
+    // Allow Delete() to access destructor.
+    template < typename T > friend void Delete (T *);
 
-  RefCountedWithTracing()
-      : RefCountedWithTracing(static_cast<TraceFlag*>(nullptr)) {}
+  RefCountedWithTracing ():RefCountedWithTracing (static_cast <
+			   TraceFlag * >(nullptr))
+    {
+    }
 
-  explicit RefCountedWithTracing(TraceFlag* trace_flag)
-      : trace_flag_(trace_flag) {
-    gpr_ref_init(&refs_, 1);
-  }
+    explicit RefCountedWithTracing (TraceFlag *
+				    trace_flag):trace_flag_ (trace_flag)
+    {
+      gpr_ref_init (&refs_, 1);
+    }
 
 #ifdef NDEBUG
-  explicit RefCountedWithTracing(DebugOnlyTraceFlag* trace_flag)
-      : RefCountedWithTracing() {}
+    explicit RefCountedWithTracing (DebugOnlyTraceFlag *
+				    trace_flag):RefCountedWithTracing ()
+    {
+    }
 #endif
 
-  virtual ~RefCountedWithTracing() {}
+    virtual ~ RefCountedWithTracing ()
+    {
+    }
 
- private:
-  TraceFlag* trace_flag_ = nullptr;
-  gpr_refcount refs_;
-};
+  private:
+    TraceFlag * trace_flag_ = nullptr;
+    gpr_refcount refs_;
+  };
 
-}  // namespace grpc_core
+}				// namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_REF_COUNTED_H */

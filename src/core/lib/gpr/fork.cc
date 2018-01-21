@@ -33,30 +33,43 @@
 static int override_fork_support_enabled = -1;
 static int fork_support_enabled;
 
-void grpc_fork_support_init() {
+void
+grpc_fork_support_init ()
+{
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   fork_support_enabled = 1;
 #else
   fork_support_enabled = 0;
-  char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
-  if (env != nullptr) {
-    static const char* truthy[] = {"yes",  "Yes",  "YES", "true",
-                                   "True", "TRUE", "1"};
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
-      if (0 == strcmp(env, truthy[i])) {
-        fork_support_enabled = 1;
-      }
+  char *env = gpr_getenv ("GRPC_ENABLE_FORK_SUPPORT");
+  if (env != nullptr)
+    {
+      static const char *truthy[] = { "yes", "Yes", "YES", "true",
+	"True", "TRUE", "1"
+      };
+      for (size_t i = 0; i < GPR_ARRAY_SIZE (truthy); i++)
+	{
+	  if (0 == strcmp (env, truthy[i]))
+	    {
+	      fork_support_enabled = 1;
+	    }
+	}
+      gpr_free (env);
     }
-    gpr_free(env);
-  }
 #endif
-  if (override_fork_support_enabled != -1) {
-    fork_support_enabled = override_fork_support_enabled;
-  }
+  if (override_fork_support_enabled != -1)
+    {
+      fork_support_enabled = override_fork_support_enabled;
+    }
 }
 
-int grpc_fork_support_enabled() { return fork_support_enabled; }
+int
+grpc_fork_support_enabled ()
+{
+  return fork_support_enabled;
+}
 
-void grpc_enable_fork_support(int enable) {
+void
+grpc_enable_fork_support (int enable)
+{
   override_fork_support_enabled = enable;
 }

@@ -23,7 +23,8 @@
  * explanation and detailed descriptions of workarounds, see
  * /doc/workarounds.md
  */
-typedef enum {
+typedef enum
+{
   GRPC_WORKAROUND_ID_CRONET_COMPRESSION = 0,
   GRPC_MAX_WORKAROUND_ID
 } grpc_workaround_list;
