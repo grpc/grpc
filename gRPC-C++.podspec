@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.9.0-dev'
+  # version = '1.10.0-dev'
   version = '0.0.1'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.9.0-dev'
+  grpc_version = '1.10.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -202,24 +202,24 @@ Pod::Spec.new do |s|
                       'src/cpp/util/string_ref.cc',
                       'src/cpp/util/time_cc.cc',
                       'src/cpp/codegen/codegen_init.cc',
+                      'src/core/lib/gpr/arena.h',
+                      'src/core/lib/gpr/env.h',
+                      'src/core/lib/gpr/fork.h',
+                      'src/core/lib/gpr/mpscq.h',
+                      'src/core/lib/gpr/murmur_hash.h',
+                      'src/core/lib/gpr/spinlock.h',
+                      'src/core/lib/gpr/string.h',
+                      'src/core/lib/gpr/string_windows.h',
+                      'src/core/lib/gpr/thd_internal.h',
+                      'src/core/lib/gpr/time_precise.h',
+                      'src/core/lib/gpr/tmpfile.h',
+                      'src/core/lib/gprpp/abstract.h',
+                      'src/core/lib/gprpp/atomic.h',
+                      'src/core/lib/gprpp/atomic_with_atm.h',
+                      'src/core/lib/gprpp/atomic_with_std.h',
+                      'src/core/lib/gprpp/manual_constructor.h',
+                      'src/core/lib/gprpp/memory.h',
                       'src/core/lib/profiling/timers.h',
-                      'src/core/lib/support/abstract.h',
-                      'src/core/lib/support/arena.h',
-                      'src/core/lib/support/atomic.h',
-                      'src/core/lib/support/atomic_with_atm.h',
-                      'src/core/lib/support/atomic_with_std.h',
-                      'src/core/lib/support/env.h',
-                      'src/core/lib/support/fork.h',
-                      'src/core/lib/support/manual_constructor.h',
-                      'src/core/lib/support/memory.h',
-                      'src/core/lib/support/mpscq.h',
-                      'src/core/lib/support/murmur_hash.h',
-                      'src/core/lib/support/spinlock.h',
-                      'src/core/lib/support/string.h',
-                      'src/core/lib/support/string_windows.h',
-                      'src/core/lib/support/thd_internal.h',
-                      'src/core/lib/support/time_precise.h',
-                      'src/core/lib/support/tmpfile.h',
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
@@ -310,6 +310,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/compression/stream_compression_identity.h',
                       'src/core/lib/debug/stats.h',
                       'src/core/lib/debug/stats_data.h',
+                      'src/core/lib/gprpp/debug_location.h',
+                      'src/core/lib/gprpp/inlined_vector.h',
+                      'src/core/lib/gprpp/orphanable.h',
+                      'src/core/lib/gprpp/ref_counted.h',
+                      'src/core/lib/gprpp/ref_counted_ptr.h',
                       'src/core/lib/http/format_request.h',
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/parser.h',
@@ -385,9 +390,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_hash_table.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
-                      'src/core/lib/support/debug_location.h',
-                      'src/core/lib/support/ref_counted.h',
-                      'src/core/lib/support/ref_counted_ptr.h',
                       'src/core/lib/surface/alarm_internal.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
@@ -445,24 +447,24 @@ Pod::Spec.new do |s|
                               'src/cpp/server/health/health.pb.h',
                               'src/cpp/server/thread_pool_interface.h',
                               'src/cpp/thread_manager/thread_manager.h',
+                              'src/core/lib/gpr/arena.h',
+                              'src/core/lib/gpr/env.h',
+                              'src/core/lib/gpr/fork.h',
+                              'src/core/lib/gpr/mpscq.h',
+                              'src/core/lib/gpr/murmur_hash.h',
+                              'src/core/lib/gpr/spinlock.h',
+                              'src/core/lib/gpr/string.h',
+                              'src/core/lib/gpr/string_windows.h',
+                              'src/core/lib/gpr/thd_internal.h',
+                              'src/core/lib/gpr/time_precise.h',
+                              'src/core/lib/gpr/tmpfile.h',
+                              'src/core/lib/gprpp/abstract.h',
+                              'src/core/lib/gprpp/atomic.h',
+                              'src/core/lib/gprpp/atomic_with_atm.h',
+                              'src/core/lib/gprpp/atomic_with_std.h',
+                              'src/core/lib/gprpp/manual_constructor.h',
+                              'src/core/lib/gprpp/memory.h',
                               'src/core/lib/profiling/timers.h',
-                              'src/core/lib/support/abstract.h',
-                              'src/core/lib/support/arena.h',
-                              'src/core/lib/support/atomic.h',
-                              'src/core/lib/support/atomic_with_atm.h',
-                              'src/core/lib/support/atomic_with_std.h',
-                              'src/core/lib/support/env.h',
-                              'src/core/lib/support/fork.h',
-                              'src/core/lib/support/manual_constructor.h',
-                              'src/core/lib/support/memory.h',
-                              'src/core/lib/support/mpscq.h',
-                              'src/core/lib/support/murmur_hash.h',
-                              'src/core/lib/support/spinlock.h',
-                              'src/core/lib/support/string.h',
-                              'src/core/lib/support/string_windows.h',
-                              'src/core/lib/support/thd_internal.h',
-                              'src/core/lib/support/time_precise.h',
-                              'src/core/lib/support/tmpfile.h',
                               'src/core/lib/backoff/backoff.h',
                               'src/core/lib/channel/channel_args.h',
                               'src/core/lib/channel/channel_stack.h',
@@ -479,6 +481,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/compression/stream_compression_identity.h',
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
+                              'src/core/lib/gprpp/debug_location.h',
+                              'src/core/lib/gprpp/inlined_vector.h',
+                              'src/core/lib/gprpp/orphanable.h',
+                              'src/core/lib/gprpp/ref_counted.h',
+                              'src/core/lib/gprpp/ref_counted_ptr.h',
                               'src/core/lib/http/format_request.h',
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
@@ -554,9 +561,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_hash_table.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
-                              'src/core/lib/support/debug_location.h',
-                              'src/core/lib/support/ref_counted.h',
-                              'src/core/lib/support/ref_counted_ptr.h',
                               'src/core/lib/surface/alarm_internal.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',
@@ -671,9 +675,9 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
-    find src/cpp/ -type f -exec sed -E -i '.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+    find src/cpp/ -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
     find src/cpp/ -name "*.back" -type f -delete
-    find src/core/ -regex ".*\.h" -type f -exec sed -E -i '.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+    find src/core/ -regex ".*\.h" -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
     find src/core/ -name "*.back" -type f -delete
   END_OF_COMMAND
 end
