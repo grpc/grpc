@@ -58,7 +58,8 @@ def cert_hier_1_client_1_key():
 def cert_hier_1_client_1_cert():
     return pkg_resources.resource_string(
         __name__,
-        'credentials/certificate_hierarchy_1/intermediate/certs/client.cert.pem')
+        'credentials/certificate_hierarchy_1/intermediate/certs/client.cert.pem'
+    )
 
 
 def cert_hier_1_server_1_key():
@@ -97,7 +98,8 @@ def cert_hier_2_client_1_key():
 def cert_hier_2_client_1_cert():
     return pkg_resources.resource_string(
         __name__,
-        'credentials/certificate_hierarchy_2/intermediate/certs/client.cert.pem')
+        'credentials/certificate_hierarchy_2/intermediate/certs/client.cert.pem'
+    )
 
 
 def cert_hier_2_server_1_key():

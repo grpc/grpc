@@ -20,7 +20,7 @@
 
 #include <string.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 #define MAX_POLICIES 10
 
@@ -61,10 +61,10 @@ static grpc_lb_policy_factory* lookup_factory(const char* name) {
   return nullptr;
 }
 
-grpc_lb_policy* grpc_lb_policy_create(grpc_exec_ctx* exec_ctx, const char* name,
+grpc_lb_policy* grpc_lb_policy_create(const char* name,
                                       grpc_lb_policy_args* args) {
   grpc_lb_policy_factory* factory = lookup_factory(name);
   grpc_lb_policy* lb_policy =
-      grpc_lb_policy_factory_create_lb_policy(exec_ctx, factory, args);
+      grpc_lb_policy_factory_create_lb_policy(factory, args);
   return lb_policy;
 }

@@ -24,10 +24,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/iomgr/iomgr_internal.h" /* for iomgr_abort_on_leaks() */
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define LOG2_SHARD_COUNT 5
@@ -90,7 +90,7 @@ static void interned_slice_destroy(interned_slice_refcount* s) {
   gpr_mu_unlock(&shard->mu);
 }
 
-static void interned_slice_unref(grpc_exec_ctx* exec_ctx, void* p) {
+static void interned_slice_unref(void* p) {
   interned_slice_refcount* s = (interned_slice_refcount*)p;
   if (1 == gpr_atm_full_fetch_add(&s->refcnt, -1)) {
     interned_slice_destroy(s);
@@ -101,9 +101,8 @@ static void interned_slice_sub_ref(void* p) {
   interned_slice_ref(((char*)p) - offsetof(interned_slice_refcount, sub));
 }
 
-static void interned_slice_sub_unref(grpc_exec_ctx* exec_ctx, void* p) {
-  interned_slice_unref(exec_ctx,
-                       ((char*)p) - offsetof(interned_slice_refcount, sub));
+static void interned_slice_sub_unref(void* p) {
+  interned_slice_unref(((char*)p) - offsetof(interned_slice_refcount, sub));
 }
 
 static uint32_t interned_slice_hash(grpc_slice slice) {

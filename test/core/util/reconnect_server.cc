@@ -55,7 +55,7 @@ static void pretty_print_backoffs(reconnect_server* server) {
   }
 }
 
-static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
+static void on_connect(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
@@ -65,9 +65,9 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   timestamp_list* new_tail;
   peer = grpc_endpoint_get_peer(tcp);
-  grpc_endpoint_shutdown(exec_ctx, tcp,
+  grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
-  grpc_endpoint_destroy(exec_ctx, tcp);
+  grpc_endpoint_destroy(tcp);
   if (peer) {
     last_colon = strrchr(peer, ':');
     if (server->peer == nullptr) {

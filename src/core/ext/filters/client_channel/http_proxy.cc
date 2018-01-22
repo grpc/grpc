@@ -30,25 +30,24 @@
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/b64.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 
 /**
  * Parses the 'http_proxy' env var and returns the proxy hostname to resolve or
- * NULL on error. Also sets 'user_cred' to user credentials if present in the
+ * nullptr on error. Also sets 'user_cred' to user credentials if present in the
  * 'http_proxy' env var, otherwise leaves it unchanged. It is caller's
  * responsibility to gpr_free user_cred.
  */
-static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
+static char* get_http_proxy_server(char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   char* proxy_name = nullptr;
   char* uri_str = gpr_getenv("http_proxy");
   char** authority_strs = nullptr;
   size_t authority_nstrs;
   if (uri_str == nullptr) return nullptr;
-  grpc_uri* uri =
-      grpc_uri_parse(exec_ctx, uri_str, false /* suppress_errors */);
+  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
   if (uri == nullptr || uri->authority == nullptr) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
     goto done;
@@ -82,18 +81,16 @@ done:
   return proxy_name;
 }
 
-static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
-                                  grpc_proxy_mapper* mapper,
+static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
                                   const char* server_uri,
                                   const grpc_channel_args* args,
                                   char** name_to_resolve,
                                   grpc_channel_args** new_args) {
   char* user_cred = nullptr;
-  *name_to_resolve = get_http_proxy_server(exec_ctx, &user_cred);
+  *name_to_resolve = get_http_proxy_server(&user_cred);
   if (*name_to_resolve == nullptr) return false;
   char* no_proxy_str = nullptr;
-  grpc_uri* uri =
-      grpc_uri_parse(exec_ctx, server_uri, false /* suppress_errors */);
+  grpc_uri* uri = grpc_uri_parse(server_uri, false /* suppress_errors */);
   if (uri == nullptr || uri->path[0] == '\0') {
     gpr_log(GPR_ERROR,
             "'http_proxy' environment variable set, but cannot "
@@ -174,8 +171,7 @@ no_use_proxy:
   return false;
 }
 
-static bool proxy_mapper_map_address(grpc_exec_ctx* exec_ctx,
-                                     grpc_proxy_mapper* mapper,
+static bool proxy_mapper_map_address(grpc_proxy_mapper* mapper,
                                      const grpc_resolved_address* address,
                                      const grpc_channel_args* args,
                                      grpc_resolved_address** new_address,

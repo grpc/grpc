@@ -19,9 +19,9 @@
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 
 static uint8_t decode_table[] = {
     0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
@@ -130,8 +130,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
   return true;
 }
 
-grpc_slice grpc_chttp2_base64_decode(grpc_exec_ctx* exec_ctx,
-                                     grpc_slice input) {
+grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t output_length = input_length / 4 * 3;
   struct grpc_base64_decode_context ctx;
@@ -167,7 +166,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_exec_ctx* exec_ctx,
     char* s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
-    grpc_slice_unref_internal(exec_ctx, output);
+    grpc_slice_unref_internal(output);
     return grpc_empty_slice();
   }
   GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));
@@ -175,8 +174,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_exec_ctx* exec_ctx,
   return output;
 }
 
-grpc_slice grpc_chttp2_base64_decode_with_length(grpc_exec_ctx* exec_ctx,
-                                                 grpc_slice input,
+grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
                                                  size_t output_length) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   grpc_slice output = GRPC_SLICE_MALLOC(output_length);
@@ -189,7 +187,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_exec_ctx* exec_ctx,
             "grpc_chttp2_base64_decode_with_length has a length of %d, which "
             "has a tail of 1 byte.\n",
             (int)input_length);
-    grpc_slice_unref_internal(exec_ctx, output);
+    grpc_slice_unref_internal(output);
     return grpc_empty_slice();
   }
 
@@ -199,7 +197,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_exec_ctx* exec_ctx,
             "than the max possible output length %d.\n",
             (int)output_length,
             (int)(input_length / 4 * 3 + tail_xtra[input_length % 4]));
-    grpc_slice_unref_internal(exec_ctx, output);
+    grpc_slice_unref_internal(output);
     return grpc_empty_slice();
   }
 
@@ -213,7 +211,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_exec_ctx* exec_ctx,
     char* s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
-    grpc_slice_unref_internal(exec_ctx, output);
+    grpc_slice_unref_internal(output);
     return grpc_empty_slice();
   }
   GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));

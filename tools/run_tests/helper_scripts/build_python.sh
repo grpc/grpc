@@ -16,13 +16,13 @@
 set -ex
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 ##########################
 # Portability operations #
 ##########################
 
-PLATFORM=`uname -s`
+PLATFORM=$(uname -s)
 
 function is_msys() {
   if [ "${PLATFORM/MSYS}" != "$PLATFORM" ]; then
@@ -64,7 +64,7 @@ function venv() {
 # Path to python executable within a virtual environment depending on the
 # system.
 function venv_relative_python() {
-  if [ $(is_mingw) ]; then
+  if [ "$(is_mingw)" ]; then
     echo 'Scripts/python.exe'
   else
     echo 'bin/python'
@@ -73,7 +73,7 @@ function venv_relative_python() {
 
 # Distutils toolchain to use depending on the system.
 function toolchain() {
-  if [ $(is_mingw) ]; then
+  if [ "$(is_mingw)" ]; then
     echo 'mingw32'
   else
     echo 'unix'
@@ -97,17 +97,17 @@ function script_realpath() {
 ####################
 
 PYTHON=${1:-python2.7}
-VENV=${2:-$(venv $PYTHON)}
+VENV=${2:-$(venv "$PYTHON")}
 VENV_RELATIVE_PYTHON=${3:-$(venv_relative_python)}
 TOOLCHAIN=${4:-$(toolchain)}
 
-if [ $(is_msys) ]; then
+if [ "$(is_msys)" ]; then
   echo "MSYS doesn't directly provide the right compiler(s);"
   echo "switch to a MinGW shell."
   exit 1
 fi
 
-ROOT=`pwd`
+ROOT=$(pwd)
 export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export LANG=en_US.UTF-8
@@ -117,7 +117,7 @@ export LANG=en_US.UTF-8
 HOST_PYTHON=${HOST_PYTHON:-python}
 
 # If ccache is available on Linux, use it.
-if [ $(is_linux) ]; then
+if [ "$(is_linux)" ]; then
   # We're not on Darwin (Mac OS X)
   if [ -x "$(command -v ccache)" ]; then
     if [ -x "$(command -v gcc)" ]; then
@@ -137,46 +137,46 @@ fi
 # it's possible that the virtualenv is still usable and we trust the tester to
 # be able to 'figure it out' instead of us e.g. doing potentially expensive and
 # unnecessary error recovery by `rm -rf`ing the virtualenv.
-($PYTHON -m virtualenv $VENV ||
- $HOST_PYTHON -m virtualenv -p $PYTHON $VENV ||
+($PYTHON -m virtualenv "$VENV" ||
+ $HOST_PYTHON -m virtualenv -p "$PYTHON" "$VENV" ||
  true)
-VENV_PYTHON=`script_realpath "$VENV/$VENV_RELATIVE_PYTHON"`
+VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
 pip_install_dir() {
-  PWD=`pwd`
-  cd $1
-  ($VENV_PYTHON setup.py build_ext -c $TOOLCHAIN || true)
+  PWD=$(pwd)
+  cd "$1"
+  ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   $VENV_PYTHON -m pip install --no-deps .
-  cd $PWD
+  cd "$PWD"
 }
 
 $VENV_PYTHON -m pip install --upgrade pip==9.0.1
 $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython
 $VENV_PYTHON -m pip install six enum34 protobuf futures
-pip_install_dir $ROOT
+pip_install_dir "$ROOT"
 
-$VENV_PYTHON $ROOT/tools/distrib/python/make_grpcio_tools.py
-pip_install_dir $ROOT/tools/distrib/python/grpcio_tools
+$VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
+pip_install_dir "$ROOT/tools/distrib/python/grpcio_tools"
 
 # Build/install health checking
-$VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py preprocess
-$VENV_PYTHON $ROOT/src/python/grpcio_health_checking/setup.py build_package_protos
-pip_install_dir $ROOT/src/python/grpcio_health_checking
+$VENV_PYTHON "$ROOT/src/python/grpcio_health_checking/setup.py" preprocess
+$VENV_PYTHON "$ROOT/src/python/grpcio_health_checking/setup.py" build_package_protos
+pip_install_dir "$ROOT/src/python/grpcio_health_checking"
 
 # Build/install reflection
-$VENV_PYTHON $ROOT/src/python/grpcio_reflection/setup.py preprocess
-$VENV_PYTHON $ROOT/src/python/grpcio_reflection/setup.py build_package_protos
-pip_install_dir $ROOT/src/python/grpcio_reflection
+$VENV_PYTHON "$ROOT/src/python/grpcio_reflection/setup.py" preprocess
+$VENV_PYTHON "$ROOT/src/python/grpcio_reflection/setup.py" build_package_protos
+pip_install_dir "$ROOT/src/python/grpcio_reflection"
 
 # Install testing
-pip_install_dir $ROOT/src/python/grpcio_testing
+pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
 $VENV_PYTHON -m pip install coverage==4.4 oauth2client==4.1.0 \
                             google-auth==1.0.0 requests==2.14.2
-$VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py preprocess
-$VENV_PYTHON $ROOT/src/python/grpcio_tests/setup.py build_package_protos
-pip_install_dir $ROOT/src/python/grpcio_tests
+$VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
+$VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
+pip_install_dir "$ROOT/src/python/grpcio_tests"

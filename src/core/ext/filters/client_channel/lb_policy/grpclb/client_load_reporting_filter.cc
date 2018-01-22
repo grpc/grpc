@@ -25,16 +25,15 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 
-static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
-                                     grpc_channel_element* elem,
+static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
-                                 grpc_channel_element* elem) {}
+static void destroy_channel_elem(grpc_channel_element* elem) {}
 
-typedef struct {
+namespace {
+struct call_data {
   // Stats object to update.
   grpc_grpclb_client_stats* client_stats;
   // State for intercepting send_initial_metadata.
@@ -45,30 +44,27 @@ typedef struct {
   grpc_closure recv_initial_metadata_ready;
   grpc_closure* original_recv_initial_metadata_ready;
   bool recv_initial_metadata_succeeded;
-} call_data;
+};
+}  // namespace
 
-static void on_complete_for_send(grpc_exec_ctx* exec_ctx, void* arg,
-                                 grpc_error* error) {
+static void on_complete_for_send(void* arg, grpc_error* error) {
   call_data* calld = (call_data*)arg;
   if (error == GRPC_ERROR_NONE) {
     calld->send_initial_metadata_succeeded = true;
   }
-  GRPC_CLOSURE_RUN(exec_ctx, calld->original_on_complete_for_send,
-                   GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_RUN(calld->original_on_complete_for_send, GRPC_ERROR_REF(error));
 }
 
-static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
-                                        grpc_error* error) {
+static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   call_data* calld = (call_data*)arg;
   if (error == GRPC_ERROR_NONE) {
     calld->recv_initial_metadata_succeeded = true;
   }
-  GRPC_CLOSURE_RUN(exec_ctx, calld->original_recv_initial_metadata_ready,
+  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready,
                    GRPC_ERROR_REF(error));
 }
 
-static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
-                                  grpc_call_element* elem,
+static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   call_data* calld = (call_data*)elem->call_data;
   // Get stats object from context and take a ref.
@@ -81,7 +77,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
   call_data* calld = (call_data*)elem->call_data;
@@ -96,8 +92,7 @@ static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 }
 
 static void start_transport_stream_op_batch(
-    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-    grpc_transport_stream_op_batch* batch) {
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = (call_data*)elem->call_data;
   GPR_TIMER_BEGIN("clr_start_transport_stream_op_batch", 0);
   // Intercept send_initial_metadata.
@@ -118,7 +113,7 @@ static void start_transport_stream_op_batch(
         &calld->recv_initial_metadata_ready;
   }
   // Chain to next filter.
-  grpc_call_next_op(exec_ctx, elem, batch);
+  grpc_call_next_op(elem, batch);
   GPR_TIMER_END("clr_start_transport_stream_op_batch", 0);
 }
 

@@ -27,13 +27,13 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/fork.h"
+#include "src/core/lib/gpr/thd_internal.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/fork.h"
-#include "src/core/lib/support/thd_internal.h"
 #include "src/core/lib/surface/init.h"
 
 /*
@@ -49,10 +49,10 @@ void grpc_prefork() {
     return;
   }
   if (grpc_is_initialized()) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     grpc_timer_manager_set_threading(false);
-    grpc_executor_set_threading(&exec_ctx, false);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_executor_set_threading(false);
+    grpc_core::ExecCtx::Get()->Flush();
     if (!gpr_await_threads(
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                          gpr_time_from_seconds(3, GPR_TIMESPAN)))) {
@@ -64,18 +64,17 @@ void grpc_prefork() {
 void grpc_postfork_parent() {
   if (grpc_is_initialized()) {
     grpc_timer_manager_set_threading(true);
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_executor_set_threading(&exec_ctx, true);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_executor_set_threading(true);
   }
 }
 
 void grpc_postfork_child() {
   if (grpc_is_initialized()) {
     grpc_timer_manager_set_threading(true);
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_executor_set_threading(&exec_ctx, true);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_executor_set_threading(true);
+    grpc_core::ExecCtx::Get()->Flush();
   }
 }
 

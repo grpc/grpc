@@ -17,12 +17,12 @@ set -ex
 
 rm -rf ~/.rake-compiler
 
-CROSS_RUBY=`mktemp tmpfile.XXXXXXXX`
+CROSS_RUBY=$(mktemp tmpfile.XXXXXXXX)
 
-curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.0.3/tasks/bin/cross-ruby.rake > $CROSS_RUBY
+curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.0.3/tasks/bin/cross-ruby.rake > "$CROSS_RUBY"
 
 # See https://github.com/grpc/grpc/issues/12161 for verconf.h patch details
-patch $CROSS_RUBY << EOF
+patch "$CROSS_RUBY" << EOF
 --- cross-ruby.rake 2017-09-27 16:46:00.311020325 +0200
 +++ patched 2017-09-27 16:49:46.127016895 +0200
 @@ -133,7 +133,8 @@
@@ -47,10 +47,11 @@ EOF
 
 MAKE="make -j8"
 
-for v in 2.4.0 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
+for v in 2.5.0 2.4.0 2.3.0 2.2.2 2.1.6 2.0.0-p645 ; do
   ccache -c
-  rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11
+  rake -f "$CROSS_RUBY" cross-ruby VERSION="$v" HOST=x86_64-darwin11 MAKE="$MAKE"
 done
 
-sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > $CROSS_RUBY
-mv $CROSS_RUBY ~/.rake-compiler/config.yml
+sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > "$CROSS_RUBY"
+mv "$CROSS_RUBY" ~/.rake-compiler/config.yml
+

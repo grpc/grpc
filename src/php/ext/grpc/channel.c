@@ -242,6 +242,7 @@ PHP_METHOD(Channel, __construct) {
 
   // parse the rest of the channel args array
   if (php_grpc_read_args_array(args_array, &args TSRMLS_CC) == FAILURE) {
+    efree(args.args);
     return;
   }
 
@@ -301,6 +302,7 @@ PHP_METHOD(Channel, __construct) {
       create_and_add_channel_to_persistent_list(
           channel, target, args, creds, key, key_len TSRMLS_CC);
     } else {
+      efree(args.args);
       channel->wrapper = le->channel;
     }
   }

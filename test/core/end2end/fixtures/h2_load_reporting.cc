@@ -78,9 +78,8 @@ void chttp2_init_server_load_reporting(grpc_end2end_test_fixture* f,
   server_args = grpc_channel_args_copy_and_add(server_args, &arg, 1);
   f->server = grpc_server_create(server_args, nullptr);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(server_args);
   }
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(f->server, ffd->localaddr));

@@ -106,8 +106,8 @@ class InvalidMetadataTest(unittest.TestCase):
         self.assertEqual(response_iterator.code(), grpc.StatusCode.INTERNAL)
 
     def testStreamRequestBlockingUnaryResponse(self):
-        request_iterator = (b'\x07\x08'
-                            for _ in range(test_constants.STREAM_LENGTH))
+        request_iterator = (
+            b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH))
         metadata = (('InVaLiD', 'StreamRequestBlockingUnaryResponse'),)
         expected_error_details = "metadata was invalid: %s" % metadata
         with self.assertRaises(ValueError) as exception_context:
@@ -115,8 +115,8 @@ class InvalidMetadataTest(unittest.TestCase):
         self.assertIn(expected_error_details, str(exception_context.exception))
 
     def testStreamRequestBlockingUnaryResponseWithCall(self):
-        request_iterator = (b'\x07\x08'
-                            for _ in range(test_constants.STREAM_LENGTH))
+        request_iterator = (
+            b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH))
         metadata = (('InVaLiD', 'StreamRequestBlockingUnaryResponseWithCall'),)
         expected_error_details = "metadata was invalid: %s" % metadata
         multi_callable = _stream_unary_multi_callable(self._channel)
@@ -125,8 +125,8 @@ class InvalidMetadataTest(unittest.TestCase):
         self.assertIn(expected_error_details, str(exception_context.exception))
 
     def testStreamRequestFutureUnaryResponse(self):
-        request_iterator = (b'\x07\x08'
-                            for _ in range(test_constants.STREAM_LENGTH))
+        request_iterator = (
+            b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH))
         metadata = (('InVaLiD', 'StreamRequestFutureUnaryResponse'),)
         expected_error_details = "metadata was invalid: %s" % metadata
         response_future = self._stream_unary.future(
@@ -141,8 +141,8 @@ class InvalidMetadataTest(unittest.TestCase):
         self.assertEqual(response_future.code(), grpc.StatusCode.INTERNAL)
 
     def testStreamRequestStreamResponse(self):
-        request_iterator = (b'\x07\x08'
-                            for _ in range(test_constants.STREAM_LENGTH))
+        request_iterator = (
+            b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH))
         metadata = (('InVaLiD', 'StreamRequestStreamResponse'),)
         expected_error_details = "metadata was invalid: %s" % metadata
         response_iterator = self._stream_stream(

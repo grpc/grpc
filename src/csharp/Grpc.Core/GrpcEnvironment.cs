@@ -35,6 +35,8 @@ namespace Grpc.Core
         const int MinDefaultThreadPoolSize = 4;
         const int DefaultBatchContextPoolSharedCapacity = 10000;
         const int DefaultBatchContextPoolThreadLocalCapacity = 64;
+        const int DefaultRequestCallContextPoolSharedCapacity = 10000;
+        const int DefaultRequestCallContextPoolThreadLocalCapacity = 64;
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
@@ -44,12 +46,15 @@ namespace Grpc.Core
         static bool inlineHandlers;
         static int batchContextPoolSharedCapacity = DefaultBatchContextPoolSharedCapacity;
         static int batchContextPoolThreadLocalCapacity = DefaultBatchContextPoolThreadLocalCapacity;
+        static int requestCallContextPoolSharedCapacity = DefaultRequestCallContextPoolSharedCapacity;
+        static int requestCallContextPoolThreadLocalCapacity = DefaultRequestCallContextPoolThreadLocalCapacity;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), LogLevel.Off, true);
 
         readonly IObjectPool<BatchContextSafeHandle> batchContextPool;
+        readonly IObjectPool<RequestCallContextSafeHandle> requestCallContextPool;
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
@@ -263,6 +268,26 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Sets the parameters for a pool that caches request call context instances. Reusing request call context instances
+        /// instead of creating a new one for every requested call in C core helps reducing the GC pressure.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// This is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static void SetRequestCallContextPoolParams(int sharedCapacity, int threadLocalCapacity)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcPreconditions.CheckArgument(sharedCapacity >= 0, "Shared capacity needs to be a non-negative number");
+                GrpcPreconditions.CheckArgument(threadLocalCapacity >= 0, "Thread local capacity needs to be a non-negative number");
+                requestCallContextPoolSharedCapacity = sharedCapacity;
+                requestCallContextPoolThreadLocalCapacity = threadLocalCapacity;
+            }
+        }
+
+        /// <summary>
         /// Occurs when <c>GrpcEnvironment</c> is about the start the shutdown logic.
         /// If <c>GrpcEnvironment</c> is later initialized and shutdown, the event will be fired again (unless unregistered first).
         /// </summary>
@@ -274,7 +299,8 @@ namespace Grpc.Core
         private GrpcEnvironment()
         {
             GrpcNativeInit();
-            batchContextPool = new DefaultObjectPool<BatchContextSafeHandle>(() => BatchContextSafeHandle.Create(this.batchContextPool), batchContextPoolSharedCapacity, batchContextPoolThreadLocalCapacity);
+            batchContextPool = new DefaultObjectPool<BatchContextSafeHandle>(() => BatchContextSafeHandle.Create(), batchContextPoolSharedCapacity, batchContextPoolThreadLocalCapacity);
+            requestCallContextPool = new DefaultObjectPool<RequestCallContextSafeHandle>(() => RequestCallContextSafeHandle.Create(), requestCallContextPoolSharedCapacity, requestCallContextPoolThreadLocalCapacity);
             threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault(), inlineHandlers);
             threadPool.Start();
         }
@@ -291,6 +317,8 @@ namespace Grpc.Core
         }
 
         internal IObjectPool<BatchContextSafeHandle> BatchContextPool => batchContextPool;
+
+        internal IObjectPool<RequestCallContextSafeHandle> RequestCallContextPool => requestCallContextPool;
 
         internal bool IsAlive
         {
@@ -353,6 +381,7 @@ namespace Grpc.Core
             await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
 
             await threadPool.StopAsync().ConfigureAwait(false);
+            requestCallContextPool.Dispose();
             batchContextPool.Dispose();
             GrpcNativeShutdown();
             isShutdown = true;

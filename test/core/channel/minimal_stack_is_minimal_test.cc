@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -125,12 +125,10 @@ static int check_stack(const char* file, int line, const char* transport_name,
     grpc_channel_stack_builder_set_transport(builder, &fake_transport);
   }
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_stack_builder_set_channel_arguments(&exec_ctx, builder,
-                                                     channel_args);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_stack_builder_set_channel_arguments(builder, channel_args);
     GPR_ASSERT(grpc_channel_init_create_stack(
-        &exec_ctx, builder, (grpc_channel_stack_type)channel_stack_type));
-    grpc_exec_ctx_finish(&exec_ctx);
+        builder, (grpc_channel_stack_type)channel_stack_type));
   }
 
   // build up our expectation list
@@ -212,10 +210,9 @@ static int check_stack(const char* file, int line, const char* transport_name,
   gpr_free(expect);
 
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_stack_builder_destroy(&exec_ctx, builder);
-    grpc_channel_args_destroy(&exec_ctx, channel_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_stack_builder_destroy(builder);
+    grpc_channel_args_destroy(channel_args);
   }
 
   return result;

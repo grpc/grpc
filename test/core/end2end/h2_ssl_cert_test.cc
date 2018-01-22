@@ -26,10 +26,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
-#include "src/core/lib/support/tmpfile.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
@@ -181,9 +181,8 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
         grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);  \
     chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);      \
     {                                                                        \
-      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;                           \
-      grpc_channel_args_destroy(&exec_ctx, new_client_args);                 \
-      grpc_exec_ctx_finish(&exec_ctx);                                       \
+      grpc_core::ExecCtx exec_ctx;                                           \
+      grpc_channel_args_destroy(new_client_args);                            \
     }                                                                        \
   }
 

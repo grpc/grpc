@@ -44,7 +44,7 @@ def main
   ch = GRPC::Core::Channel.new("localhost:#{server_port}", {},
                                :this_channel_is_insecure)
 
-  srv = GRPC::RpcServer.new
+  srv = new_rpc_server_for_testing
   thd = Thread.new do
     srv.add_http2_port("0.0.0.0:#{client_control_port}", :this_port_is_insecure)
     srv.handle(ChannelClosingClientController.new(ch))

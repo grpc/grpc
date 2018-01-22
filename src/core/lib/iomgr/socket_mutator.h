@@ -26,7 +26,7 @@
 
 /** The virtual table of grpc_socket_mutator */
 typedef struct {
-  /** Mutates the socket opitons of \a fd */
+  /** Mutates the socket options of \a fd */
   bool (*mutate_fd)(int fd, grpc_socket_mutator* mutator);
   /** Compare socket mutator \a a and \a b */
   int (*compare)(grpc_socket_mutator* a, grpc_socket_mutator* b);

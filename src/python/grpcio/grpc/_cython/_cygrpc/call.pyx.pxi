@@ -26,20 +26,13 @@ cdef class Call:
   def _start_batch(self, operations, tag, retain_self):
     if not self.is_valid:
       raise ValueError("invalid call object cannot be used from Python")
-    cdef grpc_call_error result
-    cdef Operations cy_operations = Operations(operations)
-    cdef OperationTag operation_tag = OperationTag(tag)
-    if retain_self:
-      operation_tag.operation_call = self
-    else:
-      operation_tag.operation_call = None
-    operation_tag.batch_operations = cy_operations
-    cpython.Py_INCREF(operation_tag)
-    with nogil:
-      result = grpc_call_start_batch(
-          self.c_call, cy_operations.c_ops, cy_operations.c_nops,
-          <cpython.PyObject *>operation_tag, NULL)
-    return result
+    cdef _BatchOperationTag batch_operation_tag = _BatchOperationTag(
+        tag, operations, self if retain_self else None)
+    batch_operation_tag.prepare()
+    cpython.Py_INCREF(batch_operation_tag)
+    return grpc_call_start_batch(
+          self.c_call, batch_operation_tag.c_ops, batch_operation_tag.c_nops,
+          <cpython.PyObject *>batch_operation_tag, NULL)
 
   def start_client_batch(self, operations, tag):
     # We don't reference this call in the operations tag because
@@ -72,13 +65,12 @@ cdef class Call:
         result = grpc_call_cancel(self.c_call, NULL)
       return result
 
-  def set_credentials(
-      self, CallCredentials call_credentials not None):
-    cdef grpc_call_error result
-    with nogil:
-      result = grpc_call_set_credentials(
-          self.c_call, call_credentials.c_credentials)
-    return result
+  def set_credentials(self, CallCredentials call_credentials not None):
+    cdef grpc_call_credentials *c_call_credentials = call_credentials.c()
+    cdef grpc_call_error call_error = grpc_call_set_credentials(
+        self.c_call, c_call_credentials)
+    grpc_call_credentials_release(c_call_credentials)
+    return call_error
 
   def peer(self):
     cdef char *peer = NULL

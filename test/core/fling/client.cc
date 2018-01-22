@@ -22,15 +22,15 @@
 #include <string.h>
 
 #include <grpc/support/cmdline.h>
-#include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "src/core/lib/profiling/timers.h"
 #include "test/core/util/grpc_profiler.h"
+#include "test/core/util/histogram.h"
 #include "test/core/util/test_config.h"
 
-static gpr_histogram* histogram;
+static grpc_histogram* histogram;
 static grpc_byte_buffer* the_buffer;
 static grpc_channel* channel;
 static grpc_completion_queue* cq;
@@ -186,8 +186,10 @@ int main(int argc, char** argv) {
   }
   if (!sc.name) {
     fprintf(stderr, "unsupported scenario '%s'. Valid are:", scenario_name);
+    fflush(stderr);
     for (i = 0; i < GPR_ARRAY_SIZE(scenarios); i++) {
       fprintf(stderr, " %s", scenarios[i].name);
+      fflush(stderr);
     }
     return 1;
   }
@@ -195,7 +197,7 @@ int main(int argc, char** argv) {
   channel = grpc_insecure_channel_create(target, nullptr, nullptr);
   cq = grpc_completion_queue_create_for_next(nullptr);
   the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
-  histogram = gpr_histogram_create(0.01, 60e9);
+  histogram = grpc_histogram_create(0.01, 60e9);
 
   sc.init();
 
@@ -213,7 +215,7 @@ int main(int argc, char** argv) {
     start = now();
     sc.do_one_step();
     stop = now();
-    gpr_histogram_add(histogram, stop - start);
+    grpc_histogram_add(histogram, stop - start);
   }
   grpc_profiler_stop();
 
@@ -232,11 +234,11 @@ int main(int argc, char** argv) {
   grpc_slice_unref(slice);
 
   gpr_log(GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f",
-          gpr_histogram_percentile(histogram, 50),
-          gpr_histogram_percentile(histogram, 95),
-          gpr_histogram_percentile(histogram, 99),
-          gpr_histogram_percentile(histogram, 99.9));
-  gpr_histogram_destroy(histogram);
+          grpc_histogram_percentile(histogram, 50),
+          grpc_histogram_percentile(histogram, 95),
+          grpc_histogram_percentile(histogram, 99),
+          grpc_histogram_percentile(histogram, 99.9));
+  grpc_histogram_destroy(histogram);
 
   grpc_shutdown();
 

@@ -22,8 +22,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 
 static void add_metadata(gpr_strvec* b, const grpc_metadata* md, size_t count) {
   size_t i;
