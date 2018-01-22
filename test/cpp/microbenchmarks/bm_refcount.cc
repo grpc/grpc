@@ -36,7 +36,7 @@ struct Small {
 struct SmallRef : public grpc_core::RefCounted {
   struct Small obj;
 };
-  
+
 struct Medium {
   int word[1000];
 };
@@ -44,7 +44,7 @@ struct Medium {
 struct MediumRef : public grpc_core::RefCounted {
   struct Medium obj;
 };
-  
+
 struct Large {
   int word[1000000];
 };
@@ -52,7 +52,7 @@ struct Large {
 struct LargeRef : public grpc_core::RefCounted {
   struct Large obj;
 };
-  
+
 static void BM_RefCountedAllocateSmall(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
