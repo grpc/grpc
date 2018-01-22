@@ -437,6 +437,7 @@ void php_grpc_delete_persistent_list_entry(char *key, php_grpc_int key_len
     le = (channel_persistent_le_t *)rsrc->ptr;
     le->channel = NULL;
     php_grpc_zend_hash_del(&EG(persistent_list), key, key_len+1);
+    free(le);
   }
   gpr_mu_unlock(&global_persistent_list_mu);
 }
