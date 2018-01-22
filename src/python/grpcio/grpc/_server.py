@@ -791,7 +791,7 @@ class Server(grpc.Server):
     def __init__(self, thread_pool, generic_handlers, interceptors, options,
                  maximum_concurrent_rpcs):
         completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server(_common.channel_args(options))
+        server = cygrpc.Server(options)
         server.register_completion_queue(completion_queue)
         self._state = _ServerState(completion_queue, server, generic_handlers,
                                    _interceptor.service_pipeline(interceptors),
