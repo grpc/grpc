@@ -70,11 +70,6 @@ class ChannelArguments {
   /// the resolver.
   void SetGrpclbFallbackTimeout(int fallback_timeout);
 
-  /// Set the grpclb re-resolution timeout (in ms) for the channel. If the
-  /// connection with all the backends and balancers has been lost for this
-  /// amount of time, a re-resolution will be requested.
-  void SetGrpclbReresolutionTimeout(int reresolution_timeout);
-
   /// Set the socket mutator for the channel.
   void SetSocketMutator(grpc_socket_mutator* mutator);
 

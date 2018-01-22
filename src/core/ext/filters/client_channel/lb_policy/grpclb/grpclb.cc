@@ -125,7 +125,6 @@
 #define GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_GRPCLB_RECONNECT_JITTER 0.2
 #define GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS 10000
-#define GRPC_GRPCLB_DEFAULT_RERESOLUTION_TIMEOUT_MS 1000
 
 grpc_core::TraceFlag grpc_lb_glb_trace(false, "glb");
 
@@ -186,10 +185,6 @@ struct glb_lb_policy {
    * 0 means not using fallback. */
   int lb_fallback_timeout_ms;
 
-  /** timeout in milliseconds for before requesting re-resolution. 0 means not
-   * using re-resolution. */
-  int reresolution_timeout_ms;
-
   /** for communicating with the LB server */
   grpc_channel* lb_channel;
 
@@ -236,19 +231,11 @@ struct glb_lb_policy {
   /** are we already watching the LB channel's connectivity? */
   bool watching_lb_channel;
 
-  /** have we lost contact with the balancers (i.e., the last LB call has
-   * terminated and the new call hasn't returned any new non-empty serverlist)
-   */
-  bool lost_lb_connection;
-
   /** is the callback associated with \a lb_call_retry_timer pending? */
   bool retry_timer_callback_pending;
 
   /** is the callback associated with \a lb_fallback_timer pending? */
   bool fallback_timer_callback_pending;
-
-  /** is \a reresolution_timer active? */
-  bool reresolution_timer_active;
 
   /** called upon changes to the LB channel's connectivity. */
   grpc_closure lb_channel_on_connectivity_changed;
@@ -304,9 +291,7 @@ struct glb_lb_policy {
   /** LB fallback timer */
   grpc_timer lb_fallback_timer;
 
-  /** re-resolution timer */
-  grpc_timer reresolution_timer;
-
+  bool lb_connected;
   bool initial_request_sent;
   bool seen_initial_response;
 
@@ -597,11 +582,12 @@ static void update_lb_connectivity_status_locked(glb_lb_policy* glb_policy,
     gpr_log(
         GPR_INFO,
         "[grpclb %p] Setting grpclb's state to %s from new RR policy %p state.",
-        glb_policy, grpc_connectivity_state_name(glb_policy->rr_connectivity_state),
+        glb_policy,
+        grpc_connectivity_state_name(glb_policy->rr_connectivity_state),
         glb_policy->rr_policy);
   }
-  grpc_connectivity_state_set(&glb_policy->state_tracker, glb_policy->rr_connectivity_state,
-                              rr_state_error,
+  grpc_connectivity_state_set(&glb_policy->state_tracker,
+                              glb_policy->rr_connectivity_state, rr_state_error,
                               "update_lb_connectivity_status_locked");
 }
 
@@ -771,21 +757,6 @@ static void rr_handover_locked(glb_lb_policy* glb_policy) {
   lb_policy_args_destroy(args);
 }
 
-static void maybe_start_reresolution_timer(glb_lb_policy* glb_policy) {
-  if (glb_policy->reresolution_timeout_ms > 0 &&
-      !glb_policy->reresolution_timer_active &&
-      glb_policy->lost_lb_connection &&
-      (glb_policy->rr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-       glb_policy->rr_connectivity_state == GRPC_CHANNEL_IDLE)) {
-    grpc_millis deadline =
-        grpc_core::ExecCtx::Get()->Now() + glb_policy->reresolution_timeout_ms;
-    GRPC_LB_POLICY_REF(&glb_policy->base, "reresolution_timer");
-    glb_policy->reresolution_timer_active = true;
-    grpc_timer_init(&glb_policy->reresolution_timer, deadline,
-                    &glb_policy->on_reresolution);
-  }
-}
-
 static void glb_rr_connectivity_changed_locked(void* arg, grpc_error* error) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
   if (glb_policy->shutting_down) {
@@ -793,11 +764,10 @@ static void glb_rr_connectivity_changed_locked(void* arg, grpc_error* error) {
     return;
   }
   GPR_ASSERT(glb_policy->rr_connectivity_state != GRPC_CHANNEL_SHUTDOWN);
-  if (glb_policy->rr_connectivity_state == GRPC_CHANNEL_READY &&
-      glb_policy->reresolution_timer_active) {
-    grpc_timer_cancel(&glb_policy->reresolution_timer);
-  } else {
-    maybe_start_reresolution_timer(glb_policy);
+  if (!glb_policy->lb_connected &&
+      glb_policy->rr_connectivity_state != GRPC_CHANNEL_READY) {
+    grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace,
+                                 GRPC_ERROR_NONE);
   }
   update_lb_connectivity_status_locked(glb_policy, GRPC_ERROR_REF(error));
   /* Resubscribe. Reuse the "glb_rr_connectivity_cb" weak ref. */
@@ -929,9 +899,6 @@ static void glb_shutdown_locked(grpc_lb_policy* pol,
   }
   if (glb_policy->fallback_timer_callback_pending) {
     grpc_timer_cancel(&glb_policy->lb_fallback_timer);
-  }
-  if (glb_policy->reresolution_timer_active) {
-    grpc_timer_cancel(&glb_policy->reresolution_timer);
   }
   if (glb_policy->rr_policy != nullptr) {
     grpc_lb_policy_shutdown_locked(glb_policy->rr_policy, nullptr);
@@ -1562,10 +1529,7 @@ static void lb_on_response_received_locked(void* arg, grpc_error* error) {
             glb_policy->serverlist = serverlist;
             glb_policy->serverlist_index = 0;
             rr_handover_locked(glb_policy);
-            glb_policy->lost_lb_connection = false;
-            if (glb_policy->reresolution_timer_active) {
-              grpc_timer_cancel(&glb_policy->reresolution_timer);
-            }
+            glb_policy->lb_connected = true;
           }
         } else {
           if (grpc_lb_glb_trace.enabled()) {
@@ -1641,8 +1605,9 @@ static void lb_on_server_status_received_locked(void* arg, grpc_error* error) {
   }
   /* We need to perform cleanups no matter what. */
   lb_call_destroy_locked(glb_policy);
-  glb_policy->lost_lb_connection = true;
-  maybe_start_reresolution_timer(glb_policy);
+  glb_policy->lb_connected = false;
+  grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace,
+                               GRPC_ERROR_NONE);
   // If the load report timer is still pending, we wait for it to be
   // called before restarting the call.  Otherwise, we restart the call
   // here.
@@ -1717,19 +1682,6 @@ static void glb_update_locked(grpc_lb_policy* policy,
         &glb_policy->lb_channel_connectivity,
         &glb_policy->lb_channel_on_connectivity_changed, nullptr);
   }
-}
-
-static void on_reresolution_requested_locked(void* arg, grpc_error* error) {
-  glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
-  glb_policy->reresolution_timer_active = false;
-  /* If we regain contact with balancers or backends after the timer fires but
-   * before this callback actually runs, don't re-resolve. */
-  if (glb_policy->lost_lb_connection &&
-      glb_policy->rr_connectivity_state != GRPC_CHANNEL_READY &&
-      !glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
-    grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace, error);
-  }
-  GRPC_LB_POLICY_UNREF(&glb_policy->base, "reresolution_timer");
 }
 
 // Invoked as part of the update process. It continues watching the LB channel
@@ -1849,11 +1801,6 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
   glb_policy->lb_fallback_timeout_ms = grpc_channel_arg_get_integer(
       arg, {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
 
-  arg = grpc_channel_args_find(args->args,
-                               GRPC_ARG_GRPCLB_RERESOLUTION_TIMEOUT_MS);
-  glb_policy->reresolution_timeout_ms = grpc_channel_arg_get_integer(
-      arg, {GRPC_GRPCLB_DEFAULT_RERESOLUTION_TIMEOUT_MS, 0, INT_MAX});
-
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   grpc_arg new_arg = grpc_channel_arg_string_create(
@@ -1894,9 +1841,6 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
                     grpc_combiner_scheduler(args->combiner));
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
-                    grpc_combiner_scheduler(args->combiner));
-  GRPC_CLOSURE_INIT(&glb_policy->on_reresolution,
-                    on_reresolution_requested_locked, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
   grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner);
   grpc_connectivity_state_init(&glb_policy->state_tracker, GRPC_CHANNEL_IDLE,
