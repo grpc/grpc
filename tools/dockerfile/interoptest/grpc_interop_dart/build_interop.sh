@@ -22,7 +22,5 @@ git clone /var/local/jenkins/grpc-dart /var/local/git/grpc-dart
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true
 
-export PATH=$PATH:/usr/lib/dart/bin
-
 cd /var/local/git/grpc-dart/interop
-pub get
+/usr/lib/dart/bin/pub get

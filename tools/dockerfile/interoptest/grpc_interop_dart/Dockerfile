@@ -27,8 +27,6 @@ RUN sh -c 'curl https://storage.googleapis.com/download.dartlang.org/linux/debia
 # Install Dart
 RUN apt-get update && apt-get -y install dart
 
-RUN ls -l /usr/lib/dart/bin
-
 ENV PATH $PATH:/usr/lib/dart/bin
 
 # Define the default command.
