@@ -59,6 +59,12 @@ inline UniquePtr<T> MakeUnique(Args&&... args) {
 template <class T>
 class Allocator {
  public:
+  Allocator() {}
+
+  // Create a copy of an allocator of a component type, used in allocate-shared
+  template <class Component>
+  Allocator(const Allocator<Component>&) {}
+
   typedef T value_type;
   typedef T* pointer;
   typedef const T* const_pointer;

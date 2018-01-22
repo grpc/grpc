@@ -143,3 +143,11 @@ grpc_cc_binary(
     srcs = ["bm_metadata.cc"],
     deps = [":helpers"],
 )
+
+grpc_cc_binary(
+    name = "bm_refcount",
+    testonly = 1,
+    srcs = ["bm_refcount.cc"],
+    deps = [":helpers"],
+)
+
