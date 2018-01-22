@@ -28,8 +28,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };

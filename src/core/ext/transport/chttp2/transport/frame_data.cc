@@ -25,9 +25,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport.h"
 
 grpc_error* grpc_chttp2_data_parser_init(grpc_chttp2_data_parser* parser) {

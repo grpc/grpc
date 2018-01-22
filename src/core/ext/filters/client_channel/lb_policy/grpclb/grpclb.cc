@@ -106,6 +106,8 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -113,8 +115,6 @@
 #include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/manual_constructor.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -1158,7 +1158,7 @@ static void maybe_restart_lb_call(glb_lb_policy* glb_policy) {
     glb_policy->updating_lb_call = false;
   } else if (!glb_policy->shutting_down) {
     /* if we aren't shutting down, restart the LB client call after some time */
-    grpc_millis next_try = glb_policy->lb_call_backoff->Step();
+    grpc_millis next_try = glb_policy->lb_call_backoff->NextAttemptTime();
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
               glb_policy);

@@ -31,11 +31,11 @@ extern "C" {
 #include <openssl/pem.h>
 }
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/tsi/ssl_types.h"
 
 /* --- Utils. --- */

@@ -21,10 +21,10 @@
 
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/support/arena.h"
-#include "src/core/lib/support/ref_counted.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 

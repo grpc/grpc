@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <memory>
 #include <mutex>
+#include <random>
 #include <thread>
 
 #include <grpc++/channel.h>
@@ -37,7 +38,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -456,7 +457,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
     grpc_subchannel_index_test_only_set_force_creation(force_creation);
     gpr_log(GPR_INFO, "Force subchannel creation: %d", force_creation);
     for (size_t i = 0; i < 1000; ++i) {
-      std::random_shuffle(ports.begin(), ports.end());
+      std::shuffle(ports.begin(), ports.end(),
+                   std::mt19937(std::random_device()()));
       SetNextResolution(ports);
       if (i % 10 == 0) CheckRpcSendOk();
     }
@@ -621,7 +623,8 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
     ports.emplace_back(servers_[i]->port_);
   }
   for (size_t i = 0; i < 1000; ++i) {
-    std::random_shuffle(ports.begin(), ports.end());
+    std::shuffle(ports.begin(), ports.end(),
+                 std::mt19937(std::random_device()()));
     SetNextResolution(ports);
     if (i % 10 == 0) CheckRpcSendOk();
   }

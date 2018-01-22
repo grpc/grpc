@@ -24,10 +24,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/iomgr/iomgr_internal.h" /* for iomgr_abort_on_leaks() */
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define LOG2_SHARD_COUNT 5

@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.9.0-dev")
+set(PACKAGE_VERSION   "1.10.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -544,6 +544,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx http2_client)
 endif()
 add_dependencies(buildtests_cxx hybrid_end2end_test)
+add_dependencies(buildtests_cxx inlined_vector_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx inproc_sync_unary_ping_pong_test)
 endif()
@@ -600,7 +601,6 @@ add_dependencies(buildtests_cxx stress_test)
 add_dependencies(buildtests_cxx thread_manager_test)
 add_dependencies(buildtests_cxx thread_stress_test)
 add_dependencies(buildtests_cxx transport_pid_controller_test)
-add_dependencies(buildtests_cxx vector_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
 endif()
@@ -623,50 +623,50 @@ endif (gRPC_BUILD_TESTS)
 
 
 add_library(gpr
+  src/core/lib/gpr/alloc.cc
+  src/core/lib/gpr/arena.cc
+  src/core/lib/gpr/atm.cc
+  src/core/lib/gpr/avl.cc
+  src/core/lib/gpr/cmdline.cc
+  src/core/lib/gpr/cpu_iphone.cc
+  src/core/lib/gpr/cpu_linux.cc
+  src/core/lib/gpr/cpu_posix.cc
+  src/core/lib/gpr/cpu_windows.cc
+  src/core/lib/gpr/env_linux.cc
+  src/core/lib/gpr/env_posix.cc
+  src/core/lib/gpr/env_windows.cc
+  src/core/lib/gpr/fork.cc
+  src/core/lib/gpr/host_port.cc
+  src/core/lib/gpr/log.cc
+  src/core/lib/gpr/log_android.cc
+  src/core/lib/gpr/log_linux.cc
+  src/core/lib/gpr/log_posix.cc
+  src/core/lib/gpr/log_windows.cc
+  src/core/lib/gpr/mpscq.cc
+  src/core/lib/gpr/murmur_hash.cc
+  src/core/lib/gpr/string.cc
+  src/core/lib/gpr/string_posix.cc
+  src/core/lib/gpr/string_util_windows.cc
+  src/core/lib/gpr/string_windows.cc
+  src/core/lib/gpr/subprocess_posix.cc
+  src/core/lib/gpr/subprocess_windows.cc
+  src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_posix.cc
+  src/core/lib/gpr/sync_windows.cc
+  src/core/lib/gpr/thd.cc
+  src/core/lib/gpr/thd_posix.cc
+  src/core/lib/gpr/thd_windows.cc
+  src/core/lib/gpr/time.cc
+  src/core/lib/gpr/time_posix.cc
+  src/core/lib/gpr/time_precise.cc
+  src/core/lib/gpr/time_windows.cc
+  src/core/lib/gpr/tls_pthread.cc
+  src/core/lib/gpr/tmpfile_msys.cc
+  src/core/lib/gpr/tmpfile_posix.cc
+  src/core/lib/gpr/tmpfile_windows.cc
+  src/core/lib/gpr/wrap_memcpy.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
-  src/core/lib/support/alloc.cc
-  src/core/lib/support/arena.cc
-  src/core/lib/support/atm.cc
-  src/core/lib/support/avl.cc
-  src/core/lib/support/cmdline.cc
-  src/core/lib/support/cpu_iphone.cc
-  src/core/lib/support/cpu_linux.cc
-  src/core/lib/support/cpu_posix.cc
-  src/core/lib/support/cpu_windows.cc
-  src/core/lib/support/env_linux.cc
-  src/core/lib/support/env_posix.cc
-  src/core/lib/support/env_windows.cc
-  src/core/lib/support/fork.cc
-  src/core/lib/support/host_port.cc
-  src/core/lib/support/log.cc
-  src/core/lib/support/log_android.cc
-  src/core/lib/support/log_linux.cc
-  src/core/lib/support/log_posix.cc
-  src/core/lib/support/log_windows.cc
-  src/core/lib/support/mpscq.cc
-  src/core/lib/support/murmur_hash.cc
-  src/core/lib/support/string.cc
-  src/core/lib/support/string_posix.cc
-  src/core/lib/support/string_util_windows.cc
-  src/core/lib/support/string_windows.cc
-  src/core/lib/support/subprocess_posix.cc
-  src/core/lib/support/subprocess_windows.cc
-  src/core/lib/support/sync.cc
-  src/core/lib/support/sync_posix.cc
-  src/core/lib/support/sync_windows.cc
-  src/core/lib/support/thd.cc
-  src/core/lib/support/thd_posix.cc
-  src/core/lib/support/thd_windows.cc
-  src/core/lib/support/time.cc
-  src/core/lib/support/time_posix.cc
-  src/core/lib/support/time_precise.cc
-  src/core/lib/support/time_windows.cc
-  src/core/lib/support/tls_pthread.cc
-  src/core/lib/support/tmpfile_msys.cc
-  src/core/lib/support/tmpfile_posix.cc
-  src/core/lib/support/tmpfile_windows.cc
-  src/core/lib/support/wrap_memcpy.cc
 )
 
 if(WIN32 AND MSVC)
@@ -4784,7 +4784,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(alloc_test
-  test/core/support/alloc_test.cc
+  test/core/gpr/alloc_test.cc
 )
 
 
@@ -4836,7 +4836,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(arena_test
-  test/core/support/arena_test.cc
+  test/core/gpr/arena_test.cc
 )
 
 
@@ -5635,7 +5635,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_avl_test
-  test/core/support/avl_test.cc
+  test/core/gpr/avl_test.cc
 )
 
 
@@ -5660,7 +5660,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_cmdline_test
-  test/core/support/cmdline_test.cc
+  test/core/gpr/cmdline_test.cc
 )
 
 
@@ -5685,7 +5685,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_cpu_test
-  test/core/support/cpu_test.cc
+  test/core/gpr/cpu_test.cc
 )
 
 
@@ -5710,7 +5710,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_env_test
-  test/core/support/env_test.cc
+  test/core/gpr/env_test.cc
 )
 
 
@@ -5735,7 +5735,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_host_port_test
-  test/core/support/host_port_test.cc
+  test/core/gpr/host_port_test.cc
 )
 
 
@@ -5760,7 +5760,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_log_test
-  test/core/support/log_test.cc
+  test/core/gpr/log_test.cc
 )
 
 
@@ -5785,7 +5785,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_manual_constructor_test
-  test/core/support/manual_constructor_test.cc
+  test/core/gprpp/manual_constructor_test.cc
 )
 
 
@@ -5810,7 +5810,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_mpscq_test
-  test/core/support/mpscq_test.cc
+  test/core/gpr/mpscq_test.cc
 )
 
 
@@ -5835,7 +5835,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_spinlock_test
-  test/core/support/spinlock_test.cc
+  test/core/gpr/spinlock_test.cc
 )
 
 
@@ -5860,7 +5860,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_string_test
-  test/core/support/string_test.cc
+  test/core/gpr/string_test.cc
 )
 
 
@@ -5885,7 +5885,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_sync_test
-  test/core/support/sync_test.cc
+  test/core/gpr/sync_test.cc
 )
 
 
@@ -5910,7 +5910,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_thd_test
-  test/core/support/thd_test.cc
+  test/core/gpr/thd_test.cc
 )
 
 
@@ -5935,7 +5935,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_time_test
-  test/core/support/time_test.cc
+  test/core/gpr/time_test.cc
 )
 
 
@@ -5960,7 +5960,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_tls_test
-  test/core/support/tls_test.cc
+  test/core/gpr/tls_test.cc
 )
 
 
@@ -5985,7 +5985,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_useful_test
-  test/core/support/useful_test.cc
+  test/core/gpr/useful_test.cc
 )
 
 
@@ -7202,7 +7202,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(murmur_hash_test
-  test/core/support/murmur_hash_test.cc
+  test/core/gpr/murmur_hash_test.cc
 )
 
 
@@ -10554,6 +10554,43 @@ target_link_libraries(hybrid_end2end_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+
+add_executable(inlined_vector_test
+  test/core/gprpp/inlined_vector_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(inlined_vector_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(inlined_vector_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(inproc_sync_unary_ping_pong_test
@@ -10764,7 +10801,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(memory_test
-  test/core/support/memory_test.cc
+  test/core/gprpp/memory_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -10915,7 +10952,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(orphanable_test
-  test/core/support/orphanable_test.cc
+  test/core/gprpp/orphanable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11315,7 +11352,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_ptr_test
-  test/core/support/ref_counted_ptr_test.cc
+  test/core/gprpp/ref_counted_ptr_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11352,7 +11389,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_test
-  test/core/support/ref_counted_test.cc
+  test/core/gprpp/ref_counted_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -12051,43 +12088,6 @@ target_link_libraries(transport_pid_controller_test
   grpc++_test_util
   grpc++
   grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(vector_test
-  test/core/support/vector_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(vector_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(vector_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc++
   grpc
   gpr_test_util
   gpr

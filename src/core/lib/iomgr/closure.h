@@ -25,9 +25,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <stdbool.h>
+#include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/mpscq.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;

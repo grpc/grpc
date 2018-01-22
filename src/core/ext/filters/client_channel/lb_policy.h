@@ -20,8 +20,8 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 /** A load balancing policy: specified by a vtable and a struct (which

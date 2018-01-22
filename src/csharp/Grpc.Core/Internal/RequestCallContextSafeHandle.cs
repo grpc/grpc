@@ -20,26 +20,26 @@ using System;
 using System.Runtime.InteropServices;
 using Grpc.Core;
 using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
     /// grpcsharp_request_call_context
     /// </summary>
-    internal class RequestCallContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback
+    internal class RequestCallContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback, IPooledObject<RequestCallContextSafeHandle>
     {
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<RequestCallContextSafeHandle>();
-        IObjectPool<RequestCallContextSafeHandle> ownedByPool;
+        Action<RequestCallContextSafeHandle> returnToPoolAction;
 
         private RequestCallContextSafeHandle()
         {
         }
 
-        public static RequestCallContextSafeHandle Create(IObjectPool<RequestCallContextSafeHandle> ownedByPool = null)
+        public static RequestCallContextSafeHandle Create()
         {
             var ctx = Native.grpcsharp_request_call_context_create();
-            ctx.ownedByPool = ownedByPool;
             return ctx;
         }
 
@@ -49,6 +49,12 @@ namespace Grpc.Core.Internal
             {
                 return handle;
             }
+        }
+
+        public void SetReturnToPoolAction(Action<RequestCallContextSafeHandle> returnAction)
+        {
+            GrpcPreconditions.CheckState(returnToPoolAction == null);
+            returnToPoolAction = returnAction;
         }
 
         public RequestCallCompletionDelegate CompletionCallback { get; set; }
@@ -76,10 +82,15 @@ namespace Grpc.Core.Internal
 
         public void Recycle()
         {
-            if (ownedByPool != null)
+            if (returnToPoolAction != null)
             {
                 Native.grpcsharp_request_call_context_reset(this);
-                ownedByPool.Return(this);
+
+                var origReturnAction = returnToPoolAction;
+                // Not clearing all the references to the pool could prevent garbage collection of the pool object
+                // and thus cause memory leaks.
+                returnToPoolAction = null;
+                origReturnAction(this);
             }
             else
             {

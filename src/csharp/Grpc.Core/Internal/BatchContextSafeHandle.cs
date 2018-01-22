@@ -33,22 +33,21 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// grpcsharp_batch_context
     /// </summary>
-    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback
+    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback, IPooledObject<BatchContextSafeHandle>
     {
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<BatchContextSafeHandle>();
 
-        IObjectPool<BatchContextSafeHandle> ownedByPool;
+        Action<BatchContextSafeHandle> returnToPoolAction;
         CompletionCallbackData completionCallbackData;
 
         private BatchContextSafeHandle()
         {
         }
 
-        public static BatchContextSafeHandle Create(IObjectPool<BatchContextSafeHandle> ownedByPool = null)
+        public static BatchContextSafeHandle Create()
         {
             var ctx = Native.grpcsharp_batch_context_create();
-            ctx.ownedByPool = ownedByPool;
             return ctx;
         }
 
@@ -58,6 +57,12 @@ namespace Grpc.Core.Internal
             {
                 return handle;
             }
+        }
+
+        public void SetReturnToPoolAction(Action<BatchContextSafeHandle> returnAction)
+        {
+            GrpcPreconditions.CheckState(returnToPoolAction == null);
+            returnToPoolAction = returnAction;
         }
 
         public void SetCompletionCallback(BatchCompletionDelegate callback, object state)
@@ -109,10 +114,15 @@ namespace Grpc.Core.Internal
 
         public void Recycle()
         {
-            if (ownedByPool != null)
+            if (returnToPoolAction != null)
             {
                 Native.grpcsharp_batch_context_reset(this);
-                ownedByPool.Return(this);
+
+                var origReturnAction = returnToPoolAction;
+                // Not clearing all the references to the pool could prevent garbage collection of the pool object
+                // and thus cause memory leaks.
+                returnToPoolAction = null;
+                origReturnAction(this);
             }
             else
             {
