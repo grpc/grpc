@@ -59,7 +59,7 @@ typedef struct {
 /* Run the server side validator and set done_thd once done */
 static void thd_func(void* arg) {
   thd_args* a = (thd_args*)arg;
-  if (a->validator) {
+  if (a->validator != nullptr) {
     a->validator(a->server, a->cq, a->registered_method);
   }
   gpr_event_set(&a->done_thd, (void*)1);
