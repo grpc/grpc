@@ -26,6 +26,10 @@ struct grpc_resource_quota;
 
 namespace grpc {
 
+// Forward declarations for friends
+class ServerBuilder;
+class ChannelArguments;
+  
 /// ResourceQuota represents a bound on memory usage by the gRPC library.
 /// A ResourceQuota can be attached to a server (via \a ServerBuilder),
 /// or a client channel (via \a ChannelArguments).
@@ -44,11 +48,13 @@ class ResourceQuota final : private GrpcLibraryCodegen {
   /// No time bound is given for this to occur however.
   ResourceQuota& Resize(size_t new_size);
 
-  grpc_resource_quota* c_resource_quota() const { return impl_; }
-
  private:
+  friend class ServerBuilder;
+  friend class ChannelArguments;
+
   ResourceQuota(const ResourceQuota& rhs);
   ResourceQuota& operator=(const ResourceQuota& rhs);
+  grpc_resource_quota* c_resource_quota() const { return impl_; }
 
   grpc_resource_quota* const impl_;
 };
