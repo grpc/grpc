@@ -21,8 +21,9 @@
 #include <grpc/support/log.h>
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
-#ifdef GRPC_LINUX_EPOLL_CREATE1
+#ifdef GRPC_LINUX_EPOLL
 
+#include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 
 #include <assert.h>
@@ -436,9 +437,9 @@ static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
 static grpc_error* pollable_create(pollable_type type, pollable** p) {
   *p = nullptr;
 
-  int epfd = epoll_create1(EPOLL_CLOEXEC);
+  int epfd = epoll_create_and_cloexec();
   if (epfd == -1) {
-    return GRPC_OS_ERROR(errno, "epoll_create1");
+    return GRPC_OS_ERROR(errno, "epoll_create");
   }
   *p = (pollable*)gpr_malloc(sizeof(**p));
   grpc_error* err = grpc_wakeup_fd_init(&(*p)->wakeup);
@@ -1442,15 +1443,15 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
   return &vtable;
 }
 
-#else /* defined(GRPC_LINUX_EPOLL_CREATE1) */
+#else /* defined(GRPC_LINUX_EPOLL) */
 #if defined(GRPC_POSIX_SOCKET)
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
-/* If GRPC_LINUX_EPOLL_CREATE1 is not defined, it means
-   epoll_create1 is not available. Return NULL */
+/* If GRPC_LINUX_EPOLL is not defined, it means
+   epoll is not available. Return NULL */
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested) {
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
 
-#endif /* !defined(GRPC_LINUX_EPOLL_CREATE1) */
+#endif /* !defined(GRPC_LINUX_EPOLL) */
