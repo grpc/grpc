@@ -90,8 +90,8 @@ void* gpr_realloc(void* p, size_t size) {
   return p;
 }
 
-void* gpr_malloc_aligned(size_t size, size_t alignment_log) {
-  size_t alignment = ((size_t)1) << alignment_log;
+void* gpr_malloc_aligned(size_t size, size_t alignment) {
+  GPR_ASSERT(((alignment - 1) & alignment) == 0);  // Must be power of 2.
   size_t extra = alignment - 1 + sizeof(void*);
   void* p = gpr_malloc(size + extra);
   void** ret = (void**)(((uintptr_t)p + extra) & ~(alignment - 1));

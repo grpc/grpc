@@ -46,8 +46,9 @@ GPRAPI void* gpr_zalloc(size_t size);
 GPRAPI void gpr_free(void* ptr);
 /** realloc, never returns NULL */
 GPRAPI void* gpr_realloc(void* p, size_t size);
-/** aligned malloc, never returns NULL, will align to 1 << alignment_log */
-GPRAPI void* gpr_malloc_aligned(size_t size, size_t alignment_log);
+/** aligned malloc, never returns NULL, will align to alignment, which
+ * must be a power of 2. */
+GPRAPI void* gpr_malloc_aligned(size_t size, size_t alignment);
 /** free memory allocated by gpr_malloc_aligned */
 GPRAPI void gpr_free_aligned(void* ptr);
 

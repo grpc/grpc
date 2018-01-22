@@ -16,8 +16,11 @@
  *
  */
 
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
 #include "test/core/util/test_config.h"
 
 static void* fake_malloc(size_t size) { return (void*)size; }
@@ -48,8 +51,19 @@ static void test_custom_allocs() {
   gpr_free(i);
 }
 
+static void test_malloc_aligned() {
+  for (size_t size = 1; size <= 256; ++size) {
+    void* ptr = gpr_malloc_aligned(size, 16);
+    GPR_ASSERT(ptr != nullptr);
+    GPR_ASSERT(((intptr_t)ptr & 0xf) == 0);
+    memset(ptr, 0, size);
+    gpr_free_aligned(ptr);
+  }
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_custom_allocs();
+  test_malloc_aligned();
   return 0;
 }
