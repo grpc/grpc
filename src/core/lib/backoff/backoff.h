@@ -32,11 +32,14 @@ class BackOff {
   /// Initialize backoff machinery - does not need to be destroyed
   explicit BackOff(const Options& options);
 
-  /// Returns the time at which the next attempt should start.
-  grpc_millis NextAttemptTime();
-
-  /// Reset the backoff, so the next value returned by NextAttemptTime()
-  /// will be the time of the second attempt (rather than the Nth).
+  /// Begin retry loop: returns the deadline to be used for the next attempt,
+  /// following the backoff strategy.
+  grpc_millis Begin();
+  /// Step a retry loop: returns the deadline to be used for the next attempt,
+  /// following the backoff strategy.
+  grpc_millis Step();
+  /// Reset the backoff, so the next grpc_backoff_step will be a
+  /// grpc_backoff_begin.
   void Reset();
 
   void SetRandomSeed(unsigned int seed);
@@ -77,10 +80,9 @@ class BackOff {
 
  private:
   const Options options_;
-  uint32_t rng_state_;
-  bool initial_;
   /// current delay before retries
   grpc_millis current_backoff_;
+  uint32_t rng_state_;
 };
 
 }  // namespace grpc_core
