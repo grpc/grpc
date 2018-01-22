@@ -101,6 +101,7 @@ END2END_TESTS = {
     'filter_causes_close': default_test_options._replace(cpu_cost=LOWCPU),
     'filter_call_init_fails': default_test_options,
     'filter_latency': default_test_options._replace(cpu_cost=LOWCPU),
+    'filter_status_code': default_test_options._replace(cpu_cost=LOWCPU),
     'graceful_server_shutdown': default_test_options._replace(cpu_cost=LOWCPU,exclude_inproc=True),
     'hpack_size': default_test_options._replace(proxyable=False,
                                                 traceable=False,

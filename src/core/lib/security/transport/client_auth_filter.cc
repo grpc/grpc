@@ -37,8 +37,9 @@
 
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 
+namespace {
 /* We can have a per-call credentials. */
-typedef struct {
+struct call_data {
   grpc_call_stack* owning_call;
   grpc_call_combiner* call_combiner;
   grpc_call_credentials* creds;
@@ -57,13 +58,14 @@ typedef struct {
   grpc_closure async_result_closure;
   grpc_closure check_call_host_cancel_closure;
   grpc_closure get_request_metadata_cancel_closure;
-} call_data;
+};
 
 /* We can have a per-channel credentials. */
-typedef struct {
+struct channel_data {
   grpc_channel_security_connector* security_connector;
   grpc_auth_context* auth_context;
-} channel_data;
+};
+}  // namespace
 
 void grpc_auth_metadata_context_reset(
     grpc_auth_metadata_context* auth_md_context) {
@@ -112,7 +114,7 @@ static void on_credentials_metadata(void* arg, grpc_error* input_error) {
     grpc_call_next_op(elem, batch);
   } else {
     error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
-                               GRPC_STATUS_UNAUTHENTICATED);
+                               GRPC_STATUS_UNAVAILABLE);
     grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                        calld->call_combiner);
   }

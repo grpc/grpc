@@ -25,7 +25,8 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata.h"
 
-typedef struct call_data {
+namespace {
+struct call_data {
   // Receive closures are chained: we inject this closure as the
   // recv_initial_metadata_ready up-call on transport_stream_op, and remember to
   // call our next_recv_initial_metadata_ready member after handling it.
@@ -37,7 +38,8 @@ typedef struct call_data {
 
   // Marks whether the workaround is active
   bool workaround_active;
-} call_data;
+};
+}  // namespace
 
 // Find the user agent metadata element in the batch
 static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,

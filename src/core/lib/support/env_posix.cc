@@ -31,12 +31,12 @@
 
 const char* gpr_getenv_silent(const char* name, char** dst) {
   *dst = gpr_getenv(name);
-  return NULL;
+  return nullptr;
 }
 
 char* gpr_getenv(const char* name) {
   char* result = getenv(name);
-  return result == NULL ? result : gpr_strdup(result);
+  return result == nullptr ? result : gpr_strdup(result);
 }
 
 void gpr_setenv(const char* name, const char* value) {

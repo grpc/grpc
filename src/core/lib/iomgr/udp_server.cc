@@ -21,6 +21,10 @@
 #define _GNU_SOURCE
 #endif
 
+#ifndef SO_RXQ_OVFL
+#define SO_RXQ_OVFL 40
+#endif
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET
@@ -280,11 +284,10 @@ static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
 
 /* Prepare a recently-created socket for listening. */
 static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
-                          const grpc_resolved_address* addr) {
+                          const grpc_resolved_address* addr, int rcv_buf_size,
+                          int snd_buf_size) {
   grpc_resolved_address sockname_temp;
   struct sockaddr* addr_ptr = (struct sockaddr*)addr->addr;
-  /* Set send/receive socket buffers to 1 MB */
-  int buffer_size_bytes = 1024 * 1024;
 
   if (fd < 0) {
     goto error;
@@ -325,18 +328,25 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
     goto error;
   }
 
-  if (grpc_set_socket_sndbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
+  if (grpc_set_socket_sndbuf(fd, snd_buf_size) != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
-            buffer_size_bytes);
+            snd_buf_size);
     goto error;
   }
 
-  if (grpc_set_socket_rcvbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
+  if (grpc_set_socket_rcvbuf(fd, rcv_buf_size) != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes",
-            buffer_size_bytes);
+            rcv_buf_size);
     goto error;
   }
 
+  {
+    int get_overflow = 1;
+    if (0 != setsockopt(fd, SOL_SOCKET, SO_RXQ_OVFL, &get_overflow,
+                        sizeof(get_overflow))) {
+      gpr_log(GPR_INFO, "Failed to set socket overflow support");
+    }
+  }
   return grpc_sockaddr_get_port(&sockname_temp);
 
 error:
@@ -451,6 +461,7 @@ static void on_write(void* arg, grpc_error* error) {
 
 static int add_socket_to_server(grpc_udp_server* s, int fd,
                                 const grpc_resolved_address* addr,
+                                int rcv_buf_size, int snd_buf_size,
                                 grpc_udp_server_start_cb start_cb,
                                 grpc_udp_server_read_cb read_cb,
                                 grpc_udp_server_write_cb write_cb,
@@ -460,7 +471,8 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
   char* addr_str;
   char* name;
 
-  port = prepare_socket(s->socket_factory, fd, addr);
+  port =
+      prepare_socket(s->socket_factory, fd, addr, rcv_buf_size, snd_buf_size);
   if (port >= 0) {
     grpc_sockaddr_to_string(&addr_str, addr, 1);
     gpr_asprintf(&name, "udp-server-listener:%s", addr_str);
@@ -495,6 +507,7 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
 
 int grpc_udp_server_add_port(grpc_udp_server* s,
                              const grpc_resolved_address* addr,
+                             int rcv_buf_size, int snd_buf_size,
                              grpc_udp_server_start_cb start_cb,
                              grpc_udp_server_read_cb read_cb,
                              grpc_udp_server_write_cb write_cb,
@@ -545,8 +558,9 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
     // TODO(rjshade): Test and propagate the returned grpc_error*:
     GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
         s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
-    allocated_port1 = add_socket_to_server(s, fd, addr, start_cb, read_cb,
-                                           write_cb, orphan_cb);
+    allocated_port1 =
+        add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size, start_cb,
+                             read_cb, write_cb, orphan_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
     }
@@ -569,7 +583,8 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
     addr = &addr4_copy;
   }
   allocated_port2 =
-      add_socket_to_server(s, fd, addr, start_cb, read_cb, write_cb, orphan_cb);
+      add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size, start_cb,
+                           read_cb, write_cb, orphan_cb);
 
 done:
   gpr_free(allocated_addr);

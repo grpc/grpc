@@ -13,9 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 
-make buildtests \
-  -j "$(python -c 'import multiprocessing; print multiprocessing.cpu_count()')"
-find src/core src/cpp test/core test/cpp -print0 -name '*.h' -or -name '*.cc' \
+# clang format command
+CLANG_TIDY=${CLANG_TIDY:-clang-tidy-5.0}
+
+cd ${CLANG_TIDY_ROOT}
+
+find src/core src/cpp test/core test/cpp -name '*.h' -or -name '*.cc' -print0 \
   | xargs -0 tools/distrib/run_clang_tidy.py "$@"

@@ -20,7 +20,6 @@ from grpc._cython import cygrpc
 
 RPC_COUNT = 4000
 
-INFINITE_FUTURE = cygrpc.Timespec(float('+inf'))
 EMPTY_FLAGS = 0
 
 INVOCATION_METADATA = (

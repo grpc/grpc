@@ -31,9 +31,9 @@ def _connectivity_loop(channel, completion_queue):
     for _ in range(100):
         connectivity = channel.check_connectivity_state(True)
         channel.watch_connectivity_state(connectivity,
-                                         cygrpc.Timespec(time.time() + 0.2),
-                                         completion_queue, None)
-        completion_queue.poll(deadline=cygrpc.Timespec(float('+inf')))
+                                         time.time() + 0.2, completion_queue,
+                                         None)
+        completion_queue.poll()
 
 
 def _create_loop_destroy():

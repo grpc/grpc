@@ -18,8 +18,16 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/transport/metadata.h"
 
-void grpc_chttp2_plugin_init(void) {}
+void grpc_chttp2_plugin_init(void) {
+  g_flow_control_enabled = true;
+  char* env_variable = gpr_getenv("GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL");
+  if (env_variable != nullptr) {
+    g_flow_control_enabled = false;
+    gpr_free(env_variable);
+  }
+}
 
 void grpc_chttp2_plugin_shutdown(void) {}

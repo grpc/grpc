@@ -63,7 +63,8 @@ typedef size_t msg_iovlen_type;
 
 grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
 
-typedef struct {
+namespace {
+struct grpc_tcp {
   grpc_endpoint base;
   grpc_fd* em_fd;
   int fd;
@@ -96,12 +97,13 @@ typedef struct {
 
   grpc_resource_user* resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
-} grpc_tcp;
+};
 
-typedef struct backup_poller {
+struct backup_poller {
   gpr_mu* pollset_mu;
   grpc_closure run_poller;
-} backup_poller;
+};
+}  // namespace
 
 #define BACKUP_POLLER_POLLSET(b) ((grpc_pollset*)((b) + 1))
 

@@ -52,17 +52,18 @@ cdef class CompletionQueue:
       cpython.Py_DECREF(tag)
       return tag.event(event)
 
-  def poll(self, Timespec deadline=None):
+  def poll(self, deadline=None):
     # We name this 'poll' to avoid problems with CPython's expectations for
     # 'special' methods (like next and __next__).
     cdef gpr_timespec c_increment
     cdef gpr_timespec c_timeout
     cdef gpr_timespec c_deadline
+    if deadline is None:
+      c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
+    else:
+      c_deadline = _timespec_from_time(deadline)
     with nogil:
       c_increment = gpr_time_from_millis(_INTERRUPT_CHECK_PERIOD_MS, GPR_TIMESPAN)
-      c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
-      if deadline is not None:
-        c_deadline = deadline.c_time
 
       while True:
         c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)

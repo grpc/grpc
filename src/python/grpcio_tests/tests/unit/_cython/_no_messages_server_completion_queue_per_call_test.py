@@ -41,9 +41,9 @@ class Test(_common.RpcTest, unittest.TestCase):
                 server_request_call_tag,
             })
 
-        client_call = self.channel.create_call(
-            None, _common.EMPTY_FLAGS, self.client_completion_queue,
-            b'/twinkies', None, _common.INFINITE_FUTURE)
+        client_call = self.channel.create_call(None, _common.EMPTY_FLAGS,
+                                               self.client_completion_queue,
+                                               b'/twinkies', None, None)
         client_receive_initial_metadata_tag = 'client_receive_initial_metadata_tag'
         client_complete_rpc_tag = 'client_complete_rpc_tag'
         with self.client_condition:

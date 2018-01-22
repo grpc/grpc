@@ -26,4 +26,9 @@
 #define GRPC_ABSTRACT_BASE_CLASS \
   static void operator delete(void* p) { abort(); }
 
+// gRPC currently can't depend on libstdc++, so we can't use "= 0" for
+// pure virtual methods.  Instead, we use this macro.
+#define GRPC_ABSTRACT \
+  { GPR_ASSERT(false); }
+
 #endif /* GRPC_CORE_LIB_SUPPORT_ABSTRACT_H */

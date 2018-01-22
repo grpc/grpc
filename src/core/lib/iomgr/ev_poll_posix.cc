@@ -71,6 +71,7 @@ struct grpc_fd {
   int shutdown;
   int closed;
   int released;
+  gpr_atm pollhup;
   grpc_error* shutdown_error;
 
   /* The watcher list.
@@ -335,6 +336,7 @@ static grpc_fd* fd_create(int fd, const char* name) {
   r->on_done_closure = nullptr;
   r->closed = 0;
   r->released = 0;
+  gpr_atm_no_barrier_store(&r->pollhup, 0);
   r->read_notifier_pollset = nullptr;
 
   char* name2;
@@ -462,7 +464,7 @@ static grpc_error* fd_shutdown_error(grpc_fd* fd) {
 
 static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
                              grpc_closure* closure) {
-  if (fd->shutdown) {
+  if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
     GRPC_CLOSURE_SCHED(closure,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"));
   } else if (*st == CLOSURE_NOT_READY) {
@@ -950,7 +952,8 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
       pfds[0].events = POLLIN;
       pfds[0].revents = 0;
       for (i = 0; i < pollset->fd_count; i++) {
-        if (fd_is_orphaned(pollset->fds[i])) {
+        if (fd_is_orphaned(pollset->fds[i]) ||
+            gpr_atm_no_barrier_load(&pollset->fds[i]->pollhup) == 1) {
           GRPC_FD_UNREF(pollset->fds[i], "multipoller");
         } else {
           pollset->fds[fd_count++] = pollset->fds[i];
@@ -1016,6 +1019,12 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
               gpr_log(GPR_DEBUG, "%p got_event: %d r:%d w:%d [%d]", pollset,
                       pfds[i].fd, (pfds[i].revents & POLLIN_CHECK) != 0,
                       (pfds[i].revents & POLLOUT_CHECK) != 0, pfds[i].revents);
+            }
+            /* This is a mitigation to prevent poll() from spinning on a
+             ** POLLHUP https://github.com/grpc/grpc/pull/13665
+             */
+            if (pfds[i].revents & POLLHUP) {
+              gpr_atm_no_barrier_store(&watchers[i].fd->pollhup, 1);
             }
             fd_end_poll(&watchers[i], pfds[i].revents & POLLIN_CHECK,
                         pfds[i].revents & POLLOUT_CHECK, pollset);
