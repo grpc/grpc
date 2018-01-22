@@ -15,7 +15,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 export GRPC_PYTHON_USE_CUSTOM_BDIST=0
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
@@ -29,30 +29,30 @@ ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
-${SETARCH_CMD} ${PYTHON} setup.py sdist
+${SETARCH_CMD} "${PYTHON}" setup.py sdist
 
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
-${SETARCH_CMD} ${PYTHON} setup.py bdist_wheel
+${SETARCH_CMD} "${PYTHON}" setup.py bdist_wheel
 
 # Build gRPC tools package distribution
-${PYTHON} tools/distrib/python/make_grpcio_tools.py
+"${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
 # Build gRPC tools package source distribution
-${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py sdist
+${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 
 # Build gRPC tools package binary distribution
-${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
+${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel
 
 if [ "$GRPC_BUILD_MANYLINUX_WHEEL" != "" ]
 then
   for wheel in dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w "$ARTIFACT_DIR"
-    rm $wheel
+    "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
+    rm "$wheel"
   done
   for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w "$ARTIFACT_DIR"
-    rm $wheel
+    "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
+    rm "$wheel"
   done
 fi
 
@@ -62,17 +62,17 @@ fi
 # are in a docker image or in a virtualenv.
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
-  ${PIP} install -rrequirements.txt
-  ${PIP} install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
-  ${PIP} install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PIP}" install -rrequirements.txt
+  "${PIP}" install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PIP}" install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Build gRPC health-checking source distribution
-  ${SETARCH_CMD} ${PYTHON} src/python/grpcio_health_checking/setup.py \
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \
       preprocess build_package_protos sdist
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
   # Build gRPC reflection source distribution
-  ${SETARCH_CMD} ${PYTHON} src/python/grpcio_reflection/setup.py \
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_reflection/setup.py \
       preprocess build_package_protos sdist
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 fi

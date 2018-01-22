@@ -41,18 +41,20 @@ double generate_uniform_random_number_between(uint32_t* rng_state, double a,
   const double range = b - a;
   return a + generate_uniform_random_number(rng_state) * range;
 }
+
 }  // namespace
 
-BackOff::BackOff(const Options& options) : options_(options) {
-  rng_state_ = static_cast<uint32_t>(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
+BackOff::BackOff(const Options& options)
+    : options_(options),
+      rng_state_(static_cast<uint32_t>(gpr_now(GPR_CLOCK_REALTIME).tv_nsec)) {
+  Reset();
 }
 
-grpc_millis BackOff::Begin() {
-  current_backoff_ = options_.initial_backoff();
-  return current_backoff_ + grpc_core::ExecCtx::Get()->Now();
-}
-
-grpc_millis BackOff::Step() {
+grpc_millis BackOff::NextAttemptTime() {
+  if (initial_) {
+    initial_ = false;
+    return current_backoff_ + grpc_core::ExecCtx::Get()->Now();
+  }
   current_backoff_ =
       (grpc_millis)(std::min(current_backoff_ * options_.multiplier(),
                              (double)options_.max_backoff()));
@@ -63,7 +65,10 @@ grpc_millis BackOff::Step() {
   return next_timeout + grpc_core::ExecCtx::Get()->Now();
 }
 
-void BackOff::Reset() { current_backoff_ = options_.initial_backoff(); }
+void BackOff::Reset() {
+  current_backoff_ = options_.initial_backoff();
+  initial_ = true;
+}
 
 void BackOff::SetRandomSeed(uint32_t seed) { rng_state_ = seed; }
 

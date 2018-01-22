@@ -22,8 +22,8 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/support/string.h"
 
 #define GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
 

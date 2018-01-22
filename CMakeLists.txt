@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.9.0-dev")
+set(PACKAGE_VERSION   "1.10.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -45,6 +45,10 @@ if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 set(gRPC_INSTALL ${gRPC_INSTALL_default} CACHE BOOL
     "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
+
+# Providers for third-party dependencies (gRPC_*_PROVIDER properties):
+# "module": build the dependency using sources from git submodule (under third_party)
+# "package": use cmake's find_package functionality to locate a pre-installed dependency
 
 set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
 set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
@@ -145,7 +149,7 @@ function(protobuf_generate_grpc_cpp)
     return()
   endif()
 
-  set(_protobuf_include_path -I . -I ${PROTOBUF_WELLKNOWN_IMPORT_DIR})
+  set(_protobuf_include_path -I . -I ${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR})
   foreach(FIL ${ARGN})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
@@ -540,6 +544,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx http2_client)
 endif()
 add_dependencies(buildtests_cxx hybrid_end2end_test)
+add_dependencies(buildtests_cxx inlined_vector_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx inproc_sync_unary_ping_pong_test)
 endif()
@@ -559,6 +564,7 @@ add_dependencies(buildtests_cxx memory_test)
 add_dependencies(buildtests_cxx metrics_client)
 add_dependencies(buildtests_cxx mock_test)
 add_dependencies(buildtests_cxx noop-benchmark)
+add_dependencies(buildtests_cxx orphanable_test)
 add_dependencies(buildtests_cxx proto_server_reflection_test)
 add_dependencies(buildtests_cxx proto_utils_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -595,7 +601,6 @@ add_dependencies(buildtests_cxx stress_test)
 add_dependencies(buildtests_cxx thread_manager_test)
 add_dependencies(buildtests_cxx thread_stress_test)
 add_dependencies(buildtests_cxx transport_pid_controller_test)
-add_dependencies(buildtests_cxx vector_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
 endif()
@@ -618,50 +623,50 @@ endif (gRPC_BUILD_TESTS)
 
 
 add_library(gpr
+  src/core/lib/gpr/alloc.cc
+  src/core/lib/gpr/arena.cc
+  src/core/lib/gpr/atm.cc
+  src/core/lib/gpr/avl.cc
+  src/core/lib/gpr/cmdline.cc
+  src/core/lib/gpr/cpu_iphone.cc
+  src/core/lib/gpr/cpu_linux.cc
+  src/core/lib/gpr/cpu_posix.cc
+  src/core/lib/gpr/cpu_windows.cc
+  src/core/lib/gpr/env_linux.cc
+  src/core/lib/gpr/env_posix.cc
+  src/core/lib/gpr/env_windows.cc
+  src/core/lib/gpr/fork.cc
+  src/core/lib/gpr/host_port.cc
+  src/core/lib/gpr/log.cc
+  src/core/lib/gpr/log_android.cc
+  src/core/lib/gpr/log_linux.cc
+  src/core/lib/gpr/log_posix.cc
+  src/core/lib/gpr/log_windows.cc
+  src/core/lib/gpr/mpscq.cc
+  src/core/lib/gpr/murmur_hash.cc
+  src/core/lib/gpr/string.cc
+  src/core/lib/gpr/string_posix.cc
+  src/core/lib/gpr/string_util_windows.cc
+  src/core/lib/gpr/string_windows.cc
+  src/core/lib/gpr/subprocess_posix.cc
+  src/core/lib/gpr/subprocess_windows.cc
+  src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_posix.cc
+  src/core/lib/gpr/sync_windows.cc
+  src/core/lib/gpr/thd.cc
+  src/core/lib/gpr/thd_posix.cc
+  src/core/lib/gpr/thd_windows.cc
+  src/core/lib/gpr/time.cc
+  src/core/lib/gpr/time_posix.cc
+  src/core/lib/gpr/time_precise.cc
+  src/core/lib/gpr/time_windows.cc
+  src/core/lib/gpr/tls_pthread.cc
+  src/core/lib/gpr/tmpfile_msys.cc
+  src/core/lib/gpr/tmpfile_posix.cc
+  src/core/lib/gpr/tmpfile_windows.cc
+  src/core/lib/gpr/wrap_memcpy.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
-  src/core/lib/support/alloc.cc
-  src/core/lib/support/arena.cc
-  src/core/lib/support/atm.cc
-  src/core/lib/support/avl.cc
-  src/core/lib/support/cmdline.cc
-  src/core/lib/support/cpu_iphone.cc
-  src/core/lib/support/cpu_linux.cc
-  src/core/lib/support/cpu_posix.cc
-  src/core/lib/support/cpu_windows.cc
-  src/core/lib/support/env_linux.cc
-  src/core/lib/support/env_posix.cc
-  src/core/lib/support/env_windows.cc
-  src/core/lib/support/fork.cc
-  src/core/lib/support/host_port.cc
-  src/core/lib/support/log.cc
-  src/core/lib/support/log_android.cc
-  src/core/lib/support/log_linux.cc
-  src/core/lib/support/log_posix.cc
-  src/core/lib/support/log_windows.cc
-  src/core/lib/support/mpscq.cc
-  src/core/lib/support/murmur_hash.cc
-  src/core/lib/support/string.cc
-  src/core/lib/support/string_posix.cc
-  src/core/lib/support/string_util_windows.cc
-  src/core/lib/support/string_windows.cc
-  src/core/lib/support/subprocess_posix.cc
-  src/core/lib/support/subprocess_windows.cc
-  src/core/lib/support/sync.cc
-  src/core/lib/support/sync_posix.cc
-  src/core/lib/support/sync_windows.cc
-  src/core/lib/support/thd.cc
-  src/core/lib/support/thd_posix.cc
-  src/core/lib/support/thd_windows.cc
-  src/core/lib/support/time.cc
-  src/core/lib/support/time_posix.cc
-  src/core/lib/support/time_precise.cc
-  src/core/lib/support/time_windows.cc
-  src/core/lib/support/tls_pthread.cc
-  src/core/lib/support/tmpfile_msys.cc
-  src/core/lib/support/tmpfile_posix.cc
-  src/core/lib/support/tmpfile_windows.cc
-  src/core/lib/support/wrap_memcpy.cc
 )
 
 if(WIN32 AND MSVC)
@@ -680,13 +685,11 @@ target_include_directories(gpr
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr
@@ -772,13 +775,11 @@ target_include_directories(gpr_test_util
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_test_util
@@ -1059,13 +1060,11 @@ target_include_directories(grpc
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc
@@ -1372,13 +1371,11 @@ target_include_directories(grpc_cronet
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_cronet
@@ -1659,13 +1656,11 @@ target_include_directories(grpc_test_util
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_test_util
@@ -1928,13 +1923,11 @@ target_include_directories(grpc_test_util_unsecure
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_test_util_unsecure
@@ -2215,13 +2208,11 @@ target_include_directories(grpc_unsecure
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_unsecure
@@ -2306,13 +2297,11 @@ target_include_directories(reconnect_server
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(reconnect_server
@@ -2348,13 +2337,11 @@ target_include_directories(test_tcp_server
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(test_tcp_server
@@ -2429,13 +2416,11 @@ target_include_directories(grpc++
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -2631,13 +2616,11 @@ target_include_directories(grpc++_core_stats
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -2913,13 +2896,11 @@ target_include_directories(grpc++_cronet
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3114,13 +3095,11 @@ target_include_directories(grpc++_error_details
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3179,13 +3158,11 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3240,13 +3217,11 @@ target_include_directories(grpc++_reflection
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3298,13 +3273,11 @@ target_include_directories(grpc++_test_config
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3376,13 +3349,11 @@ target_include_directories(grpc++_test_util
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3516,13 +3487,11 @@ target_include_directories(grpc++_test_util_unsecure
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3658,13 +3627,11 @@ target_include_directories(grpc++_unsecure
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -3850,13 +3817,11 @@ target_include_directories(grpc_benchmark
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3867,7 +3832,7 @@ target_include_directories(grpc_benchmark
 target_link_libraries(grpc_benchmark
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_unsecure
   grpc_test_util_unsecure
   grpc_unsecure
@@ -3909,13 +3874,11 @@ target_include_directories(grpc_cli_libs
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -3969,13 +3932,11 @@ target_include_directories(grpc_plugin_support
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -4047,13 +4008,11 @@ target_include_directories(http2_client_main
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4102,13 +4061,11 @@ target_include_directories(interop_client_helper
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4172,13 +4129,11 @@ target_include_directories(interop_client_main
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4223,13 +4178,11 @@ target_include_directories(interop_server_helper
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4292,13 +4245,11 @@ target_include_directories(interop_server_lib
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4343,13 +4294,11 @@ target_include_directories(interop_server_main
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4431,13 +4380,11 @@ target_include_directories(qps
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -4478,13 +4425,11 @@ target_include_directories(grpc_csharp_ext
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_csharp_ext
@@ -4525,13 +4470,11 @@ target_include_directories(bad_client_test
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(bad_client_test
@@ -4566,13 +4509,11 @@ target_include_directories(bad_ssl_test_server
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(bad_ssl_test_server
@@ -4668,13 +4609,11 @@ target_include_directories(end2end_tests
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(end2end_tests
@@ -4770,13 +4709,11 @@ target_include_directories(end2end_nosec_tests
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_INCLUDE_DIR}
-  PRIVATE ${BENCHMARK}/include
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(end2end_nosec_tests
@@ -4801,13 +4738,11 @@ target_include_directories(alarm_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(alarm_test
@@ -4830,13 +4765,11 @@ target_include_directories(algorithm_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(algorithm_test
@@ -4851,7 +4784,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(alloc_test
-  test/core/support/alloc_test.cc
+  test/core/gpr/alloc_test.cc
 )
 
 
@@ -4859,13 +4792,11 @@ target_include_directories(alloc_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(alloc_test
@@ -4886,13 +4817,11 @@ target_include_directories(alpn_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(alpn_test
@@ -4907,7 +4836,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(arena_test
-  test/core/support/arena_test.cc
+  test/core/gpr/arena_test.cc
 )
 
 
@@ -4915,13 +4844,11 @@ target_include_directories(arena_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(arena_test
@@ -4942,13 +4869,11 @@ target_include_directories(bad_server_response_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(bad_server_response_test
@@ -4972,13 +4897,11 @@ target_include_directories(bin_decoder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(bin_decoder_test
@@ -4999,13 +4922,11 @@ target_include_directories(bin_encoder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(bin_encoder_test
@@ -5026,13 +4947,11 @@ target_include_directories(byte_stream_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(byte_stream_test
@@ -5055,13 +4974,11 @@ target_include_directories(channel_create_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(channel_create_test
@@ -5083,13 +5000,11 @@ target_include_directories(check_epollexclusive
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(check_epollexclusive
@@ -5118,13 +5033,11 @@ target_include_directories(chttp2_hpack_encoder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(chttp2_hpack_encoder_test
@@ -5147,13 +5060,11 @@ target_include_directories(chttp2_stream_map_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(chttp2_stream_map_test
@@ -5176,13 +5087,11 @@ target_include_directories(chttp2_varint_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(chttp2_varint_test
@@ -5205,13 +5114,11 @@ target_include_directories(combiner_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(combiner_test
@@ -5234,13 +5141,11 @@ target_include_directories(compression_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(compression_test
@@ -5263,13 +5168,11 @@ target_include_directories(concurrent_connectivity_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(concurrent_connectivity_test
@@ -5292,13 +5195,11 @@ target_include_directories(connection_refused_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(connection_refused_test
@@ -5321,13 +5222,11 @@ target_include_directories(dns_resolver_connectivity_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(dns_resolver_connectivity_test
@@ -5350,13 +5249,11 @@ target_include_directories(dns_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(dns_resolver_test
@@ -5380,13 +5277,11 @@ target_include_directories(dualstack_socket_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(dualstack_socket_test
@@ -5410,13 +5305,11 @@ target_include_directories(endpoint_pair_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(endpoint_pair_test
@@ -5439,13 +5332,11 @@ target_include_directories(error_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(error_test
@@ -5469,13 +5360,11 @@ target_include_directories(ev_epollsig_linux_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(ev_epollsig_linux_test
@@ -5499,13 +5388,11 @@ target_include_directories(fake_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(fake_resolver_test
@@ -5530,13 +5417,11 @@ target_include_directories(fake_transport_security_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(fake_transport_security_test
@@ -5560,13 +5445,11 @@ target_include_directories(fd_conservation_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(fd_conservation_posix_test
@@ -5591,13 +5474,11 @@ target_include_directories(fd_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(fd_posix_test
@@ -5621,13 +5502,11 @@ target_include_directories(fling_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(fling_client
@@ -5650,13 +5529,11 @@ target_include_directories(fling_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(fling_server
@@ -5680,13 +5557,11 @@ target_include_directories(fling_stream_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(fling_stream_test
@@ -5711,13 +5586,11 @@ target_include_directories(fling_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(fling_test
@@ -5742,13 +5615,11 @@ target_include_directories(goaway_server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(goaway_server_test
@@ -5764,7 +5635,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_avl_test
-  test/core/support/avl_test.cc
+  test/core/gpr/avl_test.cc
 )
 
 
@@ -5772,13 +5643,11 @@ target_include_directories(gpr_avl_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_avl_test
@@ -5791,7 +5660,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_cmdline_test
-  test/core/support/cmdline_test.cc
+  test/core/gpr/cmdline_test.cc
 )
 
 
@@ -5799,13 +5668,11 @@ target_include_directories(gpr_cmdline_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_cmdline_test
@@ -5818,7 +5685,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_cpu_test
-  test/core/support/cpu_test.cc
+  test/core/gpr/cpu_test.cc
 )
 
 
@@ -5826,13 +5693,11 @@ target_include_directories(gpr_cpu_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_cpu_test
@@ -5845,7 +5710,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_env_test
-  test/core/support/env_test.cc
+  test/core/gpr/env_test.cc
 )
 
 
@@ -5853,13 +5718,11 @@ target_include_directories(gpr_env_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_env_test
@@ -5872,7 +5735,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_host_port_test
-  test/core/support/host_port_test.cc
+  test/core/gpr/host_port_test.cc
 )
 
 
@@ -5880,13 +5743,11 @@ target_include_directories(gpr_host_port_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_host_port_test
@@ -5899,7 +5760,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_log_test
-  test/core/support/log_test.cc
+  test/core/gpr/log_test.cc
 )
 
 
@@ -5907,13 +5768,11 @@ target_include_directories(gpr_log_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_log_test
@@ -5926,7 +5785,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_manual_constructor_test
-  test/core/support/manual_constructor_test.cc
+  test/core/gprpp/manual_constructor_test.cc
 )
 
 
@@ -5934,13 +5793,11 @@ target_include_directories(gpr_manual_constructor_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_manual_constructor_test
@@ -5953,7 +5810,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_mpscq_test
-  test/core/support/mpscq_test.cc
+  test/core/gpr/mpscq_test.cc
 )
 
 
@@ -5961,13 +5818,11 @@ target_include_directories(gpr_mpscq_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_mpscq_test
@@ -5980,7 +5835,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_spinlock_test
-  test/core/support/spinlock_test.cc
+  test/core/gpr/spinlock_test.cc
 )
 
 
@@ -5988,13 +5843,11 @@ target_include_directories(gpr_spinlock_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_spinlock_test
@@ -6007,7 +5860,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_string_test
-  test/core/support/string_test.cc
+  test/core/gpr/string_test.cc
 )
 
 
@@ -6015,13 +5868,11 @@ target_include_directories(gpr_string_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_string_test
@@ -6034,7 +5885,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_sync_test
-  test/core/support/sync_test.cc
+  test/core/gpr/sync_test.cc
 )
 
 
@@ -6042,13 +5893,11 @@ target_include_directories(gpr_sync_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_sync_test
@@ -6061,7 +5910,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_thd_test
-  test/core/support/thd_test.cc
+  test/core/gpr/thd_test.cc
 )
 
 
@@ -6069,13 +5918,11 @@ target_include_directories(gpr_thd_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_thd_test
@@ -6088,7 +5935,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_time_test
-  test/core/support/time_test.cc
+  test/core/gpr/time_test.cc
 )
 
 
@@ -6096,13 +5943,11 @@ target_include_directories(gpr_time_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_time_test
@@ -6115,7 +5960,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_tls_test
-  test/core/support/tls_test.cc
+  test/core/gpr/tls_test.cc
 )
 
 
@@ -6123,13 +5968,11 @@ target_include_directories(gpr_tls_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_tls_test
@@ -6142,7 +5985,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_useful_test
-  test/core/support/useful_test.cc
+  test/core/gpr/useful_test.cc
 )
 
 
@@ -6150,13 +5993,11 @@ target_include_directories(gpr_useful_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gpr_useful_test
@@ -6177,13 +6018,11 @@ target_include_directories(grpc_auth_context_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_auth_context_test
@@ -6206,13 +6045,11 @@ target_include_directories(grpc_b64_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_b64_test
@@ -6235,13 +6072,11 @@ target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_byte_buffer_reader_test
@@ -6264,13 +6099,11 @@ target_include_directories(grpc_channel_args_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_channel_args_test
@@ -6293,13 +6126,11 @@ target_include_directories(grpc_channel_stack_builder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_channel_stack_builder_test
@@ -6322,13 +6153,11 @@ target_include_directories(grpc_channel_stack_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_channel_stack_test
@@ -6351,13 +6180,11 @@ target_include_directories(grpc_completion_queue_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_completion_queue_test
@@ -6380,13 +6207,11 @@ target_include_directories(grpc_completion_queue_threading_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_completion_queue_threading_test
@@ -6408,13 +6233,11 @@ target_include_directories(grpc_create_jwt
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_create_jwt
@@ -6444,13 +6267,11 @@ target_include_directories(grpc_credentials_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_credentials_test
@@ -6473,13 +6294,11 @@ target_include_directories(grpc_fetch_oauth2
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_fetch_oauth2
@@ -6502,13 +6321,11 @@ target_include_directories(grpc_invalid_channel_args_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_invalid_channel_args_test
@@ -6532,13 +6349,11 @@ target_include_directories(grpc_json_token_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_json_token_test
@@ -6562,13 +6377,11 @@ target_include_directories(grpc_jwt_verifier_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_jwt_verifier_test
@@ -6590,13 +6403,11 @@ target_include_directories(grpc_print_google_default_creds_token
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_print_google_default_creds_token
@@ -6625,13 +6436,11 @@ target_include_directories(grpc_security_connector_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_security_connector_test
@@ -6654,13 +6463,11 @@ target_include_directories(grpc_ssl_credentials_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_ssl_credentials_test
@@ -6682,13 +6489,11 @@ target_include_directories(grpc_verify_jwt
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(grpc_verify_jwt
@@ -6718,13 +6523,11 @@ target_include_directories(handshake_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(handshake_client
@@ -6751,13 +6554,11 @@ target_include_directories(handshake_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(handshake_server
@@ -6784,13 +6585,11 @@ target_include_directories(handshake_server_with_readahead_handshaker
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(handshake_server_with_readahead_handshaker
@@ -6815,13 +6614,11 @@ target_include_directories(histogram_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(histogram_test
@@ -6842,13 +6639,11 @@ target_include_directories(hpack_parser_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(hpack_parser_test
@@ -6871,13 +6666,11 @@ target_include_directories(hpack_table_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(hpack_table_test
@@ -6900,13 +6693,11 @@ target_include_directories(http_parser_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(http_parser_test
@@ -6929,13 +6720,11 @@ target_include_directories(httpcli_format_request_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(httpcli_format_request_test
@@ -6959,13 +6748,11 @@ target_include_directories(httpcli_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(httpcli_test
@@ -6990,13 +6777,11 @@ target_include_directories(httpscli_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(httpscli_test
@@ -7020,13 +6805,11 @@ target_include_directories(init_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(init_test
@@ -7049,13 +6832,11 @@ target_include_directories(invalid_call_argument_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(invalid_call_argument_test
@@ -7078,13 +6859,11 @@ target_include_directories(json_rewrite
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(json_rewrite
@@ -7105,13 +6884,11 @@ target_include_directories(json_rewrite_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(json_rewrite_test
@@ -7134,13 +6911,11 @@ target_include_directories(json_stream_error_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(json_stream_error_test
@@ -7163,13 +6938,11 @@ target_include_directories(json_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(json_test
@@ -7192,13 +6965,11 @@ target_include_directories(lame_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(lame_client_test
@@ -7221,13 +6992,11 @@ target_include_directories(lb_policies_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(lb_policies_test
@@ -7250,13 +7019,11 @@ target_include_directories(load_file_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(load_file_test
@@ -7279,13 +7046,11 @@ target_include_directories(memory_profile_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(memory_profile_client
@@ -7308,13 +7073,11 @@ target_include_directories(memory_profile_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(memory_profile_server
@@ -7338,13 +7101,11 @@ target_include_directories(memory_profile_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(memory_profile_test
@@ -7368,13 +7129,11 @@ target_include_directories(message_compress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(message_compress_test
@@ -7397,13 +7156,11 @@ target_include_directories(minimal_stack_is_minimal_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(minimal_stack_is_minimal_test
@@ -7426,13 +7183,11 @@ target_include_directories(multiple_server_queues_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(multiple_server_queues_test
@@ -7447,7 +7202,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(murmur_hash_test
-  test/core/support/murmur_hash_test.cc
+  test/core/gpr/murmur_hash_test.cc
 )
 
 
@@ -7455,13 +7210,11 @@ target_include_directories(murmur_hash_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(murmur_hash_test
@@ -7482,13 +7235,11 @@ target_include_directories(no_server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(no_server_test
@@ -7511,13 +7262,11 @@ target_include_directories(num_external_connectivity_watchers_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(num_external_connectivity_watchers_test
@@ -7540,13 +7289,11 @@ target_include_directories(parse_address_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(parse_address_test
@@ -7569,13 +7316,11 @@ target_include_directories(percent_encoding_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(percent_encoding_test
@@ -7599,13 +7344,11 @@ target_include_directories(pollset_set_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(pollset_set_test
@@ -7630,13 +7373,11 @@ target_include_directories(resolve_address_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(resolve_address_posix_test
@@ -7660,13 +7401,11 @@ target_include_directories(resolve_address_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(resolve_address_test
@@ -7689,13 +7428,11 @@ target_include_directories(resource_quota_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(resource_quota_test
@@ -7718,13 +7455,11 @@ target_include_directories(secure_channel_create_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(secure_channel_create_test
@@ -7747,13 +7482,11 @@ target_include_directories(secure_endpoint_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(secure_endpoint_test
@@ -7776,13 +7509,11 @@ target_include_directories(sequential_connectivity_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(sequential_connectivity_test
@@ -7805,13 +7536,11 @@ target_include_directories(server_chttp2_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(server_chttp2_test
@@ -7834,13 +7563,11 @@ target_include_directories(server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(server_test
@@ -7863,13 +7590,11 @@ target_include_directories(slice_buffer_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(slice_buffer_test
@@ -7892,13 +7617,11 @@ target_include_directories(slice_hash_table_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(slice_hash_table_test
@@ -7921,13 +7644,11 @@ target_include_directories(slice_string_helpers_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(slice_string_helpers_test
@@ -7950,13 +7671,11 @@ target_include_directories(slice_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(slice_test
@@ -7979,13 +7698,11 @@ target_include_directories(sockaddr_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(sockaddr_resolver_test
@@ -8008,13 +7725,11 @@ target_include_directories(sockaddr_utils_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(sockaddr_utils_test
@@ -8038,13 +7753,11 @@ target_include_directories(socket_utils_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(socket_utils_test
@@ -8070,13 +7783,11 @@ target_include_directories(ssl_transport_security_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(ssl_transport_security_test
@@ -8099,13 +7810,11 @@ target_include_directories(status_conversion_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(status_conversion_test
@@ -8128,13 +7837,11 @@ target_include_directories(stream_compression_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(stream_compression_test
@@ -8157,13 +7864,11 @@ target_include_directories(stream_owned_slice_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(stream_owned_slice_test
@@ -8187,13 +7892,11 @@ target_include_directories(tcp_client_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(tcp_client_posix_test
@@ -8217,13 +7920,11 @@ target_include_directories(tcp_client_uv_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(tcp_client_uv_test
@@ -8247,13 +7948,11 @@ target_include_directories(tcp_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(tcp_posix_test
@@ -8278,13 +7977,11 @@ target_include_directories(tcp_server_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(tcp_server_posix_test
@@ -8308,13 +8005,11 @@ target_include_directories(tcp_server_uv_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(tcp_server_uv_test
@@ -8337,13 +8032,11 @@ target_include_directories(time_averaged_stats_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(time_averaged_stats_test
@@ -8366,13 +8059,11 @@ target_include_directories(timeout_encoding_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(timeout_encoding_test
@@ -8395,13 +8086,11 @@ target_include_directories(timer_heap_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(timer_heap_test
@@ -8424,13 +8113,11 @@ target_include_directories(timer_list_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(timer_list_test
@@ -8453,13 +8140,11 @@ target_include_directories(transport_connectivity_state_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(transport_connectivity_state_test
@@ -8482,13 +8167,11 @@ target_include_directories(transport_metadata_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(transport_metadata_test
@@ -8512,13 +8195,11 @@ target_include_directories(transport_security_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(transport_security_test
@@ -8543,13 +8224,11 @@ target_include_directories(udp_server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(udp_server_test
@@ -8573,13 +8252,11 @@ target_include_directories(uri_parser_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(uri_parser_test
@@ -8603,13 +8280,11 @@ target_include_directories(wakeup_fd_cv_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(wakeup_fd_cv_test
@@ -8635,13 +8310,11 @@ target_include_directories(alarm_cpp_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -8675,13 +8348,11 @@ target_include_directories(async_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -8715,13 +8386,11 @@ target_include_directories(auth_property_iterator_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -8755,13 +8424,11 @@ target_include_directories(backoff_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -8793,13 +8460,11 @@ target_include_directories(bdp_estimator_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -8834,13 +8499,11 @@ target_include_directories(bm_arena
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -8852,7 +8515,7 @@ target_link_libraries(bm_arena
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -8878,13 +8541,11 @@ target_include_directories(bm_call_create
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -8896,7 +8557,7 @@ target_link_libraries(bm_call_create
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -8922,13 +8583,11 @@ target_include_directories(bm_chttp2_hpack
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -8940,7 +8599,7 @@ target_link_libraries(bm_chttp2_hpack
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -8966,13 +8625,11 @@ target_include_directories(bm_chttp2_transport
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -8984,7 +8641,7 @@ target_link_libraries(bm_chttp2_transport
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9010,13 +8667,11 @@ target_include_directories(bm_closure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9028,7 +8683,7 @@ target_link_libraries(bm_closure
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9054,13 +8709,11 @@ target_include_directories(bm_cq
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9072,7 +8725,7 @@ target_link_libraries(bm_cq
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9098,13 +8751,11 @@ target_include_directories(bm_cq_multiple_threads
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9116,7 +8767,7 @@ target_link_libraries(bm_cq_multiple_threads
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9142,13 +8793,11 @@ target_include_directories(bm_error
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9160,7 +8809,7 @@ target_link_libraries(bm_error
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9186,13 +8835,11 @@ target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9204,7 +8851,7 @@ target_link_libraries(bm_fullstack_streaming_ping_pong
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9230,13 +8877,11 @@ target_include_directories(bm_fullstack_streaming_pump
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9248,7 +8893,7 @@ target_link_libraries(bm_fullstack_streaming_pump
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9274,13 +8919,11 @@ target_include_directories(bm_fullstack_trickle
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9292,7 +8935,7 @@ target_link_libraries(bm_fullstack_trickle
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9319,13 +8962,11 @@ target_include_directories(bm_fullstack_unary_ping_pong
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9337,7 +8978,7 @@ target_link_libraries(bm_fullstack_unary_ping_pong
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9363,13 +9004,11 @@ target_include_directories(bm_metadata
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9381,7 +9020,7 @@ target_link_libraries(bm_metadata
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9407,13 +9046,11 @@ target_include_directories(bm_pollset
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9425,7 +9062,7 @@ target_link_libraries(bm_pollset
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -9450,13 +9087,11 @@ target_include_directories(channel_arguments_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9487,13 +9122,11 @@ target_include_directories(channel_filter_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9524,13 +9157,11 @@ target_include_directories(chttp2_settings_timeout_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9562,13 +9193,11 @@ target_include_directories(cli_call_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9610,13 +9239,11 @@ target_include_directories(client_channel_stress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9651,13 +9278,11 @@ target_include_directories(client_crash_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9692,13 +9317,11 @@ target_include_directories(client_crash_test_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9732,13 +9355,11 @@ target_include_directories(client_lb_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9807,13 +9428,11 @@ target_include_directories(codegen_test_full
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9881,13 +9500,11 @@ target_include_directories(codegen_test_minimal
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9918,13 +9535,11 @@ target_include_directories(credentials_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9955,13 +9570,11 @@ target_include_directories(cxx_byte_buffer_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -9994,13 +9607,11 @@ target_include_directories(cxx_slice_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10033,13 +9644,11 @@ target_include_directories(cxx_string_ref_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10069,13 +9678,11 @@ target_include_directories(cxx_time_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10108,13 +9715,11 @@ target_include_directories(end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10155,13 +9760,11 @@ target_include_directories(error_details_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10191,13 +9794,11 @@ target_include_directories(exception_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10231,13 +9832,11 @@ target_include_directories(filter_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10271,13 +9870,11 @@ target_include_directories(generic_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10318,13 +9915,11 @@ target_include_directories(golden_file_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10355,13 +9950,11 @@ target_include_directories(grpc_cli
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10392,13 +9985,11 @@ target_include_directories(grpc_cpp_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10428,13 +10019,11 @@ target_include_directories(grpc_csharp_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10464,13 +10053,11 @@ target_include_directories(grpc_node_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10500,13 +10087,11 @@ target_include_directories(grpc_objective_c_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10536,13 +10121,11 @@ target_include_directories(grpc_php_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10572,13 +10155,11 @@ target_include_directories(grpc_python_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10608,13 +10189,11 @@ target_include_directories(grpc_ruby_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -10661,13 +10240,11 @@ target_include_directories(grpc_tool_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10711,13 +10288,11 @@ target_include_directories(grpclb_api_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10756,13 +10331,11 @@ target_include_directories(grpclb_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10803,13 +10376,11 @@ target_include_directories(grpclb_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10843,13 +10414,11 @@ target_include_directories(h2_ssl_cert_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10882,13 +10451,11 @@ target_include_directories(health_service_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10922,13 +10489,11 @@ target_include_directories(http2_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10963,13 +10528,11 @@ target_include_directories(hybrid_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -10981,6 +10544,43 @@ target_link_libraries(hybrid_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(inlined_vector_test
+  test/core/gprpp/inlined_vector_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(inlined_vector_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(inlined_vector_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++
   grpc
@@ -11004,13 +10604,11 @@ target_include_directories(inproc_sync_unary_ping_pong_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11048,13 +10646,11 @@ target_include_directories(interop_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11092,13 +10688,11 @@ target_include_directories(interop_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11138,13 +10732,11 @@ target_include_directories(interop_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11179,13 +10771,11 @@ target_include_directories(json_run_localhost
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11211,7 +10801,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(memory_test
-  test/core/support/memory_test.cc
+  test/core/gprpp/memory_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11221,13 +10811,11 @@ target_include_directories(memory_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11267,13 +10855,11 @@ target_include_directories(metrics_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11305,13 +10891,11 @@ target_include_directories(mock_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11345,13 +10929,11 @@ target_include_directories(noop-benchmark
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11362,7 +10944,44 @@ target_include_directories(noop-benchmark
 target_link_libraries(noop-benchmark
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(orphanable_test
+  test/core/gprpp/orphanable_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(orphanable_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(orphanable_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -11380,13 +10999,11 @@ target_include_directories(proto_server_reflection_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11422,13 +11039,11 @@ target_include_directories(proto_utils_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11459,13 +11074,11 @@ target_include_directories(qps_interarrival_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11502,13 +11115,11 @@ target_include_directories(qps_json_driver
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11546,13 +11157,11 @@ target_include_directories(qps_openloop_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11590,13 +11199,11 @@ target_include_directories(qps_worker
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11654,13 +11261,11 @@ target_include_directories(reconnect_interop_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11716,13 +11321,11 @@ target_include_directories(reconnect_interop_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11749,7 +11352,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_ptr_test
-  test/core/support/ref_counted_ptr_test.cc
+  test/core/gprpp/ref_counted_ptr_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11759,13 +11362,11 @@ target_include_directories(ref_counted_ptr_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11788,7 +11389,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_test
-  test/core/support/ref_counted_test.cc
+  test/core/gprpp/ref_counted_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11798,13 +11399,11 @@ target_include_directories(ref_counted_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11837,13 +11436,11 @@ target_include_directories(secure_auth_context_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11878,13 +11475,11 @@ target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11922,13 +11517,11 @@ target_include_directories(server_builder_plugin_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -11976,13 +11569,11 @@ target_include_directories(server_builder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12016,13 +11607,11 @@ target_include_directories(server_context_test_spouse_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12056,13 +11645,11 @@ target_include_directories(server_crash_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12097,13 +11684,11 @@ target_include_directories(server_crash_test_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12151,13 +11736,11 @@ target_include_directories(server_request_call_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12191,13 +11774,11 @@ target_include_directories(shutdown_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12231,13 +11812,11 @@ target_include_directories(stats_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12270,13 +11849,11 @@ target_include_directories(status_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12310,13 +11887,11 @@ target_include_directories(streaming_throughput_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12382,13 +11957,11 @@ target_include_directories(stress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12423,13 +11996,11 @@ target_include_directories(thread_manager_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12461,13 +12032,11 @@ target_include_directories(thread_stress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12501,13 +12070,11 @@ target_include_directories(transport_pid_controller_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12529,45 +12096,6 @@ target_link_libraries(transport_pid_controller_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
-
-add_executable(vector_test
-  test/core/support/vector_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(vector_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(vector_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc++
-  grpc
-  gpr_test_util
-  gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(writes_per_rpc_test
@@ -12581,13 +12109,11 @@ target_include_directories(writes_per_rpc_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -12620,13 +12146,11 @@ target_include_directories(public_headers_must_be_c89
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(public_headers_must_be_c89
@@ -12646,13 +12170,11 @@ target_include_directories(gen_hpack_tables
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gen_hpack_tables
@@ -12680,13 +12202,11 @@ target_include_directories(gen_legal_metadata_characters
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gen_legal_metadata_characters
@@ -12712,13 +12232,11 @@ target_include_directories(gen_percent_encoding_tables
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(gen_percent_encoding_tables
@@ -12745,13 +12263,11 @@ target_include_directories(badreq_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(badreq_bad_client_test
@@ -12776,13 +12292,11 @@ target_include_directories(connection_prefix_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(connection_prefix_bad_client_test
@@ -12807,13 +12321,11 @@ target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(head_of_line_blocking_bad_client_test
@@ -12838,13 +12350,11 @@ target_include_directories(headers_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(headers_bad_client_test
@@ -12869,13 +12379,11 @@ target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(initial_settings_frame_bad_client_test
@@ -12900,13 +12408,11 @@ target_include_directories(server_registered_method_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(server_registered_method_bad_client_test
@@ -12931,13 +12437,11 @@ target_include_directories(simple_request_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(simple_request_bad_client_test
@@ -12962,13 +12466,11 @@ target_include_directories(unknown_frame_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(unknown_frame_bad_client_test
@@ -12993,13 +12495,11 @@ target_include_directories(window_overflow_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(window_overflow_bad_client_test
@@ -13025,13 +12525,11 @@ target_include_directories(bad_ssl_cert_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(bad_ssl_cert_server
@@ -13057,13 +12555,11 @@ target_include_directories(bad_ssl_cert_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(bad_ssl_cert_test
@@ -13087,13 +12583,11 @@ target_include_directories(h2_census_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_census_test
@@ -13117,13 +12611,11 @@ target_include_directories(h2_compress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_compress_test
@@ -13147,13 +12639,11 @@ target_include_directories(h2_fakesec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_fakesec_test
@@ -13178,13 +12668,11 @@ target_include_directories(h2_fd_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_fd_test
@@ -13209,13 +12697,11 @@ target_include_directories(h2_full_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_full_test
@@ -13240,13 +12726,11 @@ target_include_directories(h2_full+pipe_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_full+pipe_test
@@ -13271,13 +12755,11 @@ target_include_directories(h2_full+trace_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_full+trace_test
@@ -13301,13 +12783,11 @@ target_include_directories(h2_full+workarounds_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_full+workarounds_test
@@ -13331,13 +12811,11 @@ target_include_directories(h2_http_proxy_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_http_proxy_test
@@ -13361,13 +12839,11 @@ target_include_directories(h2_load_reporting_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_load_reporting_test
@@ -13391,13 +12867,11 @@ target_include_directories(h2_oauth2_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_oauth2_test
@@ -13421,13 +12895,11 @@ target_include_directories(h2_proxy_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_proxy_test
@@ -13451,13 +12923,11 @@ target_include_directories(h2_sockpair_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_sockpair_test
@@ -13481,13 +12951,11 @@ target_include_directories(h2_sockpair+trace_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_sockpair+trace_test
@@ -13511,13 +12979,11 @@ target_include_directories(h2_sockpair_1byte_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_sockpair_1byte_test
@@ -13541,13 +13007,11 @@ target_include_directories(h2_ssl_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_ssl_test
@@ -13571,13 +13035,11 @@ target_include_directories(h2_ssl_proxy_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_ssl_proxy_test
@@ -13602,13 +13064,11 @@ target_include_directories(h2_uds_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_uds_test
@@ -13633,13 +13093,11 @@ target_include_directories(inproc_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(inproc_test
@@ -13663,13 +13121,11 @@ target_include_directories(h2_census_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_census_nosec_test
@@ -13693,13 +13149,11 @@ target_include_directories(h2_compress_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_compress_nosec_test
@@ -13724,13 +13178,11 @@ target_include_directories(h2_fd_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_fd_nosec_test
@@ -13755,13 +13207,11 @@ target_include_directories(h2_full_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_full_nosec_test
@@ -13786,13 +13236,11 @@ target_include_directories(h2_full+pipe_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_full+pipe_nosec_test
@@ -13817,13 +13265,11 @@ target_include_directories(h2_full+trace_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_full+trace_nosec_test
@@ -13847,13 +13293,11 @@ target_include_directories(h2_full+workarounds_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_full+workarounds_nosec_test
@@ -13877,13 +13321,11 @@ target_include_directories(h2_http_proxy_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_http_proxy_nosec_test
@@ -13907,13 +13349,11 @@ target_include_directories(h2_load_reporting_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_load_reporting_nosec_test
@@ -13937,13 +13377,11 @@ target_include_directories(h2_proxy_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_proxy_nosec_test
@@ -13967,13 +13405,11 @@ target_include_directories(h2_sockpair_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_sockpair_nosec_test
@@ -13997,13 +13433,11 @@ target_include_directories(h2_sockpair+trace_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_sockpair+trace_nosec_test
@@ -14027,13 +13461,11 @@ target_include_directories(h2_sockpair_1byte_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_sockpair_1byte_nosec_test
@@ -14058,13 +13490,11 @@ target_include_directories(h2_uds_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(h2_uds_nosec_test
@@ -14089,13 +13519,11 @@ target_include_directories(inproc_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(inproc_nosec_test
@@ -14122,13 +13550,11 @@ target_include_directories(resolver_component_test_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -14165,13 +13591,11 @@ target_include_directories(resolver_component_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -14208,13 +13632,11 @@ target_include_directories(resolver_component_tests_runner_invoker_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -14251,13 +13673,11 @@ target_include_directories(resolver_component_tests_runner_invoker
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
@@ -14292,13 +13712,11 @@ target_include_directories(api_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(api_fuzzer_one_entry
@@ -14322,13 +13740,11 @@ target_include_directories(client_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(client_fuzzer_one_entry
@@ -14352,13 +13768,11 @@ target_include_directories(hpack_parser_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(hpack_parser_fuzzer_test_one_entry
@@ -14382,13 +13796,11 @@ target_include_directories(http_request_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(http_request_fuzzer_test_one_entry
@@ -14412,13 +13824,11 @@ target_include_directories(http_response_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(http_response_fuzzer_test_one_entry
@@ -14442,13 +13852,11 @@ target_include_directories(json_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(json_fuzzer_test_one_entry
@@ -14472,13 +13880,11 @@ target_include_directories(nanopb_fuzzer_response_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(nanopb_fuzzer_response_test_one_entry
@@ -14502,13 +13908,11 @@ target_include_directories(nanopb_fuzzer_serverlist_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
@@ -14532,13 +13936,11 @@ target_include_directories(percent_decode_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(percent_decode_fuzzer_one_entry
@@ -14562,13 +13964,11 @@ target_include_directories(percent_encode_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(percent_encode_fuzzer_one_entry
@@ -14592,13 +13992,11 @@ target_include_directories(server_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(server_fuzzer_one_entry
@@ -14622,13 +14020,11 @@ target_include_directories(ssl_server_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(ssl_server_fuzzer_one_entry
@@ -14652,13 +14048,11 @@ target_include_directories(uri_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
 )
 
 target_link_libraries(uri_fuzzer_test_one_entry

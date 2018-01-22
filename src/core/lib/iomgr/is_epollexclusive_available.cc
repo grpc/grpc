@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
 
-#ifdef GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 
 #include <grpc/support/log.h>
 
