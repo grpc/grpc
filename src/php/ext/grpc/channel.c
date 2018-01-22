@@ -318,6 +318,10 @@ PHP_METHOD(Channel, __construct) {
         channel->wrapper->creds_hashstr = NULL;
       }
       free(channel->wrapper->creds_hashstr);
+      free(channel->wrapper->key);
+      free(channel->wrapper->target);
+      free(channel->wrapper->args_hashstr);
+      free(channel->wrapper);
       channel->wrapper = le->channel;
     }
   }
