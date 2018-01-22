@@ -29,7 +29,7 @@ namespace grpc {
 // Forward declarations for friends
 class ServerBuilder;
 class ChannelArguments;
-  
+
 /// ResourceQuota represents a bound on memory usage by the gRPC library.
 /// A ResourceQuota can be attached to a server (via \a ServerBuilder),
 /// or a client channel (via \a ChannelArguments).

@@ -67,7 +67,7 @@ class TimePoint<gpr_timespec> {
   friend class ClientContext;
   friend class CompletionQueue;
   friend class ServerInterface;
- 
+
   gpr_timespec raw_time() { return time_; }
   gpr_timespec time_;
 };
@@ -87,6 +87,7 @@ class TimePoint<std::chrono::system_clock::time_point> {
   TimePoint(const std::chrono::system_clock::time_point& time) {
     Timepoint2Timespec(time, &time_);
   }
+
  private:
   friend class Alarm;
   friend class ChannelInterface;

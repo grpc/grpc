@@ -95,7 +95,9 @@ class FullstackFixture : public BaseFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
-        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
+        << static_cast<double>(
+               grpc::internal::CompletionQueueStats(this->cq()).GetPollNum()) /
+               state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -219,7 +221,9 @@ class EndpointPairFixture : public BaseFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
-        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
+        << static_cast<double>(
+               grpc::internal::CompletionQueueStats(this->cq()).GetPollNum()) /
+               state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
