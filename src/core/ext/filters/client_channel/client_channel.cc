@@ -1308,18 +1308,18 @@ static void do_retry(grpc_call_element* elem,
   if (server_pushback_ms >= 0) {
     next_attempt_time = grpc_core::ExecCtx::Get()->Now() + server_pushback_ms;
     calld->last_attempt_got_server_pushback = true;
-  } else if (calld->num_attempts_completed == 1 ||
-             calld->last_attempt_got_server_pushback) {
-    calld->retry_backoff.Init(
-        grpc_core::BackOff::Options()
-            .set_initial_backoff(retry_policy->initial_backoff)
-            .set_multiplier(retry_policy->backoff_multiplier)
-            .set_jitter(RETRY_BACKOFF_JITTER)
-            .set_max_backoff(retry_policy->max_backoff));
-    next_attempt_time = calld->retry_backoff->Begin();
-    calld->last_attempt_got_server_pushback = false;
   } else {
-    next_attempt_time = calld->retry_backoff->Step();
+    if (calld->num_attempts_completed == 1 ||
+        calld->last_attempt_got_server_pushback) {
+      calld->retry_backoff.Init(
+          grpc_core::BackOff::Options()
+              .set_initial_backoff(retry_policy->initial_backoff)
+              .set_multiplier(retry_policy->backoff_multiplier)
+              .set_jitter(RETRY_BACKOFF_JITTER)
+              .set_max_backoff(retry_policy->max_backoff));
+      calld->last_attempt_got_server_pushback = false;
+    }
+    next_attempt_time = calld->retry_backoff->NextAttemptTime();
   }
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
