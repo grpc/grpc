@@ -769,7 +769,7 @@ static void rr_on_connectivity_changed_locked(void* arg, grpc_error* error) {
                                  GRPC_ERROR_NONE);
   }
   update_lb_connectivity_status_locked(glb_policy, GRPC_ERROR_REF(error));
-  /* Resubscribe. Reuse the "rr_on_connectivity_changed_locked" weak ref. */
+  // Resubscribe. Reuse the "rr_on_connectivity_changed_locked" ref.
   grpc_lb_policy_notify_on_state_change_locked(
       glb_policy->rr_policy, &glb_policy->rr_connectivity_state,
       &glb_policy->rr_on_connectivity_changed);
