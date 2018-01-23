@@ -41,6 +41,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 
 #include "completion_queue.h"
 #include "channel_credentials.h"
@@ -323,7 +324,8 @@ PHP_METHOD(Channel, getTarget) {
   }
   char *target = grpc_channel_get_target(channel->wrapper->wrapped);
   gpr_mu_unlock(&channel->wrapper->mu);
-  PHP_GRPC_RETURN_STRING(target, 1);
+  PHP_GRPC_RETVAL_STRING(target, 1);
+  gpr_free(target);
 }
 
 /**
