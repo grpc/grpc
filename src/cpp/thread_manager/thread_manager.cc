@@ -45,14 +45,19 @@ void ThreadManager::WorkerThread::Run() {
 }
 
 ThreadManager::WorkerThread::~WorkerThread() {
-  // the thread will always be fully constructed by now because the destructor
-  // is only ever called if:
-  //    1. valid_ was false (in which case an asynchronous thread never ran)
-  // OR 2. valid_ was true AND the thread function completed AND locked the
+  // The object will always be fully constructed by now because the destructor
+  // is only ever called in two ways:
+  //    1. Immediately after an attempted construction when the thread
+  //       creation is realized to have failed. In that case, valid_ is false
+  //       and an asynchronous thread never ran, so the object was fully
+  //       constructed before the destructor was called.
+  // OR 2. From the CleanupCompletedThreads function. In that case,
+  //       valid_ was true AND the thread function completed AND locked the
   //       thread manager's lock on completion AND either the cleanup function
   //       also grabbed the lock before causing destruction or the thread
   //       manager itself is being destroyed after having gone through a lock
-  //       on the call to Wait
+  //       on the call to Wait. So there is a clear happens-before ordering
+  //       created through the lock.
   if (valid_) {
     thd_mgr_->thread_joiner_(thd_);
   }
