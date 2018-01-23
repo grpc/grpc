@@ -62,6 +62,9 @@ class ChannelTracer : public RefCounted {
   // Internal helper that frees a TraceEvent.
   void FreeNode(TraceEvent* node);
 
+  // Internal helper to add and link in a tracenode
+  void AddTraceEventNode(TraceEvent* new_trace_node);
+
   friend class ChannelTracerRenderer;
   gpr_mu tracer_mu_;
   intptr_t channel_uuid_;

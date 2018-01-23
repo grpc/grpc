@@ -44,8 +44,18 @@ class TraceEvent {
       : data_(data),
         error_(error),
         connectivity_state_(connectivity_state),
-        next_(nullptr) {
-    referenced_tracer_ = referenced_tracer;
+        next_(nullptr),
+        referenced_tracer_(referenced_tracer) {
+    time_created_ = gpr_now(GPR_CLOCK_REALTIME);
+  }
+
+  TraceEvent(grpc_slice data, grpc_error* error,
+             grpc_connectivity_state connectivity_state)
+      : data_(data),
+        error_(error),
+        connectivity_state_(connectivity_state),
+        next_(nullptr),
+        referenced_tracer_(nullptr) {
     time_created_ = gpr_now(GPR_CLOCK_REALTIME);
   }
 
@@ -96,15 +106,8 @@ ChannelTracer::~ChannelTracer() {
 
 intptr_t ChannelTracer::GetUuid() { return channel_uuid_; }
 
-void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
-                             grpc_connectivity_state connectivity_state,
-                             RefCountedPtr<ChannelTracer> referenced_tracer) {
-  if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
+void ChannelTracer::AddTraceEventNode(TraceEvent* new_trace_node) {
   ++num_nodes_logged_;
-  if (referenced_tracer != nullptr) ++num_children_seen_;
-  // create and fill up the new node
-  TraceEvent* new_trace_node =
-      New<TraceEvent>(data, error, connectivity_state, referenced_tracer);
   // first node case
   if (head_trace_ == nullptr) {
     head_trace_ = tail_trace_ = new_trace_node;
@@ -125,8 +128,18 @@ void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
 }
 
 void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
+                             grpc_connectivity_state connectivity_state,
+                             RefCountedPtr<ChannelTracer> referenced_tracer) {
+  if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
+  ++num_children_seen_;
+  // create and fill up the new node
+  AddTraceEventNode(
+      New<TraceEvent>(data, error, connectivity_state, referenced_tracer));
+}
+
+void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
                              grpc_connectivity_state connectivity_state) {
-  AddTrace(data, error, connectivity_state, RefCountedPtr<ChannelTracer>());
+  AddTraceEventNode(New<TraceEvent>(data, error, connectivity_state));
 }
 
 // returns an allocated string that represents tm according to RFC-3339.
