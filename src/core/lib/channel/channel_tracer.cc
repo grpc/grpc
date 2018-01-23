@@ -67,8 +67,8 @@ ChannelTracer::ChannelTracer(size_t max_nodes)
       num_children_seen_(0),
       list_size_(0),
       max_list_size_(max_nodes),
-      head_trace_(0),
-      tail_trace_(0) {
+      head_trace_(nullptr),
+      tail_trace_(nullptr) {
   if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
   gpr_mu_init(&tracer_mu_);
   gpr_ref_init(&refs_, 1);
