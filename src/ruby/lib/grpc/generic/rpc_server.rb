@@ -246,7 +246,7 @@ module GRPC
         transition_running_state(:stopping)
       end
       deadline = from_relative_time(@poll_period)
-      @server.close(deadline)
+      @server.shutdown_and_notify(deadline)
       @pool.stop
     end
 
@@ -418,6 +418,7 @@ module GRPC
       # @running_state should be :stopping here
       @run_mutex.synchronize { transition_running_state(:stopped) }
       GRPC.logger.info("stopped: #{self}")
+      @server.close
     end
 
     def new_active_server_call(an_rpc)
