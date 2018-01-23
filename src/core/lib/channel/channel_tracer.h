@@ -63,6 +63,7 @@ class ChannelTracer {
   gpr_mu tracer_mu_;
   intptr_t channel_uuid_;
   uint64_t num_nodes_logged_;
+  uint64_t num_children_seen_;
   size_t list_size_;
   size_t max_list_size_;
   TraceEvent* head_trace_;

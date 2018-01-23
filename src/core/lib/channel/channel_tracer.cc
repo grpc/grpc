@@ -63,6 +63,7 @@ class TraceEvent {
 ChannelTracer::ChannelTracer(size_t max_nodes)
     : channel_uuid_(-1),
       num_nodes_logged_(0),
+      num_children_seen_(0),
       list_size_(0),
       max_list_size_(max_nodes),
       head_trace_(0),
@@ -111,6 +112,7 @@ void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
                              ChannelTracer* referenced_tracer) {
   if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
   ++num_nodes_logged_;
+  if (referenced_tracer != nullptr) ++num_children_seen_;
   // create and fill up the new node
   TraceEvent* new_trace_node =
       New<TraceEvent>(data, error, connectivity_state, referenced_tracer);
@@ -150,36 +152,27 @@ static char* fmt_time(gpr_timespec tm) {
 // The rendered JSON should be of this format:
 // {
 //   "channelData": {
+//     "uuid": string,
 //     "numNodesLogged": number,
 //     "startTime": timestamp string,
 //     "nodes": [
 //       {
-//         "uuid": string,
 //         "data": string,
 //         "error": string,
 //         "time": timestamp string,
 //         // can only be one of the states in connectivity_state.h
 //         "state": enum string,
-//         // uuid of referenced subchannel
-//         "subchannel_uuid": string
+//         // uuid of referenced subchannel.
+//         // Optional, only present if this event refers to a child object.
+//         // and example of a referenced child would be a trace event for a
+//         // subchannel being created.
+//         "child_uuid": string
 //       },
 //     ]
 //   },
-//   "numSubchannelsSeen": number,
-//   "subchannelData": [
-//     {
-//       "uuid": string,
-//       "numNodesLogged": number,
-//       "startTime": timestamp string,
-//       "nodes": [
-//         {
-//           "data": string,
-//           "error": string,
-//           "time": timestamp string,
-//           "state": enum string,
-//         },
-//       ]
-//     },
+//   // Optional, only present if this channel has children
+//   "childData": [
+//     // List of child data, which is of the exact same format as the
 //   ]
 // }
 
@@ -225,19 +218,22 @@ class ChannelTracerRenderer {
   }
 
   // Recursively fills up json by walking over all of the trace of
-  // current_tracer_.
+  // current_tracer_. Starts at the top level, by creating the fields
+  // channelData, and childData.
   void RecursivelyPopulateJson(grpc_json* json) {
     grpc_json* channel_data = grpc_json_create_child(
         nullptr, json, "channelData", nullptr, GRPC_JSON_OBJECT, false);
     grpc_json* children = nullptr;
     if (recursive_) {
-      children = grpc_json_create_child(channel_data, json, "children", nullptr,
-                                        GRPC_JSON_ARRAY, false);
+      children = grpc_json_create_child(channel_data, json, "childData",
+                                        nullptr, GRPC_JSON_ARRAY, false);
     }
-    PopulateTracer(channel_data, children);
+    PopulateChannelData(channel_data, children);
   }
 
-  void PopulateTracer(grpc_json* channel_data, grpc_json* children) {
+  // Fills up the channelData object. If children is not null, it will
+  // recursively populate each referenced child as it passes that node.
+  void PopulateChannelData(grpc_json* channel_data, grpc_json* children) {
     grpc_json* child = nullptr;
 
     char* uuid_str;
@@ -258,6 +254,7 @@ class ChannelTracerRenderer {
     PopulateNodeList(child, children);
   }
 
+  // Iterated over the list of TraceEvents and populates their data.
   void PopulateNodeList(grpc_json* nodes, grpc_json* children) {
     grpc_json* child = nullptr;
     TraceEvent* it = current_tracer_->head_trace_;
@@ -269,6 +266,9 @@ class ChannelTracerRenderer {
     }
   }
 
+  // Fills in all the data for a single TraceEvent. If children is not null
+  // and the TraceEvent refers to a child Tracer object and recursive_ is true,
+  // then that child object will be rendered into the trace.
   void PopulateNode(TraceEvent* node, grpc_json* json, grpc_json* children) {
     grpc_json* child = nullptr;
     child = grpc_json_create_child(child, json, "data",
@@ -292,6 +292,10 @@ class ChannelTracerRenderer {
                    node->referenced_tracer_->channel_uuid_);
       child = grpc_json_create_child(child, json, "uuid", uuid_str,
                                      GRPC_JSON_NUMBER, true);
+
+      // If we are recursively populating everything, and this node
+      // references a tracer we haven't seen yet, we render that tracer
+      // in full, adding it to the parent JSON's "children" field.
       if (children && !TracerAlreadySeen(node->referenced_tracer_)) {
         grpc_json* referenced_tracer = grpc_json_create_child(
             nullptr, children, nullptr, nullptr, GRPC_JSON_OBJECT, false);

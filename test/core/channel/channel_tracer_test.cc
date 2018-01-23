@@ -66,7 +66,7 @@ static void validate_children(ChannelTracer* tracer,
                               size_t expected_num_children) {
   char* json_str = tracer->RenderTrace(true);
   grpc_json* json = grpc_json_parse_string(json_str);
-  validate_json_array_size(json, "children", expected_num_children);
+  validate_json_array_size(json, "childData", expected_num_children);
   grpc_json_destroy(json);
   gpr_free(json_str);
 }
@@ -146,7 +146,7 @@ static void test_complex_channel_tracing(size_t max_nodes) {
   add_simple_trace(&tracer);
   add_simple_trace(&tracer);
   add_simple_trace(&tracer);
-  // validate_tracer_data_matches_uuid_lookup(&tracer);
+  validate_tracer_data_matches_uuid_lookup(&tracer);
   sc1.Unref();
   sc2.Unref();
   tracer.Unref();
