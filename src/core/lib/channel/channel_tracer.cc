@@ -25,11 +25,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "src/core/lib/gpr/object_registry.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/memory.h"
-#include "src/core/lib/support/object_registry.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 

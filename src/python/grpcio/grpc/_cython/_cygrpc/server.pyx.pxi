@@ -106,7 +106,7 @@ cdef class Server:
     with nogil:
       grpc_server_start(self.c_server)
     # Ensure the core has gotten a chance to do the start-up work
-    self.backup_shutdown_queue.poll(Timespec(None))
+    self.backup_shutdown_queue.poll(deadline=time.time())
 
   def add_http2_port(self, bytes address,
                      ServerCredentials server_credentials=None):

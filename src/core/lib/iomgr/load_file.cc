@@ -25,8 +25,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/block_annotate.h"
-#include "src/core/lib/support/string.h"
 
 grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
                            grpc_slice* output) {
