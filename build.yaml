@@ -317,7 +317,7 @@ filegroups:
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
-  - src/core/lib/channel/object_registry.cc
+  - src/core/lib/channel/object_registry.h
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/compression/stream_compression.h
