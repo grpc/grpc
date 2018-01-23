@@ -26,10 +26,9 @@
 
 namespace grpc {
 
-ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr,
-					  bool* valid,
-					  bool wait)
-  : thd_mgr_(thd_mgr), wait_(wait) {
+ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr, bool* valid,
+                                          bool wait)
+    : thd_mgr_(thd_mgr), wait_(wait) {
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
 
@@ -120,7 +119,7 @@ void ThreadManager::MarkAsStarted() {
   if (threads_awaited_ == 0) {
     startup_cv_.notify_all();
   } else {
-    startup_cv_.wait(lock, [this] {return (threads_awaited_ == 0);});
+    startup_cv_.wait(lock, [this] { return (threads_awaited_ == 0); });
   }
 }
 
