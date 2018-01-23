@@ -419,35 +419,47 @@ shared_examples 'GRPC metadata delivery works OK' do
       @bad_keys << { 1 => 'a value' }
     end
 
+    def bad_metadata_test(bad_metadata, expected_error_class, expected_error_msg)
+      recvd_rpc = nil
+      rcv_thread = Thread.new do
+        recvd_rpc = @server.request_call
+      end
+
+      call = new_client_call
+      # client signals that it's done sending metadata to allow server to
+      # respond
+      client_ops = {
+        CallOps::SEND_INITIAL_METADATA => nil
+      }
+      call.run_batch(client_ops)
+
+      # server gets the invocation
+      rcv_thread.join
+      expect(recvd_rpc).to_not eq nil
+      server_ops = {
+        CallOps::SEND_INITIAL_METADATA => bad_metadata
+      }
+      blk = proc do
+        recvd_rpc.call.run_batch(server_ops)
+      end
+      if expected_error_msg.nil? && expected_error_class.nil?
+        expect(&blk).to raise_error
+      else
+        expect(&blk).to raise_error(expected_error_class, expected_error_msg)
+      end
+
+      # cancel the call so the server can shut down immediately
+      call.cancel
+    end
+
     it 'raises an exception if a metadata key is invalid' do
       @bad_keys.each do |md|
-        recvd_rpc = nil
-        rcv_thread = Thread.new do
-          recvd_rpc = @server.request_call
-        end
-
-        call = new_client_call
-        # client signals that it's done sending metadata to allow server to
-        # respond
-        client_ops = {
-          CallOps::SEND_INITIAL_METADATA => nil
-        }
-        call.run_batch(client_ops)
-
-        # server gets the invocation
-        rcv_thread.join
-        expect(recvd_rpc).to_not eq nil
-        server_ops = {
-          CallOps::SEND_INITIAL_METADATA => md
-        }
-        blk = proc do
-          recvd_rpc.call.run_batch(server_ops)
-        end
-        expect(&blk).to raise_error
-
-        # cancel the call so the server can shut down immediately
-        call.cancel
+        bad_metadata_test(md, nil, nil)
       end
+    end
+
+    it 'raises an exception if metadata is not a Hash' do
+      bad_metadata_test('String, not a Hash', TypeError, 'md_ary_convert: got <String>, want <Hash>')
     end
 
     it 'sends an empty hash if no metadata is added' do

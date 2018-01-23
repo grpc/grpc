@@ -23,6 +23,11 @@
 
 #include <grpc/grpc.h>
 
+typedef struct grpc_rb_ruby_error_to_raise {
+  char* error_msg;
+  VALUE error_class;
+} grpc_rb_ruby_error_to_raise;
+
 /* Gets the wrapped call from a VALUE. */
 grpc_call* grpc_rb_get_wrapped_call(VALUE v);
 
@@ -38,7 +43,8 @@ VALUE grpc_rb_md_ary_to_h(grpc_metadata_array* md_ary);
 /* grpc_rb_md_ary_convert converts a ruby metadata hash into
    a grpc_metadata_array.
 */
-void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array* md_ary);
+int grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array* md_ary,
+                           grpc_rb_ruby_error_to_raise* ruby_error_to_raise);
 
 void grpc_rb_metadata_array_destroy_including_entries(
     grpc_metadata_array* md_ary);

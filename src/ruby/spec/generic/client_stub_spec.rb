@@ -83,7 +83,7 @@ def sanity_check_values_of_accessors(op_view,
          op_view.deadline.is_a?(Time)).to be(true)
 end
 
-describe 'ClientStub' do
+describe 'ClientStub' do # rubocop:disable Metrics/BlockLength
   let(:noop) { proc { |x| x } }
 
   before(:each) do
@@ -228,7 +228,7 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'should receive UNAVAILABLE if call credentials plugin fails' do
+      def failing_call_credentials_test(call_creds_proc, expected_error_message)
         server_port = create_secure_test_server
         th = run_request_response(@sent_msg, @resp, @pass)
 
@@ -242,24 +242,38 @@ describe 'ClientStub' do
         }
         stub = GRPC::ClientStub.new("localhost:#{server_port}",
                                     secure_channel_creds, **secure_stub_opts)
+        creds = GRPC::Core::CallCredentials.new(call_creds_proc)
 
-        error_message = 'Failing call credentials callback'
-        failing_auth = proc do
-          fail error_message
-        end
-        creds = GRPC::Core::CallCredentials.new(failing_auth)
-
-        unauth_error_occured = false
+        unavailable_error_occured = false
         begin
           get_response(stub, credentials: creds)
         rescue GRPC::Unavailable => e
-          unauth_error_occured = true
-          expect(e.details.include?(error_message)).to be true
+          unavailable_error_occured = true
+          expect(e.details.include?(expected_error_message)).to be true
         end
-        expect(unauth_error_occured).to eq(true)
+        expect(unavailable_error_occured).to eq(true)
 
         # Kill the server thread so tests can complete
         th.kill
+      end
+
+      it 'should receive UNAVAILABLE if call credentials plugin fails' do
+        expected_error_message = 'Failing call credentials callback'
+        failing_auth = proc do
+          fail expected_error_message
+        end
+        failing_call_credentials_test(failing_auth, expected_error_message)
+      end
+
+      it 'should receive UNAVAILABLE with useful error details if call '\
+        'credentials plugin fails because of invalid metadata' do
+        bad_metadata_proc = proc do
+          bad_metadata = { k1: 'v1', k2: 'v2' }
+          bad_metadata.merge!(k3: 3)
+          bad_metadata
+        end
+        expected_error_message = 'ArgumentError: Header values must be of type string or array'
+        failing_call_credentials_test(bad_metadata_proc, expected_error_message)
       end
 
       it 'should raise ArgumentError if metadata contains invalid values' do

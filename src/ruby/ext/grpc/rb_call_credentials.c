@@ -64,9 +64,17 @@ static VALUE grpc_rb_call_credentials_callback(VALUE callback_args) {
   return result;
 }
 
+static VALUE new_failing_auth_callback_hash(VALUE rb_exception_info) {
+  VALUE result = rb_hash_new();
+  rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
+  rb_hash_aset(result, rb_str_new2("status"),
+               INT2NUM(GRPC_STATUS_UNAUTHENTICATED));
+  rb_hash_aset(result, rb_str_new2("details"), rb_exception_info);
+  return result;
+}
+
 static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
                                                       VALUE exception_object) {
-  VALUE result = rb_hash_new();
   VALUE backtrace =
       rb_funcall(rb_funcall(exception_object, rb_intern("backtrace"), 0),
                  rb_intern("join"), 1, rb_str_new2("\n\tfrom "));
@@ -75,11 +83,22 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
   (void)args;
   gpr_log(GPR_INFO, "Call credentials callback failed: %s\n%s",
           StringValueCStr(rb_exception_info), StringValueCStr(backtrace));
-  rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
-  rb_hash_aset(result, rb_str_new2("status"),
-               INT2NUM(GRPC_STATUS_UNAUTHENTICATED));
-  rb_hash_aset(result, rb_str_new2("details"), rb_exception_info);
-  return result;
+  return new_failing_auth_callback_hash(rb_exception_info);
+}
+
+static VALUE grpc_rb_call_credentials_md_conversion_failed_result(
+    const grpc_rb_ruby_error_to_raise* ruby_error_to_raise) {
+  VALUE rb_exception_info =
+      rb_funcall(ruby_error_to_raise->error_class, rb_intern("to_s"), 0);
+  GPR_ASSERT(ruby_error_to_raise->error_msg != NULL);
+  rb_exception_info =
+      rb_funcall(rb_exception_info, rb_intern("<<"), 1, rb_str_new2(": "));
+  rb_exception_info = rb_funcall(rb_exception_info, rb_intern("<<"), 1,
+                                 rb_str_new2(ruby_error_to_raise->error_msg));
+  gpr_log(GPR_INFO,
+          "Metadata conversion from call credentials callback failed: %s",
+          StringValueCStr(rb_exception_info));
+  return new_failing_auth_callback_hash(rb_exception_info);
 }
 
 static void grpc_rb_call_credentials_callback_with_gil(void* param) {
@@ -94,6 +113,8 @@ static void grpc_rb_call_credentials_callback_with_gil(void* param) {
   grpc_status_code status;
   VALUE details;
   char* error_details;
+  grpc_rb_ruby_error_to_raise ruby_error_to_raise;
+  memset(&ruby_error_to_raise, 0, sizeof(ruby_error_to_raise));
   grpc_metadata_array_init(&md_ary);
   rb_hash_aset(args, ID2SYM(rb_intern("jwt_aud_uri")), auth_uri);
   rb_ary_push(callback_args, params->get_metadata);
@@ -101,8 +122,14 @@ static void grpc_rb_call_credentials_callback_with_gil(void* param) {
   result = rb_rescue(grpc_rb_call_credentials_callback, callback_args,
                      grpc_rb_call_credentials_callback_rescue, Qnil);
   // Both callbacks return a hash, so result should be a hash
-  grpc_rb_md_ary_convert(rb_hash_aref(result, rb_str_new2("metadata")),
-                         &md_ary);
+  if (!grpc_rb_md_ary_convert(rb_hash_aref(result, rb_str_new2("metadata")),
+                              &md_ary, &ruby_error_to_raise)) {
+    result = grpc_rb_call_credentials_md_conversion_failed_result(
+        &ruby_error_to_raise);
+    gpr_free(ruby_error_to_raise.error_msg);
+  } else {
+    GPR_ASSERT(ruby_error_to_raise.error_msg == NULL);
+  }
   status = NUM2INT(rb_hash_aref(result, rb_str_new2("status")));
   details = rb_hash_aref(result, rb_str_new2("details"));
   error_details = StringValueCStr(details);
