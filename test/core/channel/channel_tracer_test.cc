@@ -59,7 +59,7 @@ static void validate_tracer_data_matches_uuid_lookup(
   char* tracer_json_str = tracer->RenderTrace(true);
   char* uuid_lookup_json_str =
       ChannelTracer::GetChannelTraceFromUuid(uuid, true);
-  strcmp(tracer_json_str, uuid_lookup_json_str);
+  GPR_ASSERT(strcmp(tracer_json_str, uuid_lookup_json_str) == 0);
   gpr_free(tracer_json_str);
   gpr_free(uuid_lookup_json_str);
 }
