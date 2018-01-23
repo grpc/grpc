@@ -262,9 +262,6 @@ struct glb_lb_policy {
   /* LB fallback timer callback. */
   grpc_closure lb_on_fallback;
 
-  /* Callback to request re-resolution. */
-  grpc_closure on_reresolution;
-
   grpc_call* lb_call; /* streaming call to the LB server, */
 
   grpc_metadata_array lb_initial_metadata_recv; /* initial MD from LB server */
@@ -706,7 +703,7 @@ static void create_rr_locked(glb_lb_policy* glb_policy,
   grpc_pollset_set_add_pollset_set(glb_policy->rr_policy->interested_parties,
                                    glb_policy->base.interested_parties);
   /* Subscribe to changes to the connectivity of the new RR */
-  GRPC_LB_POLICY_REF(&glb_policy->base, "glb_rr_connectivity_cb");
+  GRPC_LB_POLICY_REF(&glb_policy->base, "rr_on_connectivity_changed_locked");
   grpc_lb_policy_notify_on_state_change_locked(
       glb_policy->rr_policy, &glb_policy->rr_connectivity_state,
       &glb_policy->rr_on_connectivity_changed);
@@ -757,20 +754,22 @@ static void rr_handover_locked(glb_lb_policy* glb_policy) {
   lb_policy_args_destroy(args);
 }
 
-static void glb_rr_connectivity_changed_locked(void* arg, grpc_error* error) {
+static void rr_on_connectivity_changed_locked(void* arg, grpc_error* error) {
   glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
   if (glb_policy->shutting_down) {
-    GRPC_LB_POLICY_UNREF(&glb_policy->base, "glb_rr_connectivity_cb");
+    GRPC_LB_POLICY_UNREF(&glb_policy->base,
+                         "rr_on_connectivity_changed_locked");
     return;
   }
   GPR_ASSERT(glb_policy->rr_connectivity_state != GRPC_CHANNEL_SHUTDOWN);
   if (!glb_policy->lb_connected &&
-      glb_policy->rr_connectivity_state != GRPC_CHANNEL_READY) {
+      (glb_policy->rr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+       glb_policy->rr_connectivity_state == GRPC_CHANNEL_IDLE)) {
     grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace,
                                  GRPC_ERROR_NONE);
   }
   update_lb_connectivity_status_locked(glb_policy, GRPC_ERROR_REF(error));
-  /* Resubscribe. Reuse the "glb_rr_connectivity_cb" weak ref. */
+  /* Resubscribe. Reuse the "rr_on_connectivity_changed_locked" weak ref. */
   grpc_lb_policy_notify_on_state_change_locked(
       glb_policy->rr_policy, &glb_policy->rr_connectivity_state,
       &glb_policy->rr_on_connectivity_changed);
@@ -1837,7 +1836,7 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
   }
   grpc_subchannel_index_ref();
   GRPC_CLOSURE_INIT(&glb_policy->rr_on_connectivity_changed,
-                    glb_rr_connectivity_changed_locked, glb_policy,
+                    rr_on_connectivity_changed_locked, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
