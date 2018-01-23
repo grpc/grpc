@@ -4111,9 +4111,9 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "server_early_return_test", 
+    "name": "server_crash_test_client", 
     "src": [
-      "test/cpp/end2end/server_early_return_test.cc"
+      "test/cpp/end2end/server_crash_test_client.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4130,9 +4130,9 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "server_crash_test_client", 
+    "name": "server_early_return_test", 
     "src": [
-      "test/cpp/end2end/server_crash_test_client.cc"
+      "test/cpp/end2end/server_early_return_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
