@@ -99,7 +99,7 @@ class ThreadManager {
   // ThreadManager::MarkAsCompleted()
   class WorkerThread {
    public:
-    WorkerThread(ThreadManager* thd_mgr, bool* valid);
+    WorkerThread(ThreadManager* thd_mgr, bool* valid, bool wait);
     ~WorkerThread();
 
    private:
@@ -108,23 +108,27 @@ class ThreadManager {
     void Run();
 
     ThreadManager* const thd_mgr_;
-    std::mutex wt_mu_;
     gpr_thd_id thd_;
     bool valid_;
+    bool wait_;
   };
 
   // The main funtion in ThreadManager
   void MainWorkLoop();
 
   void MarkAsCompleted(WorkerThread* thd);
+  void MarkAsStarted();
   void CleanupCompletedThreads();
 
-  // Protects shutdown_, num_pollers_ and num_threads_
+  // Protects shutdown_, startup_, num_pollers_ and num_threads_
   // TODO: sreek - Change num_pollers and num_threads_ to atomics
   std::mutex mu_;
 
   bool shutdown_;
   std::condition_variable shutdown_cv_;
+
+  int threads_awaited_;
+  std::condition_variable startup_cv_;
 
   // Number of threads doing polling
   int num_pollers_;

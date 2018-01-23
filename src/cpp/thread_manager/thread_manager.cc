@@ -26,8 +26,10 @@
 
 namespace grpc {
 
-ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr, bool* valid)
-    : thd_mgr_(thd_mgr) {
+ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr,
+					  bool* valid,
+					  bool wait)
+  : thd_mgr_(thd_mgr), wait_(wait) {
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
 
@@ -40,6 +42,9 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr, bool* valid)
 }
 
 void ThreadManager::WorkerThread::Run() {
+  if (wait_) {
+    thd_mgr_->MarkAsStarted();
+  }
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
 }
@@ -109,6 +114,16 @@ void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
   }
 }
 
+void ThreadManager::MarkAsStarted() {
+  std::unique_lock<std::mutex> lock(mu_);
+  threads_awaited_--;
+  if (threads_awaited_ == 0) {
+    startup_cv_.notify_all();
+  } else {
+    startup_cv_.wait(lock, [this] {return (threads_awaited_ == 0);});
+  }
+}
+
 void ThreadManager::CleanupCompletedThreads() {
   std::vector<std::unique_ptr<WorkerThread>> completed_threads;
   // swap out the completed threads collection
@@ -123,11 +138,12 @@ void ThreadManager::Initialize() {
   // When called, there are no threads yet in the thread manager
   num_pollers_ = min_pollers_;
   num_threads_ = min_pollers_;
+  threads_awaited_ = num_threads_;
 
   for (int i = 0; i < min_pollers_; i++) {
     // Create a new thread (which ends up calling the MainWorkLoop() function
     bool valid;
-    new WorkerThread(this, &valid);
+    new WorkerThread(this, &valid, true);
     GPR_ASSERT(valid);  // we need to have at least this minimum
   }
 }
@@ -160,7 +176,7 @@ void ThreadManager::MainWorkLoop() {
           bool valid;
           // Drop lock before spawning thread to avoid contention
           lock.unlock();
-          auto* th = new WorkerThread(this, &valid);
+          auto* th = new WorkerThread(this, &valid, false);
           lock.lock();
           if (valid) {
             num_pollers_++;
