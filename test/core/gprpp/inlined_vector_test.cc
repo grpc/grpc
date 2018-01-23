@@ -64,6 +64,28 @@ TEST(InlinedVectorTest, EmplaceBack) {
   EXPECT_EQ(3, *v[0]);
 }
 
+TEST(InlinedVectorTest, ClearAndRepopulate) {
+  const int kNumElements = 10;
+  InlinedVector<int, 5> v;
+  EXPECT_EQ(0, v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(i);
+    EXPECT_EQ(i + 1, v.size());
+  }
+  for (int i = 0; i < kNumElements; ++i) {
+    EXPECT_EQ(i, v[i]);
+  }
+  v.clear();
+  EXPECT_EQ(0, v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(kNumElements + i);
+    EXPECT_EQ(i + 1, v.size());
+  }
+  for (int i = 0; i < kNumElements; ++i) {
+    EXPECT_EQ(kNumElements + i, v[i]);
+  }
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
