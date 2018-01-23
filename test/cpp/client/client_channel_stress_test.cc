@@ -36,8 +36,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
