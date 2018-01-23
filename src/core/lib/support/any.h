@@ -22,7 +22,7 @@
 #include <cstddef>
 #include <type_traits>
 
-#include "src/core/lib/support/memory.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 

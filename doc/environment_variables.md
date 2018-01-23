@@ -127,3 +127,8 @@ some configuration as environment variables that can be set.
   there is no active polling thread. They help reconnect disconnected client
   channels (mostly due to idleness), so that the next RPC on this channel won't
   fail. Set to 0 to turn off the backup polls.
+
+* GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
+  if set, flow control will be effectively disabled. Max out all values and
+  assume the remote peer does the same. Thus we can ignore any flow control
+  bookkeeping, error checking, and decision making

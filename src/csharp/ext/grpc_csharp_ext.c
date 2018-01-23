@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
