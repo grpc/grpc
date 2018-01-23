@@ -28,6 +28,7 @@
 
 namespace grpc {
 namespace testing {
+namespace {
 
 struct Small {
   int word;
@@ -53,7 +54,7 @@ struct LargeRef : public grpc_core::RefCounted {
   struct Large obj;
 };
 
-static void BM_RefCountedAllocateSmall(benchmark::State& state) {
+void BM_RefCountedAllocateSmall(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
     auto rcp = grpc_core::MakeRefCounted<SmallRef>();
@@ -62,7 +63,7 @@ static void BM_RefCountedAllocateSmall(benchmark::State& state) {
 }
 BENCHMARK(BM_RefCountedAllocateSmall);
 
-static void BM_RefCountedAllocateMedium(benchmark::State& state) {
+void BM_RefCountedAllocateMedium(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
     auto rcp = grpc_core::MakeRefCounted<MediumRef>();
@@ -71,7 +72,7 @@ static void BM_RefCountedAllocateMedium(benchmark::State& state) {
 }
 BENCHMARK(BM_RefCountedAllocateMedium);
 
-static void BM_RefCountedAllocateLarge(benchmark::State& state) {
+void BM_RefCountedAllocateLarge(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
     auto rcp = grpc_core::MakeRefCounted<LargeRef>();
@@ -80,7 +81,7 @@ static void BM_RefCountedAllocateLarge(benchmark::State& state) {
 }
 BENCHMARK(BM_RefCountedAllocateLarge);
 
-static void BM_RefCountedCopy(benchmark::State& state) {
+void BM_RefCountedCopy(benchmark::State& state) {
   auto rcp = grpc_core::MakeRefCounted<SmallRef>();
   TrackCounters track_counters;
   while (state.KeepRunning()) {
@@ -90,7 +91,7 @@ static void BM_RefCountedCopy(benchmark::State& state) {
 }
 BENCHMARK(BM_RefCountedCopy);
 
-static void BM_SharedAllocateSmall(benchmark::State& state) {
+void BM_SharedAllocateSmall(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::Allocator<Small> alloc;
   while (state.KeepRunning()) {
@@ -100,7 +101,7 @@ static void BM_SharedAllocateSmall(benchmark::State& state) {
 }
 BENCHMARK(BM_SharedAllocateSmall);
 
-static void BM_SharedAllocateMedium(benchmark::State& state) {
+void BM_SharedAllocateMedium(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::Allocator<Medium> alloc;
   while (state.KeepRunning()) {
@@ -110,7 +111,7 @@ static void BM_SharedAllocateMedium(benchmark::State& state) {
 }
 BENCHMARK(BM_SharedAllocateMedium);
 
-static void BM_SharedAllocateLarge(benchmark::State& state) {
+void BM_SharedAllocateLarge(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::Allocator<Large> alloc;
   while (state.KeepRunning()) {
@@ -120,7 +121,7 @@ static void BM_SharedAllocateLarge(benchmark::State& state) {
 }
 BENCHMARK(BM_SharedAllocateLarge);
 
-static void BM_SharedCopy(benchmark::State& state) {
+void BM_SharedCopy(benchmark::State& state) {
   grpc_core::Allocator<Small> alloc;
   auto sp = std::allocate_shared<Small>(alloc);
   TrackCounters track_counters;
@@ -131,6 +132,7 @@ static void BM_SharedCopy(benchmark::State& state) {
 }
 BENCHMARK(BM_SharedCopy);
 
+}  // namespace
 }  // namespace testing
 }  // namespace grpc
 
