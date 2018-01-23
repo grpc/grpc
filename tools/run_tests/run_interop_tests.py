@@ -169,32 +169,32 @@ class CSharpCoreCLRLanguage:
 
 class DartLanguage:
 
-  def __init__(self):
-    self.client_cwd = '../grpc-dart/interop'
-    self.server_cwd = '../grpc-dart/interop'
-    self.http2_cwd = '../grpc-dart/interop'
-    self.safename = str(self)
+    def __init__(self):
+        self.client_cwd = '../grpc-dart/interop'
+        self.server_cwd = '../grpc-dart/interop'
+        self.http2_cwd = '../grpc-dart/interop'
+        self.safename = str(self)
 
-  def client_cmd(self, args):
-    return ['dart', 'bin/client.dart'] + args
+    def client_cmd(self, args):
+        return ['dart', 'bin/client.dart'] + args
 
-  def cloud_to_prod_env(self):
-    return {}
+    def cloud_to_prod_env(self):
+        return {}
 
-  def server_cmd(self, args):
-    return ['dart', 'bin/server.dart'] + args
+    def server_cmd(self, args):
+        return ['dart', 'bin/server.dart'] + args
 
-  def global_env(self):
-    return {}
+    def global_env(self):
+        return {}
 
-  def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION
+    def unimplemented_test_cases(self):
+        return _SKIP_COMPRESSION
 
-  def unimplemented_test_cases_server(self):
-    return _SKIP_COMPRESSION
+    def unimplemented_test_cases_server(self):
+        return _SKIP_COMPRESSION
 
-  def __str__(self):
-    return 'dart'
+    def __str__(self):
+        return 'dart'
 
 
 class JavaLanguage:
@@ -568,7 +568,8 @@ _LANGUAGES = {
 
 # languages supported as cloud_to_cloud servers
 _SERVERS = [
-    'c++', 'node', 'csharp', 'csharpcoreclr', 'java', 'go', 'ruby', 'python', 'dart'
+    'c++', 'node', 'csharp', 'csharpcoreclr', 'java', 'go', 'ruby', 'python',
+    'dart'
 ]
 
 _TEST_CASES = [
