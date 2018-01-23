@@ -20,6 +20,8 @@
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACER_H
 
 #include <grpc/grpc.h>
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
@@ -27,22 +29,24 @@ namespace grpc_core {
 
 class TraceEvent;
 
-class ChannelTracer {
+class ChannelTracer : public RefCounted {
  public:
   ChannelTracer(size_t max_nodes);
-  ~ChannelTracer() {}
-
-  // TODO(ncteisen): incorporate RefCounted class
-  ChannelTracer* Ref();
-  void Unref();
+  ~ChannelTracer();
 
   /* returns the tracers uuid */
   intptr_t GetUuid();
 
   /* Adds a new trace node to the tracing object */
   void AddTrace(grpc_slice data, grpc_error* error,
+                grpc_connectivity_state connectivity_state);
+
+  /* Adds a new trace node to the tracing object. This trace node refers to a
+     an event on a child of the channel. For example this could log when a
+     particular subchannel becomes connected */
+  void AddTrace(grpc_slice data, grpc_error* error,
                 grpc_connectivity_state connectivity_state,
-                ChannelTracer* subchannel);
+                RefCountedPtr<ChannelTracer> referenced_tracer);
 
   /* Returns the tracing data rendered as a grpc json string.
      The string is owned by the caller and must be freed. If recursive
@@ -59,7 +63,6 @@ class ChannelTracer {
   void FreeNode(TraceEvent* node);
 
   friend class ChannelTracerRenderer;
-  gpr_refcount refs_;
   gpr_mu tracer_mu_;
   intptr_t channel_uuid_;
   uint64_t num_nodes_logged_;

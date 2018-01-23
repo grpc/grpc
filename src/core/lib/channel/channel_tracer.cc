@@ -40,12 +40,12 @@ class TraceEvent {
  public:
   TraceEvent(grpc_slice data, grpc_error* error,
              grpc_connectivity_state connectivity_state,
-             ChannelTracer* referenced_tracer)
+             RefCountedPtr<ChannelTracer> referenced_tracer)
       : data_(data),
         error_(error),
         connectivity_state_(connectivity_state),
         next_(nullptr) {
-    referenced_tracer_ = referenced_tracer ? referenced_tracer->Ref() : nullptr;
+    referenced_tracer_ = referenced_tracer;
     time_created_ = gpr_now(GPR_CLOCK_REALTIME);
   }
 
@@ -58,7 +58,7 @@ class TraceEvent {
   grpc_connectivity_state connectivity_state_;
   TraceEvent* next_;
   // the tracer object for the (sub)channel that this trace node refers to.
-  ChannelTracer* referenced_tracer_;
+  RefCountedPtr<ChannelTracer> referenced_tracer_;
 };
 
 ChannelTracer::ChannelTracer(size_t max_nodes)
@@ -71,46 +71,34 @@ ChannelTracer::ChannelTracer(size_t max_nodes)
       tail_trace_(nullptr) {
   if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
   gpr_mu_init(&tracer_mu_);
-  gpr_ref_init(&refs_, 1);
   channel_uuid_ = grpc_object_registry_register_object(
       this, GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
   max_list_size_ = max_nodes;
   time_created_ = gpr_now(GPR_CLOCK_REALTIME);
 }
 
-ChannelTracer* ChannelTracer::Ref() {
-  if (!max_list_size_) return nullptr;  // tracing is disabled if max_nodes == 0
-  gpr_ref(&refs_);
-  return this;
-}
-
 void ChannelTracer::FreeNode(TraceEvent* node) {
   GRPC_ERROR_UNREF(node->error_);
-  if (node->referenced_tracer_) {
-    node->referenced_tracer_->Unref();
-  }
   grpc_slice_unref_internal(node->data_);
   gpr_free(node);
 }
 
-void ChannelTracer::Unref() {
+ChannelTracer::~ChannelTracer() {
   if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
-  if (gpr_unref(&refs_)) {
-    TraceEvent* it = head_trace_;
-    while (it != nullptr) {
-      TraceEvent* to_free = it;
-      it = it->next_;
-      FreeNode(to_free);
-    }
-    gpr_mu_destroy(&tracer_mu_);
+  TraceEvent* it = head_trace_;
+  while (it != nullptr) {
+    TraceEvent* to_free = it;
+    it = it->next_;
+    FreeNode(to_free);
   }
+  gpr_mu_destroy(&tracer_mu_);
 }
 
 intptr_t ChannelTracer::GetUuid() { return channel_uuid_; }
 
 void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
                              grpc_connectivity_state connectivity_state,
-                             ChannelTracer* referenced_tracer) {
+                             RefCountedPtr<ChannelTracer> referenced_tracer) {
   if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
   ++num_nodes_logged_;
   if (referenced_tracer != nullptr) ++num_children_seen_;
@@ -134,6 +122,11 @@ void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
     FreeNode(to_free);
     --list_size_;
   }
+}
+
+void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
+                             grpc_connectivity_state connectivity_state) {
+  AddTrace(data, error, connectivity_state, RefCountedPtr<ChannelTracer>());
 }
 
 // returns an allocated string that represents tm according to RFC-3339.
@@ -297,12 +290,12 @@ class ChannelTracerRenderer {
       // If we are recursively populating everything, and this node
       // references a tracer we haven't seen yet, we render that tracer
       // in full, adding it to the parent JSON's "children" field.
-      if (children && !TracerAlreadySeen(node->referenced_tracer_)) {
+      if (children && !TracerAlreadySeen(node->referenced_tracer_.get())) {
         grpc_json* referenced_tracer = grpc_json_create_child(
             nullptr, children, nullptr, nullptr, GRPC_JSON_OBJECT, false);
-        AddSeenTracer(node->referenced_tracer_);
+        AddSeenTracer(node->referenced_tracer_.get());
         ChannelTracer* saved = current_tracer_;
-        current_tracer_ = node->referenced_tracer_;
+        current_tracer_ = node->referenced_tracer_.get();
         RecursivelyPopulateJson(referenced_tracer);
         current_tracer_ = saved;
       }
