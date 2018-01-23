@@ -17,11 +17,19 @@
  */
 
 #include "src/core/lib/gpr/arena.h"
+
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+// TODO(roth): We currently assume that all callers need alignment of 16
+// bytes, which may be wrong in some cases.  As part of converting the
+// arena API to C++, we should consider replacing gpr_arena_alloc() with a
+// template that takes the type of the value being allocated, which
+// would allow us to use the alignment actually needed by the caller.
 #define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
   (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
 
@@ -36,9 +44,16 @@ struct gpr_arena {
   zone initial_zone;
 };
 
+static void* zalloc_aligned(size_t size) {
+  void* ptr = gpr_malloc_aligned(size, GPR_MAX_ALIGNMENT);
+  memset(ptr, 0, size);
+  return ptr;
+}
+
 gpr_arena* gpr_arena_create(size_t initial_size) {
   initial_size = ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
-  gpr_arena* a = (gpr_arena*)gpr_zalloc(sizeof(gpr_arena) + initial_size);
+  gpr_arena* a = (gpr_arena*)zalloc_aligned(
+      ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena)) + initial_size);
   a->initial_zone.size_end = initial_size;
   return a;
 }
@@ -46,10 +61,10 @@ gpr_arena* gpr_arena_create(size_t initial_size) {
 size_t gpr_arena_destroy(gpr_arena* arena) {
   gpr_atm size = gpr_atm_no_barrier_load(&arena->size_so_far);
   zone* z = (zone*)gpr_atm_no_barrier_load(&arena->initial_zone.next_atm);
-  gpr_free(arena);
+  gpr_free_aligned(arena);
   while (z) {
     zone* next_z = (zone*)gpr_atm_no_barrier_load(&z->next_atm);
-    gpr_free(z);
+    gpr_free_aligned(z);
     z = next_z;
   }
   return (size_t)size;
@@ -64,11 +79,12 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
     zone* next_z = (zone*)gpr_atm_acq_load(&z->next_atm);
     if (next_z == nullptr) {
       size_t next_z_size = (size_t)gpr_atm_no_barrier_load(&arena->size_so_far);
-      next_z = (zone*)gpr_zalloc(sizeof(zone) + next_z_size);
+      next_z = (zone*)zalloc_aligned(ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) +
+                                     next_z_size);
       next_z->size_begin = z->size_end;
       next_z->size_end = z->size_end + next_z_size;
       if (!gpr_atm_rel_cas(&z->next_atm, (gpr_atm)NULL, (gpr_atm)next_z)) {
-        gpr_free(next_z);
+        gpr_free_aligned(next_z);
         next_z = (zone*)gpr_atm_acq_load(&z->next_atm);
       }
     }
@@ -79,5 +95,8 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   }
   GPR_ASSERT(start >= z->size_begin);
   GPR_ASSERT(start + size <= z->size_end);
-  return ((char*)(z + 1)) + start - z->size_begin;
+  char* ptr = (z == &arena->initial_zone)
+                  ? (char*)arena + ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena))
+                  : (char*)z + ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone));
+  return ptr + start - z->size_begin;
 }
