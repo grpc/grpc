@@ -5052,7 +5052,7 @@ defaults:
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
-      $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
+      -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f
