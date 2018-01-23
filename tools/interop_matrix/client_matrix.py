@@ -18,7 +18,6 @@
 
 def get_github_repo(lang):
     return {
-        'dart': 'git@github.com:dart-lang/grpc-dart.git',
         'go': 'git@github.com:grpc/grpc-go.git',
         'java': 'git@github.com:grpc/grpc-java.git',
         'node': 'git@github.com:grpc/grpc-node.git',
