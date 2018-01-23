@@ -106,6 +106,9 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -113,9 +116,6 @@
 #include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/manual_constructor.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -942,7 +942,7 @@ static void glb_shutdown_locked(grpc_lb_policy* pol,
       }
       gpr_free(pp);
     } else {
-      pp->pick->connected_subchannel = nullptr;
+      pp->pick->connected_subchannel.reset();
       GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
     }
     pp = next;
@@ -979,7 +979,7 @@ static void glb_cancel_pick_locked(grpc_lb_policy* pol,
   while (pp != nullptr) {
     pending_pick* next = pp->next;
     if (pp->pick == pick) {
-      pick->connected_subchannel = nullptr;
+      pick->connected_subchannel.reset();
       GRPC_CLOSURE_SCHED(&pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Pick Cancelled", &error, 1));
@@ -1161,7 +1161,7 @@ static void maybe_restart_lb_call(glb_lb_policy* glb_policy) {
     glb_policy->updating_lb_call = false;
   } else if (!glb_policy->shutting_down) {
     /* if we aren't shutting down, restart the LB client call after some time */
-    grpc_millis next_try = glb_policy->lb_call_backoff->Step();
+    grpc_millis next_try = glb_policy->lb_call_backoff->NextAttemptTime();
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...",
               glb_policy);

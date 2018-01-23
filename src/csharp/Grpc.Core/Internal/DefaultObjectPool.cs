@@ -27,9 +27,10 @@ namespace Grpc.Core.Internal
     /// Pool of objects that combines a shared pool and a thread local pool.
     /// </summary>
     internal class DefaultObjectPool<T> : IObjectPool<T>
-        where T : class, IDisposable
+        where T : class, IPooledObject<T>
     {
         readonly object myLock = new object();
+        readonly Action<T> returnAction;
         readonly Func<T> itemFactory;
 
         // Queue shared between threads, access needs to be synchronized.
@@ -54,6 +55,7 @@ namespace Grpc.Core.Internal
         {
             GrpcPreconditions.CheckArgument(sharedCapacity >= 0);
             GrpcPreconditions.CheckArgument(threadLocalCapacity >= 0);
+            this.returnAction = Return;
             this.itemFactory = GrpcPreconditions.CheckNotNull(itemFactory, nameof(itemFactory));
             this.sharedQueue = new Queue<T>(sharedCapacity);
             this.sharedCapacity = sharedCapacity;
@@ -73,6 +75,13 @@ namespace Grpc.Core.Internal
         /// in the thread local pool, it will continue returning new objects created by the factory).
         /// </summary>
         public T Lease()
+        {
+            var item = LeaseInternal();
+            item.SetReturnToPoolAction(returnAction);
+            return item;
+        }
+
+        private T LeaseInternal()
         {
             var localData = threadLocalData.Value;
             if (localData.Queue.Count > 0)

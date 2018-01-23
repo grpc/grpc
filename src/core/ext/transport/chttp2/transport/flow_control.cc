@@ -29,7 +29,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 

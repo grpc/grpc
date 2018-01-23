@@ -158,10 +158,6 @@ on outside context */
     now_is_valid_ = true;
   }
 
-  /** Finish any pending work for a grpc_exec_ctx. Must be called before
-   *  the instance is destroyed, or work may be lost. */
-  void Finish();
-
   /** Global initialization for ExecCtx. Called by iomgr */
   static void GlobalInit(void);
 

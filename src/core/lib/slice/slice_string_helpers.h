@@ -26,7 +26,7 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 /* Calls gpr_dump on a slice. */
 char* grpc_dump_slice(grpc_slice slice, uint32_t flags);

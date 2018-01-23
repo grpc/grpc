@@ -21,9 +21,9 @@
 
 #include "src/core/ext/filters/client_channel/resolver_factory.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/support/memory.h"
-#include "src/core/lib/support/orphanable.h"
-#include "src/core/lib/support/vector.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 
 namespace grpc_core {
 
