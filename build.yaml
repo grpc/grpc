@@ -3426,7 +3426,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/support/any_test.cc
+  - test/core/gprpp/any_test.cc
   deps:
   - grpc_test_util
   - grpc++

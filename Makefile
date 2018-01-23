@@ -13434,7 +13434,7 @@ endif
 
 
 ANY_TEST_SRC = \
-    test/core/support/any_test.cc \
+    test/core/gprpp/any_test.cc \
 
 ANY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ANY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13465,7 +13465,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/any_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/any_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_any_test: $(ANY_TEST_OBJS:.o=.dep)
 

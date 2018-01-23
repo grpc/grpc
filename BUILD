@@ -206,12 +206,6 @@ GRPCXX_PUBLIC_HDRS = [
 ]
 
 grpc_cc_library(
-    name = "support_any",
-    language = "c++",
-    hdrs = ["src/core/lib/support/any.h"]
-)
-
-grpc_cc_library(
     name = "gpr",
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -591,6 +585,13 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
 )
+
+grpc_cc_library(
+    name = "any",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/any.h"],
+)
+
 
 grpc_cc_library(
     name = "orphanable",

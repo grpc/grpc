@@ -18,6 +18,22 @@ licenses(["notice"])  # Apache v2
 
 grpc_package(name = "test/core/gprpp")
 
+
+grpc_cc_test(
+    name = "any_test",
+    srcs = ["any_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:any",
+        "//:gpr++_base",
+        "//test/core/util:gpr_test_util",
+    ],
+    uses_polling = False,
+)
+
 grpc_cc_test(
     name = "manual_constructor_test",
     srcs = ["manual_constructor_test.cc"],
