@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H
-#define GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H
+#ifndef GRPC_CORE_LIB_CHANNEL_OBJECT_REGISTRY_H
+#define GRPC_CORE_LIB_CHANNEL_OBJECT_REGISTRY_H
 
 #include <stdint.h>
 
@@ -40,4 +40,4 @@ void grpc_object_registry_unregister_object(intptr_t uuid);
 grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid,
                                                           void** object);
 
-#endif /* GRPC_CORE_LIB_SUPPORT_OBJECT_REGISTRY_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_OBJECT_REGISTRY_H */
