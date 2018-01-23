@@ -80,6 +80,16 @@ static void BM_RefCountedAllocateLarge(benchmark::State& state) {
 }
 BENCHMARK(BM_RefCountedAllocateLarge);
 
+static void BM_RefCountedCopy(benchmark::State& state) {
+  auto rcp = grpc_core::MakeRefCounted<SmallRef>();
+  TrackCounters track_counters;
+  while (state.KeepRunning()) {
+    auto rcp1 = rcp;
+  }
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_RefCountedCopy);
+
 static void BM_SharedAllocateSmall(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::Allocator<Small> alloc;
@@ -109,6 +119,17 @@ static void BM_SharedAllocateLarge(benchmark::State& state) {
   track_counters.Finish(state);
 }
 BENCHMARK(BM_SharedAllocateLarge);
+
+static void BM_SharedCopy(benchmark::State& state) {
+  grpc_core::Allocator<Small> alloc;
+  auto sp = std::allocate_shared<Small>(alloc);
+  TrackCounters track_counters;
+  while (state.KeepRunning()) {
+    auto sp1 = sp;
+  }
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_SharedCopy);
 
 }  // namespace testing
 }  // namespace grpc
