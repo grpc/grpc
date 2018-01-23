@@ -61,6 +61,15 @@ class InlinedVector {
     }
   }
 
+  const T& operator[](size_t offset) const {
+    assert(offset < size_);
+    if (offset < N) {
+      return *reinterpret_cast<const T*>(inline_ + offset);
+    } else {
+      return dynamic_[offset - N];
+    }
+  }
+
   template <typename... Args>
   void emplace_back(Args&&... args) {
     if (size_ < N) {

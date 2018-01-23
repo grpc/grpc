@@ -86,6 +86,22 @@ TEST(InlinedVectorTest, ClearAndRepopulate) {
   }
 }
 
+TEST(InlinedVectorTest, ConstIndexOperator) {
+  const int kNumElements = 10;
+  InlinedVector<int, 5> v;
+  EXPECT_EQ(0, v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(i);
+    EXPECT_EQ(i + 1, v.size());
+  }
+  auto const_func = [kNumElements](const InlinedVector<int, 5>& v) {
+    for (int i = 0; i < kNumElements; ++i) {
+      EXPECT_EQ(i, v[i]);
+    }
+  };
+  const_func(v);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
