@@ -2847,6 +2847,11 @@ install-plugins: $(PROTOC_PLUGINS)
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
 
+install-grpc-cli: grpc_cli
+	$(E) "[INSTALL] Installing grpc cli"
+	$(Q) $(INSTALL) -d $(prefix)/bin
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cli $(prefix)/bin/grpc_cli
+
 install-pkg-config_c: pc_c pc_c_unsecure
 	$(E) "[INSTALL] Installing C pkg-config files"
 	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
