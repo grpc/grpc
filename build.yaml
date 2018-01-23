@@ -931,19 +931,19 @@ filegroups:
   - grpc
 - name: tsi
   headers:
+  - src/core/tsi/alts_transport_security.h
   - src/core/tsi/fake_transport_security.h
-  - src/core/tsi/gts_transport_security.h
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security_grpc.h
   src:
+  - src/core/tsi/alts_transport_security.cc
   - src/core/tsi/fake_transport_security.cc
-  - src/core/tsi/gts_transport_security.cc
   - src/core/tsi/ssl_transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - gpr
-  plugin: grpc_tsi_gts
+  plugin: grpc_tsi_alts
   secure: true
   uses:
   - tsi_interface

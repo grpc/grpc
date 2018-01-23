@@ -978,8 +978,8 @@ add_library(grpc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
+  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
-  src/core/tsi/gts_transport_security.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/tsi/transport_security.cc
@@ -1343,8 +1343,8 @@ add_library(grpc_cronet
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
+  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
-  src/core/tsi/gts_transport_security.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/tsi/transport_security.cc

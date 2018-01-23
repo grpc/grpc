@@ -1403,10 +1403,10 @@ src/core/lib/transport/transport_impl.h \
 src/core/lib/transport/transport_op_string.cc \
 src/core/plugin_registry/grpc_plugin_registry.cc \
 src/core/tsi/README.md \
+src/core/tsi/alts_transport_security.cc \
+src/core/tsi/alts_transport_security.h \
 src/core/tsi/fake_transport_security.cc \
 src/core/tsi/fake_transport_security.h \
-src/core/tsi/gts_transport_security.cc \
-src/core/tsi/gts_transport_security.h \
 src/core/tsi/ssl_transport_security.cc \
 src/core/tsi/ssl_transport_security.h \
 src/core/tsi/ssl_types.h \
