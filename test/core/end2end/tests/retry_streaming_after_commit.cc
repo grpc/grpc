@@ -169,17 +169,6 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   grpc_call_details_init(&call_details);
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
 
-  // Client starts a batch for receiving trailing metadata.
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
   // Client starts a batch for receiving initial metadata and a message.
   // This will commit retries.
   memset(ops, 0, sizeof(ops));
@@ -310,6 +299,15 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   // Client receives status.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
