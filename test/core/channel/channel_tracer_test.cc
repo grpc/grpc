@@ -71,6 +71,8 @@ static void validate_children(ChannelTracer* tracer,
   gpr_free(json_str);
 }
 
+// Tests basic ChannelTracer functionality like construction, adding trace, and
+// lookups by uuid.
 static void test_basic_channel_tracing(size_t max_nodes) {
   grpc_core::ExecCtx exec_ctx;
   ChannelTracer tracer(max_nodes);
@@ -97,6 +99,8 @@ static void test_basic_channel_tracing(size_t max_nodes) {
   tracer.Unref();
 }
 
+// Calls basic test with various values for max_nodes (including 0, which turns
+// the tracer off).
 static void test_basic_channel_sizing() {
   test_basic_channel_tracing(0);
   test_basic_channel_tracing(1);
@@ -106,6 +110,9 @@ static void test_basic_channel_sizing() {
   test_basic_channel_tracing(15);
 }
 
+// Tests more complex functionality, like a parent channel tracking
+// subchannles. This exercises the ref/unref patterns since the parent tracer
+// and this function will both hold refs to the subchannel.
 static void test_complex_channel_tracing(size_t max_nodes) {
   grpc_core::ExecCtx exec_ctx;
   ChannelTracer tracer(max_nodes);
@@ -145,6 +152,7 @@ static void test_complex_channel_tracing(size_t max_nodes) {
   tracer.Unref();
 }
 
+// Calls the complex test with a sweep of sizes for max_nodes.
 static void test_complex_channel_sizing() {
   test_complex_channel_tracing(0);
   test_complex_channel_tracing(1);
@@ -154,6 +162,9 @@ static void test_complex_channel_sizing() {
   test_complex_channel_tracing(15);
 }
 
+// Tests edge case in which the parent channel tracer is destroyed before the
+// subchannel. Not sure if it is a realistic scenario, but the refcounting
+// balance should still hold.
 static void test_delete_parent_first() {
   grpc_core::ExecCtx exec_ctx;
   ChannelTracer tracer(3);
@@ -167,6 +178,9 @@ static void test_delete_parent_first() {
   sc1.Unref();
 }
 
+// Test a case in which the parent channel has subchannels and the subchannels
+// have connections. Ensures that everything lives as long as it should then
+// gets deleted.
 static void test_nesting() {
   grpc_core::ExecCtx exec_ctx;
   ChannelTracer tracer(10);

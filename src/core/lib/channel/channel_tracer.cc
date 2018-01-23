@@ -35,7 +35,8 @@
 
 namespace grpc_core {
 
-struct TraceEvent {
+class TraceEvent {
+ public:
   TraceEvent(grpc_slice data, grpc_error* error,
              grpc_connectivity_state connectivity_state,
              ChannelTracer* referenced_tracer)
@@ -46,6 +47,10 @@ struct TraceEvent {
     referenced_tracer_ = referenced_tracer ? referenced_tracer->Ref() : nullptr;
     time_created_ = gpr_now(GPR_CLOCK_REALTIME);
   }
+
+ private:
+  friend class ChannelTracer;
+  friend class ChannelTracerRenderer;
   grpc_slice data_;
   grpc_error* error_;
   gpr_timespec time_created_;
@@ -138,8 +143,50 @@ static char* fmt_time(gpr_timespec tm) {
   return full_time_str;
 }
 
+// Helper class that is responsible for walking the tree of ChannelTracer
+// objects and rendering the trace as JSON according to:
+// https://github.com/grpc/proposal/pull/7
+
+// The rendered JSON should be of this format:
+// {
+//   "channelData": {
+//     "numNodesLogged": number,
+//     "startTime": timestamp string,
+//     "nodes": [
+//       {
+//         "uuid": string,
+//         "data": string,
+//         "error": string,
+//         "time": timestamp string,
+//         // can only be one of the states in connectivity_state.h
+//         "state": enum string,
+//         // uuid of referenced subchannel
+//         "subchannel_uuid": string
+//       },
+//     ]
+//   },
+//   "numSubchannelsSeen": number,
+//   "subchannelData": [
+//     {
+//       "uuid": string,
+//       "numNodesLogged": number,
+//       "startTime": timestamp string,
+//       "nodes": [
+//         {
+//           "data": string,
+//           "error": string,
+//           "time": timestamp string,
+//           "state": enum string,
+//         },
+//       ]
+//     },
+//   ]
+// }
+
 class ChannelTracerRenderer {
  public:
+  // If recursive==true, then the entire tree of trace will be rendered.
+  // If not, then only the top level data will be.
   ChannelTracerRenderer(ChannelTracer* tracer, bool recursive)
       : current_tracer_(tracer),
         recursive_(recursive),
@@ -147,17 +194,20 @@ class ChannelTracerRenderer {
         size_(0),
         cap_(0) {}
 
+  // Renders the trace and returns an allocated char* with the formatted JSON
   char* Run() {
     grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);
     AddSeenTracer(current_tracer_);
     RecursivelyPopulateJson(json);
     gpr_free(seen_tracers_);
-    char* json_str = grpc_json_dump_to_string(json, 1);
+    char* json_str = grpc_json_dump_to_string(json, 0);
     grpc_json_destroy(json);
     return json_str;
   }
 
  private:
+  // tracks that a tracer has already been rendered to avoid infinite
+  // recursion.
   void AddSeenTracer(ChannelTracer* newly_seen) {
     if (size_ >= cap_) {
       cap_ = GPR_MAX(5 * sizeof(newly_seen), 3 * cap_ / 2);
@@ -166,6 +216,7 @@ class ChannelTracerRenderer {
     seen_tracers_[size_++] = newly_seen;
   }
 
+  // Checks if a tracer has already been seen.
   bool TracerAlreadySeen(ChannelTracer* tracer) {
     for (size_t i = 0; i < size_; ++i) {
       if (seen_tracers_[i] == tracer) return true;
@@ -173,6 +224,8 @@ class ChannelTracerRenderer {
     return false;
   }
 
+  // Recursively fills up json by walking over all of the trace of
+  // current_tracer_.
   void RecursivelyPopulateJson(grpc_json* json) {
     grpc_json* channel_data = grpc_json_create_child(
         nullptr, json, "channelData", nullptr, GRPC_JSON_OBJECT, false);
@@ -251,8 +304,14 @@ class ChannelTracerRenderer {
     }
   }
 
+  // Tracks the current tracer we are rendering as we walk the tree of tracers.
   ChannelTracer* current_tracer_;
+
+  // If true, we will render the data of all of this tracer's children.
   bool recursive_;
+
+  // These members are used to track tracers we have already rendered. This is
+  // a dynamically growing array that is deallocated when the rendering is done.
   ChannelTracer** seen_tracers_;
   size_t size_;
   size_t cap_;

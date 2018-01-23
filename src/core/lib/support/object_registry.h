@@ -21,8 +21,13 @@
 
 #include <stdint.h>
 
+// Different types that may be stored in the general object registry
 typedef enum {
+  // Used to hold uuid -> ChannelTracer mappings to allow for the trace data
+  // to be looked up by uuid, rather then have to walk the entire tree of
+  // trace.
   GRPC_OBJECT_REGISTRY_CHANNEL_TRACER,
+  // Usually represents an error has occurred in the object lookup.
   GRPC_OBJECT_REGISTRY_UNKNOWN,
 } grpc_object_registry_type;
 

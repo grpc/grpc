@@ -79,7 +79,6 @@ typedef struct external_state_watcher {
 } external_state_watcher;
 
 struct grpc_subchannel {
-  intptr_t uuid;
   grpc_connector* connector;
 
   /** refcount
@@ -137,7 +136,7 @@ struct grpc_subchannel {
   /** our alarm */
   grpc_timer alarm;
 
-  grpc_core::ChannelTracer* tracer;
+  grpc_core::ManualConstructor<grpc_core::ChannelTracer> tracer;
 };
 
 struct grpc_subchannel_call {
@@ -344,7 +343,6 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
 
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   c = (grpc_subchannel*)gpr_zalloc(sizeof(*c));
-  c->uuid = -1;
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;

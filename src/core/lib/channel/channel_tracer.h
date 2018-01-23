@@ -25,7 +25,7 @@
 
 namespace grpc_core {
 
-struct TraceEvent;
+class TraceEvent;
 
 class ChannelTracer {
  public:
@@ -51,10 +51,11 @@ class ChannelTracer {
   char* RenderTrace(bool recursive);
 
   /* util functions that perform the uuid -> tracer step for you, and then
-   returns the trace for the uuid given. */
+     returns the trace for the uuid given. */
   static char* GetChannelTraceFromUuid(intptr_t uuid, bool recursive);
 
  private:
+  // Internal helper that frees a TraceEvent.
   void FreeNode(TraceEvent* node);
 
   friend class ChannelTracerRenderer;
