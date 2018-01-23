@@ -93,8 +93,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Similar to test_retry_exceeds_buffer_size_in_initial_batch(), but we don't
-// exceed the buffer size until the second batch.
+// Similar to the retry_exceeds_buffer_size_in_initial_batch test, but we
+// don't exceed the buffer size until the second batch.
 // - 1 retry attempt allowed for ABORTED status
 // - buffer size set to 100 KiB (larger than initial metadata)
 // - client sends a 100 KiB message

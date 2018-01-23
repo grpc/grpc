@@ -95,7 +95,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 // Tests that we don't retry when retries are disabled.
 // - 1 retry attempt allowed for ABORTED status
-// - first attempt gets ABORTED but does not retry
+// - first attempt returns ABORTED but does not retry
 static void test_retry_disabled(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;

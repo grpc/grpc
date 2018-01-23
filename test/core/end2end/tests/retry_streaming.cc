@@ -94,7 +94,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Tests retrying a streaming RPC.  This is the same as
-// test_retry_basic(), except that the client sends two messages on the
+// the basic retry test, except that the client sends two messages on the
 // call before the initial attempt fails.
 // FIXME: We should also test the case where the retry is committed after
 // replaying 1 of 2 previously-completed send_message ops.  However,

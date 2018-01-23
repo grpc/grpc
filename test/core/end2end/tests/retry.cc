@@ -95,8 +95,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 // Tests a basic retry scenario:
 // - 2 retry attempts allowed for ABORTED status
-// - first attempt gets ABORTED
-// - second attempt gets OK
+// - first attempt returns ABORTED
+// - second attempt returns OK
 static void test_retry(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;

@@ -164,6 +164,7 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   grpc_call_details_init(&call_details);
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
 
+  // Client starts a batch with all 6 ops.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -188,6 +189,7 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
+  // Server gets a call and fails with retryable status.
   error =
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
@@ -229,6 +231,7 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   grpc_call_details_destroy(&call_details);
   grpc_call_details_init(&call_details);
 
+  // Server gets a second call (the retry).
   error =
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(201));
@@ -236,6 +239,7 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(201), true);
   cq_verify(cqv);
 
+  // Initiate cancellation.
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
