@@ -1158,6 +1158,7 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
 }
 
 TEST_F(UpdatesTest, ReresolveDeadBackend) {
+  ResetStub(500);
   // The first resolution only contains a fallback address.
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{backend_servers_[0].port_, false, ""});
