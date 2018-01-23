@@ -1050,6 +1050,8 @@ src/core/lib/channel/handshaker_factory.cc \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
+src/core/lib/channel/object_registry.cc \
+src/core/lib/channel/object_registry.cc \
 src/core/lib/compression/algorithm_metadata.h \
 src/core/lib/compression/compression.cc \
 src/core/lib/compression/message_compress.cc \
@@ -1093,8 +1095,6 @@ src/core/lib/gpr/mpscq.cc \
 src/core/lib/gpr/mpscq.h \
 src/core/lib/gpr/murmur_hash.cc \
 src/core/lib/gpr/murmur_hash.h \
-src/core/lib/gpr/object_registry.cc \
-src/core/lib/gpr/object_registry.h \
 src/core/lib/gpr/spinlock.h \
 src/core/lib/gpr/string.cc \
 src/core/lib/gpr/string.h \

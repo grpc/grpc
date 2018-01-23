@@ -2865,7 +2865,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/log_windows.cc \
     src/core/lib/gpr/mpscq.cc \
     src/core/lib/gpr/murmur_hash.cc \
-    src/core/lib/gpr/object_registry.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
@@ -3004,6 +3003,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
     src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/channel/object_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -3347,6 +3347,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
     src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/channel/object_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -3673,6 +3674,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
     src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/channel/object_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -3935,6 +3937,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
     src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/channel/object_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -4166,6 +4169,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
     src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/channel/object_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -4898,6 +4902,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
     src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/channel/object_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \

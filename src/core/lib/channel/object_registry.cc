@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/gpr/object_registry.h"
+#include "src/core/lib/channel/object_registry.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>

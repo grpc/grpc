@@ -645,7 +645,6 @@ add_library(gpr
   src/core/lib/gpr/log_windows.cc
   src/core/lib/gpr/mpscq.cc
   src/core/lib/gpr/murmur_hash.cc
-  src/core/lib/gpr/object_registry.cc
   src/core/lib/gpr/string.cc
   src/core/lib/gpr/string_posix.cc
   src/core/lib/gpr/string_util_windows.cc
@@ -803,6 +802,7 @@ add_library(grpc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/object_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
@@ -1144,6 +1144,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/object_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
@@ -1469,6 +1470,7 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/object_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
@@ -1738,6 +1740,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/object_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
@@ -1989,6 +1992,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/object_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
@@ -2728,6 +2732,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/object_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
