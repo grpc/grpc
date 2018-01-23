@@ -888,6 +888,9 @@ grpc_cc_library(
         "gpr++_base",
         "grpc_codegen",
         "grpc_trace",
+        ":ref_counted",
+        ":ref_counted_ptr",
+        ":debug_location",
     ],
 )
 
