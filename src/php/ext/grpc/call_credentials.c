@@ -183,15 +183,16 @@ int plugin_get_metadata(
   *status = GRPC_STATUS_OK;
   *error_details = NULL;
 
+  bool should_return = false;
   grpc_metadata_array metadata;
 
   if (retval == NULL || Z_TYPE_P(retval) != IS_ARRAY) {
     *status = GRPC_STATUS_INVALID_ARGUMENT;
-    return true;  // Synchronous return.
+    should_return = true;  // Synchronous return.
   }
   if (!create_metadata_array(retval, &metadata)) {
     *status = GRPC_STATUS_INVALID_ARGUMENT;
-    return true;  // Synchronous return.
+    should_return = true;  // Synchronous return.
   }
 
   if (retval != NULL) {
@@ -203,6 +204,9 @@ int plugin_get_metadata(
     PHP_GRPC_FREE_STD_ZVAL(arg);
     PHP_GRPC_FREE_STD_ZVAL(retval);
 #endif
+  }
+  if (should_return) {
+    return true;
   }
 
   if (metadata.count > GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX) {
