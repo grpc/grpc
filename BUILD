@@ -977,8 +977,6 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_deadline_filter",
-        "ref_counted",
-        "ref_counted_ptr",
     ],
 )
 
