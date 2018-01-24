@@ -51,6 +51,30 @@ class _ClientCallDetails(
     pass
 
 
+def _unwrap_client_call_details(call_details, default_details):
+    try:
+        method = call_details.method
+    except AttributeError:
+        method = default_details.method
+
+    try:
+        timeout = call_details.timeout
+    except AttributeError:
+        timeout = default_details.timeout
+
+    try:
+        metadata = call_details.metadata
+    except AttributeError:
+        metadata = default_details.metadata
+
+    try:
+        credentials = call_details.credentials
+    except AttributeError:
+        credentials = default_details.credentials
+
+    return method, timeout, metadata, credentials
+
+
 class _LocalFailure(grpc.RpcError, grpc.Future, grpc.Call):
 
     def __init__(self, exception, traceback):
@@ -126,15 +150,18 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 
     def future(self, request, timeout=None, metadata=None, credentials=None):
 
-        def continuation(client_call_details, request):
-            return self._thunk(client_call_details.method).future(
-                request,
-                timeout=client_call_details.timeout,
-                metadata=client_call_details.metadata,
-                credentials=client_call_details.credentials)
-
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials)
+
+        def continuation(new_details, request):
+            new_method, new_timeout, new_metadata, new_credentials = (
+                _unwrap_client_call_details(new_details, client_call_details))
+            return self._thunk(new_method).future(
+                request,
+                timeout=new_timeout,
+                metadata=new_metadata,
+                credentials=new_credentials)
+
         try:
             return self._interceptor.intercept_unary_unary(
                 continuation, client_call_details, request)
@@ -150,16 +177,18 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._interceptor = interceptor
 
     def __call__(self, request, timeout=None, metadata=None, credentials=None):
-
-        def continuation(client_call_details, request):
-            return self._thunk(client_call_details.method)(
-                request,
-                timeout=client_call_details.timeout,
-                metadata=client_call_details.metadata,
-                credentials=client_call_details.credentials)
-
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials)
+
+        def continuation(new_details, request):
+            new_method, new_timeout, new_metadata, new_credentials = (
+                _unwrap_client_call_details(new_details, client_call_details))
+            return self._thunk(new_method)(
+                request,
+                timeout=new_timeout,
+                metadata=new_metadata,
+                credentials=new_credentials)
+
         try:
             return self._interceptor.intercept_unary_stream(
                 continuation, client_call_details, request)
@@ -203,16 +232,17 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                timeout=None,
                metadata=None,
                credentials=None):
-
-        def continuation(client_call_details, request_iterator):
-            return self._thunk(client_call_details.method).future(
-                request_iterator,
-                timeout=client_call_details.timeout,
-                metadata=client_call_details.metadata,
-                credentials=client_call_details.credentials)
-
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials)
+
+        def continuation(new_details, request_iterator):
+            new_method, new_timeout, new_metadata, new_credentials = (
+                _unwrap_client_call_details(new_details, client_call_details))
+            return self._thunk(new_method).future(
+                request_iterator,
+                timeout=new_timeout,
+                metadata=new_metadata,
+                credentials=new_credentials)
 
         try:
             return self._interceptor.intercept_stream_unary(
@@ -233,16 +263,17 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                  timeout=None,
                  metadata=None,
                  credentials=None):
-
-        def continuation(client_call_details, request_iterator):
-            return self._thunk(client_call_details.method)(
-                request_iterator,
-                timeout=client_call_details.timeout,
-                metadata=client_call_details.metadata,
-                credentials=client_call_details.credentials)
-
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials)
+
+        def continuation(new_details, request_iterator):
+            new_method, new_timeout, new_metadata, new_credentials = (
+                _unwrap_client_call_details(new_details, client_call_details))
+            return self._thunk(new_method)(
+                request_iterator,
+                timeout=new_timeout,
+                metadata=new_metadata,
+                credentials=new_credentials)
 
         try:
             return self._interceptor.intercept_stream_stream(
