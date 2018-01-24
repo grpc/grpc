@@ -157,7 +157,7 @@ PHP_METHOD(ChannelCredentials, createSsl) {
   }
 
   php_grpc_int hashkey_len = root_certs_length + cert_chain_length;
-  char *hashkey = emalloc(hashkey_len);
+  char *hashkey = emalloc(hashkey_len + 1);
   if (root_certs_length > 0) {
     strcpy(hashkey, pem_root_certs);
   }
