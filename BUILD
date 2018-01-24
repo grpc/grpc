@@ -971,6 +971,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "inlined_vector",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
