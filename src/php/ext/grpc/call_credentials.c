@@ -120,6 +120,8 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
                             fci->params, fci->param_count) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "createFromPlugin expects 1 callback", 1 TSRMLS_CC);
+    free(fci);
+    free(fci_cache);
     return;
   }
 
