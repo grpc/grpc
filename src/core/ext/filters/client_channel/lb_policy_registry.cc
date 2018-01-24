@@ -39,8 +39,8 @@ class RegistryState {
     factories_.push_back(std::move(factory));
   }
 
-  LoadBalancingPolicyFactory* GetLoadBalancingPolicyFactory(const char* name)
-      const {
+  LoadBalancingPolicyFactory* GetLoadBalancingPolicyFactory(
+      const char* name) const {
     for (size_t i = 0; i < factories_.size(); ++i) {
       if (strcmp(name, factories_[i]->name()) == 0) {
         return factories_[i].get();

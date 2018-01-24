@@ -974,7 +974,7 @@ int main(int argc, char** argv) {
           grpc_core::LoadBalancingPolicy::Args());
   GPR_ASSERT(lb_policy == nullptr);
   lb_policy = grpc_core::LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-                  nullptr, grpc_core::LoadBalancingPolicy::Args());
+      nullptr, grpc_core::LoadBalancingPolicy::Args());
   GPR_ASSERT(lb_policy == nullptr);
 
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);

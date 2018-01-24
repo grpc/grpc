@@ -658,8 +658,8 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
 }  // namespace grpc_core
 
 void grpc_lb_policy_round_robin_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder
-      ::RegisterLoadBalancingPolicyFactory(
+  grpc_core::LoadBalancingPolicyRegistry::Builder::
+      RegisterLoadBalancingPolicyFactory(
           grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
               grpc_core::New<grpc_core::RoundRobinFactory>()));
 }
