@@ -138,43 +138,6 @@ static void server_verifier_sends_too_much_metadata(grpc_server* server,
   cq_verifier_destroy(cqv);
 }
 
-static bool client_validator(grpc_slice_buffer* incoming) {
-  for (size_t i = 0; i < incoming->count; ++i) {
-    const char* s = (const char*)GRPC_SLICE_START_PTR(incoming->slices[i]);
-    char* hex = gpr_dump(s, GRPC_SLICE_LENGTH(incoming->slices[i]),
-                         GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_INFO, "RESPONSE SLICE %" PRIdPTR ": %s", i, hex);
-    gpr_free(hex);
-  }
-
-  // Get last frame from incoming slice buffer.
-  grpc_slice_buffer last_frame_buffer;
-  grpc_slice_buffer_init(&last_frame_buffer);
-  grpc_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
-  GPR_ASSERT(last_frame_buffer.count == 1);
-  grpc_slice last_frame = last_frame_buffer.slices[0];
-
-  const uint8_t* p = GRPC_SLICE_START_PTR(last_frame);
-  bool success =
-      // Length == 4
-      *p++ != 0 || *p++ != 0 || *p++ != 4 ||
-      // Frame type (RST_STREAM)
-      *p++ != 3 ||
-      // Flags
-      *p++ != 0 ||
-      // Stream ID.
-      *p++ != 0 || *p++ != 0 || *p++ != 0 || *p++ != 1 ||
-      // Payload (error code)
-      *p++ == 0 || *p++ == 0 || *p++ == 0 || *p == 0 || *p == 11;
-
-  if (!success) {
-    gpr_log(GPR_INFO, "client expected RST_STREAM frame, not found");
-  }
-
-  grpc_slice_buffer_destroy(&last_frame_buffer);
-  return success;
-}
-
 int main(int argc, char** argv) {
   int i;
 
@@ -199,7 +162,7 @@ int main(int argc, char** argv) {
          client_headers, headers_len);
   grpc_bad_client_arg args[2];
   args[0] = connection_preface_arg;
-  args[1].client_validator = client_validator;
+  args[1].client_validator = rst_stream_client_validator;
   args[1].client_payload = client_payload;
   args[1].client_payload_length = sizeof(client_payload) - 1;
 
@@ -208,7 +171,7 @@ int main(int argc, char** argv) {
 
   // Test sending more metadata than the client will accept.
   GRPC_RUN_BAD_CLIENT_TEST(server_verifier_sends_too_much_metadata,
-                           client_validator,
+                           rst_stream_client_validator,
                            PFX_TOO_MUCH_METADATA_FROM_SERVER_STR, 0);
   return 0;
 }

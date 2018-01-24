@@ -26,8 +26,7 @@
 #include "src/core/lib/surface/server.h"
 
 #define PFX_STR                                                            \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */              \
+  "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \
   "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
                                             simple_request.headers in this \
                                             directory */                   \
@@ -92,8 +91,10 @@ int main(int argc, char** argv) {
       addbuf(message, sizeof(message));
     }
   }
-  grpc_bad_client_arg bca = {nullptr, g_buffer, g_count};
-  grpc_run_bad_client_test(verifier, &bca, 1, GRPC_BAD_CLIENT_LARGE_REQUEST);
+  grpc_bad_client_arg bca[2];
+  bca[0] = connection_preface_arg;
+  bca[1] = {rst_stream_client_validator, nullptr, g_buffer, g_count};
+  grpc_run_bad_client_test(verifier, bca, 2, GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free(g_buffer);
   grpc_shutdown();
 

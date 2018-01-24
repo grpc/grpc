@@ -38,15 +38,6 @@
 
 #define MIN_HTTP2_FRAME_SIZE 9
 
-/* connection preface and settings frame to be sent by the client */
-#define CONNECTION_PREFACE_FROM_CLIENT \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"   \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
-
-grpc_bad_client_arg connection_preface_arg = {
-    client_connection_preface_validator, CONNECTION_PREFACE_FROM_CLIENT,
-    sizeof(CONNECTION_PREFACE_FROM_CLIENT) - 1};
-
 /* Args to provide to thread running server side validator */
 typedef struct {
   grpc_server* server;
@@ -67,8 +58,9 @@ static void thd_func(void* arg) {
 
 /* Sets the done_write event */
 static void set_done_write(void* arg, grpc_error* error) {
-  gpr_event* set_done = (gpr_event*)arg;
-  gpr_event_set(set_done, (void*)1);
+  gpr_log(GPR_INFO, "done writing");
+  gpr_event* done_write = (gpr_event*)arg;
+  gpr_event_set(done_write, (void*)1);
 }
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
@@ -84,10 +76,10 @@ static void set_read_done(void* arg, grpc_error* error) {
   gpr_event_set(read_done, (void*)1);
 }
 
-/* Runs client side validators */
-void grpc_run_client_side_validators(grpc_bad_client_arg* arg, uint32_t flags,
-                                     grpc_endpoint_pair* sfd,
-                                     grpc_completion_queue* client_cq) {
+/* Runs client side validator */
+void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
+                                    grpc_endpoint_pair* sfd,
+                                    grpc_completion_queue* client_cq) {
   char* hex;
   gpr_event done_write;
   if (arg->client_payload_length < 4 * 1024) {
@@ -156,7 +148,7 @@ void grpc_run_client_side_validators(grpc_bad_client_arg* arg, uint32_t flags,
                          nullptr)
                          .type == GRPC_QUEUE_TIMEOUT);
         } while (!gpr_event_get(&read_done_event));
-        if (arg->client_validator(&incoming)) break;
+        if (arg->client_validator(&incoming, arg->client_validator_arg)) break;
         gpr_log(GPR_INFO,
                 "client validator failed; trying additional read "
                 "in case we didn't get all the data");
@@ -214,7 +206,7 @@ void grpc_run_bad_client_test(
   /* Start validator */
   gpr_thd_new(&id, "grpc_bad_client", thd_func, &a, nullptr);
   for (int i = 0; i < num_args; i++) {
-    grpc_run_client_side_validators(&args[i], flags, &sfd, client_cq);
+    grpc_run_client_side_validator(&args[i], flags, &sfd, client_cq);
   }
   /* Wait for server thread to finish */
   GPR_ASSERT(gpr_event_wait(&a.done_thd, grpc_timeout_seconds_to_deadline(1)));
@@ -240,7 +232,8 @@ void grpc_run_bad_client_test(
   grpc_shutdown();
 }
 
-bool client_connection_preface_validator(grpc_slice_buffer* incoming) {
+bool client_connection_preface_validator(grpc_slice_buffer* incoming,
+                                         void* arg) {
   if (incoming->count < 1) {
     return false;
   }
@@ -255,6 +248,44 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming) {
     return false;
   }
   return true;
+}
+
+/* connection preface and settings frame to be sent by the client */
+#define CONNECTION_PREFACE_FROM_CLIENT \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"   \
+  "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
+
+grpc_bad_client_arg connection_preface_arg = {
+    client_connection_preface_validator, nullptr,
+    CONNECTION_PREFACE_FROM_CLIENT, sizeof(CONNECTION_PREFACE_FROM_CLIENT) - 1};
+
+bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* arg) {
+  // Get last frame from incoming slice buffer.
+  grpc_slice_buffer last_frame_buffer;
+  grpc_slice_buffer_init(&last_frame_buffer);
+  grpc_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
+  GPR_ASSERT(last_frame_buffer.count == 1);
+  grpc_slice last_frame = last_frame_buffer.slices[0];
+
+  const uint8_t* p = GRPC_SLICE_START_PTR(last_frame);
+  bool success =
+      // Length == 4
+      *p++ != 0 || *p++ != 0 || *p++ != 4 ||
+      // Frame type (RST_STREAM)
+      *p++ != 3 ||
+      // Flags
+      *p++ != 0 ||
+      // Stream ID.
+      *p++ != 0 || *p++ != 0 || *p++ != 0 || *p++ != 1 ||
+      // Payload (error code)
+      *p++ == 0 || *p++ == 0 || *p++ == 0 || *p == 0 || *p == 11;
+
+  if (!success) {
+    gpr_log(GPR_INFO, "client expected RST_STREAM frame, not found");
+  }
+
+  grpc_slice_buffer_destroy(&last_frame_buffer);
+  return success;
 }
 
 static void* tag(intptr_t t) { return (void*)t; }
