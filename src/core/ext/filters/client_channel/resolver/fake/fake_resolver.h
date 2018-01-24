@@ -42,6 +42,12 @@ void grpc_fake_resolver_response_generator_set_response(
     grpc_fake_resolver_response_generator* generator,
     grpc_channel_args* next_response);
 
+// Same as \a grpc_fake_resolver_response_generator_set_response but without
+// notifying the client channel of the update.
+void grpc_fake_resolver_response_generator_set_response_no_notify(
+    grpc_fake_resolver_response_generator* generator,
+    grpc_channel_args* next_response);
+
 // Return a \a grpc_arg for a \a grpc_fake_resolver_response_generator instance.
 grpc_arg grpc_fake_resolver_response_generator_arg(
     grpc_fake_resolver_response_generator* generator);

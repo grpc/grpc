@@ -150,6 +150,7 @@ typedef struct set_response_closure_arg {
   grpc_closure set_response_closure;
   grpc_fake_resolver_response_generator* generator;
   grpc_channel_args* next_response;
+  bool notify;
 } set_response_closure_arg;
 
 static void set_response_closure_fn(void* arg, grpc_error* error) {
@@ -164,23 +165,36 @@ static void set_response_closure_fn(void* arg, grpc_error* error) {
     grpc_channel_args_destroy(r->results_upon_error);
   }
   r->results_upon_error = grpc_channel_args_copy(closure_arg->next_response);
+  if (closure_arg->notify) fake_resolver_maybe_finish_next_locked(r);
   gpr_free(closure_arg);
-  fake_resolver_maybe_finish_next_locked(r);
 }
 
-void grpc_fake_resolver_response_generator_set_response(
+static void set_response_and_maybe_push(
     grpc_fake_resolver_response_generator* generator,
-    grpc_channel_args* next_response) {
+    grpc_channel_args* next_response, bool notify) {
   GPR_ASSERT(generator->resolver != nullptr);
   set_response_closure_arg* closure_arg =
       (set_response_closure_arg*)gpr_zalloc(sizeof(*closure_arg));
   closure_arg->generator = generator;
   closure_arg->next_response = grpc_channel_args_copy(next_response);
+  closure_arg->notify = notify;
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
                                        set_response_closure_fn, closure_arg,
                                        grpc_combiner_scheduler(
                                            generator->resolver->base.combiner)),
                      GRPC_ERROR_NONE);
+}
+
+void grpc_fake_resolver_response_generator_set_response(
+    grpc_fake_resolver_response_generator* generator,
+    grpc_channel_args* next_response) {
+  set_response_and_maybe_push(generator, next_response, true);
+}
+
+void grpc_fake_resolver_response_generator_set_response_no_notify(
+    grpc_fake_resolver_response_generator* generator,
+    grpc_channel_args* next_response) {
+  set_response_and_maybe_push(generator, next_response, false);
 }
 
 static void* response_generator_arg_copy(void* p) {

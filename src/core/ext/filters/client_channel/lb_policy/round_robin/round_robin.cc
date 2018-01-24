@@ -328,18 +328,12 @@ static void update_lb_connectivity_status_locked(grpc_lb_subchannel_data* sd,
    * 2) RULE: ANY subchannel is CONNECTING => policy is CONNECTING.
    *    CHECK: sd->curr_connectivity_state == CONNECTING.
    *
-   * 3) RULE: ALL subchannels are SHUTDOWN => policy is IDLE (and requests
-   *          re-resolution).
-   *    CHECK: subchannel_list->num_shutdown ==
-   *           subchannel_list->num_subchannels.
-   *
-   * 4) RULE: ALL subchannels are SHUTDOWN or TRANSIENT_FAILURE => policy is
-   *          TRANSIENT_FAILURE.
-   *    CHECK: subchannel_list->num_shutdown +
-   *             subchannel_list->num_transient_failures ==
+   * 3) RULE: ALL subchannels are TRANSIENT_FAILURE => policy is
+   *                                                   TRANSIENT_FAILURE (and
+   *                                                   requests re-resolution).
+   *    CHECK: subchannel_list->num_transient_failures ==
    *           subchannel_list->num_subchannels.
    */
-  // TODO(juanlishen): For rule 4, we may want to re-resolve instead.
   grpc_lb_subchannel_list* subchannel_list = sd->subchannel_list;
   round_robin_lb_policy* p = (round_robin_lb_policy*)subchannel_list->policy;
   GPR_ASSERT(sd->curr_connectivity_state != GRPC_CHANNEL_IDLE);
@@ -351,22 +345,14 @@ static void update_lb_connectivity_status_locked(grpc_lb_subchannel_data* sd,
     /* 2) CONNECTING */
     grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_CONNECTING,
                                 GRPC_ERROR_NONE, "rr_connecting");
-  } else if (subchannel_list->num_shutdown ==
+  } else if (subchannel_list->num_transient_failures ==
              subchannel_list->num_subchannels) {
-    /* 3) IDLE and re-resolve */
-    grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_IDLE,
-                                GRPC_ERROR_NONE,
-                                "rr_exhausted_subchannels+reresolve");
-    p->started_picking = false;
+    /* 3) TRANSIENT_FAILURE and re-resolve */
+    grpc_connectivity_state_set(
+        &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_ERROR_REF(error), "rr_exhausted_subchannels+reresolve");
     grpc_lb_policy_try_reresolve(&p->base, &grpc_lb_round_robin_trace,
                                  GRPC_ERROR_NONE);
-  } else if (subchannel_list->num_shutdown +
-                 subchannel_list->num_transient_failures ==
-             subchannel_list->num_subchannels) {
-    /* 4) TRANSIENT_FAILURE */
-    grpc_connectivity_state_set(&p->state_tracker,
-                                GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                GRPC_ERROR_REF(error), "rr_transient_failure");
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -387,6 +373,7 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
         p->shutdown, sd->subchannel_list->shutting_down,
         grpc_error_string(error));
   }
+  GPR_ASSERT(sd->subchannel != nullptr);
   // If the policy is shutting down, unref and return.
   if (p->shutdown) {
     grpc_lb_subchannel_data_stop_connectivity_watch(sd);
