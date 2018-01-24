@@ -195,6 +195,7 @@ int plugin_get_metadata(
   if (!create_metadata_array(retval, &metadata)) {
     *status = GRPC_STATUS_INVALID_ARGUMENT;
     should_return = true;  // Synchronous return.
+    grpc_php_metadata_array_destroy_including_entries(&metadata);
   }
 
   if (retval != NULL) {
