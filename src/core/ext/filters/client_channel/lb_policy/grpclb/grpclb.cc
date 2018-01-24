@@ -1369,10 +1369,9 @@ void GrpcLb::BalancerCallInitLocked() {
    * the LB policy's interested_parties, which is comprised of the polling
    * entities from the client_channel. */
   grpc_slice host = grpc_slice_from_copied_string(server_name_);
-  grpc_millis deadline =
-      lb_call_timeout_ms_ == 0
-          ? GRPC_MILLIS_INF_FUTURE
-          : ExecCtx::Get()->Now() + lb_call_timeout_ms_;
+  grpc_millis deadline = lb_call_timeout_ms_ == 0
+                             ? GRPC_MILLIS_INF_FUTURE
+                             : ExecCtx::Get()->Now() + lb_call_timeout_ms_;
   lb_call_ = grpc_channel_create_pollset_set_call(
       lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties(),
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,

@@ -182,14 +182,13 @@ void RoundRobin::UpdateLastReadySubchannelIndexLocked(size_t last_ready_index) {
   GPR_ASSERT(last_ready_index < subchannel_list_->num_subchannels);
   last_ready_subchannel_index_ = last_ready_index;
   if (grpc_lb_round_robin_trace.enabled()) {
-    gpr_log(
-        GPR_DEBUG,
-        "[RR %p] setting last_ready_subchannel_index=%" PRIuPTR
-        " (SC %p, CSC %p)",
-        this, last_ready_index,
-        subchannel_list_->subchannels[last_ready_index].subchannel,
-        subchannel_list_->subchannels[last_ready_index].connected_subchannel
-            .get());
+    gpr_log(GPR_DEBUG,
+            "[RR %p] setting last_ready_subchannel_index=%" PRIuPTR
+            " (SC %p, CSC %p)",
+            this, last_ready_index,
+            subchannel_list_->subchannels[last_ready_index].subchannel,
+            subchannel_list_->subchannels[last_ready_index]
+                .connected_subchannel.get());
   }
 }
 
