@@ -33,6 +33,7 @@
 #define php_grpc_add_next_index_stringl(data, str, len, b) \
   add_next_index_stringl(data, str, len, b)
 
+#define PHP_GRPC_RETVAL_STRING(val, dup) RETVAL_STRING(val, dup)
 #define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val, dup)
 #define PHP_GRPC_MAKE_STD_ZVAL(pzv) MAKE_STD_ZVAL(pzv)
 #define PHP_GRPC_FREE_STD_ZVAL(pzv)
@@ -145,6 +146,7 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 #define php_grpc_add_next_index_stringl(data, str, len, b) \
   add_next_index_stringl(data, str, len)
 
+#define PHP_GRPC_RETVAL_STRING(val, dup) RETVAL_STRING(val)
 #define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val)
 #define PHP_GRPC_MAKE_STD_ZVAL(pzv) \
   pzv = (zval *)emalloc(sizeof(zval));

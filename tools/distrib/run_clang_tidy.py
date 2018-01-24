@@ -26,6 +26,8 @@ import jobset
 
 GRPC_CHECKS = [
     'modernize-use-nullptr',
+    'google-build-namespaces',
+    'google-build-explicit-make-pair',
 ]
 
 extra_args = [
@@ -69,4 +71,5 @@ for filename in args.files:
         shortname=filename,
     ))  #verbose_success=True))
 
-jobset.run(jobs, maxjobs=args.jobs)
+num_fails, res_set = jobset.run(jobs, maxjobs=args.jobs)
+sys.exit(num_fails)

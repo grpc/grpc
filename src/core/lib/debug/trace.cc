@@ -23,7 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 

@@ -42,9 +42,9 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 
 namespace grpc {
 

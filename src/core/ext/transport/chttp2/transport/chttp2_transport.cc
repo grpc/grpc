@@ -38,14 +38,14 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -151,6 +151,10 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error* error);
 static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error);
 
 static void reset_byte_stream(void* arg, grpc_error* error);
+
+// Flow control default enabled. Can be disabled by setting
+// GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
+bool g_flow_control_enabled = true;
 
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -517,7 +521,13 @@ static void init_transport(grpc_chttp2_transport* t,
     }
   }
 
-  t->flow_control.Init(t, enable_bdp);
+  if (g_flow_control_enabled) {
+    t->flow_control.Init<grpc_core::chttp2::TransportFlowControl>(t,
+                                                                  enable_bdp);
+  } else {
+    t->flow_control.Init<grpc_core::chttp2::TransportFlowControlDisabled>(t);
+    enable_bdp = false;
+  }
 
   /* No pings allowed before receiving a header or data frame. */
   t->ping_state.pings_before_data_required = 0;
@@ -682,7 +692,14 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
     post_destructive_reclaimer(t);
   }
 
-  s->flow_control.Init(t->flow_control.get(), s);
+  if (t->flow_control->flow_control_enabled()) {
+    s->flow_control.Init<grpc_core::chttp2::StreamFlowControl>(
+        static_cast<grpc_core::chttp2::TransportFlowControl*>(
+            t->flow_control.get()),
+        s);
+  } else {
+    s->flow_control.Init<grpc_core::chttp2::StreamFlowControlDisabled>();
+  }
   GPR_TIMER_END("init_stream", 0);
 
   return 0;
@@ -1869,7 +1886,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
   grpc_chttp2_maybe_complete_recv_message(t, s);
   if (s->recv_trailing_metadata_finished != nullptr && s->read_closed &&
       s->write_closed) {
-    if (s->seen_error) {
+    if (s->seen_error || !t->is_client) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
       if (!s->pending_byte_stream) {
         grpc_slice_buffer_reset_and_unref_internal(
@@ -2402,8 +2419,11 @@ static void read_action_locked(void* tp, grpc_error* error) {
     grpc_error* errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
                              GRPC_ERROR_NONE};
     for (; i < t->read_buffer.count && errors[1] == GRPC_ERROR_NONE; i++) {
-      t->flow_control->bdp_estimator()->AddIncomingBytes(
-          (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
+      grpc_core::BdpEstimator* bdp_est = t->flow_control->bdp_estimator();
+      if (bdp_est) {
+        bdp_est->AddIncomingBytes(
+            (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
+      }
       errors[1] = grpc_chttp2_perform_read(t, t->read_buffer.slices[i]);
     }
     if (errors[1] != GRPC_ERROR_NONE) {

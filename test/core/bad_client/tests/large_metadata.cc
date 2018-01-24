@@ -22,7 +22,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
 

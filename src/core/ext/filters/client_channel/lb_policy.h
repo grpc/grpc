@@ -20,6 +20,7 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -54,9 +55,9 @@ typedef struct grpc_lb_policy_pick_state {
   grpc_linked_mdelem lb_token_mdelem_storage;
   /// Closure to run when pick is complete, if not completed synchronously.
   grpc_closure* on_complete;
-  /// Will be set to the selected subchannel, or NULL on failure or when
+  /// Will be set to the selected subchannel, or nullptr on failure or when
   /// the LB policy decides to drop the call.
-  grpc_connected_subchannel* connected_subchannel;
+  grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel> connected_subchannel;
   /// Will be populated with context to pass to the subchannel call, if needed.
   grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
   /// Upon success, \a *user_data will be set to whatever opaque information
@@ -152,7 +153,8 @@ void grpc_lb_policy_shutdown_locked(grpc_lb_policy* policy,
 int grpc_lb_policy_pick_locked(grpc_lb_policy* policy,
                                grpc_lb_policy_pick_state* pick);
 
-/** Perform a connected subchannel ping (see \a grpc_connected_subchannel_ping)
+/** Perform a connected subchannel ping (see \a
+   grpc_core::ConnectedSubchannel::Ping)
     against one of the connected subchannels managed by \a policy. */
 void grpc_lb_policy_ping_one_locked(grpc_lb_policy* policy,
                                     grpc_closure* on_initiate,

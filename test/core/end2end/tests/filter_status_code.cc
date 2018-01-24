@@ -30,11 +30,14 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static bool g_enable_filter = false;
 static gpr_mu g_mu;
+static grpc_call_stack* g_client_call_stack;
+static grpc_call_stack* g_server_call_stack;
 static bool g_client_code_recv;
 static bool g_server_code_recv;
 static gpr_cv g_client_code_cv;
@@ -117,6 +120,8 @@ static void test_request(grpc_end2end_test_config config) {
   int was_cancelled = 2;
 
   gpr_mu_lock(&g_mu);
+  g_client_call_stack = nullptr;
+  g_server_call_stack = nullptr;
   g_client_status_code = GRPC_STATUS_OK;
   g_server_status_code = GRPC_STATUS_OK;
   gpr_mu_unlock(&g_mu);
@@ -127,6 +132,9 @@ static void test_request(grpc_end2end_test_config config) {
       grpc_slice_from_static_string("/foo"),
       get_host_override_slice("foo.test.google.fr", config), deadline, nullptr);
   GPR_ASSERT(c);
+  gpr_mu_lock(&g_mu);
+  g_client_call_stack = grpc_call_get_call_stack(c);
+  gpr_mu_unlock(&g_mu);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -167,6 +175,10 @@ static void test_request(grpc_end2end_test_config config) {
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
+
+  gpr_mu_lock(&g_mu);
+  g_server_call_stack = grpc_call_get_call_stack(s);
+  gpr_mu_unlock(&g_mu);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -215,49 +227,62 @@ static void test_request(grpc_end2end_test_config config) {
   // Perform checks after test tear-down
   // Guards against the case that there's outstanding channel-related work on a
   // call prior to verification
-  // TODO(https://github.com/grpc/grpc/issues/13915) enable this for windows
-#ifndef GPR_WINDOWS
   gpr_mu_lock(&g_mu);
   if (!g_client_code_recv) {
     GPR_ASSERT(gpr_cv_wait(&g_client_code_cv, &g_mu,
-                           grpc_timeout_seconds_to_deadline(3)));
+                           grpc_timeout_seconds_to_deadline(3)) == 0);
   }
   if (!g_server_code_recv) {
-    GPR_ASSERT(gpr_cv_wait(&g_client_code_cv, &g_mu,
-                           grpc_timeout_seconds_to_deadline(3)));
+    GPR_ASSERT(gpr_cv_wait(&g_server_code_cv, &g_mu,
+                           grpc_timeout_seconds_to_deadline(3)) == 0);
   }
   GPR_ASSERT(g_client_status_code == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(g_server_status_code == GRPC_STATUS_UNIMPLEMENTED);
   gpr_mu_unlock(&g_mu);
-#endif  // GPR_WINDOWS
 }
 
 /*******************************************************************************
  * Test status_code filter
  */
 
+typedef struct final_status_data {
+  grpc_call_stack* call;
+} final_status_data;
+
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
+  final_status_data* data = (final_status_data*)elem->call_data;
+  data->call = args->call_stack;
   return GRPC_ERROR_NONE;
 }
 
 static void client_destroy_call_elem(grpc_call_element* elem,
                                      const grpc_call_final_info* final_info,
                                      grpc_closure* ignored) {
+  final_status_data* data = (final_status_data*)elem->call_data;
   gpr_mu_lock(&g_mu);
-  g_client_status_code = final_info->final_status;
-  g_client_code_recv = true;
-  gpr_cv_signal(&g_client_code_cv);
+  // Some fixtures, like proxies, will spawn intermidiate calls
+  // We only want the results from our explicit calls
+  if (data->call == g_client_call_stack) {
+    g_client_status_code = final_info->final_status;
+    g_client_code_recv = true;
+    gpr_cv_signal(&g_client_code_cv);
+  }
   gpr_mu_unlock(&g_mu);
 }
 
 static void server_destroy_call_elem(grpc_call_element* elem,
                                      const grpc_call_final_info* final_info,
                                      grpc_closure* ignored) {
+  final_status_data* data = (final_status_data*)elem->call_data;
   gpr_mu_lock(&g_mu);
-  g_server_status_code = final_info->final_status;
-  g_server_code_recv = true;
-  gpr_cv_signal(&g_server_code_cv);
+  // Some fixtures, like proxies, will spawn intermidiate calls
+  // We only want the results from our explicit calls
+  if (data->call == g_server_call_stack) {
+    g_server_status_code = final_info->final_status;
+    g_server_code_recv = true;
+    gpr_cv_signal(&g_server_code_cv);
+  }
   gpr_mu_unlock(&g_mu);
 }
 
@@ -271,7 +296,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {}
 static const grpc_channel_filter test_client_filter = {
     grpc_call_next_op,
     grpc_channel_next_op,
-    0,
+    sizeof(final_status_data),
     init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     client_destroy_call_elem,
@@ -284,7 +309,7 @@ static const grpc_channel_filter test_client_filter = {
 static const grpc_channel_filter test_server_filter = {
     grpc_call_next_op,
     grpc_channel_next_op,
-    0,
+    sizeof(final_status_data),
     init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     server_destroy_call_elem,
