@@ -220,30 +220,31 @@ class BalancerServiceImpl : public BalancerService {
 
     if (client_load_reporting_interval_seconds_ > 0) {
       request.Clear();
-      stream->Read(&request);
-      gpr_log(GPR_INFO, "LB[%p]: recv client load report msg: '%s'", this,
-              request.DebugString().c_str());
-      GPR_ASSERT(request.has_client_stats());
-      // We need to acquire the lock here in order to prevent the notify_one
-      // below from firing before its corresponding wait is executed.
-      std::lock_guard<std::mutex> lock(mu_);
-      client_stats_.num_calls_started +=
-          request.client_stats().num_calls_started();
-      client_stats_.num_calls_finished +=
-          request.client_stats().num_calls_finished();
-      client_stats_.num_calls_finished_with_client_failed_to_send +=
-          request.client_stats()
-              .num_calls_finished_with_client_failed_to_send();
-      client_stats_.num_calls_finished_known_received +=
-          request.client_stats().num_calls_finished_known_received();
-      for (const auto& drop_token_count :
-           request.client_stats().calls_finished_with_drop()) {
-        client_stats_
-            .drop_token_counts[drop_token_count.load_balance_token()] +=
-            drop_token_count.num_calls();
+      if (stream->Read(&request)) {
+        gpr_log(GPR_INFO, "LB[%p]: recv client load report msg: '%s'", this,
+                request.DebugString().c_str());
+        GPR_ASSERT(request.has_client_stats());
+        // We need to acquire the lock here in order to prevent the notify_one
+        // below from firing before its corresponding wait is executed.
+        std::lock_guard<std::mutex> lock(mu_);
+        client_stats_.num_calls_started +=
+            request.client_stats().num_calls_started();
+        client_stats_.num_calls_finished +=
+            request.client_stats().num_calls_finished();
+        client_stats_.num_calls_finished_with_client_failed_to_send +=
+            request.client_stats()
+                .num_calls_finished_with_client_failed_to_send();
+        client_stats_.num_calls_finished_known_received +=
+            request.client_stats().num_calls_finished_known_received();
+        for (const auto& drop_token_count :
+             request.client_stats().calls_finished_with_drop()) {
+          client_stats_
+              .drop_token_counts[drop_token_count.load_balance_token()] +=
+              drop_token_count.num_calls();
+        }
+        load_report_ready_ = true;
+        load_report_cond_.notify_one();
       }
-      load_report_ready_ = true;
-      load_report_cond_.notify_one();
     }
   done:
     gpr_log(GPR_INFO, "LB[%p]: done", this);
