@@ -108,6 +108,9 @@ message ClientConfig {
 
   // Number of messages on a stream before it gets finished/restarted
   int32 messages_per_stream = 18;
+
+  // Use coalescing API when possible.
+  bool use_coalesce_api = 19;
 }
 
 message ClientStatus { ClientStats stats = 1; }
