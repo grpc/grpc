@@ -29,15 +29,24 @@ namespace grpc_core {
 
 class ResolverRegistry {
  public:
-  /// Returns the global resolver registry.
-  static ResolverRegistry* Global();
+  /// Methods used to create and populate the ResolverRegistry.
+  /// NOT THREAD SAFE -- to be used only during global gRPC
+  /// initialization and shutdown.
+  class Builder {
+   public:
+    /// Global initialization and shutdown hooks.
+    static void InitRegistry();
+    static void ShutdownRegistry();
 
-  /// Sets the default URI prefix to \a default_prefix.
-  void SetDefaultPrefix(const char* default_prefix);
+    /// Sets the default URI prefix to \a default_prefix.
+    /// Calls InitRegistry() if it has not already been called.
+    static void SetDefaultPrefix(const char* default_prefix);
 
-  /// Registers a resolver factory.  The factory will be used to create a
-  /// resolver for any URI whose scheme matches that of the factory.
-  void RegisterResolverFactory(UniquePtr<ResolverFactory> factory);
+    /// Registers a resolver factory.  The factory will be used to create a
+    /// resolver for any URI whose scheme matches that of the factory.
+    /// Calls InitRegistry() if it has not already been called.
+    static void RegisterResolverFactory(UniquePtr<ResolverFactory> factory);
+  };
 
   /// Creates a resolver given \a target.
   /// First tries to parse \a target as a URI. If this succeeds, tries
@@ -46,38 +55,20 @@ class ResolverRegistry {
   /// to target and tries again.
   /// If a resolver factory was found, uses it to instantiate a resolver and
   /// returns it; otherwise, returns nullptr.
-  OrphanablePtr<Resolver> CreateResolver(const char* target,
-                                         const grpc_channel_args* args,
-                                         grpc_pollset_set* pollset_set,
-                                         grpc_combiner* combiner);
+  static OrphanablePtr<Resolver> CreateResolver(const char* target,
+                                                const grpc_channel_args* args,
+                                                grpc_pollset_set* pollset_set,
+                                                grpc_combiner* combiner);
 
   /// Returns the default authority to pass from a client for \a target.
-  UniquePtr<char> GetDefaultAuthority(const char* target);
+  static UniquePtr<char> GetDefaultAuthority(const char* target);
 
   /// Returns \a target with the default prefix prepended, if needed.
-  UniquePtr<char> AddDefaultPrefixIfNeeded(const char* target);
+  static UniquePtr<char> AddDefaultPrefixIfNeeded(const char* target);
 
   /// Returns the resolver factory for \a scheme.
   /// Caller does NOT own the return value.
-  ResolverFactory* LookupResolverFactory(const char* scheme);
-
-  /// Global initialization and shutdown hooks.
-  static void Init();
-  static void Shutdown();
-
-  // DO NOT USE THESE.
-  // Instead, use the singleton instance returned by Global().
-  // The only reason these are not private is that they need to be
-  // accessed by the gRPC-specific New<> and Delete<>.
-  ResolverRegistry();
-  ~ResolverRegistry();
-
- private:
-  ResolverFactory* FindResolverFactory(const char* target, grpc_uri** uri,
-                                       char** canonical_target);
-
-  InlinedVector<UniquePtr<ResolverFactory>, 10> factories_;
-  UniquePtr<char> default_prefix_;
+  static ResolverFactory* LookupResolverFactory(const char* scheme);
 };
 
 }  // namespace grpc_core

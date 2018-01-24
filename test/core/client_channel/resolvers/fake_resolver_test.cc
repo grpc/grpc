@@ -37,7 +37,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
     grpc_combiner* combiner,
     grpc_core::FakeResolverResponseGenerator* response_generator) {
   grpc_core::ResolverFactory* factory =
-      grpc_core::ResolverRegistry::Global()->LookupResolverFactory("fake");
+      grpc_core::ResolverRegistry::LookupResolverFactory("fake");
   grpc_arg generator_arg =
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
           response_generator);

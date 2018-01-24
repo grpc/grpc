@@ -229,7 +229,7 @@ class FakeResolverFactory : public ResolverFactory {
 }  // namespace grpc_core
 
 void grpc_resolver_fake_init() {
-  grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
+  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       grpc_core::UniquePtr<grpc_core::ResolverFactory>(
           grpc_core::New<grpc_core::FakeResolverFactory>()));
 }

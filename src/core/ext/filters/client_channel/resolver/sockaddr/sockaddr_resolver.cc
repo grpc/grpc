@@ -197,15 +197,14 @@ class UnixResolverFactory : public ResolverFactory {
 }  // namespace grpc_core
 
 void grpc_resolver_sockaddr_init() {
-  grpc_core::ResolverRegistry* registry = grpc_core::ResolverRegistry::Global();
-  registry->RegisterResolverFactory(
+  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       grpc_core::UniquePtr<grpc_core::ResolverFactory>(
           grpc_core::New<grpc_core::IPv4ResolverFactory>()));
-  registry->RegisterResolverFactory(
+  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       grpc_core::UniquePtr<grpc_core::ResolverFactory>(
           grpc_core::New<grpc_core::IPv6ResolverFactory>()));
 #ifdef GRPC_HAVE_UNIX_SOCKET
-  registry->RegisterResolverFactory(
+  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       grpc_core::UniquePtr<grpc_core::ResolverFactory>(
           grpc_core::New<grpc_core::UnixResolverFactory>()));
 #endif

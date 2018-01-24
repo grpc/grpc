@@ -396,7 +396,7 @@ void grpc_resolver_dns_ares_init() {
       return;
     }
     grpc_resolve_address = grpc_resolve_address_ares;
-    grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
+    grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
             grpc_core::New<grpc_core::AresDnsResolverFactory>()));
   }

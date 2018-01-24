@@ -90,9 +90,9 @@ int main(int argc, char** argv) {
   g_combiner = grpc_combiner_create();
 
   grpc_core::ResolverFactory* ipv4 =
-      grpc_core::ResolverRegistry::Global()->LookupResolverFactory("ipv4");
+      grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
   grpc_core::ResolverFactory* ipv6 =
-      grpc_core::ResolverRegistry::Global()->LookupResolverFactory("ipv6");
+      grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
 
   test_fails(ipv4, "ipv4:10.2.1.1");
   test_succeeds(ipv4, "ipv4:10.2.1.1:1234");

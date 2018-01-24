@@ -264,15 +264,16 @@ void grpc_resolver_dns_native_init() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
-    grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
+    grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
             grpc_core::New<grpc_core::NativeDnsResolverFactory>()));
   } else {
+    grpc_core::ResolverRegistry::Builder::InitRegistry();
     grpc_core::ResolverFactory* existing_factory =
-        grpc_core::ResolverRegistry::Global()->LookupResolverFactory("dns");
+        grpc_core::ResolverRegistry::LookupResolverFactory("dns");
     if (existing_factory == nullptr) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");
-      grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
+      grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
           grpc_core::UniquePtr<grpc_core::ResolverFactory>(
               grpc_core::New<grpc_core::NativeDnsResolverFactory>()));
     }

@@ -755,7 +755,7 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   grpc_proxy_mappers_map_name(arg->value.string, args->channel_args,
                               &proxy_name, &new_args);
   // Instantiate resolver.
-  chand->resolver = grpc_core::ResolverRegistry::Global()->CreateResolver(
+  chand->resolver = grpc_core::ResolverRegistry::CreateResolver(
       proxy_name != nullptr ? proxy_name : arg->value.string,
       new_args != nullptr ? new_args : args->channel_args,
       chand->interested_parties, chand->combiner);
