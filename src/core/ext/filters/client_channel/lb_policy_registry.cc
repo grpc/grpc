@@ -21,48 +21,72 @@
 #include <string.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 
 namespace grpc_core {
 
 namespace {
-LoadBalancingPolicyRegistry* g_registry = nullptr;
+
+class RegistryState {
+ public:
+  RegistryState() {}
+
+  void RegisterLoadBalancingPolicyFactory(
+      UniquePtr<LoadBalancingPolicyFactory> factory) {
+    for (size_t i = 0; i < factories_.size(); ++i) {
+      GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
+    }
+    factories_.push_back(std::move(factory));
+  }
+
+  LoadBalancingPolicyFactory* GetLoadBalancingPolicyFactory(const char* name)
+      const {
+    for (size_t i = 0; i < factories_.size(); ++i) {
+      if (strcmp(name, factories_[i]->name()) == 0) {
+        return factories_[i].get();
+      }
+    }
+    return nullptr;
+  }
+
+ private:
+  InlinedVector<UniquePtr<LoadBalancingPolicyFactory>, 10> factories_;
+};
+
+RegistryState* g_state = nullptr;
+
 }  // namespace
 
-LoadBalancingPolicyRegistry* LoadBalancingPolicyRegistry::Global() {
-  return g_registry;
+//
+// LoadBalancingPolicyRegistry::Builder
+//
+
+void LoadBalancingPolicyRegistry::Builder::InitRegistry() {
+  if (g_state == nullptr) g_state = New<RegistryState>();
 }
 
-void LoadBalancingPolicyRegistry::Init() {
-  g_registry = New<LoadBalancingPolicyRegistry>();
+void LoadBalancingPolicyRegistry::Builder::ShutdownRegistry() {
+  Delete(g_state);
+  g_state = nullptr;
 }
 
-void LoadBalancingPolicyRegistry::Shutdown() {
-  Delete(g_registry);
-  g_registry = nullptr;
-}
-
-LoadBalancingPolicyRegistry::LoadBalancingPolicyRegistry() {}
-
-LoadBalancingPolicyRegistry::~LoadBalancingPolicyRegistry() {}
-
-void LoadBalancingPolicyRegistry::RegisterLoadBalancingPolicyFactory(
+void LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
     UniquePtr<LoadBalancingPolicyFactory> factory) {
-  for (size_t i = 0; i < factories_.size(); ++i) {
-    GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
-  }
-  factories_.push_back(std::move(factory));
+  InitRegistry();
+  g_state->RegisterLoadBalancingPolicyFactory(std::move(factory));
 }
+
+//
+// LoadBalancingPolicyRegistry
+//
 
 OrphanablePtr<LoadBalancingPolicy>
 LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
     const char* name, const LoadBalancingPolicy::Args& args) {
+  GPR_ASSERT(g_state != nullptr);
   // Find factory.
-  LoadBalancingPolicyFactory* factory = nullptr;
-  for (size_t i = 0; i < factories_.size(); ++i) {
-    if (strcmp(name, factories_[i]->name()) == 0) {
-      factory = factories_[i].get();
-    }
-  }
+  LoadBalancingPolicyFactory* factory =
+      g_state->GetLoadBalancingPolicyFactory(name);
   if (factory == nullptr) return nullptr;  // Specified name not found.
   // Create policy via factory.
   return factory->CreateLoadBalancingPolicy(args);

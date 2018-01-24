@@ -969,13 +969,12 @@ int main(int argc, char** argv) {
   grpc_tracer_set_enabled("round_robin", 1);
 
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> lb_policy =
-      grpc_core::LoadBalancingPolicyRegistry::Global()
-          ->CreateLoadBalancingPolicy("this-lb-policy-does-not-exist",
-                                      grpc_core::LoadBalancingPolicy::Args());
+      grpc_core::LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+          "this-lb-policy-does-not-exist",
+          grpc_core::LoadBalancingPolicy::Args());
   GPR_ASSERT(lb_policy == nullptr);
-  lb_policy = grpc_core::LoadBalancingPolicyRegistry::Global()
-                  ->CreateLoadBalancingPolicy(
-                      nullptr, grpc_core::LoadBalancingPolicy::Args());
+  lb_policy = grpc_core::LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+                  nullptr, grpc_core::LoadBalancingPolicy::Args());
   GPR_ASSERT(lb_policy == nullptr);
 
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);

@@ -20,7 +20,6 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_REGISTRY_H
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -29,31 +28,24 @@ namespace grpc_core {
 
 class LoadBalancingPolicyRegistry {
  public:
-  /// Returns the global LB policy registry.
-  static LoadBalancingPolicyRegistry* Global();
+  /// Methods used to create and populate the LoadBalancingPolicyRegistry.
+  /// NOT THREAD SAFE -- to be used only during global gRPC
+  /// initialization and shutdown.
+  class Builder {
+   public:
+    /// Global initialization and shutdown hooks.
+    static void InitRegistry();
+    static void ShutdownRegistry();
 
-  /// Registers an LB policy factory.  The factory will be used to create an
-  /// LB policy for any URI whose scheme matches that of the factory.
-  void RegisterLoadBalancingPolicyFactory(
-      UniquePtr<LoadBalancingPolicyFactory> factory);
+    /// Registers an LB policy factory.  The factory will be used to create an
+    /// LB policy whose name matches that of the factory.
+    static void RegisterLoadBalancingPolicyFactory(
+        UniquePtr<LoadBalancingPolicyFactory> factory);
+  };
 
-  /// Creates a LB policy of the type specified by \a name.
-  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+  /// Creates an LB policy of the type specified by \a name.
+  static OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       const char* name, const LoadBalancingPolicy::Args& args);
-
-  /// Global initialization and shutdown hooks.
-  static void Init();
-  static void Shutdown();
-
-  // DO NOT USE THESE.
-  // Instead, use the singleton instance returned by Global().
-  // The only reason these are not private is that they need to be
-  // accessed by the gRPC-specific New<> and Delete<>.
-  LoadBalancingPolicyRegistry();
-  ~LoadBalancingPolicyRegistry();
-
- private:
-  InlinedVector<UniquePtr<LoadBalancingPolicyFactory>, 10> factories_;
 };
 
 }  // namespace grpc_core

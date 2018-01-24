@@ -813,7 +813,7 @@ bool GrpcLb::PickFromInternalRRLocked(bool force_async, PendingPick* pp) {
 
 void GrpcLb::CreateRRLocked(const Args& args) {
   GPR_ASSERT(rr_policy_.get() == nullptr);
-  rr_policy_ = LoadBalancingPolicyRegistry::Global()->CreateLoadBalancingPolicy(
+  rr_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
       "round_robin", args);
   if (rr_policy_.get() == nullptr) {
     gpr_log(GPR_ERROR, "[grpclb %p] Failure creating a RoundRobin policy",
@@ -1846,8 +1846,8 @@ static bool maybe_add_client_load_reporting_filter(
 }
 
 void grpc_lb_policy_grpclb_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Global()
-      ->RegisterLoadBalancingPolicyFactory(
+  grpc_core::LoadBalancingPolicyRegistry::Builder
+      ::RegisterLoadBalancingPolicyFactory(
           grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
               grpc_core::New<grpc_core::GrpcLbFactory>()));
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,

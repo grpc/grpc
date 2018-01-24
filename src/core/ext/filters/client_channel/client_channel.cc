@@ -453,8 +453,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
         // Instantiate new LB policy.
         lb_policy_created = true;
         new_lb_policy =
-            grpc_core::LoadBalancingPolicyRegistry::Global()
-                ->CreateLoadBalancingPolicy(lb_policy_name, lb_policy_args);
+            grpc_core::LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+                lb_policy_name, lb_policy_args);
         if (new_lb_policy == nullptr) {
           gpr_log(GPR_ERROR, "could not create LB policy \"%s\"",
                   lb_policy_name);
