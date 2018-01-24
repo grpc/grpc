@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_ANY_H
-#define GRPC_CORE_LIB_SUPPORT_ANY_H
+#ifndef GRPC_CORE_LIB_GPRPP_ANY_H
+#define GRPC_CORE_LIB_GPRPP_ANY_H
 
 #include <cstddef>
 #include <type_traits>
