@@ -50,7 +50,7 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder* builder,
     }
   }
   grpc_core::UniquePtr<char> default_authority =
-      grpc_core::ResolverRegistry::Global()->GetDefaultAuthority(
+      grpc_core::ResolverRegistry::GetDefaultAuthority(
           grpc_channel_stack_builder_get_target(builder));
   if (default_authority.get() != nullptr) {
     grpc_arg arg = grpc_channel_arg_string_create(
@@ -64,7 +64,7 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder* builder,
 
 void grpc_client_channel_init(void) {
   grpc_core::LoadBalancingPolicyRegistry::Init();
-  grpc_core::ResolverRegistry::Init();
+  grpc_core::ResolverRegistry::Builder::InitRegistry();
   grpc_retry_throttle_map_init();
   grpc_proxy_mapper_registry_init();
   grpc_register_http_proxy_mapper();
@@ -82,6 +82,6 @@ void grpc_client_channel_shutdown(void) {
   grpc_channel_init_shutdown();
   grpc_proxy_mapper_registry_shutdown();
   grpc_retry_throttle_map_shutdown();
-  grpc_core::ResolverRegistry::Shutdown();
+  grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
   grpc_core::LoadBalancingPolicyRegistry::Shutdown();
 }

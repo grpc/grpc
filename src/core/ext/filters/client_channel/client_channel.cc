@@ -41,12 +41,12 @@
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
@@ -752,7 +752,7 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   grpc_proxy_mappers_map_name(arg->value.string, args->channel_args,
                               &proxy_name, &new_args);
   // Instantiate resolver.
-  chand->resolver = grpc_core::ResolverRegistry::Global()->CreateResolver(
+  chand->resolver = grpc_core::ResolverRegistry::CreateResolver(
       proxy_name != nullptr ? proxy_name : arg->value.string,
       new_args != nullptr ? new_args : args->channel_args,
       chand->interested_parties, chand->combiner);
@@ -994,7 +994,7 @@ static void create_subchannel_call_locked(grpc_call_element* elem,
                                           grpc_error* error) {
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
-  const grpc_connected_subchannel_call_args call_args = {
+  const grpc_core::ConnectedSubchannel::CallArgs call_args = {
       calld->pollent,                       // pollent
       calld->path,                          // path
       calld->call_start_time,               // start_time
@@ -1003,8 +1003,8 @@ static void create_subchannel_call_locked(grpc_call_element* elem,
       calld->pick.subchannel_call_context,  // context
       calld->call_combiner                  // call_combiner
   };
-  grpc_error* new_error = grpc_connected_subchannel_create_call(
-      calld->pick.connected_subchannel, &call_args, &calld->subchannel_call);
+  grpc_error* new_error = calld->pick.connected_subchannel->CreateCall(
+      call_args, &calld->subchannel_call);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
             chand, calld, calld->subchannel_call, grpc_error_string(new_error));
@@ -1451,7 +1451,7 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
   }
   GPR_ASSERT(calld->waiting_for_pick_batches_count == 0);
   if (calld->pick.connected_subchannel != nullptr) {
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(calld->pick.connected_subchannel, "picked");
+    calld->pick.connected_subchannel.reset();
   }
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
     if (calld->pick.subchannel_call_context[i].value != nullptr) {

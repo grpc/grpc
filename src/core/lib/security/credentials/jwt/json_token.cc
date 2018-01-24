@@ -26,9 +26,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
-#include "src/core/lib/support/string.h"
 
 extern "C" {
 #include <openssl/bio.h>

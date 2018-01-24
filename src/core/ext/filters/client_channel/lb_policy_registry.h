@@ -20,10 +20,10 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_REGISTRY_H
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/support/memory.h"
-#include "src/core/lib/support/orphanable.h"
-#include "src/core/lib/support/vector.h"
 
 namespace grpc_core {
 

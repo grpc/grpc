@@ -26,7 +26,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 #include <gtest/gtest.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

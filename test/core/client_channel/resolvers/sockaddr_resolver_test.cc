@@ -62,6 +62,9 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
 
   resolver->NextLocked(&on_res_arg.resolver_result, on_resolution);
   grpc_uri_destroy(uri);
+  /* Flush ExecCtx to avoid stack-use-after-scope on on_res_arg which is
+   * accessed in the closure on_resolution_cb */
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void test_fails(grpc_core::ResolverFactory* factory,
@@ -87,9 +90,9 @@ int main(int argc, char** argv) {
   g_combiner = grpc_combiner_create();
 
   grpc_core::ResolverFactory* ipv4 =
-      grpc_core::ResolverRegistry::Global()->LookupResolverFactory("ipv4");
+      grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
   grpc_core::ResolverFactory* ipv6 =
-      grpc_core::ResolverRegistry::Global()->LookupResolverFactory("ipv6");
+      grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
 
   test_fails(ipv4, "ipv4:10.2.1.1");
   test_succeeds(ipv4, "ipv4:10.2.1.1:1234");

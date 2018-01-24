@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   g_combiner = grpc_combiner_create();
 
   grpc_core::ResolverFactory* dns =
-      grpc_core::ResolverRegistry::Global()->LookupResolverFactory("dns");
+      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
 
   test_succeeds(dns, "dns:10.2.1.1");
   test_succeeds(dns, "dns:10.2.1.1:1234");

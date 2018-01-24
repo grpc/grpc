@@ -29,7 +29,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/event_string.h"
 
 #define ROOT_EXPECTATION 1000

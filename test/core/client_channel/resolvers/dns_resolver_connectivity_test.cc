@@ -82,7 +82,7 @@ static grpc_ares_request* my_dns_lookup_ares(
 static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
     const char* name) {
   grpc_core::ResolverFactory* factory =
-      grpc_core::ResolverRegistry::Global()->LookupResolverFactory("dns");
+      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
   grpc_uri* uri = grpc_uri_parse(name, 0);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;

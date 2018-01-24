@@ -19,6 +19,7 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <random>
 #include <sstream>
 #include <thread>
 
@@ -35,8 +36,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -105,8 +106,8 @@ class BalancerServiceImpl : public LoadBalancer::Service {
     for (size_t i = 0; i < num_drop_entry; ++i) {
       random_backend_indices.push_back(-1);
     }
-    std::random_shuffle(random_backend_indices.begin(),
-                        random_backend_indices.end());
+    std::shuffle(random_backend_indices.begin(), random_backend_indices.end(),
+                 std::mt19937(std::random_device()()));
     // Build the response according to the random list generated above.
     LoadBalanceResponse response;
     for (int index : random_backend_indices) {
@@ -150,7 +151,8 @@ class ClientChannelStressTest {
           addresses.emplace_back(AddressData{balancer_server.port_, true, ""});
         }
       }
-      std::random_shuffle(addresses.begin(), addresses.end());
+      std::shuffle(addresses.begin(), addresses.end(),
+                   std::mt19937(std::random_device()()));
       SetNextResolution(addresses);
       std::this_thread::sleep_for(wait_duration);
     }

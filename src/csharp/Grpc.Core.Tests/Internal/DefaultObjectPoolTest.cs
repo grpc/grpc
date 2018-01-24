@@ -60,6 +60,16 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void LeaseSetsReturnAction()
+        {
+            var pool = new DefaultObjectPool<TestPooledObject>(() => new TestPooledObject(), 10, 0);
+            var origLeased = pool.Lease();
+            origLeased.ReturnAction(origLeased);
+            pool.Dispose();
+            Assert.AreNotSame(origLeased, pool.Lease());
+        }
+
+        [Test]
         public void Constructor()
         {
             Assert.Throws<ArgumentNullException>(() => new DefaultObjectPool<TestPooledObject>(null, 10, 2));
@@ -67,8 +77,14 @@ namespace Grpc.Core.Internal.Tests
             Assert.Throws<ArgumentException>(() => new DefaultObjectPool<TestPooledObject>(() => new TestPooledObject(), 10, -1));
         }
 
-        class TestPooledObject : IDisposable
+        class TestPooledObject : IPooledObject<TestPooledObject>
         {
+            public Action<TestPooledObject> ReturnAction;
+
+            public void SetReturnToPoolAction(Action<TestPooledObject> returnAction)
+            {
+                this.ReturnAction = returnAction;
+            }
 
             public void Dispose()
             {

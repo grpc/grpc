@@ -29,11 +29,12 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -188,7 +189,7 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     grpc_resolved_addresses_destroy(r->addresses_);
     grpc_lb_addresses_destroy(addresses);
   } else {
-    grpc_millis next_try = r->backoff_.Step();
+    grpc_millis next_try = r->backoff_.NextAttemptTime();
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
@@ -263,15 +264,16 @@ void grpc_resolver_dns_native_init() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
-    grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
+    grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
             grpc_core::New<grpc_core::NativeDnsResolverFactory>()));
   } else {
+    grpc_core::ResolverRegistry::Builder::InitRegistry();
     grpc_core::ResolverFactory* existing_factory =
-        grpc_core::ResolverRegistry::Global()->LookupResolverFactory("dns");
+        grpc_core::ResolverRegistry::LookupResolverFactory("dns");
     if (existing_factory == nullptr) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");
-      grpc_core::ResolverRegistry::Global()->RegisterResolverFactory(
+      grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
           grpc_core::UniquePtr<grpc_core::ResolverFactory>(
               grpc_core::New<grpc_core::NativeDnsResolverFactory>()));
     }

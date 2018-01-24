@@ -101,6 +101,9 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -108,9 +111,6 @@
 #include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/manual_constructor.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -429,7 +429,7 @@ grpc_slice_hash_table_entry BalancerEntryCreate(const char* address,
  *   - \a args: other args inherited from the grpclb policy. */
 grpc_channel_args* BuildBalancerChannelArgs(
     const grpc_lb_addresses* addresses,
-    grpc_core::FakeResolverResponseGenerator* response_generator,
+    FakeResolverResponseGenerator* response_generator,
     const grpc_channel_args* args) {
   // Find number of balancer addresses.
   size_t num_grpclb_addrs = 0;
@@ -527,8 +527,7 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses, const Args& args)
    * fallback. */
   fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
   /* Create a client channel to communicate with a balancer. */
-  response_generator_ =
-      MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+  response_generator_ = MakeRefCounted<FakeResolverResponseGenerator>();
   grpc_channel_args* lb_channel_args =
       BuildBalancerChannelArgs(addresses, response_generator_.get(), args.args);
   char* uri_str;
@@ -1051,7 +1050,7 @@ void GrpcLb::ShutdownLocked() {
   PendingPick* pp;
   while ((pp = pending_picks_) != nullptr) {
     pending_picks_ = pp->next;
-    pp->pick->connected_subchannel = nullptr;
+    pp->pick->connected_subchannel.reset();
     // Note: pp is deleted in this callback.
     GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
   }
@@ -1083,7 +1082,7 @@ void GrpcLb::CancelPickLocked(PickState* pick, grpc_error* error) {
   while (pp != nullptr) {
     PendingPick* next = pp->next;
     if (pp->pick == pick) {
-      pick->connected_subchannel = nullptr;
+      pick->connected_subchannel.reset();
       // Note: pp is deleted in this callback.
       GRPC_CLOSURE_SCHED(&pp->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -1141,8 +1140,7 @@ void GrpcLb::StartPickingLocked() {
   /* start a timer to fall back */
   if (lb_fallback_timeout_ms_ > 0 && serverlist_ == nullptr &&
       !fallback_timer_callback_pending_) {
-    grpc_millis deadline =
-        grpc_core::ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
+    grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
     Ref(DEBUG_LOCATION, "grpclb_fallback_timer");
     GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimeoutLocked, this,
                       grpc_combiner_scheduler(combiner()));
@@ -1249,10 +1247,10 @@ void GrpcLb::MaybeRestartBalancerCallLocked() {
     updating_lb_call_ = false;
   } else if (!shutting_down_) {
     /* if we aren't shutting down, restart the LB client call after some time */
-    grpc_millis next_try = lb_call_backoff_.Step();
+    grpc_millis next_try = lb_call_backoff_.NextAttemptTime();
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...", this);
-      grpc_millis timeout = next_try - grpc_core::ExecCtx::Get()->Now();
+      grpc_millis timeout = next_try - ExecCtx::Get()->Now();
       if (timeout > 0) {
         gpr_log(GPR_DEBUG,
                 "[grpclb %p] ... retry LB call after %" PRIuPTR "ms.", this,
@@ -1272,7 +1270,7 @@ void GrpcLb::MaybeRestartBalancerCallLocked() {
 
 void GrpcLb::ScheduleNextClientLoadReportLocked() {
   const grpc_millis next_client_load_report_time =
-      grpc_core::ExecCtx::Get()->Now() + client_stats_report_interval_;
+      ExecCtx::Get()->Now() + client_stats_report_interval_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_,
                     &GrpcLb::SendClientLoadReportLocked, this,
                     grpc_combiner_scheduler(combiner()));
@@ -1374,7 +1372,7 @@ void GrpcLb::BalancerCallInitLocked() {
   grpc_millis deadline =
       lb_call_timeout_ms_ == 0
           ? GRPC_MILLIS_INF_FUTURE
-          : grpc_core::ExecCtx::Get()->Now() + lb_call_timeout_ms_;
+          : ExecCtx::Get()->Now() + lb_call_timeout_ms_;
   lb_call_ = grpc_channel_create_pollset_set_call(
       lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties(),
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,

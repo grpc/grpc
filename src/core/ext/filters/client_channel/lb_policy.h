@@ -21,10 +21,11 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/support/abstract.h"
-#include "src/core/lib/support/orphanable.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
@@ -61,9 +62,9 @@ class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// Closure to run when pick is complete, if not completed synchronously.
     grpc_closure* on_complete;
-    /// Will be set to the selected subchannel, or NULL on failure or when
+    /// Will be set to the selected subchannel, or nullptr on failure or when
     /// the LB policy decides to drop the call.
-    grpc_connected_subchannel* connected_subchannel;
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     /// Will be populated with context to pass to the subchannel call, if
     /// needed.
     grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];

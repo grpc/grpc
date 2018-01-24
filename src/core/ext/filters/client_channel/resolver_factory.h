@@ -24,9 +24,9 @@
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/support/abstract.h"
-#include "src/core/lib/support/memory.h"
-#include "src/core/lib/support/orphanable.h"
+#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
 
 namespace grpc_core {
 

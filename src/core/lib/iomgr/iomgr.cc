@@ -31,14 +31,14 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;

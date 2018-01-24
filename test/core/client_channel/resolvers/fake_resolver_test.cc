@@ -27,9 +27,9 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/support/ref_counted_ptr.h"
 
 #include "test/core/util/test_config.h"
 
@@ -37,7 +37,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
     grpc_combiner* combiner,
     grpc_core::FakeResolverResponseGenerator* response_generator) {
   grpc_core::ResolverFactory* factory =
-      grpc_core::ResolverRegistry::Global()->LookupResolverFactory("fake");
+      grpc_core::ResolverRegistry::LookupResolverFactory("fake");
   grpc_arg generator_arg =
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
           response_generator);
