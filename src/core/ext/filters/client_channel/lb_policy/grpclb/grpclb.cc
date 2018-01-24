@@ -171,7 +171,7 @@ struct pending_ping {
 
 typedef struct glb_lb_call_data {
   struct glb_lb_policy* glb_policy;
-  // todo refactor
+  // TODO(juanlishen): c++ize this struct.
   gpr_refcount refs;
 
   /** The streaming call to the LB server. Always non-NULL. */
