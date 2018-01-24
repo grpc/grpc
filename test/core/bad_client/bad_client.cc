@@ -58,7 +58,6 @@ static void thd_func(void* arg) {
 
 /* Sets the done_write event */
 static void set_done_write(void* arg, grpc_error* error) {
-  gpr_log(GPR_INFO, "done writing");
   gpr_event* done_write = (gpr_event*)arg;
   gpr_event_set(done_write, (void*)1);
 }
@@ -157,7 +156,6 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
     }
     grpc_core::ExecCtx::Get()->Flush();
   }
-  GPR_ASSERT(gpr_event_wait(&done_write, grpc_timeout_seconds_to_deadline(1)));
   grpc_slice_buffer_destroy_internal(&outgoing);
   grpc_core::ExecCtx::Get()->Flush();
 }
