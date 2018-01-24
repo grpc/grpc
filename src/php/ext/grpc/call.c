@@ -174,6 +174,18 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
   return true;
 }
 
+void grpc_php_metadata_array_destroy_including_entries(
+    grpc_metadata_array* array) {
+  size_t i;
+  if (array->metadata) {
+    for (i = 0; i < array->count; i++) {
+      grpc_slice_unref(array->metadata[i].key);
+      grpc_slice_unref(array->metadata[i].value);
+    }
+  }
+  grpc_metadata_array_destroy(array);
+}
+
 /* Wraps a grpc_call struct in a PHP object. Owned indicates whether the
    struct should be destroyed at the end of the object's lifecycle */
 zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
@@ -502,8 +514,8 @@ PHP_METHOD(Call, startBatch) {
   }
 
 cleanup:
-  grpc_metadata_array_destroy(&metadata);
-  grpc_metadata_array_destroy(&trailing_metadata);
+  grpc_php_metadata_array_destroy_including_entries(&metadata);
+  grpc_php_metadata_array_destroy_including_entries(&trailing_metadata);
   grpc_metadata_array_destroy(&recv_metadata);
   grpc_metadata_array_destroy(&recv_trailing_metadata);
   grpc_slice_unref(recv_status_details);
