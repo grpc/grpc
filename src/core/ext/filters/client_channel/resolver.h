@@ -21,10 +21,10 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/iomgr.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
