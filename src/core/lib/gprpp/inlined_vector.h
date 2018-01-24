@@ -40,12 +40,12 @@ namespace grpc_core {
 // ANY METHOD ADDED HERE MUST COMPLY WITH THE INTERFACE IN THE absl
 // IMPLEMENTATION!
 //
-// TODO(ctiller, nnoble, roth): Replace this with absl::InlinedVector
-// once we integrate absl into the gRPC build system in a usable way.
+// TODO(nnoble, roth): Replace this with absl::InlinedVector once we
+// integrate absl into the gRPC build system in a usable way.
 template <typename T, size_t N>
 class InlinedVector {
  public:
-  InlinedVector() {}
+  InlinedVector() { init_data(); }
   ~InlinedVector() { destroy_elements(); }
 
   // For now, we do not support copying.
@@ -100,12 +100,16 @@ class InlinedVector {
 
   void clear() {
     destroy_elements();
+    init_data();
+  }
+
+ private:
+  void init_data() {
     dynamic_ = nullptr;
     size_ = 0;
     dynamic_capacity_ = 0;
   }
 
- private:
   void destroy_elements() {
     for (size_t i = 0; i < size_ && i < N; ++i) {
       T& value = *reinterpret_cast<T*>(inline_ + i);
@@ -120,9 +124,9 @@ class InlinedVector {
   }
 
   typename std::aligned_storage<sizeof(T)>::type inline_[N];
-  T* dynamic_ = nullptr;
-  size_t size_ = 0;
-  size_t dynamic_capacity_ = 0;
+  T* dynamic_;
+  size_t size_;
+  size_t dynamic_capacity_;
 };
 
 }  // namespace grpc_core
