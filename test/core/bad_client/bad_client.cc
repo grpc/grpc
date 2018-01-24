@@ -146,7 +146,8 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                          client_cq, grpc_timeout_milliseconds_to_deadline(100),
                          nullptr)
                          .type == GRPC_QUEUE_TIMEOUT);
-        } while (!gpr_event_get(&read_done_event));
+        } while (!gpr_event_get(&read_done_event) ||
+                 !gpr_event_get(&done_write));
         if (arg->client_validator(&incoming, arg->client_validator_arg)) break;
         gpr_log(GPR_INFO,
                 "client validator failed; trying additional read "
@@ -156,6 +157,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
     }
     grpc_core::ExecCtx::Get()->Flush();
   }
+
   grpc_slice_buffer_destroy_internal(&outgoing);
   grpc_core::ExecCtx::Get()->Flush();
 }
