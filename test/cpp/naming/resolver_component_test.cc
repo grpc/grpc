@@ -285,8 +285,8 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
                       FLAGS_target_name.c_str()));
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(
-          whole_uri, nullptr, args.pollset_set, args.lock);
+      grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
+                                                  args.pollset_set, args.lock);
   gpr_free(whole_uri);
   grpc_closure on_resolver_result_changed;
   GRPC_CLOSURE_INIT(&on_resolver_result_changed, CheckResolverResultLocked,

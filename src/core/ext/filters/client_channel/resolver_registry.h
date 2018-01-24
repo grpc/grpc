@@ -20,10 +20,10 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_REGISTRY_H
 
 #include "src/core/ext/filters/client_channel/resolver_factory.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 namespace grpc_core {
 
