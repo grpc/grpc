@@ -128,10 +128,12 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
   HashTable *inner_array_hash;
   zval *value;
   zval *inner_array;
+  grpc_metadata_array_init(metadata);
+  metadata->count = 0;
+  metadata->metadata = NULL;
   if (Z_TYPE_P(array) != IS_ARRAY) {
     return false;
   }
-  grpc_metadata_array_init(metadata);
   array_hash = Z_ARRVAL_P(array);
 
   char *key;
