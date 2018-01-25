@@ -679,6 +679,11 @@ static grpc_error* pollset_kick_all(grpc_pollset* pollset) {
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   gpr_mu_init(&pollset->mu);
   pollset->active_pollable = POLLABLE_REF(g_empty_pollable, "pollset");
+  pollset->kicked_without_poller = false;
+  pollset->shutdown_closure = nullptr;
+  pollset->already_shutdown = false;
+  pollset->root_worker = nullptr;
+  pollset->containing_pollset_set_count = 0;
   *mu = &pollset->mu;
 }
 
