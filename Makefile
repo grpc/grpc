@@ -4765,6 +4765,8 @@ LIBGRPC++_CORE_STATS_SRC = \
     $(GENDIR)/src/proto/grpc/core/stats.pb.cc $(GENDIR)/src/proto/grpc/core/stats.grpc.pb.cc \
     src/cpp/util/core_stats.cc \
 
+PUBLIC_HEADERS_CXX += \
+
 LIBGRPC++_CORE_STATS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CORE_STATS_SRC))))
 
 
