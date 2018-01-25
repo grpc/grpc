@@ -4721,6 +4721,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: server_early_return_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/server_early_return_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_request_call_test
   gtest: true
   build: test
