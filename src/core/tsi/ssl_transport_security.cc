@@ -96,8 +96,7 @@ struct tsi_ssl_server_handshaker_factory {
 typedef struct {
   tsi_handshaker base;
   SSL* ssl;
-  BIO* into_ssl;
-  BIO* from_ssl;
+  BIO* network_io;
   tsi_result result;
   tsi_ssl_handshaker_factory* factory_ref;
 } tsi_ssl_handshaker;
@@ -105,8 +104,7 @@ typedef struct {
 typedef struct {
   tsi_frame_protector base;
   SSL* ssl;
-  BIO* into_ssl;
-  BIO* from_ssl;
+  BIO* network_io;
   unsigned char* buffer;
   size_t buffer_size;
   size_t buffer_offset;
@@ -730,11 +728,11 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
   tsi_result result = TSI_OK;
 
   /* First see if we have some pending data in the SSL BIO. */
-  int pending_in_ssl = (int)BIO_pending(impl->from_ssl);
+  int pending_in_ssl = (int)BIO_pending(impl->network_io);
   if (pending_in_ssl > 0) {
     *unprotected_bytes_size = 0;
     GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
-    read_from_ssl = BIO_read(impl->from_ssl, protected_output_frames,
+    read_from_ssl = BIO_read(impl->network_io, protected_output_frames,
                              (int)*protected_output_frames_size);
     if (read_from_ssl < 0) {
       gpr_log(GPR_ERROR,
@@ -762,7 +760,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
   if (result != TSI_OK) return result;
 
   GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
-  read_from_ssl = BIO_read(impl->from_ssl, protected_output_frames,
+  read_from_ssl = BIO_read(impl->network_io, protected_output_frames,
                            (int)*protected_output_frames_size);
   if (read_from_ssl < 0) {
     gpr_log(GPR_ERROR, "Could not read from BIO after SSL_write.");
@@ -788,20 +786,20 @@ static tsi_result ssl_protector_protect_flush(
     impl->buffer_offset = 0;
   }
 
-  pending = (int)BIO_pending(impl->from_ssl);
+  pending = (int)BIO_pending(impl->network_io);
   GPR_ASSERT(pending >= 0);
   *still_pending_size = (size_t)pending;
   if (*still_pending_size == 0) return TSI_OK;
 
   GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
-  read_from_ssl = BIO_read(impl->from_ssl, protected_output_frames,
+  read_from_ssl = BIO_read(impl->network_io, protected_output_frames,
                            (int)*protected_output_frames_size);
   if (read_from_ssl <= 0) {
     gpr_log(GPR_ERROR, "Could not read from BIO after SSL_write.");
     return TSI_INTERNAL_ERROR;
   }
   *protected_output_frames_size = (size_t)read_from_ssl;
-  pending = (int)BIO_pending(impl->from_ssl);
+  pending = (int)BIO_pending(impl->network_io);
   GPR_ASSERT(pending >= 0);
   *still_pending_size = (size_t)pending;
   return TSI_OK;
@@ -831,7 +829,7 @@ static tsi_result ssl_protector_unprotect(
 
   /* Then, try to write some data to ssl. */
   GPR_ASSERT(*protected_frames_bytes_size <= INT_MAX);
-  written_into_ssl = BIO_write(impl->into_ssl, protected_frames_bytes,
+  written_into_ssl = BIO_write(impl->network_io, protected_frames_bytes,
                                (int)*protected_frames_bytes_size);
   if (written_into_ssl < 0) {
     gpr_log(GPR_ERROR, "Sending protected frame to ssl failed with %d",
@@ -853,6 +851,7 @@ static void ssl_protector_destroy(tsi_frame_protector* self) {
   tsi_ssl_frame_protector* impl = (tsi_ssl_frame_protector*)self;
   if (impl->buffer != nullptr) gpr_free(impl->buffer);
   if (impl->ssl != nullptr) SSL_free(impl->ssl);
+  if (impl->network_io != nullptr) BIO_free(impl->network_io);
   gpr_free(self);
 }
 
@@ -916,10 +915,10 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
     return TSI_INVALID_ARGUMENT;
   }
   GPR_ASSERT(*bytes_size <= INT_MAX);
-  bytes_read_from_ssl = BIO_read(impl->from_ssl, bytes, (int)*bytes_size);
+  bytes_read_from_ssl = BIO_read(impl->network_io, bytes, (int)*bytes_size);
   if (bytes_read_from_ssl < 0) {
     *bytes_size = 0;
-    if (!BIO_should_retry(impl->from_ssl)) {
+    if (!BIO_should_retry(impl->network_io)) {
       impl->result = TSI_INTERNAL_ERROR;
       return impl->result;
     } else {
@@ -927,7 +926,7 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
     }
   }
   *bytes_size = (size_t)bytes_read_from_ssl;
-  return BIO_pending(impl->from_ssl) == 0 ? TSI_OK : TSI_INCOMPLETE_DATA;
+  return BIO_pending(impl->network_io) == 0 ? TSI_OK : TSI_INCOMPLETE_DATA;
 }
 
 static tsi_result ssl_handshaker_get_result(tsi_handshaker* self) {
@@ -948,7 +947,7 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
   }
   GPR_ASSERT(*bytes_size <= INT_MAX);
   bytes_written_into_ssl_size =
-      BIO_write(impl->into_ssl, bytes, (int)*bytes_size);
+      BIO_write(impl->network_io, bytes, (int)*bytes_size);
   if (bytes_written_into_ssl_size < 0) {
     gpr_log(GPR_ERROR, "Could not write to memory BIO.");
     impl->result = TSI_INTERNAL_ERROR;
@@ -965,7 +964,7 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     ssl_result = SSL_get_error(impl->ssl, ssl_result);
     switch (ssl_result) {
       case SSL_ERROR_WANT_READ:
-        if (BIO_pending(impl->from_ssl) == 0) {
+        if (BIO_pending(impl->network_io) == 0) {
           /* We need more data. */
           return TSI_INCOMPLETE_DATA;
         } else {
@@ -1058,12 +1057,13 @@ static tsi_result ssl_handshaker_create_frame_protector(
     return TSI_INTERNAL_ERROR;
   }
 
-  /* Transfer ownership of ssl to the frame protector. It is OK as the caller
-   * cannot call anything else but destroy on the handshaker after this call. */
+  /* Transfer ownership of ssl and network_io to the frame protector. It is OK
+   * as the caller cannot call anything else but destroy on the handshaker
+   * after this call. */
   protector_impl->ssl = impl->ssl;
   impl->ssl = nullptr;
-  protector_impl->into_ssl = impl->into_ssl;
-  protector_impl->from_ssl = impl->from_ssl;
+  protector_impl->network_io = impl->network_io;
+  impl->network_io = nullptr;
 
   protector_impl->base.vtable = &frame_protector_vtable;
   *protector = &protector_impl->base;
@@ -1072,7 +1072,8 @@ static tsi_result ssl_handshaker_create_frame_protector(
 
 static void ssl_handshaker_destroy(tsi_handshaker* self) {
   tsi_ssl_handshaker* impl = (tsi_ssl_handshaker*)self;
-  SSL_free(impl->ssl); /* The BIO objects are owned by ssl */
+  SSL_free(impl->ssl);
+  BIO_free(impl->network_io);
   tsi_ssl_handshaker_factory_unref(impl->factory_ref);
   gpr_free(impl);
 }
@@ -1094,8 +1095,8 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
                                             tsi_ssl_handshaker_factory* factory,
                                             tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
-  BIO* into_ssl = nullptr;
-  BIO* from_ssl = nullptr;
+  BIO* network_io = nullptr;
+  BIO* ssl_io = nullptr;
   tsi_ssl_handshaker* impl = nullptr;
   *handshaker = nullptr;
   if (ctx == nullptr) {
@@ -1107,16 +1108,12 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
   }
   SSL_set_info_callback(ssl, ssl_info_callback);
 
-  into_ssl = BIO_new(BIO_s_mem());
-  from_ssl = BIO_new(BIO_s_mem());
-  if (into_ssl == nullptr || from_ssl == nullptr) {
-    gpr_log(GPR_ERROR, "BIO_new failed.");
+  if (!BIO_new_bio_pair(&network_io, 0, &ssl_io, 0)) {
+    gpr_log(GPR_ERROR, "BIO_new_bio_pair failed.");
     SSL_free(ssl);
-    if (into_ssl != nullptr) BIO_free(into_ssl);
-    if (from_ssl != nullptr) BIO_free(into_ssl);
     return TSI_OUT_OF_RESOURCES;
   }
-  SSL_set_bio(ssl, into_ssl, from_ssl);
+  SSL_set_bio(ssl, ssl_io, ssl_io);
   if (is_client) {
     int ssl_result;
     SSL_set_connect_state(ssl);
@@ -1125,6 +1122,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
         gpr_log(GPR_ERROR, "Invalid server name indication %s.",
                 server_name_indication);
         SSL_free(ssl);
+        BIO_free(network_io);
         return TSI_INTERNAL_ERROR;
       }
     }
@@ -1135,6 +1133,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
               "Unexpected error received from first SSL_do_handshake call: %s",
               ssl_error_string(ssl_result));
       SSL_free(ssl);
+      BIO_free(network_io);
       return TSI_INTERNAL_ERROR;
     }
   } else {
@@ -1143,8 +1142,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
 
   impl = (tsi_ssl_handshaker*)gpr_zalloc(sizeof(*impl));
   impl->ssl = ssl;
-  impl->into_ssl = into_ssl;
-  impl->from_ssl = from_ssl;
+  impl->network_io = network_io;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;
   impl->base.vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
