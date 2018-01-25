@@ -69,6 +69,8 @@ CORE_SOURCE_FILES = [
     'src/core/lib/channel/handshaker_factory.cc',
     'src/core/lib/channel/handshaker_registry.cc',
     'src/core/lib/compression/compression.cc',
+    'src/core/lib/compression/compression_internal.cc',
+    'src/core/lib/compression/compression_ruby.cc',
     'src/core/lib/compression/message_compress.cc',
     'src/core/lib/compression/stream_compression.cc',
     'src/core/lib/compression/stream_compression_gzip.cc',
