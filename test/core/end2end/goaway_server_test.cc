@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
@@ -263,7 +263,7 @@ int main(int argc, char** argv) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,

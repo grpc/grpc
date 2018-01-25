@@ -53,6 +53,8 @@ static void test(const char* name, size_t init_size, const size_t* allocs,
   void** ps = static_cast<void**>(gpr_zalloc(sizeof(*ps) * nallocs));
   for (size_t i = 0; i < nallocs; i++) {
     ps[i] = gpr_arena_alloc(a, allocs[i]);
+    // ensure the returned address is aligned
+    GPR_ASSERT(((intptr_t)ps[i] & 0xf) == 0);
     // ensure no duplicate results
     for (size_t j = 0; j < i; j++) {
       GPR_ASSERT(ps[i] != ps[j]);

@@ -10,11 +10,11 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2017-08-24</date>
+ <date>2018-01-19</date>
  <time>16:06:07</time>
  <version>
-  <release>1.9.0dev</release>
-  <api>1.9.0dev</api>
+  <release>1.10.0dev</release>
+  <api>1.10.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,12 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- Channel are now by default persistent #11878
-- Some bug fixes from 1.4 branch #12109, #12123
-- Fixed hang bug when fork() was used #11814
-- License changed to Apache 2.0
-- Added support for php_namespace option in codegen plugin #11886
-- Updated gRPC C Core library version 1.6
+- TBD
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -95,12 +90,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/abstract.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/atomic.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/atomic_with_atm.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/atomic_with_std.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/manual_constructor.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/fork.h" role="src" />
@@ -112,6 +101,12 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/thd_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/abstract.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_atm.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_std.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.cc" role="src" />
@@ -284,11 +279,11 @@
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_identity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/debug_location.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/inlined_vector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/orphanable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/ref_counted.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr++/ref_counted_ptr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/inlined_vector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />

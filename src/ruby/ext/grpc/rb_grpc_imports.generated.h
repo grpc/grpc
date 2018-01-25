@@ -583,7 +583,7 @@ extern gpr_free_type gpr_free_import;
 typedef void*(*gpr_realloc_type)(void* p, size_t size);
 extern gpr_realloc_type gpr_realloc_import;
 #define gpr_realloc gpr_realloc_import
-typedef void*(*gpr_malloc_aligned_type)(size_t size, size_t alignment_log);
+typedef void*(*gpr_malloc_aligned_type)(size_t size, size_t alignment);
 extern gpr_malloc_aligned_type gpr_malloc_aligned_import;
 #define gpr_malloc_aligned gpr_malloc_aligned_import
 typedef void(*gpr_free_aligned_type)(void* ptr);
