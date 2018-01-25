@@ -29,6 +29,7 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
@@ -196,7 +197,6 @@ static void install_crash_handler() {
 #elif GPR_POSIX_CRASH_HANDLER
 #include <errno.h>
 #include <execinfo.h>
-#include <grpc/support/useful.h>
 #include <stdio.h>
 #include <string.h>
 

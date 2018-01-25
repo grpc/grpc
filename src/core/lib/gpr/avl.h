@@ -16,14 +16,10 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_AVL_H
-#define GRPC_SUPPORT_AVL_H
+#ifndef GRPC_CORE_LIB_GPR_AVL_H
+#define GRPC_CORE_LIB_GPR_AVL_H
 
 #include <grpc/support/sync.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** internal node of an AVL tree */
 typedef struct gpr_avl_node {
@@ -63,40 +59,34 @@ typedef struct gpr_avl {
 } gpr_avl;
 
 /** Create an immutable AVL tree. */
-GPRAPI gpr_avl gpr_avl_create(const gpr_avl_vtable* vtable);
+gpr_avl gpr_avl_create(const gpr_avl_vtable* vtable);
 /** Add a reference to an existing tree - returns
     the tree as a convenience. The optional user_data will be passed to vtable
     functions. */
-GPRAPI gpr_avl gpr_avl_ref(gpr_avl avl, void* user_data);
+gpr_avl gpr_avl_ref(gpr_avl avl, void* user_data);
 /** Remove a reference to a tree - destroying it if there
     are no references left. The optional user_data will be passed to vtable
     functions. */
-GPRAPI void gpr_avl_unref(gpr_avl avl, void* user_data);
+void gpr_avl_unref(gpr_avl avl, void* user_data);
 /** Return a new tree with (key, value) added to avl.
     implicitly unrefs avl to allow easy chaining.
     if key exists in avl, the new tree's key entry updated
     (i.e. a duplicate is not created). The optional user_data will be passed to
     vtable functions. */
-GPRAPI gpr_avl gpr_avl_add(gpr_avl avl, void* key, void* value,
-                           void* user_data);
+gpr_avl gpr_avl_add(gpr_avl avl, void* key, void* value, void* user_data);
 /** Return a new tree with key deleted
     implicitly unrefs avl to allow easy chaining. The optional user_data will be
     passed to vtable functions. */
-GPRAPI gpr_avl gpr_avl_remove(gpr_avl avl, void* key, void* user_data);
+gpr_avl gpr_avl_remove(gpr_avl avl, void* key, void* user_data);
 /** Lookup key, and return the associated value.
     Does not mutate avl.
     Returns NULL if key is not found. The optional user_data will be passed to
     vtable functions.*/
-GPRAPI void* gpr_avl_get(gpr_avl avl, void* key, void* user_data);
+void* gpr_avl_get(gpr_avl avl, void* key, void* user_data);
 /** Return 1 if avl contains key, 0 otherwise; if it has the key, sets *value to
-    its value. THe optional user_data will be passed to vtable functions. */
-GPRAPI int gpr_avl_maybe_get(gpr_avl avl, void* key, void** value,
-                             void* user_data);
+    its value. The optional user_data will be passed to vtable functions. */
+int gpr_avl_maybe_get(gpr_avl avl, void* key, void** value, void* user_data);
 /** Return 1 if avl is empty, 0 otherwise */
-GPRAPI int gpr_avl_is_empty(gpr_avl avl);
+int gpr_avl_is_empty(gpr_avl avl);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* GRPC_SUPPORT_AVL_H */
+#endif /* GRPC_CORE_LIB_GPR_AVL_H */

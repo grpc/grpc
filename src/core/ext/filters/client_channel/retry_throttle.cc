@@ -23,9 +23,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/avl.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+
+#include "src/core/lib/gpr/avl.h"
 
 //
 // server_retry_throttle_data

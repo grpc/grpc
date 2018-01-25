@@ -704,7 +704,6 @@ foreach(_hdr
   include/grpc/support/atm_gcc_atomic.h
   include/grpc/support/atm_gcc_sync.h
   include/grpc/support/atm_windows.h
-  include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
   include/grpc/support/host_port.h
@@ -724,7 +723,6 @@ foreach(_hdr
   include/grpc/support/tls_gcc.h
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
-  include/grpc/support/useful.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
@@ -2494,7 +2492,6 @@ foreach(_hdr
   include/grpc/support/atm_gcc_atomic.h
   include/grpc/support/atm_gcc_sync.h
   include/grpc/support/atm_windows.h
-  include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
   include/grpc/support/host_port.h
@@ -2514,7 +2511,6 @@ foreach(_hdr
   include/grpc/support/tls_gcc.h
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
-  include/grpc/support/useful.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
@@ -2969,7 +2965,6 @@ foreach(_hdr
   include/grpc/support/atm_gcc_atomic.h
   include/grpc/support/atm_gcc_sync.h
   include/grpc/support/atm_windows.h
-  include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
   include/grpc/support/host_port.h
@@ -2989,7 +2984,6 @@ foreach(_hdr
   include/grpc/support/tls_gcc.h
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
-  include/grpc/support/useful.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
@@ -3700,7 +3694,6 @@ foreach(_hdr
   include/grpc/support/atm_gcc_atomic.h
   include/grpc/support/atm_gcc_sync.h
   include/grpc/support/atm_windows.h
-  include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
   include/grpc/support/host_port.h
@@ -3720,7 +3713,6 @@ foreach(_hdr
   include/grpc/support/tls_gcc.h
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
-  include/grpc/support/useful.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h

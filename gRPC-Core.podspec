@@ -114,7 +114,6 @@ Pod::Spec.new do |s|
                       'include/grpc/support/atm_gcc_atomic.h',
                       'include/grpc/support/atm_gcc_sync.h',
                       'include/grpc/support/atm_windows.h',
-                      'include/grpc/support/avl.h',
                       'include/grpc/support/cmdline.h',
                       'include/grpc/support/cpu.h',
                       'include/grpc/support/host_port.h',
@@ -134,7 +133,6 @@ Pod::Spec.new do |s|
                       'include/grpc/support/tls_gcc.h',
                       'include/grpc/support/tls_msvc.h',
                       'include/grpc/support/tls_pthread.h',
-                      'include/grpc/support/useful.h',
                       'include/grpc/impl/codegen/atm.h',
                       'include/grpc/impl/codegen/atm_gcc_atomic.h',
                       'include/grpc/impl/codegen/atm_gcc_sync.h',
@@ -194,6 +192,7 @@ Pod::Spec.new do |s|
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/gpr/arena.h',
+                      'src/core/lib/gpr/avl.h',
                       'src/core/lib/gpr/env.h',
                       'src/core/lib/gpr/fork.h',
                       'src/core/lib/gpr/mpscq.h',
@@ -204,6 +203,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/thd_internal.h',
                       'src/core/lib/gpr/time_precise.h',
                       'src/core/lib/gpr/tmpfile.h',
+                      'src/core/lib/gpr/useful.h',
                       'src/core/lib/gprpp/abstract.h',
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/atomic_with_atm.h',
@@ -721,6 +721,7 @@ Pod::Spec.new do |s|
                       'src/core/plugin_registry/grpc_plugin_registry.cc'
 
     ss.private_header_files = 'src/core/lib/gpr/arena.h',
+                              'src/core/lib/gpr/avl.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/fork.h',
                               'src/core/lib/gpr/mpscq.h',
@@ -731,6 +732,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/thd_internal.h',
                               'src/core/lib/gpr/time_precise.h',
                               'src/core/lib/gpr/tmpfile.h',
+                              'src/core/lib/gpr/useful.h',
                               'src/core/lib/gprpp/abstract.h',
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/atomic_with_atm.h',

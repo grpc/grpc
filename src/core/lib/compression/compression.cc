@@ -20,10 +20,10 @@
 #include <string.h>
 
 #include <grpc/compression.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/static_metadata.h"
 

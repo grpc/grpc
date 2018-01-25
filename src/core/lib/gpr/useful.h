@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_USEFUL_H
-#define GRPC_SUPPORT_USEFUL_H
+#ifndef GRPC_CORE_LIB_GPR_USEFUL_H
+#define GRPC_CORE_LIB_GPR_USEFUL_H
 
 /** useful macros that don't belong anywhere else */
 
@@ -62,4 +62,4 @@
 #define GPR_HASH_POINTER(x, range) \
   ((((size_t)x) >> 4) ^ (((size_t)x) >> 9) ^ (((size_t)x) >> 14)) % (range)
 
-#endif /* GRPC_SUPPORT_USEFUL_H */
+#endif /* GRPC_CORE_LIB_GPR_USEFUL_H */

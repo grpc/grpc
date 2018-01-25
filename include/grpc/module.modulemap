@@ -4,7 +4,6 @@ framework module grpc {
 
   header "support/alloc.h"
   header "support/atm.h"
-  header "support/avl.h"
   header "support/cmdline.h"
   header "support/cpu.h"
   header "support/host_port.h"
@@ -18,7 +17,6 @@ framework module grpc {
   header "support/thd.h"
   header "support/time.h"
   header "support/tls.h"
-  header "support/useful.h"
   header "impl/codegen/atm.h"
   header "impl/codegen/fork.h"
   header "impl/codegen/gpr_slice.h"

@@ -17,7 +17,6 @@
  */
 
 #include <grpc/compression_ruby.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/static_metadata.h"

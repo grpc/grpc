@@ -66,7 +66,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/atm_gcc_atomic.h",
     "include/grpc/support/atm_gcc_sync.h",
     "include/grpc/support/atm_windows.h",
-    "include/grpc/support/avl.h",
     "include/grpc/support/cmdline.h",
     "include/grpc/support/cpu.h",
     "include/grpc/support/host_port.h",
@@ -86,7 +85,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/tls_gcc.h",
     "include/grpc/support/tls_msvc.h",
     "include/grpc/support/tls_pthread.h",
-    "include/grpc/support/useful.h",
 ]
 
 GRPC_PUBLIC_HDRS = [
@@ -501,8 +499,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/profiling/timers.h",
         "src/core/lib/gpr/arena.h",
+        "src/core/lib/gpr/avl.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/fork.h",
+	"src/core/lib/gpr/useful.h",
         "src/core/lib/gpr/mpscq.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",

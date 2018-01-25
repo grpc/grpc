@@ -22,7 +22,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST() gpr_log(GPR_INFO, "test at %s:%d", __FILE__, __LINE__)

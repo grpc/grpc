@@ -47,7 +47,6 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/host_port.h>
@@ -61,7 +60,6 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/tls.h>
-#include <grpc/support/useful.h>
 #include <grpc/support/workaround_list.h>
 
 #include <stdio.h>
@@ -243,14 +241,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_free_aligned);
   printf("%lx", (unsigned long) gpr_set_allocation_functions);
   printf("%lx", (unsigned long) gpr_get_allocation_functions);
-  printf("%lx", (unsigned long) gpr_avl_create);
-  printf("%lx", (unsigned long) gpr_avl_ref);
-  printf("%lx", (unsigned long) gpr_avl_unref);
-  printf("%lx", (unsigned long) gpr_avl_add);
-  printf("%lx", (unsigned long) gpr_avl_remove);
-  printf("%lx", (unsigned long) gpr_avl_get);
-  printf("%lx", (unsigned long) gpr_avl_maybe_get);
-  printf("%lx", (unsigned long) gpr_avl_is_empty);
   printf("%lx", (unsigned long) gpr_cmdline_create);
   printf("%lx", (unsigned long) gpr_cmdline_add_int);
   printf("%lx", (unsigned long) gpr_cmdline_add_flag);

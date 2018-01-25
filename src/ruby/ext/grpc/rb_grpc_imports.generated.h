@@ -34,7 +34,6 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/host_port.h>
@@ -583,30 +582,6 @@ extern gpr_set_allocation_functions_type gpr_set_allocation_functions_import;
 typedef gpr_allocation_functions(*gpr_get_allocation_functions_type)(void);
 extern gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
 #define gpr_get_allocation_functions gpr_get_allocation_functions_import
-typedef gpr_avl(*gpr_avl_create_type)(const gpr_avl_vtable* vtable);
-extern gpr_avl_create_type gpr_avl_create_import;
-#define gpr_avl_create gpr_avl_create_import
-typedef gpr_avl(*gpr_avl_ref_type)(gpr_avl avl, void* user_data);
-extern gpr_avl_ref_type gpr_avl_ref_import;
-#define gpr_avl_ref gpr_avl_ref_import
-typedef void(*gpr_avl_unref_type)(gpr_avl avl, void* user_data);
-extern gpr_avl_unref_type gpr_avl_unref_import;
-#define gpr_avl_unref gpr_avl_unref_import
-typedef gpr_avl(*gpr_avl_add_type)(gpr_avl avl, void* key, void* value, void* user_data);
-extern gpr_avl_add_type gpr_avl_add_import;
-#define gpr_avl_add gpr_avl_add_import
-typedef gpr_avl(*gpr_avl_remove_type)(gpr_avl avl, void* key, void* user_data);
-extern gpr_avl_remove_type gpr_avl_remove_import;
-#define gpr_avl_remove gpr_avl_remove_import
-typedef void*(*gpr_avl_get_type)(gpr_avl avl, void* key, void* user_data);
-extern gpr_avl_get_type gpr_avl_get_import;
-#define gpr_avl_get gpr_avl_get_import
-typedef int(*gpr_avl_maybe_get_type)(gpr_avl avl, void* key, void** value, void* user_data);
-extern gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
-#define gpr_avl_maybe_get gpr_avl_maybe_get_import
-typedef int(*gpr_avl_is_empty_type)(gpr_avl avl);
-extern gpr_avl_is_empty_type gpr_avl_is_empty_import;
-#define gpr_avl_is_empty gpr_avl_is_empty_import
 typedef gpr_cmdline*(*gpr_cmdline_create_type)(const char* description);
 extern gpr_cmdline_create_type gpr_cmdline_create_import;
 #define gpr_cmdline_create gpr_cmdline_create_import

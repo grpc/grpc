@@ -25,7 +25,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "test/cpp/interop/client_helper.h"

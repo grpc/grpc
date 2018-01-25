@@ -24,7 +24,8 @@
 #include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/profiling/timers.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/histogram.h"

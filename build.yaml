@@ -79,7 +79,6 @@ filegroups:
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
-  - include/grpc/support/avl.h
   - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
   - include/grpc/support/host_port.h
@@ -99,9 +98,9 @@ filegroups:
   - include/grpc/support/tls_gcc.h
   - include/grpc/support/tls_msvc.h
   - include/grpc/support/tls_pthread.h
-  - include/grpc/support/useful.h
   headers:
   - src/core/lib/gpr/arena.h
+  - src/core/lib/gpr/avl.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/fork.h
   - src/core/lib/gpr/mpscq.h
@@ -112,6 +111,7 @@ filegroups:
   - src/core/lib/gpr/thd_internal.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/abstract.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/atomic_with_atm.h

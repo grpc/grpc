@@ -16,14 +16,15 @@
  *
  */
 
-#include <grpc/support/avl.h>
+#include "src/core/lib/gpr/avl.h"
 
 #include <assert.h>
 #include <stdlib.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 
 gpr_avl gpr_avl_create(const gpr_avl_vtable* vtable) {
   gpr_avl out;

@@ -30,9 +30,10 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/tls.h>
-#include <grpc/support/useful.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/spinlock.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/time_averaged_stats.h"
 #include "src/core/lib/iomgr/timer_heap.h"
 

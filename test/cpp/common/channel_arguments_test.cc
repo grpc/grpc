@@ -20,9 +20,9 @@
 
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
-#include <grpc/support/useful.h>
 #include <gtest/gtest.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 

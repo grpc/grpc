@@ -25,7 +25,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/useful.h>
 
 extern "C" {
 #include <openssl/pem.h>
