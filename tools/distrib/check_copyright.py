@@ -86,6 +86,9 @@ _EXEMPT = frozenset((
     'tools/grpcz/census.proto',
     # status.proto copied from googleapis
     'src/proto/grpc/status/status.proto',
+
+    # Gradle wrapper used to build for Android
+    'examples/android/helloworld/gradlew.bat',
 ))
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) gRPC authors.'

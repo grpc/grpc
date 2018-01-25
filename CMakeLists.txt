@@ -37,6 +37,7 @@ set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
+option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 
 set(gRPC_INSTALL_default ON)
 if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -78,6 +79,8 @@ if(UNIX)
     set(_gRPC_PLATFORM_LINUX ON)
   elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(_gRPC_PLATFORM_MAC ON)
+  elseif(${CMAKE_SYSTEM_NAME} MATCHES "Android")
+    set(_gRPC_PLATFORM_ANDROID ON)
   else()
     set(_gRPC_PLATFORM_POSIX ON)
   endif()
@@ -120,6 +123,8 @@ endif()
 
 if(_gRPC_PLATFORM_MAC)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
+elseif(_gRPC_PLATFORM_ANDROID)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m)
 elseif(UNIX)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
 endif()
@@ -693,6 +698,12 @@ target_include_directories(gpr
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
+if (_gRPC_PLATFORM_ANDROID)
+  target_link_libraries(gpr
+    android
+    log
+  )
+endif (_gRPC_PLATFORM_ANDROID)
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -2687,6 +2698,7 @@ endif()
 
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_core_stats
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.cc
@@ -2732,6 +2744,7 @@ target_link_libraries(grpc++_core_stats
   grpc++
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
@@ -3224,6 +3237,7 @@ if (gRPC_INSTALL)
 endif()
 
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_error_details
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.cc
@@ -3276,6 +3290,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 
 if (gRPC_INSTALL)
@@ -3288,6 +3303,7 @@ endif()
 
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_proto_reflection_desc_db
   test/cpp/util/proto_reflection_descriptor_database.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
@@ -3344,9 +3360,11 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_reflection
   src/cpp/ext/proto_server_reflection.cc
   src/cpp/ext/proto_server_reflection_plugin.cc
@@ -3400,6 +3418,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 
 if (gRPC_INSTALL)
@@ -3453,6 +3472,7 @@ target_link_libraries(grpc++_test_config
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_test_util
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
@@ -3621,10 +3641,12 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_test_util_unsecure
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
@@ -3791,6 +3813,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
@@ -4133,6 +4156,7 @@ target_link_libraries(grpc_benchmark
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc_cli_libs
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc
@@ -4194,6 +4218,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
@@ -4259,6 +4284,7 @@ endif()
 
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(http2_client_main
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
@@ -4322,10 +4348,12 @@ target_link_libraries(http2_client_main
   grpc++_test_config
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(interop_client_helper
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
@@ -4375,10 +4403,12 @@ target_link_libraries(interop_client_helper
   gpr
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(interop_client_main
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
@@ -4446,6 +4476,7 @@ target_link_libraries(interop_client_main
   grpc++_test_config
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -4496,6 +4527,7 @@ target_link_libraries(interop_server_helper
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(interop_server_lib
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
@@ -4562,6 +4594,7 @@ target_link_libraries(interop_server_lib
   grpc++_test_config
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -4608,6 +4641,7 @@ target_link_libraries(interop_server_main
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(qps
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
@@ -4694,6 +4728,7 @@ target_link_libraries(qps
   grpc
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
@@ -10220,6 +10255,7 @@ target_link_libraries(grpc_cli
 )
 
 endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
@@ -10254,6 +10290,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_csharp_plugin
   src/compiler/csharp_plugin.cc
@@ -10288,6 +10326,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_node_plugin
   src/compiler/node_plugin.cc
@@ -10322,6 +10362,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_objective_c_plugin
   src/compiler/objective_c_plugin.cc
@@ -10356,6 +10398,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_php_plugin
   src/compiler/php_plugin.cc
@@ -10390,6 +10434,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_python_plugin
   src/compiler/python_plugin.cc
@@ -10424,6 +10470,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_ruby_plugin
   src/compiler/ruby_plugin.cc
@@ -10458,6 +10506,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_tool_test
