@@ -94,8 +94,7 @@ static void fake_resolver_maybe_finish_next_locked(fake_resolver* r) {
   if (r->next_completion != nullptr && r->next_results != nullptr) {
     *r->target_result =
         grpc_channel_args_union(r->next_results, r->channel_args);
-    grpc_channel_args_destroy(r->last_used_results);
-    r->last_used_results = r->next_results;
+    grpc_channel_args_destroy(r->next_results);
     r->next_results = nullptr;
     GRPC_CLOSURE_SCHED(r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = nullptr;
@@ -172,6 +171,8 @@ static void set_response_closure_fn(void* arg, grpc_error* error) {
   if (!closure_arg->upon_error) {
     grpc_channel_args_destroy(r->next_results);
     r->next_results = closure_arg->response;
+    grpc_channel_args_destroy(r->last_used_results);
+    r->last_used_results = grpc_channel_args_copy(closure_arg->response);
     fake_resolver_maybe_finish_next_locked(r);
   } else {
     grpc_channel_args_destroy(r->results_upon_error);
