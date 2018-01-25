@@ -114,6 +114,9 @@ PHP_METHOD(Server, requestCall) {
   zval *result;
   PHP_GRPC_MAKE_STD_ZVAL(result);
   object_init(result);
+  zval *zv_call = NULL;
+  zval *zv_timeval = NULL;
+  zval *zv_md = NULL;
 
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
@@ -141,29 +144,39 @@ PHP_METHOD(Server, requestCall) {
   gpr_free(method_text);
   gpr_free(host_text);
 #if PHP_MAJOR_VERSION < 7
-  add_property_zval(result, "call", grpc_php_wrap_call(call, true TSRMLS_CC));
-  add_property_zval(result, "absolute_deadline",
-                    grpc_php_wrap_timeval(details.deadline TSRMLS_CC));
-  add_property_zval(result, "metadata", grpc_parse_metadata_array(&metadata
-                                                                  TSRMLS_CC));
+  zv_call = grpc_php_wrap_call(call, true TSRMLS_CC);
+  zv_timeval = grpc_php_wrap_timeval(details.deadline TSRMLS_CC);
+  zv_md = grpc_parse_metadata_array(&metadata TSRMLS_CC);
+  add_property_zval(result, "call", zv_call);
+  add_property_zval(result, "absolute_deadline", zv_timeval);
+  add_property_zval(result, "metadata", zv_md);
+  zval_ptr_dtor(&zv_call);
+  zval_ptr_dtor(&zv_timeval);
+  zval_ptr_dtor(&zv_md);
 #else
-  zval zv_call;
-  zval zv_timeval;
-  zval zv_md;
   //TODO(thinkerou): why use zval* to unit test error?
-  zv_call = *grpc_php_wrap_call(call, true);
-  zv_timeval = *grpc_php_wrap_timeval(details.deadline);
-  zv_md = *grpc_parse_metadata_array(&metadata);
+  zv_call = grpc_php_wrap_call(call, true);
+  zv_timeval = grpc_php_wrap_timeval(details.deadline);
+  zv_md = grpc_parse_metadata_array(&metadata);
 
-  add_property_zval(result, "call", &zv_call);
-  add_property_zval(result, "absolute_deadline", &zv_timeval);
-  add_property_zval(result, "metadata", &zv_md);
+  add_property_zval(result, "call", zv_call);
+  add_property_zval(result, "absolute_deadline", zv_timeval);
+  add_property_zval(result, "metadata", zv_md);
+  zval_ptr_dtor(zv_call);
+  zval_ptr_dtor(zv_timeval);
+  zval_ptr_dtor(zv_md);
 #endif
 
  cleanup:
   grpc_call_details_destroy(&details);
   grpc_metadata_array_destroy(&metadata);
-  RETURN_DESTROY_ZVAL(result);
+  RETVAL_ZVAL(result, false, true);
+#if PHP_MAJOR_VERSION >= 7
+  efree(zv_call);
+  efree(zv_timeval);
+  efree(zv_md);
+  efree(result);
+#endif
 }
 
 /**
