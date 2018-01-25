@@ -1117,6 +1117,13 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
 
   CheckRpcSendFailure();
 
+  balancers_[1]->NotifyDoneWithServerlists();
+  balancers_[2]->NotifyDoneWithServerlists();
+  EXPECT_EQ(0U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
+
   // Kill balancer 0.
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
   balancers_[0]->NotifyDoneWithServerlists();
@@ -1130,8 +1137,12 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
-  EXPECT_EQ(0U, balancer_servers_[1].service_->request_count());
-  EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
+  // Balancer 1 may have received a request if re-resolution is done quickly
+  // enough.
+  EXPECT_GE(balancer_servers_[1].service_->request_count(), 0U);
+  EXPECT_GE(balancer_servers_[1].service_->response_count(), 0U);
+  EXPECT_LE(balancer_servers_[1].service_->request_count(), 1U);
+  EXPECT_LE(balancer_servers_[1].service_->response_count(), 1U);
   EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
 
