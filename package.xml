@@ -57,14 +57,12 @@
     <file baseinstalldir="/" name="include/grpc/support/atm_gcc_sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/avl.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/cmdline.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cpu.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/host_port.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/string_util.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/subprocess.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_generic.h" role="src" />
@@ -112,7 +110,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/avl.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/cmdline.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_iphone.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_posix.cc" role="src" />
@@ -133,8 +130,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/string_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string_util_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/subprocess_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/subprocess_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_windows.cc" role="src" />
