@@ -174,6 +174,24 @@ TEST(RefCountedPtr, RefCountedWithTracing) {
   foo->Unref(DEBUG_LOCATION, "foo");
 }
 
+class FooFromThis : public EnableRefCountedFromThis<RefCounted, FooFromThis> {
+ public:
+  FooFromThis(): value_(0) {}
+  void Set(int v) { value_ = v; }
+  int Get() const { return value_; }
+  RefCountedPtr<FooFromThis> GetPtr() { return RefCountedFromThis(); }
+ private:
+  int value_;
+};
+
+TEST(RefCountedPtr, FromThis) {
+  RefCountedPtr<FooFromThis> rcp(New<FooFromThis>());
+  rcp->Set(2);
+  ASSERT_EQ(2, rcp->Get());
+  auto rcp2 = rcp->GetPtr();
+  ASSERT_EQ(rcp->Get(), rcp2->Get());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
