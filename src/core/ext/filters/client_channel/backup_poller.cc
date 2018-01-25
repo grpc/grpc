@@ -105,7 +105,8 @@ static void run_poller(void* arg, grpc_error* error) {
   backup_poller* p = (backup_poller*)arg;
   if (error != GRPC_ERROR_NONE) {
     if (error != GRPC_ERROR_CANCELLED) {
-      GRPC_LOG_IF_ERROR("run_poller", GRPC_ERROR_REF(error));
+      const char* msg = grpc_error_string(error);
+      gpr_log(GPR_INFO, "run_poller: %s", msg);
     }
     backup_poller_shutdown_unref(p);
     return;
