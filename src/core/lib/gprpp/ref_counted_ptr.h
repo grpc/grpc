@@ -103,6 +103,9 @@ inline RefCountedPtr<T> MakeRefCounted(Args&&... args) {
 // EnableRefCountedFromThis is analogous to std::enable_shared_from_this .
 // To avoid multiple inheritance, we need to template based on both the
 // base ref-counted class and the pointed-to class. The latter uses CRTP.
+// If/when we are able to use std::shared_ptr, we should replace
+//   EnableRefCountedFromThis<RefCountedClass, This> with
+//   std::enable_shared_from_this<This>.
 template <typename RefCountedClass, typename This>
 class EnableRefCountedFromThis : public RefCountedClass {
 public:
