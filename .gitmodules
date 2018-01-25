@@ -1,6 +1,10 @@
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://github.com/madler/zlib
+	# When using CMake to build, the zlib submodule ends up with a
+	# generated file that makes Git consider the submodule dirty. This
+	# state can be ignored for day-to-day development on gRPC.
+	ignore = dirty
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://github.com/google/protobuf.git
