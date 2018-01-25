@@ -137,7 +137,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  void SetNextResolution(const std::vector<int>& ports) {
+  void SetNextResolution(const std::vector<int>& ports, bool notify = true) {
     grpc_core::ExecCtx exec_ctx;
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(ports.size(), nullptr);
@@ -156,8 +156,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
         grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args* fake_result =
         grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                       fake_result);
+    if (notify) {
+      grpc_fake_resolver_response_generator_set_response(response_generator_,
+                                                         fake_result);
+    } else {
+      grpc_fake_resolver_response_generator_set_response_no_notify(
+          response_generator_, fake_result);
+    }
     grpc_channel_args_destroy(fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
@@ -181,12 +186,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  bool SendRpc(EchoResponse* response = nullptr) {
+  bool SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
     ClientContext context;
+    context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     Status status = stub_->Echo(&context, request, response);
     if (local_response) delete response;
     return status.ok();
@@ -640,13 +646,17 @@ TEST_F(ClientLbEnd2endTest, RoundRobinConcurrentUpdates) {
 TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
-  std::vector<int> ports;
+  std::vector<int> first_ports;
+  std::vector<int> second_ports;
   for (int i = 0; i < kNumServers; ++i) {
-    ports.push_back(grpc_pick_unused_port_or_die());
+    first_ports.push_back(grpc_pick_unused_port_or_die());
   }
-  StartServers(kNumServers, ports);
+  for (int i = 0; i < kNumServers; ++i) {
+    second_ports.push_back(grpc_pick_unused_port_or_die());
+  }
+  StartServers(kNumServers, first_ports);
   ResetStub(GetServersPorts(), "round_robin");
-  SetNextResolution(ports);
+  SetNextResolution(first_ports);
   // Send a number of RPCs, which succeed.
   for (size_t i = 0; i < 100; ++i) {
     CheckRpcSendOk();
@@ -661,9 +671,16 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   // Client requests should fail. Send enough to tickle all subchannels.
   for (size_t i = 0; i < servers_.size(); ++i) CheckRpcSendFailure();
   gpr_log(GPR_INFO, "****** DOOMED REQUESTS SENT *******");
-  // Bring servers back up on the same port (we aren't recreating the channel).
+  // Bring servers back up on a different set of ports. We need to do this to be
+  // sure that the eventual success is *not* due to subchannel reconnection
+  // attempts and that an actual re-resolution has happened as a result of the
+  // RR policy going into transient failure when all its subchannels become
+  // unavailable (in transient failure as well).
   gpr_log(GPR_INFO, "****** RESTARTING SERVERS *******");
-  StartServers(kNumServers, ports);
+  StartServers(kNumServers, second_ports);
+  // Don't notify of the update. Wait for the LB policy's re-resolution to
+  // "pull" the new ports.
+  SetNextResolution(second_ports, false);
   gpr_log(GPR_INFO, "****** SERVERS RESTARTED *******");
   gpr_log(GPR_INFO, "****** SENDING REQUEST TO SUCCEED *******");
   // Client request should eventually (but still fairly soon) succeed.
