@@ -18,7 +18,7 @@
 
 SERVICE_KEY=$1
 
-gcloud auth activate-service-account --key-file=$SERVICE_KEY || exit 1
+gcloud auth activate-service-account --key-file="$SERVICE_KEY" || exit 1
 gcloud config set project grpc-testing || exit 1
 
 rm -rf grpc-java
