@@ -16,25 +16,22 @@
  *
  */
 
-#include "src/core/tsi/gts_transport_security.h"
+#ifndef GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
 
-#include <string.h>
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd.h>
 
-static gts_shared_resource g_gts_resource;
+typedef struct alts_shared_resource {
+  gpr_thd_id thread_id;
+  grpc_channel* channel;
+  grpc_completion_queue* cq;
+  gpr_mu mu;
+} alts_shared_resource;
 
-gts_shared_resource* gts_get_shared_resource(void) { return &g_gts_resource; }
+/* This method returns the address of alts_shared_resource object shared by all
+ *    TSI handshakes. */
+alts_shared_resource* alts_get_shared_resource(void);
 
-void grpc_tsi_gts_init() {
-  memset(&g_gts_resource, 0, sizeof(gts_shared_resource));
-  gpr_mu_init(&g_gts_resource.mu);
-}
-
-void grpc_tsi_gts_shutdown() {
-  gpr_mu_destroy(&g_gts_resource.mu);
-  if (g_gts_resource.cq == nullptr) {
-    return;
-  }
-  grpc_completion_queue_destroy(g_gts_resource.cq);
-  grpc_channel_destroy(g_gts_resource.channel);
-  gpr_thd_join(g_gts_resource.thread_id);
-}
+#endif /* GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H */

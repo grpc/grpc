@@ -515,10 +515,6 @@ typedef struct grpc_op {
         uint8_t is_set;
         grpc_compression_level level;
       } maybe_compression_level;
-      struct grpc_op_send_initial_metadata_maybe_stream_compression_level {
-        uint8_t is_set;
-        grpc_stream_compression_level level;
-      } maybe_stream_compression_level;
     } send_initial_metadata;
     struct grpc_op_send_message {
       /** This op takes ownership of the slices in send_message.  After

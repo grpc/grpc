@@ -17,26 +17,25 @@ cimport cpython
 
 cdef class Channel:
 
-  def __cinit__(self, bytes target, ChannelArgs arguments,
+  def __cinit__(self, bytes target, object arguments,
                 ChannelCredentials channel_credentials=None):
     grpc_init()
-    cdef grpc_channel_args *c_arguments = NULL
-    cdef char *c_target = NULL
-    self.c_channel = NULL
+    self._vtable.copy = &_copy_pointer
+    self._vtable.destroy = &_destroy_pointer
+    self._vtable.cmp = &_compare_pointer
+    cdef _ArgumentsProcessor arguments_processor = _ArgumentsProcessor(
+        arguments)
+    cdef grpc_channel_args *c_arguments = arguments_processor.c(&self._vtable)
     self.references = []
-    if len(arguments) > 0:
-      c_arguments = &arguments.c_args
-      self.references.append(arguments)
     c_target = target
     if channel_credentials is None:
-      with nogil:
-        self.c_channel = grpc_insecure_channel_create(c_target, c_arguments,
-                                                      NULL)
+      self.c_channel = grpc_insecure_channel_create(c_target, c_arguments, NULL)
     else:
       c_channel_credentials = channel_credentials.c()
       self.c_channel = grpc_secure_channel_create(
           c_channel_credentials, c_target, c_arguments, NULL)
       grpc_channel_credentials_release(c_channel_credentials)
+    arguments_processor.un_c()
     self.references.append(target)
     self.references.append(arguments)
 
