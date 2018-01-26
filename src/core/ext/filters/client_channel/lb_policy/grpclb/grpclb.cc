@@ -293,6 +293,9 @@ typedef struct glb_lb_policy {
   /** called upon changes to the RR's connectivity. */
   grpc_closure rr_on_connectivity_changed;
 
+  /** called upon reresolution request from the RR policy. */
+  grpc_closure rr_on_reresolution_requested;
+
   /************************************************************/
   /*  client data associated with the LB server communication */
   /************************************************************/
@@ -736,11 +739,35 @@ static void lb_policy_args_destroy(grpc_lb_policy_args* args) {
   gpr_free(args);
 }
 
+static void rr_on_reresolution_requested_locked(void* arg, grpc_error* error) {
+  glb_lb_policy* glb_policy = (glb_lb_policy*)arg;
+  if (glb_policy->shutting_down || error != GRPC_ERROR_NONE) {
+    GRPC_LB_POLICY_UNREF(&glb_policy->base,
+                         "rr_on_reresolution_requested_locked");
+    return;
+  }
+  if (grpc_lb_glb_trace.enabled()) {
+    gpr_log(
+        GPR_DEBUG,
+        "[grpclb %p] Re-resolution requested from the internal RR policy (%p).",
+        glb_policy, glb_policy->rr_policy);
+  }
+  // Handle the re-resolution request using glb's original re-resolution
+  // closure.
+  grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace,
+                               GRPC_ERROR_NONE);
+  // Give back the wrapper closure to the RR policy.
+  grpc_lb_policy_set_reresolve_closure_locked(
+      glb_policy->rr_policy, &glb_policy->rr_on_reresolution_requested);
+}
+
 static void create_rr_locked(glb_lb_policy* glb_policy,
                              grpc_lb_policy_args* args) {
   GPR_ASSERT(glb_policy->rr_policy == nullptr);
-
   grpc_lb_policy* new_rr_policy = grpc_lb_policy_create("round_robin", args);
+  GRPC_LB_POLICY_REF(&glb_policy->base, "rr_on_reresolution_requested_locked");
+  grpc_lb_policy_set_reresolve_closure_locked(
+      new_rr_policy, &glb_policy->rr_on_reresolution_requested);
   if (new_rr_policy == nullptr) {
     gpr_log(GPR_ERROR,
             "[grpclb %p] Failure creating a RoundRobin policy for serverlist "
@@ -1766,14 +1793,6 @@ static void glb_lb_channel_on_connectivity_changed_cb(void* arg,
   }
 }
 
-static void glb_set_reresolve_closure_locked(
-    grpc_lb_policy* policy, grpc_closure* request_reresolution) {
-  glb_lb_policy* glb_policy = (glb_lb_policy*)policy;
-  GPR_ASSERT(!glb_policy->shutting_down);
-  GPR_ASSERT(glb_policy->base.request_reresolution == nullptr);
-  glb_policy->base.request_reresolution = request_reresolution;
-}
-
 /* Code wiring the policy with the rest of the core */
 static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_destroy,
@@ -1785,8 +1804,7 @@ static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_exit_idle_locked,
     glb_check_connectivity_locked,
     glb_notify_on_state_change_locked,
-    glb_update_locked,
-    glb_set_reresolve_closure_locked};
+    glb_update_locked};
 
 static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
                                   grpc_lb_policy_args* args) {
@@ -1868,6 +1886,9 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
   grpc_subchannel_index_ref();
   GRPC_CLOSURE_INIT(&glb_policy->rr_on_connectivity_changed,
                     rr_on_connectivity_changed_locked, glb_policy,
+                    grpc_combiner_scheduler(args->combiner));
+  GRPC_CLOSURE_INIT(&glb_policy->rr_on_reresolution_requested,
+                    rr_on_reresolution_requested_locked, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
