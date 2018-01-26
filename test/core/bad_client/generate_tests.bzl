@@ -25,6 +25,7 @@ def test_options():
 BAD_CLIENT_TESTS = {
     'badreq': test_options(),
     'connection_prefix': test_options(),
+    'duplicate_header': test_options(),
     'headers': test_options(),
     'initial_settings_frame': test_options(),
     'head_of_line_blocking': test_options(),

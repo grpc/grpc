@@ -1101,6 +1101,7 @@ static grpc_stream_compression_algorithm decode_stream_compression(
 static void publish_app_metadata(grpc_call* call, grpc_metadata_batch* b,
                                  int is_trailing) {
   if (b->list.count == 0) return;
+  if (is_trailing && call->buffered_metadata[1] == nullptr) return;
   GPR_TIMER_BEGIN("publish_app_metadata", 0);
   grpc_metadata_array* dest;
   grpc_metadata* mdusr;
