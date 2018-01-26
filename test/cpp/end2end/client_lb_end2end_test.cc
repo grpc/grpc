@@ -111,7 +111,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  void SetNextResolution(const std::vector<int>& ports) {
+  void SetNextResolution(const std::vector<int>& ports, bool notify = true) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(ports.size(), nullptr);
@@ -130,15 +130,27 @@ class ClientLbEnd2endTest : public ::testing::Test {
         grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args* fake_result =
         grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    grpc_fake_resolver_response_generator_set_response(
-        &exec_ctx, response_generator_, fake_result);
+    if (notify) {
+      grpc_fake_resolver_response_generator_set_response(
+          &exec_ctx, response_generator_, fake_result);
+    } else {
+      grpc_fake_resolver_response_generator_set_response_no_notify(
+          &exec_ctx, response_generator_, fake_result);
+    }
     grpc_channel_args_destroy(&exec_ctx, fake_result);
     grpc_lb_addresses_destroy(&exec_ctx, addresses);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
-  void ResetStub(const grpc::string& lb_policy_name = "") {
-    ChannelArguments args;
+  std::vector<int> GetServersPorts() {
+    std::vector<int> ports;
+    for (const auto& server : servers_) ports.push_back(server->port_);
+    return ports;
+  }
+
+  void ResetStub(const std::vector<int>& ports,
+                 const grpc::string& lb_policy_name,
+                 ChannelArguments args = ChannelArguments()) {
     if (lb_policy_name.size() > 0) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
@@ -156,27 +168,28 @@ class ClientLbEnd2endTest : public ::testing::Test {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  Status SendRpc(EchoResponse* response = nullptr) {
+  bool SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
     ClientContext context;
+    context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     Status status = stub_->Echo(&context, request, response);
     if (local_response) delete response;
-    return status;
+    return status.ok();
   }
 
   void CheckRpcSendOk() {
     EchoResponse response;
-    const Status status = SendRpc(&response);
-    EXPECT_TRUE(status.ok());
+    const bool success = SendRpc(&response);
+    EXPECT_TRUE(success);
     EXPECT_EQ(response.message(), kRequestMessage_);
   }
 
   void CheckRpcSendFailure() {
-    const Status status = SendRpc();
-    EXPECT_FALSE(status.ok());
+    const bool success = SendRpc();
+    EXPECT_FALSE(success);
   }
 
   struct ServerData {
@@ -267,7 +280,7 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub();  // implicit pick first
+  ResetStub(GetServersPorts(), "");  // test that pick first is the default.
   std::vector<int> ports;
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
@@ -295,7 +308,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub();  // implicit pick first
+  ResetStub(GetServersPorts(), "pick_first");
   std::vector<int> ports;
 
   // Perform one RPC against the first server.
@@ -341,7 +354,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub();  // implicit pick first
+  ResetStub(GetServersPorts(), "pick_first");
   std::vector<int> ports;
 
   // Perform one RPC against the first server.
@@ -371,7 +384,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub();  // implicit pick first
+  ResetStub(GetServersPorts(), "pick_first");
   std::vector<int> ports;
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
@@ -380,7 +393,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
     grpc_subchannel_index_test_only_set_force_creation(force_creation);
     gpr_log(GPR_INFO, "Force subchannel creation: %d", force_creation);
     for (size_t i = 0; i < 1000; ++i) {
-      std::random_shuffle(ports.begin(), ports.end());
+      std::shuffle(ports.begin(), ports.end(),
+                   std::mt19937(std::random_device()()));
       SetNextResolution(ports);
       if (i % 10 == 0) CheckRpcSendOk();
     }
@@ -393,7 +407,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("round_robin");
+  ResetStub(GetServersPorts(), "round_robin");
   std::vector<int> ports;
   for (const auto& server : servers_) {
     ports.emplace_back(server->port_);
@@ -424,7 +438,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("round_robin");
+  ResetStub(GetServersPorts(), "round_robin");
   std::vector<int> ports;
 
   // Start with a single server.
@@ -507,7 +521,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
 TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("round_robin");
+  ResetStub(GetServersPorts(), "round_robin");
   std::vector<int> ports;
 
   // Start with a single server.
@@ -539,13 +553,14 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("round_robin");
+  ResetStub(GetServersPorts(), "round_robin");
   std::vector<int> ports;
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
   }
   for (size_t i = 0; i < 1000; ++i) {
-    std::random_shuffle(ports.begin(), ports.end());
+    std::shuffle(ports.begin(), ports.end(),
+                 std::mt19937(std::random_device()()));
     SetNextResolution(ports);
     if (i % 10 == 0) CheckRpcSendOk();
   }
@@ -561,27 +576,87 @@ TEST_F(ClientLbEnd2endTest, RoundRobinConcurrentUpdates) {
 TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
-  std::vector<int> ports;
+  std::vector<int> first_ports;
+  std::vector<int> second_ports;
   for (int i = 0; i < kNumServers; ++i) {
-    ports.push_back(grpc_pick_unused_port_or_die());
+    first_ports.push_back(grpc_pick_unused_port_or_die());
   }
-  StartServers(kNumServers, ports);
-  ResetStub("round_robin");
-  SetNextResolution(ports);
+  for (int i = 0; i < kNumServers; ++i) {
+    second_ports.push_back(grpc_pick_unused_port_or_die());
+  }
+  StartServers(kNumServers, first_ports);
+  ResetStub(GetServersPorts(), "round_robin");
+  SetNextResolution(first_ports);
   // Send a number of RPCs, which succeed.
   for (size_t i = 0; i < 100; ++i) {
     CheckRpcSendOk();
   }
   // Kill all servers
+  gpr_log(GPR_INFO, "****** ABOUT TO KILL SERVERS *******");
   for (size_t i = 0; i < servers_.size(); ++i) {
     servers_[i]->Shutdown(false);
   }
-  // Client request should fail.
-  CheckRpcSendFailure();
-  // Bring servers back up on the same port (we aren't recreating the channel).
-  StartServers(kNumServers, ports);
-  // Client request should succeed.
-  CheckRpcSendOk();
+  gpr_log(GPR_INFO, "****** SERVERS KILLED *******");
+  gpr_log(GPR_INFO, "****** SENDING DOOMED REQUESTS *******");
+  // Client requests should fail. Send enough to tickle all subchannels.
+  for (size_t i = 0; i < servers_.size(); ++i) CheckRpcSendFailure();
+  gpr_log(GPR_INFO, "****** DOOMED REQUESTS SENT *******");
+  // Bring servers back up on a different set of ports. We need to do this to be
+  // sure that the eventual success is *not* due to subchannel reconnection
+  // attempts and that an actual re-resolution has happened as a result of the
+  // RR policy going into transient failure when all its subchannels become
+  // unavailable (in transient failure as well).
+  gpr_log(GPR_INFO, "****** RESTARTING SERVERS *******");
+  StartServers(kNumServers, second_ports);
+  // Don't notify of the update. Wait for the LB policy's re-resolution to
+  // "pull" the new ports.
+  SetNextResolution(second_ports, false);
+  gpr_log(GPR_INFO, "****** SERVERS RESTARTED *******");
+  gpr_log(GPR_INFO, "****** SENDING REQUEST TO SUCCEED *******");
+  // Client request should eventually (but still fairly soon) succeed.
+  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  while (gpr_time_cmp(deadline, now) > 0) {
+    if (SendRpc()) break;
+    now = gpr_now(GPR_CLOCK_MONOTONIC);
+  }
+  GPR_ASSERT(gpr_time_cmp(deadline, now) > 0);
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  const auto ports = GetServersPorts();
+  ResetStub(ports, "round_robin");
+  SetNextResolution(ports);
+  for (size_t i = 0; i < kNumServers; ++i) WaitForServer(i);
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    CheckRpcSendOk();
+    EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
+  }
+  // One request should have gone to each server.
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    EXPECT_EQ(1, servers_[i]->service_.request_count());
+  }
+  const auto pre_death = servers_[0]->service_.request_count();
+  // Kill the first server.
+  servers_[0]->Shutdown(true);
+  // Client request still succeed. May need retrying if RR had returned a pick
+  // before noticing the change in the server's connectivity.
+  while (!SendRpc())
+    ;  // Retry until success.
+  // Send a bunch of RPCs that should succeed.
+  for (int i = 0; i < 10 * kNumServers; ++i) CheckRpcSendOk();
+  const auto post_death = servers_[0]->service_.request_count();
+  // No requests have gone to the deceased server.
+  EXPECT_EQ(pre_death, post_death);
+  // Bring the first server back up.
+  servers_[0].reset(new ServerData(server_host_, ports[0]));
+  // Requests should start arriving at the first server either right away (if
+  // the server managed to start before the RR policy retried the subchannel) or
+  // after the subchannel retry delay otherwise (RR's subchannel retried before
+  // the server was fully back up).
+  WaitForServer(0);
 }
 
 }  // namespace
