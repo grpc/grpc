@@ -20,6 +20,7 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/census.h>
 #include <grpc/compression.h>
+#include <grpc/compression_ruby.h>
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -66,16 +67,17 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
+  printf("%lx", (unsigned long) grpc_compression_algorithm_is_message);
+  printf("%lx", (unsigned long) grpc_compression_algorithm_is_stream);
   printf("%lx", (unsigned long) grpc_compression_algorithm_parse);
   printf("%lx", (unsigned long) grpc_compression_algorithm_name);
-  printf("%lx", (unsigned long) grpc_stream_compression_algorithm_name);
   printf("%lx", (unsigned long) grpc_compression_algorithm_for_level);
-  printf("%lx", (unsigned long) grpc_stream_compression_algorithm_for_level);
   printf("%lx", (unsigned long) grpc_compression_options_init);
   printf("%lx", (unsigned long) grpc_compression_options_enable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_disable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_is_algorithm_enabled);
-  printf("%lx", (unsigned long) grpc_compression_options_is_stream_compression_algorithm_enabled);
+  printf("%lx", (unsigned long) grpc_compression_algorithm_parse_ruby);
+  printf("%lx", (unsigned long) grpc_compression_algorithm_name_ruby);
   printf("%lx", (unsigned long) grpc_metadata_array_init);
   printf("%lx", (unsigned long) grpc_metadata_array_destroy);
   printf("%lx", (unsigned long) grpc_call_details_init);

@@ -15,7 +15,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 mkdir -p artifacts/
-cp -r $EXTERNAL_GIT_ROOT/platform={windows,linux,macos}/artifacts/php_*/* artifacts/ || true
+cp -r "$EXTERNAL_GIT_ROOT"/platform={windows,linux,macos}/artifacts/php_*/* artifacts/ || true

@@ -29,12 +29,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -43,14 +43,11 @@
 
 static void* tag(intptr_t i) { return (void*)i; }
 
-static gpr_timespec ms_from_now(int ms) {
-  return grpc_timeout_milliseconds_to_deadline(ms);
-}
-
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, ms_from_now(5000), nullptr);
+    ev = grpc_completion_queue_next(
+        cq, grpc_timeout_milliseconds_to_deadline(5000), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -165,11 +162,11 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
   if (expect_ok) {
     /* Normal deadline, shouldn't be reached. */
-    deadline = ms_from_now(60000);
+    deadline = grpc_timeout_milliseconds_to_deadline(60000);
   } else {
     /* Give up faster when failure is expected.
        BUG: Setting this to 1000 reveals a memory leak (b/18608927). */
-    deadline = ms_from_now(1500);
+    deadline = grpc_timeout_milliseconds_to_deadline(3000);
   }
 
   /* Send a trivial request. */

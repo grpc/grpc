@@ -26,8 +26,8 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport.h"
 
 #define MAX_BUFFER_LENGTH 8192

@@ -44,14 +44,19 @@ _DEFAULT_INNER_JOBS = 2
 _REPORT_SUFFIX = 'sponge_log.xml'
 
 
+def _safe_report_name(name):
+    """Reports with '+' in target name won't show correctly in ResultStore"""
+    return name.replace('+', 'p')
+
+
 def _report_filename(name):
     """Generates report file name"""
-    return 'report_%s_%s' % (name, _REPORT_SUFFIX)
+    return 'report_%s_%s' % (_safe_report_name(name), _REPORT_SUFFIX)
 
 
 def _report_filename_internal_ci(name):
     """Generates report file name that leads to better presentation by internal CI"""
-    return '%s/%s' % (name, _REPORT_SUFFIX)
+    return '%s/%s' % (_safe_report_name(name), _REPORT_SUFFIX)
 
 
 def _docker_jobspec(name,
@@ -68,7 +73,7 @@ def _docker_jobspec(name,
             '-j',
             str(inner_jobs), '-x',
             _report_filename(name), '--report_suite_name',
-            '%s' % name
+            '%s' % _safe_report_name(name)
         ] + runtests_args,
         environ=runtests_envs,
         shortname='run_tests_%s' % name,
@@ -95,7 +100,7 @@ def _workspace_jobspec(name,
             '-t', '-j',
             str(inner_jobs), '-x',
             '../%s' % _report_filename(name), '--report_suite_name',
-            '%s' % name
+            '%s' % _safe_report_name(name)
         ] + runtests_args,
         environ=env,
         shortname='run_tests_%s' % name,
@@ -255,7 +260,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.8', 'gcc5.3', 'gcc_musl', 'clang3.5', 'clang3.6', 'clang3.7'
+            'gcc4.8', 'gcc5.3', 'gcc7.2', 'gcc_musl', 'clang3.5', 'clang3.6',
+            'clang3.7'
     ]:
         test_jobs += _generate_jobs(
             languages=['c', 'c++'],

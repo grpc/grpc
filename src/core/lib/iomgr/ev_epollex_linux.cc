@@ -21,7 +21,7 @@
 #include <grpc/support/log.h>
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
-#ifdef GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 
@@ -41,6 +41,8 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/spinlock.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
@@ -49,8 +51,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/manual_constructor.h"
-#include "src/core/lib/support/spinlock.h"
 
 // debug aid: create workers on the heap (allows asan to spot
 // use-after-destruction)
@@ -199,6 +199,7 @@ struct grpc_pollset {
   pollable* active_pollable;
   bool kicked_without_poller;
   grpc_closure* shutdown_closure;
+  bool already_shutdown;
   grpc_pollset_worker* root_worker;
   int containing_pollset_set_count;
 };
@@ -562,6 +563,7 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
       pollset->containing_pollset_set_count == 0) {
     GRPC_CLOSURE_SCHED(pollset->shutdown_closure, GRPC_ERROR_NONE);
     pollset->shutdown_closure = nullptr;
+    pollset->already_shutdown = true;
   }
 }
 
@@ -677,6 +679,11 @@ static grpc_error* pollset_kick_all(grpc_pollset* pollset) {
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   gpr_mu_init(&pollset->mu);
   pollset->active_pollable = POLLABLE_REF(g_empty_pollable, "pollset");
+  pollset->kicked_without_poller = false;
+  pollset->shutdown_closure = nullptr;
+  pollset->already_shutdown = false;
+  pollset->root_worker = nullptr;
+  pollset->containing_pollset_set_count = 0;
   *mu = &pollset->mu;
 }
 
@@ -862,7 +869,8 @@ static worker_remove_result worker_remove(grpc_pollset_worker** root_worker,
 static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
                          grpc_pollset_worker** worker_hdl,
                          grpc_millis deadline) {
-  bool do_poll = (pollset->shutdown_closure == nullptr);
+  bool do_poll =
+      (pollset->shutdown_closure == nullptr && !pollset->already_shutdown);
   if (worker_hdl != nullptr) *worker_hdl = worker;
   worker->initialized_cv = false;
   worker->kicked = false;
@@ -1442,15 +1450,15 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
   return &vtable;
 }
 
-#else /* defined(GRPC_LINUX_EPOLL) */
+#else /* defined(GRPC_LINUX_EPOLL_CREATE1) */
 #if defined(GRPC_POSIX_SOCKET)
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
-/* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
- * NULL */
+/* If GRPC_LINUX_EPOLL_CREATE1 is not defined, it means
+   epoll_create1 is not available. Return NULL */
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested) {
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET) */
 
-#endif /* !defined(GRPC_LINUX_EPOLL) */
+#endif /* !defined(GRPC_LINUX_EPOLL_CREATE1) */

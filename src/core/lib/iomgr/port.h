@@ -37,6 +37,7 @@
 #define GRPC_POSIX_SOCKETUTILS 1
 #define GRPC_POSIX_WAKEUP_FD 1
 #define GRPC_TIMER_USE_GENERIC 1
+#define GRPC_LINUX_EPOLL 1
 #elif defined(GPR_WINDOWS)
 #define GRPC_TIMER_USE_GENERIC 1
 #define GRPC_WINSOCK_SOCKET 1
@@ -80,6 +81,7 @@
 #endif
 #ifndef __GLIBC__
 #define GRPC_LINUX_EPOLL 1
+#define GRPC_LINUX_EPOLL_CREATE1 1
 #define GRPC_LINUX_EVENTFD 1
 #define GRPC_MSG_IOVLEN_TYPE int
 #endif

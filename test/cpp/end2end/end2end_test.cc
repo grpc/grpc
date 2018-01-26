@@ -35,8 +35,8 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -350,7 +350,7 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
       char bytes[8] = {'\0', '\1', '\2', '\3', '\4', '\5', '\6', (char)i};
       context.AddMetadata("custom-bin", grpc::string(bytes, 8));
     }
-    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+    context.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());
@@ -1085,31 +1085,6 @@ TEST_P(End2endTest, RpcMaxMessageSize) {
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
-}
-
-// Client sends 20 requests and the server returns CANCELLED status after
-// reading 10 requests.
-TEST_P(End2endTest, RequestStreamServerEarlyCancelTest) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-
-  context.AddMetadata(kServerCancelAfterReads, "10");
-  auto stream = stub_->RequestStream(&context, &response);
-  request.set_message("hello");
-  int send_messages = 20;
-  while (send_messages > 10) {
-    EXPECT_TRUE(stream->Write(request));
-    send_messages--;
-  }
-  while (send_messages > 0) {
-    stream->Write(request);
-    send_messages--;
-  }
-  stream->WritesDone();
-  Status s = stream->Finish();
-  EXPECT_EQ(s.error_code(), StatusCode::CANCELLED);
 }
 
 void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,

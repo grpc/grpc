@@ -111,7 +111,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   grpc_byte_buffer* response_payload1_recv = nullptr;
   grpc_byte_buffer* response_payload2_recv = nullptr;
   grpc_call_details call_details;
-  grpc_status_code status;
+  grpc_status_code status = GRPC_STATUS_OK;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
