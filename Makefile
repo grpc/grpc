@@ -3648,7 +3648,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.cc \
     test/core/end2end/fixtures/proxy.cc \
     test/core/iomgr/endpoint_tests.cc \
-    test/core/util/cmdline.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.cc \
     test/core/util/histogram.cc \
@@ -3664,6 +3663,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/subprocess_windows.cc \
     test/core/util/tracer_util.cc \
     test/core/util/trickle_endpoint.cc \
+    test/core/util/cmdline.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -3851,14 +3851,30 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/http/server/http_server_filter.cc \
 
 PUBLIC_HEADERS_C += \
-    include/grpc/impl/codegen/byte_buffer.h \
-    include/grpc/impl/codegen/byte_buffer_reader.h \
-    include/grpc/impl/codegen/compression_types.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/propagation_bits.h \
-    include/grpc/impl/codegen/slice.h \
-    include/grpc/impl/codegen/status.h \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/avl.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/host_port.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd.h \
+    include/grpc/support/time.h \
+    include/grpc/support/tls.h \
+    include/grpc/support/tls_gcc.h \
+    include/grpc/support/tls_msvc.h \
+    include/grpc/support/tls_pthread.h \
+    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -3872,6 +3888,14 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
 
 LIBGRPC_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
 
@@ -3913,7 +3937,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.cc \
     test/core/end2end/fixtures/proxy.cc \
     test/core/iomgr/endpoint_tests.cc \
-    test/core/util/cmdline.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.cc \
     test/core/util/histogram.cc \
@@ -3929,6 +3952,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/subprocess_windows.cc \
     test/core/util/tracer_util.cc \
     test/core/util/trickle_endpoint.cc \
+    test/core/util/cmdline.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -4116,14 +4140,30 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/http/server/http_server_filter.cc \
 
 PUBLIC_HEADERS_C += \
-    include/grpc/impl/codegen/byte_buffer.h \
-    include/grpc/impl/codegen/byte_buffer_reader.h \
-    include/grpc/impl/codegen/compression_types.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/propagation_bits.h \
-    include/grpc/impl/codegen/slice.h \
-    include/grpc/impl/codegen/status.h \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/avl.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/host_port.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd.h \
+    include/grpc/support/time.h \
+    include/grpc/support/tls.h \
+    include/grpc/support/tls_gcc.h \
+    include/grpc/support/tls_msvc.h \
+    include/grpc/support/tls_pthread.h \
+    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -4137,6 +4177,14 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
 
 LIBGRPC_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_UNSECURE_SRC))))
 
@@ -10611,6 +10659,7 @@ endif
 
 GRPC_CREATE_JWT_SRC = \
     test/core/security/create_jwt.cc \
+    test/core/util/cmdline.cc \
 
 GRPC_CREATE_JWT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CREATE_JWT_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10623,14 +10672,16 @@ else
 
 
 
-$(BINDIR)/$(CONFIG)/grpc_create_jwt: $(GRPC_CREATE_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/grpc_create_jwt: $(GRPC_CREATE_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_CREATE_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_create_jwt
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CREATE_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_create_jwt
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/security/create_jwt.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/security/create_jwt.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/util/cmdline.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_grpc_create_jwt: $(GRPC_CREATE_JWT_OBJS:.o=.dep)
 
@@ -10803,6 +10854,7 @@ endif
 
 GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_SRC = \
     test/core/security/print_google_default_creds_token.cc \
+    test/core/util/cmdline.cc \
 
 GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10815,14 +10867,16 @@ else
 
 
 
-$(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token: $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token: $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/security/print_google_default_creds_token.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/security/print_google_default_creds_token.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/util/cmdline.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_grpc_print_google_default_creds_token: $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS:.o=.dep)
 
@@ -10899,6 +10953,7 @@ endif
 
 GRPC_VERIFY_JWT_SRC = \
     test/core/security/verify_jwt.cc \
+    test/core/util/cmdline.cc \
 
 GRPC_VERIFY_JWT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_VERIFY_JWT_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10911,14 +10966,16 @@ else
 
 
 
-$(BINDIR)/$(CONFIG)/grpc_verify_jwt: $(GRPC_VERIFY_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/grpc_verify_jwt: $(GRPC_VERIFY_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_VERIFY_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_verify_jwt
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_VERIFY_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/security/verify_jwt.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/security/verify_jwt.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/util/cmdline.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_grpc_verify_jwt: $(GRPC_VERIFY_JWT_OBJS:.o=.dep)
 

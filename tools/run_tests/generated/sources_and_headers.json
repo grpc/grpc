@@ -951,10 +951,9 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
+      "grpc"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -1053,10 +1052,9 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
+      "grpc"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -1104,10 +1102,9 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
+      "grpc"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -7850,6 +7847,23 @@
     "deps": [
       "gpr_base_headers"
     ], 
+    "headers": [
+      "test/core/util/cmdline.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "cmdline", 
+    "src": [
+      "test/core/util/cmdline.cc", 
+      "test/core/util/cmdline.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr_base_headers"
+    ], 
     "headers": [], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9016,6 +9030,7 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
       "gpr_test_util", 
       "grpc_base", 
@@ -9028,7 +9043,6 @@
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
-      "test/core/util/cmdline.h", 
       "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/histogram.h", 
@@ -9057,8 +9071,6 @@
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.cc", 
       "test/core/iomgr/endpoint_tests.h", 
-      "test/core/util/cmdline.cc", 
-      "test/core/util/cmdline.h", 
       "test/core/util/debugger_macros.cc", 
       "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.cc", 

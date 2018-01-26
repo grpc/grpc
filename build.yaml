@@ -24,6 +24,13 @@ filegroups:
   uses:
   - grpc_base
   - nanopb
+- name: cmdline
+  headers:
+  - test/core/util/cmdline.h
+  src:
+  - test/core/util/cmdline.cc
+  uses:
+  - gpr_base_headers
 - name: gpr_base
   src:
   - src/core/lib/gpr/alloc.cc
@@ -710,7 +717,6 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
-  - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -730,7 +736,6 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy_fixture.cc
   - test/core/end2end/fixtures/proxy.cc
   - test/core/iomgr/endpoint_tests.cc
-  - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -750,6 +755,7 @@ filegroups:
   - gpr_test_util
   - gpr
   uses:
+  - cmdline
   - grpc_base
   - grpc_client_channel
   - grpc_transport_chttp2
@@ -2367,10 +2373,10 @@ targets:
   src:
   - test/core/security/create_jwt.cc
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
+  filegroups:
+  - cmdline
   secure: true
   uses_polling: false
 - name: grpc_credentials_test
@@ -2437,10 +2443,10 @@ targets:
   src:
   - test/core/security/print_google_default_creds_token.cc
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
+  filegroups:
+  - cmdline
   uses_polling: false
 - name: grpc_security_connector_test
   build: test
@@ -2468,10 +2474,10 @@ targets:
   src:
   - test/core/security/verify_jwt.cc
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
+  filegroups:
+  - cmdline
   uses_polling: false
 - name: handshake_client
   build: test

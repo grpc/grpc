@@ -1443,7 +1443,6 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
-  test/core/util/cmdline.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -1459,6 +1458,7 @@ add_library(grpc_test_util
   test/core/util/subprocess_windows.cc
   test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
+  test/core/util/cmdline.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1677,14 +1677,30 @@ target_link_libraries(grpc_test_util
 )
 
 foreach(_hdr
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
+  include/grpc/support/alloc.h
+  include/grpc/support/atm.h
+  include/grpc/support/atm_gcc_atomic.h
+  include/grpc/support/atm_gcc_sync.h
+  include/grpc/support/atm_windows.h
+  include/grpc/support/avl.h
+  include/grpc/support/cpu.h
+  include/grpc/support/host_port.h
+  include/grpc/support/log.h
+  include/grpc/support/log_windows.h
+  include/grpc/support/port_platform.h
+  include/grpc/support/string_util.h
+  include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
+  include/grpc/support/sync_generic.h
+  include/grpc/support/sync_posix.h
+  include/grpc/support/sync_windows.h
+  include/grpc/support/thd.h
+  include/grpc/support/time.h
+  include/grpc/support/tls.h
+  include/grpc/support/tls_gcc.h
+  include/grpc/support/tls_msvc.h
+  include/grpc/support/tls_pthread.h
+  include/grpc/support/useful.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
@@ -1698,6 +1714,14 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/status.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -1715,7 +1739,6 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
-  test/core/util/cmdline.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -1731,6 +1754,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/subprocess_windows.cc
   test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
+  test/core/util/cmdline.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1949,14 +1973,30 @@ target_link_libraries(grpc_test_util_unsecure
 )
 
 foreach(_hdr
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
+  include/grpc/support/alloc.h
+  include/grpc/support/atm.h
+  include/grpc/support/atm_gcc_atomic.h
+  include/grpc/support/atm_gcc_sync.h
+  include/grpc/support/atm_windows.h
+  include/grpc/support/avl.h
+  include/grpc/support/cpu.h
+  include/grpc/support/host_port.h
+  include/grpc/support/log.h
+  include/grpc/support/log_windows.h
+  include/grpc/support/port_platform.h
+  include/grpc/support/string_util.h
+  include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
+  include/grpc/support/sync_generic.h
+  include/grpc/support/sync_posix.h
+  include/grpc/support/sync_windows.h
+  include/grpc/support/thd.h
+  include/grpc/support/time.h
+  include/grpc/support/tls.h
+  include/grpc/support/tls_gcc.h
+  include/grpc/support/tls_msvc.h
+  include/grpc/support/tls_pthread.h
+  include/grpc/support/useful.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
@@ -1970,6 +2010,14 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/status.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -6240,6 +6288,7 @@ endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_create_jwt
   test/core/security/create_jwt.cc
+  test/core/util/cmdline.cc
 )
 
 
@@ -6257,9 +6306,7 @@ target_include_directories(grpc_create_jwt
 target_link_libraries(grpc_create_jwt
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc
-  gpr_test_util
   gpr
 )
 
@@ -6412,6 +6459,7 @@ endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_print_google_default_creds_token
   test/core/security/print_google_default_creds_token.cc
+  test/core/util/cmdline.cc
 )
 
 
@@ -6428,9 +6476,7 @@ target_include_directories(grpc_print_google_default_creds_token
 
 target_link_libraries(grpc_print_google_default_creds_token
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc
-  gpr_test_util
   gpr
 )
 
@@ -6500,6 +6546,7 @@ endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_verify_jwt
   test/core/security/verify_jwt.cc
+  test/core/util/cmdline.cc
 )
 
 
@@ -6516,9 +6563,7 @@ target_include_directories(grpc_verify_jwt
 
 target_link_libraries(grpc_verify_jwt
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc
-  gpr_test_util
   gpr
 )
 
