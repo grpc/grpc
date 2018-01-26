@@ -26,7 +26,7 @@
 #include <queue>
 #include <thread>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
 

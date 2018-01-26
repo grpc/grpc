@@ -49,7 +49,7 @@ class GuardValidator(object):
         self.failed = False
 
     def fail(self, fpath, regexp, fcontents, match_txt, correct, fix):
-        cpp_header = 'grpc++' in fpath
+        cpp_header = 'grpc++' in fpath or 'grpcpp' in fpath
         self.failed = True
         invalid_guards_msg_template = (
             '{0}: Missing preprocessor guards (RE {1}). '
@@ -78,7 +78,7 @@ class GuardValidator(object):
         return fcontents
 
     def check(self, fpath, fix):
-        cpp_header = 'grpc++' in fpath
+        cpp_header = 'grpc++' in fpath or 'grpcpp' in fpath
         valid_guard = build_valid_guard(fpath)
 
         fcontents = load(fpath)

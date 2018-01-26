@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/client_context.h>
+#include <grpcpp/client_context.h>
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -24,10 +24,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/time.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/time.h>
 
 namespace grpc {
 
