@@ -157,81 +157,6 @@ cdef class SslPemKeyCertPair:
     self.c_pair.certificate_chain = self.certificate_chain
 
 
-
-cdef void* copy_ptr(void* ptr):
-  return ptr
-
-
-cdef void destroy_ptr(void* ptr):
-  pass
-
-
-cdef int compare_ptr(void* ptr1, void* ptr2):
-  if ptr1 < ptr2:
-    return -1
-  elif ptr1 > ptr2:
-    return 1
-  else:
-    return 0
-
-
-cdef class ChannelArg:
-
-  def __cinit__(self, bytes key, value):
-    self.key = key
-    self.value = value
-    self.c_arg.key = self.key
-    if isinstance(value, int):
-      self.c_arg.type = GRPC_ARG_INTEGER
-      self.c_arg.value.integer = self.value
-    elif isinstance(value, bytes):
-      self.c_arg.type = GRPC_ARG_STRING
-      self.c_arg.value.string = self.value
-    elif hasattr(value, '__int__'):
-      # Pointer objects must override __int__() to return
-      # the underlying C address (Python ints are word size).  The
-      # lifecycle of the pointer is fixed to the lifecycle of the
-      # python object wrapping it.
-      self.ptr_vtable.copy = &copy_ptr
-      self.ptr_vtable.destroy = &destroy_ptr
-      self.ptr_vtable.cmp = &compare_ptr
-      self.c_arg.type = GRPC_ARG_POINTER
-      self.c_arg.value.pointer.vtable = &self.ptr_vtable
-      self.c_arg.value.pointer.address = <void*>(<intptr_t>int(self.value))
-    else:
-      # TODO Add supported pointer types to this message
-      raise TypeError('Expected int or bytes, got {}'.format(type(value)))
-
-
-cdef class ChannelArgs:
-
-  def __cinit__(self, args):
-    grpc_init()
-    self.args = list(args)
-    for arg in self.args:
-      if not isinstance(arg, ChannelArg):
-        raise TypeError("expected list of ChannelArg")
-    self.c_args.arguments_length = len(self.args)
-    with nogil:
-      self.c_args.arguments = <grpc_arg *>gpr_malloc(
-          self.c_args.arguments_length*sizeof(grpc_arg))
-    for i in range(self.c_args.arguments_length):
-      self.c_args.arguments[i] = (<ChannelArg>self.args[i]).c_arg
-
-  def __dealloc__(self):
-    with nogil:
-      gpr_free(self.c_args.arguments)
-    grpc_shutdown()
-
-  def __len__(self):
-    # self.args is never stale; it's only updated from this file
-    return len(self.args)
-
-  def __getitem__(self, size_t i):
-    # self.args is never stale; it's only updated from this file
-    return self.args[i]
-
-
 cdef class CompressionOptions:
 
   def __cinit__(self):
@@ -254,8 +179,10 @@ cdef class CompressionOptions:
     return result
 
   def to_channel_arg(self):
-    return ChannelArg(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
-                      self.c_options.enabled_algorithms_bitset)
+    return (
+        GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+        self.c_options.enabled_algorithms_bitset,
+    )
 
 
 def compression_algorithm_name(grpc_compression_algorithm algorithm):
