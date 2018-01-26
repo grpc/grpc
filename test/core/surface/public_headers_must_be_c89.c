@@ -60,7 +60,6 @@
 #include <grpc/support/sync_generic.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 #include <grpc/support/workaround_list.h>
 

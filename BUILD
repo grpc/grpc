@@ -82,10 +82,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/sync_windows.h",
     "include/grpc/support/thd.h",
     "include/grpc/support/time.h",
-    "include/grpc/support/tls.h",
-    "include/grpc/support/tls_gcc.h",
-    "include/grpc/support/tls_msvc.h",
-    "include/grpc/support/tls_pthread.h",
     "include/grpc/support/useful.h",
 ]
 
@@ -509,6 +505,10 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/thd_internal.h",
         "src/core/lib/gpr/time_precise.h",
+        "src/core/lib/gpr/tls.h",
+        "src/core/lib/gpr/tls_gcc.h",
+        "src/core/lib/gpr/tls_msvc.h",
+        "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
     ],
     language = "c++",

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_TLS_H
-#define GRPC_SUPPORT_TLS_H
+#ifndef GRPC_CORE_LIB_GPR_TLS_H
+#define GRPC_CORE_LIB_GPR_TLS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -54,15 +54,15 @@
    ALL functions here may be implemented as macros. */
 
 #ifdef GPR_GCC_TLS
-#include <grpc/support/tls_gcc.h>
+#include "src/core/lib/gpr/tls_gcc.h"
 #endif
 
 #ifdef GPR_MSVC_TLS
-#include <grpc/support/tls_msvc.h>
+#include "src/core/lib/gpr/tls_msvc.h"
 #endif
 
 #ifdef GPR_PTHREAD_TLS
-#include <grpc/support/tls_pthread.h>
+#include "src/core/lib/gpr/tls_pthread.h"
 #endif
 
-#endif /* GRPC_SUPPORT_TLS_H */
+#endif /* GRPC_CORE_LIB_GPR_TLS_H */

@@ -20,7 +20,7 @@
 
 #ifdef GPR_PTHREAD_TLS
 
-#include <grpc/support/tls.h>
+#include "src/core/lib/gpr/tls.h"
 
 intptr_t gpr_tls_set(struct gpr_pthread_thread_local* tls, intptr_t value) {
   GPR_ASSERT(0 == pthread_setspecific(tls->key, (void*)value));
