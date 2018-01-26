@@ -201,8 +201,6 @@ EXPORTS
     gpr_cmdline_usage_string
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_join_host_port
-    gpr_split_host_port
     gpr_log_severity_string
     gpr_log
     gpr_log_message
