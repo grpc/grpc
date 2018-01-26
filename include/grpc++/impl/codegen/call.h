@@ -607,7 +607,7 @@ class CallOpSetInterface : public CompletionQueueTag {
   virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
 };
 
-/// Primary implementaiton of CallOpSetInterface.
+/// Primary implementation of CallOpSetInterface.
 /// Since we cannot use variadic templates, we declare slots up to
 /// the maximum count of ops we'll need in a set. We leverage the
 /// empty base class optimization to slim this class (especially
@@ -624,7 +624,7 @@ class CallOpSet : public CallOpSetInterface,
                   public Op5,
                   public Op6 {
  public:
-  CallOpSet() : return_tag_(this) {}
+  CallOpSet() : return_tag_(this), call_(nullptr) {}
   void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);
