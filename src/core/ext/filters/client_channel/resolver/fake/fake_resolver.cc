@@ -53,7 +53,7 @@ class FakeResolver : public Resolver {
   void NextLocked(grpc_channel_args** result,
                   grpc_closure* on_complete) override;
 
-  void ChannelSawErrorLocked() override;
+  void RequestReresolutionLocked() override;
 
  private:
   friend class FakeResolverResponseGenerator;
@@ -70,7 +70,7 @@ class FakeResolver : public Resolver {
   // NextLocked()'s closure.
   grpc_channel_args* next_results_ = nullptr;
   // Results to use for the pretended re-resolution in
-  // ChannelSawErrorLocked().
+  // RequestReresolutionLocked().
   grpc_channel_args* results_upon_error_ = nullptr;
   // pending next completion, or NULL
   grpc_closure* next_completion_ = nullptr;
@@ -99,7 +99,7 @@ void FakeResolver::NextLocked(grpc_channel_args** target_result,
   MaybeFinishNextLocked();
 }
 
-void FakeResolver::ChannelSawErrorLocked() {
+void FakeResolver::RequestReresolutionLocked() {
   if (next_results_ == nullptr && results_upon_error_ != nullptr) {
     // Pretend we re-resolved.
     next_results_ = grpc_channel_args_copy(results_upon_error_);

@@ -54,7 +54,7 @@ class NativeDnsResolver : public Resolver {
   void NextLocked(grpc_channel_args** result,
                   grpc_closure* on_complete) override;
 
-  void ChannelSawErrorLocked() override;
+  void RequestReresolutionLocked() override;
 
   void ShutdownLocked() override;
 
@@ -136,7 +136,7 @@ void NativeDnsResolver::NextLocked(grpc_channel_args** result,
   }
 }
 
-void NativeDnsResolver::ChannelSawErrorLocked() {
+void NativeDnsResolver::RequestReresolutionLocked() {
   if (!resolving_) {
     backoff_.Reset();
     StartResolvingLocked();

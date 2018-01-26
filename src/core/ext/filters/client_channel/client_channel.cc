@@ -378,7 +378,7 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p: started name re-resolving", chand);
   }
-  chand->resolver->ChannelSawErrorLocked();
+  chand->resolver->RequestReresolutionLocked();
   // Give back the closure to the LB policy.
   grpc_lb_policy_set_reresolve_closure_locked(chand->lb_policy, &args->closure);
 }

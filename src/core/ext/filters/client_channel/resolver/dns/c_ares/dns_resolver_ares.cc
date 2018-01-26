@@ -62,7 +62,7 @@ class AresDnsResolver : public Resolver {
   void NextLocked(grpc_channel_args** result,
                   grpc_closure* on_complete) override;
 
-  void ChannelSawErrorLocked() override;
+  void RequestReresolutionLocked() override;
 
   void ShutdownLocked() override;
 
@@ -170,7 +170,7 @@ void AresDnsResolver::NextLocked(grpc_channel_args** target_result,
   }
 }
 
-void AresDnsResolver::ChannelSawErrorLocked() {
+void AresDnsResolver::RequestReresolutionLocked() {
   if (!resolving_) {
     backoff_.Reset();
     StartResolvingLocked();
