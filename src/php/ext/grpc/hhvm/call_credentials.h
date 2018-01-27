@@ -19,6 +19,8 @@
 #ifndef NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_
 #define NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_
 
+#define GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX 4
+
 #include <future>
 #include <memory>
 #include <mutex>
