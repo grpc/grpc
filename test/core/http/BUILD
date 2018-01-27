@@ -66,7 +66,12 @@ grpc_cc_test(
     name = "httpcli_test",
     srcs = ["httpcli_test.cc"],
     language = "C++",
-    data = ["test_server.py"],
+    data = [
+        "python_wrapper.sh",
+        "test_server.py",
+        "//src/core/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:server1.key"
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -80,7 +85,12 @@ grpc_cc_test(
     name = "httpscli_test",
     srcs = ["httpscli_test.cc"],
     language = "C++",
-    data = ["test_server.py"],
+    data = [
+        "python_wrapper.sh",
+        "test_server.py",
+        "//src/core/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:server1.key"
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
