@@ -205,7 +205,8 @@ void grpc_fake_resolver_response_generator_set_response_upon_error(
   set_response_closure_arg* closure_arg =
       (set_response_closure_arg*)gpr_zalloc(sizeof(*closure_arg));
   closure_arg->generator = generator;
-  closure_arg->response = grpc_channel_args_copy(response);
+  closure_arg->response =
+      response != nullptr ? grpc_channel_args_copy(response) : nullptr;
   closure_arg->upon_error = true;
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
                                        set_response_closure_fn, closure_arg,

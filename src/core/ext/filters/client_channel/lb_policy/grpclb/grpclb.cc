@@ -853,7 +853,7 @@ static void rr_on_connectivity_changed_locked(void* arg, grpc_error* error) {
   GPR_ASSERT(glb_policy->rr_connectivity_state != GRPC_CHANNEL_IDLE);
   if ((glb_policy->lb_calld == nullptr ||
        !glb_policy->lb_calld->seen_initial_response) &&
-      (glb_policy->rr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE)) {
+      glb_policy->rr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace,
                                  GRPC_ERROR_NONE);
   }
