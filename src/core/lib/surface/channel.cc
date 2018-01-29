@@ -105,7 +105,7 @@ grpc_channel* grpc_channel_create_with_builder(
   memset(channel, 0, sizeof(*channel));
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
-  int64_t channel_tracer_max_nodes = 0;  // default to off
+  size_t channel_tracer_max_nodes = 0;  // default to off
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
 
@@ -170,7 +170,7 @@ grpc_channel* grpc_channel_create_with_builder(
           0x1; /* always support no compression */
     } else if (0 ==
                strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING_MAX_NODES)) {
-      GPR_ASSERT(channel_tracer_max_nodes == -1);
+      GPR_ASSERT(channel_tracer_max_nodes == 0);
       // max_nodes defaults to 10, clamped between 0 and 100.
       const grpc_integer_options options = {10, 0, 100};
       channel_tracer_max_nodes =
