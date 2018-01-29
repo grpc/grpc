@@ -132,10 +132,9 @@ static void call_resolver_next_after_locking(grpc_core::Resolver* resolver,
   a->resolver = resolver;
   a->result = result;
   a->on_complete = on_complete;
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(call_resolver_next_now_lock_taken, a,
-                          grpc_combiner_scheduler(combiner)),
-      GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(call_resolver_next_now_lock_taken, a,
+                                         grpc_combiner_scheduler(combiner)),
+                     GRPC_ERROR_NONE);
 }
 
 int main(int argc, char** argv) {

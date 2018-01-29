@@ -51,10 +51,15 @@ class ResolverRegistry {
   /// Creates a resolver given \a target.
   /// First tries to parse \a target as a URI. If this succeeds, tries
   /// to locate a registered resolver factory based on the URI scheme.
-  /// If parsing or location fails, prefixes default_prefix
-  /// to target and tries again.
-  /// If a resolver factory was found, uses it to instantiate a resolver and
+  /// If parsing fails or there is no factory for the URI's scheme,
+  /// prepends default_prefix to target and tries again.
+  /// If a resolver factory is found, uses it to instantiate a resolver and
   /// returns it; otherwise, returns nullptr.
+  /// \a args, \a pollset_set, and \a combiner are passed to the factory's
+  /// \a CreateResolver() method.
+  /// \a args are the channel args to be included in resolver results.
+  /// \a pollset_set is used to drive I/O in the name resolution process.
+  /// \a combiner is the combiner under which all resolver calls will be run.
   static OrphanablePtr<Resolver> CreateResolver(const char* target,
                                                 const grpc_channel_args* args,
                                                 grpc_pollset_set* pollset_set,
