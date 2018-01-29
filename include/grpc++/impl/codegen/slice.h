@@ -39,14 +39,6 @@ class Slice final {
   /// Destructor - drops one reference.
   ~Slice();
 
-  enum AddRef { ADD_REF };
-  /// Construct a slice from \a slice, adding a reference.
-  Slice(grpc_slice slice, AddRef);
-
-  enum StealRef { STEAL_REF };
-  /// Construct a slice from \a slice, stealing a reference.
-  Slice(grpc_slice slice, StealRef);
-
   /// Allocate a slice of specified size
   Slice(size_t len);
 
@@ -84,6 +76,16 @@ class Slice final {
   /// Similar to the above but has a destroy that also takes slice length
   Slice(void* buf, size_t len, void (*destroy)(void*, size_t));
 
+  /// DEPRECATED: One element enum used to indicate a specific constructor
+  enum AddRef { ADD_REF };
+  /// DEPRECATED: Construct a slice from \a slice, adding a reference.
+  Slice(grpc_slice slice, AddRef);
+
+  /// DEPRECATED: One element enum used to indicate a specific constructor
+  enum StealRef { STEAL_REF };
+  /// DEPRECATED: Construct a slice from \a slice, stealing a reference.
+  Slice(grpc_slice slice, StealRef);
+
   /// Byte size.
   size_t size() const { return GRPC_SLICE_LENGTH(slice_); }
 
@@ -93,7 +95,9 @@ class Slice final {
   /// Raw pointer to the end (one byte \em past the last element) of the slice.
   const uint8_t* end() const { return GRPC_SLICE_END_PTR(slice_); }
 
-  /// Raw C slice. Caller needs to call grpc_slice_unref when done.
+  /// DEPRECATED: Raw C slice. Caller needs to call grpc_slice_unref when done.
+  /// This function exists as API because grpc_slice previously had more
+  /// capabilities than grpc::Slice, but this is no longer true
   grpc_slice c_slice() const;
 
  private:
