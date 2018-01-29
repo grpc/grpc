@@ -529,9 +529,9 @@ static void on_connected_subchannel_connectivity_changed(void* p,
                       connected_subchannel_watcher->connectivity_state));
         }
         c->connected_subchannel.reset();
-        grpc_connectivity_state_set(&c->state_tracker,
-                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                    GRPC_ERROR_REF(error), "reflect_child");
+        grpc_connectivity_state_set(
+            &c->state_tracker, connected_subchannel_watcher->connectivity_state,
+            GRPC_ERROR_REF(error), "reflect_child");
         c->backoff_begun = false;
         c->backoff->Reset();
         maybe_start_connecting_locked(c);

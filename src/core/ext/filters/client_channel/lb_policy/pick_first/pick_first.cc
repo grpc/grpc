@@ -402,21 +402,22 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
           &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_REF(error), "selected_not_ready+switch_to_update");
     } else {
-      // TODO(juanlishen): we re-resolve when the selected subchannel goes to
-      // TRANSIENT_FAILURE because we used to shut down in this case before
-      // re-resolution is introduced. But we need to investigate whether we
-      // really want to take any action instead of waiting for the selected
-      // subchannel reconnecting.
-      GPR_ASSERT(sd->curr_connectivity_state != GRPC_CHANNEL_SHUTDOWN);
-      if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN ||
+          sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
+          grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_IDLE,
+                                      GRPC_ERROR_NONE,
+                                      "selected_shutdown+reresolve");
+          p->started_picking = false;
+        } else {
+          grpc_connectivity_state_set(
+              &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+              GRPC_ERROR_REF(error), "selected_transient_failure+reresolve");
+        }
         // If the selected channel goes bad, request a re-resolution.
-        grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_IDLE,
-                                    GRPC_ERROR_NONE,
-                                    "selected_changed+reresolve");
-        p->started_picking = false;
         grpc_lb_policy_try_reresolve(&p->base, &grpc_lb_pick_first_trace,
                                      GRPC_ERROR_NONE);
-        // in transient failure. Rely on re-resolution to recover.
+        // In transient failure. Rely on re-resolution to recover.
         p->selected = nullptr;
         grpc_lb_subchannel_data_stop_connectivity_watch(sd);
         grpc_lb_subchannel_list_unref_for_connectivity_watch(
