@@ -202,7 +202,8 @@ class ServerBuilder {
     return SetOption(MakeChannelArgumentOption(arg, value));
   }
 
-  /// For internal use only: Register a ServerBuilderPlugin factory function.
+  /// For internal and specialized use only: Register a ServerBuilderPlugin
+  /// factory function.
   static void InternalAddPluginFactory(
       std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)());
 
