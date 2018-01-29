@@ -1108,7 +1108,7 @@ static grpc_error* pollset_as_multipollable_locked(grpc_pollset* pollset,
                 pollset);
       }
       static const char* err_desc =
-          "pollset_as_multipollable_locked (%p): empty -> multi";
+          "pollset_as_multipollable_locked: empty -> multi";
       append_error(&error, pollset_kick_all(pollset), err_desc);
       break;
     case PO_FD:
