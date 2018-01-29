@@ -42,7 +42,7 @@ namespace grpc_core {
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
 /// combiner passed to the constructor.
-class Resolver : public InternallyRefCountedWithTracing {
+class Resolver : public InternallyRefCountedWithTracing<Resolver> {
  public:
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;

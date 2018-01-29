@@ -37,7 +37,8 @@ class FakeResolver;
 // instead of RefCounted, but external refs are currently needed to
 // encode this in channel args.  Once channel_args are converted to C++,
 // see if we can find a way to fix this.
-class FakeResolverResponseGenerator : public RefCounted {
+class FakeResolverResponseGenerator
+    : public RefCounted<FakeResolverResponseGenerator> {
  public:
   FakeResolverResponseGenerator() {}
 

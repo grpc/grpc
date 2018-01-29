@@ -172,7 +172,11 @@ namespace {
 static void* response_generator_arg_copy(void* p) {
   FakeResolverResponseGenerator* generator =
       static_cast<FakeResolverResponseGenerator*>(p);
-  generator->Ref();
+  // TODO(roth): We currently deal with this ref manually.  Once the
+  // new channel args code is converted to C++, find a way to track this ref
+  // in a cleaner way.
+  RefCountedPtr<FakeResolverResponseGenerator> copy = generator->Ref();
+  copy.release();
   return p;
 }
 

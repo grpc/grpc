@@ -325,7 +325,11 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
             grpc_error_string(error));
     GPR_ASSERT(!r->have_retry_timer_);
     r->have_retry_timer_ = true;
-    r->Ref(DEBUG_LOCATION, "retry-timer");
+    // TODO(roth): We currently deal with this ref manually.  Once the
+    // new closure API is done, find a way to track this ref with the timer
+    // callback as part of the type system.
+    RefCountedPtr<Resolver> self = r->Ref(DEBUG_LOCATION, "retry-timer");
+    self.release();
     if (timeout > 0) {
       gpr_log(GPR_DEBUG, "retrying in %" PRIdPTR " milliseconds", timeout);
     } else {
@@ -344,7 +348,11 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
 }
 
 void AresDnsResolver::StartResolvingLocked() {
-  Ref(DEBUG_LOCATION, "dns-resolving");
+  // TODO(roth): We currently deal with this ref manually.  Once the
+  // new closure API is done, find a way to track this ref with the timer
+  // callback as part of the type system.
+  RefCountedPtr<Resolver> self = Ref(DEBUG_LOCATION, "dns-resolving");
+  self.release();
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   lb_addresses_ = nullptr;
