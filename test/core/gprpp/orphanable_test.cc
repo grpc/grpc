@@ -58,18 +58,19 @@ TEST(MakeOrphanable, WithParameters) {
   EXPECT_EQ(5, foo->value());
 }
 
-class Bar : public InternallyRefCounted {
+class Bar : public InternallyRefCounted<Bar> {
  public:
   Bar() : Bar(0) {}
   explicit Bar(int value) : value_(value) {}
   void Orphan() override { Unref(); }
   int value() const { return value_; }
 
-  void StartWork() { Ref(); }
-  void FinishWork() { Unref(); }
+  void StartWork() { self_ref_ = Ref(); }
+  void FinishWork() { self_ref_.reset(); }
 
  private:
   int value_;
+  RefCountedPtr<Bar> self_ref_;
 };
 
 TEST(OrphanablePtr, InternallyRefCounted) {
@@ -82,19 +83,24 @@ TEST(OrphanablePtr, InternallyRefCounted) {
 // things build properly in both debug and non-debug cases.
 DebugOnlyTraceFlag baz_tracer(true, "baz");
 
-class Baz : public InternallyRefCountedWithTracing {
+class Baz : public InternallyRefCountedWithTracing<Baz> {
  public:
   Baz() : Baz(0) {}
   explicit Baz(int value)
-      : InternallyRefCountedWithTracing(&baz_tracer), value_(value) {}
+      : InternallyRefCountedWithTracing<Baz>(&baz_tracer), value_(value) {}
   void Orphan() override { Unref(); }
   int value() const { return value_; }
 
-  void StartWork() { Ref(DEBUG_LOCATION, "work"); }
-  void FinishWork() { Unref(DEBUG_LOCATION, "work"); }
+  void StartWork() { self_ref_ = Ref(DEBUG_LOCATION, "work"); }
+  void FinishWork() {
+    // This is a little ugly, but it makes the logged ref and unref match up.
+    self_ref_.release();
+    Unref(DEBUG_LOCATION, "work");
+  }
 
  private:
   int value_;
+  RefCountedPtr<Baz> self_ref_;
 };
 
 TEST(OrphanablePtr, InternallyRefCountedWithTracing) {
