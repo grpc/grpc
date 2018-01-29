@@ -89,6 +89,7 @@ ChannelTracer::ChannelTracer(size_t max_nodes)
 
 void ChannelTracer::FreeNode(TraceEvent* node) {
   GRPC_ERROR_UNREF(node->error_);
+  node->referenced_tracer_.reset(nullptr);
   grpc_slice_unref_internal(node->data_);
   gpr_free(node);
 }

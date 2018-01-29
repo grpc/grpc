@@ -100,6 +100,7 @@ static void test_basic_channel_tracing(size_t max_nodes) {
   add_simple_trace(tracer);
   validate_tracer(tracer, 10, max_nodes);
   validate_tracer_data_matches_uuid_lookup(tracer);
+  tracer.reset(nullptr);
 }
 
 // Calls basic test with various values for max_nodes (including 0, which turns
@@ -151,6 +152,9 @@ static void test_complex_channel_tracing(size_t max_nodes) {
   add_simple_trace(tracer);
   add_simple_trace(tracer);
   validate_tracer_data_matches_uuid_lookup(tracer);
+  tracer.reset(nullptr);
+  sc1.reset(nullptr);
+  sc2.reset(nullptr);
 }
 
 // Calls the complex test with a sweep of sizes for max_nodes.
@@ -195,6 +199,10 @@ static void test_nesting() {
                    GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc1);
   validate_children(tracer, 2);
   add_simple_trace(tracer);
+  tracer.reset(nullptr);
+  sc1.reset(nullptr);
+  sc2.reset(nullptr);
+  conn1.reset(nullptr);
 }
 
 int main(int argc, char** argv) {
