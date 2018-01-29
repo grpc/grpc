@@ -126,14 +126,15 @@ static void call_resolver_next_now_lock_taken(void* arg,
 
 static void call_resolver_next_after_locking(grpc_core::Resolver* resolver,
                                              grpc_channel_args** result,
-                                             grpc_closure* on_complete) {
+                                             grpc_closure* on_complete,
+                                             grpc_combiner* combiner) {
   next_args* a = static_cast<next_args*>(gpr_malloc(sizeof(*a)));
   a->resolver = resolver;
   a->result = result;
   a->on_complete = on_complete;
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_CREATE(call_resolver_next_now_lock_taken, a,
-                          grpc_combiner_scheduler(resolver->combiner())),
+                          grpc_combiner_scheduler(combiner)),
       GRPC_ERROR_NONE);
 }
 
@@ -155,7 +156,8 @@ int main(int argc, char** argv) {
     gpr_event_init(&ev1);
     call_resolver_next_after_locking(
         resolver.get(), &result,
-        GRPC_CLOSURE_CREATE(on_done, &ev1, grpc_schedule_on_exec_ctx));
+        GRPC_CLOSURE_CREATE(on_done, &ev1, grpc_schedule_on_exec_ctx),
+        g_combiner);
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(wait_loop(5, &ev1));
     GPR_ASSERT(result == nullptr);
@@ -164,7 +166,8 @@ int main(int argc, char** argv) {
     gpr_event_init(&ev2);
     call_resolver_next_after_locking(
         resolver.get(), &result,
-        GRPC_CLOSURE_CREATE(on_done, &ev2, grpc_schedule_on_exec_ctx));
+        GRPC_CLOSURE_CREATE(on_done, &ev2, grpc_schedule_on_exec_ctx),
+        g_combiner);
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(wait_loop(30, &ev2));
     GPR_ASSERT(result != nullptr);
