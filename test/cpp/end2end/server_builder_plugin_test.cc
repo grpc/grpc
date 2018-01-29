@@ -251,7 +251,7 @@ TEST_P(ServerBuilderPluginTest, PluginWithServiceTest) {
   EchoResponse response;
   request.set_message("Hello hello hello hello");
   ClientContext context;
-  context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+  context.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());

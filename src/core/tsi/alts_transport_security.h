@@ -16,22 +16,22 @@
  *
  */
 
-#ifndef GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
 
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 
-typedef struct gts_shared_resource {
+typedef struct alts_shared_resource {
   gpr_thd_id thread_id;
   grpc_channel* channel;
   grpc_completion_queue* cq;
   gpr_mu mu;
-} gts_shared_resource;
+} alts_shared_resource;
 
-/* This method returns the address of gts_shared_resource object shared by all
+/* This method returns the address of alts_shared_resource object shared by all
  *    TSI handshakes. */
-gts_shared_resource* gts_get_shared_resource(void);
+alts_shared_resource* alts_get_shared_resource(void);
 
-#endif /* GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H */
+#endif /* GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H */

@@ -350,7 +350,7 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
       char bytes[8] = {'\0', '\1', '\2', '\3', '\4', '\5', '\6', (char)i};
       context.AddMetadata("custom-bin", grpc::string(bytes, 8));
     }
-    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+    context.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());
@@ -706,7 +706,6 @@ TEST_P(End2endTest, ReconnectChannel) {
   if (GetParam().inproc) {
     return;
   }
-  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
@@ -1828,6 +1827,7 @@ INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

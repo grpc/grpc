@@ -16,25 +16,27 @@
  *
  */
 
-#include "src/core/tsi/gts_transport_security.h"
+#include "src/core/tsi/alts_transport_security.h"
 
 #include <string.h>
 
-static gts_shared_resource g_gts_resource;
+static alts_shared_resource g_alts_resource;
 
-gts_shared_resource* gts_get_shared_resource(void) { return &g_gts_resource; }
-
-void grpc_tsi_gts_init() {
-  memset(&g_gts_resource, 0, sizeof(gts_shared_resource));
-  gpr_mu_init(&g_gts_resource.mu);
+alts_shared_resource* alts_get_shared_resource(void) {
+  return &g_alts_resource;
 }
 
-void grpc_tsi_gts_shutdown() {
-  gpr_mu_destroy(&g_gts_resource.mu);
-  if (g_gts_resource.cq == nullptr) {
+void grpc_tsi_alts_init() {
+  memset(&g_alts_resource, 0, sizeof(alts_shared_resource));
+  gpr_mu_init(&g_alts_resource.mu);
+}
+
+void grpc_tsi_alts_shutdown() {
+  gpr_mu_destroy(&g_alts_resource.mu);
+  if (g_alts_resource.cq == nullptr) {
     return;
   }
-  grpc_completion_queue_destroy(g_gts_resource.cq);
-  grpc_channel_destroy(g_gts_resource.channel);
-  gpr_thd_join(g_gts_resource.thread_id);
+  grpc_completion_queue_destroy(g_alts_resource.cq);
+  grpc_channel_destroy(g_alts_resource.channel);
+  gpr_thd_join(g_alts_resource.thread_id);
 }
