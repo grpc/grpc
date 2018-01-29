@@ -29,19 +29,6 @@ cdef class SslPemKeyCertPair:
   cdef readonly object private_key, certificate_chain
 
 
-cdef class ChannelArg:
-
-  cdef grpc_arg c_arg
-  cdef grpc_arg_pointer_vtable ptr_vtable
-  cdef readonly object key, value
-
-
-cdef class ChannelArgs:
-
-  cdef grpc_channel_args c_args
-  cdef list args
-
-
 cdef class CompressionOptions:
 
   cdef grpc_compression_options c_options

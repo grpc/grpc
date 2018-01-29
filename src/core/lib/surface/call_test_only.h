@@ -21,7 +21,7 @@
 
 #include <grpc/grpc.h>
 
-/** Return the compression algorithm from \a call.
+/** Return the message compression algorithm from \a call.
  *
  * \warning This function should \b only be used in test code. */
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
@@ -37,17 +37,5 @@ uint32_t grpc_call_test_only_get_message_flags(grpc_call* call);
  *
  * To be indexed by grpc_compression_algorithm enum values. */
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call);
-
-/** Returns a bitset for the stream encodings (stream compression algorithms)
- * supported by \a call's peer.
- *
- * To be indexed by grpc_stream_compression_algorithm enum values. */
-uint32_t grpc_call_test_only_get_stream_encodings_accepted_by_peer(
-    grpc_call* call);
-
-/** Returns the incoming stream compression algorithm (content-encoding header)
- * received by a call. */
-grpc_stream_compression_algorithm
-grpc_call_test_only_get_incoming_stream_encodings(grpc_call* call);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CALL_TEST_ONLY_H */
