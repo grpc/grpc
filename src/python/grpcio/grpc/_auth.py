@@ -54,7 +54,9 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
         if self._is_jwt:
             future = self._pool.submit(
                 self._credentials.get_access_token,
-                additional_claims={'aud': context.service_url})
+                additional_claims={
+                    'aud': context.service_url
+                })
         else:
             future = self._pool.submit(self._credentials.get_access_token)
         future.add_done_callback(_create_get_token_callback(callback))
@@ -63,7 +65,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
         self._pool.shutdown(wait=False)
 
 
-class AccessTokenCallCredentials(grpc.AuthMetadataPlugin):
+class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
     """Metadata wrapper for raw access token credentials."""
 
     def __init__(self, access_token):

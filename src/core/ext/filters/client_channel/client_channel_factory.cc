@@ -23,23 +23,19 @@ void grpc_client_channel_factory_ref(grpc_client_channel_factory* factory) {
   factory->vtable->ref(factory);
 }
 
-void grpc_client_channel_factory_unref(grpc_exec_ctx* exec_ctx,
-                                       grpc_client_channel_factory* factory) {
-  factory->vtable->unref(exec_ctx, factory);
+void grpc_client_channel_factory_unref(grpc_client_channel_factory* factory) {
+  factory->vtable->unref(factory);
 }
 
 grpc_subchannel* grpc_client_channel_factory_create_subchannel(
-    grpc_exec_ctx* exec_ctx, grpc_client_channel_factory* factory,
-    const grpc_subchannel_args* args) {
-  return factory->vtable->create_subchannel(exec_ctx, factory, args);
+    grpc_client_channel_factory* factory, const grpc_subchannel_args* args) {
+  return factory->vtable->create_subchannel(factory, args);
 }
 
 grpc_channel* grpc_client_channel_factory_create_channel(
-    grpc_exec_ctx* exec_ctx, grpc_client_channel_factory* factory,
-    const char* target, grpc_client_channel_type type,
-    const grpc_channel_args* args) {
-  return factory->vtable->create_client_channel(exec_ctx, factory, target, type,
-                                                args);
+    grpc_client_channel_factory* factory, const char* target,
+    grpc_client_channel_type type, const grpc_channel_args* args) {
+  return factory->vtable->create_client_channel(factory, target, type, args);
 }
 
 static void* factory_arg_copy(void* factory) {
@@ -47,9 +43,8 @@ static void* factory_arg_copy(void* factory) {
   return factory;
 }
 
-static void factory_arg_destroy(grpc_exec_ctx* exec_ctx, void* factory) {
-  grpc_client_channel_factory_unref(exec_ctx,
-                                    (grpc_client_channel_factory*)factory);
+static void factory_arg_destroy(void* factory) {
+  grpc_client_channel_factory_unref((grpc_client_channel_factory*)factory);
 }
 
 static int factory_arg_cmp(void* factory1, void* factory2) {

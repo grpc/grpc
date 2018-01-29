@@ -20,6 +20,8 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/census.h>
 #include <grpc/compression.h>
+#include <grpc/compression_ruby.h>
+#include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -28,7 +30,7 @@
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/exec_ctx_fwd.h>
+#include <grpc/impl/codegen/fork.h>
 #include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -48,7 +50,6 @@
 #include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -66,16 +67,17 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
+  printf("%lx", (unsigned long) grpc_compression_algorithm_is_message);
+  printf("%lx", (unsigned long) grpc_compression_algorithm_is_stream);
   printf("%lx", (unsigned long) grpc_compression_algorithm_parse);
   printf("%lx", (unsigned long) grpc_compression_algorithm_name);
-  printf("%lx", (unsigned long) grpc_stream_compression_algorithm_name);
   printf("%lx", (unsigned long) grpc_compression_algorithm_for_level);
-  printf("%lx", (unsigned long) grpc_stream_compression_algorithm_for_level);
   printf("%lx", (unsigned long) grpc_compression_options_init);
   printf("%lx", (unsigned long) grpc_compression_options_enable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_disable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_is_algorithm_enabled);
-  printf("%lx", (unsigned long) grpc_compression_options_is_stream_compression_algorithm_enabled);
+  printf("%lx", (unsigned long) grpc_compression_algorithm_parse_ruby);
+  printf("%lx", (unsigned long) grpc_compression_algorithm_name_ruby);
   printf("%lx", (unsigned long) grpc_metadata_array_init);
   printf("%lx", (unsigned long) grpc_metadata_array_destroy);
   printf("%lx", (unsigned long) grpc_call_details_init);
@@ -264,21 +266,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_cmdline_usage_string);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
-  printf("%lx", (unsigned long) gpr_histogram_create);
-  printf("%lx", (unsigned long) gpr_histogram_destroy);
-  printf("%lx", (unsigned long) gpr_histogram_add);
-  printf("%lx", (unsigned long) gpr_histogram_merge);
-  printf("%lx", (unsigned long) gpr_histogram_percentile);
-  printf("%lx", (unsigned long) gpr_histogram_mean);
-  printf("%lx", (unsigned long) gpr_histogram_stddev);
-  printf("%lx", (unsigned long) gpr_histogram_variance);
-  printf("%lx", (unsigned long) gpr_histogram_maximum);
-  printf("%lx", (unsigned long) gpr_histogram_minimum);
-  printf("%lx", (unsigned long) gpr_histogram_count);
-  printf("%lx", (unsigned long) gpr_histogram_sum);
-  printf("%lx", (unsigned long) gpr_histogram_sum_of_squares);
-  printf("%lx", (unsigned long) gpr_histogram_get_contents);
-  printf("%lx", (unsigned long) gpr_histogram_merge_contents);
   printf("%lx", (unsigned long) gpr_join_host_port);
   printf("%lx", (unsigned long) gpr_split_host_port);
   printf("%lx", (unsigned long) gpr_log_severity_string);

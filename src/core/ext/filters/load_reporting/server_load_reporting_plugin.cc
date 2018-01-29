@@ -38,7 +38,7 @@ static bool is_load_reporting_enabled(const grpc_channel_args* a) {
 }
 
 static bool maybe_add_server_load_reporting_filter(
-    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
+    grpc_channel_stack_builder* builder, void* arg) {
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const grpc_channel_filter* filter = (const grpc_channel_filter*)arg;
@@ -61,10 +61,10 @@ grpc_arg grpc_load_reporting_enable_arg() {
 
 /* Plugin registration */
 
-extern "C" void grpc_server_load_reporting_plugin_init(void) {
+void grpc_server_load_reporting_plugin_init(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
                                    maybe_add_server_load_reporting_filter,
                                    (void*)&grpc_server_load_reporting_filter);
 }
 
-extern "C" void grpc_server_load_reporting_plugin_shutdown() {}
+void grpc_server_load_reporting_plugin_shutdown() {}

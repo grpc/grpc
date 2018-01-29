@@ -522,10 +522,16 @@ namespace Grpc.Testing {
       }
       switch (other.LoadCase) {
         case LoadOneofCase.ClosedLoop:
-          ClosedLoop = other.ClosedLoop;
+          if (ClosedLoop == null) {
+            ClosedLoop = new global::Grpc.Testing.ClosedLoopParams();
+          }
+          ClosedLoop.MergeFrom(other.ClosedLoop);
           break;
         case LoadOneofCase.Poisson:
-          Poisson = other.Poisson;
+          if (Poisson == null) {
+            Poisson = new global::Grpc.Testing.PoissonParams();
+          }
+          Poisson.MergeFrom(other.Poisson);
           break;
       }
 
@@ -1901,10 +1907,16 @@ namespace Grpc.Testing {
       }
       switch (other.ArgtypeCase) {
         case ArgtypeOneofCase.Setup:
-          Setup = other.Setup;
+          if (Setup == null) {
+            Setup = new global::Grpc.Testing.ClientConfig();
+          }
+          Setup.MergeFrom(other.Setup);
           break;
         case ArgtypeOneofCase.Mark:
-          Mark = other.Mark;
+          if (Mark == null) {
+            Mark = new global::Grpc.Testing.Mark();
+          }
+          Mark.MergeFrom(other.Mark);
           break;
       }
 
@@ -2508,10 +2520,16 @@ namespace Grpc.Testing {
       }
       switch (other.ArgtypeCase) {
         case ArgtypeOneofCase.Setup:
-          Setup = other.Setup;
+          if (Setup == null) {
+            Setup = new global::Grpc.Testing.ServerConfig();
+          }
+          Setup.MergeFrom(other.Setup);
           break;
         case ArgtypeOneofCase.Mark:
-          Mark = other.Mark;
+          if (Mark == null) {
+            Mark = new global::Grpc.Testing.Mark();
+          }
+          Mark.MergeFrom(other.Mark);
           break;
       }
 

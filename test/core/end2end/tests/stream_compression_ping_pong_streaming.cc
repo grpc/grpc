@@ -90,12 +90,10 @@ static void end_test(grpc_end2end_test_fixture* f) {
 /* Client pings and server pongs. Repeat messages rounds before finishing. */
 static void test_pingpong_streaming(grpc_end2end_test_config config,
                                     int messages) {
-  grpc_channel_args* client_args =
-      grpc_channel_args_set_stream_compression_algorithm(
-          nullptr, GRPC_STREAM_COMPRESS_GZIP);
-  grpc_channel_args* server_args =
-      grpc_channel_args_set_stream_compression_algorithm(
-          nullptr, GRPC_STREAM_COMPRESS_GZIP);
+  grpc_channel_args* client_args = grpc_channel_args_set_compression_algorithm(
+      nullptr, GRPC_COMPRESS_STREAM_GZIP);
+  grpc_channel_args* server_args = grpc_channel_args_set_compression_algorithm(
+      nullptr, GRPC_COMPRESS_STREAM_GZIP);
   grpc_end2end_test_fixture f =
       begin_test(config, "test_pingpong_streaming", client_args, server_args);
   grpc_call* c;
@@ -275,10 +273,9 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   end_test(&f);
   config.tear_down_data(&f);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(client_args);
+    grpc_channel_args_destroy(server_args);
   }
 }
 

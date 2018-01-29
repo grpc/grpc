@@ -13,12 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 set -e
 
-# Make sure that there is no path from a known unsecure target
-# to an SSL library
+# Make sure that there is no path from known unsecure libraries and targets
+# to an SSL library. Any failure among these will make the script fail.
 
-test `bazel query "somepath(//test/cpp/microbenchmarks:helpers, //external:libssl)" 2>/dev/null | wc -l` -eq 0
+test "$(bazel query 'somepath("//:grpc_unsecure", "//external:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
+test "$(bazel query 'somepath("//:grpc++_unsecure", "//external:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
+test "$(bazel query 'somepath("//:grpc++_codegen_proto", "//external:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
+test "$(bazel query 'somepath("//test/cpp/microbenchmarks:helpers", "//external:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
 
-# Fall through with the exit code of that command
+exit 0
+

@@ -32,9 +32,9 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/iomgr/time_averaged_stats.h"
 #include "src/core/lib/iomgr/timer_heap.h"
-#include "src/core/lib/support/spinlock.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
@@ -225,8 +225,7 @@ static gpr_atm saturating_add(gpr_atm a, gpr_atm b) {
   return a + b;
 }
 
-static grpc_timer_check_result run_some_expired_timers(grpc_exec_ctx* exec_ctx,
-                                                       gpr_atm now,
+static grpc_timer_check_result run_some_expired_timers(gpr_atm now,
                                                        gpr_atm* next,
                                                        grpc_error* error);
 
@@ -236,7 +235,7 @@ static gpr_atm compute_min_deadline(timer_shard* shard) {
              : grpc_timer_heap_top(&shard->heap)->deadline;
 }
 
-void grpc_timer_list_init(grpc_exec_ctx* exec_ctx) {
+void grpc_timer_list_init() {
   uint32_t i;
 
   g_num_shards = GPR_MIN(1, 2 * gpr_cpu_num_cores());
@@ -247,7 +246,7 @@ void grpc_timer_list_init(grpc_exec_ctx* exec_ctx) {
   g_shared_mutables.initialized = true;
   g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
   gpr_mu_init(&g_shared_mutables.mu);
-  g_shared_mutables.min_timer = grpc_exec_ctx_now(exec_ctx);
+  g_shared_mutables.min_timer = grpc_core::ExecCtx::Get()->Now();
   gpr_tls_init(&g_last_seen_min_timer);
   gpr_tls_set(&g_last_seen_min_timer, 0);
 
@@ -267,10 +266,10 @@ void grpc_timer_list_init(grpc_exec_ctx* exec_ctx) {
   INIT_TIMER_HASH_TABLE();
 }
 
-void grpc_timer_list_shutdown(grpc_exec_ctx* exec_ctx) {
+void grpc_timer_list_shutdown() {
   size_t i;
   run_some_expired_timers(
-      exec_ctx, GPR_ATM_MAX, nullptr,
+      GPR_ATM_MAX, nullptr,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Timer list shutdown"));
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
@@ -323,8 +322,8 @@ static void note_deadline_change(timer_shard* shard) {
 
 void grpc_timer_init_unset(grpc_timer* timer) { timer->pending = false; }
 
-void grpc_timer_init(grpc_exec_ctx* exec_ctx, grpc_timer* timer,
-                     grpc_millis deadline, grpc_closure* closure) {
+void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
+                     grpc_closure* closure) {
   int is_first_timer = 0;
   timer_shard* shard = &g_shards[GPR_HASH_POINTER(timer, g_num_shards)];
   timer->closure = closure;
@@ -337,12 +336,12 @@ void grpc_timer_init(grpc_exec_ctx* exec_ctx, grpc_timer* timer,
   if (grpc_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "TIMER %p: SET %" PRIdPTR " now %" PRIdPTR " call %p[%p]", timer,
-            deadline, grpc_exec_ctx_now(exec_ctx), closure, closure->cb);
+            deadline, grpc_core::ExecCtx::Get()->Now(), closure, closure->cb);
   }
 
   if (!g_shared_mutables.initialized) {
     timer->pending = false;
-    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure,
+    GRPC_CLOSURE_SCHED(timer->closure,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "Attempt to create timer before initialization"));
     return;
@@ -350,10 +349,10 @@ void grpc_timer_init(grpc_exec_ctx* exec_ctx, grpc_timer* timer,
 
   gpr_mu_lock(&shard->mu);
   timer->pending = true;
-  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   if (deadline <= now) {
     timer->pending = false;
-    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_NONE);
     gpr_mu_unlock(&shard->mu);
     /* early out */
     return;
@@ -414,7 +413,7 @@ void grpc_timer_consume_kick(void) {
   gpr_tls_set(&g_last_seen_min_timer, 0);
 }
 
-void grpc_timer_cancel(grpc_exec_ctx* exec_ctx, grpc_timer* timer) {
+void grpc_timer_cancel(grpc_timer* timer) {
   if (!g_shared_mutables.initialized) {
     /* must have already been cancelled, also the shard mutex is invalid */
     return;
@@ -430,7 +429,7 @@ void grpc_timer_cancel(grpc_exec_ctx* exec_ctx, grpc_timer* timer) {
   if (timer->pending) {
     REMOVE_FROM_HASH_TABLE(timer);
 
-    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
+    GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_CANCELLED);
     timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -516,15 +515,14 @@ static grpc_timer* pop_one(timer_shard* shard, gpr_atm now) {
 }
 
 /* REQUIRES: shard->mu unlocked */
-static size_t pop_timers(grpc_exec_ctx* exec_ctx, timer_shard* shard,
-                         gpr_atm now, gpr_atm* new_min_deadline,
-                         grpc_error* error) {
+static size_t pop_timers(timer_shard* shard, gpr_atm now,
+                         gpr_atm* new_min_deadline, grpc_error* error) {
   size_t n = 0;
   grpc_timer* timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
     REMOVE_FROM_HASH_TABLE(timer);
-    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_REF(error));
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);
@@ -536,8 +534,7 @@ static size_t pop_timers(grpc_exec_ctx* exec_ctx, timer_shard* shard,
   return n;
 }
 
-static grpc_timer_check_result run_some_expired_timers(grpc_exec_ctx* exec_ctx,
-                                                       gpr_atm now,
+static grpc_timer_check_result run_some_expired_timers(gpr_atm now,
                                                        gpr_atm* next,
                                                        grpc_error* error) {
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
@@ -566,8 +563,7 @@ static grpc_timer_check_result run_some_expired_timers(grpc_exec_ctx* exec_ctx,
       /* For efficiency, we pop as many available timers as we can from the
          shard.  This may violate perfect timer deadline ordering, but that
          shouldn't be a big deal because we don't make ordering guarantees. */
-      if (pop_timers(exec_ctx, g_shard_queue[0], now, &new_min_deadline,
-                     error) > 0) {
+      if (pop_timers(g_shard_queue[0], now, &new_min_deadline, error) > 0) {
         result = GRPC_TIMERS_FIRED;
       }
 
@@ -604,10 +600,9 @@ static grpc_timer_check_result run_some_expired_timers(grpc_exec_ctx* exec_ctx,
   return result;
 }
 
-grpc_timer_check_result grpc_timer_check(grpc_exec_ctx* exec_ctx,
-                                         grpc_millis* next) {
+grpc_timer_check_result grpc_timer_check(grpc_millis* next) {
   // prelude
-  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
 
   /* fetch from a thread-local first: this avoids contention on a globally
      mutable cacheline in the common case */
@@ -646,7 +641,7 @@ grpc_timer_check_result grpc_timer_check(grpc_exec_ctx* exec_ctx,
   }
   // actual code
   grpc_timer_check_result r =
-      run_some_expired_timers(exec_ctx, now, next, shutdown_error);
+      run_some_expired_timers(now, next, shutdown_error);
   // tracing
   if (grpc_timer_check_trace.enabled()) {
     char* next_str;

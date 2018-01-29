@@ -26,6 +26,7 @@
 #include <windows.h>
 
 #include <grpc/compression.h>
+#include <grpc/compression_ruby.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
@@ -36,7 +37,6 @@
 #include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -46,21 +46,21 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+typedef int(*grpc_compression_algorithm_is_message_type)(grpc_compression_algorithm algorithm);
+extern grpc_compression_algorithm_is_message_type grpc_compression_algorithm_is_message_import;
+#define grpc_compression_algorithm_is_message grpc_compression_algorithm_is_message_import
+typedef int(*grpc_compression_algorithm_is_stream_type)(grpc_compression_algorithm algorithm);
+extern grpc_compression_algorithm_is_stream_type grpc_compression_algorithm_is_stream_import;
+#define grpc_compression_algorithm_is_stream grpc_compression_algorithm_is_stream_import
 typedef int(*grpc_compression_algorithm_parse_type)(grpc_slice value, grpc_compression_algorithm* algorithm);
 extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_import;
 #define grpc_compression_algorithm_parse grpc_compression_algorithm_parse_import
 typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, const char** name);
 extern grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
 #define grpc_compression_algorithm_name grpc_compression_algorithm_name_import
-typedef int(*grpc_stream_compression_algorithm_name_type)(grpc_stream_compression_algorithm algorithm, const char** name);
-extern grpc_stream_compression_algorithm_name_type grpc_stream_compression_algorithm_name_import;
-#define grpc_stream_compression_algorithm_name grpc_stream_compression_algorithm_name_import
 typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level, uint32_t accepted_encodings);
 extern grpc_compression_algorithm_for_level_type grpc_compression_algorithm_for_level_import;
 #define grpc_compression_algorithm_for_level grpc_compression_algorithm_for_level_import
-typedef grpc_stream_compression_algorithm(*grpc_stream_compression_algorithm_for_level_type)(grpc_stream_compression_level level, uint32_t accepted_stream_encodings);
-extern grpc_stream_compression_algorithm_for_level_type grpc_stream_compression_algorithm_for_level_import;
-#define grpc_stream_compression_algorithm_for_level grpc_stream_compression_algorithm_for_level_import
 typedef void(*grpc_compression_options_init_type)(grpc_compression_options* opts);
 extern grpc_compression_options_init_type grpc_compression_options_init_import;
 #define grpc_compression_options_init grpc_compression_options_init_import
@@ -73,9 +73,12 @@ extern grpc_compression_options_disable_algorithm_type grpc_compression_options_
 typedef int(*grpc_compression_options_is_algorithm_enabled_type)(const grpc_compression_options* opts, grpc_compression_algorithm algorithm);
 extern grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 #define grpc_compression_options_is_algorithm_enabled grpc_compression_options_is_algorithm_enabled_import
-typedef int(*grpc_compression_options_is_stream_compression_algorithm_enabled_type)(const grpc_compression_options* opts, grpc_stream_compression_algorithm algorithm);
-extern grpc_compression_options_is_stream_compression_algorithm_enabled_type grpc_compression_options_is_stream_compression_algorithm_enabled_import;
-#define grpc_compression_options_is_stream_compression_algorithm_enabled grpc_compression_options_is_stream_compression_algorithm_enabled_import
+typedef int(*grpc_compression_algorithm_parse_ruby_type)(grpc_slice value, grpc_compression_algorithm* algorithm);
+extern grpc_compression_algorithm_parse_ruby_type grpc_compression_algorithm_parse_ruby_import;
+#define grpc_compression_algorithm_parse_ruby grpc_compression_algorithm_parse_ruby_import
+typedef int(*grpc_compression_algorithm_name_ruby_type)(grpc_compression_algorithm algorithm, const char** name);
+extern grpc_compression_algorithm_name_ruby_type grpc_compression_algorithm_name_ruby_import;
+#define grpc_compression_algorithm_name_ruby grpc_compression_algorithm_name_ruby_import
 typedef void(*grpc_metadata_array_init_type)(grpc_metadata_array* array);
 extern grpc_metadata_array_init_type grpc_metadata_array_init_import;
 #define grpc_metadata_array_init grpc_metadata_array_init_import
@@ -559,7 +562,7 @@ extern grpc_slice_buffer_move_first_type grpc_slice_buffer_move_first_import;
 typedef void(*grpc_slice_buffer_move_first_no_ref_type)(grpc_slice_buffer* src, size_t n, grpc_slice_buffer* dst);
 extern grpc_slice_buffer_move_first_no_ref_type grpc_slice_buffer_move_first_no_ref_import;
 #define grpc_slice_buffer_move_first_no_ref grpc_slice_buffer_move_first_no_ref_import
-typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_exec_ctx* exec_ctx, grpc_slice_buffer* src, size_t n, void* dst);
+typedef void(*grpc_slice_buffer_move_first_into_buffer_type)(grpc_slice_buffer* src, size_t n, void* dst);
 extern grpc_slice_buffer_move_first_into_buffer_type grpc_slice_buffer_move_first_into_buffer_import;
 #define grpc_slice_buffer_move_first_into_buffer grpc_slice_buffer_move_first_into_buffer_import
 typedef grpc_slice(*grpc_slice_buffer_take_first_type)(grpc_slice_buffer* src);
@@ -580,7 +583,7 @@ extern gpr_free_type gpr_free_import;
 typedef void*(*gpr_realloc_type)(void* p, size_t size);
 extern gpr_realloc_type gpr_realloc_import;
 #define gpr_realloc gpr_realloc_import
-typedef void*(*gpr_malloc_aligned_type)(size_t size, size_t alignment_log);
+typedef void*(*gpr_malloc_aligned_type)(size_t size, size_t alignment);
 extern gpr_malloc_aligned_type gpr_malloc_aligned_import;
 #define gpr_malloc_aligned gpr_malloc_aligned_import
 typedef void(*gpr_free_aligned_type)(void* ptr);
@@ -649,51 +652,6 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef gpr_histogram*(*gpr_histogram_create_type)(double resolution, double max_bucket_start);
-extern gpr_histogram_create_type gpr_histogram_create_import;
-#define gpr_histogram_create gpr_histogram_create_import
-typedef void(*gpr_histogram_destroy_type)(gpr_histogram* h);
-extern gpr_histogram_destroy_type gpr_histogram_destroy_import;
-#define gpr_histogram_destroy gpr_histogram_destroy_import
-typedef void(*gpr_histogram_add_type)(gpr_histogram* h, double x);
-extern gpr_histogram_add_type gpr_histogram_add_import;
-#define gpr_histogram_add gpr_histogram_add_import
-typedef int(*gpr_histogram_merge_type)(gpr_histogram* dst, const gpr_histogram* src);
-extern gpr_histogram_merge_type gpr_histogram_merge_import;
-#define gpr_histogram_merge gpr_histogram_merge_import
-typedef double(*gpr_histogram_percentile_type)(gpr_histogram* histogram, double percentile);
-extern gpr_histogram_percentile_type gpr_histogram_percentile_import;
-#define gpr_histogram_percentile gpr_histogram_percentile_import
-typedef double(*gpr_histogram_mean_type)(gpr_histogram* histogram);
-extern gpr_histogram_mean_type gpr_histogram_mean_import;
-#define gpr_histogram_mean gpr_histogram_mean_import
-typedef double(*gpr_histogram_stddev_type)(gpr_histogram* histogram);
-extern gpr_histogram_stddev_type gpr_histogram_stddev_import;
-#define gpr_histogram_stddev gpr_histogram_stddev_import
-typedef double(*gpr_histogram_variance_type)(gpr_histogram* histogram);
-extern gpr_histogram_variance_type gpr_histogram_variance_import;
-#define gpr_histogram_variance gpr_histogram_variance_import
-typedef double(*gpr_histogram_maximum_type)(gpr_histogram* histogram);
-extern gpr_histogram_maximum_type gpr_histogram_maximum_import;
-#define gpr_histogram_maximum gpr_histogram_maximum_import
-typedef double(*gpr_histogram_minimum_type)(gpr_histogram* histogram);
-extern gpr_histogram_minimum_type gpr_histogram_minimum_import;
-#define gpr_histogram_minimum gpr_histogram_minimum_import
-typedef double(*gpr_histogram_count_type)(gpr_histogram* histogram);
-extern gpr_histogram_count_type gpr_histogram_count_import;
-#define gpr_histogram_count gpr_histogram_count_import
-typedef double(*gpr_histogram_sum_type)(gpr_histogram* histogram);
-extern gpr_histogram_sum_type gpr_histogram_sum_import;
-#define gpr_histogram_sum gpr_histogram_sum_import
-typedef double(*gpr_histogram_sum_of_squares_type)(gpr_histogram* histogram);
-extern gpr_histogram_sum_of_squares_type gpr_histogram_sum_of_squares_import;
-#define gpr_histogram_sum_of_squares gpr_histogram_sum_of_squares_import
-typedef const uint32_t*(*gpr_histogram_get_contents_type)(gpr_histogram* histogram, size_t* count);
-extern gpr_histogram_get_contents_type gpr_histogram_get_contents_import;
-#define gpr_histogram_get_contents gpr_histogram_get_contents_import
-typedef void(*gpr_histogram_merge_contents_type)(gpr_histogram* histogram, const uint32_t* data, size_t data_count, double min_seen, double max_seen, double sum, double sum_of_squares, double count);
-extern gpr_histogram_merge_contents_type gpr_histogram_merge_contents_import;
-#define gpr_histogram_merge_contents gpr_histogram_merge_contents_import
 typedef int(*gpr_join_host_port_type)(char** out, const char* host, int port);
 extern gpr_join_host_port_type gpr_join_host_port_import;
 #define gpr_join_host_port gpr_join_host_port_import
@@ -814,7 +772,7 @@ extern gpr_stats_inc_type gpr_stats_inc_import;
 typedef intptr_t(*gpr_stats_read_type)(const gpr_stats_counter* c);
 extern gpr_stats_read_type gpr_stats_read_import;
 #define gpr_stats_read gpr_stats_read_import
-typedef int(*gpr_thd_new_type)(gpr_thd_id* t, void (*thd_body)(void* arg), void* arg, const gpr_thd_options* options);
+typedef int(*gpr_thd_new_type)(gpr_thd_id* t, const char* thd_name, void (*thd_body)(void* arg), void* arg, const gpr_thd_options* options);
 extern gpr_thd_new_type gpr_thd_new_import;
 #define gpr_thd_new gpr_thd_new_import
 typedef gpr_thd_options(*gpr_thd_options_default_type)(void);

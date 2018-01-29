@@ -23,11 +23,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:
@@ -152,10 +152,8 @@ static char* parse_json_method_name(grpc_json* json) {
 // each name found, incrementing \a idx for each entry added.
 // Returns false on error.
 static bool parse_json_method_config(
-    grpc_exec_ctx* exec_ctx, grpc_json* json,
-    void* (*create_value)(const grpc_json* method_config_json),
-    void* (*ref_value)(void* value),
-    void (*unref_value)(grpc_exec_ctx* exec_ctx, void* value),
+    grpc_json* json, void* (*create_value)(const grpc_json* method_config_json),
+    void* (*ref_value)(void* value), void (*unref_value)(void* value),
     grpc_slice_hash_table_entry* entries, size_t* idx) {
   // Construct value.
   void* method_config = create_value(json);
@@ -184,16 +182,15 @@ static bool parse_json_method_config(
   }
   success = true;
 done:
-  unref_value(exec_ctx, method_config);
+  unref_value(method_config);
   gpr_strvec_destroy(&paths);
   return success;
 }
 
 grpc_slice_hash_table* grpc_service_config_create_method_config_table(
-    grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
+    const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
-    void* (*ref_value)(void* value),
-    void (*unref_value)(grpc_exec_ctx* exec_ctx, void* value)) {
+    void* (*ref_value)(void* value), void (*unref_value)(void* value)) {
   const grpc_json* json = service_config->json_tree;
   // Traverse parsed JSON tree.
   if (json->type != GRPC_JSON_OBJECT || json->key != nullptr) return nullptr;
@@ -217,11 +214,11 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
       size_t idx = 0;
       for (grpc_json* method = field->child; method != nullptr;
            method = method->next) {
-        if (!parse_json_method_config(exec_ctx, method, create_value, ref_value,
+        if (!parse_json_method_config(method, create_value, ref_value,
                                       unref_value, entries, &idx)) {
           for (size_t i = 0; i < idx; ++i) {
-            grpc_slice_unref_internal(exec_ctx, entries[i].key);
-            unref_value(exec_ctx, entries[i].value);
+            grpc_slice_unref_internal(entries[i].key);
+            unref_value(entries[i].value);
           }
           gpr_free(entries);
           return nullptr;
@@ -240,8 +237,7 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
   return method_config_table;
 }
 
-void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
-                                   const grpc_slice_hash_table* table,
+void* grpc_method_config_table_get(const grpc_slice_hash_table* table,
                                    grpc_slice path) {
   void* value = grpc_slice_hash_table_get(table, path);
   // If we didn't find a match for the path, try looking for a wildcard
@@ -257,7 +253,7 @@ void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
     grpc_slice wildcard_path = grpc_slice_from_copied_string(buf);
     gpr_free(buf);
     value = grpc_slice_hash_table_get(table, wildcard_path);
-    grpc_slice_unref_internal(exec_ctx, wildcard_path);
+    grpc_slice_unref_internal(wildcard_path);
     gpr_free(path_str);
   }
   return value;

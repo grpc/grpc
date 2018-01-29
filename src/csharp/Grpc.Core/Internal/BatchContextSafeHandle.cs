@@ -33,11 +33,12 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// grpcsharp_batch_context
     /// </summary>
-    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback
+    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback, IPooledObject<BatchContextSafeHandle>
     {
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<BatchContextSafeHandle>();
 
+        Action<BatchContextSafeHandle> returnToPoolAction;
         CompletionCallbackData completionCallbackData;
 
         private BatchContextSafeHandle()
@@ -46,7 +47,8 @@ namespace Grpc.Core.Internal
 
         public static BatchContextSafeHandle Create()
         {
-            return Native.grpcsharp_batch_context_create();
+            var ctx = Native.grpcsharp_batch_context_create();
+            return ctx;
         }
 
         public IntPtr Handle
@@ -55,6 +57,12 @@ namespace Grpc.Core.Internal
             {
                 return handle;
             }
+        }
+
+        public void SetReturnToPoolAction(Action<BatchContextSafeHandle> returnAction)
+        {
+            GrpcPreconditions.CheckState(returnToPoolAction == null);
+            returnToPoolAction = returnAction;
         }
 
         public void SetCompletionCallback(BatchCompletionDelegate callback, object state)
@@ -104,6 +112,24 @@ namespace Grpc.Core.Internal
             return Native.grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
         }
 
+        public void Recycle()
+        {
+            if (returnToPoolAction != null)
+            {
+                Native.grpcsharp_batch_context_reset(this);
+
+                var origReturnAction = returnToPoolAction;
+                // Not clearing all the references to the pool could prevent garbage collection of the pool object
+                // and thus cause memory leaks.
+                returnToPoolAction = null;
+                origReturnAction(this);
+            }
+            else
+            {
+                Dispose();
+            }
+        }
+
         protected override bool ReleaseHandle()
         {
             Native.grpcsharp_batch_context_destroy(handle);
@@ -123,7 +149,7 @@ namespace Grpc.Core.Internal
             finally
             {
                 completionCallbackData = default(CompletionCallbackData);
-                Dispose();
+                Recycle();
             }
         }
 

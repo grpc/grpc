@@ -93,18 +93,17 @@ static void start_timer_thread_and_unlock(void) {
   // to leak through g_completed_threads and be freed in gc_completed_threads()
   // before "&ct->t" is written to, causing a use-after-free.
   gpr_mu_lock(&g_mu);
-  gpr_thd_new(&ct->t, timer_thread, ct, &opt);
+  gpr_thd_new(&ct->t, "grpc_global_timer", timer_thread, ct, &opt);
   gpr_mu_unlock(&g_mu);
 }
 
 void grpc_timer_manager_tick() {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_millis next = GRPC_MILLIS_INF_FUTURE;
-  grpc_timer_check(&exec_ctx, &next);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_timer_check(&next);
 }
 
-static void run_some_timers(grpc_exec_ctx* exec_ctx) {
+static void run_some_timers() {
   // if there's something to execute...
   gpr_mu_lock(&g_mu);
   // remove a waiter from the pool, and start another thread if necessary
@@ -126,7 +125,7 @@ static void run_some_timers(grpc_exec_ctx* exec_ctx) {
   if (grpc_timer_check_trace.enabled()) {
     gpr_log(GPR_DEBUG, "flush exec_ctx");
   }
-  grpc_exec_ctx_flush(exec_ctx);
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(&g_mu);
   // garbage collect any threads hanging out that are dead
   gc_completed_threads();
@@ -138,7 +137,7 @@ static void run_some_timers(grpc_exec_ctx* exec_ctx) {
 // wait until 'next' (or forever if there is already a timed waiter in the pool)
 // returns true if the thread should continue executing (false if it should
 // shutdown)
-static bool wait_until(grpc_exec_ctx* exec_ctx, grpc_millis next) {
+static bool wait_until(grpc_millis next) {
   gpr_mu_lock(&g_mu);
   // if we're not threaded anymore, leave
   if (!g_threaded) {
@@ -179,7 +178,7 @@ static bool wait_until(grpc_exec_ctx* exec_ctx, grpc_millis next) {
         g_timed_waiter_deadline = next;
 
         if (grpc_timer_check_trace.enabled()) {
-          grpc_millis wait_time = next - grpc_exec_ctx_now(exec_ctx);
+          grpc_millis wait_time = next - grpc_core::ExecCtx::Get()->Now();
           gpr_log(GPR_DEBUG, "sleep for a %" PRIdPTR " milliseconds",
                   wait_time);
         }
@@ -193,7 +192,7 @@ static bool wait_until(grpc_exec_ctx* exec_ctx, grpc_millis next) {
     }
 
     gpr_cv_wait(&g_cv_wait, &g_mu,
-                grpc_millis_to_timespec(next, GPR_CLOCK_REALTIME));
+                grpc_millis_to_timespec(next, GPR_CLOCK_MONOTONIC));
 
     if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG, "wait ended: was_timed:%d kicked:%d",
@@ -220,15 +219,15 @@ static bool wait_until(grpc_exec_ctx* exec_ctx, grpc_millis next) {
   return true;
 }
 
-static void timer_main_loop(grpc_exec_ctx* exec_ctx) {
+static void timer_main_loop() {
   for (;;) {
     grpc_millis next = GRPC_MILLIS_INF_FUTURE;
-    grpc_exec_ctx_invalidate_now(exec_ctx);
+    grpc_core::ExecCtx::Get()->InvalidateNow();
 
     // check timer state, updates next to the next time to run a check
-    switch (grpc_timer_check(exec_ctx, &next)) {
+    switch (grpc_timer_check(&next)) {
       case GRPC_TIMERS_FIRED:
-        run_some_timers(exec_ctx);
+        run_some_timers();
         break;
       case GRPC_TIMERS_NOT_CHECKED:
         /* This case only happens under contention, meaning more than one timer
@@ -246,7 +245,7 @@ static void timer_main_loop(grpc_exec_ctx* exec_ctx) {
         next = GRPC_MILLIS_INF_FUTURE;
       /* fall through */
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
-        if (!wait_until(exec_ctx, next)) {
+        if (!wait_until(next)) {
           return;
         }
         break;
@@ -274,10 +273,9 @@ static void timer_thread_cleanup(completed_thread* ct) {
 static void timer_thread(void* completed_thread_ptr) {
   // this threads exec_ctx: we try to run things through to completion here
   // since it's easy to spin up new threads
-  grpc_exec_ctx exec_ctx =
-      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, nullptr);
-  timer_main_loop(&exec_ctx);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx(0);
+  timer_main_loop();
+
   timer_thread_cleanup((completed_thread*)completed_thread_ptr);
 }
 
@@ -319,7 +317,7 @@ static void stop_threads(void) {
       gpr_log(GPR_DEBUG, "num timer threads: %d", g_thread_count);
     }
     while (g_thread_count > 0) {
-      gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+      gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
       if (grpc_timer_check_trace.enabled()) {
         gpr_log(GPR_DEBUG, "num timer threads: %d", g_thread_count);
       }

@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -44,11 +45,13 @@ static void test_varint(uint32_t value, uint32_t prefix_bits, uint8_t prefix_or,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   TEST_VARINT(0, 1, 0, "\x00");
   TEST_VARINT(128, 1, 0, "\x7f\x01");
   TEST_VARINT(16384, 1, 0, "\x7f\x81\x7f");
   TEST_VARINT(2097152, 1, 0, "\x7f\x81\xff\x7f");
   TEST_VARINT(268435456, 1, 0, "\x7f\x81\xff\xff\x7f");
   TEST_VARINT(0xffffffff, 1, 0, "\x7f\x80\xff\xff\xff\x0f");
+  grpc_shutdown();
   return 0;
 }

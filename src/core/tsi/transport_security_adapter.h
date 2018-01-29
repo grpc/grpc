@@ -21,10 +21,6 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Create a tsi handshaker that takes an implementation of old interface and
    converts into an implementation of new interface. In the old interface,
    there are get_bytes_to_send_to_peer, process_bytes_from_peer, get_result,
@@ -39,9 +35,5 @@ tsi_handshaker* tsi_create_adapter_handshaker(tsi_handshaker* wrapped);
    adapter still owns the wrapped handshaker which should not be destroyed by
    the caller. */
 tsi_handshaker* tsi_adapter_handshaker_get_wrapped(tsi_handshaker* adapter);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H */

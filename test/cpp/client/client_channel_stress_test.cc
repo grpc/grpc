@@ -19,6 +19,7 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <random>
 #include <sstream>
 #include <thread>
 
@@ -34,10 +35,8 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
-extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-}
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -106,8 +105,8 @@ class BalancerServiceImpl : public LoadBalancer::Service {
     for (size_t i = 0; i < num_drop_entry; ++i) {
       random_backend_indices.push_back(-1);
     }
-    std::random_shuffle(random_backend_indices.begin(),
-                        random_backend_indices.end());
+    std::shuffle(random_backend_indices.begin(), random_backend_indices.end(),
+                 std::mt19937(std::random_device()()));
     // Build the response according to the random list generated above.
     LoadBalanceResponse response;
     for (int index : random_backend_indices) {
@@ -151,7 +150,8 @@ class ClientChannelStressTest {
           addresses.emplace_back(AddressData{balancer_server.port_, true, ""});
         }
       }
-      std::random_shuffle(addresses.begin(), addresses.end());
+      std::shuffle(addresses.begin(), addresses.end(),
+                   std::mt19937(std::random_device()()));
       SetNextResolution(addresses);
       std::this_thread::sleep_for(wait_duration);
     }
@@ -214,13 +214,13 @@ class ClientChannelStressTest {
   };
 
   void SetNextResolution(const std::vector<AddressData>& address_data) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(address_data.size(), nullptr);
     for (size_t i = 0; i < address_data.size(); ++i) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", address_data[i].port);
-      grpc_uri* lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
+      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
       GPR_ASSERT(lb_uri != nullptr);
       grpc_lb_addresses_set_address_from_uri(
           addresses, i, lb_uri, address_data[i].is_balancer,
@@ -230,10 +230,9 @@ class ClientChannelStressTest {
     }
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
-    grpc_fake_resolver_response_generator_set_response(
-        &exec_ctx, response_generator_, &fake_result);
-    grpc_lb_addresses_destroy(&exec_ctx, addresses);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_fake_resolver_response_generator_set_response(response_generator_,
+                                                       &fake_result);
+    grpc_lb_addresses_destroy(addresses);
   }
 
   void KeepSendingRequests() {

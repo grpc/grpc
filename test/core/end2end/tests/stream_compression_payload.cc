@@ -264,12 +264,10 @@ static void request_response_with_payload(grpc_end2end_test_config config,
    payload and status. */
 static void test_invoke_request_response_with_payload(
     grpc_end2end_test_config config) {
-  grpc_channel_args* client_args =
-      grpc_channel_args_set_stream_compression_algorithm(
-          nullptr, GRPC_STREAM_COMPRESS_GZIP);
-  grpc_channel_args* server_args =
-      grpc_channel_args_set_stream_compression_algorithm(
-          nullptr, GRPC_STREAM_COMPRESS_GZIP);
+  grpc_channel_args* client_args = grpc_channel_args_set_compression_algorithm(
+      nullptr, GRPC_COMPRESS_STREAM_GZIP);
+  grpc_channel_args* server_args = grpc_channel_args_set_compression_algorithm(
+      nullptr, GRPC_COMPRESS_STREAM_GZIP);
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_request_response_with_payload",
                  client_args, server_args);
@@ -277,10 +275,9 @@ static void test_invoke_request_response_with_payload(
   end_test(&f);
   config.tear_down_data(&f);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(client_args);
+    grpc_channel_args_destroy(server_args);
   }
 }
 

@@ -15,8 +15,8 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 export GOPATH=$(pwd)/../gopath
 
-${GOPATH}/bin/worker $@
+"${GOPATH}/bin/worker" "$@"

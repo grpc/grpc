@@ -30,12 +30,12 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 
 typedef struct {
   /** base class: must be first */
@@ -52,15 +52,13 @@ typedef struct {
   grpc_channel_args** target_result;
 } sockaddr_resolver;
 
-static void sockaddr_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* r);
+static void sockaddr_destroy(grpc_resolver* r);
 
-static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
-                                              sockaddr_resolver* r);
+static void sockaddr_maybe_finish_next_locked(sockaddr_resolver* r);
 
-static void sockaddr_shutdown_locked(grpc_exec_ctx* exec_ctx, grpc_resolver* r);
-static void sockaddr_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
-                                              grpc_resolver* r);
-static void sockaddr_next_locked(grpc_exec_ctx* exec_ctx, grpc_resolver* r,
+static void sockaddr_shutdown_locked(grpc_resolver* r);
+static void sockaddr_channel_saw_error_locked(grpc_resolver* r);
+static void sockaddr_next_locked(grpc_resolver* r,
                                  grpc_channel_args** target_result,
                                  grpc_closure* on_complete);
 
@@ -68,52 +66,47 @@ static const grpc_resolver_vtable sockaddr_resolver_vtable = {
     sockaddr_destroy, sockaddr_shutdown_locked,
     sockaddr_channel_saw_error_locked, sockaddr_next_locked};
 
-static void sockaddr_shutdown_locked(grpc_exec_ctx* exec_ctx,
-                                     grpc_resolver* resolver) {
+static void sockaddr_shutdown_locked(grpc_resolver* resolver) {
   sockaddr_resolver* r = (sockaddr_resolver*)resolver;
   if (r->next_completion != nullptr) {
     *r->target_result = nullptr;
-    GRPC_CLOSURE_SCHED(
-        exec_ctx, r->next_completion,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
+    GRPC_CLOSURE_SCHED(r->next_completion, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                               "Resolver Shutdown"));
     r->next_completion = nullptr;
   }
 }
 
-static void sockaddr_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
-                                              grpc_resolver* resolver) {
+static void sockaddr_channel_saw_error_locked(grpc_resolver* resolver) {
   sockaddr_resolver* r = (sockaddr_resolver*)resolver;
   r->published = false;
-  sockaddr_maybe_finish_next_locked(exec_ctx, r);
+  sockaddr_maybe_finish_next_locked(r);
 }
 
-static void sockaddr_next_locked(grpc_exec_ctx* exec_ctx,
-                                 grpc_resolver* resolver,
+static void sockaddr_next_locked(grpc_resolver* resolver,
                                  grpc_channel_args** target_result,
                                  grpc_closure* on_complete) {
   sockaddr_resolver* r = (sockaddr_resolver*)resolver;
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
   r->target_result = target_result;
-  sockaddr_maybe_finish_next_locked(exec_ctx, r);
+  sockaddr_maybe_finish_next_locked(r);
 }
 
-static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx* exec_ctx,
-                                              sockaddr_resolver* r) {
+static void sockaddr_maybe_finish_next_locked(sockaddr_resolver* r) {
   if (r->next_completion != nullptr && !r->published) {
     r->published = true;
     grpc_arg arg = grpc_lb_addresses_create_channel_arg(r->addresses);
     *r->target_result =
         grpc_channel_args_copy_and_add(r->channel_args, &arg, 1);
-    GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = nullptr;
   }
 }
 
-static void sockaddr_destroy(grpc_exec_ctx* exec_ctx, grpc_resolver* gr) {
+static void sockaddr_destroy(grpc_resolver* gr) {
   sockaddr_resolver* r = (sockaddr_resolver*)gr;
-  grpc_lb_addresses_destroy(exec_ctx, r->addresses);
-  grpc_channel_args_destroy(exec_ctx, r->channel_args);
+  grpc_lb_addresses_destroy(r->addresses);
+  grpc_channel_args_destroy(r->channel_args);
   gpr_free(r);
 }
 
@@ -142,8 +135,7 @@ char* unix_get_default_authority(grpc_resolver_factory* factory,
 
 static void do_nothing(void* ignored) {}
 
-static grpc_resolver* sockaddr_create(grpc_exec_ctx* exec_ctx,
-                                      grpc_resolver_args* args,
+static grpc_resolver* sockaddr_create(grpc_resolver_args* args,
                                       bool parse(const grpc_uri* uri,
                                                  grpc_resolved_address* dst)) {
   if (0 != strcmp(args->uri->authority, "")) {
@@ -170,10 +162,10 @@ static grpc_resolver* sockaddr_create(grpc_exec_ctx* exec_ctx,
     gpr_free(part_str);
     if (errors_found) break;
   }
-  grpc_slice_buffer_destroy_internal(exec_ctx, &path_parts);
-  grpc_slice_unref_internal(exec_ctx, path_slice);
+  grpc_slice_buffer_destroy_internal(&path_parts);
+  grpc_slice_unref_internal(path_slice);
   if (errors_found) {
-    grpc_lb_addresses_destroy(exec_ctx, addresses);
+    grpc_lb_addresses_destroy(addresses);
     return nullptr;
   }
   /* Instantiate resolver. */
@@ -195,9 +187,8 @@ static void sockaddr_factory_unref(grpc_resolver_factory* factory) {}
 
 #define DECL_FACTORY(name)                                                  \
   static grpc_resolver* name##_factory_create_resolver(                     \
-      grpc_exec_ctx* exec_ctx, grpc_resolver_factory* factory,              \
-      grpc_resolver_args* args) {                                           \
-    return sockaddr_create(exec_ctx, args, grpc_parse_##name);              \
+      grpc_resolver_factory* factory, grpc_resolver_args* args) {           \
+    return sockaddr_create(args, grpc_parse_##name);                        \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
       sockaddr_factory_ref, sockaddr_factory_unref,                         \
@@ -211,7 +202,7 @@ DECL_FACTORY(unix);
 DECL_FACTORY(ipv4);
 DECL_FACTORY(ipv6);
 
-extern "C" void grpc_resolver_sockaddr_init(void) {
+void grpc_resolver_sockaddr_init(void) {
   grpc_register_resolver_type(&ipv4_resolver_factory);
   grpc_register_resolver_type(&ipv6_resolver_factory);
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -219,4 +210,4 @@ extern "C" void grpc_resolver_sockaddr_init(void) {
 #endif
 }
 
-extern "C" void grpc_resolver_sockaddr_shutdown(void) {}
+void grpc_resolver_sockaddr_shutdown(void) {}

@@ -216,14 +216,12 @@ class CallOpSendInitialMetadata {
  public:
   CallOpSendInitialMetadata() : send_(false) {
     maybe_compression_level_.is_set = false;
-    maybe_stream_compression_level_.is_set = false;
   }
 
   void SendInitialMetadata(
       const std::multimap<grpc::string, grpc::string>& metadata,
       uint32_t flags) {
     maybe_compression_level_.is_set = false;
-    maybe_stream_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
     initial_metadata_ =
@@ -233,11 +231,6 @@ class CallOpSendInitialMetadata {
   void set_compression_level(grpc_compression_level level) {
     maybe_compression_level_.is_set = true;
     maybe_compression_level_.level = level;
-  }
-
-  void set_stream_compression_level(grpc_stream_compression_level level) {
-    maybe_stream_compression_level_.is_set = true;
-    maybe_stream_compression_level_.level = level;
   }
 
  protected:
@@ -255,12 +248,6 @@ class CallOpSendInitialMetadata {
       op->data.send_initial_metadata.maybe_compression_level.level =
           maybe_compression_level_.level;
     }
-    op->data.send_initial_metadata.maybe_stream_compression_level.is_set =
-        maybe_stream_compression_level_.is_set;
-    if (maybe_stream_compression_level_.is_set) {
-      op->data.send_initial_metadata.maybe_stream_compression_level.level =
-          maybe_stream_compression_level_.level;
-    }
   }
   void FinishOp(bool* status) {
     if (!send_) return;
@@ -276,10 +263,6 @@ class CallOpSendInitialMetadata {
     bool is_set;
     grpc_compression_level level;
   } maybe_compression_level_;
-  struct {
-    bool is_set;
-    grpc_stream_compression_level level;
-  } maybe_stream_compression_level_;
 };
 
 class CallOpSendMessage {
@@ -312,11 +295,6 @@ class CallOpSendMessage {
   ByteBuffer send_buf_;
   WriteOptions write_options_;
 };
-
-namespace internal {
-template <class T>
-T Example();
-}  // namespace internal
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
@@ -563,10 +541,12 @@ class CallOpRecvInitialMetadata {
 
 class CallOpClientRecvStatus {
  public:
-  CallOpClientRecvStatus() : recv_status_(nullptr) {}
+  CallOpClientRecvStatus()
+      : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
   void ClientRecvStatus(ClientContext* context, Status* status) {
-    metadata_map_ = &context->trailing_metadata_;
+    client_context_ = context;
+    metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
     error_message_ = g_core_codegen_interface->grpc_empty_slice();
   }
@@ -579,7 +559,7 @@ class CallOpClientRecvStatus {
     op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &error_message_;
-    op->data.recv_status_on_client.error_string = nullptr;
+    op->data.recv_status_on_client.error_string = &debug_error_string_;
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -597,13 +577,20 @@ class CallOpClientRecvStatus {
                            grpc::string(GRPC_SLICE_START_PTR(error_message_),
                                         GRPC_SLICE_END_PTR(error_message_)),
                            binary_error_details);
+    client_context_->set_debug_error_string(
+        debug_error_string_ != nullptr ? debug_error_string_ : "");
     g_core_codegen_interface->grpc_slice_unref(error_message_);
+    if (debug_error_string_ != nullptr) {
+      g_core_codegen_interface->gpr_free((void*)debug_error_string_);
+    }
     recv_status_ = nullptr;
   }
 
  private:
+  ClientContext* client_context_;
   MetadataMap* metadata_map_;
   Status* recv_status_;
+  const char* debug_error_string_;
   grpc_status_code status_code_;
   grpc_slice error_message_;
 };
@@ -620,7 +607,7 @@ class CallOpSetInterface : public CompletionQueueTag {
   virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
 };
 
-/// Primary implementaiton of CallOpSetInterface.
+/// Primary implementation of CallOpSetInterface.
 /// Since we cannot use variadic templates, we declare slots up to
 /// the maximum count of ops we'll need in a set. We leverage the
 /// empty base class optimization to slim this class (especially
@@ -637,7 +624,7 @@ class CallOpSet : public CallOpSetInterface,
                   public Op5,
                   public Op6 {
  public:
-  CallOpSet() : return_tag_(this) {}
+  CallOpSet() : return_tag_(this), call_(nullptr) {}
   void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);

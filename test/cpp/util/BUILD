@@ -43,6 +43,7 @@ grpc_cc_library(
         "proto_reflection_descriptor_database.h",
     ],
     deps = [
+        "//:grpc++",
         "//:grpc++_config_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
@@ -131,6 +132,105 @@ grpc_cc_library(
     deps = [
         "//src/proto/grpc/testing:metrics_proto",
         "//:grpc++",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_tool_test",
+    srcs = [
+        "grpc_tool_test.cc",
+    ],
+    deps = [
+        ":grpc_cli_libs",
+	":test_util",
+	"//:grpc++_reflection",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_messages_proto",
+	"//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "byte_buffer_test",
+    srcs = [
+        "byte_buffer_test.cc",
+    ],
+    deps = [
+	":test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "slice_test",
+    srcs = [
+        "slice_test.cc",
+    ],
+    deps = [
+	":test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "string_ref_test",
+    srcs = [
+        "string_ref_test.cc",
+    ],
+    deps = [
+	"//:grpc++",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "time_test",
+    srcs = [
+        "time_test.cc",
+    ],
+    deps = [
+	":test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "status_test",
+    srcs = [
+        "status_test.cc",
+    ],
+    deps = [
+	":test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "cli_call_test",
+    srcs = [
+        "cli_call_test.cc",
+    ],
+    deps = [
+        ":grpc_cli_libs",
+	":test_util",
+        "//src/proto/grpc/testing:echo_proto",
+	"//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )
 

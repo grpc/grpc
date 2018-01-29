@@ -18,11 +18,12 @@
 
 #include "src/core/lib/slice/percent_encoding.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
 #define TEST_VECTOR(raw, encoded, dict) \
@@ -118,6 +119,7 @@ static void test_nonconformant_vector(const char* encoded,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   TEST_VECTOR(
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~",
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~",
@@ -140,5 +142,6 @@ int main(int argc, char** argv) {
                             grpc_url_percent_encoding_unreserved_bytes);
   TEST_NONCONFORMANT_VECTOR("\0", "\0",
                             grpc_url_percent_encoding_unreserved_bytes);
+  grpc_shutdown();
   return 0;
 }

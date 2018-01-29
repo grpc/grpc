@@ -1383,6 +1383,7 @@ void PrintSourceService(grpc_generator::Printer* printer,
                  "std::unique_ptr< $ns$$Service$::Stub> $ns$$Service$::NewStub("
                  "const std::shared_ptr< ::grpc::ChannelInterface>& channel, "
                  "const ::grpc::StubOptions& options) {\n"
+                 "  (void)options;\n"
                  "  std::unique_ptr< $ns$$Service$::Stub> stub(new "
                  "$ns$$Service$::Stub(channel));\n"
                  "  return stub;\n"
@@ -1567,10 +1568,23 @@ grpc::string GetMockIncludes(grpc_generator::File* file,
     static const char* headers_strs[] = {
         "grpc++/impl/codegen/async_stream.h",
         "grpc++/impl/codegen/sync_stream.h",
-        "gmock/gmock.h",
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
+
+    std::vector<grpc::string> gmock_header;
+    if (params.gmock_search_path.empty()) {
+      gmock_header.push_back("gmock/gmock.h");
+      PrintIncludes(printer.get(), gmock_header, params);
+    } else {
+      gmock_header.push_back("gmock.h");
+      // Copy a params to generate gmock header.
+      Parameters gmock_params(params);
+      // We use local includes when a gmock_search_path is given
+      gmock_params.use_system_headers = false;
+      gmock_params.grpc_search_path = params.gmock_search_path;
+      PrintIncludes(printer.get(), gmock_header, gmock_params);
+    }
 
     if (!file->package().empty()) {
       std::vector<grpc::string> parts = file->package_parts();

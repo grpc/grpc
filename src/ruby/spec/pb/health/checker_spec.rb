@@ -192,7 +192,7 @@ describe Grpc::Health::Checker do
       server_opts = {
         poll_period: 1
       }
-      @srv = RpcServer.new(**server_opts)
+      @srv = new_rpc_server_for_testing(**server_opts)
       server_port = @srv.add_http2_port(server_host, :this_port_is_insecure)
       @host = "localhost:#{server_port}"
       @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)

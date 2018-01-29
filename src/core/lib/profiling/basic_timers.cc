@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
@@ -203,7 +203,8 @@ void gpr_timers_set_log_filename(const char* filename) {
 static void init_output() {
   gpr_thd_options options = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&options);
-  GPR_ASSERT(gpr_thd_new(&g_writing_thread, writing_thread, NULL, &options));
+  GPR_ASSERT(gpr_thd_new(&g_writing_thread, "timer_output_thread",
+                         writing_thread, NULL, &options));
   atexit(finish_writing);
 }
 

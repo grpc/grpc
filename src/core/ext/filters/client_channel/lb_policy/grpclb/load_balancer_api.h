@@ -25,10 +25,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 
 typedef grpc_lb_v1_Server_ip_address_t grpc_grpclb_ip_address;
@@ -39,7 +35,6 @@ typedef grpc_lb_v1_Duration grpc_grpclb_duration;
 typedef struct {
   grpc_grpclb_server** servers;
   size_t num_servers;
-  grpc_grpclb_duration expiration_interval;
 } grpc_grpclb_serverlist;
 
 /** Create a request for a gRPC LB service under \a lb_service_name */
@@ -86,10 +81,6 @@ grpc_millis grpc_grpclb_duration_to_millis(grpc_grpclb_duration* duration_pb);
 /** Destroy \a initial_response */
 void grpc_grpclb_initial_response_destroy(
     grpc_grpclb_initial_response* response);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H \
         */

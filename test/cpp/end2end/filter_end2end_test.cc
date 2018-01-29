@@ -100,7 +100,7 @@ int GetCallCounterValue() {
 
 class ChannelDataImpl : public ChannelData {
  public:
-  grpc_error* Init(grpc_exec_ctx* exec_ctx, grpc_channel_element* elem,
+  grpc_error* Init(grpc_channel_element* elem,
                    grpc_channel_element_args* args) {
     IncrementConnectionCounter();
     return GRPC_ERROR_NONE;
@@ -109,13 +109,12 @@ class ChannelDataImpl : public ChannelData {
 
 class CallDataImpl : public CallData {
  public:
-  void StartTransportStreamOpBatch(grpc_exec_ctx* exec_ctx,
-                                   grpc_call_element* elem,
+  void StartTransportStreamOpBatch(grpc_call_element* elem,
                                    TransportStreamOpBatch* op) override {
     // Incrementing the counter could be done from Init(), but we want
     // to test that the individual methods are actually called correctly.
     if (op->recv_initial_metadata() != nullptr) IncrementCallCounter();
-    grpc_call_next_op(exec_ctx, elem, op->op());
+    grpc_call_next_op(elem, op->op());
   }
 };
 
@@ -266,7 +265,7 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   GenericServerContext srv_ctx;
   GenericServerAsyncReaderWriter srv_stream(&srv_ctx);
 
-  cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+  cli_ctx.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
   send_request.set_message("Hello");
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
       generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));

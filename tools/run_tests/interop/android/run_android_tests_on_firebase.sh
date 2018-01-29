@@ -21,7 +21,7 @@ DOCKER_TAG=android_interop_test
 SERVICE_KEY=~/android-interops-service-key.json
 HELPER=$(pwd)/tools/run_tests/interop/android/android_interop_helper.sh
 
-docker build -t $DOCKER_TAG -f $DOCKERFILE .
+docker build -t "$DOCKER_TAG" -f "$DOCKERFILE" .
 
 docker run --interactive --rm \
   --volume="$SERVICE_KEY":/service-key.json:ro \

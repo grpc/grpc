@@ -155,7 +155,8 @@ class _SyncStream(object):
                                                    _TIMEOUT)
         for _ in response_stream:
             self._handle_response(
-                self, time.time() - self._send_time_queue.get_nowait())
+                self,
+                time.time() - self._send_time_queue.get_nowait())
 
     def stop(self):
         self._is_streaming = False

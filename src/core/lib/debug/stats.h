@@ -23,10 +23,6 @@
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_stats_data {
   gpr_atm counters[GRPC_STATS_COUNTER_COUNT];
   gpr_atm histograms[GRPC_STATS_HISTOGRAM_BUCKETS];
@@ -34,17 +30,15 @@ typedef struct grpc_stats_data {
 
 extern grpc_stats_data* grpc_stats_per_cpu_storage;
 
-#define GRPC_THREAD_STATS_DATA(exec_ctx) \
-  (&grpc_stats_per_cpu_storage[(exec_ctx)->starting_cpu])
+#define GRPC_THREAD_STATS_DATA() \
+  (&grpc_stats_per_cpu_storage[grpc_core::ExecCtx::Get()->starting_cpu()])
 
-#define GRPC_STATS_INC_COUNTER(exec_ctx, ctr) \
-  (gpr_atm_no_barrier_fetch_add(              \
-      &GRPC_THREAD_STATS_DATA((exec_ctx))->counters[(ctr)], 1))
+#define GRPC_STATS_INC_COUNTER(ctr) \
+  (gpr_atm_no_barrier_fetch_add(&GRPC_THREAD_STATS_DATA()->counters[(ctr)], 1))
 
-#define GRPC_STATS_INC_HISTOGRAM(exec_ctx, histogram, index) \
-  (gpr_atm_no_barrier_fetch_add(                             \
-      &GRPC_THREAD_STATS_DATA((exec_ctx))                    \
-           ->histograms[histogram##_FIRST_SLOT + (index)],   \
+#define GRPC_STATS_INC_HISTOGRAM(histogram, index)                             \
+  (gpr_atm_no_barrier_fetch_add(                                               \
+      &GRPC_THREAD_STATS_DATA()->histograms[histogram##_FIRST_SLOT + (index)], \
       1))
 
 void grpc_stats_init(void);
@@ -54,16 +48,12 @@ void grpc_stats_collect(grpc_stats_data* output);
 void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
                      grpc_stats_data* c);
 char* grpc_stats_data_as_json(const grpc_stats_data* data);
-int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx* exec_ctx, int value,
-                                      const int* table, int table_size);
+int grpc_stats_histo_find_bucket_slow(int value, const int* table,
+                                      int table_size);
 double grpc_stats_histo_percentile(const grpc_stats_data* data,
                                    grpc_stats_histograms histogram,
                                    double percentile);
 size_t grpc_stats_histo_count(const grpc_stats_data* data,
                               grpc_stats_histograms histogram);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -26,7 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 static void fill_common_header(const grpc_httpcli_request* request,
                                gpr_strvec* buf, bool connection_close) {

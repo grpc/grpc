@@ -30,7 +30,7 @@ char* grpc_gethostname() {
   char* hostname = (char*)gpr_malloc(host_name_max);
   if (gethostname(hostname, host_name_max) != 0) {
     gpr_free(hostname);
-    return NULL;
+    return nullptr;
   }
   return hostname;
 }

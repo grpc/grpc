@@ -42,20 +42,18 @@ static gpr_atm g_custom_events = 0;
 
 static HANDLE g_iocp;
 
-static DWORD deadline_to_millis_timeout(grpc_exec_ctx* exec_ctx,
-                                        grpc_millis deadline) {
+static DWORD deadline_to_millis_timeout(grpc_millis deadline) {
   if (deadline == GRPC_MILLIS_INF_FUTURE) {
     return INFINITE;
   }
-  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   if (deadline < now) return 0;
   grpc_millis timeout = deadline - now;
   if (timeout > std::numeric_limits<DWORD>::max()) return INFINITE;
   return static_cast<DWORD>(deadline - now);
 }
 
-grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx* exec_ctx,
-                                     grpc_millis deadline) {
+grpc_iocp_work_status grpc_iocp_work(grpc_millis deadline) {
   BOOL success;
   DWORD bytes = 0;
   DWORD flags = 0;
@@ -63,11 +61,11 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx* exec_ctx,
   LPOVERLAPPED overlapped;
   grpc_winsocket* socket;
   grpc_winsocket_callback_info* info;
-  GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
+  GRPC_STATS_INC_SYSCALL_POLL();
   success =
       GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key, &overlapped,
-                                deadline_to_millis_timeout(exec_ctx, deadline));
-  grpc_exec_ctx_invalidate_now(exec_ctx);
+                                deadline_to_millis_timeout(deadline));
+  grpc_core::ExecCtx::Get()->InvalidateNow();
   if (success == 0 && overlapped == NULL) {
     return GRPC_IOCP_WORK_TIMEOUT;
   }
@@ -95,7 +93,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx* exec_ctx,
   info->bytes_transfered = bytes;
   info->wsa_error = success ? 0 : WSAGetLastError();
   GPR_ASSERT(overlapped == &info->overlapped);
-  grpc_socket_become_ready(exec_ctx, socket, info);
+  grpc_socket_become_ready(socket, info);
   return GRPC_IOCP_WORK_WORK;
 }
 
@@ -115,22 +113,22 @@ void grpc_iocp_kick(void) {
 }
 
 void grpc_iocp_flush(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_iocp_work_status work_status;
 
   do {
-    work_status = grpc_iocp_work(&exec_ctx, GRPC_MILLIS_INF_PAST);
+    work_status = grpc_iocp_work(GRPC_MILLIS_INF_PAST);
   } while (work_status == GRPC_IOCP_WORK_KICK ||
-           grpc_exec_ctx_flush(&exec_ctx));
+           grpc_core::ExecCtx::Get()->Flush());
 }
 
 void grpc_iocp_shutdown(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   while (gpr_atm_acq_load(&g_custom_events)) {
-    grpc_iocp_work(&exec_ctx, GRPC_MILLIS_INF_FUTURE);
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_iocp_work(GRPC_MILLIS_INF_FUTURE);
+    grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+
   GPR_ASSERT(CloseHandle(g_iocp));
 }
 

@@ -31,12 +31,12 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/murmur_hash.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 /* There are two kinds of mdelem and mdstr instances.
@@ -108,7 +108,7 @@ typedef struct mdtab_shard {
 
 static mdtab_shard g_shards[SHARD_COUNT];
 
-static void gc_mdtab(grpc_exec_ctx* exec_ctx, mdtab_shard* shard);
+static void gc_mdtab(mdtab_shard* shard);
 
 void grpc_mdctx_global_init(void) {
   /* initialize shards */
@@ -123,11 +123,11 @@ void grpc_mdctx_global_init(void) {
   }
 }
 
-void grpc_mdctx_global_shutdown(grpc_exec_ctx* exec_ctx) {
+void grpc_mdctx_global_shutdown() {
   for (size_t i = 0; i < SHARD_COUNT; i++) {
     mdtab_shard* shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
-    gc_mdtab(exec_ctx, shard);
+    gc_mdtab(shard);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
       gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata elements were leaked",
@@ -165,7 +165,7 @@ static void ref_md_locked(mdtab_shard* shard,
   }
 }
 
-static void gc_mdtab(grpc_exec_ctx* exec_ctx, mdtab_shard* shard) {
+static void gc_mdtab(mdtab_shard* shard) {
   size_t i;
   interned_metadata** prev_next;
   interned_metadata *md, *next;
@@ -178,8 +178,8 @@ static void gc_mdtab(grpc_exec_ctx* exec_ctx, mdtab_shard* shard) {
       void* user_data = (void*)gpr_atm_no_barrier_load(&md->user_data);
       next = md->bucket_next;
       if (gpr_atm_acq_load(&md->refcnt) == 0) {
-        grpc_slice_unref_internal(exec_ctx, md->key);
-        grpc_slice_unref_internal(exec_ctx, md->value);
+        grpc_slice_unref_internal(md->key);
+        grpc_slice_unref_internal(md->value);
         if (md->user_data) {
           ((destroy_user_data_func)gpr_atm_no_barrier_load(
               &md->destroy_user_data))(user_data);
@@ -228,17 +228,17 @@ static void grow_mdtab(mdtab_shard* shard) {
   GPR_TIMER_END("grow_mdtab", 0);
 }
 
-static void rehash_mdtab(grpc_exec_ctx* exec_ctx, mdtab_shard* shard) {
+static void rehash_mdtab(mdtab_shard* shard) {
   if (gpr_atm_no_barrier_load(&shard->free_estimate) >
       (gpr_atm)(shard->capacity / 4)) {
-    gc_mdtab(exec_ctx, shard);
+    gc_mdtab(shard);
   } else {
     grow_mdtab(shard);
   }
 }
 
 grpc_mdelem grpc_mdelem_create(
-    grpc_exec_ctx* exec_ctx, grpc_slice key, grpc_slice value,
+    grpc_slice key, grpc_slice value,
     grpc_mdelem_data* compatible_external_backing_store) {
   if (!grpc_slice_is_interned(key) || !grpc_slice_is_interned(value)) {
     if (compatible_external_backing_store != nullptr) {
@@ -318,7 +318,7 @@ grpc_mdelem grpc_mdelem_create(
   shard->count++;
 
   if (shard->count > shard->capacity * 2) {
-    rehash_mdtab(exec_ctx, shard);
+    rehash_mdtab(shard);
   }
 
   gpr_mu_unlock(&shard->mu);
@@ -328,22 +328,20 @@ grpc_mdelem grpc_mdelem_create(
   return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
 }
 
-grpc_mdelem grpc_mdelem_from_slices(grpc_exec_ctx* exec_ctx, grpc_slice key,
-                                    grpc_slice value) {
-  grpc_mdelem out = grpc_mdelem_create(exec_ctx, key, value, nullptr);
-  grpc_slice_unref_internal(exec_ctx, key);
-  grpc_slice_unref_internal(exec_ctx, value);
+grpc_mdelem grpc_mdelem_from_slices(grpc_slice key, grpc_slice value) {
+  grpc_mdelem out = grpc_mdelem_create(key, value, nullptr);
+  grpc_slice_unref_internal(key);
+  grpc_slice_unref_internal(value);
   return out;
 }
 
-grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_exec_ctx* exec_ctx,
-                                           grpc_metadata* metadata) {
+grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
   bool changed = false;
   grpc_slice key_slice =
       grpc_slice_maybe_static_intern(metadata->key, &changed);
   grpc_slice value_slice =
       grpc_slice_maybe_static_intern(metadata->value, &changed);
-  return grpc_mdelem_create(exec_ctx, key_slice, value_slice,
+  return grpc_mdelem_create(key_slice, value_slice,
                             changed ? nullptr : (grpc_mdelem_data*)metadata);
 }
 
@@ -417,7 +415,7 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
   return gmd;
 }
 
-void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
+void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
   switch (GRPC_MDELEM_STORAGE(gmd)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_STATIC:
@@ -465,8 +463,8 @@ void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
       const gpr_atm prev_refcount = gpr_atm_full_fetch_add(&md->refcnt, -1);
       GPR_ASSERT(prev_refcount >= 1);
       if (1 == prev_refcount) {
-        grpc_slice_unref_internal(exec_ctx, md->key);
-        grpc_slice_unref_internal(exec_ctx, md->value);
+        grpc_slice_unref_internal(md->key);
+        grpc_slice_unref_internal(md->value);
         gpr_free(md);
       }
       break;

@@ -22,13 +22,12 @@
 #include <grpc/support/port_platform.h>
 
 #include <assert.h>
-#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <stdbool.h>
+#include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/mpscq.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
@@ -47,18 +46,15 @@ typedef struct grpc_closure_list {
  *              describing what went wrong.
  *              Error contract: it is not the cb's job to unref this error;
  *              the closure scheduler will do that after the cb returns */
-typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx* exec_ctx, void* arg,
-                                   grpc_error* error);
+typedef void (*grpc_iomgr_cb_func)(void* arg, grpc_error* error);
 
 typedef struct grpc_closure_scheduler grpc_closure_scheduler;
 
 typedef struct grpc_closure_scheduler_vtable {
   /* NOTE: for all these functions, closure->scheduler == the scheduler that was
            used to find this vtable */
-  void (*run)(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
-              grpc_error* error);
-  void (*sched)(grpc_exec_ctx* exec_ctx, grpc_closure* closure,
-                grpc_error* error);
+  void (*run)(grpc_closure* closure, grpc_error* error);
+  void (*sched)(grpc_closure* closure, grpc_error* error);
   const char* name;
 } grpc_closure_scheduler_vtable;
 
@@ -146,13 +142,12 @@ typedef struct {
   grpc_closure wrapper;
 } wrapped_closure;
 
-inline void closure_wrapper(grpc_exec_ctx* exec_ctx, void* arg,
-                            grpc_error* error) {
+inline void closure_wrapper(void* arg, grpc_error* error) {
   wrapped_closure* wc = (wrapped_closure*)arg;
   grpc_iomgr_cb_func cb = wc->cb;
   void* cb_arg = wc->cb_arg;
   gpr_free(wc);
-  cb(exec_ctx, cb_arg, error);
+  cb(cb_arg, error);
 }
 
 }  // namespace closure_impl
@@ -247,12 +242,10 @@ inline bool grpc_closure_list_empty(grpc_closure_list closure_list) {
 }
 
 #ifndef NDEBUG
-inline void grpc_closure_run(const char* file, int line,
-                             grpc_exec_ctx* exec_ctx, grpc_closure* c,
+inline void grpc_closure_run(const char* file, int line, grpc_closure* c,
                              grpc_error* error) {
 #else
-inline void grpc_closure_run(grpc_exec_ctx* exec_ctx, grpc_closure* c,
-                             grpc_error* error) {
+inline void grpc_closure_run(grpc_closure* c, grpc_error* error) {
 #endif
   GPR_TIMER_BEGIN("grpc_closure_run", 0);
   if (c != nullptr) {
@@ -262,7 +255,7 @@ inline void grpc_closure_run(grpc_exec_ctx* exec_ctx, grpc_closure* c,
     c->run = true;
 #endif
     assert(c->cb);
-    c->scheduler->vtable->run(exec_ctx, c, error);
+    c->scheduler->vtable->run(c, error);
   } else {
     GRPC_ERROR_UNREF(error);
   }
@@ -273,20 +266,17 @@ inline void grpc_closure_run(grpc_exec_ctx* exec_ctx, grpc_closure* c,
  *  Note that calling this at the end of a closure callback function itself is
  *  by definition safe. */
 #ifndef NDEBUG
-#define GRPC_CLOSURE_RUN(exec_ctx, closure, error) \
-  grpc_closure_run(__FILE__, __LINE__, exec_ctx, closure, error)
+#define GRPC_CLOSURE_RUN(closure, error) \
+  grpc_closure_run(__FILE__, __LINE__, closure, error)
 #else
-#define GRPC_CLOSURE_RUN(exec_ctx, closure, error) \
-  grpc_closure_run(exec_ctx, closure, error)
+#define GRPC_CLOSURE_RUN(closure, error) grpc_closure_run(closure, error)
 #endif
 
 #ifndef NDEBUG
-inline void grpc_closure_sched(const char* file, int line,
-                               grpc_exec_ctx* exec_ctx, grpc_closure* c,
+inline void grpc_closure_sched(const char* file, int line, grpc_closure* c,
                                grpc_error* error) {
 #else
-inline void grpc_closure_sched(grpc_exec_ctx* exec_ctx, grpc_closure* c,
-                               grpc_error* error) {
+inline void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
 #endif
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != nullptr) {
@@ -305,7 +295,7 @@ inline void grpc_closure_sched(grpc_exec_ctx* exec_ctx, grpc_closure* c,
     c->run = false;
 #endif
     assert(c->cb);
-    c->scheduler->vtable->sched(exec_ctx, c, error);
+    c->scheduler->vtable->sched(c, error);
   } else {
     GRPC_ERROR_UNREF(error);
   }
@@ -314,20 +304,17 @@ inline void grpc_closure_sched(grpc_exec_ctx* exec_ctx, grpc_closure* c,
 
 /** Schedule a closure to be run. Does not need to be run from a safe point. */
 #ifndef NDEBUG
-#define GRPC_CLOSURE_SCHED(exec_ctx, closure, error) \
-  grpc_closure_sched(__FILE__, __LINE__, exec_ctx, closure, error)
+#define GRPC_CLOSURE_SCHED(closure, error) \
+  grpc_closure_sched(__FILE__, __LINE__, closure, error)
 #else
-#define GRPC_CLOSURE_SCHED(exec_ctx, closure, error) \
-  grpc_closure_sched(exec_ctx, closure, error)
+#define GRPC_CLOSURE_SCHED(closure, error) grpc_closure_sched(closure, error)
 #endif
 
 #ifndef NDEBUG
 inline void grpc_closure_list_sched(const char* file, int line,
-                                    grpc_exec_ctx* exec_ctx,
                                     grpc_closure_list* list) {
 #else
-inline void grpc_closure_list_sched(grpc_exec_ctx* exec_ctx,
-                                    grpc_closure_list* list) {
+inline void grpc_closure_list_sched(grpc_closure_list* list) {
 #endif
   grpc_closure* c = list->head;
   while (c != nullptr) {
@@ -347,7 +334,7 @@ inline void grpc_closure_list_sched(grpc_exec_ctx* exec_ctx,
     c->run = false;
 #endif
     assert(c->cb);
-    c->scheduler->vtable->sched(exec_ctx, c, c->error_data.error);
+    c->scheduler->vtable->sched(c, c->error_data.error);
     c = next;
   }
   list->head = list->tail = nullptr;
@@ -356,11 +343,11 @@ inline void grpc_closure_list_sched(grpc_exec_ctx* exec_ctx,
 /** Schedule all closures in a list to be run. Does not need to be run from a
  * safe point. */
 #ifndef NDEBUG
-#define GRPC_CLOSURE_LIST_SCHED(exec_ctx, closure_list) \
-  grpc_closure_list_sched(__FILE__, __LINE__, exec_ctx, closure_list)
+#define GRPC_CLOSURE_LIST_SCHED(closure_list) \
+  grpc_closure_list_sched(__FILE__, __LINE__, closure_list)
 #else
-#define GRPC_CLOSURE_LIST_SCHED(exec_ctx, closure_list) \
-  grpc_closure_list_sched(exec_ctx, closure_list)
+#define GRPC_CLOSURE_LIST_SCHED(closure_list) \
+  grpc_closure_list_sched(closure_list)
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */

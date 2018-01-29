@@ -20,16 +20,18 @@ using System;
 using System.Runtime.InteropServices;
 using Grpc.Core;
 using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
     /// grpcsharp_request_call_context
     /// </summary>
-    internal class RequestCallContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback
+    internal class RequestCallContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback, IPooledObject<RequestCallContextSafeHandle>
     {
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<RequestCallContextSafeHandle>();
+        Action<RequestCallContextSafeHandle> returnToPoolAction;
 
         private RequestCallContextSafeHandle()
         {
@@ -37,7 +39,8 @@ namespace Grpc.Core.Internal
 
         public static RequestCallContextSafeHandle Create()
         {
-            return Native.grpcsharp_request_call_context_create();
+            var ctx = Native.grpcsharp_request_call_context_create();
+            return ctx;
         }
 
         public IntPtr Handle
@@ -46,6 +49,12 @@ namespace Grpc.Core.Internal
             {
                 return handle;
             }
+        }
+
+        public void SetReturnToPoolAction(Action<RequestCallContextSafeHandle> returnAction)
+        {
+            GrpcPreconditions.CheckState(returnToPoolAction == null);
+            returnToPoolAction = returnAction;
         }
 
         public RequestCallCompletionDelegate CompletionCallback { get; set; }
@@ -71,6 +80,24 @@ namespace Grpc.Core.Internal
             return new ServerRpcNew(server, call, method, host, deadline, metadata);
         }
 
+        public void Recycle()
+        {
+            if (returnToPoolAction != null)
+            {
+                Native.grpcsharp_request_call_context_reset(this);
+
+                var origReturnAction = returnToPoolAction;
+                // Not clearing all the references to the pool could prevent garbage collection of the pool object
+                // and thus cause memory leaks.
+                returnToPoolAction = null;
+                origReturnAction(this);
+            }
+            else
+            {
+                Dispose();
+            }
+        }
+
         protected override bool ReleaseHandle()
         {
             Native.grpcsharp_request_call_context_destroy(handle);
@@ -90,7 +117,7 @@ namespace Grpc.Core.Internal
             finally
             {
                 CompletionCallback = null;
-                Dispose();
+                Recycle();
             }
         }
     }

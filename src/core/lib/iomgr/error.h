@@ -29,10 +29,6 @@
 
 #include "src/core/lib/debug/trace.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /// Opaque representation of an error.
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
 /// full write up of this object.
@@ -169,6 +165,8 @@ void grpc_error_unref(grpc_error* err);
 grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
                                intptr_t value) GRPC_MUST_USE_RESULT;
 bool grpc_error_get_int(grpc_error* error, grpc_error_ints which, intptr_t* p);
+/// This call takes ownership of the slice; the error is responsible for
+/// eventually unref-ing it.
 grpc_error* grpc_error_set_str(grpc_error* src, grpc_error_strs which,
                                grpc_slice str) GRPC_MUST_USE_RESULT;
 /// Returns false if the specified string is not set.
@@ -178,7 +176,8 @@ bool grpc_error_get_str(grpc_error* error, grpc_error_strs which,
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level
-/// errors that contributed to them.
+/// errors that contributed to them. The src error takes ownership of the
+/// child error.
 grpc_error* grpc_error_add_child(grpc_error* src,
                                  grpc_error* child) GRPC_MUST_USE_RESULT;
 grpc_error* grpc_os_error(const char* file, int line, int err,
@@ -202,9 +201,5 @@ bool grpc_log_if_error(const char* what, grpc_error* error, const char* file,
                        int line);
 #define GRPC_LOG_IF_ERROR(what, error) \
   grpc_log_if_error((what), (error), __FILE__, __LINE__)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

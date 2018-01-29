@@ -25,7 +25,8 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata.h"
 
-typedef struct call_data {
+namespace {
+struct call_data {
   // Receive closures are chained: we inject this closure as the
   // recv_initial_metadata_ready up-call on transport_stream_op, and remember to
   // call our next_recv_initial_metadata_ready member after handling it.
@@ -37,7 +38,8 @@ typedef struct call_data {
 
   // Marks whether the workaround is active
   bool workaround_active;
-} call_data;
+};
+}  // namespace
 
 // Find the user agent metadata element in the batch
 static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
@@ -50,8 +52,7 @@ static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
 }
 
 // Callback invoked when we receive an initial metadata.
-static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx,
-                                        void* user_data, grpc_error* error) {
+static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
   grpc_call_element* elem = (grpc_call_element*)user_data;
   call_data* calld = (call_data*)elem->call_data;
 
@@ -67,14 +68,13 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx,
   }
 
   // Invoke the next callback.
-  GRPC_CLOSURE_RUN(exec_ctx, calld->next_recv_initial_metadata_ready,
+  GRPC_CLOSURE_RUN(calld->next_recv_initial_metadata_ready,
                    GRPC_ERROR_REF(error));
 }
 
 // Start transport stream op.
 static void start_transport_stream_op_batch(
-    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-    grpc_transport_stream_op_batch* op) {
+    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   call_data* calld = (call_data*)elem->call_data;
 
   // Inject callback for receiving initial metadata
@@ -96,12 +96,11 @@ static void start_transport_stream_op_batch(
   }
 
   // Chain to the next filter.
-  grpc_call_next_op(exec_ctx, elem, op);
+  grpc_call_next_op(elem, op);
 }
 
 // Constructor for call_data.
-static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
-                                  grpc_call_element* elem,
+static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   call_data* calld = (call_data*)elem->call_data;
   calld->next_recv_initial_metadata_ready = nullptr;
@@ -113,20 +112,18 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 }
 
 // Destructor for call_data.
-static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {}
 
 // Constructor for channel_data.
-static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
-                                     grpc_channel_element* elem,
+static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   return GRPC_ERROR_NONE;
 }
 
 // Destructor for channel_data.
-static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
-                                 grpc_channel_element* elem) {}
+static void destroy_channel_elem(grpc_channel_element* elem) {}
 
 // Parse the user agent
 static bool parse_user_agent(grpc_mdelem md) {
@@ -181,7 +178,7 @@ const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
     "workaround_cronet_compression"};
 
 static bool register_workaround_cronet_compression(
-    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
+    grpc_channel_stack_builder* builder, void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const grpc_arg* a = grpc_channel_args_find(
@@ -196,7 +193,7 @@ static bool register_workaround_cronet_compression(
       builder, &grpc_workaround_cronet_compression_filter, nullptr, nullptr);
 }
 
-extern "C" void grpc_workaround_cronet_compression_filter_init(void) {
+void grpc_workaround_cronet_compression_filter_init(void) {
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, GRPC_WORKAROUND_PRIORITY_HIGH,
       register_workaround_cronet_compression, nullptr);
@@ -204,4 +201,4 @@ extern "C" void grpc_workaround_cronet_compression_filter_init(void) {
                            parse_user_agent);
 }
 
-extern "C" void grpc_workaround_cronet_compression_filter_shutdown(void) {}
+void grpc_workaround_cronet_compression_filter_shutdown(void) {}

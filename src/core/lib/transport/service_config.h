@@ -22,10 +22,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_service_config grpc_service_config;
 
 grpc_service_config* grpc_service_config_create(const char* json_string);
@@ -49,10 +45,9 @@ const char* grpc_service_config_get_lb_policy_name(
 /// \a ref_value() and \a unref_value() are used to ref and unref values.
 /// Returns NULL on error.
 grpc_slice_hash_table* grpc_service_config_create_method_config_table(
-    grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
+    const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
-    void* (*ref_value)(void* value),
-    void (*unref_value)(grpc_exec_ctx* exec_ctx, void* value));
+    void* (*ref_value)(void* value), void (*unref_value)(void* value));
 
 /// A helper function for looking up values in the table returned by
 /// \a grpc_service_config_create_method_config_table().
@@ -60,12 +55,7 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
 /// the form "/service/method".
 /// Returns NULL if the method has no config.
 /// Caller does NOT own a reference to the result.
-void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
-                                   const grpc_slice_hash_table* table,
+void* grpc_method_config_table_get(const grpc_slice_hash_table* table,
                                    grpc_slice path);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H */
