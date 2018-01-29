@@ -27,6 +27,9 @@ namespace grpc_core {
 
 // A smart pointer class for objects that provide Ref() and Unref() methods,
 // such as those provided by the RefCounted base class.
+// NOTE: This is a substitute for std::shared_ptr with a custom allocator.
+//       It exists because we cannot use libstdc++ and shared_ptr is a
+//       complex enough class that it needs libraries and not just headers.
 template <typename T>
 class RefCountedPtr {
  public:
@@ -89,11 +92,36 @@ class RefCountedPtr {
   T* value_ = nullptr;
 };
 
+// NOTE: MakeRefCounted is analogous to std::allocate_shared with
+//       grpc_core::Allocator<T> as the customer allocator. This exists
+//       to avoid a dependence on C++ standard libraries.
 template <typename T, typename... Args>
 inline RefCountedPtr<T> MakeRefCounted(Args&&... args) {
   return RefCountedPtr<T>(New<T>(std::forward<Args>(args)...));
-}
+} 
+ 
+// EnableRefCountedFromThis is analogous to std::enable_shared_from_this .
+// To avoid multiple inheritance, we need to template based on both the
+// base ref-counted class and the pointed-to class. The latter uses CRTP.
+// If/when we are able to use std::shared_ptr, we should replace
+//   EnableRefCountedFromThis<RefCountedClass, This> with
+//   std::enable_shared_from_this<This>.
+template <typename RefCountedClass, typename This>
+class EnableRefCountedFromThis : public RefCountedClass {
+public:
+  // Pass constructor arguments to the RefCountedClass template parameter
+  template<typename... RefCountedClassArgs>
+    EnableRefCountedFromThis(RefCountedClassArgs&& ...args) :
+    RefCountedClass(std::forward<RefCountedClassArgs>(args)...) { }
 
+  // This analog of shared_from_this is much simpler than a standard library
+  // implementation because the underlying object is inherited from the
+  // RefCounted class. We can static_cast back to the derived class.
+  RefCountedPtr<This> RefCountedFromThis() {
+    this->Ref();
+    return RefCountedPtr<This>(static_cast<This*>(this));
+  }
+};
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H */
