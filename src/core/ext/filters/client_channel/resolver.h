@@ -62,9 +62,8 @@ class Resolver : public InternallyRefCountedWithTracing {
   virtual void NextLocked(grpc_channel_args** result,
                           grpc_closure* on_complete) GRPC_ABSTRACT;
 
-  /// Requests re-resolution.  If this causes new data to become
-  /// available, then the currently pending call to \a NextLocked() will
-  /// return the new result.
+  /// Asks the resolver to obtain an updated resolver result, if
+  /// applicable.
   ///
   /// This is useful for pull-based implementations to decide when to
   /// re-resolve.  However, the implementation is not required to
@@ -73,6 +72,9 @@ class Resolver : public InternallyRefCountedWithTracing {
   /// queries, to avoid hammering the name service with queries.
   ///
   /// For push-based implementations, this may be a no-op.
+  ///
+  /// If this causes new data to become available, then the currently
+  /// pending call to \a NextLocked() will return the new result.
   ///
   /// Note: Currently, all resolvers are required to return a new result
   /// shortly after this method is called.  For pull-based mechanisms, if
