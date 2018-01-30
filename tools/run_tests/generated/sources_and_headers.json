@@ -6614,6 +6614,7 @@
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/create_test_channel.h", 
+      "test/cpp/util/server_context_test_spouse.h", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.h", 
       "test/cpp/util/test_credentials_provider.h"
@@ -6628,6 +6629,7 @@
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/create_test_channel.cc", 
       "test/cpp/util/create_test_channel.h", 
+      "test/cpp/util/server_context_test_spouse.h", 
       "test/cpp/util/string_ref_helper.cc", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.cc", 
@@ -6663,6 +6665,7 @@
       "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
+      "test/cpp/util/server_context_test_spouse.h", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.h"
     ], 
@@ -6674,6 +6677,7 @@
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.cc", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
+      "test/cpp/util/server_context_test_spouse.h", 
       "test/cpp/util/string_ref_helper.cc", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.cc", 
@@ -10100,15 +10104,13 @@
       "grpc++"
     ], 
     "headers": [
-      "include/grpc++/test/mock_stream.h", 
-      "include/grpc++/test/server_context_test_spouse.h"
+      "include/grpc++/test/mock_stream.h"
     ], 
     "is_filegroup": true, 
     "language": "c++", 
     "name": "grpc++_test", 
     "src": [
-      "include/grpc++/test/mock_stream.h", 
-      "include/grpc++/test/server_context_test_spouse.h"
+      "include/grpc++/test/mock_stream.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

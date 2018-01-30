@@ -57,6 +57,7 @@ GRPCXX_TESTUTIL_SRCS  = [
 
 GRPCXX_TESTUTIL_HDRS = [
     "byte_buffer_proto_helper.h",
+    "server_context_test_spouse.h",
     "string_ref_helper.h",
     "subprocess.h",
 ]

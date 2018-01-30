@@ -26,9 +26,6 @@
 
 namespace grpc {
 
-class Server;
-class Service;
-
 /// This class is for internal or specialized usage only, and only used through
 /// the ServerBuilderPlugin interface
 class ServerInitializer {

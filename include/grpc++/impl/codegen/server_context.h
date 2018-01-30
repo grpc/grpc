@@ -103,9 +103,6 @@ class ServerContext {
     return Timespec2Timepoint(deadline_);
   }
 
-  /// Return a \a gpr_timespec representation of the server call's deadline.
-  gpr_timespec raw_deadline() const { return deadline_; }
-
   /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
   /// associated with a server call. These are made available at the client side
   /// by the \a grpc::ClientContext::GetServerInitialMetadata() method.

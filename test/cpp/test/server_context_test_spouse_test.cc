@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/test/server_context_test_spouse.h>
+#include "test/cpp/util/server_context_test_spouse.h"
 
 #include <cstring>
 #include <vector>

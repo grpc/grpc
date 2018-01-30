@@ -606,6 +606,7 @@ Pod::Spec.new do |s|
                       'test/cpp/util/subprocess.cc',
                       'test/cpp/util/test_credentials_provider.cc',
                       'test/cpp/util/create_test_channel.h',
+                      'test/cpp/util/server_context_test_spouse.h',
                       'test/cpp/util/string_ref_helper.h',
                       'test/cpp/util/subprocess.h',
                       'test/cpp/util/test_credentials_provider.h',
