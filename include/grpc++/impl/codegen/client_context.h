@@ -93,52 +93,52 @@ class ServerContext;
 /// \see ClientContext::FromServerContext
 class PropagationOptions {
  public:
-  PropagationOptions() : propagate_(GRPC_PROPAGATE_DEFAULTS) {}
+  PropagationOptions() : bitmask_(GRPC_PROPAGATE_DEFAULTS) {}
 
   PropagationOptions& enable_deadline_propagation() {
-    propagate_ |= GRPC_PROPAGATE_DEADLINE;
+    bitmask_ |= GRPC_PROPAGATE_DEADLINE;
     return *this;
   }
 
   PropagationOptions& disable_deadline_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_DEADLINE;
+    bitmask_ &= ~GRPC_PROPAGATE_DEADLINE;
     return *this;
   }
 
   PropagationOptions& enable_census_stats_propagation() {
-    propagate_ |= GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
+    bitmask_ |= GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
     return *this;
   }
 
   PropagationOptions& disable_census_stats_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
+    bitmask_ &= ~GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
     return *this;
   }
 
   PropagationOptions& enable_census_tracing_propagation() {
-    propagate_ |= GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
+    bitmask_ |= GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
     return *this;
   }
 
   PropagationOptions& disable_census_tracing_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
+    bitmask_ &= ~GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
     return *this;
   }
 
   PropagationOptions& enable_cancellation_propagation() {
-    propagate_ |= GRPC_PROPAGATE_CANCELLATION;
+    bitmask_ |= GRPC_PROPAGATE_CANCELLATION;
     return *this;
   }
 
   PropagationOptions& disable_cancellation_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_CANCELLATION;
+    bitmask_ &= ~GRPC_PROPAGATE_CANCELLATION;
     return *this;
   }
 
-  uint32_t c_bitmask() const { return propagate_; }
-
  private:
-  uint32_t propagate_;
+  friend class Channel;
+
+  uint32_t bitmask_;
 };
 
 namespace testing {

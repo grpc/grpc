@@ -93,7 +93,7 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
   if (kRegistered) {
     c_call = grpc_channel_create_registered_call(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(),
+        context->propagation_options_.bitmask_, cq->cq(),
         method.channel_tag(), context->raw_deadline(), nullptr);
   } else {
     const char* host_str = nullptr;
@@ -109,7 +109,7 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
     }
     c_call = grpc_channel_create_call(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(), method_slice,
+        context->propagation_options_.bitmask_, cq->cq(), method_slice,
         host_str == nullptr ? nullptr : &host_slice, context->raw_deadline(),
         nullptr);
     grpc_slice_unref(method_slice);
