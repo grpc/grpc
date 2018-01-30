@@ -156,7 +156,7 @@ int main(int argc, char** argv) {
     char* root;
     if (lslash != nullptr) {
       /* Hack for bazel target */
-      if (lslash - me >= (unsigned)(sizeof("http") - 1) &&
+      if ((unsigned)(lslash - me) >= (sizeof("http") - 1) &&
           strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
                   sizeof("http") - 1) == 0) {
         lslash = me + (lslash - me) - sizeof("http");
