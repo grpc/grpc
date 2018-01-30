@@ -12,22 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
-
-# Install basic dependencies.
-RUN apt-get update && apt-get -y install curl git
-
-# Set up Dart stable repository.
-RUN apt-get update && apt-get -y install apt-transport-https
-# Get the Google Linux package signing key.
-RUN sh -c 'curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -'
-# Set up the location of the stable repository.
-RUN sh -c 'curl https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_stable.list > /etc/apt/sources.list.d/dart_stable.list'
-
-# Install Dart
-RUN apt-get update && apt-get -y install dart
-
-ENV PATH $PATH:/usr/lib/dart/bin
+FROM google/dart:latest
 
 # Define the default command.
 CMD ["bash"]
