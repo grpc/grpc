@@ -125,10 +125,11 @@ ServerBuilder& ServerBuilder::SetSyncServerOption(
 
 ServerBuilder& ServerBuilder::SetCompressionAlgorithmSupportStatus(
     grpc_compression_algorithm algorithm, bool enabled) {
+  int alg = static_cast<int>(algorithm);
   if (enabled) {
-    GPR_BITSET(&enabled_compression_algorithms_bitset_, algorithm);
+    GPR_BITSET(&enabled_compression_algorithms_bitset_, alg);
   } else {
-    GPR_BITCLEAR(&enabled_compression_algorithms_bitset_, algorithm);
+    GPR_BITCLEAR(&enabled_compression_algorithms_bitset_, alg);
   }
   return *this;
 }

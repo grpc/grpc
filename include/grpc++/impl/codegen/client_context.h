@@ -39,6 +39,7 @@
 #include <mutex>
 #include <string>
 
+#include <grpc++/impl/codegen/compression.h>
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
@@ -48,7 +49,6 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
-#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 
 struct census_context;
@@ -289,10 +289,19 @@ class ClientContext {
   /// Return the compression algorithm the client call will request be used.
   /// Note that the gRPC runtime may decide to ignore this request, for example,
   /// due to resource constraints.
-  grpc_compression_algorithm compression_algorithm() const {
+  CompressionAlgorithm compression_algorithm() const {
     return compression_algorithm_;
   }
 
+  /// Set \a algorithm to be the compression algorithm used for the client call.
+  ///
+  /// \param algorithm The compression algorithm used for the client call.
+  void set_compression_algorithm(CompressionAlgorithm algorithm) {
+    set_compression_algorithm(
+        static_cast<grpc_compression_algorithm>(algorithm));
+  }
+
+  /// DEPRECATED API
   /// Set \a algorithm to be the compression algorithm used for the client call.
   ///
   /// \param algorithm The compression algorithm used for the client call.
@@ -421,7 +430,7 @@ class ClientContext {
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;
 
-  grpc_compression_algorithm compression_algorithm_;
+  CompressionAlgorithm compression_algorithm_;
   bool initial_metadata_corked_;
 
   grpc::string debug_error_string_;

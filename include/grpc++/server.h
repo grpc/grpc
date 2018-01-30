@@ -104,7 +104,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   friend class AsyncGenericService;
   friend class ServerBuilder;
   friend class ServerInitializer;
-  friend class testing::EndpointPairFixture; // for use by tests only
+  friend class testing::EndpointPairFixture;  // for use by tests only
   friend void AddInsecureChannelFromFd(Server* server, int fd);
 
   class SyncRequest;

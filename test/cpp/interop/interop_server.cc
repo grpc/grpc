@@ -107,11 +107,11 @@ bool SetPayload(int size, Payload* payload) {
 bool CheckExpectedCompression(const ServerContext& context,
                               const bool compression_expected) {
   const InteropServerContextInspector inspector(context);
-  const grpc_compression_algorithm received_compression =
+  const grpc::CompressionAlgorithm received_compression =
       inspector.GetCallCompressionAlgorithm();
 
   if (compression_expected) {
-    if (received_compression == GRPC_COMPRESS_NONE) {
+    if (received_compression == grpc::CompressionAlgorithm::NONE) {
       // Expected some compression, got NONE. This is an error.
       gpr_log(GPR_ERROR,
               "Expected compression but got uncompressed request from client.");
