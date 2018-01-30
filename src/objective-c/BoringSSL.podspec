@@ -129,7 +129,11 @@ Pod::Spec.new do |s|
                               '*.h',
                               'crypto/*.h',
                               'crypto/**/*.h'
-    ss.exclude_files = '**/*_test.*',
+    # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
+    # explicitly exclude it from the pod.
+    # TODO (mxyan): Work with BoringSSL team to remove this hack.
+    ss.exclude_files = 'crypto/fipsmodule/bcm.c',
+                       '**/*_test.*',
                        '**/test_*.*',
                        '**/test/*.*'
 
