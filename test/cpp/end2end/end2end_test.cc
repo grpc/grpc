@@ -1333,8 +1333,11 @@ TEST_P(ProxyEnd2endTest, EchoDeadline) {
   EXPECT_TRUE(s.ok());
   gpr_timespec sent_deadline;
   Timepoint2Timespec(deadline, &sent_deadline);
-  // Allow 1 second error.
-  EXPECT_LE(response.param().request_deadline() - sent_deadline.tv_sec, 1);
+  // We want to allow some reasonable error given:
+  // - request_deadline() only has 1sec resolution so the best we can do is +-1
+  // - if sent_deadline.tv_nsec is very close to the next second's boundary we
+  // can end up being off by 2 in one direction.
+  EXPECT_LE(response.param().request_deadline() - sent_deadline.tv_sec, 2);
   EXPECT_GE(response.param().request_deadline() - sent_deadline.tv_sec, -1);
 }
 
