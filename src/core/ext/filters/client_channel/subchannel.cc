@@ -377,7 +377,7 @@ static void continue_connect_locked(grpc_subchannel* c) {
   args.deadline = std::max(c->next_attempt_deadline, min_deadline);
   args.channel_args = c->args;
   grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
-                              GRPC_ERROR_NONE, "state_change");
+                              GRPC_ERROR_NONE, "state_change", true);
   grpc_connector_connect(c->connector, &args, &c->connecting_result,
                          &c->on_connected);
 }
@@ -513,38 +513,34 @@ static void on_connected_subchannel_connectivity_changed(void* p,
   state_watcher* connected_subchannel_watcher = (state_watcher*)p;
   grpc_subchannel* c = connected_subchannel_watcher->subchannel;
   gpr_mu* mu = &c->mu;
-
   gpr_mu_lock(mu);
-
   switch (connected_subchannel_watcher->connectivity_state) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      // Any error after connection has been established is treated as a
+      // shutdown.
+      connected_subchannel_watcher->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
     case GRPC_CHANNEL_SHUTDOWN: {
       if (!c->disconnected && c->connected_subchannel != nullptr) {
         if (grpc_trace_stream_refcount.enabled()) {
           gpr_log(GPR_INFO,
-                  "Connected subchannel %p of subchannel %p has gone into %s. "
+                  "Connected subchannel %p of subchannel %p has shut down. "
                   "Attempting to reconnect.",
-                  c->connected_subchannel.get(), c,
-                  grpc_connectivity_state_name(
-                      connected_subchannel_watcher->connectivity_state));
+                  c->connected_subchannel.get(), c);
         }
         c->connected_subchannel.reset();
-        grpc_connectivity_state_set(
-            &c->state_tracker, connected_subchannel_watcher->connectivity_state,
-            GRPC_ERROR_REF(error), "reflect_child");
+        grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_SHUTDOWN,
+                                    GRPC_ERROR_REF(error), "reflect_child",
+                                    true);
         c->backoff_begun = false;
         c->backoff->Reset();
         maybe_start_connecting_locked(c);
-      } else {
-        connected_subchannel_watcher->connectivity_state =
-            GRPC_CHANNEL_SHUTDOWN;
       }
       break;
     }
     default: {
       grpc_connectivity_state_set(
           &c->state_tracker, connected_subchannel_watcher->connectivity_state,
-          GRPC_ERROR_REF(error), "reflect_child");
+          GRPC_ERROR_REF(error), "reflect_child", true);
       GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
       c->connected_subchannel->NotifyOnStateChange(
           nullptr, &connected_subchannel_watcher->connectivity_state,
@@ -613,7 +609,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
 
   /* signal completion */
   grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_READY,
-                              GRPC_ERROR_NONE, "connected");
+                              GRPC_ERROR_NONE, "connected", true);
   return true;
 }
 
@@ -635,7 +631,7 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
         grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                "Connect Failed", &error, 1),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-        "connect_failed");
+        "connect_failed", true);
 
     const char* errmsg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Connect failed: %s", errmsg);

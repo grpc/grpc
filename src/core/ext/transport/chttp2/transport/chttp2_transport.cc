@@ -1083,9 +1083,6 @@ static void queue_setting_update(grpc_chttp2_transport* t,
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      grpc_slice goaway_text) {
-  // GRPC_CHTTP2_IF_TRACING(
-  //     gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
-
   // Discard the error from a previous goaway frame (if any)
   if (t->goaway_error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(t->goaway_error);
@@ -1095,7 +1092,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
           GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)goaway_error),
       GRPC_ERROR_STR_RAW_BYTES, goaway_text);
-
   /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
    * data equal to "too_many_pings", it should log the occurrence at a log level
    * that is enabled by default and double the configured KEEPALIVE_TIME used
@@ -1112,10 +1108,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             : (grpc_millis)(current_keepalive_time_ms *
                             KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
   }
-
-  /* lie: use transient failure from the transport to indicate goaway has been
-   * received */
-  connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE,
+  connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN,
                          GRPC_ERROR_REF(t->goaway_error), "got_goaway");
 }
 
@@ -2690,7 +2683,7 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_DEBUG, "set connectivity_state=%d", state));
   grpc_connectivity_state_set(&t->channel_callback.state_tracker, state, error,
-                              reason);
+                              reason, true);
 }
 
 /*******************************************************************************

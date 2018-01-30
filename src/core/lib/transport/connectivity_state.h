@@ -58,7 +58,7 @@ void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker* tracker);
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker* tracker,
                                  grpc_connectivity_state state,
                                  grpc_error* associated_error,
-                                 const char* reason);
+                                 const char* reason, bool is_internal);
 
 /** Return true if this connectivity state has watchers.
     Access must be serialized with an external lock. */
