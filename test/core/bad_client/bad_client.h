@@ -44,6 +44,7 @@ struct grpc_bad_client_arg {
   size_t client_payload_length;
 };
 
+/* Flags for grpc_run_bad_client_test */
 #define GRPC_BAD_CLIENT_DISCONNECT 1
 #define GRPC_BAD_CLIENT_LARGE_REQUEST 2
 
@@ -53,6 +54,9 @@ struct grpc_bad_client_arg {
  * payload, run client_validator to make sure that the response is as expected.
  * Also execute \a server_validator in a separate thread to assert that the
  * bytes are handled as expected.
+ *
+ * The flags are only applicable to the last validator in the array. (This can
+ * be changed in the future if necessary)
  */
 void grpc_run_bad_client_test(
     grpc_bad_client_server_side_validator server_validator,

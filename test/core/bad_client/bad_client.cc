@@ -153,8 +153,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                          client_cq, grpc_timeout_milliseconds_to_deadline(100),
                          nullptr)
                          .type == GRPC_QUEUE_TIMEOUT);
-        } while (!gpr_event_get(&read_done_event) ||
-                 !gpr_event_get(&done_write));
+        } while (!gpr_event_get(&read_done_event));
         if (arg->client_validator(&incoming, arg->client_validator_arg)) break;
         gpr_log(GPR_INFO,
                 "client validator failed; trying additional read "
@@ -165,12 +164,13 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
     grpc_core::ExecCtx::Get()->Flush();
   }
 
-  /* If flags is non-zero, it is time to shutdown the client */
-  if (flags) {
+  /* If the request was too large, then we need to forcefully shut down the
+   * client, so that the write can be considered completed */
+  if (flags & GRPC_BAD_CLIENT_LARGE_REQUEST) {
     shutdown_client(&sfd->client);
   }
 
-  /* Make sure that the server is done writing */
+  /* Make sure that the client is done writing */
   while (!gpr_event_get(&done_write)) {
     GPR_ASSERT(
         grpc_completion_queue_next(
