@@ -301,7 +301,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
       // Prepare for the next request
       if (!IsShutdown()) {
         sync_req->SetupRequest();  // Create new completion queue for sync_req
-        sync_req->Request(server_->c_server(), server_cq_->cq());
+        sync_req->Request(server_->server_, server_cq_->cq());
       }
 
       GPR_TIMER_SCOPE("cd.Run()", 0);
@@ -345,7 +345,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     if (!sync_requests_.empty()) {
       for (auto m = sync_requests_.begin(); m != sync_requests_.end(); m++) {
         (*m)->SetupRequest();
-        (*m)->Request(server_->c_server(), server_cq_->cq());
+        (*m)->Request(server_->server_, server_cq_->cq());
       }
 
       Initialize();  // ThreadManager's Initialize()
@@ -430,8 +430,6 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   GPR_ASSERT(callbacks);
   g_callbacks.reset(callbacks);
 }
-
-grpc_server* Server::c_server() { return server_; }
 
 std::shared_ptr<Channel> Server::InProcessChannel(
     const ChannelArguments& args) {

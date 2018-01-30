@@ -87,19 +87,19 @@ class EndpointPairFixture {
     /* add server endpoint to server_ */
     {
       const grpc_channel_args* server_args =
-          grpc_server_get_channel_args(server_->c_server());
+          grpc_server_get_channel_args(server_->server());
       grpc_transport* transport = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */);
 
       grpc_pollset** pollsets;
       size_t num_pollsets = 0;
-      grpc_server_get_pollsets(server_->c_server(), &pollsets, &num_pollsets);
+      grpc_server_get_pollsets(server_->server(), &pollsets, &num_pollsets);
 
       for (size_t i = 0; i < num_pollsets; i++) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollsets[i]);
       }
 
-      grpc_server_setup_transport(server_->c_server(), transport, nullptr,
+      grpc_server_setup_transport(server_->server(), transport, nullptr,
                                   server_args);
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
     }
