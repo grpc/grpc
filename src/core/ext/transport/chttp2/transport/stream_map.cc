@@ -27,6 +27,7 @@
 void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map,
                                  size_t initial_capacity) {
   GPR_ASSERT(initial_capacity > 1);
+  gpr_mu_init(&map->mu);
   map->keys = (uint32_t*)gpr_malloc(sizeof(uint32_t) * initial_capacity);
   map->values = (void**)gpr_malloc(sizeof(void*) * initial_capacity);
   map->count = 0;
@@ -35,6 +36,7 @@ void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map,
 }
 
 void grpc_chttp2_stream_map_destroy(grpc_chttp2_stream_map* map) {
+  gpr_mu_destroy(&map->mu);
   gpr_free(map->keys);
   gpr_free(map->values);
 }
@@ -64,6 +66,7 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
   GPR_ASSERT(value);
   GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
 
+  gpr_mu_lock(&map->mu);
   if (count == capacity) {
     if (map->free > capacity / 4) {
       count = compact(keys, values, count);
@@ -82,6 +85,7 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
   keys[count] = key;
   values[count] = value;
   map->count = count + 1;
+  gpr_mu_unlock(&map->mu);
 }
 
 static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
@@ -113,19 +117,33 @@ static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
 }
 
 void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
+  gpr_mu_lock(&map->mu);
   void** pvalue = find(map, key);
   void* out = nullptr;
   if (pvalue != nullptr) {
     out = *pvalue;
     *pvalue = nullptr;
     map->free += (out != nullptr);
-    /* recognize complete emptyness and ensure we can skip
-     * defragmentation later */
     if (map->free == map->count) {
+      /* recognize complete emptiness and ensure we can skip
+       * defragmentation later */
       map->free = map->count = 0;
+    } else if (map->count > 8 && map->free > 3 * map->count / 4) {
+      /* if we've significantly shrunk, reallocate to avoid stranding memory
+       * after a usage spike */
+      map->count = compact(map->keys, map->values, map->count);
+      map->free = 0;
+      map->capacity = 3 * map->count / 2;
+      map->keys =
+          (uint32_t*)gpr_realloc(map->keys, map->capacity * sizeof(*map->keys));
+      map->values = (void**)gpr_realloc(map->values,
+                                        map->capacity * sizeof(*map->values));
+
     }
+
     GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
   }
+  gpr_mu_unlock(&map->mu);
   return out;
 }
 
