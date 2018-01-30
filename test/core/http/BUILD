@@ -88,6 +88,7 @@ grpc_cc_test(
     data = [
         "python_wrapper.sh",
         "test_server.py",
+        "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:server1.pem",
         "//src/core/tsi/test_creds:server1.key"
     ],
