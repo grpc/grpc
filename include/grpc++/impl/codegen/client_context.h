@@ -260,9 +260,6 @@ class ClientContext {
     return Timespec2Timepoint(deadline_);
   }
 
-  /// Return a \a gpr_timespec representation of the client call's deadline.
-  gpr_timespec raw_deadline() const { return deadline_; }
-
   /// Set the per call authority header (see
   /// https://tools.ietf.org/html/rfc7540#section-8.1.2.3).
   void set_authority(const grpc::string& authority) { authority_ = authority; }
