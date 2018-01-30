@@ -20,26 +20,19 @@
 #define GRPC_CORE_LIB_COMPRESSION_ALGORITHM_METADATA_H
 
 #include <grpc/compression.h>
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/transport/metadata.h"
 
 /** Return compression algorithm based metadata value */
 grpc_slice grpc_compression_algorithm_slice(
     grpc_compression_algorithm algorithm);
 
-/** Find compression algorithm based on passed in mdstr - returns
- *  GRPC_COMPRESS_ALGORITHM_COUNT on failure */
-grpc_compression_algorithm grpc_compression_algorithm_from_slice(
-    grpc_slice str);
+/** Return stream compression algorithm based metadata value */
+grpc_slice grpc_stream_compression_algorithm_slice(
+    grpc_stream_compression_algorithm algorithm);
 
-/** Return compression algorithm based metadata element */
+/** Return compression algorithm based metadata element (grpc-encoding: xxx) */
 grpc_mdelem grpc_compression_encoding_mdelem(
     grpc_compression_algorithm algorithm);
-
-/** Return message compression algorithm based metadata element (grpc-encoding:
- * xxx) */
-grpc_mdelem grpc_message_compression_encoding_mdelem(
-    grpc_message_compression_algorithm algorithm);
 
 /** Return stream compression algorithm based metadata element
  * (content-encoding: xxx) */
@@ -48,8 +41,8 @@ grpc_mdelem grpc_stream_compression_encoding_mdelem(
 
 /** Find compression algorithm based on passed in mdstr - returns
  * GRPC_COMPRESS_ALGORITHM_COUNT on failure */
-grpc_message_compression_algorithm
-grpc_message_compression_algorithm_from_slice(grpc_slice str);
+grpc_compression_algorithm grpc_compression_algorithm_from_slice(
+    grpc_slice str);
 
 /** Find stream compression algorithm based on passed in mdstr - returns
  * GRPC_STREAM_COMPRESS_ALGORITHM_COUNT on failure */
