@@ -19,11 +19,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <string.h>
+#include <climits>
+#include <cstring>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -71,7 +73,16 @@ typedef struct {
   grpc_closure on_retry;
   /** retry backoff state */
   grpc_core::ManualConstructor<grpc_core::BackOff> backoff;
-
+  /** min resolution period. Max one resolution will happen per period */
+  gpr_timespec cooldown_period;
+  /** when was the last resolution? If no resolution has happened yet, equals
+   * gpr_inf_past() */
+  gpr_timespec last_resolution_timestamp;
+  /** Timer for resolutions delayed due to cooldown period */
+  grpc_timer cooldown_timer;
+  bool have_cooldown_timer;
+  /** To be invoked once the cooldown period is over */
+  grpc_closure cooldown_closure;
   /** currently resolving addresses */
   grpc_resolved_addresses* addresses;
 } dns_resolver;
@@ -94,6 +105,9 @@ static void dns_shutdown_locked(grpc_resolver* resolver) {
   dns_resolver* r = (dns_resolver*)resolver;
   if (r->have_retry_timer) {
     grpc_timer_cancel(&r->retry_timer);
+  }
+  if (r->have_cooldown_timer) {
+    grpc_timer_cancel(&r->cooldown_timer);
   }
   if (r->next_completion != nullptr) {
     *r->target_result = nullptr;
@@ -128,15 +142,13 @@ static void dns_next_locked(grpc_resolver* resolver,
 
 static void dns_on_retry_timer_locked(void* arg, grpc_error* error) {
   dns_resolver* r = (dns_resolver*)arg;
-
   r->have_retry_timer = false;
   if (error == GRPC_ERROR_NONE) {
     if (!r->resolving) {
       dns_start_resolving_locked(r);
     }
   }
-
-  GRPC_RESOLVER_UNREF(&r->base, "retry-timer");
+  GRPC_RESOLVER_UNREF(&r->base, "retry_timer");
 }
 
 static void dns_on_resolved_locked(void* arg, grpc_error* error) {
@@ -167,7 +179,7 @@ static void dns_on_resolved_locked(void* arg, grpc_error* error) {
             grpc_error_string(error));
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
-    GRPC_RESOLVER_REF(&r->base, "retry-timer");
+    GRPC_RESOLVER_REF(&r->base, "retry_timer");
     if (timeout > 0) {
       gpr_log(GPR_DEBUG, "retrying in %" PRIdPTR " milliseconds", timeout);
     } else {
@@ -189,6 +201,31 @@ static void dns_on_resolved_locked(void* arg, grpc_error* error) {
 }
 
 static void dns_start_resolving_locked(dns_resolver* r) {
+  if (gpr_time_cmp(gpr_inf_past(GPR_CLOCK_MONOTONIC),
+                   r->last_resolution_timestamp) != 0) {
+    const gpr_timespec earliest_next_resolution =
+        gpr_time_add(r->last_resolution_timestamp, r->cooldown_period);
+    const auto ms_until_next_resolution = gpr_time_to_millis(
+        gpr_time_sub(earliest_next_resolution, gpr_now(GPR_CLOCK_MONOTONIC)));
+    if (ms_until_next_resolution > 0) {
+      const gpr_timespec last_resolution_ago = gpr_time_sub(
+          gpr_now(GPR_CLOCK_MONOTONIC), r->last_resolution_timestamp);
+      gpr_log(GPR_DEBUG,
+              "In cooldown from last resolution (from %d ms ago). Will resolve "
+              "again in %d ms",
+              gpr_time_to_millis(last_resolution_ago),
+              ms_until_next_resolution);
+      if (!r->have_cooldown_timer) {
+        r->have_cooldown_timer = true;
+        GRPC_RESOLVER_REF(&r->base, "cooldown_timer");
+        grpc_timer_init(&r->cooldown_timer, ms_until_next_resolution,
+                        &r->cooldown_closure);
+      }
+      ++r->resolved_version;
+      dns_maybe_finish_next_locked(r);
+      return;
+    }
+  }
   GRPC_RESOLVER_REF(&r->base, "dns-resolving");
   GPR_ASSERT(!r->resolving);
   r->resolving = true;
@@ -198,6 +235,7 @@ static void dns_start_resolving_locked(dns_resolver* r) {
       GRPC_CLOSURE_CREATE(dns_on_resolved_locked, r,
                           grpc_combiner_scheduler(r->base.combiner)),
       &r->addresses);
+  r->last_resolution_timestamp = gpr_now(GPR_CLOCK_MONOTONIC);
 }
 
 static void dns_maybe_finish_next_locked(dns_resolver* r) {
@@ -222,6 +260,15 @@ static void dns_destroy(grpc_resolver* gr) {
   gpr_free(r->default_port);
   grpc_channel_args_destroy(r->channel_args);
   gpr_free(r);
+}
+
+static void cooldown_cb(void* arg, grpc_error* error) {
+  dns_resolver* r = static_cast<dns_resolver*>(arg);
+  r->have_cooldown_timer = false;
+  if (error == GRPC_ERROR_NONE && !r->resolving) {
+    dns_start_resolving_locked(r);
+  }
+  GRPC_RESOLVER_UNREF(&r->base, "cooldown_timer");
 }
 
 static grpc_resolver* dns_create(grpc_resolver_args* args,
@@ -250,6 +297,14 @@ static grpc_resolver* dns_create(grpc_resolver_args* args,
       .set_jitter(GRPC_DNS_RECONNECT_JITTER)
       .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   r->backoff.Init(grpc_core::BackOff(backoff_options));
+  const grpc_arg* period_arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_DNS_MIN_RESOLUTION_PERIOD_MS);
+  const grpc_millis cooldown_period_ms =
+      grpc_channel_arg_get_integer(period_arg, {1000, 0, INT_MAX});
+  r->cooldown_period = gpr_time_from_millis(cooldown_period_ms, GPR_TIMESPAN);
+  r->last_resolution_timestamp = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  GRPC_CLOSURE_INIT(&r->cooldown_closure, cooldown_cb, r,
+                    grpc_combiner_scheduler(r->base.combiner));
   return &r->base;
 }
 
