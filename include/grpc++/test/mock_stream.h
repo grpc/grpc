@@ -27,6 +27,9 @@
 #include <grpc++/support/async_unary_call.h>
 #include <grpc++/support/sync_stream.h>
 
+/// This header file provides client stream objects required for
+/// mocking synchronous streaming RPCs
+
 namespace grpc {
 namespace testing {
 
