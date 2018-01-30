@@ -49,15 +49,18 @@ struct grpc_bad_client_arg {
 
 /* Test runner.
  *
- *  Create a server, and for each arg in \a args send client_payload. For each
- *  payload, run client_validator to make sure that the response is as expected.
- *  Also execute \a server_validator in a separate thread to assert that the
+ * Create a server, and for each arg in \a args send client_payload. For each
+ * payload, run client_validator to make sure that the response is as expected.
+ * Also execute \a server_validator in a separate thread to assert that the
  * bytes are handled as expected.
  */
 void grpc_run_bad_client_test(
     grpc_bad_client_server_side_validator server_validator,
     grpc_bad_client_arg args[], int num_args, uint32_t flags);
 
+/* A hack to let old tests work as before. In these tests, instead of an array,
+ * the tests provide a single client_validator and payload
+ */
 #define COMBINE1(X, Y) X##Y
 #define COMBINE(X, Y) COMBINE1(X, Y)
 
