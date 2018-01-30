@@ -83,7 +83,6 @@ ChannelTracer::ChannelTracer(size_t max_nodes)
   gpr_mu_init(&tracer_mu_);
   channel_uuid_ = grpc_object_registry_register_object(
       this, GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
-  max_list_size_ = max_nodes;
   time_created_ = gpr_now(GPR_CLOCK_REALTIME);
 }
 
