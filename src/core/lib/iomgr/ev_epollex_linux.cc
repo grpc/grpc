@@ -1110,6 +1110,16 @@ static grpc_error* pollset_as_multipollable_locked(grpc_pollset* pollset,
     case PO_EMPTY:
       POLLABLE_UNREF(pollset->active_pollable, "pollset");
       error = pollable_create(PO_MULTI, &pollset->active_pollable);
+      /* Any workers currently polling on this pollset must now be woked up so
+       * that they can pick up the new active_pollable */
+      if (grpc_polling_trace.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "PS:%p active pollable transition from empty to multi",
+                pollset);
+      }
+      static const char* err_desc =
+          "pollset_as_multipollable_locked: empty -> multi";
+      append_error(&error, pollset_kick_all(pollset), err_desc);
       break;
     case PO_FD:
       gpr_mu_lock(&po_at_start->owner_fd->orphan_mu);
