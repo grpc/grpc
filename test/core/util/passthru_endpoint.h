@@ -24,6 +24,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 
 typedef struct {
+  gpr_refcount refs;
   gpr_atm num_writes;
 } grpc_passthru_endpoint_stats;
 
@@ -31,5 +32,9 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
                                    grpc_resource_quota* resource_quota,
                                    grpc_passthru_endpoint_stats* stats);
+
+grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create();
+
+void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats);
 
 #endif

@@ -252,20 +252,27 @@ class InProcessCHTTP2 : public EndpointPairFixture {
                       FixtureConfiguration())
       : EndpointPairFixture(service, MakeEndpoints(), fixture_configuration) {}
 
+  virtual ~InProcessCHTTP2() { grpc_passthru_endpoint_stats_destroy(stats_); }
+
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << static_cast<double>(gpr_atm_no_barrier_load(&stats_.num_writes)) /
+        << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /
                static_cast<double>(state.iterations());
   }
 
  private:
-  grpc_passthru_endpoint_stats stats_;
+  grpc_passthru_endpoint_stats* stats_;
 
   grpc_endpoint_pair MakeEndpoints() {
+    stats_ = grpc_passthru_endpoint_stats_create();  // is there a better way to
+                                                     // initialize stats_ and
+                                                     // pass MakeEndpoints's
+                                                     // return value to base
+                                                     // constructor?
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  &stats_);
+                                  stats_);
     return p;
   }
 };

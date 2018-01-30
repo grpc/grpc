@@ -101,9 +101,11 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     }
   }
 
+  virtual ~TrickledCHTTP2() { grpc_passthru_endpoint_stats_destroy(stats_); }
+
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     out << " writes/iter:"
-        << ((double)stats_.num_writes / (double)state.iterations())
+        << ((double)stats_->num_writes / (double)state.iterations())
         << " cli_transport_stalls/iter:"
         << ((double)
                 client_stats_.streams_stalled_due_to_transport_flow_control /
@@ -193,7 +195,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   }
 
  private:
-  grpc_passthru_endpoint_stats stats_;
+  grpc_passthru_endpoint_stats* stats_;
   struct Stats {
     int streams_stalled_due_to_stream_flow_control = 0;
     int streams_stalled_due_to_transport_flow_control = 0;
@@ -204,9 +206,14 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   gpr_timespec start_ = gpr_now(GPR_CLOCK_MONOTONIC);
 
   grpc_endpoint_pair MakeEndpoints(size_t kilobits) {
+    stats_ = grpc_passthru_endpoint_stats_create();  // is there a better way to
+                                                     // initialize stats_ and
+                                                     // pass MakeEndpoints's
+                                                     // return value to base
+                                                     // constructor?
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  &stats_);
+                                  stats_);
     double bytes_per_second = 125.0 * kilobits;
     p.client = grpc_trickle_endpoint_create(p.client, bytes_per_second);
     p.server = grpc_trickle_endpoint_create(p.server, bytes_per_second);
