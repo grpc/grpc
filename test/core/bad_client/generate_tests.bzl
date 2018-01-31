@@ -28,7 +28,7 @@ BAD_CLIENT_TESTS = {
     'headers': test_options(),
     'initial_settings_frame': test_options(),
     'head_of_line_blocking': test_options(),
-    # 'large_metadata': test_options(), # disabling as per issue #11745
+    'large_metadata': test_options(),
     'server_registered_method': test_options(),
     'simple_request': test_options(),
     'window_overflow': test_options(),

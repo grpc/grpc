@@ -48,6 +48,7 @@ class Grpc(object):
   yaml = None
 
   def WriteFiles(self, files, asm_outputs):
+
     self.yaml = {
       '#': 'generated with tools/buildgen/gen_boring_ssl_build_yaml.py',
       'raw_boringssl_build_output_for_debugging': {
@@ -98,41 +99,7 @@ class Grpc(object):
                 'boringssl',
             ]
           }
-          for test in sorted(files['test'])
-      ],
-      'targets': [
-          {
-            'name': 'boringssl_%s' % os.path.splitext(os.path.basename(test))[0],
-            'build': 'test',
-            'run': False,
-            'secure': 'no',
-            'language': 'c++',
-            'src': [],
-            'vs_proj_dir': 'test/boringssl',
-            'boringssl': True,
-            'defaults': 'boringssl',
-            'deps': [
-                'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
-                'boringssl_test_util',
-                'boringssl',
-            ]
-          }
-          for test in sorted(files['test'])
-      ],
-      'tests': [
-          {
-            'name': 'boringssl_%s' % os.path.basename(test[0]),
-            'args': [map_testarg(arg) for arg in test[1:]],
-            'exclude_configs': ['asan', 'ubsan'],
-            'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
-            'platforms': ['linux', 'mac', 'posix', 'windows'],
-            'flaky': False,
-            'language': 'c++',
-            'boringssl': True,
-            'defaults': 'boringssl',
-            'cpu_cost': 1.0
-          }
-          for test in files['tests']
+          for test in list(sorted(set(files['ssl_test'] + files['crypto_test'])))
       ]
     }
 

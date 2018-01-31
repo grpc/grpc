@@ -130,7 +130,7 @@ static void run_poller(void* bp, grpc_error* error_ignored) {
     gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p run", p);
   }
   gpr_mu_lock(p->pollset_mu);
-  grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 13 * GPR_MS_PER_SEC;
+  grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   GRPC_STATS_INC_TCP_BACKUP_POLLER_POLLS();
   GRPC_LOG_IF_ERROR(
       "backup_poller:pollset_work",
