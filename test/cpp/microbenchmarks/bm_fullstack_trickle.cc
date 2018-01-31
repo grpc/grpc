@@ -80,8 +80,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
  public:
   TrickledCHTTP2(Service* service, bool streaming, size_t req_size,
                  size_t resp_size, size_t kilobits_per_second,
-                 grpc_passthru_endpoint_stats* stats =
-                     grpc_passthru_endpoint_stats_create())
+                 grpc_passthru_endpoint_stats* stats)
       : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second, stats),
                             FixtureConfiguration()),
         stats_(stats) {
@@ -261,7 +260,8 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
       &service, true, state.range(0) /* req_size */,
-      state.range(0) /* resp_size */, state.range(1) /* bw in kbit/s */));
+      state.range(0) /* resp_size */, state.range(1) /* bw in kbit/s */,
+      grpc_passthru_endpoint_stats_create()));
   {
     EchoResponse send_response;
     EchoResponse recv_response;
@@ -354,7 +354,8 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
       &service, false, state.range(0) /* req_size */,
-      state.range(1) /* resp_size */, state.range(2) /* bw in kbit/s */));
+      state.range(1) /* resp_size */, state.range(2) /* bw in kbit/s */,
+      grpc_passthru_endpoint_stats_create()));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;

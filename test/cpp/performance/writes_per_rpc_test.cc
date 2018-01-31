@@ -142,8 +142,7 @@ class EndpointPairFixture {
 
 class InProcessCHTTP2 : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats =
-                                        grpc_passthru_endpoint_stats_create())
+  InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats)
       : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
 
   virtual ~InProcessCHTTP2() {
@@ -169,7 +168,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   const int kIterations = 10000;
 
   EchoTestService::AsyncService service;
-  std::unique_ptr<InProcessCHTTP2> fixture(new InProcessCHTTP2(&service));
+  std::unique_ptr<InProcessCHTTP2> fixture(
+      new InProcessCHTTP2(&service, grpc_passthru_endpoint_stats_create()));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;

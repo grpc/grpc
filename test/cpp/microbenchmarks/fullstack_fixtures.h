@@ -245,18 +245,20 @@ class SockPair : public EndpointPairFixture {
                             fixture_configuration) {}
 };
 
-class InProcessCHTTP2 : public EndpointPairFixture {
+/* Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)
+   is here only to be able to initialize both the base class and stats_ with the
+   same stats instance without accessing the stats_ fields before the object is
+   properly initialized. */
+class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service,
-                  const FixtureConfiguration& fixture_configuration =
-                      FixtureConfiguration(),
-                  grpc_passthru_endpoint_stats* stats =
-                      grpc_passthru_endpoint_stats_create())
+  InProcessCHTTP2WithExplicitStats(
+      Service* service, grpc_passthru_endpoint_stats* stats,
+      const FixtureConfiguration& fixture_configuration)
       : EndpointPairFixture(service, MakeEndpoints(stats),
                             fixture_configuration),
         stats_(stats) {}
 
-  virtual ~InProcessCHTTP2() {
+  virtual ~InProcessCHTTP2WithExplicitStats() {
     if (stats_ != nullptr) {
       grpc_passthru_endpoint_stats_destroy(stats_);
     }
@@ -278,6 +280,16 @@ class InProcessCHTTP2 : public EndpointPairFixture {
                                   stats);
     return p;
   }
+};
+
+class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
+ public:
+  InProcessCHTTP2(Service* service,
+                  const FixtureConfiguration& fixture_configuration =
+                      FixtureConfiguration())
+      : InProcessCHTTP2WithExplicitStats(service,
+                                         grpc_passthru_endpoint_stats_create(),
+                                         fixture_configuration) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
