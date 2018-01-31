@@ -24,6 +24,7 @@
   "unit._auth_context_test.AuthContextTest",
   "unit._auth_test.AccessTokenAuthMetadataPluginTest",
   "unit._auth_test.GoogleCallCredentialsTest",
+  "unit._authority_test.AuthorityTest",
   "unit._channel_args_test.ChannelArgsTest",
   "unit._channel_connectivity_test.ChannelConnectivityTest",
   "unit._channel_ready_future_test.ChannelReadyFutureTest",

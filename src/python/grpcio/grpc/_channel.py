@@ -464,15 +464,18 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             )
             return state, operations, deadline, None
 
-    def _blocking(self, request, timeout, metadata, credentials):
+    def _blocking(self, request, timeout, metadata, credentials, authority):
         state, operations, deadline, rendezvous = self._prepare(
             request, timeout, metadata)
         if rendezvous:
             raise rendezvous
         else:
             completion_queue = cygrpc.CompletionQueue()
+            encoded_authority = None if authority is None else _common.encode(
+                authority)
             call = self._channel.create_call(None, 0, completion_queue,
-                                             self._method, None, deadline)
+                                             self._method, encoded_authority,
+                                             deadline)
             if credentials is not None:
                 call.set_credentials(credentials._credentials)
             call_error = call.start_client_batch(operations, None)
@@ -481,24 +484,39 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                           self._response_deserializer)
             return state, call, deadline
 
-    def __call__(self, request, timeout=None, metadata=None, credentials=None):
+    def __call__(self,
+                 request,
+                 timeout=None,
+                 metadata=None,
+                 credentials=None,
+                 authority=None):
         state, call, deadline = self._blocking(request, timeout, metadata,
-                                               credentials)
+                                               credentials, authority)
         return _end_unary_response_blocking(state, call, False, deadline)
 
-    def with_call(self, request, timeout=None, metadata=None, credentials=None):
+    def with_call(self,
+                  request,
+                  timeout=None,
+                  metadata=None,
+                  credentials=None,
+                  authority=None):
         state, call, deadline = self._blocking(request, timeout, metadata,
-                                               credentials)
+                                               credentials, authority)
         return _end_unary_response_blocking(state, call, True, deadline)
 
-    def future(self, request, timeout=None, metadata=None, credentials=None):
+    def future(self,
+               request,
+               timeout=None,
+               metadata=None,
+               credentials=None,
+               authority=None):
         state, operations, deadline, rendezvous = self._prepare(
             request, timeout, metadata)
         if rendezvous:
             return rendezvous
         else:
-            call, drive_call = self._managed_call(None, 0, self._method, None,
-                                                  deadline)
+            call, drive_call = self._managed_call(None, 0, self._method,
+                                                  authority, deadline)
             if credentials is not None:
                 call.set_credentials(credentials._credentials)
             event_handler = _event_handler(state, call,
@@ -523,15 +541,20 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
-    def __call__(self, request, timeout=None, metadata=None, credentials=None):
+    def __call__(self,
+                 request,
+                 timeout=None,
+                 metadata=None,
+                 credentials=None,
+                 authority=None):
         deadline, serialized_request, rendezvous = (_start_unary_request(
             request, timeout, self._request_serializer))
         if serialized_request is None:
             raise rendezvous
         else:
             state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
-            call, drive_call = self._managed_call(None, 0, self._method, None,
-                                                  deadline)
+            call, drive_call = self._managed_call(None, 0, self._method,
+                                                  authority, deadline)
             if credentials is not None:
                 call.set_credentials(credentials._credentials)
             event_handler = _event_handler(state, call,
@@ -566,12 +589,16 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
-    def _blocking(self, request_iterator, timeout, metadata, credentials):
+    def _blocking(self, request_iterator, timeout, metadata, credentials,
+                  authority):
         deadline = _deadline(timeout)
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
         completion_queue = cygrpc.CompletionQueue()
+        encoded_authority = None if authority is None else _common.encode(
+            authority)
         call = self._channel.create_call(None, 0, completion_queue,
-                                         self._method, None, deadline)
+                                         self._method, encoded_authority,
+                                         deadline)
         if credentials is not None:
             call.set_credentials(credentials._credentials)
         with state.condition:
@@ -599,28 +626,31 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                  request_iterator,
                  timeout=None,
                  metadata=None,
-                 credentials=None):
+                 credentials=None,
+                 authority=None):
         state, call, deadline = self._blocking(request_iterator, timeout,
-                                               metadata, credentials)
+                                               metadata, credentials, authority)
         return _end_unary_response_blocking(state, call, False, deadline)
 
     def with_call(self,
                   request_iterator,
                   timeout=None,
                   metadata=None,
-                  credentials=None):
+                  credentials=None,
+                  authority=None):
         state, call, deadline = self._blocking(request_iterator, timeout,
-                                               metadata, credentials)
+                                               metadata, credentials, authority)
         return _end_unary_response_blocking(state, call, True, deadline)
 
     def future(self,
                request_iterator,
                timeout=None,
                metadata=None,
-               credentials=None):
+               credentials=None,
+               authority=None):
         deadline = _deadline(timeout)
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
-        call, drive_call = self._managed_call(None, 0, self._method, None,
+        call, drive_call = self._managed_call(None, 0, self._method, authority,
                                               deadline)
         if credentials is not None:
             call.set_credentials(credentials._credentials)
@@ -658,10 +688,11 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                  request_iterator,
                  timeout=None,
                  metadata=None,
-                 credentials=None):
+                 credentials=None,
+                 authority=None):
         deadline = _deadline(timeout)
         state = _RPCState(_STREAM_STREAM_INITIAL_DUE, None, None, None, None)
-        call, drive_call = self._managed_call(None, 0, self._method, None,
+        call, drive_call = self._managed_call(None, 0, self._method, authority,
                                               deadline)
         if credentials is not None:
             call.set_credentials(credentials._credentials)
@@ -719,7 +750,7 @@ def _run_channel_spin_thread(state):
 
 def _channel_managed_call_management(state):
 
-    def create(parent, flags, method, host, deadline):
+    def create(parent, flags, method, authority, deadline):
         """Creates a managed cygrpc.Call and a function to call to drive it.
 
     If operations are successfully added to the returned cygrpc.Call, the
@@ -730,7 +761,7 @@ def _channel_managed_call_management(state):
       parent: A cygrpc.Call to be used as the parent of the created call.
       flags: An integer bitfield of call flags.
       method: The RPC method.
-      host: A host string for the created call.
+      authority: A authority string for the created call.
       deadline: A float to be the deadline of the created call or None if the
         call is to have an infinite deadline.
 
@@ -738,8 +769,10 @@ def _channel_managed_call_management(state):
       A cygrpc.Call with which to conduct an RPC and a function to call if
         operations are successfully started on the call.
     """
+        encoded_authority = None if authority is None else _common.encode(
+            authority)
         call = state.channel.create_call(parent, flags, state.completion_queue,
-                                         method, host, deadline)
+                                         method, encoded_authority, deadline)
 
         def drive():
             with state.lock:
