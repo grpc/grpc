@@ -38,7 +38,10 @@ cdef int _get_metadata(
       cb(user_data, c_metadata, metadata_count, status, NULL)
       _release_c_metadata(c_metadata, metadata_count)
     else:
-      cb(user_data, NULL, 0, status, error_details)
+      metadata = ()
+      _store_c_metadata(metadata, &c_metadata, &metadata_count)
+      cb(user_data, c_metadata, metadata_count, status, NULL)
+      _release_c_metadata(c_metadata, metadata_count)
   args = context.service_url, context.method_name, callback,
   threading.Thread(target=<object>state, args=args).start()
   return 0  # Asynchronous return
