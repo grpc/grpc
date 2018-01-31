@@ -142,25 +142,25 @@ class EndpointPairFixture {
 
 class InProcessCHTTP2 : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service)
-      : EndpointPairFixture(service, MakeEndpoints()) {}
+  InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats =
+                                        grpc_passthru_endpoint_stats_create())
+      : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
 
-  virtual ~InProcessCHTTP2() { grpc_passthru_endpoint_stats_destroy(stats_); }
+  virtual ~InProcessCHTTP2() {
+    if (stats_ != nullptr) {
+      grpc_passthru_endpoint_stats_destroy(stats_);
+    }
+  }
 
   int writes_performed() const { return stats_->num_writes; }
 
  private:
   grpc_passthru_endpoint_stats* stats_;
 
-  grpc_endpoint_pair MakeEndpoints() {
-    stats_ = grpc_passthru_endpoint_stats_create();  // is there a better way to
-                                                     // initialize stats_ and
-                                                     // pass MakeEndpoints's
-                                                     // return value to base
-                                                     // constructor?
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
-                                  stats_);
+                                  stats);
     return p;
   }
 };

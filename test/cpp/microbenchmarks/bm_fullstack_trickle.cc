@@ -79,9 +79,12 @@ static void write_csv(std::ostream* out, A0&& a0, Arg&&... arg) {
 class TrickledCHTTP2 : public EndpointPairFixture {
  public:
   TrickledCHTTP2(Service* service, bool streaming, size_t req_size,
-                 size_t resp_size, size_t kilobits_per_second)
-      : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second),
-                            FixtureConfiguration()) {
+                 size_t resp_size, size_t kilobits_per_second,
+                 grpc_passthru_endpoint_stats* stats =
+                     grpc_passthru_endpoint_stats_create())
+      : EndpointPairFixture(service, MakeEndpoints(kilobits_per_second, stats),
+                            FixtureConfiguration()),
+        stats_(stats) {
     if (FLAGS_log) {
       std::ostringstream fn;
       fn << "trickle." << (streaming ? "streaming" : "unary") << "." << req_size
@@ -101,7 +104,11 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     }
   }
 
-  virtual ~TrickledCHTTP2() { grpc_passthru_endpoint_stats_destroy(stats_); }
+  virtual ~TrickledCHTTP2() {
+    if (stats_ != nullptr) {
+      grpc_passthru_endpoint_stats_destroy(stats_);
+    }
+  }
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     out << " writes/iter:"
@@ -205,15 +212,11 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   std::unique_ptr<std::ofstream> log_;
   gpr_timespec start_ = gpr_now(GPR_CLOCK_MONOTONIC);
 
-  grpc_endpoint_pair MakeEndpoints(size_t kilobits) {
-    stats_ = grpc_passthru_endpoint_stats_create();  // is there a better way to
-                                                     // initialize stats_ and
-                                                     // pass MakeEndpoints's
-                                                     // return value to base
-                                                     // constructor?
+  static grpc_endpoint_pair MakeEndpoints(size_t kilobits,
+                                          grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  stats_);
+                                  stats);
     double bytes_per_second = 125.0 * kilobits;
     p.client = grpc_trickle_endpoint_create(p.client, bytes_per_second);
     p.server = grpc_trickle_endpoint_create(p.server, bytes_per_second);
