@@ -85,7 +85,7 @@ typedef struct {
   grpc_channel_args** target_result;
   /** current (fully resolved) result */
   grpc_channel_args* resolved_result;
-  /** retry timer */
+  /** next resolution timer */
   bool have_next_resolution_timer;
   grpc_timer next_resolution_timer;
   /** retry backoff state */
@@ -348,11 +348,9 @@ static void dns_ares_maybe_start_resolving_locked(ares_dns_resolver* r) {
     if (ms_until_next_resolution > 0) {
       const grpc_millis last_resolution_ago =
           grpc_core::ExecCtx::Get()->Now() - r->last_resolution_timestamp;
-      gpr_log(
-          GPR_DEBUG,
-          "In cooldown from last resolution (from %ld ms ago). Will resolve "
-          "again in %ld ms",
-          last_resolution_ago, ms_until_next_resolution);
+      gpr_log(GPR_DEBUG, "In cooldown from last resolution (from %" PRIdPTR
+                         " ms ago). Will resolve again in %" PRIdPTR " ms",
+              last_resolution_ago, ms_until_next_resolution);
       if (!r->have_next_resolution_timer) {
         r->have_next_resolution_timer = true;
         GRPC_RESOLVER_REF(&r->base, "next_resolution_timer_cooldown");
