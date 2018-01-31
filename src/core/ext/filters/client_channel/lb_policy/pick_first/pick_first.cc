@@ -402,6 +402,7 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
           &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_REF(error), "selected_not_ready+switch_to_update", false);
     } else {
+      // A subchannel can be in TRANSIENT_FAILURE only before it's connected.
       GPR_ASSERT(sd->curr_connectivity_state != GRPC_CHANNEL_TRANSIENT_FAILURE);
       if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
         grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_IDLE,
@@ -476,6 +477,7 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
       grpc_lb_subchannel_data_start_connectivity_watch(sd);
       break;
     }
+    case GRPC_CHANNEL_SHUTDOWN:
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
       grpc_lb_subchannel_data_stop_connectivity_watch(sd);
       do {
@@ -509,8 +511,6 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
       grpc_lb_subchannel_data_start_connectivity_watch(sd);
       break;
     }
-    case GRPC_CHANNEL_SHUTDOWN:
-      GPR_UNREACHABLE_CODE(break);
   }
 }
 

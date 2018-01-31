@@ -415,6 +415,8 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
   // If the sd's new state is TRANSIENT_FAILURE, unref the *connected*
   // subchannel, if any.
   switch (sd->curr_connectivity_state) {
+    // The subchannel can retry connecting after being SHUTDOWN. So it can be
+    // treated as a TRANSIENT_FAILURE.
     case GRPC_CHANNEL_SHUTDOWN:
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
       sd->connected_subchannel.reset();
