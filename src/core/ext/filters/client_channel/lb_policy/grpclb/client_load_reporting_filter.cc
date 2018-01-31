@@ -98,7 +98,7 @@ static void destroy_call_elem(grpc_call_element* elem,
 static void start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = (call_data*)elem->call_data;
-  GPR_TIMER_BEGIN("clr_start_transport_stream_op_batch", 0);
+  GPR_TIMER_SCOPE("clr_start_transport_stream_op_batch", 0);
   if (calld->client_stats != nullptr) {
     // Intercept send_initial_metadata.
     if (batch->send_initial_metadata) {
@@ -120,7 +120,6 @@ static void start_transport_stream_op_batch(
   }
   // Chain to next filter.
   grpc_call_next_op(elem, batch);
-  GPR_TIMER_END("clr_start_transport_stream_op_batch", 0);
 }
 
 const grpc_channel_filter grpc_client_load_reporting_filter = {
