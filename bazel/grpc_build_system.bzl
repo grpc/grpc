@@ -158,7 +158,7 @@ def grpc_sh_test(name, srcs, args = [], data = []):
     data = data)
 
 def grpc_sh_binary(name, srcs, data = []):
-  native.sh_test(
+  native.sh_binary(
     name = name,
     srcs = srcs,
     data = data)
