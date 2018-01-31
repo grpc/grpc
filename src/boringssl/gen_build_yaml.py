@@ -100,7 +100,43 @@ class Grpc(object):
             ]
           }
           for test in list(sorted(set(files['ssl_test'] + files['crypto_test'])))
+      ],
+      'targets': [
+          {
+            'name': 'boringssl_%s' % os.path.splitext(os.path.basename(test))[0],
+            'build': 'test',
+            'run': False,
+            'secure': 'no',
+            'language': 'c++',
+            'src': ["third_party/boringssl/crypto/test/gtest_main.cc"],
+            'vs_proj_dir': 'test/boringssl',
+            'boringssl': True,
+            'defaults': 'boringssl',
+            'deps': [
+                'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
+                'boringssl_test_util',
+                'boringssl',
+            ]
+          }
+          for test in list(sorted(set(files['ssl_test'] + files['crypto_test'])))
+      ],
+      'tests': [
+          {
+            'name': 'boringssl_%s' % os.path.splitext(os.path.basename(test))[0],
+            'args': [],
+            'exclude_configs': ['asan', 'ubsan'],
+            'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
+            'platforms': ['linux', 'mac', 'posix', 'windows'],
+            'flaky': False,
+            'gtest': True,
+            'language': 'c++',
+            'boringssl': True,
+            'defaults': 'boringssl',
+            'cpu_cost': 1.0
+          }
+          for test in list(sorted(set(files['ssl_test'] + files['crypto_test'])))
       ]
+
     }
 
 
