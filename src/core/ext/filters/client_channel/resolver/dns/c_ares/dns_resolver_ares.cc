@@ -340,8 +340,6 @@ static void dns_ares_maybe_finish_next_locked(ares_dns_resolver* r) {
 }
 
 static void dns_ares_maybe_start_resolving_locked(ares_dns_resolver* r) {
-  gpr_log(GPR_INFO, "IN %s, LAST RESOLUTION TS: %lu", __func__,
-          r->last_resolution_timestamp);
   if (r->last_resolution_timestamp >= 0) {
     const grpc_millis earliest_next_resolution =
         r->last_resolution_timestamp + r->min_time_between_resolutions;
