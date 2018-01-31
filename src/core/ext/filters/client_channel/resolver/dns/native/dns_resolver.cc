@@ -23,6 +23,7 @@
 #include <cstring>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -75,9 +76,9 @@ typedef struct {
   grpc_core::ManualConstructor<grpc_core::BackOff> backoff;
   /** min resolution period. Max one resolution will happen per period */
   grpc_millis min_time_between_resolutions;
-  /** when was the last resolution? If no resolution has happened yet, equals
-   * gpr_inf_past() */
-  grpc_millis last_resolution_timestamp;
+  /** when was the last resolution? -1 if no resolution has happened yet. Holds
+   * a grpc_millis */
+  gpr_atm last_resolution_timestamp;
   /** To be invoked once the cooldown period is over */
   grpc_closure deferred_resolution_closure;
   /** currently resolving addresses */
@@ -196,14 +197,16 @@ static void dns_on_resolved_locked(void* arg, grpc_error* error) {
 }
 
 static void maybe_start_resolving_locked(dns_resolver* r) {
-  if (r->last_resolution_timestamp >= 0) {
+  const grpc_millis last_resolution_ts =
+      static_cast<grpc_millis>(gpr_atm_acq_load(&r->last_resolution_timestamp));
+  if (last_resolution_ts >= 0) {
     const grpc_millis earliest_next_resolution =
-        r->last_resolution_timestamp + r->min_time_between_resolutions;
+        last_resolution_ts + r->min_time_between_resolutions;
     const grpc_millis ms_until_next_resolution =
         earliest_next_resolution - grpc_core::ExecCtx::Get()->Now();
     if (ms_until_next_resolution > 0) {
       const grpc_millis last_resolution_ago =
-          grpc_core::ExecCtx::Get()->Now() - r->last_resolution_timestamp;
+          grpc_core::ExecCtx::Get()->Now() - last_resolution_ts;
       gpr_log(GPR_DEBUG, "In cooldown from last resolution (from %" PRIdPTR
                          " ms ago). Will resolve again in %" PRIdPTR " ms",
               last_resolution_ago, ms_until_next_resolution);
@@ -231,7 +234,8 @@ static void dns_start_resolving_locked(dns_resolver* r) {
       GRPC_CLOSURE_CREATE(dns_on_resolved_locked, r,
                           grpc_combiner_scheduler(r->base.combiner)),
       &r->addresses);
-  r->last_resolution_timestamp = grpc_core::ExecCtx::Get()->Now();
+  gpr_atm_rel_store(&r->last_resolution_timestamp,
+                    grpc_core::ExecCtx::Get()->Now());
 }
 
 static void dns_maybe_finish_next_locked(dns_resolver* r) {
@@ -298,7 +302,7 @@ static grpc_resolver* dns_create(grpc_resolver_args* args,
   const grpc_millis min_time_between_resolutions =
       grpc_channel_arg_get_integer(period_arg, {1000, 0, INT_MAX});
   r->min_time_between_resolutions = min_time_between_resolutions;
-  r->last_resolution_timestamp = -1;
+  gpr_atm_rel_store(&r->last_resolution_timestamp, -1);
   GRPC_CLOSURE_INIT(&r->deferred_resolution_closure, cooldown_cb, r,
                     grpc_combiner_scheduler(r->base.combiner));
   return &r->base;
