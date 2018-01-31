@@ -242,9 +242,11 @@ void grpc_pollset_destroy(grpc_pollset* pollset) {
 grpc_error* grpc_pollset_work(grpc_pollset* pollset,
                               grpc_pollset_worker** worker,
                               grpc_millis deadline) {
-  GRPC_POLLING_API_TRACE("pollset_work(%p, %d) begin", pollset, deadline);
+  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRIdPTR ") begin", pollset,
+                         deadline);
   grpc_error* err = g_event_engine->pollset_work(pollset, worker, deadline);
-  GRPC_POLLING_API_TRACE("pollset_work(%p, %d) end", pollset, deadline);
+  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRIdPTR ") end", pollset,
+                         deadline);
   return err;
 }
 
