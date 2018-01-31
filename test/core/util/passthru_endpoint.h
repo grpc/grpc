@@ -23,6 +23,9 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
+/* The struct is refcounted, always use grpc_passthru_endpoint_stats_create and
+ * grpc_passthru_endpoint_stats_destroy, rather then embedding it in your
+ * objects by value. */
 typedef struct {
   gpr_refcount refs;
   gpr_atm num_writes;
