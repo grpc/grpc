@@ -765,9 +765,6 @@ static void create_rr_locked(glb_lb_policy* glb_policy,
                              grpc_lb_policy_args* args) {
   GPR_ASSERT(glb_policy->rr_policy == nullptr);
   grpc_lb_policy* new_rr_policy = grpc_lb_policy_create("round_robin", args);
-  GRPC_LB_POLICY_REF(&glb_policy->base, "rr_on_reresolution_requested_locked");
-  grpc_lb_policy_set_reresolve_closure_locked(
-      new_rr_policy, &glb_policy->rr_on_reresolution_requested);
   if (new_rr_policy == nullptr) {
     gpr_log(GPR_ERROR,
             "[grpclb %p] Failure creating a RoundRobin policy for serverlist "
@@ -779,6 +776,9 @@ static void create_rr_locked(glb_lb_policy* glb_policy,
             glb_policy->rr_policy);
     return;
   }
+  GRPC_LB_POLICY_REF(&glb_policy->base, "rr_on_reresolution_requested_locked");
+  grpc_lb_policy_set_reresolve_closure_locked(
+      new_rr_policy, &glb_policy->rr_on_reresolution_requested);
   glb_policy->rr_policy = new_rr_policy;
   grpc_error* rr_state_error = nullptr;
   glb_policy->rr_connectivity_state = grpc_lb_policy_check_connectivity_locked(

@@ -73,7 +73,7 @@ void on_resolution_cb(void* arg, grpc_error* error) {
 }
 
 // Create a new resolution containing 2 addresses.
-static grpc_channel_args* create_new_resolution() {
+static grpc_channel_args* create_new_resolver_result() {
   static size_t test_counter = 0;
   const size_t num_addresses = 2;
   char* uri_string;
@@ -122,31 +122,31 @@ static void test_fake_resolver() {
   // Test 1: normal resolution.
   // next_results != NULL, results_upon_error == NULL, last_used_results ==
   // NULL. Expected response is next_results.
-  grpc_channel_args* results = create_new_resolution();
+  grpc_channel_args* results = create_new_resolver_result();
   on_resolution_arg on_res_arg = create_on_resolution_arg(results);
   grpc_closure* on_resolution = GRPC_CLOSURE_CREATE(
       on_resolution_cb, &on_res_arg, grpc_combiner_scheduler(combiner));
-  // Set next_results and trigger a resolution.
-  grpc_fake_resolver_response_generator_set_response(response_generator,
-                                                     results);
+  // Resolution won't be triggered until next_results is set.
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
+  grpc_fake_resolver_response_generator_set_response(response_generator,
+                                                     results);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);
   // Test 2: update resolution.
   // next_results != NULL, results_upon_error == NULL, last_used_results !=
   // NULL. Expected response is next_results.
-  results = create_new_resolution();
+  results = create_new_resolver_result();
   grpc_channel_args* last_used_results = grpc_channel_args_copy(results);
   on_res_arg = create_on_resolution_arg(results);
   on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg,
                                       grpc_combiner_scheduler(combiner));
-  // Set next_results and trigger a resolution.
-  grpc_fake_resolver_response_generator_set_response(response_generator,
-                                                     results);
+  // Resolution won't be triggered until next_results is set.
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
+  grpc_fake_resolver_response_generator_set_response(response_generator,
+                                                     results);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);
@@ -166,7 +166,7 @@ static void test_fake_resolver() {
   // Test 4: normal re-resolution.
   // next_results == NULL, results_upon_error != NULL, last_used_results !=
   // NULL. Expected response is results_upon_error.
-  grpc_channel_args* results_upon_error = create_new_resolution();
+  grpc_channel_args* results_upon_error = create_new_resolver_result();
   on_res_arg =
       create_on_resolution_arg(grpc_channel_args_copy(results_upon_error));
   on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg,
@@ -199,14 +199,14 @@ static void test_fake_resolver() {
   // Test 6: normal resolution.
   // next_results != NULL, results_upon_error != NULL, last_used_results !=
   // NULL. Expected response is next_results.
-  results = create_new_resolution();
+  results = create_new_resolver_result();
   last_used_results = grpc_channel_args_copy(results);
   on_res_arg = create_on_resolution_arg(results);
   on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg,
                                       grpc_combiner_scheduler(combiner));
+  // Resolution won't be triggered until next_results is set.
   grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
                             on_resolution);
-  // Set next_results and trigger a resolution.
   grpc_fake_resolver_response_generator_set_response(response_generator,
                                                      results);
   grpc_core::ExecCtx::Get()->Flush();
