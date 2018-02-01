@@ -316,6 +316,11 @@ PHP_METHOD(Call, startBatch) {
                            "batch keys must be integers", 1 TSRMLS_CC);
       goto cleanup;
     }
+
+    ops[op_num].op = (grpc_op_type)index;
+    ops[op_num].flags = 0;
+    ops[op_num].reserved = NULL;
+
     switch(index) {
     case GRPC_OP_SEND_INITIAL_METADATA:
       if (!create_metadata_array(value, &metadata)) {
@@ -429,9 +434,6 @@ PHP_METHOD(Call, startBatch) {
                            "Unrecognized key in batch", 1 TSRMLS_CC);
       goto cleanup;
     }
-    ops[op_num].op = (grpc_op_type)index;
-    ops[op_num].flags = 0;
-    ops[op_num].reserved = NULL;
     op_num++;
   PHP_GRPC_HASH_FOREACH_END()
 

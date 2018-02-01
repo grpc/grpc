@@ -347,8 +347,8 @@ static void start_send_message_batch(void* arg, grpc_error* unused) {
 
 static void compress_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+  GPR_TIMER_SCOPE("compress_start_transport_stream_op_batch", 0);
   call_data* calld = (call_data*)elem->call_data;
-  GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
   // Handle cancel_stream.
   if (batch->cancel_stream) {
     GRPC_ERROR_UNREF(calld->cancel_error);
@@ -371,7 +371,7 @@ static void compress_start_transport_stream_op_batch(
   } else if (calld->cancel_error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
         batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
-    goto done;
+    return;
   }
   // Handle send_initial_metadata.
   if (batch->send_initial_metadata) {
@@ -383,7 +383,7 @@ static void compress_start_transport_stream_op_batch(
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                          calld->call_combiner);
-      goto done;
+      return;
     }
     calld->send_initial_metadata_state = has_compression_algorithm
                                              ? HAS_COMPRESSION_ALGORITHM
@@ -412,15 +412,13 @@ static void compress_start_transport_stream_op_batch(
       GRPC_CALL_COMBINER_STOP(
           calld->call_combiner,
           "send_message batch pending send_initial_metadata");
-      goto done;
+      return;
     }
     start_send_message_batch(elem, GRPC_ERROR_NONE);
   } else {
     // Pass control down the stack.
     grpc_call_next_op(elem, batch);
   }
-done:
-  GPR_TIMER_END("compress_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */

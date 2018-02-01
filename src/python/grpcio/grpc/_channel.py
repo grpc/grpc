@@ -13,10 +13,10 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
+import logging
 import sys
 import threading
 import time
-import logging
 
 import grpc
 from grpc import _common
@@ -882,8 +882,12 @@ def _unsubscribe(state, callback):
 
 
 def _options(options):
-    return list(options) + [(cygrpc.ChannelArgKey.primary_user_agent_string,
-                             _USER_AGENT)]
+    return list(options) + [
+        (
+            cygrpc.ChannelArgKey.primary_user_agent_string,
+            _USER_AGENT,
+        ),
+    ]
 
 
 class Channel(grpc.Channel):
@@ -892,14 +896,13 @@ class Channel(grpc.Channel):
     def __init__(self, target, options, credentials):
         """Constructor.
 
-    Args:
-      target: The target to which to connect.
-      options: Configuration options for the channel.
-      credentials: A cygrpc.ChannelCredentials or None.
-    """
+        Args:
+          target: The target to which to connect.
+          options: Configuration options for the channel.
+          credentials: A cygrpc.ChannelCredentials or None.
+        """
         self._channel = cygrpc.Channel(
-            _common.encode(target), _common.channel_args(_options(options)),
-            credentials)
+            _common.encode(target), _options(options), credentials)
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
 

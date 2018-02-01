@@ -380,11 +380,6 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         // close channel1
         $this->channel1->close();
 
-        // channel2 is now in SHUTDOWN state
-        $state = $this->channel2->getConnectivityState();
-        $this->assertEquals(GRPC\CHANNEL_FATAL_FAILURE, $state);
-
-        // calling it again will result in an exception because the
         // channel is already closed
         $state = $this->channel2->getConnectivityState();
     }

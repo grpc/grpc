@@ -79,16 +79,6 @@ def decode(b):
             return b.decode('latin1')
 
 
-def channel_args(options):
-    cygrpc_args = []
-    for key, value in options:
-        if isinstance(value, six.string_types):
-            cygrpc_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
-        else:
-            cygrpc_args.append(cygrpc.ChannelArg(encode(key), value))
-    return cygrpc.ChannelArgs(cygrpc_args)
-
-
 def _transform(message, transformer, exception_message):
     if transformer is None:
         return message

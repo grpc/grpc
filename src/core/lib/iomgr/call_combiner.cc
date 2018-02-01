@@ -60,7 +60,7 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
                               grpc_closure* closure,
                               grpc_error* error DEBUG_ARGS,
                               const char* reason) {
-  GPR_TIMER_BEGIN("call_combiner_start", 0);
+  GPR_TIMER_SCOPE("call_combiner_start", 0);
   if (grpc_call_combiner_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "==> grpc_call_combiner_start() [%p] closure=%p [" DEBUG_FMT_STR
@@ -92,12 +92,11 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
     closure->error_data.error = error;
     gpr_mpscq_push(&call_combiner->queue, (gpr_mpscq_node*)closure);
   }
-  GPR_TIMER_END("call_combiner_start", 0);
 }
 
 void grpc_call_combiner_stop(grpc_call_combiner* call_combiner DEBUG_ARGS,
                              const char* reason) {
-  GPR_TIMER_BEGIN("call_combiner_stop", 0);
+  GPR_TIMER_SCOPE("call_combiner_stop", 0);
   if (grpc_call_combiner_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "==> grpc_call_combiner_stop() [%p] [" DEBUG_FMT_STR "%s]",
@@ -136,7 +135,6 @@ void grpc_call_combiner_stop(grpc_call_combiner* call_combiner DEBUG_ARGS,
   } else if (grpc_call_combiner_trace.enabled()) {
     gpr_log(GPR_DEBUG, "  queue empty");
   }
-  GPR_TIMER_END("call_combiner_stop", 0);
 }
 
 void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,

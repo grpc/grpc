@@ -26,6 +26,7 @@ RUN apk update && apk add \
   gcc \
   git \
   libtool \
+  linux-headers \
   make \
   perl \
   strace \

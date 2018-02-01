@@ -184,7 +184,7 @@ static grpc_filtered_mdelem lr_trailing_md_filter(void* user_data,
 
 static void lr_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-  GPR_TIMER_BEGIN("lr_start_transport_stream_op_batch", 0);
+  GPR_TIMER_SCOPE("lr_start_transport_stream_op_batch", 0);
   call_data* calld = (call_data*)elem->call_data;
 
   if (op->recv_initial_metadata) {
@@ -204,8 +204,6 @@ static void lr_start_transport_stream_op_batch(
             "LR trailing metadata filtering error"));
   }
   grpc_call_next_op(elem, op);
-
-  GPR_TIMER_END("lr_start_transport_stream_op_batch", 0);
 }
 
 const grpc_channel_filter grpc_server_load_reporting_filter = {
