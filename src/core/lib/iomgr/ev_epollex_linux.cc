@@ -1452,10 +1452,6 @@ static const grpc_event_engine_vtable vtable = {
 
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested) {
-  if (!explicitly_requested) {
-    return nullptr;
-  }
-
   if (!grpc_has_wakeup_fd()) {
     gpr_log(GPR_ERROR, "Skipping epollex because of no wakeup fd.");
     return nullptr;
