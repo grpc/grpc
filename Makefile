@@ -1194,6 +1194,55 @@ public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
 gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
 gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
+boringssl_crypto_test_data: $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data
+boringssl_asn1_test: $(BINDIR)/$(CONFIG)/boringssl_asn1_test
+boringssl_base64_test: $(BINDIR)/$(CONFIG)/boringssl_base64_test
+boringssl_bio_test: $(BINDIR)/$(CONFIG)/boringssl_bio_test
+boringssl_bytestring_test: $(BINDIR)/$(CONFIG)/boringssl_bytestring_test
+boringssl_chacha_test: $(BINDIR)/$(CONFIG)/boringssl_chacha_test
+boringssl_aead_test: $(BINDIR)/$(CONFIG)/boringssl_aead_test
+boringssl_cipher_test: $(BINDIR)/$(CONFIG)/boringssl_cipher_test
+boringssl_cmac_test: $(BINDIR)/$(CONFIG)/boringssl_cmac_test
+boringssl_compiler_test: $(BINDIR)/$(CONFIG)/boringssl_compiler_test
+boringssl_constant_time_test: $(BINDIR)/$(CONFIG)/boringssl_constant_time_test
+boringssl_ed25519_test: $(BINDIR)/$(CONFIG)/boringssl_ed25519_test
+boringssl_spake25519_test: $(BINDIR)/$(CONFIG)/boringssl_spake25519_test
+boringssl_x25519_test: $(BINDIR)/$(CONFIG)/boringssl_x25519_test
+boringssl_dh_test: $(BINDIR)/$(CONFIG)/boringssl_dh_test
+boringssl_digest_test: $(BINDIR)/$(CONFIG)/boringssl_digest_test
+boringssl_dsa_test: $(BINDIR)/$(CONFIG)/boringssl_dsa_test
+boringssl_ecdh_test: $(BINDIR)/$(CONFIG)/boringssl_ecdh_test
+boringssl_err_test: $(BINDIR)/$(CONFIG)/boringssl_err_test
+boringssl_evp_extra_test: $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test
+boringssl_evp_test: $(BINDIR)/$(CONFIG)/boringssl_evp_test
+boringssl_pbkdf_test: $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test
+boringssl_scrypt_test: $(BINDIR)/$(CONFIG)/boringssl_scrypt_test
+boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
+boringssl_bn_test: $(BINDIR)/$(CONFIG)/boringssl_bn_test
+boringssl_ec_test: $(BINDIR)/$(CONFIG)/boringssl_ec_test
+boringssl_p256-x86_64_test: $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test
+boringssl_ecdsa_test: $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test
+boringssl_gcm_test: $(BINDIR)/$(CONFIG)/boringssl_gcm_test
+boringssl_ctrdrbg_test: $(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test
+boringssl_hkdf_test: $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
+boringssl_hmac_test: $(BINDIR)/$(CONFIG)/boringssl_hmac_test
+boringssl_lhash_test: $(BINDIR)/$(CONFIG)/boringssl_lhash_test
+boringssl_obj_test: $(BINDIR)/$(CONFIG)/boringssl_obj_test
+boringssl_pkcs7_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
+boringssl_pkcs12_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test
+boringssl_pkcs8_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test
+boringssl_poly1305_test: $(BINDIR)/$(CONFIG)/boringssl_poly1305_test
+boringssl_pool_test: $(BINDIR)/$(CONFIG)/boringssl_pool_test
+boringssl_refcount_test: $(BINDIR)/$(CONFIG)/boringssl_refcount_test
+boringssl_rsa_test: $(BINDIR)/$(CONFIG)/boringssl_rsa_test
+boringssl_file_test_gtest: $(BINDIR)/$(CONFIG)/boringssl_file_test_gtest
+boringssl_gtest_main: $(BINDIR)/$(CONFIG)/boringssl_gtest_main
+boringssl_thread_test: $(BINDIR)/$(CONFIG)/boringssl_thread_test
+boringssl_x509_test: $(BINDIR)/$(CONFIG)/boringssl_x509_test
+boringssl_tab_test: $(BINDIR)/$(CONFIG)/boringssl_tab_test
+boringssl_v3name_test: $(BINDIR)/$(CONFIG)/boringssl_v3name_test
+boringssl_span_test: $(BINDIR)/$(CONFIG)/boringssl_span_test
+boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
 badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
 connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
 head_of_line_blocking_bad_client_test: $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test
@@ -1598,6 +1647,55 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data \
+  $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
+  $(BINDIR)/$(CONFIG)/boringssl_base64_test \
+  $(BINDIR)/$(CONFIG)/boringssl_bio_test \
+  $(BINDIR)/$(CONFIG)/boringssl_bytestring_test \
+  $(BINDIR)/$(CONFIG)/boringssl_chacha_test \
+  $(BINDIR)/$(CONFIG)/boringssl_aead_test \
+  $(BINDIR)/$(CONFIG)/boringssl_cipher_test \
+  $(BINDIR)/$(CONFIG)/boringssl_cmac_test \
+  $(BINDIR)/$(CONFIG)/boringssl_compiler_test \
+  $(BINDIR)/$(CONFIG)/boringssl_constant_time_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ed25519_test \
+  $(BINDIR)/$(CONFIG)/boringssl_spake25519_test \
+  $(BINDIR)/$(CONFIG)/boringssl_x25519_test \
+  $(BINDIR)/$(CONFIG)/boringssl_dh_test \
+  $(BINDIR)/$(CONFIG)/boringssl_digest_test \
+  $(BINDIR)/$(CONFIG)/boringssl_dsa_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ecdh_test \
+  $(BINDIR)/$(CONFIG)/boringssl_err_test \
+  $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test \
+  $(BINDIR)/$(CONFIG)/boringssl_evp_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test \
+  $(BINDIR)/$(CONFIG)/boringssl_scrypt_test \
+  $(BINDIR)/$(CONFIG)/boringssl_aes_test \
+  $(BINDIR)/$(CONFIG)/boringssl_bn_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ec_test \
+  $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test \
+  $(BINDIR)/$(CONFIG)/boringssl_gcm_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test \
+  $(BINDIR)/$(CONFIG)/boringssl_hkdf_test \
+  $(BINDIR)/$(CONFIG)/boringssl_hmac_test \
+  $(BINDIR)/$(CONFIG)/boringssl_lhash_test \
+  $(BINDIR)/$(CONFIG)/boringssl_obj_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test \
+  $(BINDIR)/$(CONFIG)/boringssl_poly1305_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pool_test \
+  $(BINDIR)/$(CONFIG)/boringssl_refcount_test \
+  $(BINDIR)/$(CONFIG)/boringssl_rsa_test \
+  $(BINDIR)/$(CONFIG)/boringssl_file_test_gtest \
+  $(BINDIR)/$(CONFIG)/boringssl_gtest_main \
+  $(BINDIR)/$(CONFIG)/boringssl_thread_test \
+  $(BINDIR)/$(CONFIG)/boringssl_x509_test \
+  $(BINDIR)/$(CONFIG)/boringssl_tab_test \
+  $(BINDIR)/$(CONFIG)/boringssl_v3name_test \
+  $(BINDIR)/$(CONFIG)/boringssl_span_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure \
@@ -18049,6 +18147,1966 @@ ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
 endif
+endif
+
+
+BORINGSSL_CRYPTO_TEST_DATA_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_CRYPTO_TEST_DATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CRYPTO_TEST_DATA_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_crypto_test_data: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_crypto_test_data: $(PROTOBUF_DEP) $(BORINGSSL_CRYPTO_TEST_DATA_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CRYPTO_TEST_DATA_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data
+
+endif
+
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_crypto_test_data: $(BORINGSSL_CRYPTO_TEST_DATA_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CRYPTO_TEST_DATA_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_ASN1_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_ASN1_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ASN1_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ASN1_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ASN1_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ASN1_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_asn1_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_asn1_test: $(PROTOBUF_DEP) $(BORINGSSL_ASN1_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ASN1_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_asn1_test
+
+endif
+
+$(BORINGSSL_ASN1_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_ASN1_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ASN1_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_asn1_test: $(BORINGSSL_ASN1_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ASN1_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_BASE64_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_BASE64_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_BASE64_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_BASE64_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BASE64_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BASE64_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_base64_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_base64_test: $(PROTOBUF_DEP) $(BORINGSSL_BASE64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_BASE64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_base64_test
+
+endif
+
+$(BORINGSSL_BASE64_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_BASE64_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_BASE64_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_base64_test: $(BORINGSSL_BASE64_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_BASE64_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_BIO_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_BIO_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_BIO_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_BIO_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BIO_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BIO_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_bio_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_bio_test: $(PROTOBUF_DEP) $(BORINGSSL_BIO_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_BIO_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bio_test
+
+endif
+
+$(BORINGSSL_BIO_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_BIO_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_BIO_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_bio_test: $(BORINGSSL_BIO_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_BIO_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_BYTESTRING_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_BYTESTRING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_BYTESTRING_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_bytestring_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_bytestring_test: $(PROTOBUF_DEP) $(BORINGSSL_BYTESTRING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_BYTESTRING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bytestring_test
+
+endif
+
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_bytestring_test: $(BORINGSSL_BYTESTRING_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_BYTESTRING_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_CHACHA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_CHACHA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CHACHA_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CHACHA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CHACHA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CHACHA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_chacha_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_chacha_test: $(PROTOBUF_DEP) $(BORINGSSL_CHACHA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CHACHA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_chacha_test
+
+endif
+
+$(BORINGSSL_CHACHA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CHACHA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CHACHA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_chacha_test: $(BORINGSSL_CHACHA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CHACHA_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_AEAD_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_AEAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_AEAD_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_AEAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_AEAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_AEAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_aead_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_aead_test: $(PROTOBUF_DEP) $(BORINGSSL_AEAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_AEAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_aead_test
+
+endif
+
+$(BORINGSSL_AEAD_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_AEAD_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_AEAD_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_aead_test: $(BORINGSSL_AEAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_AEAD_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_CIPHER_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_CIPHER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CIPHER_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CIPHER_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CIPHER_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CIPHER_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_cipher_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_cipher_test: $(PROTOBUF_DEP) $(BORINGSSL_CIPHER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CIPHER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_cipher_test
+
+endif
+
+$(BORINGSSL_CIPHER_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CIPHER_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CIPHER_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_cipher_test: $(BORINGSSL_CIPHER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CIPHER_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_CMAC_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_CMAC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CMAC_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_cmac_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_cmac_test: $(PROTOBUF_DEP) $(BORINGSSL_CMAC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CMAC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_cmac_test
+
+endif
+
+$(BORINGSSL_CMAC_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CMAC_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CMAC_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_cmac_test: $(BORINGSSL_CMAC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CMAC_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_COMPILER_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_COMPILER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_COMPILER_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_COMPILER_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_COMPILER_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_COMPILER_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_compiler_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_compiler_test: $(PROTOBUF_DEP) $(BORINGSSL_COMPILER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_COMPILER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_compiler_test
+
+endif
+
+$(BORINGSSL_COMPILER_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_COMPILER_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_COMPILER_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_compiler_test: $(BORINGSSL_COMPILER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_COMPILER_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_CONSTANT_TIME_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_CONSTANT_TIME_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CONSTANT_TIME_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_constant_time_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_constant_time_test: $(PROTOBUF_DEP) $(BORINGSSL_CONSTANT_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CONSTANT_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_constant_time_test
+
+endif
+
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_constant_time_test: $(BORINGSSL_CONSTANT_TIME_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CONSTANT_TIME_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_ED25519_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_ED25519_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ED25519_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ED25519_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ED25519_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ED25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ed25519_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ed25519_test: $(PROTOBUF_DEP) $(BORINGSSL_ED25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ED25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ed25519_test
+
+endif
+
+$(BORINGSSL_ED25519_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_ED25519_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ED25519_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ed25519_test: $(BORINGSSL_ED25519_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ED25519_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_SPAKE25519_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_SPAKE25519_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SPAKE25519_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_SPAKE25519_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SPAKE25519_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SPAKE25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_spake25519_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_spake25519_test: $(PROTOBUF_DEP) $(BORINGSSL_SPAKE25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_SPAKE25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_spake25519_test
+
+endif
+
+$(BORINGSSL_SPAKE25519_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_SPAKE25519_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_SPAKE25519_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_spake25519_test: $(BORINGSSL_SPAKE25519_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_SPAKE25519_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_X25519_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_X25519_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_X25519_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_X25519_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_X25519_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_X25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_x25519_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_x25519_test: $(PROTOBUF_DEP) $(BORINGSSL_X25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_X25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_x25519_test
+
+endif
+
+$(BORINGSSL_X25519_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_X25519_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_X25519_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_x25519_test: $(BORINGSSL_X25519_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_X25519_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_DH_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_DH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_DH_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_DH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_dh_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_dh_test: $(PROTOBUF_DEP) $(BORINGSSL_DH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_DH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_dh_test
+
+endif
+
+$(BORINGSSL_DH_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_DH_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_DH_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_dh_test: $(BORINGSSL_DH_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_DH_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_DIGEST_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_DIGEST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_DIGEST_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_DIGEST_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DIGEST_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DIGEST_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_digest_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_digest_test: $(PROTOBUF_DEP) $(BORINGSSL_DIGEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_DIGEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_digest_test
+
+endif
+
+$(BORINGSSL_DIGEST_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_DIGEST_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_DIGEST_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_digest_test: $(BORINGSSL_DIGEST_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_DIGEST_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_DSA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_DSA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_DSA_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_DSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_dsa_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_dsa_test: $(PROTOBUF_DEP) $(BORINGSSL_DSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_DSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_dsa_test
+
+endif
+
+$(BORINGSSL_DSA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_DSA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_DSA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_dsa_test: $(BORINGSSL_DSA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_DSA_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_ECDH_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_ECDH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ECDH_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ECDH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ECDH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ECDH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ecdh_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ecdh_test: $(PROTOBUF_DEP) $(BORINGSSL_ECDH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ECDH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ecdh_test
+
+endif
+
+$(BORINGSSL_ECDH_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_ECDH_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ECDH_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ecdh_test: $(BORINGSSL_ECDH_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ECDH_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_ERR_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_ERR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ERR_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ERR_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ERR_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ERR_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_err_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_err_test: $(PROTOBUF_DEP) $(BORINGSSL_ERR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ERR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_err_test
+
+endif
+
+$(BORINGSSL_ERR_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_ERR_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ERR_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_err_test: $(BORINGSSL_ERR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ERR_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_EVP_EXTRA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_EVP_EXTRA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_EVP_EXTRA_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_evp_extra_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_evp_extra_test: $(PROTOBUF_DEP) $(BORINGSSL_EVP_EXTRA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_EVP_EXTRA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test
+
+endif
+
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_evp_extra_test: $(BORINGSSL_EVP_EXTRA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_EVP_EXTRA_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_EVP_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_EVP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_EVP_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_EVP_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EVP_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EVP_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_evp_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_evp_test: $(PROTOBUF_DEP) $(BORINGSSL_EVP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_EVP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_evp_test
+
+endif
+
+$(BORINGSSL_EVP_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_EVP_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_EVP_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_evp_test: $(BORINGSSL_EVP_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_EVP_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_PBKDF_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_PBKDF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_PBKDF_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PBKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PBKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PBKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pbkdf_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pbkdf_test: $(PROTOBUF_DEP) $(BORINGSSL_PBKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PBKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test
+
+endif
+
+$(BORINGSSL_PBKDF_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_PBKDF_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_PBKDF_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pbkdf_test: $(BORINGSSL_PBKDF_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_PBKDF_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_SCRYPT_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_SCRYPT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SCRYPT_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_SCRYPT_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SCRYPT_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SCRYPT_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_scrypt_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_scrypt_test: $(PROTOBUF_DEP) $(BORINGSSL_SCRYPT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_SCRYPT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_scrypt_test
+
+endif
+
+$(BORINGSSL_SCRYPT_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_SCRYPT_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_SCRYPT_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_scrypt_test: $(BORINGSSL_SCRYPT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_SCRYPT_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_AES_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_AES_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_AES_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_AES_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_AES_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_AES_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_aes_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_aes_test: $(PROTOBUF_DEP) $(BORINGSSL_AES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_AES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_aes_test
+
+endif
+
+$(BORINGSSL_AES_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_AES_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_AES_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_aes_test: $(BORINGSSL_AES_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_AES_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_BN_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_BN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_BN_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_BN_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BN_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_bn_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_bn_test: $(PROTOBUF_DEP) $(BORINGSSL_BN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_BN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bn_test
+
+endif
+
+$(BORINGSSL_BN_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_BN_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_BN_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_bn_test: $(BORINGSSL_BN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_BN_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_EC_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_EC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_EC_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_EC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ec_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ec_test: $(PROTOBUF_DEP) $(BORINGSSL_EC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_EC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ec_test
+
+endif
+
+$(BORINGSSL_EC_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_EC_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_EC_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ec_test: $(BORINGSSL_EC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_EC_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_P256-X86_64_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_P256-X86_64_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_P256-X86_64_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test: $(PROTOBUF_DEP) $(BORINGSSL_P256-X86_64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_P256-X86_64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test
+
+endif
+
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_p256-x86_64_test: $(BORINGSSL_P256-X86_64_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_P256-X86_64_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_ECDSA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_ECDSA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ECDSA_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ECDSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ECDSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ECDSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ecdsa_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ecdsa_test: $(PROTOBUF_DEP) $(BORINGSSL_ECDSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ECDSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test
+
+endif
+
+$(BORINGSSL_ECDSA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_ECDSA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ECDSA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ecdsa_test: $(BORINGSSL_ECDSA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ECDSA_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_GCM_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_GCM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_GCM_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_GCM_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_GCM_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_GCM_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_gcm_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_gcm_test: $(PROTOBUF_DEP) $(BORINGSSL_GCM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_GCM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_gcm_test
+
+endif
+
+$(BORINGSSL_GCM_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_GCM_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_GCM_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_gcm_test: $(BORINGSSL_GCM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_GCM_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_CTRDRBG_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_CTRDRBG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CTRDRBG_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test: $(PROTOBUF_DEP) $(BORINGSSL_CTRDRBG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CTRDRBG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test
+
+endif
+
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ctrdrbg_test: $(BORINGSSL_CTRDRBG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CTRDRBG_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_HKDF_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_HKDF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_HKDF_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_HKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_HKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_HKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_hkdf_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_hkdf_test: $(PROTOBUF_DEP) $(BORINGSSL_HKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_HKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
+
+endif
+
+$(BORINGSSL_HKDF_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_HKDF_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_HKDF_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_hkdf_test: $(BORINGSSL_HKDF_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_HKDF_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_HMAC_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_HMAC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_HMAC_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_HMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_HMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_HMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_hmac_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_hmac_test: $(PROTOBUF_DEP) $(BORINGSSL_HMAC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_HMAC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_hmac_test
+
+endif
+
+$(BORINGSSL_HMAC_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_HMAC_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_HMAC_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_hmac_test: $(BORINGSSL_HMAC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_HMAC_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_LHASH_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_LHASH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_LHASH_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_LHASH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_LHASH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_LHASH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_lhash_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_lhash_test: $(PROTOBUF_DEP) $(BORINGSSL_LHASH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_LHASH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_lhash_test
+
+endif
+
+$(BORINGSSL_LHASH_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_LHASH_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_LHASH_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_lhash_test: $(BORINGSSL_LHASH_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_LHASH_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_OBJ_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_OBJ_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_OBJ_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_OBJ_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_OBJ_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_OBJ_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_obj_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_obj_test: $(PROTOBUF_DEP) $(BORINGSSL_OBJ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_OBJ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_obj_test
+
+endif
+
+$(BORINGSSL_OBJ_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_OBJ_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_OBJ_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_obj_test: $(BORINGSSL_OBJ_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_OBJ_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_PKCS7_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_PKCS7_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_PKCS7_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PKCS7_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PKCS7_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS7_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs7_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs7_test: $(PROTOBUF_DEP) $(BORINGSSL_PKCS7_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PKCS7_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
+
+endif
+
+$(BORINGSSL_PKCS7_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_PKCS7_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_PKCS7_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pkcs7_test: $(BORINGSSL_PKCS7_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_PKCS7_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_PKCS12_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_PKCS12_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_PKCS12_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PKCS12_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PKCS12_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS12_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs12_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs12_test: $(PROTOBUF_DEP) $(BORINGSSL_PKCS12_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PKCS12_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test
+
+endif
+
+$(BORINGSSL_PKCS12_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_PKCS12_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_PKCS12_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pkcs12_test: $(BORINGSSL_PKCS12_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_PKCS12_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_PKCS8_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_PKCS8_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_PKCS8_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PKCS8_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PKCS8_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS8_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs8_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs8_test: $(PROTOBUF_DEP) $(BORINGSSL_PKCS8_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PKCS8_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test
+
+endif
+
+$(BORINGSSL_PKCS8_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_PKCS8_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_PKCS8_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pkcs8_test: $(BORINGSSL_PKCS8_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_PKCS8_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_POLY1305_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_POLY1305_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_POLY1305_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_POLY1305_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_POLY1305_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_POLY1305_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_poly1305_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_poly1305_test: $(PROTOBUF_DEP) $(BORINGSSL_POLY1305_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_POLY1305_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_poly1305_test
+
+endif
+
+$(BORINGSSL_POLY1305_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_POLY1305_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_POLY1305_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_poly1305_test: $(BORINGSSL_POLY1305_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_POLY1305_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_POOL_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_POOL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_POOL_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_POOL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_POOL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_POOL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pool_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pool_test: $(PROTOBUF_DEP) $(BORINGSSL_POOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_POOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pool_test
+
+endif
+
+$(BORINGSSL_POOL_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_POOL_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_POOL_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pool_test: $(BORINGSSL_POOL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_POOL_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_REFCOUNT_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_REFCOUNT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_REFCOUNT_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_refcount_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_refcount_test: $(PROTOBUF_DEP) $(BORINGSSL_REFCOUNT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_REFCOUNT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_refcount_test
+
+endif
+
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_refcount_test: $(BORINGSSL_REFCOUNT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_REFCOUNT_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_RSA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_RSA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_RSA_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_RSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_RSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_RSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_rsa_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_rsa_test: $(PROTOBUF_DEP) $(BORINGSSL_RSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_RSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_rsa_test
+
+endif
+
+$(BORINGSSL_RSA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_RSA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_RSA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_rsa_test: $(BORINGSSL_RSA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_RSA_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_FILE_TEST_GTEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_FILE_TEST_GTEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_FILE_TEST_GTEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_file_test_gtest: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_file_test_gtest: $(PROTOBUF_DEP) $(BORINGSSL_FILE_TEST_GTEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_FILE_TEST_GTEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_file_test_gtest
+
+endif
+
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_file_test_gtest: $(BORINGSSL_FILE_TEST_GTEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_FILE_TEST_GTEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_GTEST_MAIN_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_GTEST_MAIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_GTEST_MAIN_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_GTEST_MAIN_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_GTEST_MAIN_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_GTEST_MAIN_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_gtest_main: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_gtest_main: $(PROTOBUF_DEP) $(BORINGSSL_GTEST_MAIN_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_GTEST_MAIN_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_gtest_main
+
+endif
+
+$(BORINGSSL_GTEST_MAIN_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_GTEST_MAIN_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_GTEST_MAIN_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_gtest_main: $(BORINGSSL_GTEST_MAIN_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_GTEST_MAIN_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_THREAD_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_THREAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_THREAD_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_THREAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_THREAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_THREAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_thread_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_thread_test: $(PROTOBUF_DEP) $(BORINGSSL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_thread_test
+
+endif
+
+$(BORINGSSL_THREAD_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_THREAD_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_THREAD_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_thread_test: $(BORINGSSL_THREAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_THREAD_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_X509_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_X509_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_X509_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_X509_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_X509_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_X509_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_x509_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_x509_test: $(PROTOBUF_DEP) $(BORINGSSL_X509_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_X509_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_x509_test
+
+endif
+
+$(BORINGSSL_X509_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_X509_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_X509_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_x509_test: $(BORINGSSL_X509_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_X509_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_TAB_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_TAB_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_TAB_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_TAB_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_TAB_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_TAB_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_tab_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_tab_test: $(PROTOBUF_DEP) $(BORINGSSL_TAB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_TAB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_tab_test
+
+endif
+
+$(BORINGSSL_TAB_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_TAB_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_TAB_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_tab_test: $(BORINGSSL_TAB_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_TAB_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_V3NAME_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_V3NAME_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_V3NAME_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_V3NAME_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_V3NAME_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_V3NAME_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_v3name_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_v3name_test: $(PROTOBUF_DEP) $(BORINGSSL_V3NAME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_V3NAME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_v3name_test
+
+endif
+
+$(BORINGSSL_V3NAME_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_V3NAME_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_V3NAME_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_v3name_test: $(BORINGSSL_V3NAME_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_V3NAME_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_SPAN_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_SPAN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SPAN_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_SPAN_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SPAN_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SPAN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_span_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_span_test: $(PROTOBUF_DEP) $(BORINGSSL_SPAN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_SPAN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_span_test
+
+endif
+
+$(BORINGSSL_SPAN_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_SPAN_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_SPAN_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_span_test: $(BORINGSSL_SPAN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_SPAN_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_SSL_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_SSL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SSL_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_SSL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ssl_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ssl_test: $(PROTOBUF_DEP) $(BORINGSSL_SSL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_SSL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ssl_test
+
+endif
+
+$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_SSL_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ssl_test: $(BORINGSSL_SSL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_SSL_TEST_OBJS:.o=.dep)
 endif
 
 
