@@ -36,11 +36,20 @@ typedef struct grpc_fake_resolver_response_generator
 grpc_fake_resolver_response_generator*
 grpc_fake_resolver_response_generator_create();
 
-// Instruct the fake resolver associated with the \a response_generator instance
-// to trigger a new resolution for \a uri and \a args.
+// Set next response of the fake resolver associated with the \a
+// response_generator instance and trigger a new resolution.
 void grpc_fake_resolver_response_generator_set_response(
     grpc_fake_resolver_response_generator* generator,
-    grpc_channel_args* next_response);
+    grpc_channel_args* response);
+
+// Set results_upon_error of the fake resolver associated with the \a
+// response_generator instance. When fake_resolver_channel_saw_error_locked() is
+// called, results_upon_error will be returned as long as it's non-NULL,
+// otherwise the last value set by
+// grpc_fake_resolver_response_generator_set_response() will be returned.
+void grpc_fake_resolver_response_generator_set_response_upon_error(
+    grpc_fake_resolver_response_generator* generator,
+    grpc_channel_args* response);
 
 // Return a \a grpc_arg for a \a grpc_fake_resolver_response_generator instance.
 grpc_arg grpc_fake_resolver_response_generator_arg(
