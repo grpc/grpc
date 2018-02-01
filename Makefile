@@ -1039,7 +1039,6 @@ json_rewrite_test: $(BINDIR)/$(CONFIG)/json_rewrite_test
 json_stream_error_test: $(BINDIR)/$(CONFIG)/json_stream_error_test
 json_test: $(BINDIR)/$(CONFIG)/json_test
 lame_client_test: $(BINDIR)/$(CONFIG)/lame_client_test
-lb_policies_test: $(BINDIR)/$(CONFIG)/lb_policies_test
 load_file_test: $(BINDIR)/$(CONFIG)/load_file_test
 low_level_ping_pong_benchmark: $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
 memory_profile_client: $(BINDIR)/$(CONFIG)/memory_profile_client
@@ -1447,7 +1446,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/json_stream_error_test \
   $(BINDIR)/$(CONFIG)/json_test \
   $(BINDIR)/$(CONFIG)/lame_client_test \
-  $(BINDIR)/$(CONFIG)/lb_policies_test \
   $(BINDIR)/$(CONFIG)/load_file_test \
   $(BINDIR)/$(CONFIG)/memory_profile_client \
   $(BINDIR)/$(CONFIG)/memory_profile_server \
@@ -12109,38 +12107,6 @@ deps_lame_client_test: $(LAME_CLIENT_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LAME_CLIENT_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-LB_POLICIES_TEST_SRC = \
-    test/core/client_channel/lb_policies_test.cc \
-
-LB_POLICIES_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LB_POLICIES_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/lb_policies_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/lb_policies_test: $(LB_POLICIES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(LB_POLICIES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/lb_policies_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/client_channel/lb_policies_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_lb_policies_test: $(LB_POLICIES_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LB_POLICIES_TEST_OBJS:.o=.dep)
 endif
 endif
 
