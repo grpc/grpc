@@ -72,6 +72,9 @@ RUN mkdir /var/local/jenkins
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
 
+# Install valgrind for memory tests
+RUN apt-get update && apt-get install -y     valgrind
+
 # Define the default command.
 CMD ["bash"]
 
