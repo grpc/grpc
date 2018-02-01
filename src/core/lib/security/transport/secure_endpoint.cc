@@ -252,7 +252,7 @@ static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                            grpc_closure* cb) {
-  GPR_TIMER_BEGIN("secure_endpoint.endpoint_write", 0);
+  GPR_TIMER_SCOPE("secure_endpoint.endpoint_write", 0);
 
   unsigned i;
   tsi_result result = TSI_OK;
@@ -336,12 +336,10 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     GRPC_CLOSURE_SCHED(
         cb, grpc_set_tsi_error_result(
                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("Wrap failed"), result));
-    GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
     return;
   }
 
   grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb);
-  GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
 }
 
 static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error* why) {

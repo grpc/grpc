@@ -392,11 +392,10 @@ error_handler:
 static void free_timeout(void* p) { gpr_free(p); }
 
 static void on_initial_header(void* tp, grpc_mdelem md) {
+  GPR_TIMER_SCOPE("on_initial_header", 0);
+
   grpc_chttp2_transport* t = (grpc_chttp2_transport*)tp;
   grpc_chttp2_stream* s = t->incoming_stream;
-
-  GPR_TIMER_BEGIN("on_initial_header", 0);
-
   GPR_ASSERT(s != nullptr);
 
   if (grpc_http_trace.enabled()) {
@@ -470,16 +469,13 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
       }
     }
   }
-
-  GPR_TIMER_END("on_initial_header", 0);
 }
 
 static void on_trailing_header(void* tp, grpc_mdelem md) {
+  GPR_TIMER_SCOPE("on_trailing_header", 0);
+
   grpc_chttp2_transport* t = (grpc_chttp2_transport*)tp;
   grpc_chttp2_stream* s = t->incoming_stream;
-
-  GPR_TIMER_BEGIN("on_trailing_header", 0);
-
   GPR_ASSERT(s != nullptr);
 
   if (grpc_http_trace.enabled()) {
@@ -526,8 +522,6 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
       GRPC_MDELEM_UNREF(md);
     }
   }
-
-  GPR_TIMER_END("on_trailing_header", 0);
 }
 
 static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
