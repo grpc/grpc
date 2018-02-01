@@ -75,8 +75,7 @@ typedef struct {
   grpc_core::ManualConstructor<grpc_core::BackOff> backoff;
   /** min resolution period. Max one resolution will happen per period */
   grpc_millis min_time_between_resolutions;
-  /** when was the last resolution? If no resolution has happened yet, equals
-   * gpr_inf_past() */
+  /** when was the last resolution? -1 if no resolution has happened yet */
   grpc_millis last_resolution_timestamp;
   /** currently resolving addresses */
   grpc_resolved_addresses* addresses;

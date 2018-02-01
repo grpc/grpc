@@ -92,8 +92,7 @@ typedef struct {
   grpc_core::ManualConstructor<grpc_core::BackOff> backoff;
   /** min resolution period. Max one resolution will happen per period */
   grpc_millis min_time_between_resolutions;
-  /** when was the last resolution? If no resolution has happened yet, equals
-   * gpr_inf_past() */
+  /** when was the last resolution? -1 if no resolution has happened yet */
   grpc_millis last_resolution_timestamp;
   /** currently resolving addresses */
   grpc_lb_addresses* lb_addresses;
@@ -147,7 +146,7 @@ static void dns_ares_on_next_resolution_timer_locked(void* arg,
   r->have_next_resolution_timer = false;
   if (error == GRPC_ERROR_NONE) {
     if (!r->resolving) {
-      dns_ares_maybe_start_resolving_locked(r);
+      dns_ares_start_resolving_locked(r);
     }
   }
   GRPC_RESOLVER_UNREF(&r->base, "next_resolution_timer");
@@ -305,7 +304,7 @@ static void dns_ares_next_locked(grpc_resolver* resolver,
   r->target_result = target_result;
   if (r->resolved_version == 0 && !r->resolving) {
     r->backoff->Reset();
-    dns_ares_start_resolving_locked(r);
+    dns_ares_maybe_start_resolving_locked(r);
   } else {
     dns_ares_maybe_finish_next_locked(r);
   }
@@ -378,7 +377,6 @@ static void dns_ares_destroy(grpc_resolver* gr) {
   grpc_channel_args_destroy(r->channel_args);
   gpr_free(r);
 }
-
 
 static grpc_resolver* dns_ares_create(grpc_resolver_args* args,
                                       const char* default_port) {
