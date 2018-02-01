@@ -66,8 +66,8 @@ typedef struct {
   grpc_pollset_set* interested_parties;
 
   /** Closures used by the combiner */
-  grpc_closure dns_ares_on_next_resolution_timer_locked;
-  grpc_closure dns_ares_on_resolved_locked;
+  grpc_closure dns_ares_on_next_resolution_timer_closure;
+  grpc_closure dns_ares_on_resolved_closure;
 
   /** Combiner guarding the rest of the state */
   grpc_combiner* combiner;
@@ -95,8 +95,6 @@ typedef struct {
   /** when was the last resolution? If no resolution has happened yet, equals
    * gpr_inf_past() */
   grpc_millis last_resolution_timestamp;
-  /** To be invoked once the cooldown period is over */
-  grpc_closure deferred_resolution_closure;
   /** currently resolving addresses */
   grpc_lb_addresses* lb_addresses;
   /** currently resolving service config */
@@ -285,7 +283,7 @@ static void dns_ares_on_resolved_locked(void* arg, grpc_error* error) {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
     grpc_timer_init(&r->next_resolution_timer, next_try,
-                    &r->dns_ares_on_next_resolution_timer_locked);
+                    &r->dns_ares_on_next_resolution_timer_closure);
   }
   if (r->resolved_result != nullptr) {
     grpc_channel_args_destroy(r->resolved_result);
@@ -321,7 +319,7 @@ static void dns_ares_start_resolving_locked(ares_dns_resolver* r) {
   r->service_config_json = nullptr;
   r->pending_request = grpc_dns_lookup_ares(
       r->dns_server, r->name_to_resolve, r->default_port, r->interested_parties,
-      &r->dns_ares_on_resolved_locked, &r->lb_addresses,
+      &r->dns_ares_on_resolved_closure, &r->lb_addresses,
       true /* check_grpclb */,
       r->request_service_config ? &r->service_config_json : nullptr);
 }
@@ -355,7 +353,7 @@ static void dns_ares_maybe_start_resolving_locked(ares_dns_resolver* r) {
         r->have_next_resolution_timer = true;
         GRPC_RESOLVER_REF(&r->base, "next_resolution_timer_cooldown");
         grpc_timer_init(&r->next_resolution_timer, ms_until_next_resolution,
-                        &r->deferred_resolution_closure);
+                        &r->dns_ares_on_next_resolution_timer_closure);
       }
       // TODO(dgq): remove the following two lines once Pick First stops
       // discarding subchannels after selecting.
@@ -420,10 +418,10 @@ static grpc_resolver* dns_ares_create(grpc_resolver_args* args,
       .set_jitter(GRPC_DNS_RECONNECT_JITTER)
       .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   r->backoff.Init(grpc_core::BackOff(backoff_options));
-  GRPC_CLOSURE_INIT(&r->dns_ares_on_next_resolution_timer_locked,
+  GRPC_CLOSURE_INIT(&r->dns_ares_on_next_resolution_timer_closure,
                     dns_ares_on_next_resolution_timer_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
-  GRPC_CLOSURE_INIT(&r->dns_ares_on_resolved_locked,
+  GRPC_CLOSURE_INIT(&r->dns_ares_on_resolved_closure,
                     dns_ares_on_resolved_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
   const grpc_arg* period_arg = grpc_channel_args_find(
@@ -431,7 +429,8 @@ static grpc_resolver* dns_ares_create(grpc_resolver_args* args,
   r->min_time_between_resolutions =
       grpc_channel_arg_get_integer(period_arg, {1000, 0, INT_MAX});
   r->last_resolution_timestamp = -1;
-  GRPC_CLOSURE_INIT(&r->deferred_resolution_closure, ares_cooldown_cb, r,
+  GRPC_CLOSURE_INIT(&r->dns_ares_on_next_resolution_timer_closure,
+                    ares_cooldown_cb, r,
                     grpc_combiner_scheduler(r->base.combiner));
   return &r->base;
 }

@@ -70,7 +70,7 @@ typedef struct {
   /** next resolution timer */
   bool have_next_resolution_timer;
   grpc_timer next_resolution_timer;
-  grpc_closure on_retry;
+  grpc_closure next_resolution_closure;
   /** retry backoff state */
   grpc_core::ManualConstructor<grpc_core::BackOff> backoff;
   /** min resolution period. Max one resolution will happen per period */
@@ -78,8 +78,6 @@ typedef struct {
   /** when was the last resolution? If no resolution has happened yet, equals
    * gpr_inf_past() */
   grpc_millis last_resolution_timestamp;
-  /** To be invoked once the cooldown period is over */
-  grpc_closure deferred_resolution_closure;
   /** currently resolving addresses */
   grpc_resolved_addresses* addresses;
 } dns_resolver;
@@ -178,9 +176,11 @@ static void dns_on_resolved_locked(void* arg, grpc_error* error) {
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    GRPC_CLOSURE_INIT(&r->on_retry, dns_on_next_resolution_timer_locked, r,
+    GRPC_CLOSURE_INIT(&r->next_resolution_closure,
+                      dns_on_next_resolution_timer_locked, r,
                       grpc_combiner_scheduler(r->base.combiner));
-    grpc_timer_init(&r->next_resolution_timer, next_try, &r->on_retry);
+    grpc_timer_init(&r->next_resolution_timer, next_try,
+                    &r->next_resolution_closure);
   }
   if (r->resolved_result != nullptr) {
     grpc_channel_args_destroy(r->resolved_result);
@@ -209,7 +209,7 @@ static void maybe_start_resolving_locked(dns_resolver* r) {
         r->have_next_resolution_timer = true;
         GRPC_RESOLVER_REF(&r->base, "next_resolution_timer_cooldown");
         grpc_timer_init(&r->next_resolution_timer, ms_until_next_resolution,
-                        &r->deferred_resolution_closure);
+                        &r->next_resolution_closure);
       }
       // TODO(dgq): remove the following two lines once Pick First stops
       // discarding subchannels after selecting.
@@ -289,7 +289,7 @@ static grpc_resolver* dns_create(grpc_resolver_args* args,
   r->min_time_between_resolutions =
       grpc_channel_arg_get_integer(period_arg, {1000, 0, INT_MAX});
   r->last_resolution_timestamp = -1;
-  GRPC_CLOSURE_INIT(&r->deferred_resolution_closure,
+  GRPC_CLOSURE_INIT(&r->next_resolution_closure,
                     dns_on_next_resolution_timer_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
   return &r->base;
