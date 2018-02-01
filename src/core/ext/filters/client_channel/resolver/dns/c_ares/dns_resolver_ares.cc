@@ -357,6 +357,8 @@ static void dns_ares_maybe_start_resolving_locked(ares_dns_resolver* r) {
         grpc_timer_init(&r->next_resolution_timer, ms_until_next_resolution,
                         &r->deferred_resolution_closure);
       }
+      // TODO(dgq): remove the following two lines once Pick First stops
+      // discarding subchannels after selecting.
       ++r->resolved_version;
       dns_ares_maybe_finish_next_locked(r);
       return;
@@ -426,9 +428,8 @@ static grpc_resolver* dns_ares_create(grpc_resolver_args* args,
                     grpc_combiner_scheduler(r->base.combiner));
   const grpc_arg* period_arg = grpc_channel_args_find(
       args->args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
-  const grpc_millis min_time_between_resolutions =
+  r->min_time_between_resolutions =
       grpc_channel_arg_get_integer(period_arg, {1000, 0, INT_MAX});
-  r->min_time_between_resolutions = min_time_between_resolutions;
   r->last_resolution_timestamp = -1;
   GRPC_CLOSURE_INIT(&r->deferred_resolution_closure, ares_cooldown_cb, r,
                     grpc_combiner_scheduler(r->base.combiner));

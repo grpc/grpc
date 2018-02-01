@@ -138,10 +138,8 @@ static void dns_next_locked(grpc_resolver* resolver,
 static void dns_on_next_resolution_timer_locked(void* arg, grpc_error* error) {
   dns_resolver* r = (dns_resolver*)arg;
   r->have_next_resolution_timer = false;
-  if (error == GRPC_ERROR_NONE) {
-    if (!r->resolving) {
-      dns_start_resolving_locked(r);
-    }
+  if (error == GRPC_ERROR_NONE && !r->resolving) {
+    dns_start_resolving_locked(r);
   }
   GRPC_RESOLVER_UNREF(&r->base, "next_resolution_timer");
 }
@@ -213,6 +211,8 @@ static void maybe_start_resolving_locked(dns_resolver* r) {
         grpc_timer_init(&r->next_resolution_timer, ms_until_next_resolution,
                         &r->deferred_resolution_closure);
       }
+      // TODO(dgq): remove the following two lines once Pick First stops
+      // discarding subchannels after selecting.
       ++r->resolved_version;
       dns_maybe_finish_next_locked(r);
       return;
@@ -258,15 +258,6 @@ static void dns_destroy(grpc_resolver* gr) {
   gpr_free(r);
 }
 
-static void cooldown_cb(void* arg, grpc_error* error) {
-  dns_resolver* r = static_cast<dns_resolver*>(arg);
-  r->have_next_resolution_timer = false;
-  if (error == GRPC_ERROR_NONE && !r->resolving) {
-    dns_start_resolving_locked(r);
-  }
-  GRPC_RESOLVER_UNREF(&r->base, "next_resolution_timer_cooldown");
-}
-
 static grpc_resolver* dns_create(grpc_resolver_args* args,
                                  const char* default_port) {
   if (0 != strcmp(args->uri->authority, "")) {
@@ -295,11 +286,11 @@ static grpc_resolver* dns_create(grpc_resolver_args* args,
   r->backoff.Init(grpc_core::BackOff(backoff_options));
   const grpc_arg* period_arg = grpc_channel_args_find(
       args->args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
-  const grpc_millis min_time_between_resolutions =
+  r->min_time_between_resolutions =
       grpc_channel_arg_get_integer(period_arg, {1000, 0, INT_MAX});
-  r->min_time_between_resolutions = min_time_between_resolutions;
   r->last_resolution_timestamp = -1;
-  GRPC_CLOSURE_INIT(&r->deferred_resolution_closure, cooldown_cb, r,
+  GRPC_CLOSURE_INIT(&r->deferred_resolution_closure,
+                    dns_on_next_resolution_timer_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
   return &r->base;
 }

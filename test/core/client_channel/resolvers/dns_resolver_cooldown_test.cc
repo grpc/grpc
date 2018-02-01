@@ -43,16 +43,13 @@ grpc_ares_request* (*g_default_dns_lookup_ares)(
 // times a system-level resolution has happened.
 static int g_resolution_count;
 
-typedef struct args_struct {
+struct iomgr_args {
   gpr_event ev;
-  grpc_resolved_addresses* addrs;
   gpr_atm done_atm;
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-} args_struct;
-
-args_struct g_iomgr_args;
+} g_iomgr_args;
 
 // Wrapper around g_default_grpc_resolve_address in order to count the number of
 // times we incur in a system-level name resolution.
@@ -83,19 +80,17 @@ static gpr_timespec test_deadline(void) {
 
 static void do_nothing(void* arg, grpc_error* error) {}
 
-void args_init(args_struct* args) {
+void iomgr_args_init(iomgr_args* args) {
   gpr_event_init(&args->ev);
   args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->addrs = nullptr;
   gpr_atm_rel_store(&args->done_atm, 0);
 }
 
-void args_finish(args_struct* args) {
+void iomgr_args_finish(iomgr_args* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
-  grpc_resolved_addresses_destroy(args->addrs);
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure do_nothing_cb;
@@ -115,7 +110,7 @@ static grpc_millis n_sec_deadline(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-static void poll_pollset_until_request_done(args_struct* args) {
+static void poll_pollset_until_request_done(iomgr_args* args) {
   grpc_core::ExecCtx exec_ctx;
   grpc_millis deadline = n_sec_deadline(10);
   while (true) {
@@ -137,9 +132,11 @@ static void poll_pollset_until_request_done(args_struct* args) {
 }
 
 typedef struct on_resolution_cb_arg {
+  const char* uri_str;
   grpc_resolver* resolver;
   grpc_channel_args* result;
   grpc_millis delay_before_second_resolution;
+  bool using_cares;
 } on_resolution_cb_arg;
 
 // Counter for the number of times a resolution notification callback has been
@@ -151,9 +148,9 @@ bool g_all_callbacks_invoked;
 
 void on_third_resolution(void* arg, grpc_error* error) {
   on_resolution_cb_arg* cb_arg = static_cast<on_resolution_cb_arg*>(arg);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   ++g_on_resolution_invocations_count;
   grpc_channel_args_destroy(cb_arg->result);
-
   gpr_log(GPR_INFO,
           "3rd: g_on_resolution_invocations_count: %d, g_resolution_count: %d",
           g_on_resolution_invocations_count, g_resolution_count);
@@ -162,9 +159,15 @@ void on_third_resolution(void* arg, grpc_error* error) {
   // period.
   GPR_ASSERT(g_on_resolution_invocations_count == 3);
   GPR_ASSERT(g_resolution_count == 2);
-
   grpc_resolver_shutdown_locked(cb_arg->resolver);
   GRPC_RESOLVER_UNREF(cb_arg->resolver, "on_third_resolution");
+  if (cb_arg->using_cares) {
+    gpr_atm_rel_store(&g_iomgr_args.done_atm, 1);
+    gpr_mu_lock(g_iomgr_args.mu);
+    GRPC_LOG_IF_ERROR("pollset_kick",
+                      grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+    gpr_mu_unlock(g_iomgr_args.mu);
+  }
   gpr_free(cb_arg);
   g_all_callbacks_invoked = true;
 }
@@ -182,22 +185,29 @@ void on_second_resolution(void* arg, grpc_error* error) {
   // resolutions happened, as indicated by g_resolution_count.
   GPR_ASSERT(g_on_resolution_invocations_count == 2);
   GPR_ASSERT(g_resolution_count == 1);
-
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
       cb_arg->delay_before_second_resolution * 2);
   grpc_resolver_next_locked(
       cb_arg->resolver, &cb_arg->result,
-      GRPC_CLOSURE_CREATE(on_third_resolution, arg, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(on_third_resolution, arg,
+                          grpc_combiner_scheduler(g_combiner)));
   grpc_resolver_channel_saw_error_locked(cb_arg->resolver);
+  if (cb_arg->using_cares) {
+    gpr_mu_lock(g_iomgr_args.mu);
+    GRPC_LOG_IF_ERROR("pollset_kick",
+                      grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+    gpr_mu_unlock(g_iomgr_args.mu);
+  }
 }
 
 void on_first_resolution(void* arg, grpc_error* error) {
   on_resolution_cb_arg* cb_arg = static_cast<on_resolution_cb_arg*>(arg);
   ++g_on_resolution_invocations_count;
   grpc_channel_args_destroy(cb_arg->result);
-  grpc_resolver_next_locked(cb_arg->resolver, &cb_arg->result,
-                            GRPC_CLOSURE_CREATE(on_second_resolution, arg,
-                                                grpc_schedule_on_exec_ctx));
+  grpc_resolver_next_locked(
+      cb_arg->resolver, &cb_arg->result,
+      GRPC_CLOSURE_CREATE(on_second_resolution, arg,
+                          grpc_combiner_scheduler(g_combiner)));
   grpc_resolver_channel_saw_error_locked(cb_arg->resolver);
   gpr_log(GPR_INFO,
           "1st: g_on_resolution_invocations_count: %d, g_resolution_count: %d",
@@ -206,18 +216,21 @@ void on_first_resolution(void* arg, grpc_error* error) {
   // notification callback (the current function).
   GPR_ASSERT(g_on_resolution_invocations_count == 1);
   GPR_ASSERT(g_resolution_count == 1);
+  if (cb_arg->using_cares) {
+    gpr_mu_lock(g_iomgr_args.mu);
+    GRPC_LOG_IF_ERROR("pollset_kick",
+                      grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+    gpr_mu_unlock(g_iomgr_args.mu);
+  }
 }
 
-static void test_cooldown(const char* uri_str, bool use_cares) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_resolver_factory* factory = grpc_resolver_factory_lookup("dns");
-  grpc_uri* uri = grpc_uri_parse(uri_str, 0);
-  grpc_resolver_args args;
-
-  if (use_cares) args_init(&g_iomgr_args);
-
+static void start_test_under_combiner(void* arg, grpc_error* error) {
+  on_resolution_cb_arg* res_cb_arg = static_cast<on_resolution_cb_arg*>(arg);
   grpc_resolver* resolver;
-  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", uri_str,
+  grpc_resolver_factory* factory = grpc_resolver_factory_lookup("dns");
+  grpc_uri* uri = grpc_uri_parse(res_cb_arg->uri_str, 0);
+  grpc_resolver_args args;
+  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
           factory->vtable->scheme);
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
@@ -235,27 +248,36 @@ static void test_cooldown(const char* uri_str, bool use_cares) {
   auto* cooldown_channel_args =
       grpc_channel_args_copy_and_add(nullptr, &cooldown_arg, 1);
   args.args = cooldown_channel_args;
-
   resolver = grpc_resolver_factory_create_resolver(factory, &args);
   grpc_channel_args_destroy(cooldown_channel_args);
   GPR_ASSERT(resolver != nullptr);
-
-  on_resolution_cb_arg* arg = (on_resolution_cb_arg*)gpr_zalloc(sizeof(*arg));
-  arg->resolver = resolver;
-  arg->delay_before_second_resolution = kMinResolutionPeriodMs;
+  res_cb_arg->resolver = resolver;
+  res_cb_arg->delay_before_second_resolution = kMinResolutionPeriodMs;
   // First resolution, would incur in system-level resolution.
   grpc_resolver_next_locked(
-      resolver, &arg->result,
-      GRPC_CLOSURE_CREATE(on_first_resolution, arg, grpc_schedule_on_exec_ctx));
+      resolver, &res_cb_arg->result,
+      GRPC_CLOSURE_CREATE(on_first_resolution, res_cb_arg,
+                          grpc_combiner_scheduler(g_combiner)));
   grpc_uri_destroy(uri);
+  grpc_resolver_factory_unref(factory);
+}
 
-  if (use_cares) {
+static void test_cooldown(bool using_cares) {
+  grpc_core::ExecCtx exec_ctx;
+  if (using_cares) iomgr_args_init(&g_iomgr_args);
+  on_resolution_cb_arg* res_cb_arg =
+      static_cast<on_resolution_cb_arg*>(gpr_zalloc(sizeof(*res_cb_arg)));
+  res_cb_arg->uri_str = "dns:127.0.0.1";
+  res_cb_arg->using_cares = using_cares;
+
+  GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(start_test_under_combiner, res_cb_arg,
+                                         grpc_combiner_scheduler(g_combiner)),
+                     GRPC_ERROR_NONE);
+  if (using_cares) {
     grpc_core::ExecCtx::Get()->Flush();
     poll_pollset_until_request_done(&g_iomgr_args);
-    args_finish(&g_iomgr_args);
+    iomgr_args_finish(&g_iomgr_args);
   }
-
-  grpc_resolver_factory_unref(factory);
 }
 
 int main(int argc, char** argv) {
@@ -264,14 +286,13 @@ int main(int argc, char** argv) {
 
   g_combiner = grpc_combiner_create();
 
-  const bool use_cares = (grpc_resolve_address == grpc_resolve_address_ares);
-
+  const bool using_cares = (grpc_resolve_address == grpc_resolve_address_ares);
   g_default_grpc_resolve_address = grpc_resolve_address;
   g_default_dns_lookup_ares = grpc_dns_lookup_ares;
   grpc_dns_lookup_ares = test_dns_lookup_ares;
   grpc_resolve_address = test_resolve_address_impl;
 
-  test_cooldown("dns:127.0.0.1", use_cares);
+  test_cooldown(using_cares);
 
   {
     grpc_core::ExecCtx exec_ctx;
@@ -279,6 +300,5 @@ int main(int argc, char** argv) {
   }
   grpc_shutdown();
   GPR_ASSERT(g_all_callbacks_invoked);
-
   return 0;
 }

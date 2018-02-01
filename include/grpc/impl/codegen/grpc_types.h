@@ -241,7 +241,7 @@ typedef struct {
   "grpc.initial_reconnect_backoff_ms"
 /** Minimum amount of time between DNS resolutions, in ms */
 #define GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS \
-  "grpc.dns_min_resolution_period_ms"
+  "grpc.dns_min_time_between_resolutions_ms"
 /** The timeout used on servers for finishing handshaking on an incoming
     connection.  Defaults to 120 seconds. */
 #define GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS "grpc.server_handshake_timeout_ms"
