@@ -106,7 +106,6 @@ static void dns_shutdown_locked(grpc_resolver* resolver) {
 static void dns_channel_saw_error_locked(grpc_resolver* resolver) {
   dns_resolver* r = (dns_resolver*)resolver;
   if (!r->resolving) {
-    r->backoff->Reset();
     dns_start_resolving_locked(r);
   }
 }
@@ -119,7 +118,6 @@ static void dns_next_locked(grpc_resolver* resolver,
   r->next_completion = on_complete;
   r->target_result = target_result;
   if (r->resolved_version == 0 && !r->resolving) {
-    r->backoff->Reset();
     dns_start_resolving_locked(r);
   } else {
     dns_maybe_finish_next_locked(r);
@@ -160,6 +158,9 @@ static void dns_on_resolved_locked(void* arg, grpc_error* error) {
     result = grpc_channel_args_copy_and_add(r->channel_args, &new_arg, 1);
     grpc_resolved_addresses_destroy(r->addresses);
     grpc_lb_addresses_destroy(addresses);
+    // Reset backoff state so that we start from the beginning when the
+    // next request gets triggered.
+    r->backoff->Reset();
   } else {
     grpc_millis next_try = r->backoff->NextAttemptTime();
     grpc_millis timeout = next_try - grpc_core::ExecCtx::Get()->Now();
