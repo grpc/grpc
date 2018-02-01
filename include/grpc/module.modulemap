@@ -45,6 +45,7 @@ framework module grpc {
   header "byte_buffer.h"
   header "byte_buffer_reader.h"
   header "compression.h"
+  header "compression_ruby.h"
   header "fork.h"
   header "grpc.h"
   header "grpc_posix.h"

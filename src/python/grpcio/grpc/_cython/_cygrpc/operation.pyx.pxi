@@ -40,7 +40,6 @@ cdef class SendInitialMetadataOperation(Operation):
     self.c_op.data.send_initial_metadata.metadata = self._c_initial_metadata
     self.c_op.data.send_initial_metadata.count = self._c_initial_metadata_count
     self.c_op.data.send_initial_metadata.maybe_compression_level.is_set = 0
-    self.c_op.data.send_initial_metadata.maybe_stream_compression_level.is_set = 0
 
   cdef void un_c(self):
     _release_c_metadata(

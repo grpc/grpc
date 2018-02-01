@@ -140,6 +140,10 @@ grpc_cc_test(
     srcs = [
         "grpc_tool_test.cc",
     ],
+    data = [
+        "//src/proto/grpc/testing:echo.proto",
+        "//src/proto/grpc/testing:echo_messages.proto"
+    ],       
     deps = [
         ":grpc_cli_libs",
 	":test_util",

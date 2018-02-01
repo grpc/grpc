@@ -93,6 +93,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
+    "include/grpc/compression_ruby.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
@@ -262,6 +263,11 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_cronet_client_secure",
     ],
+)
+
+grpc_cc_library(
+    name = "grpc++_public_hdrs",
+    hdrs = GRPCXX_PUBLIC_HDRS,
 )
 
 grpc_cc_library(
@@ -629,6 +635,8 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_factory.cc",
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/compression/compression.cc",
+        "src/core/lib/compression/compression_internal.cc",
+        "src/core/lib/compression/compression_ruby.cc",
         "src/core/lib/compression/message_compress.cc",
         "src/core/lib/compression/stream_compression.cc",
         "src/core/lib/compression/stream_compression_gzip.cc",
@@ -764,6 +772,7 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_factory.h",
         "src/core/lib/channel/handshaker_registry.h",
         "src/core/lib/compression/algorithm_metadata.h",
+        "src/core/lib/compression/compression_internal.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
         "src/core/lib/compression/stream_compression_gzip.h",
@@ -1524,14 +1533,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi",
     srcs = [
+        "src/core/tsi/alts_transport_security.cc",
         "src/core/tsi/fake_transport_security.cc",
-        "src/core/tsi/gts_transport_security.cc",
         "src/core/tsi/ssl_transport_security.cc",
         "src/core/tsi/transport_security_grpc.cc",
     ],
     hdrs = [
+        "src/core/tsi/alts_transport_security.h",
         "src/core/tsi/fake_transport_security.h",
-        "src/core/tsi/gts_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
         "src/core/tsi/transport_security_grpc.h",

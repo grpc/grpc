@@ -50,48 +50,44 @@ void gpr_set_allocation_functions(gpr_allocation_functions functions) {
 }
 
 void* gpr_malloc(size_t size) {
+  GPR_TIMER_SCOPE("gpr_malloc", 0);
   void* p;
   if (size == 0) return nullptr;
-  GPR_TIMER_BEGIN("gpr_malloc", 0);
   p = g_alloc_functions.malloc_fn(size);
   if (!p) {
     abort();
   }
-  GPR_TIMER_END("gpr_malloc", 0);
   return p;
 }
 
 void* gpr_zalloc(size_t size) {
+  GPR_TIMER_SCOPE("gpr_zalloc", 0);
   void* p;
   if (size == 0) return nullptr;
-  GPR_TIMER_BEGIN("gpr_zalloc", 0);
   p = g_alloc_functions.zalloc_fn(size);
   if (!p) {
     abort();
   }
-  GPR_TIMER_END("gpr_zalloc", 0);
   return p;
 }
 
 void gpr_free(void* p) {
-  GPR_TIMER_BEGIN("gpr_free", 0);
+  GPR_TIMER_SCOPE("gpr_free", 0);
   g_alloc_functions.free_fn(p);
-  GPR_TIMER_END("gpr_free", 0);
 }
 
 void* gpr_realloc(void* p, size_t size) {
+  GPR_TIMER_SCOPE("gpr_realloc", 0);
   if ((size == 0) && (p == nullptr)) return nullptr;
-  GPR_TIMER_BEGIN("gpr_realloc", 0);
   p = g_alloc_functions.realloc_fn(p, size);
   if (!p) {
     abort();
   }
-  GPR_TIMER_END("gpr_realloc", 0);
   return p;
 }
 
-void* gpr_malloc_aligned(size_t size, size_t alignment_log) {
-  size_t alignment = ((size_t)1) << alignment_log;
+void* gpr_malloc_aligned(size_t size, size_t alignment) {
+  GPR_ASSERT(((alignment - 1) & alignment) == 0);  // Must be power of 2.
   size_t extra = alignment - 1 + sizeof(void*);
   void* p = gpr_malloc(size + extra);
   void** ret = (void**)(((uintptr_t)p + extra) & ~(alignment - 1));

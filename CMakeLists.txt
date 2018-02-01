@@ -392,6 +392,7 @@ add_dependencies(buildtests_c connection_prefix_bad_client_test)
 add_dependencies(buildtests_c head_of_line_blocking_bad_client_test)
 add_dependencies(buildtests_c headers_bad_client_test)
 add_dependencies(buildtests_c initial_settings_frame_bad_client_test)
+add_dependencies(buildtests_c large_metadata_bad_client_test)
 add_dependencies(buildtests_c server_registered_method_bad_client_test)
 add_dependencies(buildtests_c simple_request_bad_client_test)
 add_dependencies(buildtests_c unknown_frame_bad_client_test)
@@ -590,6 +591,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx server_crash_test)
 endif()
 add_dependencies(buildtests_cxx server_crash_test_client)
+add_dependencies(buildtests_cxx server_early_return_test)
 add_dependencies(buildtests_cxx server_request_call_test)
 add_dependencies(buildtests_cxx shutdown_test)
 add_dependencies(buildtests_cxx stats_test)
@@ -801,6 +803,8 @@ add_library(grpc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -978,8 +982,8 @@ add_library(grpc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
+  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
-  src/core/tsi/gts_transport_security.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/tsi/transport_security.cc
@@ -1102,6 +1106,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
+  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -1141,6 +1146,8 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -1343,8 +1350,8 @@ add_library(grpc_cronet
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
+  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
-  src/core/tsi/gts_transport_security.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/tsi/transport_security.cc
@@ -1464,6 +1471,8 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -1731,6 +1740,8 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -1981,6 +1992,8 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -2248,6 +2261,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
+  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2521,6 +2535,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
+  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2710,6 +2725,8 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -2993,6 +3010,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
+  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -3722,6 +3740,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
+  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -11702,6 +11721,44 @@ target_link_libraries(server_crash_test_client
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(server_early_return_test
+  test/cpp/end2end/server_early_return_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(server_early_return_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_early_return_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(server_request_call_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
@@ -12378,6 +12435,35 @@ target_include_directories(initial_settings_frame_bad_client_test
 )
 
 target_link_libraries(initial_settings_frame_bad_client_test
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(large_metadata_bad_client_test
+  test/core/bad_client/tests/large_metadata.cc
+)
+
+
+target_include_directories(large_metadata_bad_client_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(large_metadata_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test

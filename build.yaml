@@ -159,6 +159,8 @@ filegroups:
   - src/core/lib/channel/handshaker_factory.cc
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/compression/compression.cc
+  - src/core/lib/compression/compression_internal.cc
+  - src/core/lib/compression/compression_ruby.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/compression/stream_compression.cc
   - src/core/lib/compression/stream_compression_gzip.cc
@@ -295,6 +297,7 @@ filegroups:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
+  - include/grpc/compression_ruby.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -315,6 +318,7 @@ filegroups:
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/compression/algorithm_metadata.h
+  - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/compression/stream_compression.h
   - src/core/lib/compression/stream_compression_gzip.h
@@ -931,19 +935,19 @@ filegroups:
   - grpc
 - name: tsi
   headers:
+  - src/core/tsi/alts_transport_security.h
   - src/core/tsi/fake_transport_security.h
-  - src/core/tsi/gts_transport_security.h
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security_grpc.h
   src:
+  - src/core/tsi/alts_transport_security.cc
   - src/core/tsi/fake_transport_security.cc
-  - src/core/tsi/gts_transport_security.cc
   - src/core/tsi/ssl_transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - gpr
-  plugin: grpc_tsi_gts
+  plugin: grpc_tsi_alts
   secure: true
   uses:
   - tsi_interface
@@ -4704,6 +4708,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: server_early_return_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/server_early_return_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_request_call_test
   gtest: true
   build: test
@@ -5042,9 +5059,11 @@ defaults:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
-      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough
+      $(NO_W_EXTRA_SEMI)
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+    CXXFLAGS: -fno-rtti -fno-exceptions
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
@@ -5052,7 +5071,7 @@ defaults:
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
-      $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
+      -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f

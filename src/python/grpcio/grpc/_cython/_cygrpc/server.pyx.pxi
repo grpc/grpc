@@ -57,16 +57,19 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
 
 cdef class Server:
 
-  def __cinit__(self, ChannelArgs arguments):
+  def __cinit__(self, object arguments):
     grpc_init()
-    cdef grpc_channel_args *c_arguments = NULL
     self.references = []
     self.registered_completion_queues = []
-    if len(arguments) > 0:
-      c_arguments = &arguments.c_args
-      self.references.append(arguments)
-    with nogil:
-      self.c_server = grpc_server_create(c_arguments, NULL)
+    self._vtable.copy = &_copy_pointer
+    self._vtable.destroy = &_destroy_pointer
+    self._vtable.cmp = &_compare_pointer
+    cdef _ArgumentsProcessor arguments_processor = _ArgumentsProcessor(
+        arguments)
+    cdef grpc_channel_args *c_arguments = arguments_processor.c(&self._vtable)
+    self.c_server = grpc_server_create(c_arguments, NULL)
+    arguments_processor.un_c()
+    self.references.append(arguments)
     self.is_started = False
     self.is_shutting_down = False
     self.is_shutdown = False

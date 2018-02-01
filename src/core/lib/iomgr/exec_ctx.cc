@@ -113,7 +113,7 @@ void ExecCtx::GlobalInit(void) {
 
 bool ExecCtx::Flush() {
   bool did_something = 0;
-  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
+  GPR_TIMER_SCOPE("grpc_exec_ctx_flush", 0);
   for (;;) {
     if (!grpc_closure_list_empty(closure_list_)) {
       grpc_closure* c = closure_list_.head;
@@ -130,7 +130,6 @@ bool ExecCtx::Flush() {
     }
   }
   GPR_ASSERT(combiner_data_.active_combiner == nullptr);
-  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
   return did_something;
 }
 
