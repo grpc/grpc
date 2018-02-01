@@ -1172,7 +1172,7 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
 TEST_F(UpdatesTest, ReresolveDeadBackend) {
   ResetStub(500);
   // The first resolution contains the addresses of a balancer that never
-  // returns any serverlist, and a fallback backend.
+  // responds, and a fallback backend.
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
   addresses.emplace_back(AddressData{backend_servers_[0].port_, false, ""});
