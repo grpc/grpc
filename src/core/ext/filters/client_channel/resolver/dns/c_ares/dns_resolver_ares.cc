@@ -379,14 +379,6 @@ static void dns_ares_destroy(grpc_resolver* gr) {
   gpr_free(r);
 }
 
-static void ares_cooldown_cb(void* arg, grpc_error* error) {
-  ares_dns_resolver* r = (ares_dns_resolver*)arg;
-  r->have_next_resolution_timer = false;
-  if (error == GRPC_ERROR_NONE && !r->resolving) {
-    dns_ares_start_resolving_locked(r);
-  }
-  GRPC_RESOLVER_UNREF(&r->base, "next_resolution_timer_cooldown");
-}
 
 static grpc_resolver* dns_ares_create(grpc_resolver_args* args,
                                       const char* default_port) {
@@ -429,9 +421,6 @@ static grpc_resolver* dns_ares_create(grpc_resolver_args* args,
   r->min_time_between_resolutions =
       grpc_channel_arg_get_integer(period_arg, {1000, 0, INT_MAX});
   r->last_resolution_timestamp = -1;
-  GRPC_CLOSURE_INIT(&r->dns_ares_on_next_resolution_timer_closure,
-                    ares_cooldown_cb, r,
-                    grpc_combiner_scheduler(r->base.combiner));
   return &r->base;
 }
 

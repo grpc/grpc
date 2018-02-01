@@ -176,9 +176,6 @@ static void dns_on_resolved_locked(void* arg, grpc_error* error) {
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    GRPC_CLOSURE_INIT(&r->next_resolution_closure,
-                      dns_on_next_resolution_timer_locked, r,
-                      grpc_combiner_scheduler(r->base.combiner));
     grpc_timer_init(&r->next_resolution_timer, next_try,
                     &r->next_resolution_closure);
   }
