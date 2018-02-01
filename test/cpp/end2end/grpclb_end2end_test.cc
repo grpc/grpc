@@ -191,6 +191,7 @@ class BalancerServiceImpl : public BalancerService {
     gpr_log(GPR_INFO, "LB[%p]: recv msg '%s'", this,
             request.DebugString().c_str());
 
+    // TODO(juanlishen): Initial response should always be the first response.
     if (client_load_reporting_interval_seconds_ > 0) {
       LoadBalanceResponse initial_response;
       initial_response.mutable_initial_response()
