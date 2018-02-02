@@ -21,10 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Simple command line parser.
 
    Supports flags that can be specified as -foo, --foo, --no-foo, -no-foo, etc
@@ -80,9 +76,5 @@ int gpr_cmdline_parse(gpr_cmdline* cl, int argc, char** argv);
 void gpr_cmdline_destroy(gpr_cmdline* cl);
 /** Get a string describing usage */
 char* gpr_cmdline_usage_string(gpr_cmdline* cl, const char* argv0);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_TEST_CORE_UTIL_CMDLINE_H */

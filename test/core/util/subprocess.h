@@ -21,10 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct gpr_subprocess gpr_subprocess;
 
 /** .exe on windows, empty on unices */
@@ -36,9 +32,5 @@ void gpr_subprocess_destroy(gpr_subprocess* p);
 /** returns exit status; can be called at most once */
 int gpr_subprocess_join(gpr_subprocess* p);
 void gpr_subprocess_interrupt(gpr_subprocess* p);
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
 
 #endif /* GRPC_TEST_CORE_UTIL_SUBPROCESS_H */
