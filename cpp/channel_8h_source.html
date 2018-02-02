@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.8.0</span>
+   &#160;<span id="projectnumber">1.9.0</span>
    </div>
   </td>
  </tr>
@@ -164,7 +164,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor">#endif  // GRPCXX_CHANNEL_H</span></div>
 <div class="ttc" id="namespacegrpc_html_ab04a87625da3bf85cdaf5e7856b00203"><div class="ttname"><a href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a></div><div class="ttdeci">std::string string</div><div class="ttdef"><b>Definition:</b> config.h:35</div></div>
-<div class="ttc" id="grpc__types_8h_html_a432bfa6b9f6603643cdf9de8804c254e"><div class="ttname"><a href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a></div><div class="ttdeci">struct grpc_channel grpc_channel</div><div class="ttdoc">The Channel interface allows creation of Call objects. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:63</div></div>
+<div class="ttc" id="grpc__types_8h_html_a432bfa6b9f6603643cdf9de8804c254e"><div class="ttname"><a href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a></div><div class="ttdeci">struct grpc_channel grpc_channel</div><div class="ttdoc">The Channel interface allows creation of Call objects. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:62</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_html_af12754677a599351077d6f68cc0c9159"><div class="ttname"><a href="classgrpc_1_1_channel.html#af12754677a599351077d6f68cc0c9159">grpc::Channel::~Channel</a></div><div class="ttdeci">~Channel()</div></div>
 <div class="ttc" id="channel__interface_8h_html"><div class="ttname"><a href="channel__interface_8h.html">channel_interface.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_grpc_library_codegen_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html">grpc::GrpcLibraryCodegen</a></div><div class="ttdoc">Classes that require gRPC to be initialized should inherit from this class. </div><div class="ttdef"><b>Definition:</b> grpc_library.h:37</div></div>
@@ -176,7 +176,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="classgrpc_1_1_channel_interface_html"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></div><div class="ttdoc">Codegen interface for grpc::Channel. </div><div class="ttdef"><b>Definition:</b> channel_interface.h:55</div></div>
 <div class="ttc" id="call_8h_html"><div class="ttname"><a href="call_8h.html">call.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue.h). </div><div class="ttdef"><b>Definition:</b> completion_queue.h:94</div></div>
-<div class="ttc" id="classgrpc_1_1internal_1_1_call_op_set_interface_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set_interface.html">grpc::internal::CallOpSetInterface</a></div><div class="ttdoc">An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...</div><div class="ttdef"><b>Definition:</b> call.h:611</div></div>
+<div class="ttc" id="classgrpc_1_1internal_1_1_call_op_set_interface_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set_interface.html">grpc::internal::CallOpSetInterface</a></div><div class="ttdoc">An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...</div><div class="ttdef"><b>Definition:</b> call.h:620</div></div>
 <div class="ttc" id="classgrpc_1_1internal_1_1_blocking_unary_call_impl_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_blocking_unary_call_impl.html">grpc::internal::BlockingUnaryCallImpl</a></div><div class="ttdef"><b>Definition:</b> channel_interface.h:43</div></div>
 <div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:47</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_html_a91aa6da3fba5f5d6daf378302979ddd5"><div class="ttname"><a href="classgrpc_1_1_channel.html#a91aa6da3fba5f5d6daf378302979ddd5">grpc::Channel::GetServiceConfigJSON</a></div><div class="ttdeci">grpc::string GetServiceConfigJSON() const </div><div class="ttdoc">Returns the service config in JSON form, or the empty string if not available. </div></div>
@@ -185,12 +185,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="classgrpc_1_1_channel_html_ae3d6beda535f3e03160758ad0f6b49b6"><div class="ttname"><a href="classgrpc_1_1_channel.html#ae3d6beda535f3e03160758ad0f6b49b6">grpc::Channel::GetLoadBalancingPolicyName</a></div><div class="ttdeci">grpc::string GetLoadBalancingPolicyName() const </div><div class="ttdoc">Returns the LB policy name, or the empty string if not yet available. </div></div>
 <div class="ttc" id="classgrpc_1_1internal_1_1_call_hook_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_hook.html">grpc::internal::CallHook</a></div><div class="ttdoc">This is an interface that Channel and Server implement to allow them to hook performing ops...</div><div class="ttdef"><b>Definition:</b> call_hook.h:30</div></div>
 <div class="ttc" id="grpc_8h_html"><div class="ttname"><a href="grpc_8h.html">grpc.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object. </div><div class="ttdef"><b>Definition:</b> call.h:683</div></div>
+<div class="ttc" id="classgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object. </div><div class="ttdef"><b>Definition:</b> call.h:692</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_html"><div class="ttname"><a href="classgrpc_1_1_channel.html">grpc::Channel</a></div><div class="ttdoc">Channels represent a connection to an endpoint. Created by CreateChannel. </div><div class="ttdef"><b>Definition:</b> channel.h:34</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

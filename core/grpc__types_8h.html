@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_04ed5e7a0931afed58b44427831a7c00.html">include</a></li><li class="navelem"><a class="el" href="dir_70e6a53b947bcbad872060ddc188ca9d.html">grpc</a></li><li class="navelem"><a class="el" href="dir_32f37f9fc4aaaa68ca3d1d71f794f7c4.html">impl</a></li><li class="navelem"><a class="el" href="dir_5502caef0f6b800bde740a6356fce088.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_8c22a72beb99e7fdfd27506cb533e734.html">include</a></li><li class="navelem"><a class="el" href="dir_3da487aded176e6fcacfa0e3f4e152fb.html">grpc</a></li><li class="navelem"><a class="el" href="dir_b5794ebb4ba6e24740ff52e265370256.html">impl</a></li><li class="navelem"><a class="el" href="dir_7fbb2b96b00a7b3c2033cf6674ff589d.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -97,7 +97,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <div class="textblock"><code>#include &lt;<a class="el" href="impl_2codegen_2port__platform_8h_source.html">grpc/impl/codegen/port_platform.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="compression__types_8h_source.html">grpc/impl/codegen/compression_types.h</a>&gt;</code><br/>
-<code>#include &lt;<a class="el" href="exec__ctx__fwd_8h_source.html">grpc/impl/codegen/exec_ctx_fwd.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="gpr__types_8h_source.html">grpc/impl/codegen/gpr_types.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="impl_2codegen_2slice_8h_source.html">grpc/impl/codegen/slice.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="impl_2codegen_2status_8h_source.html">grpc/impl/codegen/status.h</a>&gt;</code><br/>
@@ -582,12 +581,12 @@ Enumerations</h2></td></tr>
 <div class="line"><a class="code" href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</a> |             <a class="code" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">\</a></div>
 <div class="line"><a class="code" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a> | <a class="code" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">\</a></div>
 <div class="line"><a class="code" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">   GRPC_INITIAL_METADATA_CORKED</a> | <a class="code" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>)</div>
-<div class="ttc" id="grpc__types_8h_html_a5de65995b1101bba3652f9d2ae51cc23"><div class="ttname"><a href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a></div><div class="ttdeci">#define GRPC_WRITE_THROUGH</div><div class="ttdoc">Force this message to be written to the socket before completing it. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:367</div></div>
-<div class="ttc" id="grpc__types_8h_html_afa71c451716eca6c8d38fb71d66c0bbb"><div class="ttname"><a href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</div><div class="ttdoc">Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set by the calling application...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:381</div></div>
-<div class="ttc" id="grpc__types_8h_html_a1175f30479912922d006387536d2c46c"><div class="ttname"><a href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">GRPC_INITIAL_METADATA_CORKED</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CORKED</div><div class="ttdoc">Signal that the initial metadata should be corked. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:383</div></div>
-<div class="ttc" id="grpc__types_8h_html_a7978c09a9933e7b858c65c1b03eb5b2b"><div class="ttname"><a href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</div><div class="ttdoc">Signal that the call is cacheable. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:378</div></div>
-<div class="ttc" id="grpc__types_8h_html_a9606180fd0950a1514522fbe535edf49"><div class="ttname"><a href="grpc__types_8h.html#a9606180fd0950a1514522fbe535edf49">GRPC_INITIAL_METADATA_WAIT_FOR_READY</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY</div><div class="ttdoc">Signal that the call should not return UNAVAILABLE before it has started. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:376</div></div>
-<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:374</div></div>
+<div class="ttc" id="grpc__types_8h_html_a5de65995b1101bba3652f9d2ae51cc23"><div class="ttname"><a href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a></div><div class="ttdeci">#define GRPC_WRITE_THROUGH</div><div class="ttdoc">Force this message to be written to the socket before completing it. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:366</div></div>
+<div class="ttc" id="grpc__types_8h_html_afa71c451716eca6c8d38fb71d66c0bbb"><div class="ttname"><a href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</div><div class="ttdoc">Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set by the calling application...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:380</div></div>
+<div class="ttc" id="grpc__types_8h_html_a1175f30479912922d006387536d2c46c"><div class="ttname"><a href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">GRPC_INITIAL_METADATA_CORKED</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CORKED</div><div class="ttdoc">Signal that the initial metadata should be corked. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:382</div></div>
+<div class="ttc" id="grpc__types_8h_html_a7978c09a9933e7b858c65c1b03eb5b2b"><div class="ttname"><a href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</div><div class="ttdoc">Signal that the call is cacheable. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:377</div></div>
+<div class="ttc" id="grpc__types_8h_html_a9606180fd0950a1514522fbe535edf49"><div class="ttname"><a href="grpc__types_8h.html#a9606180fd0950a1514522fbe535edf49">GRPC_INITIAL_METADATA_WAIT_FOR_READY</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY</div><div class="ttdoc">Signal that the call should not return UNAVAILABLE before it has started. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:375</div></div>
+<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:373</div></div>
 </div><!-- fragment -->
 <p>Mask of all valid flags. </p>
 
@@ -1142,7 +1141,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:10 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

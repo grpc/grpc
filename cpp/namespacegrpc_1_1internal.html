@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.8.0</span>
+   &#160;<span id="projectnumber">1.9.0</span>
    </div>
   </td>
  </tr>
@@ -233,6 +233,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ab89adb1632c2a6b19fa92583d698298c"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#ab89adb1632c2a6b19fa92583d698298c">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
 <tr class="memdesc:ab89adb1632c2a6b19fa92583d698298c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper that performs a blocking unary call.  <a href="#ab89adb1632c2a6b19fa92583d698298c">More...</a><br/></td></tr>
 <tr class="separator:ab89adb1632c2a6b19fa92583d698298c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae548f7c35cdcccbd9b8453b99ba1e326"><td class="memTemplParams" colspan="2">template&lt;class Callable &gt; </td></tr>
+<tr class="memitem:ae548f7c35cdcccbd9b8453b99ba1e326"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#ae548f7c35cdcccbd9b8453b99ba1e326">CatchingFunctionHandler</a> (Callable &amp;&amp;handler)</td></tr>
+<tr class="separator:ae548f7c35cdcccbd9b8453b99ba1e326"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a886108dc21aa277ba5dfc7d53328dde5"><td class="memTemplParams" colspan="2">template&lt;class BufferWriter , class T &gt; </td></tr>
 <tr class="memitem:a886108dc21aa277ba5dfc7d53328dde5"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a886108dc21aa277ba5dfc7d53328dde5">GenericSerialize</a> (const <a class="el" href="namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c">grpc::protobuf::Message</a> &amp;msg, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> **bp, bool *own_buffer)</td></tr>
 <tr class="separator:a886108dc21aa277ba5dfc7d53328dde5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -297,6 +300,24 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><div class="memdoc">
 
 <p>Wrapper that performs a blocking unary call. </p>
+
+</div>
+</div>
+<a class="anchor" id="ae548f7c35cdcccbd9b8453b99ba1e326"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Callable &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::CatchingFunctionHandler </td>
+          <td>(</td>
+          <td class="paramtype">Callable &amp;&amp;&#160;</td>
+          <td class="paramname"><em>handler</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -430,7 +451,7 @@ template&lt;class BufferWriter , class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

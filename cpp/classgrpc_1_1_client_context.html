@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.8.0</span>
+   &#160;<span id="projectnumber">1.9.0</span>
    </div>
   </td>
  </tr>
@@ -184,6 +184,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9fba10daf95815d2e1e94fa886a00459"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a9fba10daf95815d2e1e94fa886a00459">c_call</a> ()</td></tr>
 <tr class="memdesc:a9fba10daf95815d2e1e94fa886a00459"><td class="mdescLeft">&#160;</td><td class="mdescRight">Should be used for framework-level extensions only.  <a href="#a9fba10daf95815d2e1e94fa886a00459">More...</a><br/></td></tr>
 <tr class="separator:a9fba10daf95815d2e1e94fa886a00459"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a289ed3537c73b4d3fa34b648bcb84912"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a289ed3537c73b4d3fa34b648bcb84912">debug_error_string</a> () const </td></tr>
+<tr class="memdesc:a289ed3537c73b4d3fa34b648bcb84912"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL debugging API.  <a href="#a289ed3537c73b4d3fa34b648bcb84912">More...</a><br/></td></tr>
+<tr class="separator:a289ed3537c73b4d3fa34b648bcb84912"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -430,6 +433,32 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Return the deadline for the client call. </p>
+
+</div>
+</div>
+<a class="anchor" id="a289ed3537c73b4d3fa34b648bcb84912"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> grpc::ClientContext::debug_error_string </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL debugging API. </p>
+<p>if status is not ok() for an RPC, this will return a detailed string of the gRPC Core error that led to the failure. It should not be relied upon for anything other than gaining more debug data in failure cases. </p>
 
 </div>
 </div>
@@ -1164,7 +1193,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
