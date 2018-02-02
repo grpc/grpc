@@ -124,6 +124,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void TearDown() override {
     grpc_fake_resolver_response_generator_unref(response_generator_);
     for (size_t i = 0; i < servers_.size(); ++i) {
+      gpr_log(GPR_INFO, "XXX TEARING DOWN SERVER %zu", i);
       servers_[i]->Shutdown();
     }
   }
@@ -244,7 +245,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
 
     void Shutdown(bool join = true) {
-      server_->Shutdown();
+      gpr_log(GPR_INFO, "XXX YYY BEFORE CALLING THE ACTUAL SERVER SHUTDOWN METHOD FOR SERVER %p", server_.get());
+      server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+      gpr_log(GPR_INFO, "XXX YYY AFTER CALLING THE ACTUAL SERVER SHUTDOWN METHOD FOR SERVER %p", server_.get());
       if (join) thread_->join();
     }
   };
@@ -501,6 +504,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   EXPECT_EQ(expected, connection_order);
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
+  gpr_log(GPR_INFO, "XXX OUT OF THE TEST");
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {

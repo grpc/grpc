@@ -347,12 +347,10 @@ static void update_lb_connectivity_status_locked(grpc_lb_subchannel_data* sd,
                                 GRPC_ERROR_NONE, "rr_connecting");
   } else if (subchannel_list->num_transient_failures ==
              subchannel_list->num_subchannels) {
-    /* 3) TRANSIENT_FAILURE and re-resolve */
+    /* 3) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(
         &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_REF(error), "rr_exhausted_subchannels+reresolve");
-    grpc_lb_policy_try_reresolve(&p->base, &grpc_lb_round_robin_trace,
-                                 GRPC_ERROR_NONE);
+        GRPC_ERROR_REF(error), "rr_exhausted_subchannels");
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -407,6 +405,9 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
   switch (sd->curr_connectivity_state) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
       sd->connected_subchannel.reset();
+      gpr_log(GPR_INFO, "XXX RR %p TRYING TO RE-RESOLVE", p);
+      grpc_lb_policy_try_reresolve(&p->base, &grpc_lb_round_robin_trace,
+                                   GRPC_ERROR_NONE);
       break;
     }
     case GRPC_CHANNEL_READY: {
