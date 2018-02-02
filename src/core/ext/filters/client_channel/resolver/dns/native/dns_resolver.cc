@@ -199,8 +199,9 @@ static void maybe_start_resolving_locked(dns_resolver* r) {
     if (ms_until_next_resolution > 0) {
       const grpc_millis last_resolution_ago =
           grpc_core::ExecCtx::Get()->Now() - r->last_resolution_timestamp;
-      gpr_log(GPR_DEBUG, "In cooldown from last resolution (from %" PRIdPTR
-                         " ms ago). Will resolve again in %" PRIdPTR " ms",
+      gpr_log(GPR_DEBUG,
+              "In cooldown from last resolution (from %" PRIdPTR
+              " ms ago). Will resolve again in %" PRIdPTR " ms",
               last_resolution_ago, ms_until_next_resolution);
       if (!r->have_next_resolution_timer) {
         r->have_next_resolution_timer = true;
