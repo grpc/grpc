@@ -19,18 +19,6 @@ licenses(["notice"])  # Apache v2
 grpc_package(name = "test/core/surface")
 
 grpc_cc_test(
-    name = "alarm_test",
-    srcs = ["alarm_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "grpc_byte_buffer_reader_test",
     srcs = ["byte_buffer_reader_test.cc"],
     language = "C++",
