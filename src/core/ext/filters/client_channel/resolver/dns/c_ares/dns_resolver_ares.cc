@@ -66,8 +66,8 @@ typedef struct {
   grpc_pollset_set* interested_parties;
 
   /** Closures used by the combiner */
-  grpc_closure dns_ares_on_retry_timer_locked;
-  grpc_closure dns_ares_on_resolved_locked;
+  grpc_closure dns_ares_on_next_resolution_timer_closure;
+  grpc_closure dns_ares_on_resolved_closure;
 
   /** Combiner guarding the rest of the state */
   grpc_combiner* combiner;
@@ -85,12 +85,15 @@ typedef struct {
   grpc_channel_args** target_result;
   /** current (fully resolved) result */
   grpc_channel_args* resolved_result;
-  /** retry timer */
-  bool have_retry_timer;
-  grpc_timer retry_timer;
+  /** next resolution timer */
+  bool have_next_resolution_timer;
+  grpc_timer next_resolution_timer;
   /** retry backoff state */
   grpc_core::ManualConstructor<grpc_core::BackOff> backoff;
-
+  /** min resolution period. Max one resolution will happen per period */
+  grpc_millis min_time_between_resolutions;
+  /** when was the last resolution? -1 if no resolution has happened yet */
+  grpc_millis last_resolution_timestamp;
   /** currently resolving addresses */
   grpc_lb_addresses* lb_addresses;
   /** currently resolving service config */
@@ -100,6 +103,7 @@ typedef struct {
 static void dns_ares_destroy(grpc_resolver* r);
 
 static void dns_ares_start_resolving_locked(ares_dns_resolver* r);
+static void dns_ares_maybe_start_resolving_locked(ares_dns_resolver* r);
 static void dns_ares_maybe_finish_next_locked(ares_dns_resolver* r);
 
 static void dns_ares_shutdown_locked(grpc_resolver* r);
@@ -114,8 +118,8 @@ static const grpc_resolver_vtable dns_ares_resolver_vtable = {
 
 static void dns_ares_shutdown_locked(grpc_resolver* resolver) {
   ares_dns_resolver* r = (ares_dns_resolver*)resolver;
-  if (r->have_retry_timer) {
-    grpc_timer_cancel(&r->retry_timer);
+  if (r->have_next_resolution_timer) {
+    grpc_timer_cancel(&r->next_resolution_timer);
   }
   if (r->pending_request != nullptr) {
     grpc_cancel_ares_request(r->pending_request);
@@ -131,20 +135,20 @@ static void dns_ares_shutdown_locked(grpc_resolver* resolver) {
 static void dns_ares_channel_saw_error_locked(grpc_resolver* resolver) {
   ares_dns_resolver* r = (ares_dns_resolver*)resolver;
   if (!r->resolving) {
-    r->backoff->Reset();
-    dns_ares_start_resolving_locked(r);
+    dns_ares_maybe_start_resolving_locked(r);
   }
 }
 
-static void dns_ares_on_retry_timer_locked(void* arg, grpc_error* error) {
+static void dns_ares_on_next_resolution_timer_locked(void* arg,
+                                                     grpc_error* error) {
   ares_dns_resolver* r = (ares_dns_resolver*)arg;
-  r->have_retry_timer = false;
+  r->have_next_resolution_timer = false;
   if (error == GRPC_ERROR_NONE) {
     if (!r->resolving) {
       dns_ares_start_resolving_locked(r);
     }
   }
-  GRPC_RESOLVER_UNREF(&r->base, "retry-timer");
+  GRPC_RESOLVER_UNREF(&r->base, "next_resolution_timer");
 }
 
 static bool value_in_json_array(grpc_json* array, const char* value) {
@@ -261,6 +265,9 @@ static void dns_ares_on_resolved_locked(void* arg, grpc_error* error) {
     if (service_config != nullptr) grpc_service_config_destroy(service_config);
     gpr_free(service_config_string);
     grpc_lb_addresses_destroy(r->lb_addresses);
+    // Reset backoff state so that we start from the beginning when the
+    // next request gets triggered.
+    r->backoff->Reset();
   } else {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
@@ -268,21 +275,22 @@ static void dns_ares_on_resolved_locked(void* arg, grpc_error* error) {
     grpc_millis timeout = next_try - grpc_core::ExecCtx::Get()->Now();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
-    GPR_ASSERT(!r->have_retry_timer);
-    r->have_retry_timer = true;
-    GRPC_RESOLVER_REF(&r->base, "retry-timer");
+    GPR_ASSERT(!r->have_next_resolution_timer);
+    r->have_next_resolution_timer = true;
+    GRPC_RESOLVER_REF(&r->base, "next_resolution_timer");
     if (timeout > 0) {
       gpr_log(GPR_DEBUG, "retrying in %" PRIdPTR " milliseconds", timeout);
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    grpc_timer_init(&r->retry_timer, next_try,
-                    &r->dns_ares_on_retry_timer_locked);
+    grpc_timer_init(&r->next_resolution_timer, next_try,
+                    &r->dns_ares_on_next_resolution_timer_closure);
   }
   if (r->resolved_result != nullptr) {
     grpc_channel_args_destroy(r->resolved_result);
   }
   r->resolved_result = result;
+  r->last_resolution_timestamp = grpc_core::ExecCtx::Get()->Now();
   r->resolved_version++;
   dns_ares_maybe_finish_next_locked(r);
   GRPC_RESOLVER_UNREF(&r->base, "dns-resolving");
@@ -297,8 +305,7 @@ static void dns_ares_next_locked(grpc_resolver* resolver,
   r->next_completion = on_complete;
   r->target_result = target_result;
   if (r->resolved_version == 0 && !r->resolving) {
-    r->backoff->Reset();
-    dns_ares_start_resolving_locked(r);
+    dns_ares_maybe_start_resolving_locked(r);
   } else {
     dns_ares_maybe_finish_next_locked(r);
   }
@@ -312,7 +319,7 @@ static void dns_ares_start_resolving_locked(ares_dns_resolver* r) {
   r->service_config_json = nullptr;
   r->pending_request = grpc_dns_lookup_ares(
       r->dns_server, r->name_to_resolve, r->default_port, r->interested_parties,
-      &r->dns_ares_on_resolved_locked, &r->lb_addresses,
+      &r->dns_ares_on_resolved_closure, &r->lb_addresses,
       true /* check_grpclb */,
       r->request_service_config ? &r->service_config_json : nullptr);
 }
@@ -328,6 +335,35 @@ static void dns_ares_maybe_finish_next_locked(ares_dns_resolver* r) {
     r->next_completion = nullptr;
     r->published_version = r->resolved_version;
   }
+}
+
+static void dns_ares_maybe_start_resolving_locked(ares_dns_resolver* r) {
+  if (r->last_resolution_timestamp >= 0) {
+    const grpc_millis earliest_next_resolution =
+        r->last_resolution_timestamp + r->min_time_between_resolutions;
+    const grpc_millis ms_until_next_resolution =
+        earliest_next_resolution - grpc_core::ExecCtx::Get()->Now();
+    if (ms_until_next_resolution > 0) {
+      const grpc_millis last_resolution_ago =
+          grpc_core::ExecCtx::Get()->Now() - r->last_resolution_timestamp;
+      gpr_log(GPR_DEBUG,
+              "In cooldown from last resolution (from %" PRIdPTR
+              " ms ago). Will resolve again in %" PRIdPTR " ms",
+              last_resolution_ago, ms_until_next_resolution);
+      if (!r->have_next_resolution_timer) {
+        r->have_next_resolution_timer = true;
+        GRPC_RESOLVER_REF(&r->base, "next_resolution_timer_cooldown");
+        grpc_timer_init(&r->next_resolution_timer, ms_until_next_resolution,
+                        &r->dns_ares_on_next_resolution_timer_closure);
+      }
+      // TODO(dgq): remove the following two lines once Pick First stops
+      // discarding subchannels after selecting.
+      ++r->resolved_version;
+      dns_ares_maybe_finish_next_locked(r);
+      return;
+    }
+  }
+  dns_ares_start_resolving_locked(r);
 }
 
 static void dns_ares_destroy(grpc_resolver* gr) {
@@ -374,12 +410,17 @@ static grpc_resolver* dns_ares_create(grpc_resolver_args* args,
       .set_jitter(GRPC_DNS_RECONNECT_JITTER)
       .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
   r->backoff.Init(grpc_core::BackOff(backoff_options));
-  GRPC_CLOSURE_INIT(&r->dns_ares_on_retry_timer_locked,
-                    dns_ares_on_retry_timer_locked, r,
+  GRPC_CLOSURE_INIT(&r->dns_ares_on_next_resolution_timer_closure,
+                    dns_ares_on_next_resolution_timer_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
-  GRPC_CLOSURE_INIT(&r->dns_ares_on_resolved_locked,
+  GRPC_CLOSURE_INIT(&r->dns_ares_on_resolved_closure,
                     dns_ares_on_resolved_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
+  const grpc_arg* period_arg = grpc_channel_args_find(
+      args->args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
+  r->min_time_between_resolutions =
+      grpc_channel_arg_get_integer(period_arg, {1000, 0, INT_MAX});
+  r->last_resolution_timestamp = -1;
   return &r->base;
 }
 

@@ -1050,7 +1050,6 @@ src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice_hash_table.h \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.h \
-src/core/lib/surface/alarm_internal.h \
 src/core/lib/surface/api_trace.h \
 src/core/lib/surface/call.h \
 src/core/lib/surface/call_test_only.h \
@@ -1091,6 +1090,7 @@ src/cpp/client/insecure_credentials.cc \
 src/cpp/client/secure_credentials.cc \
 src/cpp/client/secure_credentials.h \
 src/cpp/codegen/codegen_init.cc \
+src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \
 src/cpp/common/channel_arguments.cc \
 src/cpp/common/channel_filter.cc \

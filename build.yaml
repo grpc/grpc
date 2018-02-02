@@ -12,8 +12,8 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 5.0.0-dev
-  g_stands_for: glamorous
+  core_version: 6.0.0-dev
+  g_stands_for: glossy
   version: 1.10.0-dev
 filegroups:
 - name: census
@@ -253,7 +253,6 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.cc
   - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/alarm.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
@@ -405,7 +404,6 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/alarm_internal.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -935,19 +933,19 @@ filegroups:
   - grpc
 - name: tsi
   headers:
+  - src/core/tsi/alts_transport_security.h
   - src/core/tsi/fake_transport_security.h
-  - src/core/tsi/gts_transport_security.h
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security_grpc.h
   src:
+  - src/core/tsi/alts_transport_security.cc
   - src/core/tsi/fake_transport_security.cc
-  - src/core/tsi/gts_transport_security.cc
   - src/core/tsi/ssl_transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - gpr
-  plugin: grpc_tsi_gts
+  plugin: grpc_tsi_alts
   secure: true
   uses:
   - tsi_interface
@@ -1078,6 +1076,7 @@ filegroups:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
   - src/cpp/client/generic_stub.cc
+  - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
@@ -1336,7 +1335,7 @@ libs:
 - name: grpc++_core_stats
   build: private
   language: c++
-  public_headers:
+  headers:
   - src/cpp/util/core_stats.h
   src:
   - src/proto/grpc/core/stats.proto
@@ -1710,17 +1709,6 @@ libs:
   - winsock
   - global
 targets:
-- name: alarm_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/surface/alarm_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: algorithm_test
   build: test
   language: c
@@ -1940,6 +1928,16 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+- name: dns_resolver_cooldown_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: dns_resolver_test
   build: test
   language: c
@@ -2725,19 +2723,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: lb_policies_test
-  cpu_cost: 0.1
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/client_channel/lb_policies_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: load_file_test
   build: test
   language: c
@@ -3411,12 +3396,12 @@ targets:
   - mac
   - linux
   - posix
-- name: alarm_cpp_test
+- name: alarm_test
   gtest: true
   build: test
   language: c++
   src:
-  - test/cpp/common/alarm_cpp_test.cc
+  - test/cpp/common/alarm_test.cc
   deps:
   - grpc++_test_util_unsecure
   - grpc_test_util_unsecure
@@ -5059,9 +5044,11 @@ defaults:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
-      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough
+      $(NO_W_EXTRA_SEMI)
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+    CXXFLAGS: -fno-rtti -fno-exceptions
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
@@ -5069,7 +5056,7 @@ defaults:
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
-      $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
+      -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f

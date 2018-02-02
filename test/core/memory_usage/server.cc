@@ -290,6 +290,7 @@ int main(int argc, char** argv) {
             }
           // no break here since we want to continue to case
           // FLING_SERVER_SEND_STATUS_SNAPSHOT to destroy the snapshot call
+          /* fallthrough */
           case FLING_SERVER_SEND_STATUS_SNAPSHOT:
             grpc_byte_buffer_destroy(payload_buffer);
             grpc_byte_buffer_destroy(terminal_buffer);

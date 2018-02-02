@@ -165,7 +165,8 @@ if "win32" in sys.platform:
   # TODO(zyc): Re-enble c-ares on x64 and x86 windows after fixing the
   # ares_library_init compilation issue
   DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1), ('CARES_STATICLIB', 1),
-                    ('GRPC_ARES', 0), ('NTDDI_VERSION', 0x06000000),)
+                    ('GRPC_ARES', 0), ('NTDDI_VERSION', 0x06000000),
+                    ('NOMINMAX', 1),)
   if '64bit' in platform.architecture()[0]:
     DEFINE_MACROS += (('MS_WIN64', 1),)
   elif sys.version_info >= (3, 5):

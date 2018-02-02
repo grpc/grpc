@@ -23,24 +23,11 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
     name = "uri_fuzzer_test",
     srcs = ["uri_fuzzer_test.cc"],
-    language = "C++",
     corpus = "uri_corpus",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "lb_policies_test",
-    srcs = ["lb_policies_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/end2end:cq_verifier",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
