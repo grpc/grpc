@@ -289,7 +289,9 @@ class ClientContext {
     creds_ = creds;
   }
 
-  /// Return the compression algorithm to be used by the client call.
+  /// Return the compression algorithm the client call will request be used.
+  /// Note that the gRPC runtime may decide to ignore this request, for example,
+  /// due to resource constraints.
   grpc_compression_algorithm compression_algorithm() const {
     return compression_algorithm_;
   }
