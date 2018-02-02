@@ -21,10 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Given a host and port, creates a newly-allocated string of the form
    "host:port" or "[ho:st]:port", depending on whether the host contains colons
    like an IPv6 literal.  If the host is already bracketed, then additional
@@ -43,9 +39,5 @@ int gpr_join_host_port(char** out, const char* host, int port);
    Return 1 on success, 0 on failure. Guarantees *host and *port == NULL on
    failure. */
 int gpr_split_host_port(const char* name, char** host, char** port);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_GPR_HOST_PORT_H */
