@@ -82,10 +82,10 @@ static grpc_channel_args* create_new_resolver_result() {
   grpc_lb_addresses* addresses =
       grpc_lb_addresses_create(num_addresses, nullptr);
   for (size_t i = 0; i < num_addresses; ++i) {
-    gpr_asprintf(&uri_string, "ipv4:127.0.0.1:100%lu",
+    gpr_asprintf(&uri_string, "ipv4:127.0.0.1:100%" PRIuPTR,
                  test_counter * num_addresses + i);
     grpc_uri* uri = grpc_uri_parse(uri_string, true);
-    gpr_asprintf(&balancer_name, "balancer%lu",
+    gpr_asprintf(&balancer_name, "balancer%" PRIuPTR,
                  test_counter * num_addresses + i);
     grpc_lb_addresses_set_address_from_uri(
         addresses, i, uri, bool(num_addresses % 2), balancer_name, nullptr);

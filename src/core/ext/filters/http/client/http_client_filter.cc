@@ -289,7 +289,7 @@ static void hc_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = (call_data*)elem->call_data;
   channel_data* channeld = (channel_data*)elem->channel_data;
-  GPR_TIMER_BEGIN("hc_start_transport_stream_op_batch", 0);
+  GPR_TIMER_SCOPE("hc_start_transport_stream_op_batch", 0);
 
   if (batch->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
@@ -404,7 +404,6 @@ done:
   } else if (!batch_will_be_handled_asynchronously) {
     grpc_call_next_op(elem, batch);
   }
-  GPR_TIMER_END("hc_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */

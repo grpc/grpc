@@ -131,7 +131,6 @@ static void dns_ares_shutdown_locked(grpc_resolver* resolver) {
 static void dns_ares_channel_saw_error_locked(grpc_resolver* resolver) {
   ares_dns_resolver* r = (ares_dns_resolver*)resolver;
   if (!r->resolving) {
-    r->backoff->Reset();
     dns_ares_start_resolving_locked(r);
   }
 }
@@ -261,6 +260,9 @@ static void dns_ares_on_resolved_locked(void* arg, grpc_error* error) {
     if (service_config != nullptr) grpc_service_config_destroy(service_config);
     gpr_free(service_config_string);
     grpc_lb_addresses_destroy(r->lb_addresses);
+    // Reset backoff state so that we start from the beginning when the
+    // next request gets triggered.
+    r->backoff->Reset();
   } else {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
@@ -297,7 +299,6 @@ static void dns_ares_next_locked(grpc_resolver* resolver,
   r->next_completion = on_complete;
   r->target_result = target_result;
   if (r->resolved_version == 0 && !r->resolving) {
-    r->backoff->Reset();
     dns_ares_start_resolving_locked(r);
   } else {
     dns_ares_maybe_finish_next_locked(r);

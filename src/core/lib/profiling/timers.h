@@ -40,12 +40,8 @@ void gpr_timer_set_enabled(int enabled);
   do {                                 \
   } while (0)
 
-#define GPR_TIMER_BEGIN(tag, important) \
+#define GPR_TIMER_SCOPE(tag, important) \
   do {                                  \
-  } while (0)
-
-#define GPR_TIMER_END(tag, important) \
-  do {                                \
   } while (0)
 
 #else /* at least one profiler requested... */
@@ -64,12 +60,6 @@ void gpr_timer_set_enabled(int enabled);
 #define GPR_TIMER_MARK(tag, important) \
   gpr_timer_add_mark(tag, important, __FILE__, __LINE__);
 
-#define GPR_TIMER_BEGIN(tag, important) \
-  gpr_timer_begin(tag, important, __FILE__, __LINE__);
-
-#define GPR_TIMER_END(tag, important) \
-  gpr_timer_end(tag, important, __FILE__, __LINE__);
-
 #ifdef GRPC_STAP_PROFILER
 /* Empty placeholder for now. */
 #endif /* GRPC_STAP_PROFILER */
@@ -78,10 +68,6 @@ void gpr_timer_set_enabled(int enabled);
 /* Empty placeholder for now. */
 #endif /* GRPC_BASIC_PROFILER */
 
-#endif /* at least one profiler requested. */
-
-#if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER) + \
-     defined(GRPC_CUSTOM_PROFILER))
 namespace grpc {
 class ProfileScope {
  public:
@@ -99,10 +85,7 @@ class ProfileScope {
 #define GPR_TIMER_SCOPE(tag, important)                                        \
   ::grpc::ProfileScope _profile_scope_##__LINE__((tag), (important), __FILE__, \
                                                  __LINE__)
-#else
-#define GPR_TIMER_SCOPE(tag, important) \
-  do {                                  \
-  } while (false)
-#endif
+
+#endif /* at least one profiler requested. */
 
 #endif /* GRPC_CORE_LIB_PROFILING_TIMERS_H */

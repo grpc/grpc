@@ -61,6 +61,9 @@ typedef struct {
   // fake_resolver_channel_saw_error_locked().
   grpc_channel_args* results_upon_error;
 
+  // TODO(juanlishen): This can go away once pick_first is changed to not throw
+  // away its subchannels, since that will eliminate its dependence on
+  // channel_saw_error_locked() causing an immediate resolver return.
   // A copy of the most-recently used resolution results.
   grpc_channel_args* last_used_results;
 
@@ -164,7 +167,7 @@ typedef struct set_response_closure_arg {
   bool upon_error;
 } set_response_closure_arg;
 
-static void set_response_closure_fn(void* arg, grpc_error* error) {
+static void set_response_closure_locked(void* arg, grpc_error* error) {
   set_response_closure_arg* closure_arg = (set_response_closure_arg*)arg;
   grpc_fake_resolver_response_generator* generator = closure_arg->generator;
   fake_resolver* r = generator->resolver;
@@ -192,7 +195,7 @@ void grpc_fake_resolver_response_generator_set_response(
   closure_arg->response = grpc_channel_args_copy(response);
   closure_arg->upon_error = false;
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
-                                       set_response_closure_fn, closure_arg,
+                                       set_response_closure_locked, closure_arg,
                                        grpc_combiner_scheduler(
                                            generator->resolver->base.combiner)),
                      GRPC_ERROR_NONE);
@@ -209,7 +212,7 @@ void grpc_fake_resolver_response_generator_set_response_upon_error(
       response != nullptr ? grpc_channel_args_copy(response) : nullptr;
   closure_arg->upon_error = true;
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
-                                       set_response_closure_fn, closure_arg,
+                                       set_response_closure_locked, closure_arg,
                                        grpc_combiner_scheduler(
                                            generator->resolver->base.combiner)),
                      GRPC_ERROR_NONE);

@@ -314,7 +314,7 @@ static void internal_add_error(grpc_error** err, grpc_error* new_err) {
 grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
                               grpc_error** referencing,
                               size_t num_referencing) {
-  GPR_TIMER_BEGIN("grpc_error_create", 0);
+  GPR_TIMER_SCOPE("grpc_error_create", 0);
   uint8_t initial_arena_capacity = (uint8_t)(
       DEFAULT_ERROR_CAPACITY +
       (uint8_t)(num_referencing * SLOTS_PER_LINKED_ERROR) + SURPLUS_CAPACITY);
@@ -355,7 +355,6 @@ grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
 
   gpr_atm_no_barrier_store(&err->atomics.error_string, 0);
   gpr_ref_init(&err->atomics.refs, 1);
-  GPR_TIMER_END("grpc_error_create", 0);
   return err;
 }
 
@@ -378,7 +377,7 @@ static void ref_errs(grpc_error* err) {
 }
 
 static grpc_error* copy_error_and_unref(grpc_error* in) {
-  GPR_TIMER_BEGIN("copy_error_and_unref", 0);
+  GPR_TIMER_SCOPE("copy_error_and_unref", 0);
   grpc_error* out;
   if (grpc_error_is_special(in)) {
     out = GRPC_ERROR_CREATE_FROM_STATIC_STRING("unknown");
@@ -422,16 +421,14 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
     ref_errs(out);
     GRPC_ERROR_UNREF(in);
   }
-  GPR_TIMER_END("copy_error_and_unref", 0);
   return out;
 }
 
 grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
                                intptr_t value) {
-  GPR_TIMER_BEGIN("grpc_error_set_int", 0);
+  GPR_TIMER_SCOPE("grpc_error_set_int", 0);
   grpc_error* new_err = copy_error_and_unref(src);
   internal_set_int(&new_err, which, value);
-  GPR_TIMER_END("grpc_error_set_int", 0);
   return new_err;
 }
 
@@ -447,36 +444,31 @@ static special_error_status_map error_status_map[] = {
 };
 
 bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
-  GPR_TIMER_BEGIN("grpc_error_get_int", 0);
+  GPR_TIMER_SCOPE("grpc_error_get_int", 0);
   if (grpc_error_is_special(err)) {
     if (which == GRPC_ERROR_INT_GRPC_STATUS) {
       for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
         if (error_status_map[i].error == err) {
           if (p != nullptr) *p = error_status_map[i].code;
-          GPR_TIMER_END("grpc_error_get_int", 0);
           return true;
         }
       }
     }
-    GPR_TIMER_END("grpc_error_get_int", 0);
     return false;
   }
   uint8_t slot = err->ints[which];
   if (slot != UINT8_MAX) {
     if (p != nullptr) *p = err->arena[slot];
-    GPR_TIMER_END("grpc_error_get_int", 0);
     return true;
   }
-  GPR_TIMER_END("grpc_error_get_int", 0);
   return false;
 }
 
 grpc_error* grpc_error_set_str(grpc_error* src, grpc_error_strs which,
                                grpc_slice str) {
-  GPR_TIMER_BEGIN("grpc_error_set_str", 0);
+  GPR_TIMER_SCOPE("grpc_error_set_str", 0);
   grpc_error* new_err = copy_error_and_unref(src);
   internal_set_str(&new_err, which, str);
-  GPR_TIMER_END("grpc_error_set_str", 0);
   return new_err;
 }
 
@@ -503,10 +495,9 @@ bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
 }
 
 grpc_error* grpc_error_add_child(grpc_error* src, grpc_error* child) {
-  GPR_TIMER_BEGIN("grpc_error_add_child", 0);
+  GPR_TIMER_SCOPE("grpc_error_add_child", 0);
   grpc_error* new_err = copy_error_and_unref(src);
   internal_add_error(&new_err, child);
-  GPR_TIMER_END("grpc_error_add_child", 0);
   return new_err;
 }
 
@@ -722,14 +713,13 @@ static char* finish_kvs(kv_pairs* kvs) {
 }
 
 const char* grpc_error_string(grpc_error* err) {
-  GPR_TIMER_BEGIN("grpc_error_string", 0);
+  GPR_TIMER_SCOPE("grpc_error_string", 0);
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
 
   void* p = (void*)gpr_atm_acq_load(&err->atomics.error_string);
   if (p != nullptr) {
-    GPR_TIMER_END("grpc_error_string", 0);
     return (const char*)p;
   }
 
@@ -752,7 +742,6 @@ const char* grpc_error_string(grpc_error* err) {
     out = (char*)gpr_atm_acq_load(&err->atomics.error_string);
   }
 
-  GPR_TIMER_END("grpc_error_string", 0);
   return out;
 }
 

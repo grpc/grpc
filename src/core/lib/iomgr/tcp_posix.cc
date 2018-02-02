@@ -130,7 +130,7 @@ static void run_poller(void* bp, grpc_error* error_ignored) {
     gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p run", p);
   }
   gpr_mu_lock(p->pollset_mu);
-  grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 13 * GPR_MS_PER_SEC;
+  grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   GRPC_STATS_INC_TCP_BACKUP_POLLER_POLLS();
   GRPC_LOG_IF_ERROR(
       "backup_poller:pollset_work",
@@ -368,6 +368,7 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
 
 #define MAX_READ_IOVEC 4
 static void tcp_do_read(grpc_tcp* tcp) {
+  GPR_TIMER_SCOPE("tcp_continue_read", 0);
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   ssize_t read_bytes;
@@ -375,7 +376,6 @@ static void tcp_do_read(grpc_tcp* tcp) {
 
   GPR_ASSERT(!tcp->finished_edge);
   GPR_ASSERT(tcp->incoming_buffer->count <= MAX_READ_IOVEC);
-  GPR_TIMER_BEGIN("tcp_continue_read", 0);
 
   for (i = 0; i < tcp->incoming_buffer->count; i++) {
     iov[i].iov_base = GRPC_SLICE_START_PTR(tcp->incoming_buffer->slices[i]);
@@ -393,12 +393,11 @@ static void tcp_do_read(grpc_tcp* tcp) {
   GRPC_STATS_INC_TCP_READ_OFFER(tcp->incoming_buffer->length);
   GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(tcp->incoming_buffer->count);
 
-  GPR_TIMER_BEGIN("recvmsg", 0);
   do {
+    GPR_TIMER_SCOPE("recvmsg", 0);
     GRPC_STATS_INC_SYSCALL_READ();
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
-  GPR_TIMER_END("recvmsg", read_bytes >= 0);
 
   if (read_bytes < 0) {
     /* NB: After calling call_read_cb a parallel call of the read handler may
@@ -434,8 +433,6 @@ static void tcp_do_read(grpc_tcp* tcp) {
     call_read_cb(tcp, GRPC_ERROR_NONE);
     TCP_UNREF(tcp, "read");
   }
-
-  GPR_TIMER_END("tcp_continue_read", 0);
 }
 
 static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
@@ -552,13 +549,12 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
     GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
     GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
 
-    GPR_TIMER_BEGIN("sendmsg", 1);
+    GPR_TIMER_SCOPE("sendmsg", 1);
     do {
       /* TODO(klempner): Cork if this is a partial write */
       GRPC_STATS_INC_SYSCALL_WRITE();
       sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
     } while (sent_length < 0 && errno == EINTR);
-    GPR_TIMER_END("sendmsg", 0);
 
     if (sent_length < 0) {
       if (errno == EAGAIN) {
@@ -637,6 +633,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
 
 static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
                       grpc_closure* cb) {
+  GPR_TIMER_SCOPE("tcp_write", 0);
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_error* error = GRPC_ERROR_NONE;
 
@@ -651,11 +648,9 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     }
   }
 
-  GPR_TIMER_BEGIN("tcp_write", 0);
   GPR_ASSERT(tcp->write_cb == nullptr);
 
   if (buf->length == 0) {
-    GPR_TIMER_END("tcp_write", 0);
     GRPC_CLOSURE_SCHED(
         cb, grpc_fd_is_shutdown(tcp->em_fd)
                 ? tcp_annotate_error(
@@ -680,8 +675,6 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     }
     GRPC_CLOSURE_SCHED(cb, error);
   }
-
-  GPR_TIMER_END("tcp_write", 0);
 }
 
 static void tcp_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {

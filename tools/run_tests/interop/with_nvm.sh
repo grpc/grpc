@@ -16,4 +16,4 @@
 
 # Makes sure NVM is loaded before executing the command passed as an argument
 source ~/.nvm/nvm.sh
-$@
+"$@"
