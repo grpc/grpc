@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.8.0</span>
+   &#160;<span id="projectnumber">1.9.0</span>
    </div>
   </td>
  </tr>
@@ -135,28 +135,45 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> host_;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;};</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
-<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="classgrpc_1_1_async_generic_service.html">   45</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_async_generic_service.html">AsyncGenericService</a> final {</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classgrpc_1_1_async_generic_service.html#a8e7ae6f6010c1a6a0c98a7a252001315">   47</a></span>&#160;  <a class="code" href="classgrpc_1_1_async_generic_service.html#a8e7ae6f6010c1a6a0c98a7a252001315">AsyncGenericService</a>() : server_(nullptr) {}</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_async_generic_service.html#aeab5c20e89a754d5add4bdaad01a3ef6">RequestCall</a>(<a class="code" href="classgrpc_1_1_generic_server_context.html">GenericServerContext</a>* ctx,</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                   <a class="code" href="classgrpc_1_1_server_async_reader_writer.html">GenericServerAsyncReaderWriter</a>* reader_writer,</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                   <a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a>* call_cq,</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                   <a class="code" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a>* notification_cq, <span class="keywordtype">void</span>* tag);</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="classgrpc_1_1_async_generic_service.html#ac2055578ac48afabe5af487878450f68">   55</a></span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classgrpc_1_1_server.html">Server</a>;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <a class="code" href="classgrpc_1_1_server.html">Server</a>* server_;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;};</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">#endif  // GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H</span></div>
-<div class="ttc" id="classgrpc_1_1_async_generic_service_html_a8e7ae6f6010c1a6a0c98a7a252001315"><div class="ttname"><a href="classgrpc_1_1_async_generic_service.html#a8e7ae6f6010c1a6a0c98a7a252001315">grpc::AsyncGenericService::AsyncGenericService</a></div><div class="ttdeci">AsyncGenericService()</div><div class="ttdef"><b>Definition:</b> async_generic_service.h:47</div></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">// A generic service at the server side accepts all RPC methods and hosts. It is</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">// typically used in proxies. The generic service can be registered to a server</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment">// which also has other services.</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment">// Sample usage:</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment">//   ServerBuilder builder;</span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="comment">//   auto cq = builder.AddCompletionQueue();</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">//   AsyncGenericService generic_service;</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">//   builder.RegisterAsyncGeneicService(&amp;generic_service);</span></div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment">//   auto server = builder.BuildAndStart();</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">//</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">//   // request a new call</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">//   GenericServerContext context;</span></div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">//   GenericAsyncReaderWriter stream;</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment">//   generic_service.RequestCall(&amp;context, &amp;stream, cq.get(), cq.get(), tag);</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment">//</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="comment">// When tag is retrieved from cq-&gt;Next(), context.method() can be used to look</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="comment">// at the method and the RPC can be handled accordingly.</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classgrpc_1_1_async_generic_service.html">   62</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_async_generic_service.html">AsyncGenericService</a> final {</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classgrpc_1_1_async_generic_service.html#a8e7ae6f6010c1a6a0c98a7a252001315">   64</a></span>&#160;  <a class="code" href="classgrpc_1_1_async_generic_service.html#a8e7ae6f6010c1a6a0c98a7a252001315">AsyncGenericService</a>() : server_(nullptr) {}</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_async_generic_service.html#aeab5c20e89a754d5add4bdaad01a3ef6">RequestCall</a>(<a class="code" href="classgrpc_1_1_generic_server_context.html">GenericServerContext</a>* ctx,</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                   <a class="code" href="classgrpc_1_1_server_async_reader_writer.html">GenericServerAsyncReaderWriter</a>* reader_writer,</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                   <a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a>* call_cq,</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                   <a class="code" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a>* notification_cq, <span class="keywordtype">void</span>* tag);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00072"></a><span class="lineno"><a class="line" href="classgrpc_1_1_async_generic_service.html#ac2055578ac48afabe5af487878450f68">   72</a></span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classgrpc_1_1_server.html">Server</a>;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <a class="code" href="classgrpc_1_1_server.html">Server</a>* server_;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;};</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor">#endif  // GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H</span></div>
+<div class="ttc" id="classgrpc_1_1_async_generic_service_html_a8e7ae6f6010c1a6a0c98a7a252001315"><div class="ttname"><a href="classgrpc_1_1_async_generic_service.html#a8e7ae6f6010c1a6a0c98a7a252001315">grpc::AsyncGenericService::AsyncGenericService</a></div><div class="ttdeci">AsyncGenericService()</div><div class="ttdef"><b>Definition:</b> async_generic_service.h:64</div></div>
 <div class="ttc" id="namespacegrpc_html_ab04a87625da3bf85cdaf5e7856b00203"><div class="ttname"><a href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a></div><div class="ttdeci">std::string string</div><div class="ttdef"><b>Definition:</b> config.h:35</div></div>
 <div class="ttc" id="classgrpc_1_1_server_async_reader_writer_html"><div class="ttname"><a href="classgrpc_1_1_server_async_reader_writer.html">grpc::ServerAsyncReaderWriter</a></div><div class="ttdoc">Async server-side API for doing bidirectional streaming RPCs, where the incoming message stream comin...</div><div class="ttdef"><b>Definition:</b> async_stream.h:951</div></div>
-<div class="ttc" id="grpc__types_8h_html_a2bbbaad8f7a806f6c834b68c5dd916d8"><div class="ttname"><a href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a></div><div class="ttdeci">struct grpc_server grpc_server</div><div class="ttdoc">A server listens to some port and responds to request calls. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:66</div></div>
-<div class="ttc" id="classgrpc_1_1_async_generic_service_html"><div class="ttname"><a href="classgrpc_1_1_async_generic_service.html">grpc::AsyncGenericService</a></div><div class="ttdef"><b>Definition:</b> async_generic_service.h:45</div></div>
+<div class="ttc" id="grpc__types_8h_html_a2bbbaad8f7a806f6c834b68c5dd916d8"><div class="ttname"><a href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a></div><div class="ttdeci">struct grpc_server grpc_server</div><div class="ttdoc">A server listens to some port and responds to request calls. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:65</div></div>
+<div class="ttc" id="classgrpc_1_1_async_generic_service_html"><div class="ttname"><a href="classgrpc_1_1_async_generic_service.html">grpc::AsyncGenericService</a></div><div class="ttdef"><b>Definition:</b> async_generic_service.h:62</div></div>
 <div class="ttc" id="classgrpc_1_1_async_generic_service_html_aeab5c20e89a754d5add4bdaad01a3ef6"><div class="ttname"><a href="classgrpc_1_1_async_generic_service.html#aeab5c20e89a754d5add4bdaad01a3ef6">grpc::AsyncGenericService::RequestCall</a></div><div class="ttdeci">void RequestCall(GenericServerContext *ctx, GenericServerAsyncReaderWriter *reader_writer, CompletionQueue *call_cq, ServerCompletionQueue *notification_cq, void *tag)</div></div>
 <div class="ttc" id="classgrpc_1_1_server_html"><div class="ttname"><a href="classgrpc_1_1_server.html">grpc::Server</a></div><div class="ttdoc">Represents a gRPC server. </div><div class="ttdef"><b>Definition:</b> server.h:52</div></div>
 <div class="ttc" id="grpc_09_09_2support_2byte__buffer_8h_html"><div class="ttname"><a href="grpc_09_09_2support_2byte__buffer_8h.html">byte_buffer.h</a></div></div>
@@ -172,7 +189,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

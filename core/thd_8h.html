@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_04ed5e7a0931afed58b44427831a7c00.html">include</a></li><li class="navelem"><a class="el" href="dir_70e6a53b947bcbad872060ddc188ca9d.html">grpc</a></li><li class="navelem"><a class="el" href="dir_109c1a2f285164b9e5e86b540d57c7ff.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_8c22a72beb99e7fdfd27506cb533e734.html">include</a></li><li class="navelem"><a class="el" href="dir_3da487aded176e6fcacfa0e3f4e152fb.html">grpc</a></li><li class="navelem"><a class="el" href="dir_254b88172214ff35a1af19380f2e7b38.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -112,9 +112,9 @@ Typedefs</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a1512fb59795f3c7acf6f1d25dd188a86"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a1512fb59795f3c7acf6f1d25dd188a86">gpr_thd_new</a> (<a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a> *t, void(*thd_body)(void *arg), void *arg, const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
-<tr class="memdesc:a1512fb59795f3c7acf6f1d25dd188a86"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new thread running (*thd_body)(arg) and place its thread identifier in *t, and return true.  <a href="#a1512fb59795f3c7acf6f1d25dd188a86">More...</a><br/></td></tr>
-<tr class="separator:a1512fb59795f3c7acf6f1d25dd188a86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63b693490ea52dd83f04d5d6116c7088"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a63b693490ea52dd83f04d5d6116c7088">gpr_thd_new</a> (<a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a> *t, const char *thd_name, void(*thd_body)(void *arg), void *arg, const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="memdesc:a63b693490ea52dd83f04d5d6116c7088"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new thread running (*thd_body)(arg) and place its thread identifier in *t, and return true.  <a href="#a63b693490ea52dd83f04d5d6116c7088">More...</a><br/></td></tr>
+<tr class="separator:a63b693490ea52dd83f04d5d6116c7088"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae568dd50aa735eb5b5bc9cd7f0a511b2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#ae568dd50aa735eb5b5bc9cd7f0a511b2">gpr_thd_options_default</a> (void)</td></tr>
 <tr class="memdesc:ae568dd50aa735eb5b5bc9cd7f0a511b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a <a class="el" href="structgpr__thd__options.html" title="Thread creation options. ">gpr_thd_options</a> struct with all fields set to defaults.  <a href="#ae568dd50aa735eb5b5bc9cd7f0a511b2">More...</a><br/></td></tr>
 <tr class="separator:ae568dd50aa735eb5b5bc9cd7f0a511b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -191,7 +191,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a1512fb59795f3c7acf6f1d25dd188a86"></a>
+<a class="anchor" id="a63b693490ea52dd83f04d5d6116c7088"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -200,6 +200,12 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype"><a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a> *&#160;</td>
           <td class="paramname"><em>t</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>thd_name</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -228,7 +234,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Create a new thread running (*thd_body)(arg) and place its thread identifier in *t, and return true. </p>
-<p>If there are insufficient resources, return false. If options==NULL, default options are used. The thread is immediately runnable, and exits when (*thd_body)() returns. </p>
+<p>If there are insufficient resources, return false. thd_name is the name of the thread for identification purposes on platforms that support thread naming. If options==NULL, default options are used. The thread is immediately runnable, and exits when (*thd_body)() returns. </p>
 
 </div>
 </div>
@@ -325,7 +331,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:10 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

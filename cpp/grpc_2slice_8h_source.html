@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.8.0</span>
+   &#160;<span id="projectnumber">1.9.0</span>
    </div>
   </td>
  </tr>
@@ -206,8 +206,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="grpc_2slice_8h_html_a8c2a57340b8ff85c5bc17ecffe941a8d"><div class="ttname"><a href="grpc_2slice_8h.html#a8c2a57340b8ff85c5bc17ecffe941a8d">grpc_slice_cmp</a></div><div class="ttdeci">GPRAPI int grpc_slice_cmp(grpc_slice a, grpc_slice b)</div><div class="ttdoc">Returns &lt;0 if a &lt; b, ==0 if a == b, &gt;0 if a &gt; b The order is arbitrary, and is not guaranteed to be s...</div></div>
 <div class="ttc" id="grpc_2slice_8h_html_a0156c0520f9f84dc4b76327d7fac69d6"><div class="ttname"><a href="grpc_2slice_8h.html#a0156c0520f9f84dc4b76327d7fac69d6">grpc_slice_from_static_buffer</a></div><div class="ttdeci">GPRAPI grpc_slice grpc_slice_from_static_buffer(const void *source, size_t len)</div><div class="ttdoc">Create a slice pointing to constant memory. </div></div>
 <div class="ttc" id="grpc_2slice_8h_html_ac334a6c6ad0a729fd4fe521df9f5ecc5"><div class="ttname"><a href="grpc_2slice_8h.html#ac334a6c6ad0a729fd4fe521df9f5ecc5">grpc_slice_sub</a></div><div class="ttdeci">GPRAPI grpc_slice grpc_slice_sub(grpc_slice s, size_t begin, size_t end)</div><div class="ttdoc">Return a result slice derived from s, which shares a ref count with s, where result.data==s.data+begin, and result.length==end-begin. </div></div>
-<div class="ttc" id="structgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...</div><div class="ttdef"><b>Definition:</b> slice.h:81</div></div>
-<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:440</div></div>
+<div class="ttc" id="structgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...</div><div class="ttdef"><b>Definition:</b> slice.h:80</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:466</div></div>
 <div class="ttc" id="grpc_2slice_8h_html_a0b714cdd6fa993b1d47eb08f2d5f8fc1"><div class="ttname"><a href="grpc_2slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">grpc_slice_malloc</a></div><div class="ttdeci">GPRAPI grpc_slice grpc_slice_malloc(size_t length)</div><div class="ttdoc">Equivalent to grpc_slice_new(malloc(len), len, free), but saves one malloc() call. </div></div>
 <div class="ttc" id="support_2sync_8h_html"><div class="ttname"><a href="support_2sync_8h.html">sync.h</a></div></div>
 <div class="ttc" id="grpc_2slice_8h_html_a4a42e5de5c07151adf96278ea466ef4d"><div class="ttname"><a href="grpc_2slice_8h.html#a4a42e5de5c07151adf96278ea466ef4d">grpc_slice_ref_whom</a></div><div class="ttdeci">grpc_slice_ref_whom</div><div class="ttdef"><b>Definition:</b> slice.h:111</div></div>
@@ -239,7 +239,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

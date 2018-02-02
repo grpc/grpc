@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_04ed5e7a0931afed58b44427831a7c00.html">include</a></li><li class="navelem"><a class="el" href="dir_70e6a53b947bcbad872060ddc188ca9d.html">grpc</a></li><li class="navelem"><a class="el" href="dir_109c1a2f285164b9e5e86b540d57c7ff.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_8c22a72beb99e7fdfd27506cb533e734.html">include</a></li><li class="navelem"><a class="el" href="dir_3da487aded176e6fcacfa0e3f4e152fb.html">grpc</a></li><li class="navelem"><a class="el" href="dir_254b88172214ff35a1af19380f2e7b38.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -108,7 +108,14 @@ Data Structures</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:ab2c3baa4e4ceb366668aaf51379340fd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#ab2c3baa4e4ceb366668aaf51379340fd">GPR_TLS_DECL</a>(name)&#160;&#160;&#160;static struct <a class="el" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> name = {0}</td></tr>
+<tr class="memdesc:ab2c3baa4e4ceb366668aaf51379340fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Use GPR_TLS_DECL to declare tls static variables outside a class.  <a href="#ab2c3baa4e4ceb366668aaf51379340fd">More...</a><br/></td></tr>
 <tr class="separator:ab2c3baa4e4ceb366668aaf51379340fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc8fbf4ef25c95e4ddab571dd156407d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#acc8fbf4ef25c95e4ddab571dd156407d">GPR_TLS_CLASS_DECL</a>(name)&#160;&#160;&#160;static struct <a class="el" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> name</td></tr>
+<tr class="memdesc:acc8fbf4ef25c95e4ddab571dd156407d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Use GPR_TLS_CLASS_DECL to declare tls static variable members of a class.  <a href="#acc8fbf4ef25c95e4ddab571dd156407d">More...</a><br/></td></tr>
+<tr class="separator:acc8fbf4ef25c95e4ddab571dd156407d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace2f12ec75e024b1adb5a67f4b3ea1cf"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#ace2f12ec75e024b1adb5a67f4b3ea1cf">GPR_TLS_CLASS_DEF</a>(name)&#160;&#160;&#160;struct <a class="el" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> name = {0}</td></tr>
+<tr class="memdesc:ace2f12ec75e024b1adb5a67f4b3ea1cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Use GPR_TLS_CLASS_DEF to declare tls static variable members of a class.  <a href="#ace2f12ec75e024b1adb5a67f4b3ea1cf">More...</a><br/></td></tr>
+<tr class="separator:ace2f12ec75e024b1adb5a67f4b3ea1cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43768a42ff705cc028b4a483dc3b65c5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#a43768a42ff705cc028b4a483dc3b65c5">gpr_tls_init</a>(tls)&#160;&#160;&#160;<a class="el" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(0 == pthread_key_create(&amp;(tls)-&gt;key, NULL))</td></tr>
 <tr class="separator:a43768a42ff705cc028b4a483dc3b65c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a187108e1078d2ce05388cb17bc59ce74"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#a187108e1078d2ce05388cb17bc59ce74">gpr_tls_destroy</a>(tls)&#160;&#160;&#160;pthread_key_delete((tls)-&gt;key)</td></tr>
@@ -122,6 +129,44 @@ Functions</h2></td></tr>
 <tr class="separator:a1851838d725310f7c043ba49fc5357c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a class="anchor" id="acc8fbf4ef25c95e4ddab571dd156407d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GPR_TLS_CLASS_DECL</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">name</td><td>)</td>
+          <td>&#160;&#160;&#160;static struct <a class="el" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> name</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Use GPR_TLS_CLASS_DECL to declare tls static variable members of a class. </p>
+<p>GPR_TLS_CLASS_DEF needs to be called to define this member. </p>
+
+</div>
+</div>
+<a class="anchor" id="ace2f12ec75e024b1adb5a67f4b3ea1cf"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GPR_TLS_CLASS_DEF</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">name</td><td>)</td>
+          <td>&#160;&#160;&#160;struct <a class="el" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> name = {0}</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Use GPR_TLS_CLASS_DEF to declare tls static variable members of a class. </p>
+<p>GPR_TLS_CLASS_DEF needs to be called to define this member. </p>
+
+</div>
+</div>
 <a class="anchor" id="ab2c3baa4e4ceb366668aaf51379340fd"></a>
 <div class="memitem">
 <div class="memproto">
@@ -135,6 +180,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Use GPR_TLS_DECL to declare tls static variables outside a class. </p>
 
 </div>
 </div>
@@ -216,7 +263,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:10 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

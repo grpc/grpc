@@ -2,6 +2,7 @@ var searchData=
 [
   ['data',['data',['../classgrpc_1_1string__ref.html#a154cea379c9d7e5635b401a4cc304216',1,'grpc::string_ref']]],
   ['deadline',['deadline',['../classgrpc_1_1_client_context.html#a7dfc4e022f2f160f430f000aec402f5c',1,'grpc::ClientContext::deadline()'],['../classgrpc_1_1_server_context.html#a082dad4103d189e28531cae36e4bab90',1,'grpc::ServerContext::deadline()']]],
+  ['debug_5ferror_5fstring',['debug_error_string',['../classgrpc_1_1_client_context.html#a289ed3537c73b4d3fa34b648bcb84912',1,'grpc::ClientContext']]],
   ['defaultconstructor',['DefaultConstructor',['../classgrpc_1_1_client_context_1_1_global_callbacks.html#afd02d69bd8d2e474e446548e4fd12bb9',1,'grpc::ClientContext::GlobalCallbacks']]],
   ['defaulthealthcheckserviceenabled',['DefaultHealthCheckServiceEnabled',['../namespacegrpc.html#ac6cb56443dd770ee50262a69abdb0b40',1,'grpc']]],
   ['deserialize',['Deserialize',['../classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a11eb353a98d86bab2fa1a1bfd5df9393',1,'grpc::SerializationTraits&lt; ByteBuffer, void &gt;::Deserialize()'],['../classgrpc_1_1internal_1_1_deserialize_func.html#adc5d764822f82dbe6452e3faed4a0c95',1,'grpc::internal::DeserializeFunc::Deserialize()'],['../classgrpc_1_1internal_1_1_deserialize_func_type.html#a75143cf9a39f6334b15a546cdd593b9c',1,'grpc::internal::DeserializeFuncType::Deserialize()']]],

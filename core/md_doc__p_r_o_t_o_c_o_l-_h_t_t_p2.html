@@ -81,7 +81,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><h2>Introduction</h2>
-<p>This document serves as a detailed description for an implementation of gRPC carried over HTTP2 draft 17 framing. It assumes familiarity with the HTTP2 specification.</p>
+<p>This document serves as a detailed description for an implementation of gRPC carried over <a href="https://tools.ietf.org/html/rfc7540">HTTP2 framing</a>. It assumes familiarity with the HTTP2 specification.</p>
 <h2>Protocol</h2>
 <p>Production rules are using <a href="http://tools.ietf.org/html/rfc5234">ABNF syntax</a>.</p>
 <h3>Outline</h3>
@@ -100,7 +100,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li><b>Call-Definition</b> → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]</li>
 <li><b>Method</b> → ":method POST"</li>
 <li><b>Scheme</b> → ":scheme " ("http" / "https")</li>
-<li><b>Path</b> → ":path" "/" Service-Name "/" {<em>method name</em>}</li>
+<li><b>Path</b> → ":path" "/" Service-Name "/" {<em>method name</em>} # But see note below.</li>
 <li><b>Service-Name</b> → {<em>IDL-specific service name</em>}</li>
 <li><b>Authority</b> → ":authority" {<em>virtual host name of authority</em>}</li>
 <li><b>TE</b> → "te" "trailers" # Used to detect incompatible proxies</li>
@@ -167,7 +167,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>``` HEADERS (flags = END_HEADERS) :method = POST :scheme = http :path = /google.pubsub.v2.PublisherService/CreateTopic :authority = pubsub.googleapis.com grpc-timeout = 1S content-type = application/grpc+proto grpc-encoding = gzip authorization = Bearer y235.wef315yfh138vh31hv93hv8h3v</p>
 <p>DATA (flags = END_STREAM) &lt;Length-Prefixed Message&gt; ``` <b>Response</b> ``` HEADERS (flags = END_HEADERS) :status = 200 grpc-encoding = gzip content-type = application/grpc+proto</p>
 <p>DATA &lt;Length-Prefixed Message&gt;</p>
-<p>HEADERS (flags = END_STREAM, END_HEADERS) grpc-status = 0 # OK trace-proto-bin = jher831yy13JHy3hc ``` </p>
+<p>HEADERS (flags = END_STREAM, END_HEADERS) grpc-status = 0 # OK trace-proto-bin = jher831yy13JHy3hc ```</p>
 <h4>User Agents</h4>
 <p>While the protocol does not require a user-agent to function it is recommended that clients provide a structured user-agent string that provides a basic description of the calling library, version &amp; platform to facilitate issue diagnosis in heterogeneous environments. The following structure is recommended to library developers ``` User-Agent → "grpc-" Language ?("-" Variant) "/" Version ?( " (" *(AdditionalProperty ";") ")" ) ``` E.g.</p>
 <p>``` grpc-java/1.2.3 grpc-ruby/1.2.3 grpc-ruby-jruby/1.3.4 grpc-java-android/0.9.1 (gingerbread/1.2.4; nexus5; tmobile) ```</p>
@@ -180,7 +180,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 <h4>HTTP2 Transport Mapping</h4>
 <h5>Stream Identification</h5>
-<p>All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These id’s are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.</p>
+<p>All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These ids are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.</p>
 <h5>Data Frames</h5>
 <p>DATA frame boundaries have no relation to <b>Length-Prefixed-Message</b> boundaries and implementations should make no assumptions about their alignment.</p>
 <h5>Errors</h5>
@@ -237,7 +237,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:10 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

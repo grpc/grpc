@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.8.0</span>
+   &#160;<span id="projectnumber">1.9.0</span>
    </div>
   </td>
  </tr>
@@ -116,25 +116,31 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="structgpr__msvc__thread__local.html#a044a9f5ee0a6d57e0863cd70fb6e2587">   26</a></span>&#160;  intptr_t <a class="code" href="structgpr__msvc__thread__local.html#a044a9f5ee0a6d57e0863cd70fb6e2587">value</a>;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;};</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;</div>
-<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#ab2c3baa4e4ceb366668aaf51379340fd">   29</a></span>&#160;<span class="preprocessor">#define GPR_TLS_DECL(name) \</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">  static __declspec(thread) struct gpr_msvc_thread_local name = {0}</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#a43768a42ff705cc028b4a483dc3b65c5">   32</a></span>&#160;<span class="preprocessor">#define gpr_tls_init(tls) \</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">  do {                    \</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">  } while (0)</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#a187108e1078d2ce05388cb17bc59ce74">   35</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_tls_destroy(tls) \</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">  do {                       \</span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">  } while (0)</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#aa8f01b3e40178b80d098650f42c529e7">   38</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_tls_set(tls, new_value) (((tls)-&gt;value) = (new_value))</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">   39</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_tls_get(tls) ((tls)-&gt;value)</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#ab2c3baa4e4ceb366668aaf51379340fd">   30</a></span>&#160;<span class="preprocessor">#define GPR_TLS_DECL(name) \</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">  static __declspec(thread) struct gpr_msvc_thread_local name = {0}</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#acc8fbf4ef25c95e4ddab571dd156407d">   35</a></span>&#160;<span class="preprocessor">#define GPR_TLS_CLASS_DECL(name) \</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">  static __declspec(thread) struct gpr_msvc_thread_local name</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#ace2f12ec75e024b1adb5a67f4b3ea1cf">   38</a></span>&#160;<span class="preprocessor">#define GPR_TLS_CLASS_DEF(name) \</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">  __declspec(thread) struct gpr_msvc_thread_local name = {0}</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_TLS_MSVC_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#a43768a42ff705cc028b4a483dc3b65c5">   41</a></span>&#160;<span class="preprocessor">#define gpr_tls_init(tls) \</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">  do {                    \</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">  } while (0)</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#a187108e1078d2ce05388cb17bc59ce74">   44</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_tls_destroy(tls) \</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor">  do {                       \</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">  } while (0)</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#aa8f01b3e40178b80d098650f42c529e7">   47</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_tls_set(tls, new_value) (((tls)-&gt;value) = (new_value))</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="tls__msvc_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">   48</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_tls_get(tls) ((tls)-&gt;value)</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_TLS_MSVC_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="structgpr__msvc__thread__local_html_a044a9f5ee0a6d57e0863cd70fb6e2587"><div class="ttname"><a href="structgpr__msvc__thread__local.html#a044a9f5ee0a6d57e0863cd70fb6e2587">gpr_msvc_thread_local::value</a></div><div class="ttdeci">intptr_t value</div><div class="ttdef"><b>Definition:</b> tls_msvc.h:26</div></div>
 <div class="ttc" id="structgpr__msvc__thread__local_html"><div class="ttname"><a href="structgpr__msvc__thread__local.html">gpr_msvc_thread_local</a></div><div class="ttdoc">Thread local storage based on ms visual c compiler primitives. </div><div class="ttdef"><b>Definition:</b> tls_msvc.h:25</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

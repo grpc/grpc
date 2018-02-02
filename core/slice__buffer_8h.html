@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_04ed5e7a0931afed58b44427831a7c00.html">include</a></li><li class="navelem"><a class="el" href="dir_70e6a53b947bcbad872060ddc188ca9d.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_8c22a72beb99e7fdfd27506cb533e734.html">include</a></li><li class="navelem"><a class="el" href="dir_3da487aded176e6fcacfa0e3f4e152fb.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -136,9 +136,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a7bd220a3e589556980985bef36b08d3e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice__buffer_8h.html#a7bd220a3e589556980985bef36b08d3e">grpc_slice_buffer_move_first_no_ref</a> (<a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *src, size_t n, <a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *dst)</td></tr>
 <tr class="memdesc:a7bd220a3e589556980985bef36b08d3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">move the first n bytes of src into dst without adding references  <a href="#a7bd220a3e589556980985bef36b08d3e">More...</a><br/></td></tr>
 <tr class="separator:a7bd220a3e589556980985bef36b08d3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab0a50399722f66965800c42b8d5f2c9d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice__buffer_8h.html#ab0a50399722f66965800c42b8d5f2c9d">grpc_slice_buffer_move_first_into_buffer</a> (<a class="el" href="exec__ctx__fwd_8h.html#aabc6a414771ff6697446fc9d5d708057">grpc_exec_ctx</a> *exec_ctx, <a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *src, size_t n, void *dst)</td></tr>
-<tr class="memdesc:ab0a50399722f66965800c42b8d5f2c9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">move the first n bytes of src into dst (copying them)  <a href="#ab0a50399722f66965800c42b8d5f2c9d">More...</a><br/></td></tr>
-<tr class="separator:ab0a50399722f66965800c42b8d5f2c9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2ab9bf61fe0a25d0684f0a56bd0d2bd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice__buffer_8h.html#ad2ab9bf61fe0a25d0684f0a56bd0d2bd">grpc_slice_buffer_move_first_into_buffer</a> (<a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *src, size_t n, void *dst)</td></tr>
+<tr class="memdesc:ad2ab9bf61fe0a25d0684f0a56bd0d2bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">move the first n bytes of src into dst (copying them)  <a href="#ad2ab9bf61fe0a25d0684f0a56bd0d2bd">More...</a><br/></td></tr>
+<tr class="separator:ad2ab9bf61fe0a25d0684f0a56bd0d2bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a661a050b772ca79a99757ee2768b32d3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice__buffer_8h.html#a661a050b772ca79a99757ee2768b32d3">grpc_slice_buffer_take_first</a> (<a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *src)</td></tr>
 <tr class="memdesc:a661a050b772ca79a99757ee2768b32d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">take the first slice in the slice buffer  <a href="#a661a050b772ca79a99757ee2768b32d3">More...</a><br/></td></tr>
 <tr class="separator:a661a050b772ca79a99757ee2768b32d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -307,19 +307,13 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab0a50399722f66965800c42b8d5f2c9d"></a>
+<a class="anchor" id="ad2ab9bf61fe0a25d0684f0a56bd0d2bd"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void grpc_slice_buffer_move_first_into_buffer </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="exec__ctx__fwd_8h.html#aabc6a414771ff6697446fc9d5d708057">grpc_exec_ctx</a> *&#160;</td>
-          <td class="paramname"><em>exec_ctx</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype"><a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *&#160;</td>
           <td class="paramname"><em>src</em>, </td>
         </tr>
@@ -584,7 +578,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 12 2017 18:36:12 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 2 2018 15:15:10 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -17,6 +17,5 @@ var searchData=
   ['error_5fcode',['error_code',['../classgrpc_1_1_status.html#a78b50cb074bcd9f1dd50e8f212f7e181',1,'grpc::Status']]],
   ['error_5fdetails',['error_details',['../classgrpc_1_1_status.html#a833996c1c8789062e4adb75df83fec2d',1,'grpc::Status']]],
   ['error_5fmessage',['error_message',['../classgrpc_1_1_status.html#a87888a7acefced58302f89a295940f16',1,'grpc::Status']]],
-  ['error_5fstring',['error_string',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a6d5471266248e60c09104ca5bf2e4b63',1,'grpc_op::grpc_op_data::grpc_op_recv_status_on_client']]],
-  ['exec_5fctx_5ffwd_2eh',['exec_ctx_fwd.h',['../exec__ctx__fwd_8h.html',1,'']]]
+  ['error_5fstring',['error_string',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a6d5471266248e60c09104ca5bf2e4b63',1,'grpc_op::grpc_op_data::grpc_op_recv_status_on_client']]]
 ];
