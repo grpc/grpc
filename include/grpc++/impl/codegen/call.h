@@ -216,14 +216,12 @@ class CallOpSendInitialMetadata {
  public:
   CallOpSendInitialMetadata() : send_(false) {
     maybe_compression_level_.is_set = false;
-    maybe_stream_compression_level_.is_set = false;
   }
 
   void SendInitialMetadata(
       const std::multimap<grpc::string, grpc::string>& metadata,
       uint32_t flags) {
     maybe_compression_level_.is_set = false;
-    maybe_stream_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
     initial_metadata_ =
@@ -233,11 +231,6 @@ class CallOpSendInitialMetadata {
   void set_compression_level(grpc_compression_level level) {
     maybe_compression_level_.is_set = true;
     maybe_compression_level_.level = level;
-  }
-
-  void set_stream_compression_level(grpc_stream_compression_level level) {
-    maybe_stream_compression_level_.is_set = true;
-    maybe_stream_compression_level_.level = level;
   }
 
  protected:
@@ -255,12 +248,6 @@ class CallOpSendInitialMetadata {
       op->data.send_initial_metadata.maybe_compression_level.level =
           maybe_compression_level_.level;
     }
-    op->data.send_initial_metadata.maybe_stream_compression_level.is_set =
-        maybe_stream_compression_level_.is_set;
-    if (maybe_stream_compression_level_.is_set) {
-      op->data.send_initial_metadata.maybe_stream_compression_level.level =
-          maybe_stream_compression_level_.level;
-    }
   }
   void FinishOp(bool* status) {
     if (!send_) return;
@@ -276,10 +263,6 @@ class CallOpSendInitialMetadata {
     bool is_set;
     grpc_compression_level level;
   } maybe_compression_level_;
-  struct {
-    bool is_set;
-    grpc_stream_compression_level level;
-  } maybe_stream_compression_level_;
 };
 
 class CallOpSendMessage {
@@ -624,7 +607,7 @@ class CallOpSetInterface : public CompletionQueueTag {
   virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
 };
 
-/// Primary implementaiton of CallOpSetInterface.
+/// Primary implementation of CallOpSetInterface.
 /// Since we cannot use variadic templates, we declare slots up to
 /// the maximum count of ops we'll need in a set. We leverage the
 /// empty base class optimization to slim this class (especially
@@ -641,7 +624,7 @@ class CallOpSet : public CallOpSetInterface,
                   public Op5,
                   public Op6 {
  public:
-  CallOpSet() : return_tag_(this) {}
+  CallOpSet() : return_tag_(this), call_(nullptr) {}
   void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);

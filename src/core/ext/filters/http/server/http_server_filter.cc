@@ -367,8 +367,8 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
 
 static void hs_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+  GPR_TIMER_SCOPE("hs_start_transport_stream_op_batch", 0);
   call_data* calld = (call_data*)elem->call_data;
-  GPR_TIMER_BEGIN("hs_start_transport_stream_op_batch", 0);
   grpc_error* error = hs_mutate_op(elem, op);
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(op, error,
@@ -376,7 +376,6 @@ static void hs_start_transport_stream_op_batch(
   } else {
     grpc_call_next_op(elem, op);
   }
-  GPR_TIMER_END("hs_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */

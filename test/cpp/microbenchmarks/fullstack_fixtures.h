@@ -245,29 +245,51 @@ class SockPair : public EndpointPairFixture {
                             fixture_configuration) {}
 };
 
-class InProcessCHTTP2 : public EndpointPairFixture {
+/* Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)
+   is here only to be able to initialize both the base class and stats_ with the
+   same stats instance without accessing the stats_ fields before the object is
+   properly initialized. */
+class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service,
-                  const FixtureConfiguration& fixture_configuration =
-                      FixtureConfiguration())
-      : EndpointPairFixture(service, MakeEndpoints(), fixture_configuration) {}
+  InProcessCHTTP2WithExplicitStats(
+      Service* service, grpc_passthru_endpoint_stats* stats,
+      const FixtureConfiguration& fixture_configuration)
+      : EndpointPairFixture(service, MakeEndpoints(stats),
+                            fixture_configuration),
+        stats_(stats) {}
+
+  virtual ~InProcessCHTTP2WithExplicitStats() {
+    if (stats_ != nullptr) {
+      grpc_passthru_endpoint_stats_destroy(stats_);
+    }
+  }
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << static_cast<double>(gpr_atm_no_barrier_load(&stats_.num_writes)) /
+        << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /
                static_cast<double>(state.iterations());
   }
 
  private:
-  grpc_passthru_endpoint_stats stats_;
+  grpc_passthru_endpoint_stats* stats_;
 
-  grpc_endpoint_pair MakeEndpoints() {
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  &stats_);
+                                  stats);
     return p;
   }
+};
+
+class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
+ public:
+  InProcessCHTTP2(Service* service,
+                  const FixtureConfiguration& fixture_configuration =
+                      FixtureConfiguration())
+      : InProcessCHTTP2WithExplicitStats(service,
+                                         grpc_passthru_endpoint_stats_create(),
+                                         fixture_configuration) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////

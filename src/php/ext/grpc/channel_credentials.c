@@ -57,6 +57,10 @@ static grpc_ssl_roots_override_result get_ssl_roots_override(
 
 /* Frees and destroys an instance of wrapped_grpc_channel_credentials */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel_credentials)
+  if (p->hashstr != NULL) {
+    free(p->hashstr);
+    p->hashstr = NULL;
+  }
   if (p->wrapped != NULL) {
     grpc_channel_credentials_release(p->wrapped);
     p->wrapped = NULL;
@@ -153,7 +157,7 @@ PHP_METHOD(ChannelCredentials, createSsl) {
   }
 
   php_grpc_int hashkey_len = root_certs_length + cert_chain_length;
-  char *hashkey = emalloc(hashkey_len);
+  char *hashkey = emalloc(hashkey_len + 1);
   if (root_certs_length > 0) {
     strcpy(hashkey, pem_root_certs);
   }

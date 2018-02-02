@@ -64,6 +64,44 @@ TEST(InlinedVectorTest, EmplaceBack) {
   EXPECT_EQ(3, *v[0]);
 }
 
+TEST(InlinedVectorTest, ClearAndRepopulate) {
+  const int kNumElements = 10;
+  InlinedVector<int, 5> v;
+  EXPECT_EQ(0UL, v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(i);
+    EXPECT_EQ(i + 1UL, v.size());
+  }
+  for (int i = 0; i < kNumElements; ++i) {
+    EXPECT_EQ(i, v[i]);
+  }
+  v.clear();
+  EXPECT_EQ(0UL, v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(kNumElements + i);
+    EXPECT_EQ(i + 1UL, v.size());
+  }
+  for (int i = 0; i < kNumElements; ++i) {
+    EXPECT_EQ(kNumElements + i, v[i]);
+  }
+}
+
+TEST(InlinedVectorTest, ConstIndexOperator) {
+  const int kNumElements = 10;
+  InlinedVector<int, 5> v;
+  EXPECT_EQ(0UL, v.size());
+  for (int i = 0; i < kNumElements; ++i) {
+    v.push_back(i);
+    EXPECT_EQ(i + 1UL, v.size());
+  }
+  auto const_func = [kNumElements](const InlinedVector<int, 5>& v) {
+    for (int i = 0; i < kNumElements; ++i) {
+      EXPECT_EQ(i, v[i]);
+    }
+  };
+  const_func(v);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

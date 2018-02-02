@@ -42,7 +42,6 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/alarm_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -162,9 +161,9 @@ void grpc_shutdown(void) {
     {
       grpc_core::ExecCtx exec_ctx(0);
       {
-        grpc_executor_shutdown();
         grpc_timer_manager_set_threading(
             false);  // shutdown timer_manager thread
+        grpc_executor_shutdown();
         for (i = g_number_of_plugins; i >= 0; i--) {
           if (g_all_of_the_plugins[i].destroy != nullptr) {
             g_all_of_the_plugins[i].destroy();

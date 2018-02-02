@@ -48,8 +48,6 @@ struct passthru_endpoint {
   gpr_mu mu;
   int halves;
   grpc_passthru_endpoint_stats* stats;
-  grpc_passthru_endpoint_stats
-      dummy_stats;  // used if constructor stats == nullptr
   bool shutdown;
   half client;
   half server;
@@ -137,6 +135,7 @@ static void me_destroy(grpc_endpoint* ep) {
   if (0 == --p->halves) {
     gpr_mu_unlock(&p->mu);
     gpr_mu_destroy(&p->mu);
+    grpc_passthru_endpoint_stats_destroy(p->stats);
     grpc_slice_buffer_destroy_internal(&p->client.read_buffer);
     grpc_slice_buffer_destroy_internal(&p->server.read_buffer);
     grpc_resource_user_unref(p->client.resource_user);
@@ -194,11 +193,30 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
   passthru_endpoint* m = (passthru_endpoint*)gpr_malloc(sizeof(*m));
   m->halves = 2;
   m->shutdown = 0;
-  m->stats = stats == nullptr ? &m->dummy_stats : stats;
-  memset(m->stats, 0, sizeof(*m->stats));
+  if (stats == nullptr) {
+    m->stats = grpc_passthru_endpoint_stats_create();
+  } else {
+    gpr_ref(&stats->refs);
+    m->stats = stats;
+  }
   half_init(&m->client, m, resource_quota, "client");
   half_init(&m->server, m, resource_quota, "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;
+}
+
+grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create() {
+  grpc_passthru_endpoint_stats* stats =
+      (grpc_passthru_endpoint_stats*)gpr_malloc(
+          sizeof(grpc_passthru_endpoint_stats));
+  memset(stats, 0, sizeof(*stats));
+  gpr_ref_init(&stats->refs, 1);
+  return stats;
+}
+
+void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats) {
+  if (gpr_unref(&stats->refs)) {
+    gpr_free(stats);
+  }
 }

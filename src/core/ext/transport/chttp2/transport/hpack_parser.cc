@@ -1618,19 +1618,17 @@ grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
                                             grpc_slice slice, int is_last) {
+  GPR_TIMER_SCOPE("grpc_chttp2_hpack_parser_parse", 0);
   grpc_chttp2_hpack_parser* parser = (grpc_chttp2_hpack_parser*)hpack_parser;
-  GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
   grpc_error* error = grpc_chttp2_hpack_parser_parse(parser, slice);
   if (error != GRPC_ERROR_NONE) {
-    GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
     return error;
   }
   if (is_last) {
     if (parser->is_boundary && parser->state != parse_begin) {
-      GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "end of header frame not aligned with a hpack record boundary");
     }
@@ -1639,7 +1637,6 @@ grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
     if (s != nullptr) {
       if (parser->is_boundary) {
         if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
-          GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Too many trailer frames");
         }
@@ -1674,6 +1671,5 @@ grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
     parser->is_eof = 0xde;
     parser->dynamic_table_update_allowed = 2;
   }
-  GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
   return GRPC_ERROR_NONE;
 }

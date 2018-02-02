@@ -99,6 +99,7 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
                              1 TSRMLS_CC);
         efree(str_key);
         efree(str_val);
+        PHP_GRPC_FREE_STD_ZVAL(array);
         return NULL;
       }
       php_grpc_add_next_index_stringl(data, str_val,
@@ -127,10 +128,12 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
   HashTable *inner_array_hash;
   zval *value;
   zval *inner_array;
+  grpc_metadata_array_init(metadata);
+  metadata->count = 0;
+  metadata->metadata = NULL;
   if (Z_TYPE_P(array) != IS_ARRAY) {
     return false;
   }
-  grpc_metadata_array_init(metadata);
   array_hash = Z_ARRVAL_P(array);
 
   char *key;
@@ -313,6 +316,11 @@ PHP_METHOD(Call, startBatch) {
                            "batch keys must be integers", 1 TSRMLS_CC);
       goto cleanup;
     }
+
+    ops[op_num].op = (grpc_op_type)index;
+    ops[op_num].flags = 0;
+    ops[op_num].reserved = NULL;
+
     switch(index) {
     case GRPC_OP_SEND_INITIAL_METADATA:
       if (!create_metadata_array(value, &metadata)) {
@@ -426,9 +434,6 @@ PHP_METHOD(Call, startBatch) {
                            "Unrecognized key in batch", 1 TSRMLS_CC);
       goto cleanup;
     }
-    ops[op_num].op = (grpc_op_type)index;
-    ops[op_num].flags = 0;
-    ops[op_num].reserved = NULL;
     op_num++;
   PHP_GRPC_HASH_FOREACH_END()
 
@@ -538,7 +543,9 @@ cleanup:
  */
 PHP_METHOD(Call, getPeer) {
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
-  PHP_GRPC_RETURN_STRING(grpc_call_get_peer(call->wrapped), 1);
+  char *peer = grpc_call_get_peer(call->wrapped);
+  PHP_GRPC_RETVAL_STRING(peer, 1);
+  gpr_free(peer);
 }
 
 /**

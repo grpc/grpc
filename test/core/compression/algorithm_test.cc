@@ -29,6 +29,8 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
+const uint32_t message_prefix_length = 8;
+const uint32_t stream_prefix_length = 7;
 static void test_algorithm_mesh(void) {
   int i;
 
@@ -48,9 +50,26 @@ static void test_algorithm_mesh(void) {
     mdstr = grpc_slice_from_copied_string(name);
     GPR_ASSERT(grpc_slice_eq(mdstr, grpc_compression_algorithm_slice(parsed)));
     GPR_ASSERT(parsed == grpc_compression_algorithm_from_slice(mdstr));
-    mdelem = grpc_compression_encoding_mdelem(parsed);
-    GPR_ASSERT(grpc_slice_eq(GRPC_MDVALUE(mdelem), mdstr));
-    GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
+    if (parsed == 0) {
+      continue;
+    } else if (grpc_compression_algorithm_is_message(parsed)) {
+      mdelem = grpc_message_compression_encoding_mdelem(
+          grpc_compression_algorithm_to_message_compression_algorithm(parsed));
+      grpc_slice value = GRPC_MDVALUE(mdelem);
+      GPR_ASSERT(0 == memcmp(&name[message_prefix_length],
+                             GRPC_SLICE_START_PTR(value),
+                             GRPC_SLICE_LENGTH(value)));
+      GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
+    } else {
+      mdelem = grpc_stream_compression_encoding_mdelem(
+          grpc_compression_algorithm_to_stream_compression_algorithm(parsed));
+      grpc_slice value = GRPC_MDVALUE(mdelem);
+      GPR_ASSERT(0 == memcmp(&name[stream_prefix_length],
+                             GRPC_SLICE_START_PTR(value),
+                             GRPC_SLICE_LENGTH(value)));
+      GPR_ASSERT(
+          grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_CONTENT_ENCODING));
+    }
     grpc_slice_unref_internal(mdstr);
     GRPC_MDELEM_UNREF(mdelem);
   }
