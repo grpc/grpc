@@ -1489,23 +1489,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "lb_policies_test", 
-    "src": [
-      "test/core/client_channel/lb_policies_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "load_file_test", 
     "src": [
       "test/core/iomgr/load_file_test.cc"
