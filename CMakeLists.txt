@@ -316,7 +316,6 @@ add_dependencies(buildtests_c json_rewrite_test)
 add_dependencies(buildtests_c json_stream_error_test)
 add_dependencies(buildtests_c json_test)
 add_dependencies(buildtests_c lame_client_test)
-add_dependencies(buildtests_c lb_policies_test)
 add_dependencies(buildtests_c load_file_test)
 add_dependencies(buildtests_c memory_profile_client)
 add_dependencies(buildtests_c memory_profile_server)
@@ -6980,33 +6979,6 @@ target_include_directories(lame_client_test
 )
 
 target_link_libraries(lame_client_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(lb_policies_test
-  test/core/client_channel/lb_policies_test.cc
-)
-
-
-target_include_directories(lb_policies_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-)
-
-target_link_libraries(lb_policies_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
