@@ -1336,7 +1336,7 @@ libs:
 - name: grpc++_core_stats
   build: private
   language: c++
-  public_headers:
+  headers:
   - src/cpp/util/core_stats.h
   src:
   - src/proto/grpc/core/stats.proto
