@@ -42,12 +42,16 @@ class TypeSmokeTest(unittest.TestCase):
         del completion_queue
 
     def testServerUpDown(self):
-        server = cygrpc.Server(
-            cygrpc.ChannelArgs([cygrpc.ChannelArg(b'grpc.so_reuseport', 0)]))
+        server = cygrpc.Server(set([
+            (
+                b'grpc.so_reuseport',
+                0,
+            ),
+        ]))
         del server
 
     def testChannelUpDown(self):
-        channel = cygrpc.Channel(b'[::]:0', cygrpc.ChannelArgs([]))
+        channel = cygrpc.Channel(b'[::]:0', None)
         del channel
 
     def test_metadata_plugin_call_credentials_up_down(self):
@@ -55,8 +59,12 @@ class TypeSmokeTest(unittest.TestCase):
                                              b'test plugin name!')
 
     def testServerStartNoExplicitShutdown(self):
-        server = cygrpc.Server(
-            cygrpc.ChannelArgs([cygrpc.ChannelArg(b'grpc.so_reuseport', 0)]))
+        server = cygrpc.Server([
+            (
+                b'grpc.so_reuseport',
+                0,
+            ),
+        ])
         completion_queue = cygrpc.CompletionQueue()
         server.register_completion_queue(completion_queue)
         port = server.add_http2_port(b'[::]:0')
@@ -66,8 +74,12 @@ class TypeSmokeTest(unittest.TestCase):
 
     def testServerStartShutdown(self):
         completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server(
-            cygrpc.ChannelArgs([cygrpc.ChannelArg(b'grpc.so_reuseport', 0)]))
+        server = cygrpc.Server([
+            (
+                b'grpc.so_reuseport',
+                0,
+            ),
+        ])
         server.add_http2_port(b'[::]:0')
         server.register_completion_queue(completion_queue)
         server.start()
@@ -85,8 +97,12 @@ class ServerClientMixin(object):
 
     def setUpMixin(self, server_credentials, client_credentials, host_override):
         self.server_completion_queue = cygrpc.CompletionQueue()
-        self.server = cygrpc.Server(
-            cygrpc.ChannelArgs([cygrpc.ChannelArg(b'grpc.so_reuseport', 0)]))
+        self.server = cygrpc.Server([
+            (
+                b'grpc.so_reuseport',
+                0,
+            ),
+        ])
         self.server.register_completion_queue(self.server_completion_queue)
         if server_credentials:
             self.port = self.server.add_http2_port(b'[::]:0',
@@ -96,16 +112,16 @@ class ServerClientMixin(object):
         self.server.start()
         self.client_completion_queue = cygrpc.CompletionQueue()
         if client_credentials:
-            client_channel_arguments = cygrpc.ChannelArgs([
-                cygrpc.ChannelArg(cygrpc.ChannelArgKey.ssl_target_name_override,
-                                  host_override)
-            ])
+            client_channel_arguments = ((
+                cygrpc.ChannelArgKey.ssl_target_name_override,
+                host_override,
+            ),)
             self.client_channel = cygrpc.Channel('localhost:{}'.format(
                 self.port).encode(), client_channel_arguments,
                                                  client_credentials)
         else:
             self.client_channel = cygrpc.Channel('localhost:{}'.format(
-                self.port).encode(), cygrpc.ChannelArgs([]))
+                self.port).encode(), set())
         if host_override:
             self.host_argument = None  # default host
             self.expected_host = host_override

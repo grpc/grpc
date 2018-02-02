@@ -122,7 +122,8 @@ class CallStackBuilder(object):
                 return True
             return False
         elif line_type == '.' or line_type == '!':
-            self.stk[-1].mark(line)
+            if self.stk:
+                self.stk[-1].mark(line)
             return False
         else:
             raise Exception('Unknown line type: \'%s\'' % line_type)
@@ -255,6 +256,7 @@ if args.fmt == 'html':
 
 accounted_for = 0
 for cs in call_stacks:
+    print >> out, '\n'
     if args.fmt in BANNER:
         print >> out, BANNER[args.fmt] % {
             'count': cs.count,

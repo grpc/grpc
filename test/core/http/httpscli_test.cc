@@ -21,11 +21,13 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
@@ -153,10 +155,17 @@ int main(int argc, char** argv) {
   int arg_shift = 0;
   /* figure out where we are */
   char* root;
-  if (lslash) {
-    root = static_cast<char*>(gpr_malloc((size_t)(lslash - me + 1)));
+  if (lslash != nullptr) {
+    /* Hack for bazel target */
+    if ((unsigned)(lslash - me) >= (sizeof("http") - 1) &&
+        strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
+                sizeof("http") - 1) == 0) {
+      lslash = me + (lslash - me) - sizeof("http");
+    }
+    root = static_cast<char*>(
+        gpr_malloc((size_t)(lslash - me + sizeof("/../.."))));
     memcpy(root, me, (size_t)(lslash - me));
-    root[lslash - me] = 0;
+    memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
   } else {
     root = gpr_strdup(".");
   }
@@ -166,9 +175,15 @@ int main(int argc, char** argv) {
     args[0] = gpr_strdup(argv[1]);
   } else {
     arg_shift = 1;
-    gpr_asprintf(&args[0], "%s/../../tools/distrib/python_wrapper.sh", root);
-    gpr_asprintf(&args[1], "%s/../../test/core/http/test_server.py", root);
+    gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh", root);
+    gpr_asprintf(&args[1], "%s/test/core/http/test_server.py", root);
   }
+
+  /* Set the environment variable for the SSL certificate file */
+  char* pem_file;
+  gpr_asprintf(&pem_file, "%s/src/core/tsi/test_creds/ca.pem", root);
+  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, pem_file);
+  gpr_free(pem_file);
 
   /* start the server */
   args[1 + arg_shift] = const_cast<char*>("--port");

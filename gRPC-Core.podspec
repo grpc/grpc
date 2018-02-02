@@ -187,7 +187,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL', '~> 9.0'
+    ss.dependency 'BoringSSL', '~> 10.0'
     ss.dependency 'nanopb', '~> 0.3'
 
     # To save you from scrolling, this is the last part of the podspec.
@@ -293,8 +293,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/transport/security_handshaker.h',
                       'src/core/lib/security/transport/tsi_error.h',
                       'src/core/lib/security/util/json_util.h',
+                      'src/core/tsi/alts_transport_security.h',
                       'src/core/tsi/fake_transport_security.h',
-                      'src/core/tsi/gts_transport_security.h',
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security_grpc.h',
@@ -421,7 +421,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_hash_table.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
-                      'src/core/lib/surface/alarm_internal.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
                       'src/core/lib/surface/call_test_only.h',
@@ -570,7 +569,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_hash_table.cc',
                       'src/core/lib/slice/slice_intern.cc',
                       'src/core/lib/slice/slice_string_helpers.cc',
-                      'src/core/lib/surface/alarm.cc',
                       'src/core/lib/surface/api_trace.cc',
                       'src/core/lib/surface/byte_buffer.cc',
                       'src/core/lib/surface/byte_buffer_reader.cc',
@@ -655,8 +653,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/transport/tsi_error.cc',
                       'src/core/lib/security/util/json_util.cc',
                       'src/core/lib/surface/init_secure.cc',
+                      'src/core/tsi/alts_transport_security.cc',
                       'src/core/tsi/fake_transport_security.cc',
-                      'src/core/tsi/gts_transport_security.cc',
                       'src/core/tsi/ssl_transport_security.cc',
                       'src/core/tsi/transport_security_grpc.cc',
                       'src/core/tsi/transport_security.cc',
@@ -778,8 +776,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/transport/security_handshaker.h',
                               'src/core/lib/security/transport/tsi_error.h',
                               'src/core/lib/security/util/json_util.h',
+                              'src/core/tsi/alts_transport_security.h',
                               'src/core/tsi/fake_transport_security.h',
-                              'src/core/tsi/gts_transport_security.h',
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/ssl_types.h',
                               'src/core/tsi/transport_security_grpc.h',
@@ -906,7 +904,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_hash_table.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
-                              'src/core/lib/surface/alarm_internal.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',

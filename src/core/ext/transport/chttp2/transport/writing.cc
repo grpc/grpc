@@ -180,7 +180,7 @@ class WriteContext {
  public:
   WriteContext(grpc_chttp2_transport* t) : t_(t) {
     GRPC_STATS_INC_HTTP2_WRITES_BEGUN();
-    GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
+    GPR_TIMER_SCOPE("grpc_chttp2_begin_write", 0);
   }
 
   // TODO(ctiller): make this the destructor
@@ -614,13 +614,11 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   maybe_initiate_ping(t);
 
-  GPR_TIMER_END("grpc_chttp2_begin_write", 0);
-
   return ctx.Result();
 }
 
 void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error) {
-  GPR_TIMER_BEGIN("grpc_chttp2_end_write", 0);
+  GPR_TIMER_SCOPE("grpc_chttp2_end_write", 0);
   grpc_chttp2_stream* s;
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
@@ -633,5 +631,4 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error) {
   }
   grpc_slice_buffer_reset_and_unref_internal(&t->outbuf);
   GRPC_ERROR_UNREF(error);
-  GPR_TIMER_END("grpc_chttp2_end_write", 0);
 }

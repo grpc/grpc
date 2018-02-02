@@ -14,6 +14,7 @@
 
 include "_cygrpc/grpc.pxi"
 
+include "_cygrpc/arguments.pxd.pxi"
 include "_cygrpc/call.pxd.pxi"
 include "_cygrpc/channel.pxd.pxi"
 include "_cygrpc/credentials.pxd.pxi"

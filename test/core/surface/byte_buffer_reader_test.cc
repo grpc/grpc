@@ -205,8 +205,8 @@ static void test_readall(void) {
 
   LOG_TEST("test_readall");
 
-  memset(lotsa_as, 'a', 512);
-  memset(lotsa_bs, 'b', 1024);
+  memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
+  memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));
   /* use slices large enough to overflow inlining */
   slices[0] = grpc_slice_malloc(512);
   memcpy(GRPC_SLICE_START_PTR(slices[0]), lotsa_as, 512);
@@ -240,8 +240,8 @@ static void test_byte_buffer_copy(void) {
 
   LOG_TEST("test_byte_buffer_copy");
 
-  memset(lotsa_as, 'a', 512);
-  memset(lotsa_bs, 'b', 1024);
+  memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
+  memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));
   /* use slices large enough to overflow inlining */
   slices[0] = grpc_slice_malloc(512);
   memcpy(GRPC_SLICE_START_PTR(slices[0]), lotsa_as, 512);
