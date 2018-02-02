@@ -457,16 +457,20 @@ static grpc_error* fd_shutdown_error(grpc_fd* fd) {
   if (!fd->shutdown) {
     return GRPC_ERROR_NONE;
   } else {
-    return GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "FD shutdown", &fd->shutdown_error, 1);
+    return grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                                  "FD shutdown", &fd->shutdown_error, 1),
+                              GRPC_ERROR_INT_GRPC_STATUS,
+                              GRPC_STATUS_UNAVAILABLE);
   }
 }
 
 static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
                              grpc_closure* closure) {
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
-    GRPC_CLOSURE_SCHED(closure,
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"));
+    GRPC_CLOSURE_SCHED(
+        closure, grpc_error_set_int(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
+                     GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
