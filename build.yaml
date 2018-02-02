@@ -3795,6 +3795,26 @@ targets:
   - mac
   - linux
   - posix
+- name: bm_refcount
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_refcount.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr_test_util
+  - gpr
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: channel_arguments_test
   gtest: true
   build: test
