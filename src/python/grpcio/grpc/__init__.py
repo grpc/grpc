@@ -352,6 +352,7 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
 
     Attributes:
       method: The method name of the RPC.
+      host: An optional target host for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: Optional :term:`metadata` to be transmitted to
         the service-side of the RPC.
@@ -848,12 +849,14 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def unary_unary(self,
                     method,
+                    host=None,
                     request_serializer=None,
                     response_deserializer=None):
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
         Args:
           method: The name of the RPC method.
+          host: Optional override of the target host.
           request_serializer: Optional behaviour for serializing the request
             message. Request goes unserialized in case None is passed.
           response_deserializer: Optional behaviour for deserializing the
@@ -868,12 +871,14 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def unary_stream(self,
                      method,
+                     host=None,
                      request_serializer=None,
                      response_deserializer=None):
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
         Args:
           method: The name of the RPC method.
+          host: Optional override of the target host.
           request_serializer: Optional behaviour for serializing the request
             message. Request goes unserialized in case None is passed.
           response_deserializer: Optional behaviour for deserializing the
@@ -888,12 +893,14 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def stream_unary(self,
                      method,
+                     host=None,
                      request_serializer=None,
                      response_deserializer=None):
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
         Args:
           method: The name of the RPC method.
+          host: Optional override of the target host.
           request_serializer: Optional behaviour for serializing the request
             message. Request goes unserialized in case None is passed.
           response_deserializer: Optional behaviour for deserializing the
@@ -908,12 +915,14 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def stream_stream(self,
                       method,
+                      host=None,
                       request_serializer=None,
                       response_deserializer=None):
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
         Args:
           method: The name of the RPC method.
+          host: Optional override of the target host.
           request_serializer: Optional behaviour for serializing the request
             message. Request goes unserialized in case None is passed.
           response_deserializer: Optional behaviour for deserializing the

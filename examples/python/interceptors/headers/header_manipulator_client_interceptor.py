@@ -22,7 +22,7 @@ import generic_client_interceptor
 class _ClientCallDetails(
         collections.namedtuple(
             '_ClientCallDetails',
-            ('method', 'timeout', 'metadata', 'credentials')),
+            ('method', 'host', 'timeout', 'metadata', 'credentials')),
         grpc.ClientCallDetails):
     pass
 
@@ -39,7 +39,8 @@ def header_adder_interceptor(header, value):
             value,
         ))
         client_call_details = _ClientCallDetails(
-            client_call_details.method, client_call_details.timeout, metadata,
+            client_call_details.method, client_call_details.host,
+            client_call_details.timeout, metadata,
             client_call_details.credentials)
         return client_call_details, request_iterator, None
 

@@ -169,12 +169,13 @@ class _Rendezvous(future.Future, face.Call):
         return self._call.details()
 
 
-def _blocking_unary_unary(channel, group, method, timeout, with_call,
+def _blocking_unary_unary(channel, group, method, host, timeout, with_call,
                           protocol_options, metadata, metadata_transformer,
                           request, request_serializer, response_deserializer):
     try:
         multi_callable = channel.unary_unary(
             _common.fully_qualified_method(group, method),
+            host,
             request_serializer=request_serializer,
             response_deserializer=response_deserializer)
         effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -195,11 +196,12 @@ def _blocking_unary_unary(channel, group, method, timeout, with_call,
         raise _abortion_error(rpc_error_call)
 
 
-def _future_unary_unary(channel, group, method, timeout, protocol_options,
+def _future_unary_unary(channel, group, method, host, timeout, protocol_options,
                         metadata, metadata_transformer, request,
                         request_serializer, response_deserializer):
     multi_callable = channel.unary_unary(
         _common.fully_qualified_method(group, method),
+        host,
         request_serializer=request_serializer,
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -211,11 +213,12 @@ def _future_unary_unary(channel, group, method, timeout, protocol_options,
     return _Rendezvous(response_future, None, response_future)
 
 
-def _unary_stream(channel, group, method, timeout, protocol_options, metadata,
-                  metadata_transformer, request, request_serializer,
+def _unary_stream(channel, group, method, host, timeout, protocol_options,
+                  metadata, metadata_transformer, request, request_serializer,
                   response_deserializer):
     multi_callable = channel.unary_stream(
         _common.fully_qualified_method(group, method),
+        host,
         request_serializer=request_serializer,
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -227,13 +230,14 @@ def _unary_stream(channel, group, method, timeout, protocol_options, metadata,
     return _Rendezvous(None, response_iterator, response_iterator)
 
 
-def _blocking_stream_unary(channel, group, method, timeout, with_call,
+def _blocking_stream_unary(channel, group, method, host, timeout, with_call,
                            protocol_options, metadata, metadata_transformer,
                            request_iterator, request_serializer,
                            response_deserializer):
     try:
         multi_callable = channel.stream_unary(
             _common.fully_qualified_method(group, method),
+            host,
             request_serializer=request_serializer,
             response_deserializer=response_deserializer)
         effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -254,11 +258,12 @@ def _blocking_stream_unary(channel, group, method, timeout, with_call,
         raise _abortion_error(rpc_error_call)
 
 
-def _future_stream_unary(channel, group, method, timeout, protocol_options,
+def _future_stream_unary(channel, group, method, host, timeout, protocol_options,
                          metadata, metadata_transformer, request_iterator,
                          request_serializer, response_deserializer):
     multi_callable = channel.stream_unary(
         _common.fully_qualified_method(group, method),
+        host,
         request_serializer=request_serializer,
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -270,11 +275,12 @@ def _future_stream_unary(channel, group, method, timeout, protocol_options,
     return _Rendezvous(response_future, None, response_future)
 
 
-def _stream_stream(channel, group, method, timeout, protocol_options, metadata,
-                   metadata_transformer, request_iterator, request_serializer,
-                   response_deserializer):
+def _stream_stream(channel, group, method, host, timeout, protocol_options,
+                   metadata, metadata_transformer, request_iterator,
+                   request_serializer, response_deserializer):
     multi_callable = channel.stream_stream(
         _common.fully_qualified_method(group, method),
+        host,
         request_serializer=request_serializer,
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -288,11 +294,12 @@ def _stream_stream(channel, group, method, timeout, protocol_options, metadata,
 
 class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
 
-    def __init__(self, channel, group, method, metadata_transformer,
+    def __init__(self, channel, group, method, host, metadata_transformer,
                  request_serializer, response_deserializer):
         self._channel = channel
         self._group = group
         self._method = method
+        self._host = host
         self._metadata_transformer = metadata_transformer
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
@@ -304,14 +311,14 @@ class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
                  with_call=False,
                  protocol_options=None):
         return _blocking_unary_unary(
-            self._channel, self._group, self._method, timeout, with_call,
-            protocol_options, metadata, self._metadata_transformer, request,
-            self._request_serializer, self._response_deserializer)
+            self._channel, self._group, self._method, self._host, timeout,
+            with_call, protocol_options, metadata, self._metadata_transformer,
+            request, self._request_serializer, self._response_deserializer)
 
     def future(self, request, timeout, metadata=None, protocol_options=None):
         return _future_unary_unary(
-            self._channel, self._group, self._method, timeout, protocol_options,
-            metadata, self._metadata_transformer, request,
+            self._channel, self._group, self._method, self._host, timeout,
+            protocol_options, metadata, self._metadata_transformer, request,
             self._request_serializer, self._response_deserializer)
 
     def event(self,
@@ -326,19 +333,20 @@ class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
 
 class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
 
-    def __init__(self, channel, group, method, metadata_transformer,
+    def __init__(self, channel, group, method, host, metadata_transformer,
                  request_serializer, response_deserializer):
         self._channel = channel
         self._group = group
         self._method = method
+        self._host = host
         self._metadata_transformer = metadata_transformer
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
     def __call__(self, request, timeout, metadata=None, protocol_options=None):
         return _unary_stream(
-            self._channel, self._group, self._method, timeout, protocol_options,
-            metadata, self._metadata_transformer, request,
+            self._channel, self._group, self._method, self._host, timeout,
+            protocol_options, metadata, self._metadata_transformer, request,
             self._request_serializer, self._response_deserializer)
 
     def event(self,
@@ -353,11 +361,12 @@ class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
 
 class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
 
-    def __init__(self, channel, group, method, metadata_transformer,
+    def __init__(self, channel, group, method, host, metadata_transformer,
                  request_serializer, response_deserializer):
         self._channel = channel
         self._group = group
         self._method = method
+        self._host = host
         self._metadata_transformer = metadata_transformer
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
@@ -369,8 +378,8 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
                  with_call=False,
                  protocol_options=None):
         return _blocking_stream_unary(
-            self._channel, self._group, self._method, timeout, with_call,
-            protocol_options, metadata, self._metadata_transformer,
+            self._channel, self._group, self._method, self._host, timeout,
+            with_call, protocol_options, metadata, self._metadata_transformer,
             request_iterator, self._request_serializer,
             self._response_deserializer)
 
@@ -380,9 +389,10 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
                metadata=None,
                protocol_options=None):
         return _future_stream_unary(
-            self._channel, self._group, self._method, timeout, protocol_options,
-            metadata, self._metadata_transformer, request_iterator,
-            self._request_serializer, self._response_deserializer)
+            self._channel, self._group, self._method, self._host, timeout,
+            protocol_options, metadata, self._metadata_transformer,
+            request_iterator, self._request_serializer,
+            self._response_deserializer)
 
     def event(self,
               receiver,
@@ -395,11 +405,12 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
 
 class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
 
-    def __init__(self, channel, group, method, metadata_transformer,
+    def __init__(self, channel, group, method, host, metadata_transformer,
                  request_serializer, response_deserializer):
         self._channel = channel
         self._group = group
         self._method = method
+        self._host = host
         self._metadata_transformer = metadata_transformer
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
@@ -410,9 +421,10 @@ class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
                  metadata=None,
                  protocol_options=None):
         return _stream_stream(
-            self._channel, self._group, self._method, timeout, protocol_options,
-            metadata, self._metadata_transformer, request_iterator,
-            self._request_serializer, self._response_deserializer)
+            self._channel, self._group, self._method, self._host, timeout,
+            protocol_options, metadata, self._metadata_transformer,
+            request_iterator, self._request_serializer,
+            self._response_deserializer)
 
     def event(self,
               receiver,
@@ -437,6 +449,7 @@ class _GenericStub(face.GenericStub):
                              method,
                              request,
                              timeout,
+                             host=None,
                              metadata=None,
                              with_call=None,
                              protocol_options=None):
@@ -448,16 +461,18 @@ class _GenericStub(face.GenericStub):
             group,
             method,
         ))
-        return _blocking_unary_unary(self._channel, group, method, timeout,
-                                     with_call, protocol_options, metadata,
-                                     self._metadata_transformer, request,
-                                     request_serializer, response_deserializer)
+        return _blocking_unary_unary(self._channel, group, method, host,
+                                     timeout, with_call, protocol_options,
+                                     metadata, self._metadata_transformer,
+                                     request, request_serializer,
+                                     response_deserializer)
 
     def future_unary_unary(self,
                            group,
                            method,
                            request,
                            timeout,
+                           host=None,
                            metadata=None,
                            protocol_options=None):
         request_serializer = self._request_serializers.get((
@@ -468,7 +483,7 @@ class _GenericStub(face.GenericStub):
             group,
             method,
         ))
-        return _future_unary_unary(self._channel, group, method, timeout,
+        return _future_unary_unary(self._channel, group, method, host, timeout,
                                    protocol_options, metadata,
                                    self._metadata_transformer, request,
                                    request_serializer, response_deserializer)
@@ -478,6 +493,7 @@ class _GenericStub(face.GenericStub):
                             method,
                             request,
                             timeout,
+                            host=None,
                             metadata=None,
                             protocol_options=None):
         request_serializer = self._request_serializers.get((
@@ -488,7 +504,7 @@ class _GenericStub(face.GenericStub):
             group,
             method,
         ))
-        return _unary_stream(self._channel, group, method, timeout,
+        return _unary_stream(self._channel, group, method, host, timeout,
                              protocol_options, metadata,
                              self._metadata_transformer, request,
                              request_serializer, response_deserializer)
@@ -498,6 +514,7 @@ class _GenericStub(face.GenericStub):
                               method,
                               request_iterator,
                               timeout,
+                              host=None,
                               metadata=None,
                               with_call=None,
                               protocol_options=None):
@@ -510,15 +527,16 @@ class _GenericStub(face.GenericStub):
             method,
         ))
         return _blocking_stream_unary(
-            self._channel, group, method, timeout, with_call, protocol_options,
-            metadata, self._metadata_transformer, request_iterator,
-            request_serializer, response_deserializer)
+            self._channel, group, method, host, timeout, with_call,
+            protocol_options, metadata, self._metadata_transformer,
+            request_iterator, request_serializer, response_deserializer)
 
     def future_stream_unary(self,
                             group,
                             method,
                             request_iterator,
                             timeout,
+                            host=None,
                             metadata=None,
                             protocol_options=None):
         request_serializer = self._request_serializers.get((
@@ -530,15 +548,16 @@ class _GenericStub(face.GenericStub):
             method,
         ))
         return _future_stream_unary(
-            self._channel, group, method, timeout, protocol_options, metadata,
-            self._metadata_transformer, request_iterator, request_serializer,
-            response_deserializer)
+            self._channel, group, method, host, timeout, protocol_options,
+            metadata, self._metadata_transformer, request_iterator,
+            request_serializer, response_deserializer)
 
     def inline_stream_stream(self,
                              group,
                              method,
                              request_iterator,
                              timeout,
+                             host=None,
                              metadata=None,
                              protocol_options=None):
         request_serializer = self._request_serializers.get((
@@ -549,7 +568,7 @@ class _GenericStub(face.GenericStub):
             group,
             method,
         ))
-        return _stream_stream(self._channel, group, method, timeout,
+        return _stream_stream(self._channel, group, method, host, timeout,
                               protocol_options, metadata,
                               self._metadata_transformer, request_iterator,
                               request_serializer, response_deserializer)
@@ -561,6 +580,7 @@ class _GenericStub(face.GenericStub):
                           receiver,
                           abortion_callback,
                           timeout,
+                          host=None,
                           metadata=None,
                           protocol_options=None):
         raise NotImplementedError()
@@ -572,6 +592,7 @@ class _GenericStub(face.GenericStub):
                            receiver,
                            abortion_callback,
                            timeout,
+                           host=None,
                            metadata=None,
                            protocol_options=None):
         raise NotImplementedError()
@@ -582,6 +603,7 @@ class _GenericStub(face.GenericStub):
                            receiver,
                            abortion_callback,
                            timeout,
+                           host=None,
                            metadata=None,
                            protocol_options=None):
         raise NotImplementedError()
@@ -592,11 +614,12 @@ class _GenericStub(face.GenericStub):
                             receiver,
                             abortion_callback,
                             timeout,
+                            host=None,
                             metadata=None,
                             protocol_options=None):
         raise NotImplementedError()
 
-    def unary_unary(self, group, method):
+    def unary_unary(self, group, method, host=None):
         request_serializer = self._request_serializers.get((
             group,
             method,
@@ -606,10 +629,10 @@ class _GenericStub(face.GenericStub):
             method,
         ))
         return _UnaryUnaryMultiCallable(
-            self._channel, group, method, self._metadata_transformer,
+            self._channel, group, method, host, self._metadata_transformer,
             request_serializer, response_deserializer)
 
-    def unary_stream(self, group, method):
+    def unary_stream(self, group, method, host=None):
         request_serializer = self._request_serializers.get((
             group,
             method,
@@ -619,10 +642,10 @@ class _GenericStub(face.GenericStub):
             method,
         ))
         return _UnaryStreamMultiCallable(
-            self._channel, group, method, self._metadata_transformer,
+            self._channel, group, method, host, self._metadata_transformer,
             request_serializer, response_deserializer)
 
-    def stream_unary(self, group, method):
+    def stream_unary(self, group, method, host=None):
         request_serializer = self._request_serializers.get((
             group,
             method,
@@ -632,10 +655,10 @@ class _GenericStub(face.GenericStub):
             method,
         ))
         return _StreamUnaryMultiCallable(
-            self._channel, group, method, self._metadata_transformer,
+            self._channel, group, method, host, self._metadata_transformer,
             request_serializer, response_deserializer)
 
-    def stream_stream(self, group, method):
+    def stream_stream(self, group, method, host=None):
         request_serializer = self._request_serializers.get((
             group,
             method,
@@ -645,7 +668,7 @@ class _GenericStub(face.GenericStub):
             method,
         ))
         return _StreamStreamMultiCallable(
-            self._channel, group, method, self._metadata_transformer,
+            self._channel, group, method, host, self._metadata_transformer,
             request_serializer, response_deserializer)
 
     def __enter__(self):
