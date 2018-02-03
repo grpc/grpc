@@ -454,8 +454,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc::string balancer_name;
   };
 
-  void SetNextResolution(const std::vector<AddressData>& address_data) {
-    grpc_core::ExecCtx exec_ctx;
+  grpc_lb_addresses* CreateLbAddressesFromAddressDataList(
+      const std::vector<AddressData>& address_data) {
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(address_data.size(), nullptr);
     for (size_t i = 0; i < address_data.size(); ++i) {
@@ -469,10 +469,29 @@ class GrpclbEnd2endTest : public ::testing::Test {
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
+    return addresses;
+  }
+
+  void SetNextResolution(const std::vector<AddressData>& address_data) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_lb_addresses* addresses =
+        CreateLbAddressesFromAddressDataList(address_data);
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
     grpc_fake_resolver_response_generator_set_response(response_generator_,
                                                        &fake_result);
+    grpc_lb_addresses_destroy(addresses);
+  }
+
+  void SetNextResolutionUponError(
+      const std::vector<AddressData>& address_data) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_lb_addresses* addresses =
+        CreateLbAddressesFromAddressDataList(address_data);
+    grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_channel_args fake_result = {1, &fake_addresses};
+    grpc_fake_resolver_response_generator_set_response_upon_error(
+        response_generator_, &fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
 
