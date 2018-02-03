@@ -11,6 +11,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "alarm_test", 
+    "src": [
+      "test/core/surface/alarm_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "algorithm_test", 
     "src": [
       "test/core/compression/algorithm_test.cc"
@@ -1483,6 +1500,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "lb_policies_test", 
+    "src": [
+      "test/core/client_channel/lb_policies_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "load_file_test", 
     "src": [
       "test/core/iomgr/load_file_test.cc"
@@ -2418,9 +2452,9 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "alarm_test", 
+    "name": "alarm_cpp_test", 
     "src": [
-      "test/cpp/common/alarm_test.cc"
+      "test/cpp/common/alarm_cpp_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -8484,6 +8518,7 @@
       "src/core/lib/slice/slice_hash_table.cc", 
       "src/core/lib/slice/slice_intern.cc", 
       "src/core/lib/slice/slice_string_helpers.cc", 
+      "src/core/lib/surface/alarm.cc", 
       "src/core/lib/surface/api_trace.cc", 
       "src/core/lib/surface/byte_buffer.cc", 
       "src/core/lib/surface/byte_buffer_reader.cc", 
@@ -8636,6 +8671,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
       "src/core/lib/surface/call_test_only.h", 
@@ -8778,6 +8814,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/surface/alarm_internal.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
       "src/core/lib/surface/call_test_only.h", 
@@ -10029,7 +10066,6 @@
       "src/cpp/client/create_channel_posix.cc", 
       "src/cpp/client/credentials_cc.cc", 
       "src/cpp/client/generic_stub.cc", 
-      "src/cpp/common/alarm.cc", 
       "src/cpp/common/channel_arguments.cc", 
       "src/cpp/common/channel_filter.cc", 
       "src/cpp/common/channel_filter.h", 
