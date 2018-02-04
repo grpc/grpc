@@ -18,6 +18,7 @@ set -ex
 # A temporary solution to give Kokoro credentials. 
 # The file name 4321_grpc-testing-service needs to match auth_credential in 
 # the build config.
+# TODO: Use keystore.
 mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
@@ -34,11 +35,10 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# TODO(adelez): implement size for test targets and change test_timeout back
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
   --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
   test --jobs="50" \
-  --test_timeout="1200,1200,1200,3600" \
+  --test_timeout="1500,1500,1500,3600" \
   --test_output=errors  \
   --verbose_failures=true  \
   --keep_going  \
@@ -53,5 +53,9 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-fl@sha256:496193842f61c9494be68bd624e47c74d706cabf19a693c4653ffe96a97e43e3" }' \
   --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/debian8_clang/0.2.0/bazel_0.7.0:toolchain \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
-  -c opt \
+  --copt=-gmlt \
+  --strip=never \
+  --copt=-fsanitize=thread \
+  --linkopt=-fsanitize=thread \
+  --test_verbose_timeout_warnings \
   -- //test/...
