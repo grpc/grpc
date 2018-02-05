@@ -29,7 +29,7 @@ then
   # run clang-tidy against the checked out codebase
   # when modifying the checked-out files, the current user will be impersonated
   # so that the updated files don't end up being owned by "root".
-  docker run -e TEST=$TEST -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_TIDY_ROOT="/local-code" --rm=true -v "${REPO_ROOT}":/local-code --user "$(id -u):$(id -g)" -t grpc_clang_tidy /clang_tidy_all_the_things.sh "$@"
+  docker run -e TEST="$TEST" -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_TIDY_ROOT="/local-code" --rm=true -v "${REPO_ROOT}":/local-code --user "$(id -u):$(id -g)" -t grpc_clang_tidy /clang_tidy_all_the_things.sh "$@"
 else
   CLANG_TIDY_ROOT="${REPO_ROOT}" tools/dockerfile/grpc_clang_tidy/clang_tidy_all_the_things.sh "$@"
 fi
