@@ -696,9 +696,9 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
   // TODO(yangg) remove the copy here.
   if (*status) {
     static_cast<GenericServerContext*>(context_)->method_ =
-        StringFromCopiedSlice(call_details_.method);
+        internal::StringFromCopiedSlice(call_details_.method);
     static_cast<GenericServerContext*>(context_)->host_ =
-        StringFromCopiedSlice(call_details_.host);
+        internal::StringFromCopiedSlice(call_details_.host);
     context_->deadline_ = call_details_.deadline;
   }
   grpc_slice_unref(call_details_.method);

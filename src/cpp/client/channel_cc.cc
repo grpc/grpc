@@ -102,10 +102,10 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
     } else if (!host_.empty()) {
       host_str = host_.c_str();
     }
-    grpc_slice method_slice = SliceFromCopiedString(method.name());
+    grpc_slice method_slice = internal::SliceFromCopiedString(method.name());
     grpc_slice host_slice;
     if (host_str != nullptr) {
-      host_slice = SliceFromCopiedString(host_str);
+      host_slice = internal::SliceFromCopiedString(host_str);
     }
     c_call = grpc_channel_create_call(
         c_channel_, context->propagate_from_call_,

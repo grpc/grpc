@@ -106,6 +106,8 @@ class Slice final {
   grpc_slice slice_;
 };
 
+namespace internal {
+
 inline grpc::string_ref StringRefFromSlice(const grpc_slice* slice) {
   return grpc::string_ref(
       reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(*slice)),
@@ -127,6 +129,7 @@ inline grpc_slice SliceFromCopiedString(const grpc::string& str) {
                                                                  str.length());
 }
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_SLICE_H
