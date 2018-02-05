@@ -120,9 +120,6 @@ class ByteBuffer final {
     buffer_ = buf;
   }
 
-  grpc_byte_buffer* c_buffer() { return buffer_; }
-  grpc_byte_buffer** c_buffer_ptr() { return &buffer_; }
-
   class ByteBufferPointer {
    public:
     ByteBufferPointer(const ByteBuffer* b)

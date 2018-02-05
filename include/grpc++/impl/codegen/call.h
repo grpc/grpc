@@ -285,7 +285,7 @@ class CallOpSendMessage {
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
     op->reserved = NULL;
-    op->data.send_message.send_message = send_buf_.c_buffer();
+    op->data.send_message.send_message = send_buf_.bbuf_ptr();
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
@@ -339,7 +339,7 @@ class CallOpRecvMessage {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
-    op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
+    op->data.recv_message.recv_message = recv_buf_.bbuf_ptr();
   }
 
   void FinishOp(bool* status) {
@@ -414,7 +414,7 @@ class CallOpGenericRecvMessage {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
-    op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
+    op->data.recv_message.recv_message = recv_buf_.bbuf_ptr();
   }
 
   void FinishOp(bool* status) {
