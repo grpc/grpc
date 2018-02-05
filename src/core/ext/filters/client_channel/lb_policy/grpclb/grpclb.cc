@@ -754,8 +754,11 @@ static void rr_on_reresolution_requested_locked(void* arg, grpc_error* error) {
   }
   // Handle the re-resolution request using glb's original re-resolution
   // closure.
-  grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace,
-                               GRPC_ERROR_NONE);
+  if (glb_policy->lb_calld == nullptr ||
+      !glb_policy->lb_calld->seen_initial_response) {
+    grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace,
+                                 GRPC_ERROR_NONE);
+  }
   // Give back the wrapper closure to the RR policy.
   grpc_lb_policy_set_reresolve_closure_locked(
       glb_policy->rr_policy, &glb_policy->rr_on_reresolution_requested);
@@ -851,12 +854,6 @@ static void rr_on_connectivity_changed_locked(void* arg, grpc_error* error) {
   }
   GPR_ASSERT(glb_policy->rr_connectivity_state != GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(glb_policy->rr_connectivity_state != GRPC_CHANNEL_IDLE);
-  if ((glb_policy->lb_calld == nullptr ||
-       !glb_policy->lb_calld->seen_initial_response) &&
-      glb_policy->rr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace,
-                                 GRPC_ERROR_NONE);
-  }
   update_lb_connectivity_status_locked(glb_policy, GRPC_ERROR_REF(error));
   // Resubscribe. Reuse the "rr_on_connectivity_changed_locked" ref.
   grpc_lb_policy_notify_on_state_change_locked(
