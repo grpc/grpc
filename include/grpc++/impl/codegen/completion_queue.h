@@ -58,7 +58,6 @@ template <class W, class R>
 class ServerReaderWriterBody;
 }  // namespace internal
 
-class Alarm;
 class Channel;
 class ClientContext;
 class CompletionQueue;
@@ -68,6 +67,7 @@ class ServerContext;
 class ServerInterface;
 
 namespace internal {
+class AlarmImpl;
 class CompletionQueueTag;
 class RpcMethod;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -217,12 +217,12 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   friend class ::grpc::internal::UnknownMethodHandler;
-  friend class ::grpc::Alarm;
   friend class ::grpc::Channel;
   friend class ::grpc::Server;
   friend class ::grpc::ServerBuilder;
   friend class ::grpc::ServerContext;
   friend class ::grpc::ServerInterface;
+  friend class ::grpc::internal::AlarmImpl;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   friend class ::grpc::internal::CompletionQueueStats;
