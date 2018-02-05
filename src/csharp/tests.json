@@ -62,5 +62,15 @@
   "Grpc.Reflection.Tests": [
     "Grpc.Reflection.Tests.ReflectionClientServerTest",
     "Grpc.Reflection.Tests.SymbolRegistryTest"
+  ],
+  "Grpc.Tools.Tests": [
+    "Grpc.Tools.Tests.CppGeneratorTests",
+    "Grpc.Tools.Tests.CSharpGeneratorTests",
+    "Grpc.Tools.Tests.GeneratorTests",
+    "Grpc.Tools.Tests.ProtoCompileBasicTests",
+    "Grpc.Tools.Tests.ProtoCompileCommandLineGeneratorTests",
+    "Grpc.Tools.Tests.ProtoCompileCommandLinePrinterTests",
+    "Grpc.Tools.Tests.ProtoToolsPlatformTaskTests",
+    "Grps.Tools.Tests.DepFileUtilTests"
   ]
 }

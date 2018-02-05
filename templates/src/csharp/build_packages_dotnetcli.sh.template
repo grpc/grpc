@@ -46,9 +46,9 @@
   dotnet pack --configuration Release Grpc.Auth --output ../../../artifacts
   dotnet pack --configuration Release Grpc.HealthCheck --output ../../../artifacts
   dotnet pack --configuration Release Grpc.Reflection --output ../../../artifacts
+  dotnet pack --configuration Release Grpc.Tools --output ../../../artifacts
   
   nuget pack Grpc.nuspec -Version "${settings.csharp_version}" -OutputDirectory ../../artifacts
   nuget pack Grpc.Core.NativeDebug.nuspec -Version "${settings.csharp_version}" -OutputDirectory ../../artifacts
-  nuget pack Grpc.Tools.nuspec -Version "${settings.csharp_version}" -OutputDirectory ../../artifacts
   
   (cd ../../artifacts && zip csharp_nugets_dotnetcli.zip *.nupkg)
