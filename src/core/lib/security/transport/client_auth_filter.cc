@@ -118,6 +118,7 @@ static void on_credentials_metadata(void* arg, grpc_error* input_error) {
     grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                        calld->call_combiner);
   }
+  GRPC_CALL_STACK_UNREF(calld->owning_call, "get_request_metadata");
 }
 
 void grpc_auth_metadata_context_build(
@@ -208,7 +209,7 @@ static void send_security_metadata(grpc_call_element* elem,
       chand->auth_context, &calld->auth_md_context);
 
   GPR_ASSERT(calld->pollent != nullptr);
-
+  GRPC_CALL_STACK_REF(calld->owning_call, "get_request_metadata");
   GRPC_CLOSURE_INIT(&calld->async_result_closure, on_credentials_metadata,
                     batch, grpc_schedule_on_exec_ctx);
   grpc_error* error = GRPC_ERROR_NONE;
@@ -250,6 +251,7 @@ static void on_host_checked(void* arg, grpc_error* error) {
         calld->call_combiner);
     gpr_free(error_msg);
   }
+  GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
 }
 
 static void cancel_check_call_host(void* arg, grpc_error* error) {
@@ -312,6 +314,7 @@ static void auth_start_transport_stream_op_batch(
     }
     if (calld->have_host) {
       batch->handler_private.extra_arg = elem;
+      GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
       char* call_host = grpc_slice_to_c_string(calld->host);
