@@ -211,7 +211,7 @@ class ServerContext {
   /// \see grpc::AuthContext.
   std::shared_ptr<const AuthContext> auth_context() const {
     if (auth_context_.get() == nullptr) {
-      auth_context_ = CreateAuthContext(call_);
+      auth_context_ = internal::CreateAuthContext(call_);
     }
     return auth_context_;
   }

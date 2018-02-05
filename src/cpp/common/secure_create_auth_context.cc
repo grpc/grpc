@@ -23,6 +23,7 @@
 #include "src/cpp/common/secure_auth_context.h"
 
 namespace grpc {
+namespace internal {
 
 std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
   if (call == nullptr) {
@@ -32,4 +33,5 @@ std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
       new SecureAuthContext(grpc_call_auth_context(call), true));
 }
 
+}  // namespace internal
 }  // namespace grpc
