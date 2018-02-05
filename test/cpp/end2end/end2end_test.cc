@@ -706,6 +706,11 @@ TEST_P(End2endTest, ReconnectChannel) {
   if (GetParam().inproc) {
     return;
   }
+  /* Some test frameworks may directly call ReconnectChannel() test without
+   * calling the main() function in this file. In such cases, we need to make
+   * sure GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS is set to 200 msec for
+   * this test */
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
@@ -1830,6 +1835,10 @@ INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  /* The ReconnectChannel test needs the backup poller to make progress.
+   * We need to increase the backup poller frequency to speed up the test.
+   * (Also, we need to set this variable before calling grpc_test_init() for it
+   * to take effect) */
   gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
