@@ -66,7 +66,7 @@
 - (void)enqueueSuccessfulCompletion {
   __weak typeof(self) weakSelf = self;
   dispatch_async(_writeableQueue, ^{
-    typeof(self) strongSelf = self;
+    typeof(self) strongSelf = weakSelf;
     if (strongSelf) {
       BOOL finished = NO;
       @synchronized (self) {
