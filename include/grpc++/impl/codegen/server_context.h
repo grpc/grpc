@@ -185,7 +185,10 @@ class ServerContext {
   /// \a set_compression_level.
   bool compression_level_set() const { return compression_level_set_; }
 
-  /// Return the compression algorithm to be used by the server call.
+  /// Return the compression algorithm the server call will request be used.
+  /// Note that the gRPC runtime may decide to ignore this request, for example,
+  /// due to resource constraints, or if the server is aware the client doesn't
+  /// support the requested algorithm.
   grpc_compression_algorithm compression_algorithm() const {
     return compression_algorithm_;
   }
