@@ -1095,6 +1095,7 @@ static void pick_callback_done_locked(void* arg, grpc_error* error) {
             chand, calld);
   }
   async_pick_done_locked(elem, GRPC_ERROR_REF(error));
+  GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback");
 }
 
 // Takes a ref to chand->lb_policy and calls grpc_lb_policy_pick_locked().
@@ -1134,6 +1135,7 @@ static bool pick_callback_start_locked(grpc_call_element* elem) {
   GRPC_CLOSURE_INIT(&calld->lb_pick_closure, pick_callback_done_locked, elem,
                     grpc_combiner_scheduler(chand->combiner));
   calld->pick.on_complete = &calld->lb_pick_closure;
+  GRPC_CALL_STACK_REF(calld->owning_call, "pick_callback");
   const bool pick_done =
       grpc_lb_policy_pick_locked(chand->lb_policy, &calld->pick);
   if (pick_done) {
@@ -1142,6 +1144,7 @@ static bool pick_callback_start_locked(grpc_call_element* elem) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed synchronously",
               chand, calld);
     }
+    GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback");
   } else {
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_callback_cancel");
     grpc_call_combiner_set_notify_on_cancel(
