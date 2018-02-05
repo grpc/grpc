@@ -563,7 +563,7 @@ bool InteropClient::DoServerCompressedStreaming() {
     // Compression checks.
     GPR_ASSERT(request.response_parameters(k).has_compressed());
     if (request.response_parameters(k).compressed().value()) {
-      GPR_ASSERT(static_cast<grpc::CompressionAlgorithm::Algorithm(
+      GPR_ASSERT(static_cast<grpc::CompressionAlgorithm::Algorithm>(
                      inspector.GetCallCompressionAlgorithm()) >
                  CompressionAlgorithm::NONE);
       GPR_ASSERT(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS);
