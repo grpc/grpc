@@ -58,7 +58,7 @@ g_stands_for = "glossy"
 
 core_version = "5.0.0"
 
-version = "1.9.0"
+version = "1.9.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
