@@ -38,6 +38,13 @@ pod install
 
 set -o pipefail
 XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
+if [ $SCHEME == HelloWorld ]; then
+xcodebuild \
+    build \
+    -workspace *.xcworkspace \
+    -scheme $SCHEME \
+    -destination name="iPhone 6"
+else
 xcodebuild \
     build \
     -workspace *.xcworkspace \
@@ -45,3 +52,4 @@ xcodebuild \
     -destination name="iPhone 6" \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v "^$" -
+fi
