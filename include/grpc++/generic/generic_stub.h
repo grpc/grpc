@@ -37,15 +37,6 @@ class GenericStub final {
   explicit GenericStub(std::shared_ptr<ChannelInterface> channel)
       : channel_(channel) {}
 
-  /// Begin a call to a named method \a method using \a context.
-  /// A tag \a tag will be delivered to \a cq when the call has been started
-  /// (i.e, initial metadata has been sent).
-  /// The return value only indicates whether or not registration of the call
-  /// succeeded (i.e. the call won't proceed if the return value is nullptr).
-  std::unique_ptr<GenericClientAsyncReaderWriter> Call(
-      ClientContext* context, const grpc::string& method, CompletionQueue* cq,
-      void* tag);
-
   /// Setup a call to a named method \a method using \a context, but don't
   /// start it. Let it be started explicitly with StartCall and a tag.
   /// The return value only indicates whether or not registration of the call
@@ -60,6 +51,16 @@ class GenericStub final {
   std::unique_ptr<GenericClientAsyncResponseReader> PrepareUnaryCall(
       ClientContext* context, const grpc::string& method,
       const ByteBuffer& request, CompletionQueue* cq);
+
+  /// DEPRECATED for multi-threaded use
+  /// Begin a call to a named method \a method using \a context.
+  /// A tag \a tag will be delivered to \a cq when the call has been started
+  /// (i.e, initial metadata has been sent).
+  /// The return value only indicates whether or not registration of the call
+  /// succeeded (i.e. the call won't proceed if the return value is nullptr).
+  std::unique_ptr<GenericClientAsyncReaderWriter> Call(
+      ClientContext* context, const grpc::string& method, CompletionQueue* cq,
+      void* tag);
 
  private:
   std::shared_ptr<ChannelInterface> channel_;
