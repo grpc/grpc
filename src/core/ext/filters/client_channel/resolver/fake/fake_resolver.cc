@@ -155,8 +155,7 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
   grpc_channel_args_destroy(resolver->next_results_);
   resolver->next_results_ = closure_arg->response;
   grpc_channel_args_destroy(resolver->last_used_results_);
-  resolver->last_used_results_ =
-      grpc_channel_args_copy(closure_arg->response);
+  resolver->last_used_results_ = grpc_channel_args_copy(closure_arg->response);
   resolver->MaybeFinishNextLocked();
   Delete(closure_arg);
 }
