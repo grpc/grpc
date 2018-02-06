@@ -346,24 +346,24 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
 
 TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   ChannelArguments args;
-  constexpr int kMinReconnectBackOffMs = 1000;
-  args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, kMinReconnectBackOffMs);
+  constexpr int kMinConnectTimeout = 1000;
+  args.SetInt(GRPC_ARG_MIN_CONNECT_TIMEOUT, kMinConnectTimeout);
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   ResetStub("pick_first", args);
   SetNextResolution(ports);
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
-  gpr_atm_rel_store(&g_connection_delay_ms, kMinReconnectBackOffMs * 1.10);
+  gpr_atm_rel_store(&g_connection_delay_ms, kMinConnectTimeout * 1.10);
   grpc_tcp_client_connect_impl = tcp_client_connect_with_delay;
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));
+      grpc_timeout_milliseconds_to_deadline(kMinConnectTimeout * 2));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
   const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %ld ms", waited_ms);
-  // We should have waited at least kMinReconnectBackOffMs. We substract one to
+  // We should have waited at least kMinConnectTimeout. We substract one to
   // account for test and precision accuracy drift.
-  EXPECT_GE(waited_ms, kMinReconnectBackOffMs - 1);
+  EXPECT_GE(waited_ms, kMinConnectTimeout - 1);
   gpr_atm_rel_store(&g_connection_delay_ms, 0);
 }
 
