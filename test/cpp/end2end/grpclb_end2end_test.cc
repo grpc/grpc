@@ -483,15 +483,14 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_lb_addresses_destroy(addresses);
   }
 
-  void SetNextResolutionUponError(
+  void SetNextReresolutionResponse(
       const std::vector<AddressData>& address_data) {
     grpc_core::ExecCtx exec_ctx;
     grpc_lb_addresses* addresses =
         CreateLbAddressesFromAddressDataList(address_data);
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
-    grpc_fake_resolver_response_generator_set_response_upon_error(
-        response_generator_, &fake_result);
+    response_generator_->SetReresolutionResponse(&fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
 
