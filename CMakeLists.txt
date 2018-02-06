@@ -30,10 +30,10 @@ set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 project(${PACKAGE_NAME} C CXX)
 
-set(gRPC_INSTALL_BINDIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
-set(gRPC_INSTALL_LIBDIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
-set(gRPC_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation directory for headers")
-set(gRPC_INSTALL_CMAKEDIR "${CMAKE_INSTALL_PREFIX}/lib/cmake/${PACKAGE_NAME}" CACHE PATH "Installation directory for cmake config files")
+set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
+set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
+set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
+set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation directory for cmake config files")
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
