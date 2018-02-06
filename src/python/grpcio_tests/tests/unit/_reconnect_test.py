@@ -19,6 +19,7 @@ import unittest
 import grpc
 from grpc.framework.foundation import logging_pool
 
+from tests.unit import test_constants
 from tests.unit.framework.common import test_constants
 
 _REQUEST = b'\x00\x00\x00'
@@ -81,14 +82,16 @@ class ReconnectTest(unittest.TestCase):
         port = _pick_and_bind_port(sock_opt)
         self.assertIsNotNone(port)
 
-        server = grpc.server(server_pool, (handler,))
+        server = test_common.test_server()
+        server.add_generic_rpc_handlers((handler,))
         server.add_insecure_port('[::]:{}'.format(port))
         server.start()
         channel = grpc.insecure_channel('localhost:%d' % port)
         multi_callable = channel.unary_unary(_UNARY_UNARY)
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
         server.stop(None)
-        server = grpc.server(server_pool, (handler,))
+        server = test_common.test_server()
+        server.add_generic_rpc_handlers((handler,))
         server.add_insecure_port('[::]:{}'.format(port))
         server.start()
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
