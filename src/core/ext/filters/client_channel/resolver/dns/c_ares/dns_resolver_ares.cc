@@ -69,10 +69,11 @@ class AresDnsResolver : public Resolver {
  private:
   virtual ~AresDnsResolver();
 
+  void MaybeStartResolvingLocked();
   void StartResolvingLocked();
   void MaybeFinishNextLocked();
 
-  static void OnRetryTimerLocked(void* arg, grpc_error* error);
+  static void OnNextResolutionLocked(void* arg, grpc_error* error);
   static void OnResolvedLocked(void* arg, grpc_error* error);
 
   /// DNS server to use (if not system default)
@@ -86,8 +87,8 @@ class AresDnsResolver : public Resolver {
   /// pollset_set to drive the name resolution process
   grpc_pollset_set* interested_parties_;
   /// closures used by the combiner
-  grpc_closure dns_ares_on_retry_timer_locked_;
-  grpc_closure dns_ares_on_resolved_locked_;
+  grpc_closure on_next_resolution_;
+  grpc_closure on_resolved_;
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
@@ -102,9 +103,13 @@ class AresDnsResolver : public Resolver {
   grpc_channel_args** target_result_ = nullptr;
   /// current (fully resolved) result
   grpc_channel_args* resolved_result_ = nullptr;
-  /// retry timer
-  bool have_retry_timer_ = false;
-  grpc_timer retry_timer_;
+  /// next resolution timer
+  bool have_next_resolution_timer_ = false;
+  grpc_timer next_resolution_timer_;
+  /// min interval between DNS requests
+  grpc_millis min_time_between_resolutions_;
+  /// timestamp of last DNS request
+  grpc_millis last_resolution_timestamp_ = -1;
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving addresses
@@ -135,13 +140,17 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
       channel_args_, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION);
   request_service_config_ = !grpc_channel_arg_get_integer(
       arg, (grpc_integer_options){false, false, true});
+  arg = grpc_channel_args_find(
+      channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
+  min_time_between_resolutions_ =
+      grpc_channel_arg_get_integer(arg, {1000, 0, INT_MAX});
   interested_parties_ = grpc_pollset_set_create();
   if (args.pollset_set != nullptr) {
     grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
   }
-  GRPC_CLOSURE_INIT(&dns_ares_on_retry_timer_locked_, OnRetryTimerLocked, this,
+  GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolutionLocked, this,
                     grpc_combiner_scheduler(combiner()));
-  GRPC_CLOSURE_INIT(&dns_ares_on_resolved_locked_, OnResolvedLocked, this,
+  GRPC_CLOSURE_INIT(&on_resolved_, OnResolvedLocked, this,
                     grpc_combiner_scheduler(combiner()));
 }
 
@@ -163,8 +172,7 @@ void AresDnsResolver::NextLocked(grpc_channel_args** target_result,
   next_completion_ = on_complete;
   target_result_ = target_result;
   if (resolved_version_ == 0 && !resolving_) {
-    backoff_.Reset();
-    StartResolvingLocked();
+    MaybeStartResolvingLocked();
   } else {
     MaybeFinishNextLocked();
   }
@@ -172,14 +180,13 @@ void AresDnsResolver::NextLocked(grpc_channel_args** target_result,
 
 void AresDnsResolver::RequestReresolutionLocked() {
   if (!resolving_) {
-    backoff_.Reset();
-    StartResolvingLocked();
+    MaybeStartResolvingLocked();
   }
 }
 
 void AresDnsResolver::ShutdownLocked() {
-  if (have_retry_timer_) {
-    grpc_timer_cancel(&retry_timer_);
+  if (have_next_resolution_timer_) {
+    grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
     grpc_cancel_ares_request(pending_request_);
@@ -192,15 +199,15 @@ void AresDnsResolver::ShutdownLocked() {
   }
 }
 
-void AresDnsResolver::OnRetryTimerLocked(void* arg, grpc_error* error) {
+void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  r->have_retry_timer_ = false;
+  r->have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE) {
     if (!r->resolving_) {
       r->StartResolvingLocked();
     }
   }
-  r->Unref(DEBUG_LOCATION, "retry-timer");
+  r->Unref(DEBUG_LOCATION, "next_resolution_timer");
 }
 
 bool ValueInJsonArray(grpc_json* array, const char* value) {
@@ -316,6 +323,9 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     if (service_config != nullptr) grpc_service_config_destroy(service_config);
     gpr_free(service_config_string);
     grpc_lb_addresses_destroy(r->lb_addresses_);
+    // Reset backoff state so that we start from the beginning when the
+    // next request gets triggered.
+    r->backoff_.Reset();
   } else {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
@@ -323,8 +333,8 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
-    GPR_ASSERT(!r->have_retry_timer_);
-    r->have_retry_timer_ = true;
+    GPR_ASSERT(!r->have_next_resolution_timer_);
+    r->have_next_resolution_timer_ = true;
     // TODO(roth): We currently deal with this ref manually.  Once the
     // new closure API is done, find a way to track this ref with the timer
     // callback as part of the type system.
@@ -335,8 +345,8 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    grpc_timer_init(&r->retry_timer_, next_try,
-                    &r->dns_ares_on_retry_timer_locked_);
+    grpc_timer_init(&r->next_resolution_timer_, next_try,
+                    &r->on_next_resolution_);
   }
   if (r->resolved_result_ != nullptr) {
     grpc_channel_args_destroy(r->resolved_result_);
@@ -345,6 +355,40 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   ++r->resolved_version_;
   r->MaybeFinishNextLocked();
   r->Unref(DEBUG_LOCATION, "dns-resolving");
+}
+
+void AresDnsResolver::MaybeStartResolvingLocked() {
+  if (last_resolution_timestamp_ >= 0) {
+    const grpc_millis earliest_next_resolution =
+        last_resolution_timestamp_ + min_time_between_resolutions_;
+    const grpc_millis ms_until_next_resolution =
+        earliest_next_resolution - grpc_core::ExecCtx::Get()->Now();
+    if (ms_until_next_resolution > 0) {
+      const grpc_millis last_resolution_ago =
+          grpc_core::ExecCtx::Get()->Now() - last_resolution_timestamp_;
+      gpr_log(GPR_DEBUG,
+              "In cooldown from last resolution (from %" PRIdPTR
+              " ms ago). Will resolve again in %" PRIdPTR " ms",
+              last_resolution_ago, ms_until_next_resolution);
+      if (!have_next_resolution_timer_) {
+        have_next_resolution_timer_ = true;
+        // TODO(roth): We currently deal with this ref manually.  Once the
+        // new closure API is done, find a way to track this ref with the timer
+        // callback as part of the type system.
+        RefCountedPtr<Resolver> self =
+            Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown");
+        self.release();
+        grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
+                        &on_next_resolution_);
+      }
+      // TODO(dgq): remove the following two lines once Pick First stops
+      // discarding subchannels after selecting.
+      ++resolved_version_;
+      MaybeFinishNextLocked();
+      return;
+    }
+  }
+  StartResolvingLocked();
 }
 
 void AresDnsResolver::StartResolvingLocked() {
@@ -359,8 +403,9 @@ void AresDnsResolver::StartResolvingLocked() {
   service_config_json_ = nullptr;
   pending_request_ = grpc_dns_lookup_ares(
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
-      &dns_ares_on_resolved_locked_, &lb_addresses_, true /* check_grpclb */,
+      &on_resolved_, &lb_addresses_, true /* check_grpclb */,
       request_service_config_ ? &service_config_json_ : nullptr);
+  last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
 }
 
 void AresDnsResolver::MaybeFinishNextLocked() {

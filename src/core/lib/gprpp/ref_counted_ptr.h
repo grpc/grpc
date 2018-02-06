@@ -71,6 +71,10 @@ class RefCountedPtr {
     value_ = value;
   }
 
+  // TODO(roth): This method exists solely as a transition mechanism to allow
+  // us to pass a ref to idiomatic C code that does not use RefCountedPtr<>.
+  // Once all of our code has been converted to idiomatic C++, this
+  // method should go away.
   T* release() {
     T* value = value_;
     value_ = nullptr;

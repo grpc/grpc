@@ -653,14 +653,13 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
  */
 
 static void subchannel_call_destroy(void* call, grpc_error* error) {
+  GPR_TIMER_SCOPE("grpc_subchannel_call_unref.destroy", 0);
   grpc_subchannel_call* c = (grpc_subchannel_call*)call;
   GPR_ASSERT(c->schedule_closure_after_destroy != nullptr);
-  GPR_TIMER_BEGIN("grpc_subchannel_call_unref.destroy", 0);
   grpc_core::ConnectedSubchannel* connection = c->connection;
   grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(c), nullptr,
                           c->schedule_closure_after_destroy);
   connection->Unref(DEBUG_LOCATION, "subchannel_call");
-  GPR_TIMER_END("grpc_subchannel_call_unref.destroy", 0);
 }
 
 void grpc_subchannel_call_set_cleanup_closure(grpc_subchannel_call* call,
@@ -682,12 +681,11 @@ void grpc_subchannel_call_unref(
 
 void grpc_subchannel_call_process_op(grpc_subchannel_call* call,
                                      grpc_transport_stream_op_batch* batch) {
-  GPR_TIMER_BEGIN("grpc_subchannel_call_process_op", 0);
+  GPR_TIMER_SCOPE("grpc_subchannel_call_process_op", 0);
   grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
   GRPC_CALL_LOG_OP(GPR_INFO, top_elem, batch);
   top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
-  GPR_TIMER_END("grpc_subchannel_call_process_op", 0);
 }
 
 grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>

@@ -183,7 +183,7 @@ We can send RPCs to a server and get responses using `grpc_cli call` command.
 
 -   Send non-proto rpc
 
-    For using gRPC with protocols other than probobuf, you will need the exact
+    For using gRPC with protocols other than protobuf, you will need the exact
     method name string and a file containing the raw bytes to be sent on the
     wire.
 

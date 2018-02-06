@@ -33,10 +33,13 @@ namespace grpc_core {
 // A base class for reference-counted objects.
 // New objects should be created via New() and start with a refcount of 1.
 // When the refcount reaches 0, the object will be deleted via Delete().
+//
+// This will commonly be used by CRTP (curiously-recurring template pattern)
+// e.g., class MyClass : public RefCounted<MyClass>
 template <typename Child>
 class RefCounted {
  public:
-  RefCountedPtr<Child> Ref() {
+  RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
     return RefCountedPtr<Child>(reinterpret_cast<Child*>(this));
   }
@@ -84,12 +87,13 @@ class RefCounted {
 template <typename Child>
 class RefCountedWithTracing {
  public:
-  RefCountedPtr<Child> Ref() {
+  RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
     return RefCountedPtr<Child>(reinterpret_cast<Child*>(this));
   }
 
-  RefCountedPtr<Child> Ref(const DebugLocation& location, const char* reason) {
+  RefCountedPtr<Child> Ref(const DebugLocation& location,
+                           const char* reason) GRPC_MUST_USE_RESULT {
     if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
       gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
       gpr_log(GPR_DEBUG, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",

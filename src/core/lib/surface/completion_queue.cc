@@ -421,9 +421,9 @@ static long cq_event_queue_num_items(grpc_cq_event_queue* q) {
 grpc_completion_queue* grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type,
     grpc_cq_polling_type polling_type) {
-  grpc_completion_queue* cq;
+  GPR_TIMER_SCOPE("grpc_completion_queue_create_internal", 0);
 
-  GPR_TIMER_BEGIN("grpc_completion_queue_create_internal", 0);
+  grpc_completion_queue* cq;
 
   GRPC_API_TRACE(
       "grpc_completion_queue_create_internal(completion_type=%d, "
@@ -452,9 +452,6 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
 
   GRPC_CLOSURE_INIT(&cq->pollset_shutdown_done, on_pollset_shutdown_done, cq,
                     grpc_schedule_on_exec_ctx);
-
-  GPR_TIMER_END("grpc_completion_queue_create_internal", 0);
-
   return cq;
 }
 
@@ -622,7 +619,7 @@ static void cq_end_op_for_next(grpc_completion_queue* cq, void* tag,
                                void (*done)(void* done_arg,
                                             grpc_cq_completion* storage),
                                void* done_arg, grpc_cq_completion* storage) {
-  GPR_TIMER_BEGIN("cq_end_op_for_next", 0);
+  GPR_TIMER_SCOPE("cq_end_op_for_next", 0);
 
   if (grpc_api_trace.enabled() ||
       (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE)) {
@@ -691,8 +688,6 @@ static void cq_end_op_for_next(grpc_completion_queue* cq, void* tag,
     }
   }
 
-  GPR_TIMER_END("cq_end_op_for_next", 0);
-
   GRPC_ERROR_UNREF(error);
 }
 
@@ -704,10 +699,10 @@ static void cq_end_op_for_pluck(grpc_completion_queue* cq, void* tag,
                                 void (*done)(void* done_arg,
                                              grpc_cq_completion* storage),
                                 void* done_arg, grpc_cq_completion* storage) {
+  GPR_TIMER_SCOPE("cq_end_op_for_pluck", 0);
+
   cq_pluck_data* cqd = (cq_pluck_data*)DATA_FROM_CQ(cq);
   int is_success = (error == GRPC_ERROR_NONE);
-
-  GPR_TIMER_BEGIN("cq_end_op_for_pluck", 0);
 
   if (grpc_api_trace.enabled() ||
       (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE)) {
@@ -759,8 +754,6 @@ static void cq_end_op_for_pluck(grpc_completion_queue* cq, void* tag,
       GRPC_ERROR_UNREF(kick_error);
     }
   }
-
-  GPR_TIMER_END("cq_end_op_for_pluck", 0);
 
   GRPC_ERROR_UNREF(error);
 }
@@ -840,10 +833,10 @@ static void dump_pending_tags(grpc_completion_queue* cq) {}
 
 static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
                           void* reserved) {
+  GPR_TIMER_SCOPE("grpc_completion_queue_next", 0);
+
   grpc_event ret;
   cq_next_data* cqd = (cq_next_data*)DATA_FROM_CQ(cq);
-
-  GPR_TIMER_BEGIN("grpc_completion_queue_next", 0);
 
   GRPC_API_TRACE(
       "grpc_completion_queue_next("
@@ -957,8 +950,6 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   GRPC_CQ_INTERNAL_UNREF(cq, "next");
 
   GPR_ASSERT(is_finished_arg.stolen_completion == nullptr);
-
-  GPR_TIMER_END("grpc_completion_queue_next", 0);
 
   return ret;
 }
@@ -1078,13 +1069,13 @@ class ExecCtxPluck : public grpc_core::ExecCtx {
 
 static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
                            gpr_timespec deadline, void* reserved) {
+  GPR_TIMER_SCOPE("grpc_completion_queue_pluck", 0);
+
   grpc_event ret;
   grpc_cq_completion* c;
   grpc_cq_completion* prev;
   grpc_pollset_worker* worker = nullptr;
   cq_pluck_data* cqd = (cq_pluck_data*)DATA_FROM_CQ(cq);
-
-  GPR_TIMER_BEGIN("grpc_completion_queue_pluck", 0);
 
   if (grpc_cq_pluck_trace.enabled()) {
     GRPC_API_TRACE(
@@ -1191,8 +1182,6 @@ done:
 
   GPR_ASSERT(is_finished_arg.stolen_completion == nullptr);
 
-  GPR_TIMER_END("grpc_completion_queue_pluck", 0);
-
   return ret;
 }
 
@@ -1240,23 +1229,19 @@ static void cq_shutdown_pluck(grpc_completion_queue* cq) {
 /* Shutdown simply drops a ref that we reserved at creation time; if we drop
    to zero here, then enter shutdown mode and wake up any waiters */
 void grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
+  GPR_TIMER_SCOPE("grpc_completion_queue_shutdown", 0);
   grpc_core::ExecCtx exec_ctx;
-  GPR_TIMER_BEGIN("grpc_completion_queue_shutdown", 0);
   GRPC_API_TRACE("grpc_completion_queue_shutdown(cq=%p)", 1, (cq));
   cq->vtable->shutdown(cq);
-
-  GPR_TIMER_END("grpc_completion_queue_shutdown", 0);
 }
 
 void grpc_completion_queue_destroy(grpc_completion_queue* cq) {
+  GPR_TIMER_SCOPE("grpc_completion_queue_destroy", 0);
   GRPC_API_TRACE("grpc_completion_queue_destroy(cq=%p)", 1, (cq));
-  GPR_TIMER_BEGIN("grpc_completion_queue_destroy", 0);
   grpc_completion_queue_shutdown(cq);
 
   grpc_core::ExecCtx exec_ctx;
   GRPC_CQ_INTERNAL_UNREF(cq, "destroy");
-
-  GPR_TIMER_END("grpc_completion_queue_destroy", 0);
 }
 
 grpc_pollset* grpc_cq_pollset(grpc_completion_queue* cq) {

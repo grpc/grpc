@@ -19,11 +19,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <string.h>
+#include <climits>
+#include <cstring>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -61,10 +63,11 @@ class NativeDnsResolver : public Resolver {
  private:
   virtual ~NativeDnsResolver();
 
+  void MaybeStartResolvingLocked();
   void StartResolvingLocked();
   void MaybeFinishNextLocked();
 
-  static void OnRetryTimerLocked(void* arg, grpc_error* error);
+  static void OnNextResolutionLocked(void* arg, grpc_error* error);
   static void OnResolvedLocked(void* arg, grpc_error* error);
 
   /// name to resolve
@@ -75,6 +78,7 @@ class NativeDnsResolver : public Resolver {
   grpc_pollset_set* interested_parties_ = nullptr;
   /// are we currently resolving?
   bool resolving_ = false;
+  grpc_closure on_resolved_;
   /// which version of the result have we published?
   int published_version_ = 0;
   /// which version of the result is current?
@@ -85,10 +89,14 @@ class NativeDnsResolver : public Resolver {
   grpc_channel_args** target_result_ = nullptr;
   /// current (fully resolved) result
   grpc_channel_args* resolved_result_ = nullptr;
-  /// retry timer
-  bool have_retry_timer_ = false;
-  grpc_timer retry_timer_;
-  grpc_closure on_retry_;
+  /// next resolution timer
+  bool have_next_resolution_timer_ = false;
+  grpc_timer next_resolution_timer_;
+  grpc_closure on_next_resolution_;
+  /// min time between DNS requests
+  grpc_millis min_time_between_resolutions_;
+  /// timestamp of last DNS request
+  grpc_millis last_resolution_timestamp_ = -1;
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving addresses
@@ -108,10 +116,19 @@ NativeDnsResolver::NativeDnsResolver(const ResolverArgs& args)
   if (path[0] == '/') ++path;
   name_to_resolve_ = gpr_strdup(path);
   channel_args_ = grpc_channel_args_copy(args.args);
+  const grpc_arg* arg = grpc_channel_args_find(
+      args.args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
+  min_time_between_resolutions_ =
+      grpc_channel_arg_get_integer(arg, {1000, 0, INT_MAX});
   interested_parties_ = grpc_pollset_set_create();
   if (args.pollset_set != nullptr) {
     grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
   }
+  GRPC_CLOSURE_INIT(&on_next_resolution_,
+                    NativeDnsResolver::OnNextResolutionLocked, this,
+                    grpc_combiner_scheduler(args.combiner));
+  GRPC_CLOSURE_INIT(&on_resolved_, NativeDnsResolver::OnResolvedLocked, this,
+                    grpc_combiner_scheduler(args.combiner));
 }
 
 NativeDnsResolver::~NativeDnsResolver() {
@@ -129,8 +146,7 @@ void NativeDnsResolver::NextLocked(grpc_channel_args** result,
   next_completion_ = on_complete;
   target_result_ = result;
   if (resolved_version_ == 0 && !resolving_) {
-    backoff_.Reset();
-    StartResolvingLocked();
+    MaybeStartResolvingLocked();
   } else {
     MaybeFinishNextLocked();
   }
@@ -138,14 +154,13 @@ void NativeDnsResolver::NextLocked(grpc_channel_args** result,
 
 void NativeDnsResolver::RequestReresolutionLocked() {
   if (!resolving_) {
-    backoff_.Reset();
-    StartResolvingLocked();
+    MaybeStartResolvingLocked();
   }
 }
 
 void NativeDnsResolver::ShutdownLocked() {
-  if (have_retry_timer_) {
-    grpc_timer_cancel(&retry_timer_);
+  if (have_next_resolution_timer_) {
+    grpc_timer_cancel(&next_resolution_timer_);
   }
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
@@ -155,13 +170,11 @@ void NativeDnsResolver::ShutdownLocked() {
   }
 }
 
-void NativeDnsResolver::OnRetryTimerLocked(void* arg, grpc_error* error) {
+void NativeDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
-  r->have_retry_timer_ = false;
-  if (error == GRPC_ERROR_NONE) {
-    if (!r->resolving_) {
-      r->StartResolvingLocked();
-    }
+  r->have_next_resolution_timer_ = false;
+  if (error == GRPC_ERROR_NONE && !r->resolving_) {
+    r->StartResolvingLocked();
   }
   r->Unref(DEBUG_LOCATION, "retry-timer");
 }
@@ -188,26 +201,29 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     result = grpc_channel_args_copy_and_add(r->channel_args_, &new_arg, 1);
     grpc_resolved_addresses_destroy(r->addresses_);
     grpc_lb_addresses_destroy(addresses);
+    // Reset backoff state so that we start from the beginning when the
+    // next request gets triggered.
+    r->backoff_.Reset();
   } else {
     grpc_millis next_try = r->backoff_.NextAttemptTime();
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_string(error));
-    GPR_ASSERT(!r->have_retry_timer_);
-    r->have_retry_timer_ = true;
+    GPR_ASSERT(!r->have_next_resolution_timer_);
+    r->have_next_resolution_timer_ = true;
     // TODO(roth): We currently deal with this ref manually.  Once the
     // new closure API is done, find a way to track this ref with the timer
     // callback as part of the type system.
-    RefCountedPtr<Resolver> self = r->Ref(DEBUG_LOCATION, "retry-timer");
+    RefCountedPtr<Resolver> self =
+        r->Ref(DEBUG_LOCATION, "next_resolution_timer");
     self.release();
     if (timeout > 0) {
       gpr_log(GPR_DEBUG, "retrying in %" PRIdPTR " milliseconds", timeout);
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    GRPC_CLOSURE_INIT(&r->on_retry_, NativeDnsResolver::OnRetryTimerLocked, r,
-                      grpc_combiner_scheduler(r->combiner()));
-    grpc_timer_init(&r->retry_timer_, next_try, &r->on_retry_);
+    grpc_timer_init(&r->next_resolution_timer_, next_try,
+                    &r->on_next_resolution_);
   }
   if (r->resolved_result_ != nullptr) {
     grpc_channel_args_destroy(r->resolved_result_);
@@ -219,6 +235,40 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   r->Unref(DEBUG_LOCATION, "dns-resolving");
 }
 
+void NativeDnsResolver::MaybeStartResolvingLocked() {
+  if (last_resolution_timestamp_ >= 0) {
+    const grpc_millis earliest_next_resolution =
+        last_resolution_timestamp_ + min_time_between_resolutions_;
+    const grpc_millis ms_until_next_resolution =
+        earliest_next_resolution - grpc_core::ExecCtx::Get()->Now();
+    if (ms_until_next_resolution > 0) {
+      const grpc_millis last_resolution_ago =
+          grpc_core::ExecCtx::Get()->Now() - last_resolution_timestamp_;
+      gpr_log(GPR_DEBUG,
+              "In cooldown from last resolution (from %" PRIdPTR
+              " ms ago). Will resolve again in %" PRIdPTR " ms",
+              last_resolution_ago, ms_until_next_resolution);
+      if (!have_next_resolution_timer_) {
+        have_next_resolution_timer_ = true;
+        // TODO(roth): We currently deal with this ref manually.  Once the
+        // new closure API is done, find a way to track this ref with the timer
+        // callback as part of the type system.
+        RefCountedPtr<Resolver> self =
+            Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown");
+        self.release();
+        grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
+                        &on_next_resolution_);
+      }
+      // TODO(dgq): remove the following two lines once Pick First stops
+      // discarding subchannels after selecting.
+      ++resolved_version_;
+      MaybeFinishNextLocked();
+      return;
+    }
+  }
+  StartResolvingLocked();
+}
+
 void NativeDnsResolver::StartResolvingLocked() {
   // TODO(roth): We currently deal with this ref manually.  Once the
   // new closure API is done, find a way to track this ref with the timer
@@ -228,11 +278,9 @@ void NativeDnsResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   addresses_ = nullptr;
-  grpc_resolve_address(
-      name_to_resolve_, kDefaultPort, interested_parties_,
-      GRPC_CLOSURE_CREATE(NativeDnsResolver::OnResolvedLocked, this,
-                          grpc_combiner_scheduler(combiner())),
-      &addresses_);
+  grpc_resolve_address(name_to_resolve_, kDefaultPort, interested_parties_,
+                       &on_resolved_, &addresses_);
+  last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
 }
 
 void NativeDnsResolver::MaybeFinishNextLocked() {

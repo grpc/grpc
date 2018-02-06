@@ -90,7 +90,7 @@ class InternallyRefCounted : public Orphanable {
   InternallyRefCounted() { gpr_ref_init(&refs_, 1); }
   virtual ~InternallyRefCounted() {}
 
-  RefCountedPtr<Child> Ref() {
+  RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
     return RefCountedPtr<Child>(reinterpret_cast<Child*>(this));
   }
@@ -147,12 +147,13 @@ class InternallyRefCountedWithTracing : public Orphanable {
 
   virtual ~InternallyRefCountedWithTracing() {}
 
-  RefCountedPtr<Child> Ref() {
+  RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
     return RefCountedPtr<Child>(reinterpret_cast<Child*>(this));
   }
 
-  RefCountedPtr<Child> Ref(const DebugLocation& location, const char* reason) {
+  RefCountedPtr<Child> Ref(const DebugLocation& location,
+                           const char* reason) GRPC_MUST_USE_RESULT {
     if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
       gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
       gpr_log(GPR_DEBUG, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",

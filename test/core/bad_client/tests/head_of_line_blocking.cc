@@ -131,7 +131,8 @@ int main(int argc, char** argv) {
     addbuf(hdr, sizeof(hdr));
     addbuf(msg, FRAME_SIZE);
   }
-  grpc_run_bad_client_test(verifier, nullptr, g_buffer, g_count, 0);
+  grpc_bad_client_arg bca = {nullptr, nullptr, g_buffer, g_count};
+  grpc_run_bad_client_test(verifier, &bca, 1, 0);
   gpr_free(g_buffer);
   grpc_shutdown();
 

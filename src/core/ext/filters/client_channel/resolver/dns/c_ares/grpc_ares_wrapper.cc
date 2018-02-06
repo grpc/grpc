@@ -505,7 +505,7 @@ static void on_dns_lookup_done_cb(void* arg, grpc_error* error) {
     }
   }
   GRPC_CLOSURE_SCHED(r->on_resolve_address_done, GRPC_ERROR_REF(error));
-  grpc_lb_addresses_destroy(r->lb_addrs);
+  if (r->lb_addrs != nullptr) grpc_lb_addresses_destroy(r->lb_addrs);
   gpr_free(r);
 }
 

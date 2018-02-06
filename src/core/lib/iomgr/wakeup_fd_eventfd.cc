@@ -52,15 +52,14 @@ static grpc_error* eventfd_consume(grpc_wakeup_fd* fd_info) {
 }
 
 static grpc_error* eventfd_wakeup(grpc_wakeup_fd* fd_info) {
+  GPR_TIMER_SCOPE("eventfd_wakeup", 0);
   int err;
-  GPR_TIMER_BEGIN("eventfd_wakeup", 0);
   do {
     err = eventfd_write(fd_info->read_fd, 1);
   } while (err < 0 && errno == EINTR);
   if (err < 0) {
     return GRPC_OS_ERROR(errno, "eventfd_write");
   }
-  GPR_TIMER_END("eventfd_wakeup", 0);
   return GRPC_ERROR_NONE;
 }
 

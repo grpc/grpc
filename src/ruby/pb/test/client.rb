@@ -707,7 +707,7 @@ Args = Struct.new(:default_service_account, :host, :host_override,
                   :oauth_scope, :port, :secure, :test_case,
                   :use_test_ca)
 
-# validates the the command line options, returning them as a Hash.
+# validates the command line options, returning them as a Hash.
 def parse_args
   args = Args.new
   args.host_override = 'foo.test.google.fr'
