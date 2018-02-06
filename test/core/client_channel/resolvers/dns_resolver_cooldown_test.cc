@@ -225,7 +225,8 @@ void on_first_resolution(void* arg, grpc_error* error) {
 }
 
 static void start_test_under_combiner(void* arg, grpc_error* error) {
-  OnResolutionCallbackArg* res_cb_arg = static_cast<OnResolutionCallbackArg*>(arg);
+  OnResolutionCallbackArg* res_cb_arg =
+      static_cast<OnResolutionCallbackArg*>(arg);
 
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
