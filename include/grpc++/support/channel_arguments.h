@@ -22,6 +22,7 @@
 #include <list>
 #include <vector>
 
+#include <grpc++/impl/codegen/compression.h>
 #include <grpc++/support/config.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -60,7 +61,13 @@ class ChannelArguments {
   /// Set target name override for SSL host name checking. This option is for
   /// testing only and should never be used in production.
   void SetSslTargetNameOverride(const grpc::string& name);
+
   // TODO(yangg) add flow control options
+
+  /// Set the compression algorithm for the channel.
+  void SetCompressionAlgorithm(CompressionAlgorithm algorithm);
+
+  // DEPRECATED VERSION
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
 

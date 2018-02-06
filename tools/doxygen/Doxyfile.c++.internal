@@ -819,6 +819,7 @@ include/grpc++/impl/codegen/client_context.h \
 include/grpc++/impl/codegen/client_unary_call.h \
 include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
+include/grpc++/impl/codegen/compression.h \
 include/grpc++/impl/codegen/config.h \
 include/grpc++/impl/codegen/config_protobuf.h \
 include/grpc++/impl/codegen/core_codegen.h \

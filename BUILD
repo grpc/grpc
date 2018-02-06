@@ -1594,6 +1594,7 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/client_unary_call.h",
         "include/grpc++/impl/codegen/completion_queue.h",
         "include/grpc++/impl/codegen/completion_queue_tag.h",
+	"include/grpc++/impl/codegen/compression.h",
         "include/grpc++/impl/codegen/config.h",
         "include/grpc++/impl/codegen/core_codegen_interface.h",
         "include/grpc++/impl/codegen/create_auth_context.h",
@@ -1678,7 +1679,6 @@ grpc_cc_library(
     name = "grpc++_test",
     public_hdrs = [
         "include/grpc++/test/mock_stream.h",
-        "include/grpc++/test/server_context_test_spouse.h",
     ],
     deps = [
         ":grpc++",

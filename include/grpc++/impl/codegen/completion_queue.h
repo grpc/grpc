@@ -59,7 +59,6 @@ class ServerReaderWriterBody;
 }  // namespace internal
 
 class Channel;
-class ChannelInterface;
 class ClientContext;
 class CompletionQueue;
 class Server;
@@ -68,6 +67,7 @@ class ServerContext;
 class ServerInterface;
 
 namespace internal {
+class AlarmImpl;
 class CompletionQueueTag;
 class RpcMethod;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -83,7 +83,13 @@ template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
+
+class CompletionQueueStats;
 }  // namespace internal
+
+namespace testing {
+class CompletionQueueBenchmarks;
+}  // namespace testing
 
 extern CoreCodegenInterface* g_core_codegen_interface;
 
@@ -98,11 +104,6 @@ class CompletionQueue : private GrpcLibraryCodegen {
   CompletionQueue()
       : CompletionQueue(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING}) {}
-
-  /// Wrap \a take, taking ownership of the instance.
-  ///
-  /// \param take The completion queue instance to wrap. Ownership is taken.
-  explicit CompletionQueue(grpc_completion_queue* take);
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
   ~CompletionQueue() {
@@ -224,16 +225,10 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// completion queue after this method is called.
   void Shutdown();
 
-  /// Returns a \em raw pointer to the underlying \a grpc_completion_queue
-  /// instance.
-  ///
-  /// \warning Remember that the returned instance is owned. No transfer of
-  /// owership is performed.
-  grpc_completion_queue* cq() { return cq_; }
-
  protected:
-  /// Private constructor of CompletionQueue only visible to friend classes
-  CompletionQueue(const grpc_completion_queue_attributes& attributes) {
+  /// Protected constructor of CompletionQueue only visible to friend
+  /// and derived classes
+  explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
     cq_ = g_core_codegen_interface->grpc_completion_queue_create(
         g_core_codegen_interface->grpc_completion_queue_factory_lookup(
             &attributes),
@@ -265,11 +260,28 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   friend class ::grpc::internal::UnknownMethodHandler;
+  friend class ::grpc::Channel;
   friend class ::grpc::Server;
+  friend class ::grpc::ServerBuilder;
   friend class ::grpc::ServerContext;
   friend class ::grpc::ServerInterface;
+  friend class ::grpc::internal::AlarmImpl;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
+  friend class ::grpc::internal::CompletionQueueStats;
+  friend class ::grpc::testing::CompletionQueueBenchmarks;
+
+  /// Wrap \a take, taking ownership of the instance.
+  ///
+  /// \param take The completion queue instance to wrap. Ownership is taken.
+  explicit CompletionQueue(grpc_completion_queue* take);
+
+  /// Returns a \em raw pointer to the underlying \a grpc_completion_queue
+  /// instance.
+  ///
+  /// \warning Remember that the returned instance is owned. No transfer of
+  /// owership is performed.
+  grpc_completion_queue* cq() { return cq_; }
 
   /// EXPERIMENTAL
   /// Creates a Thread Local cache to store the first event
@@ -377,6 +389,17 @@ class ServerCompletionQueue : public CompletionQueue {
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type}),
         polling_type_(polling_type) {}
 };
+
+namespace internal {
+class CompletionQueueStats {
+ public:
+  CompletionQueueStats(CompletionQueue* cq) : cq_(cq) {}
+  int GetPollNum();
+
+ private:
+  CompletionQueue* cq_;
+};
+}  // namespace internal
 
 }  // namespace grpc
 

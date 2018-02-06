@@ -35,6 +35,7 @@
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 #include <grpc/compression.h>
+#include <grpc/support/port_platform.h>
 
 struct grpc_server;
 
@@ -44,6 +45,10 @@ class AsyncGenericService;
 class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
+
+namespace testing {
+class EndpointPairFixture;
+}  // namespace testing
 
 /// Represents a gRPC server.
 ///
@@ -87,9 +92,6 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// application and is shared among all \a Server objects.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
-  // Returns a \em raw pointer to the underlying \a grpc_server instance.
-  grpc_server* c_server();
-
   /// Returns the health check service.
   HealthCheckServiceInterface* GetHealthCheckService() const {
     return health_check_service_.get();
@@ -102,6 +104,8 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   friend class AsyncGenericService;
   friend class ServerBuilder;
   friend class ServerInitializer;
+  friend class testing::EndpointPairFixture;  // for use by tests only
+  friend void AddInsecureChannelFromFd(Server* server, int fd);
 
   class SyncRequest;
   class AsyncRequest;
@@ -221,6 +225,17 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
 };
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+
+/// Add a new client to a \a Server communicating over the given
+/// file descriptor.
+///
+/// \param server The server to add the client to.
+/// \param fd The file descriptor representing a socket.
+void AddInsecureChannelFromFd(Server* server, int fd);
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 }  // namespace grpc
 

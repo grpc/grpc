@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCXX_TEST_SERVER_CONTEXT_TEST_SPOUSE_H
-#define GRPCXX_TEST_SERVER_CONTEXT_TEST_SPOUSE_H
+#ifndef GRPC_TEST_CPP_UTIL_SERVER_CONTEXT_TEST_SPOUSE_H
+#define GRPC_TEST_CPP_UTIL_SERVER_CONTEXT_TEST_SPOUSE_H
 
 #include <map>
 
@@ -54,6 +54,8 @@ class ServerContextTestSpouse {
     return ctx_->trailing_metadata_;
   }
 
+  gpr_timespec raw_deadline() const { return ctx_->deadline_; }
+
  private:
   ServerContext* ctx_;  // not owned
   std::multimap<grpc::string, grpc::string> client_metadata_storage_;
@@ -62,4 +64,4 @@ class ServerContextTestSpouse {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPCXX_TEST_SERVER_CONTEXT_TEST_SPOUSE_H
+#endif  // GRPC_TEST_CPP_UTIL_CONTEXT_TEST_SPOUSE_H

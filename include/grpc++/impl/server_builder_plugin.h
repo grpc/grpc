@@ -29,9 +29,9 @@ class ServerBuilder;
 class ServerInitializer;
 class ChannelArguments;
 
-/// This interface is meant for internal usage only. Implementations of this
-/// interface should add themselves to a \a ServerBuilder instance through the
-/// \a InternalAddPluginFactory method.
+/// This interface is meant for internal and specialized usage only.
+/// Implementations of this interface should add themselves to a
+/// \a ServerBuilder instance through the \a InternalAddPluginFactory method.
 class ServerBuilderPlugin {
  public:
   virtual ~ServerBuilderPlugin() {}

@@ -25,6 +25,7 @@
 #include <vector>
 
 #include <grpc++/impl/channel_argument_option.h>
+#include <grpc++/impl/codegen/compression.h>
 #include <grpc++/impl/server_builder_option.h>
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/support/config.h>
@@ -167,12 +168,34 @@ class ServerBuilder {
   /// Incoming calls compressed with an unsupported algorithm will fail with
   /// \a GRPC_STATUS_UNIMPLEMENTED.
   ServerBuilder& SetCompressionAlgorithmSupportStatus(
+      CompressionAlgorithm algorithm, bool enabled) {
+    return SetCompressionAlgorithmSupportStatus(
+        static_cast<grpc_compression_algorithm>(algorithm), enabled);
+  }
+
+  /// DEPRECATED API
+  /// Set the support status for compression algorithms. All algorithms are
+  /// enabled by default.
+  ///
+  /// Incoming calls compressed with an unsupported algorithm will fail with
+  /// \a GRPC_STATUS_UNIMPLEMENTED.
+  ServerBuilder& SetCompressionAlgorithmSupportStatus(
       grpc_compression_algorithm algorithm, bool enabled);
 
   /// The default compression level to use for all channel calls in the
   /// absence of a call-specific level.
   ServerBuilder& SetDefaultCompressionLevel(grpc_compression_level level);
 
+  /// The default compression algorithm to use for all channel calls in the
+  /// absence of a call-specific level. Note that it overrides any compression
+  /// level set by \a SetDefaultCompressionLevel.
+  ServerBuilder& SetDefaultCompressionAlgorithm(
+      CompressionAlgorithm algorithm) {
+    return SetDefaultCompressionAlgorithm(
+        static_cast<grpc_compression_algorithm>(algorithm));
+  }
+
+  /// DEPRECATED API
   /// The default compression algorithm to use for all channel calls in the
   /// absence of a call-specific level. Note that it overrides any compression
   /// level set by \a SetDefaultCompressionLevel.
@@ -202,7 +225,8 @@ class ServerBuilder {
     return SetOption(MakeChannelArgumentOption(arg, value));
   }
 
-  /// For internal use only: Register a ServerBuilderPlugin factory function.
+  /// For internal and specialized use only: Register a ServerBuilderPlugin
+  /// factory function.
   static void InternalAddPluginFactory(
       std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)());
 
@@ -269,7 +293,7 @@ class ServerBuilder {
   } maybe_default_compression_level_;
   struct {
     bool is_set;
-    grpc_compression_algorithm algorithm;
+    CompressionAlgorithm algorithm;
   } maybe_default_compression_algorithm_;
   uint32_t enabled_compression_algorithms_bitset_;
 };

@@ -23,10 +23,9 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/impl/codegen/compression_types.h>
-
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/codegen/compression.h>
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
 #include <grpc++/impl/codegen/metadata_map.h>
@@ -102,9 +101,6 @@ class ServerContext {
   std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
-
-  /// Return a \a gpr_timespec representation of the server call's deadline.
-  gpr_timespec raw_deadline() const { return deadline_; }
 
   /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
   /// associated with a server call. These are made available at the client side
@@ -193,9 +189,19 @@ class ServerContext {
   /// Note that the gRPC runtime may decide to ignore this request, for example,
   /// due to resource constraints, or if the server is aware the client doesn't
   /// support the requested algorithm.
-  grpc_compression_algorithm compression_algorithm() const {
+  CompressionAlgorithm compression_algorithm() const {
     return compression_algorithm_;
   }
+
+  /// Set \a algorithm to be the compression algorithm used for the server call.
+  ///
+  /// \param algorithm The compression algorithm used for the server call.
+  void set_compression_algorithm(CompressionAlgorithm algorithm) {
+    set_compression_algorithm(
+        static_cast<grpc_compression_algorithm>(algorithm));
+  }
+
+  /// DEPRECATED API
   /// Set \a algorithm to be the compression algorithm used for the server call.
   ///
   /// \param algorithm The compression algorithm used for the server call.
@@ -209,7 +215,7 @@ class ServerContext {
   /// \see grpc::AuthContext.
   std::shared_ptr<const AuthContext> auth_context() const {
     if (auth_context_.get() == nullptr) {
-      auth_context_ = CreateAuthContext(call_);
+      auth_context_ = internal::CreateAuthContext(call_);
     }
     return auth_context_;
   }
@@ -296,7 +302,7 @@ class ServerContext {
 
   bool compression_level_set_;
   grpc_compression_level compression_level_;
-  grpc_compression_algorithm compression_algorithm_;
+  CompressionAlgorithm compression_algorithm_;
 
   internal::CallOpSet<internal::CallOpSendInitialMetadata,
                       internal::CallOpSendMessage>

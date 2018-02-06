@@ -228,8 +228,8 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
   std::vector<grpc_metadata> md;
   for (auto it = metadata.begin(); it != metadata.end(); ++it) {
     grpc_metadata md_entry;
-    md_entry.key = SliceFromCopiedString(it->first);
-    md_entry.value = SliceFromCopiedString(it->second);
+    md_entry.key = internal::SliceFromCopiedString(it->first);
+    md_entry.value = internal::SliceFromCopiedString(it->second);
     md_entry.flags = 0;
     md.push_back(md_entry);
   }

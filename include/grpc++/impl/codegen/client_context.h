@@ -39,6 +39,7 @@
 #include <mutex>
 #include <string>
 
+#include <grpc++/impl/codegen/compression.h>
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
@@ -48,7 +49,6 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
-#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 
 struct census_context;
@@ -93,52 +93,52 @@ class ServerContext;
 /// \see ClientContext::FromServerContext
 class PropagationOptions {
  public:
-  PropagationOptions() : propagate_(GRPC_PROPAGATE_DEFAULTS) {}
+  PropagationOptions() : bitmask_(GRPC_PROPAGATE_DEFAULTS) {}
 
   PropagationOptions& enable_deadline_propagation() {
-    propagate_ |= GRPC_PROPAGATE_DEADLINE;
+    bitmask_ |= GRPC_PROPAGATE_DEADLINE;
     return *this;
   }
 
   PropagationOptions& disable_deadline_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_DEADLINE;
+    bitmask_ &= ~GRPC_PROPAGATE_DEADLINE;
     return *this;
   }
 
   PropagationOptions& enable_census_stats_propagation() {
-    propagate_ |= GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
+    bitmask_ |= GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
     return *this;
   }
 
   PropagationOptions& disable_census_stats_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
+    bitmask_ &= ~GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
     return *this;
   }
 
   PropagationOptions& enable_census_tracing_propagation() {
-    propagate_ |= GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
+    bitmask_ |= GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
     return *this;
   }
 
   PropagationOptions& disable_census_tracing_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
+    bitmask_ &= ~GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
     return *this;
   }
 
   PropagationOptions& enable_cancellation_propagation() {
-    propagate_ |= GRPC_PROPAGATE_CANCELLATION;
+    bitmask_ |= GRPC_PROPAGATE_CANCELLATION;
     return *this;
   }
 
   PropagationOptions& disable_cancellation_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_CANCELLATION;
+    bitmask_ &= ~GRPC_PROPAGATE_CANCELLATION;
     return *this;
   }
 
-  uint32_t c_bitmask() const { return propagate_; }
-
  private:
-  uint32_t propagate_;
+  friend class Channel;
+
+  uint32_t bitmask_;
 };
 
 namespace testing {
@@ -260,9 +260,6 @@ class ClientContext {
     return Timespec2Timepoint(deadline_);
   }
 
-  /// Return a \a gpr_timespec representation of the client call's deadline.
-  gpr_timespec raw_deadline() const { return deadline_; }
-
   /// Set the per call authority header (see
   /// https://tools.ietf.org/html/rfc7540#section-8.1.2.3).
   void set_authority(const grpc::string& authority) { authority_ = authority; }
@@ -272,7 +269,7 @@ class ClientContext {
   /// \see grpc::AuthContext.
   std::shared_ptr<const AuthContext> auth_context() const {
     if (auth_context_.get() == nullptr) {
-      auth_context_ = CreateAuthContext(call_);
+      auth_context_ = internal::CreateAuthContext(call_);
     }
     return auth_context_;
   }
@@ -292,10 +289,19 @@ class ClientContext {
   /// Return the compression algorithm the client call will request be used.
   /// Note that the gRPC runtime may decide to ignore this request, for example,
   /// due to resource constraints.
-  grpc_compression_algorithm compression_algorithm() const {
+  CompressionAlgorithm compression_algorithm() const {
     return compression_algorithm_;
   }
 
+  /// Set \a algorithm to be the compression algorithm used for the client call.
+  ///
+  /// \param algorithm The compression algorithm used for the client call.
+  void set_compression_algorithm(CompressionAlgorithm algorithm) {
+    set_compression_algorithm(
+        static_cast<grpc_compression_algorithm>(algorithm));
+  }
+
+  /// DEPRECATED API
   /// Set \a algorithm to be the compression algorithm used for the client call.
   ///
   /// \param algorithm The compression algorithm used for the client call.
@@ -431,7 +437,7 @@ class ClientContext {
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;
 
-  grpc_compression_algorithm compression_algorithm_;
+  CompressionAlgorithm compression_algorithm_;
   bool initial_metadata_corked_;
 
   grpc::string debug_error_string_;

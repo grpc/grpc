@@ -977,6 +977,7 @@ filegroups:
   - include/grpc++/impl/codegen/client_unary_call.h
   - include/grpc++/impl/codegen/completion_queue.h
   - include/grpc++/impl/codegen/completion_queue_tag.h
+  - include/grpc++/impl/codegen/compression.h
   - include/grpc++/impl/codegen/config.h
   - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/create_auth_context.h
@@ -1121,7 +1122,6 @@ filegroups:
   language: c++
   public_headers:
   - include/grpc++/test/mock_stream.h
-  - include/grpc++/test/server_context_test_spouse.h
   deps:
   - grpc++
   - grpc
@@ -1419,6 +1419,7 @@ libs:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h
+  - test/cpp/util/server_context_test_spouse.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
@@ -1448,6 +1449,7 @@ libs:
   headers:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
+  - test/cpp/util/server_context_test_spouse.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
@@ -4655,13 +4657,12 @@ targets:
   src:
   - test/cpp/test/server_context_test_spouse_test.cc
   deps:
+  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
   - gpr_test_util
   - gpr
-  uses:
-  - grpc++_test
 - name: server_crash_test
   gtest: true
   cpu_cost: 0.1

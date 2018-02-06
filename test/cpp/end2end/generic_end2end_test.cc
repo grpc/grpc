@@ -36,6 +36,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "test/cpp/util/server_context_test_spouse.h"
 
 #include <gtest/gtest.h>
 
@@ -145,7 +146,8 @@ class GenericEnd2endTest : public ::testing::Test {
       EXPECT_EQ(kMethodName, srv_ctx.method());
 
       if (check_deadline) {
-        EXPECT_TRUE(gpr_time_similar(deadline, srv_ctx.raw_deadline(),
+        ServerContextTestSpouse srv_ctx_spouse(&srv_ctx);
+        EXPECT_TRUE(gpr_time_similar(deadline, srv_ctx_spouse.raw_deadline(),
                                      gpr_time_from_millis(1000, GPR_TIMESPAN)));
       }
 
@@ -269,7 +271,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   GenericServerContext srv_ctx;
   GenericServerAsyncReaderWriter srv_stream(&srv_ctx);
 
-  cli_ctx.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
+  cli_ctx.set_compression_algorithm(CompressionAlgorithm::MESSAGE_GZIP);
   send_request.set_message("Hello");
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
       generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
