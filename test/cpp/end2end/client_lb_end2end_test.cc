@@ -168,7 +168,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     return ports;
   }
 
-  void ResetStub(const grpc::string& lb_policy_name,
+  void ResetStub(const std::vector<int>& ports,
+                 const grpc::string& lb_policy_name,
                  ChannelArguments args = ChannelArguments()) {
     if (lb_policy_name.size() > 0) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
@@ -291,7 +292,7 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("");  // test that pick first is the default.
+  ResetStub(GetServersPorts(), "");  // test that pick first is the default.
   std::vector<int> ports;
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
@@ -321,7 +322,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
-  ResetStub("pick_first", args);
+  ResetStub(ports, "pick_first", args);
   SetNextResolution(ports);
   // The channel won't become connected (there's no server).
   ASSERT_FALSE(channel_->WaitForConnected(
@@ -349,7 +350,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   constexpr int kMinReconnectBackOffMs = 1000;
   args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, kMinReconnectBackOffMs);
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
-  ResetStub("pick_first", args);
+  ResetStub(ports, "pick_first", args);
   SetNextResolution(ports);
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
@@ -371,7 +372,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("pick_first");
+  ResetStub(GetServersPorts(), "pick_first");
   std::vector<int> ports;
 
   // Perform one RPC against the first server.
@@ -417,7 +418,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("pick_first");
+  ResetStub(GetServersPorts(), "pick_first");
   std::vector<int> ports;
 
   // Perform one RPC against the first server.
@@ -447,7 +448,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("pick_first");
+  ResetStub(GetServersPorts(), "pick_first");
   std::vector<int> ports;
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
@@ -470,7 +471,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("round_robin");
+  ResetStub(GetServersPorts(), "round_robin");
   std::vector<int> ports;
   for (const auto& server : servers_) {
     ports.emplace_back(server->port_);
@@ -501,7 +502,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("round_robin");
+  ResetStub(GetServersPorts(), "round_robin");
   std::vector<int> ports;
 
   // Start with a single server.
@@ -584,7 +585,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
 TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("round_robin");
+  ResetStub(GetServersPorts(), "round_robin");
   std::vector<int> ports;
 
   // Start with a single server.
@@ -616,7 +617,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  ResetStub("round_robin");
+  ResetStub(GetServersPorts(), "round_robin");
   std::vector<int> ports;
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
@@ -644,7 +645,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
     ports.push_back(grpc_pick_unused_port_or_die());
   }
   StartServers(kNumServers, ports);
-  ResetStub("round_robin");
+  ResetStub(GetServersPorts(), "round_robin");
   SetNextResolution(ports);
   // Send a number of RPCs, which succeed.
   for (size_t i = 0; i < 100; ++i) {
@@ -679,7 +680,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   const auto ports = GetServersPorts();
-  ResetStub("round_robin");
+  ResetStub(ports, "round_robin");
   SetNextResolution(ports);
   for (size_t i = 0; i < kNumServers; ++i) WaitForServer(i);
   for (size_t i = 0; i < servers_.size(); ++i) {
