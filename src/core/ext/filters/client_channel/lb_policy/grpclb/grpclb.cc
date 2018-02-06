@@ -752,8 +752,10 @@ static void rr_on_reresolution_requested_locked(void* arg, grpc_error* error) {
         "[grpclb %p] Re-resolution requested from the internal RR policy (%p).",
         glb_policy, glb_policy->rr_policy);
   }
-  // Handle the re-resolution request using glb's original re-resolution
-  // closure.
+  // If we are talking to a balancer, we expect to get updated addresses form
+  // the balancer, so we can ignore the re-resolution request from the RR
+  // policy. Otherwise, handle the re-resolution request using glb's original
+  // re-resolution closure.
   if (glb_policy->lb_calld == nullptr ||
       !glb_policy->lb_calld->seen_initial_response) {
     grpc_lb_policy_try_reresolve(&glb_policy->base, &grpc_lb_glb_trace,
@@ -852,8 +854,6 @@ static void rr_on_connectivity_changed_locked(void* arg, grpc_error* error) {
                          "rr_on_connectivity_changed_locked");
     return;
   }
-  GPR_ASSERT(glb_policy->rr_connectivity_state != GRPC_CHANNEL_SHUTDOWN);
-  GPR_ASSERT(glb_policy->rr_connectivity_state != GRPC_CHANNEL_IDLE);
   update_lb_connectivity_status_locked(glb_policy, GRPC_ERROR_REF(error));
   // Resubscribe. Reuse the "rr_on_connectivity_changed_locked" ref.
   grpc_lb_policy_notify_on_state_change_locked(
