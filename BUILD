@@ -599,6 +599,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
     deps = [
         "debug_location",
+        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
     ],
@@ -610,6 +611,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
         "debug_location",
+        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
     ],

@@ -68,7 +68,8 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 #endif
 
 namespace grpc_core {
-class ConnectedSubchannel : public grpc_core::RefCountedWithTracing {
+
+class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
  public:
   struct CallArgs {
     grpc_polling_entity* pollent;
@@ -93,6 +94,7 @@ class ConnectedSubchannel : public grpc_core::RefCountedWithTracing {
  private:
   grpc_channel_stack* channel_stack_;
 };
+
 }  // namespace grpc_core
 
 grpc_subchannel* grpc_subchannel_ref(
