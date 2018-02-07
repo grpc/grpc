@@ -107,10 +107,6 @@ struct grpc_lb_policy_vtable {
 
   void (*update_locked)(grpc_lb_policy* policy,
                         const grpc_lb_policy_args* args);
-
-  /** \see grpc_lb_policy_set_reresolve_closure */
-  void (*set_reresolve_closure_locked)(grpc_lb_policy* policy,
-                                       grpc_closure* request_reresolution);
 };
 
 #ifndef NDEBUG
