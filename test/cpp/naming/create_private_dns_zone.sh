@@ -17,7 +17,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 gcloud alpha dns managed-zones create \
   resolver-tests-version-4-grpctestingexp-zone-id \
