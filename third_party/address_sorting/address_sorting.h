@@ -45,8 +45,6 @@
 extern "C" {
 #endif
 
-#include <stdbool.h>
-
 typedef struct address_sorting_address {
   char addr[128];
   size_t len;
