@@ -3029,7 +3029,6 @@ LIBGRPC_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/compression_ruby.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
@@ -3297,7 +3296,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
-    include/grpc/compression_ruby.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -3373,7 +3371,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/compression_ruby.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
@@ -3698,7 +3695,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/compression_ruby.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
@@ -3959,7 +3955,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/compression_ruby.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
@@ -4190,7 +4185,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/compression_ruby.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
@@ -4425,7 +4419,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
-    include/grpc/compression_ruby.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -4685,7 +4678,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
-    include/grpc/compression_ruby.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -4925,7 +4917,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/compression_ruby.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
@@ -5173,7 +5164,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
-    include/grpc/compression_ruby.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -5893,7 +5883,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
-    include/grpc/compression_ruby.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
