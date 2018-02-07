@@ -60,6 +60,7 @@
 #define ADDRESS_SORTING_POSIX 1
 #endif
 
+#include <stdbool.h>
 #include "address_sorting.h"
 
 address_sorting_source_addr_factory*
