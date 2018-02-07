@@ -595,14 +595,6 @@ static void rr_update_locked(grpc_lb_policy* policy,
   }
 }
 
-static void rr_set_reresolve_closure_locked(
-    grpc_lb_policy* policy, grpc_closure* request_reresolution) {
-  round_robin_lb_policy* p = (round_robin_lb_policy*)policy;
-  GPR_ASSERT(!p->shutdown);
-  GPR_ASSERT(policy->request_reresolution == nullptr);
-  policy->request_reresolution = request_reresolution;
-}
-
 static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
     rr_destroy,
     rr_shutdown_locked,
@@ -613,8 +605,7 @@ static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
     rr_exit_idle_locked,
     rr_check_connectivity_locked,
     rr_notify_on_state_change_locked,
-    rr_update_locked,
-    rr_set_reresolve_closure_locked};
+    rr_update_locked};
 
 static void round_robin_factory_ref(grpc_lb_policy_factory* factory) {}
 
