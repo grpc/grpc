@@ -697,6 +697,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                              method,
                              request,
                              timeout,
+                             host=None,
                              metadata=None,
                              with_call=False,
                              protocol_options=None):
@@ -711,6 +712,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       method: The method identifier of the RPC.
       request: The request value for the RPC.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       with_call: Whether or not to include return a Call for the RPC in addition
         to the response.
@@ -732,6 +734,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                            method,
                            request,
                            timeout,
+                           host=None,
                            metadata=None,
                            protocol_options=None):
         """Invokes a unary-request-unary-response method.
@@ -741,6 +744,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       method: The method identifier of the RPC.
       request: The request value for the RPC.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
@@ -759,6 +763,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                             method,
                             request,
                             timeout,
+                            host=None,
                             metadata=None,
                             protocol_options=None):
         """Invokes a unary-request-stream-response method.
@@ -768,6 +773,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       method: The method identifier of the RPC.
       request: The request value for the RPC.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
@@ -785,6 +791,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                               method,
                               request_iterator,
                               timeout,
+                              host=None,
                               metadata=None,
                               with_call=False,
                               protocol_options=None):
@@ -799,6 +806,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       method: The method identifier of the RPC.
       request_iterator: An iterator that yields request values for the RPC.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       with_call: Whether or not to include return a Call for the RPC in addition
         to the response.
@@ -820,6 +828,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                             method,
                             request_iterator,
                             timeout,
+                            host=None,
                             metadata=None,
                             protocol_options=None):
         """Invokes a stream-request-unary-response method.
@@ -829,6 +838,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       method: The method identifier of the RPC.
       request_iterator: An iterator that yields request values for the RPC.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
@@ -847,6 +857,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                              method,
                              request_iterator,
                              timeout,
+                             host=None,
                              metadata=None,
                              protocol_options=None):
         """Invokes a stream-request-stream-response method.
@@ -856,6 +867,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       method: The method identifier of the RPC.
       request_iterator: An iterator that yields request values for the RPC.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
@@ -875,6 +887,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                           receiver,
                           abortion_callback,
                           timeout,
+                          host=None,
                           metadata=None,
                           protocol_options=None):
         """Event-driven invocation of a unary-request-unary-response method.
@@ -887,6 +900,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       abortion_callback: A callback to be called and passed an Abortion value
         in the event of RPC abortion.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
@@ -904,6 +918,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                            receiver,
                            abortion_callback,
                            timeout,
+                           host=None,
                            metadata=None,
                            protocol_options=None):
         """Event-driven invocation of a unary-request-stream-response method.
@@ -916,6 +931,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       abortion_callback: A callback to be called and passed an Abortion value
         in the event of RPC abortion.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
@@ -932,6 +948,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                            receiver,
                            abortion_callback,
                            timeout,
+                           host=None,
                            metadata=None,
                            protocol_options=None):
         """Event-driven invocation of a unary-request-unary-response method.
@@ -943,6 +960,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       abortion_callback: A callback to be called and passed an Abortion value
         in the event of RPC abortion.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
@@ -960,6 +978,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
                             receiver,
                             abortion_callback,
                             timeout,
+                            host=None,
                             metadata=None,
                             protocol_options=None):
         """Event-driven invocation of a unary-request-stream-response method.
@@ -971,6 +990,7 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
       abortion_callback: A callback to be called and passed an Abortion value
         in the event of RPC abortion.
       timeout: A duration of time in seconds to allow for the RPC.
+      host: Optional override for the target host.
       metadata: A metadata value to be passed to the service-side of the RPC.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
@@ -982,12 +1002,13 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def unary_unary(self, group, method):
+    def unary_unary(self, group, method, host=None):
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
     Args:
       group: The group identifier of the RPC.
       method: The method identifier of the RPC.
+      host: Optional override for the target host.
 
     Returns:
       A UnaryUnaryMultiCallable value for the named unary-unary method.
@@ -995,12 +1016,13 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def unary_stream(self, group, method):
+    def unary_stream(self, group, method, host=None):
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
     Args:
       group: The group identifier of the RPC.
       method: The method identifier of the RPC.
+      host: Optional override for the target host.
 
     Returns:
       A UnaryStreamMultiCallable value for the name unary-stream method.
@@ -1008,12 +1030,13 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def stream_unary(self, group, method):
+    def stream_unary(self, group, method, host=None):
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
     Args:
       group: The group identifier of the RPC.
       method: The method identifier of the RPC.
+      host: Optional override for the target host.
 
     Returns:
       A StreamUnaryMultiCallable value for the named stream-unary method.
@@ -1021,12 +1044,13 @@ class GenericStub(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def stream_stream(self, group, method):
+    def stream_stream(self, group, method, host=None):
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
     Args:
       group: The group identifier of the RPC.
       method: The method identifier of the RPC.
+      host: Optional override for the target host.
 
     Returns:
       A StreamStreamMultiCallable value for the named stream-stream method.

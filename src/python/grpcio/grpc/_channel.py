@@ -439,11 +439,12 @@ def _end_unary_response_blocking(state, call, with_call, deadline):
 
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 
-    def __init__(self, channel, managed_call, method, request_serializer,
+    def __init__(self, channel, managed_call, method, host, request_serializer,
                  response_deserializer):
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
+        self._host = host
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
@@ -472,7 +473,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         else:
             completion_queue = cygrpc.CompletionQueue()
             call = self._channel.create_call(None, 0, completion_queue,
-                                             self._method, None, deadline)
+                                             self._method, self._host, deadline)
             if credentials is not None:
                 call.set_credentials(credentials._credentials)
             call_error = call.start_client_batch(operations, None)
@@ -497,8 +498,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         if rendezvous:
             return rendezvous
         else:
-            call, drive_call = self._managed_call(None, 0, self._method, None,
-                                                  deadline)
+            call, drive_call = self._managed_call(None, 0, self._method,
+                                                  self._host, deadline)
             if credentials is not None:
                 call.set_credentials(credentials._credentials)
             event_handler = _event_handler(state, call,
@@ -515,11 +516,12 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 
 class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
-    def __init__(self, channel, managed_call, method, request_serializer,
+    def __init__(self, channel, managed_call, method, host, request_serializer,
                  response_deserializer):
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
+        self._host = host
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
@@ -530,8 +532,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             raise rendezvous
         else:
             state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
-            call, drive_call = self._managed_call(None, 0, self._method, None,
-                                                  deadline)
+            call, drive_call = self._managed_call(None, 0, self._method,
+                                                  self._host, deadline)
             if credentials is not None:
                 call.set_credentials(credentials._credentials)
             event_handler = _event_handler(state, call,
@@ -558,11 +560,12 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
 class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
-    def __init__(self, channel, managed_call, method, request_serializer,
+    def __init__(self, channel, managed_call, method, host, request_serializer,
                  response_deserializer):
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
+        self._host = host
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
@@ -571,7 +574,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
         completion_queue = cygrpc.CompletionQueue()
         call = self._channel.create_call(None, 0, completion_queue,
-                                         self._method, None, deadline)
+                                         self._method, self._host, deadline)
         if credentials is not None:
             call.set_credentials(credentials._credentials)
         with state.condition:
@@ -620,7 +623,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                credentials=None):
         deadline = _deadline(timeout)
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
-        call, drive_call = self._managed_call(None, 0, self._method, None,
+        call, drive_call = self._managed_call(None, 0, self._method, self._host,
                                               deadline)
         if credentials is not None:
             call.set_credentials(credentials._credentials)
@@ -646,11 +649,12 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
 class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
-    def __init__(self, channel, managed_call, method, request_serializer,
+    def __init__(self, channel, managed_call, method, host, request_serializer,
                  response_deserializer):
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
+        self._host = host
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
@@ -661,7 +665,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                  credentials=None):
         deadline = _deadline(timeout)
         state = _RPCState(_STREAM_STREAM_INITIAL_DUE, None, None, None, None)
-        call, drive_call = self._managed_call(None, 0, self._method, None,
+        call, drive_call = self._managed_call(None, 0, self._method, self._host,
                                               deadline)
         if credentials is not None:
             call.set_credentials(credentials._credentials)
@@ -919,35 +923,47 @@ class Channel(grpc.Channel):
 
     def unary_unary(self,
                     method,
+                    host=None,
                     request_serializer=None,
                     response_deserializer=None):
+        host = _common.encode(host) if host else None
         return _UnaryUnaryMultiCallable(
             self._channel, _channel_managed_call_management(self._call_state),
-            _common.encode(method), request_serializer, response_deserializer)
+            _common.encode(method), host, request_serializer,
+            response_deserializer)
 
     def unary_stream(self,
                      method,
+                     host=None,
                      request_serializer=None,
                      response_deserializer=None):
+        host = _common.encode(host) if host else None
         return _UnaryStreamMultiCallable(
             self._channel, _channel_managed_call_management(self._call_state),
-            _common.encode(method), request_serializer, response_deserializer)
+            _common.encode(method), host, request_serializer,
+            response_deserializer)
 
     def stream_unary(self,
                      method,
+                     host=None,
                      request_serializer=None,
                      response_deserializer=None):
+        host = _common.encode(host) if host else None
         return _StreamUnaryMultiCallable(
             self._channel, _channel_managed_call_management(self._call_state),
-            _common.encode(method), request_serializer, response_deserializer)
+            _common.encode(method), host, request_serializer,
+            response_deserializer)
 
     def stream_stream(self,
                       method,
+                      host=None,
                       request_serializer=None,
                       response_deserializer=None):
+        host = _common.encode(host) if host else None
         return _StreamStreamMultiCallable(
             self._channel, _channel_managed_call_management(self._call_state),
-            _common.encode(method), request_serializer, response_deserializer)
+            _common.encode(method), host, request_serializer,
+            response_deserializer)
 
     def __del__(self):
         _moot(self._connectivity_state)
