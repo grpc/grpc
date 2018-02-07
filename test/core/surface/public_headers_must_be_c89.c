@@ -20,7 +20,6 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/census.h>
 #include <grpc/compression.h>
-#include <grpc/compression_ruby.h>
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -76,8 +75,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_compression_options_enable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_disable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_is_algorithm_enabled);
-  printf("%lx", (unsigned long) grpc_compression_algorithm_parse_ruby);
-  printf("%lx", (unsigned long) grpc_compression_algorithm_name_ruby);
   printf("%lx", (unsigned long) grpc_metadata_array_init);
   printf("%lx", (unsigned long) grpc_metadata_array_destroy);
   printf("%lx", (unsigned long) grpc_call_details_init);

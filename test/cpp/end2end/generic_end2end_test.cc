@@ -269,7 +269,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   GenericServerContext srv_ctx;
   GenericServerAsyncReaderWriter srv_stream(&srv_ctx);
 
-  cli_ctx.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
+  cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
   send_request.set_message("Hello");
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
       generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
