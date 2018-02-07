@@ -496,7 +496,7 @@ void BalancerCallState::ScheduleNextClientLoadReportLocked() {
 
 void BalancerCallState::MaybeSendClientLoadReportLocked(void* arg,
                                                         grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   glb_lb_policy* glb_policy = lb_calld->glb_policy_;
   lb_calld->client_load_report_timer_callback_pending_ = false;
   if (error != GRPC_ERROR_NONE || lb_calld != glb_policy->lb_calld) {
@@ -565,7 +565,7 @@ void BalancerCallState::SendClientLoadReportLocked() {
 
 void BalancerCallState::ClientLoadReportDoneLocked(void* arg,
                                                    grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   glb_lb_policy* glb_policy = lb_calld->glb_policy_;
   grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
   lb_calld->send_message_payload_ = nullptr;
@@ -578,7 +578,7 @@ void BalancerCallState::ClientLoadReportDoneLocked(void* arg,
 
 void BalancerCallState::OnInitialRequestSentLocked(void* arg,
                                                    grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
   lb_calld->send_message_payload_ = nullptr;
   // If we attempted to send a client load report before the initial request was
@@ -593,7 +593,7 @@ void BalancerCallState::OnInitialRequestSentLocked(void* arg,
 
 void BalancerCallState::OnBalancerMessageReceivedLocked(void* arg,
                                                         grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   glb_lb_policy* glb_policy = lb_calld->glb_policy_;
   // Empty payload means the LB call was cancelled.
   if (lb_calld != glb_policy->lb_calld ||
@@ -726,7 +726,7 @@ void BalancerCallState::OnBalancerMessageReceivedLocked(void* arg,
 
 void BalancerCallState::OnBalancerStatusReceivedLocked(void* arg,
                                                        grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   glb_lb_policy* glb_policy = lb_calld->glb_policy_;
   GPR_ASSERT(lb_calld->lb_call_ != nullptr);
   if (grpc_lb_glb_trace.enabled()) {
