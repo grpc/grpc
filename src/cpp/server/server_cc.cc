@@ -36,6 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/thd.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/profiling/timers.h"
@@ -195,8 +196,10 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
           call_(mrd->call_, server, &cq_, server->max_receive_message_size()),
           ctx_(mrd->deadline_, &mrd->request_metadata_),
           has_request_payload_(mrd->has_request_payload_),
-          request_payload_(mrd->request_payload_),
-          method_(mrd->method_) {
+          request_payload_(has_request_payload_ ? mrd->request_payload_
+                                                : nullptr),
+          method_(mrd->method_),
+          server_(server) {
       ctx_.set_call(mrd->call_);
       ctx_.cq_ = &cq_;
       GPR_ASSERT(mrd->in_flight_);
@@ -210,10 +213,13 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
       }
     }
 
-    void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
+    void Run(std::shared_ptr<GlobalCallbacks> global_callbacks,
+             bool resources) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
-      method_->handler()->RunHandler(internal::MethodHandler::HandlerParameter(
+      auto* handler = resources ? method_->handler()
+                                : server_->resource_exhausted_handler_.get();
+      handler->RunHandler(internal::MethodHandler::HandlerParameter(
           &call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
@@ -235,6 +241,7 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
     const bool has_request_payload_;
     grpc_byte_buffer* request_payload_;
     internal::RpcServiceMethod* const method_;
+    Server* server_;
   };
 
  private:
@@ -255,11 +262,15 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
 // appropriate RPC handlers
 class Server::SyncRequestThreadManager : public ThreadManager {
  public:
-  SyncRequestThreadManager(Server* server, CompletionQueue* server_cq,
-                           std::shared_ptr<GlobalCallbacks> global_callbacks,
-                           int min_pollers, int max_pollers,
-                           int cq_timeout_msec)
-      : ThreadManager(min_pollers, max_pollers),
+  SyncRequestThreadManager(
+      Server* server, CompletionQueue* server_cq,
+      std::shared_ptr<GlobalCallbacks> global_callbacks, int min_pollers,
+      int max_pollers, int cq_timeout_msec,
+      std::function<int(gpr_thd_id*, const char*, void (*)(void*), void*,
+                        const gpr_thd_options*)>
+          thread_creator,
+      std::function<void(gpr_thd_id)> thread_joiner)
+      : ThreadManager(min_pollers, max_pollers, thread_creator, thread_joiner),
         server_(server),
         server_cq_(server_cq),
         cq_timeout_msec_(cq_timeout_msec),
@@ -285,7 +296,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     GPR_UNREACHABLE_CODE(return TIMEOUT);
   }
 
-  void DoWork(void* tag, bool ok) override {
+  void DoWork(void* tag, bool ok, bool resources) override {
     SyncRequest* sync_req = static_cast<SyncRequest*>(tag);
 
     if (!sync_req) {
@@ -305,7 +316,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
       }
 
       GPR_TIMER_SCOPE("cd.Run()", 0);
-      cd.Run(global_callbacks_);
+      cd.Run(global_callbacks_, resources);
     }
     // TODO (sreek) If ok is false here (which it isn't in case of
     // grpc_request_registered_call), we should still re-queue the request
@@ -327,28 +338,27 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   }
 
   void Shutdown() override {
-    ThreadManager::Shutdown();
     server_cq_->Shutdown();
+    ThreadManager::Shutdown();
   }
 
   void Wait() override {
-    ThreadManager::Wait();
     // Drain any pending items from the queue
     void* tag;
     bool ok;
     while (server_cq_->Next(&tag, &ok)) {
       // Do nothing
     }
+    ThreadManager::Wait();
   }
 
   void Start() {
     if (!sync_requests_.empty()) {
+      Initialize();  // ThreadManager's Initialize()
       for (auto m = sync_requests_.begin(); m != sync_requests_.end(); m++) {
         (*m)->SetupRequest();
         (*m)->Request(server_->c_server(), server_cq_->cq());
       }
-
-      Initialize();  // ThreadManager's Initialize()
     }
   }
 
@@ -367,7 +377,11 @@ Server::Server(
     int max_receive_message_size, ChannelArguments* args,
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
-    int min_pollers, int max_pollers, int sync_cq_timeout_msec)
+    int min_pollers, int max_pollers, int sync_cq_timeout_msec,
+    std::function<int(gpr_thd_id*, const char*, void (*)(void*), void*,
+                      const gpr_thd_options*)>
+        thread_creator,
+    std::function<void(gpr_thd_id)> thread_joiner)
     : max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(sync_server_cqs),
       started_(false),
@@ -376,7 +390,9 @@ Server::Server(
       has_generic_service_(false),
       server_(nullptr),
       server_initializer_(new ServerInitializer(this)),
-      health_check_service_disabled_(false) {
+      health_check_service_disabled_(false),
+      thread_creator_(thread_creator),
+      thread_joiner_(thread_joiner) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -386,7 +402,7 @@ Server::Server(
        it++) {
     sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
         this, (*it).get(), global_callbacks_, min_pollers, max_pollers,
-        sync_cq_timeout_msec));
+        sync_cq_timeout_msec, thread_creator_, thread_joiner_));
   }
 
   grpc_channel_args channel_args;
@@ -415,9 +431,12 @@ Server::~Server() {
       lock.unlock();
       Shutdown();
     } else if (!started_) {
-      // Shutdown the completion queues
-      for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->Shutdown();
+      // Shutdown and wait for all ThreadManagers
+      for (auto&& mgr : sync_req_mgrs_) {
+        mgr->Shutdown();
+      }
+      for (auto&& mgr : sync_req_mgrs_) {
+        mgr->Wait();
       }
     }
   }
@@ -549,6 +568,10 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     }
   }
 
+  if (!sync_server_cqs_->empty()) {
+    resource_exhausted_handler_.reset(new internal::ResourceExhaustedHandler);
+  }
+
   for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
     (*it)->Start();
   }
@@ -581,13 +604,13 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
     // Shutdown all ThreadManagers. This will try to gracefully stop all the
     // threads in the ThreadManagers (once they process any inflight requests)
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Shutdown();  // ThreadManager's Shutdown()
+    for (auto&& mgr : sync_req_mgrs_) {
+      mgr->Shutdown();
     }
 
-    // Wait for threads in all ThreadManagers to terminate
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Wait();
+    // Wait for threads in manager to actually terminate
+    for (auto&& mgr : sync_req_mgrs_) {
+      mgr->Wait();
     }
 
     // Drain the shutdown queue (if the previous call to AsyncNext() timed out

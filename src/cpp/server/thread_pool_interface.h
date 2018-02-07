@@ -21,6 +21,8 @@
 
 #include <functional>
 
+#include <grpc/support/port_platform.h>
+
 namespace grpc {
 
 // A thread pool interface for running callbacks.
@@ -29,7 +31,9 @@ class ThreadPoolInterface {
   virtual ~ThreadPoolInterface() {}
 
   // Schedule the given callback for execution.
-  virtual void Add(const std::function<void()>& callback) = 0;
+  // Return true on success, false on failure
+  virtual bool Add(const std::function<void()>& callback)
+      GRPC_MUST_USE_RESULT = 0;
 };
 
 // Allows different codebases to use their own thread pool impls

@@ -19,19 +19,32 @@
 #include "src/cpp/server/dynamic_thread_pool.h"
 
 #include <mutex>
-#include <thread>
 
 #include <grpc/support/log.h>
+#include <grpc/support/thd.h>
 
 namespace grpc {
 
-DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
-    : pool_(pool),
-      thd_(new std::thread(&DynamicThreadPool::DynamicThread::ThreadFunc,
-                           this)) {}
+DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool,
+                                                bool* valid)
+    : pool_(pool) {
+  gpr_thd_options opt = gpr_thd_options_default();
+  gpr_thd_options_set_joinable(&opt);
+
+  std::lock_guard<std::mutex> l(dt_mu_);
+  valid_ = *valid = pool->thread_creator_(
+      &thd_, "dynamic thread",
+      [](void* th) {
+        reinterpret_cast<DynamicThreadPool::DynamicThread*>(th)->ThreadFunc();
+      },
+      this, &opt);
+}
+
 DynamicThreadPool::DynamicThread::~DynamicThread() {
-  thd_->join();
-  thd_.reset();
+  std::lock_guard<std::mutex> l(dt_mu_);
+  if (valid_) {
+    pool_->thread_joiner_(thd_);
+  }
 }
 
 void DynamicThreadPool::DynamicThread::ThreadFunc() {
@@ -73,15 +86,26 @@ void DynamicThreadPool::ThreadFunc() {
   }
 }
 
-DynamicThreadPool::DynamicThreadPool(int reserve_threads)
+DynamicThreadPool::DynamicThreadPool(
+    int reserve_threads,
+    std::function<int(gpr_thd_id*, const char*, void (*)(void*), void*,
+                      const gpr_thd_options*)>
+        thread_creator,
+    std::function<void(gpr_thd_id)> thread_joiner)
     : shutdown_(false),
       reserve_threads_(reserve_threads),
       nthreads_(0),
-      threads_waiting_(0) {
+      threads_waiting_(0),
+      thread_creator_(thread_creator),
+      thread_joiner_(thread_joiner) {
   for (int i = 0; i < reserve_threads_; i++) {
     std::lock_guard<std::mutex> lock(mu_);
     nthreads_++;
-    new DynamicThread(this);
+    bool valid;
+    auto* th = new DynamicThread(this, &valid);
+    if (!valid) {
+      delete th;
+    }
   }
 }
 
@@ -101,7 +125,7 @@ DynamicThreadPool::~DynamicThreadPool() {
   ReapThreads(&dead_threads_);
 }
 
-void DynamicThreadPool::Add(const std::function<void()>& callback) {
+bool DynamicThreadPool::Add(const std::function<void()>& callback) {
   std::lock_guard<std::mutex> lock(mu_);
   // Add works to the callbacks list
   callbacks_.push(callback);
@@ -109,7 +133,12 @@ void DynamicThreadPool::Add(const std::function<void()>& callback) {
   if (threads_waiting_ == 0) {
     // Kick off a new thread
     nthreads_++;
-    new DynamicThread(this);
+    bool valid;
+    auto* th = new DynamicThread(this, &valid);
+    if (!valid) {
+      delete th;
+      return false;
+    }
   } else {
     cv_.notify_one();
   }
@@ -117,6 +146,7 @@ void DynamicThreadPool::Add(const std::function<void()>& callback) {
   if (!dead_threads_.empty()) {
     ReapThreads(&dead_threads_);
   }
+  return true;
 }
 
 }  // namespace grpc

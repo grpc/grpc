@@ -20,45 +20,71 @@
 
 #include <climits>
 #include <mutex>
-#include <thread>
 
 #include <grpc/support/log.h>
+#include <grpc/support/thd.h>
 
 namespace grpc {
 
-ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
-    : thd_mgr_(thd_mgr) {
-  // Make thread creation exclusive with respect to its join happening in
-  // ~WorkerThread().
-  std::lock_guard<std::mutex> lock(wt_mu_);
-  thd_ = std::thread(&ThreadManager::WorkerThread::Run, this);
+ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr, bool* valid,
+                                          bool wait)
+    : thd_mgr_(thd_mgr), wait_(wait) {
+  gpr_thd_options opt = gpr_thd_options_default();
+  gpr_thd_options_set_joinable(&opt);
+
+  *valid = valid_ = thd_mgr->thread_creator_(
+      &thd_, "worker thread",
+      [](void* th) {
+        reinterpret_cast<ThreadManager::WorkerThread*>(th)->Run();
+      },
+      this, &opt);
 }
 
 void ThreadManager::WorkerThread::Run() {
+  if (wait_) {
+    thd_mgr_->MarkAsStarted();
+  }
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
 }
 
 ThreadManager::WorkerThread::~WorkerThread() {
-  // Don't join until the thread is fully constructed.
-  std::lock_guard<std::mutex> lock(wt_mu_);
-  thd_.join();
+  // The object will always be fully constructed by now because the destructor
+  // is only ever called in two ways:
+  //    1. Immediately after an attempted construction when the thread
+  //       creation is realized to have failed. In that case, valid_ is false
+  //       and an asynchronous thread never ran, so the object was fully
+  //       constructed before the destructor was called.
+  // OR 2. From the CleanupCompletedThreads function. In that case,
+  //       valid_ was true AND the thread function completed AND locked the
+  //       thread manager's lock on completion AND either the cleanup function
+  //       also grabbed the lock before causing destruction or the thread
+  //       manager itself is being destroyed after having gone through a lock
+  //       on the call to Wait. So there is a clear happens-before ordering
+  //       created through the lock.
+  if (valid_) {
+    thd_mgr_->thread_joiner_(thd_);
+  }
 }
 
-ThreadManager::ThreadManager(int min_pollers, int max_pollers)
+ThreadManager::ThreadManager(
+    int min_pollers, int max_pollers,
+    std::function<int(gpr_thd_id*, const char*, void (*)(void*), void*,
+                      const gpr_thd_options*)>
+        thread_creator,
+    std::function<void(gpr_thd_id)> thread_joiner)
     : shutdown_(false),
       num_pollers_(0),
       min_pollers_(min_pollers),
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),
-      num_threads_(0) {}
+      num_threads_(0),
+      thread_creator_(thread_creator),
+      thread_joiner_(thread_joiner) {}
 
 ThreadManager::~ThreadManager() {
-  {
-    std::lock_guard<std::mutex> lock(mu_);
-    GPR_ASSERT(num_threads_ == 0);
-  }
-
-  CleanupCompletedThreads();
+  // Do not hold a lock here since threads should all be Wait'ed
+  // before reaching destructor
+  GPR_ASSERT(num_threads_ == 0);
 }
 
 void ThreadManager::Wait() {
@@ -79,39 +105,45 @@ bool ThreadManager::IsShutdown() {
 }
 
 void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
-  {
-    std::lock_guard<std::mutex> list_lock(list_mu_);
-    completed_threads_.push_back(thd);
-  }
-
   std::lock_guard<std::mutex> lock(mu_);
+  completed_threads_.emplace_back(thd);
   num_threads_--;
   if (num_threads_ == 0) {
     shutdown_cv_.notify_one();
   }
 }
 
+void ThreadManager::MarkAsStarted() {
+  std::unique_lock<std::mutex> lock(mu_);
+  threads_awaited_--;
+  if (threads_awaited_ == 0) {
+    startup_cv_.notify_all();
+  } else {
+    startup_cv_.wait(lock, [this] { return (threads_awaited_ == 0); });
+  }
+}
+
 void ThreadManager::CleanupCompletedThreads() {
-  std::list<WorkerThread*> completed_threads;
+  std::vector<std::unique_ptr<WorkerThread>> completed_threads;
+  // swap out the completed threads collection
+  // and let it get destroyed outside the lock
   {
-    // swap out the completed threads list: allows other threads to clean up
-    // more quickly
-    std::unique_lock<std::mutex> lock(list_mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     completed_threads.swap(completed_threads_);
   }
-  for (auto thd : completed_threads) delete thd;
 }
 
 void ThreadManager::Initialize() {
-  {
-    std::unique_lock<std::mutex> lock(mu_);
-    num_pollers_ = min_pollers_;
-    num_threads_ = min_pollers_;
-  }
+  // When called, there are no threads yet in the thread manager
+  num_pollers_ = min_pollers_;
+  num_threads_ = min_pollers_;
+  threads_awaited_ = num_threads_;
 
   for (int i = 0; i < min_pollers_; i++) {
     // Create a new thread (which ends up calling the MainWorkLoop() function
-    new WorkerThread(this);
+    bool valid;
+    new WorkerThread(this, &valid, true);
+    GPR_ASSERT(valid);  // we need to have at least this minimum
   }
 }
 
@@ -138,18 +170,27 @@ void ThreadManager::MainWorkLoop() {
       case WORK_FOUND:
         // If we got work and there are now insufficient pollers, start a new
         // one
+        bool resources;
         if (!shutdown_ && num_pollers_ < min_pollers_) {
-          num_pollers_++;
-          num_threads_++;
+          bool valid;
           // Drop lock before spawning thread to avoid contention
           lock.unlock();
-          new WorkerThread(this);
+          auto* th = new WorkerThread(this, &valid, false);
+          lock.lock();
+          if (valid) {
+            num_pollers_++;
+            num_threads_++;
+          } else {
+            delete th;
+          }
+          resources = (num_pollers_ > 0);
         } else {
-          // Drop lock for consistency with above branch
-          lock.unlock();
+          resources = true;
         }
+        // Drop lock before any application work
+        lock.unlock();
         // Lock is always released at this point - do the application work
-        DoWork(tag, ok);
+        DoWork(tag, ok, resources);
         // Take the lock again to check post conditions
         lock.lock();
         // If we're shutdown, we should finish at this point.
