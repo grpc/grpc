@@ -225,8 +225,6 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
   if (_responseSizeLimitOverride) {
     args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
-  // Use 10000ms initial backoff time for correct behavior on bad/slow networks  
-  args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = @10000;
 
   if (_compressAlgorithm != GRPC_COMPRESS_NONE) {
     args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] =

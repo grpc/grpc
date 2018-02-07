@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,18 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Build portability tests with an updated submodule
+licenses(["notice"])  # Apache v2
 
-set -ex
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+grpc_package(name = "test/cpp/performance")
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
-# Update submodule and commit it so changes are passed to Docker
-(cd third_party/$RUN_TESTS_FLAGS && git fetch --all && git checkout origin/master)
-tools/buildgen/generate_projects.sh
-git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule'
-
-tools/run_tests/run_tests_matrix.py -f linux --inner_jobs 4 -j 4 --internal_ci --build_only
+grpc_cc_test(
+    name = "writes_per_rpc_test",
+    srcs = ["writes_per_rpc_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)

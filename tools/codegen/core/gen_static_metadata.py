@@ -54,8 +54,8 @@ CONFIG = [
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     # compression algorithm names
-    'message/deflate',
-    'message/gzip',
+    'deflate',
+    'gzip',
     'stream/gzip',
     # metadata elements
     ('grpc-status', '0'),

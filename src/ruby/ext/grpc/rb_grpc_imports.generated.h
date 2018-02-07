@@ -26,7 +26,6 @@
 #include <windows.h>
 
 #include <grpc/compression.h>
-#include <grpc/compression_ruby.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
@@ -72,12 +71,6 @@ extern grpc_compression_options_disable_algorithm_type grpc_compression_options_
 typedef int(*grpc_compression_options_is_algorithm_enabled_type)(const grpc_compression_options* opts, grpc_compression_algorithm algorithm);
 extern grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 #define grpc_compression_options_is_algorithm_enabled grpc_compression_options_is_algorithm_enabled_import
-typedef int(*grpc_compression_algorithm_parse_ruby_type)(grpc_slice value, grpc_compression_algorithm* algorithm);
-extern grpc_compression_algorithm_parse_ruby_type grpc_compression_algorithm_parse_ruby_import;
-#define grpc_compression_algorithm_parse_ruby grpc_compression_algorithm_parse_ruby_import
-typedef int(*grpc_compression_algorithm_name_ruby_type)(grpc_compression_algorithm algorithm, const char** name);
-extern grpc_compression_algorithm_name_ruby_type grpc_compression_algorithm_name_ruby_import;
-#define grpc_compression_algorithm_name_ruby grpc_compression_algorithm_name_ruby_import
 typedef void(*grpc_metadata_array_init_type)(grpc_metadata_array* array);
 extern grpc_metadata_array_init_type grpc_metadata_array_init_import;
 #define grpc_metadata_array_init grpc_metadata_array_init_import
