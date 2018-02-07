@@ -131,10 +131,116 @@
 
 grpc_core::TraceFlag grpc_lb_glb_trace(false, "glb");
 
+struct glb_lb_policy;
+
 namespace {
-class GlbLbCallData;
-struct pending_ping;
-struct pending_pick;
+
+/// Linked list of pending pick requests. It stores all information needed to
+/// eventually call (Round Robin's) pick() on them. They mainly stay pending
+/// waiting for the RR policy to be created.
+///
+/// Note that when a pick is sent to the RR policy, we inject our own
+/// on_complete callback, so that we can intercept the result before
+/// invoking the original on_complete callback.  This allows us to set the
+/// LB token metadata and add client_stats to the call context.
+/// See \a pending_pick_complete() for details.
+struct pending_pick {
+  // Our on_complete closure and the original one.
+  grpc_closure on_complete;
+  grpc_closure* original_on_complete;
+  // The original pick.
+  grpc_lb_policy_pick_state* pick;
+  // Stats for client-side load reporting. Note that this holds a
+  // reference, which must be either passed on via context or unreffed.
+  grpc_grpclb_client_stats* client_stats;
+  // The LB token associated with the pick.  This is set via user_data in
+  // the pick.
+  grpc_mdelem lb_token;
+  // The grpclb instance that created the wrapping. This instance is not owned,
+  // reference counts are untouched. It's used only for logging purposes.
+  glb_lb_policy* glb_policy;
+  // Next pending pick.
+  struct pending_pick* next;
+};
+
+/// A linked list of pending pings waiting for the RR policy to be created.
+struct pending_ping {
+  grpc_closure* on_initiate;
+  grpc_closure* on_ack;
+  struct pending_ping* next;
+};
+
+/// Contains a call to the LB server and all the data related to the call.
+class BalancerCallState
+    : public grpc_core::InternallyRefCountedWithTracing<BalancerCallState> {
+ public:
+  explicit BalancerCallState(glb_lb_policy* glb_policy);
+  // It's the caller's responsibility to ensure that Orphan() is called from
+  // inside the combiner.
+  void Orphan() override;
+
+  void StartQuery();
+
+  grpc_grpclb_client_stats* client_stats() const { return client_stats_; }
+
+ private:
+  ~BalancerCallState();
+
+  void ScheduleNextClientLoadReportLocked();
+  void SendClientLoadReportLocked();
+
+  static bool LoadReportCountersAreZero(grpc_grpclb_request* request);
+
+  static void MaybeSendClientLoadReportLocked(void* arg, grpc_error* error);
+  static void ClientLoadReportDoneLocked(void* arg, grpc_error* error);
+  static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
+  static void OnBalancerMessageReceivedLocked(void* arg, grpc_error* error);
+  static void OnBalancerStatusReceivedLocked(void* arg, grpc_error* error);
+
+  /** The owning glb. */
+  struct glb_lb_policy* glb_policy_ = nullptr;
+  /** The streaming call to the LB server. Always non-NULL. */
+  grpc_call* lb_call_ = nullptr;
+
+  /** The initial metadata received from the LB server. */
+  grpc_metadata_array lb_initial_metadata_recv_;
+
+  /** The message sent to the LB server. It's used to query for backends (the
+   * value may vary if the LB server indicates a redirect) or send client load
+   * report. */
+  grpc_byte_buffer* send_message_payload_ = nullptr;
+  /** The callback after the initial request is sent. */
+  grpc_closure lb_on_initial_request_sent_;
+
+  /** The response received from the LB server, if any. */
+  grpc_byte_buffer* recv_message_payload_ = nullptr;
+  /** The callback to process the response received from the LB server. */
+  grpc_closure lb_on_balancer_message_received_;
+  bool seen_initial_response_ = false;
+
+  /** The callback to process the status received from the LB server, which
+   * signals the end of the LB call. */
+  grpc_closure lb_on_balancer_status_received_;
+  /** The trailing metadata from the LB server. */
+  grpc_metadata_array lb_trailing_metadata_recv_;
+  /** The call status code and details. */
+  grpc_status_code lb_call_status_;
+  grpc_slice lb_call_status_details_;
+
+  /** The stats for client-side load reporting associated with this LB call.
+   * Created after the first serverlist is received. */
+  grpc_grpclb_client_stats* client_stats_ = nullptr;
+  /** The interval and timer for next client load report. */
+  grpc_millis client_stats_report_interval_ = 0;
+  grpc_timer client_load_report_timer_;
+  bool client_load_report_timer_callback_pending_ = false;
+  bool last_client_load_report_counters_were_zero_ = false;
+  bool client_load_report_is_due_ = false;
+  /** The closure used for either the load report timer or the callback for
+   * completion of sending the load report. */
+  grpc_closure client_load_report_closure_;
+};
+
 }  // namespace
 
 typedef struct glb_lb_policy {
@@ -160,7 +266,7 @@ typedef struct glb_lb_policy {
    * NULL whenever the current LB call is no longer needed (e.g., the LB policy
    * is shutting down, or the LB call has ended). A non-NULL lb_calld always
    * contains a non-NULL lb_call_. */
-  GlbLbCallData* lb_calld;
+  BalancerCallState* lb_calld;
 
   /** response generator to inject address updates into \a lb_channel */
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
@@ -241,114 +347,11 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy);
 
 namespace {
 
-/// Linked list of pending pick requests. It stores all information needed to
-/// eventually call (Round Robin's) pick() on them. They mainly stay pending
-/// waiting for the RR policy to be created.
-///
-/// Note that when a pick is sent to the RR policy, we inject our own
-/// on_complete callback, so that we can intercept the result before
-/// invoking the original on_complete callback.  This allows us to set the
-/// LB token metadata and add client_stats to the call context.
-/// See \a pending_pick_complete() for details.
-struct pending_pick {
-  // Our on_complete closure and the original one.
-  grpc_closure on_complete;
-  grpc_closure* original_on_complete;
-  // The original pick.
-  grpc_lb_policy_pick_state* pick;
-  // Stats for client-side load reporting. Note that this holds a
-  // reference, which must be either passed on via context or unreffed.
-  grpc_grpclb_client_stats* client_stats;
-  // The LB token associated with the pick.  This is set via user_data in
-  // the pick.
-  grpc_mdelem lb_token;
-  // The grpclb instance that created the wrapping. This instance is not owned,
-  // reference counts are untouched. It's used only for logging purposes.
-  glb_lb_policy* glb_policy;
-  // Next pending pick.
-  struct pending_pick* next;
-};
-
-/// A linked list of pending pings waiting for the RR policy to be created.
-struct pending_ping {
-  grpc_closure* on_initiate;
-  grpc_closure* on_ack;
-  struct pending_ping* next;
-};
-
-class GlbLbCallData
-    : public grpc_core::InternallyRefCountedWithTracing<GlbLbCallData> {
- public:
-  explicit GlbLbCallData(glb_lb_policy* glb_policy);
-  void Orphan() override;
-
-  void StartQuery();
-  // TODO(juanlishen): should be removed when glb is C++-ized and a fiend class
-  // of GlbLbCallData.
-  grpc_grpclb_client_stats* ClientStats();
-
- private:
-  ~GlbLbCallData();
-
-  void ScheduleNextClientLoadReportLocked();
-  void SendClientLoadReportLocked();
-
-  static bool LoadReportCountersAreZero(grpc_grpclb_request* request);
-
-  static void MaybeSendClientLoadReportLocked(void* arg, grpc_error* error);
-  static void ClientLoadReportDoneLocked(void* arg, grpc_error* error);
-  static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
-  static void OnBalancerMessageReceivedLocked(void* arg, grpc_error* error);
-  static void OnBalancerStatusReceivedLocked(void* arg, grpc_error* error);
-
-  /** The owning glb. */
-  struct glb_lb_policy* glb_policy_;
-  /** The streaming call to the LB server. Always non-NULL. */
-  grpc_call* lb_call_;
-
-  /** The initial metadata received from the LB server. */
-  grpc_metadata_array lb_initial_metadata_recv_;
-
-  /** The message sent to the LB server. It's used to query for backends (the
-   * value may vary if the LB server indicates a redirect) or send client load
-   * report. */
-  grpc_byte_buffer* send_message_payload_ = nullptr;
-  /** The callback after the initial request is sent. */
-  grpc_closure lb_on_initial_request_sent_;
-
-  /** The response received from the LB server, if any. */
-  grpc_byte_buffer* recv_message_payload_ = nullptr;
-  /** The callback to process the response received from the LB server. */
-  grpc_closure lb_on_balancer_message_received_;
-  bool seen_initial_response_ = false;
-
-  /** The callback to process the status received from the LB server, which
-   * signals the end of the LB call. */
-  grpc_closure lb_on_balancer_status_received_;
-  /** The trailing metadata from the LB server. */
-  grpc_metadata_array lb_trailing_metadata_recv_;
-  /** The call status code and details. */
-  grpc_status_code lb_call_status_;
-  grpc_slice lb_call_status_details_;
-
-  /** The stats for client-side load reporting associated with this LB call.
-   * Created after the first serverlist is received. */
-  grpc_grpclb_client_stats* client_stats_ = nullptr;
-  /** The interval and timer for next client load report. */
-  grpc_millis client_stats_report_interval_;
-  grpc_timer client_load_report_timer_;
-  bool client_load_report_timer_callback_pending_ = false;
-  bool last_client_load_report_counters_were_zero_ = false;
-  bool client_load_report_is_due_ = false;
-  /** The closure used for either the load report timer or the callback for
-   * completion of sending the load report. */
-  grpc_closure client_load_report_closure_;
-};
-
-GlbLbCallData::GlbLbCallData(glb_lb_policy* glb_policy)
-    : grpc_core::InternallyRefCountedWithTracing<GlbLbCallData>(
+BalancerCallState::BalancerCallState(glb_lb_policy* glb_policy)
+    : grpc_core::InternallyRefCountedWithTracing<BalancerCallState>(
           &grpc_lb_glb_trace),
       glb_policy_(glb_policy) {
+  GPR_ASSERT(glb_policy_ != nullptr);
   GPR_ASSERT(!glb_policy_->shutting_down);
   // Init the LB call. Note that the LB call will progress every time there's
   // activity in glb_policy_->base.interested_parties, which is comprised of the
@@ -375,7 +378,6 @@ GlbLbCallData::GlbLbCallData(glb_lb_policy* glb_policy)
   grpc_slice_unref_internal(request_payload_slice);
   grpc_grpclb_request_destroy(request);
   // Init other data associated with the LB call.
-  client_stats_ = nullptr;
   grpc_metadata_array_init(&lb_initial_metadata_recv_);
   grpc_metadata_array_init(&lb_trailing_metadata_recv_);
   GRPC_CLOSURE_INIT(&lb_on_initial_request_sent_, OnInitialRequestSentLocked,
@@ -390,7 +392,7 @@ GlbLbCallData::GlbLbCallData(glb_lb_policy* glb_policy)
   GRPC_LB_POLICY_REF(&glb_policy_->base, "lb_calld");
 }
 
-GlbLbCallData::~GlbLbCallData() {
+BalancerCallState::~BalancerCallState() {
   GPR_ASSERT(lb_call_ != nullptr);
   grpc_call_unref(lb_call_);
   grpc_metadata_array_destroy(&lb_initial_metadata_recv_);
@@ -404,17 +406,22 @@ GlbLbCallData::~GlbLbCallData() {
   GRPC_LB_POLICY_UNREF(&glb_policy_->base, "lb_calld");
 }
 
-void GlbLbCallData::Orphan() {
+void BalancerCallState::Orphan() {
   GPR_ASSERT(lb_call_ != nullptr);
+  // If we are here because glb_policy wants to cancel the call,
   // lb_on_balancer_status_received_ will complete the cancellation and clean
-  // up.
+  // up. Otherwise, we are here because glb_policy has to orphan a failed call,
+  // then the following cancellation will be a no-op.
   grpc_call_cancel(lb_call_, nullptr);
   if (client_load_report_timer_callback_pending_) {
     grpc_timer_cancel(&client_load_report_timer_);
   }
+  // Note that the initial ref is hold by lb_on_balancer_status_received_
+  // instead of the caller of this function. So the corresponding unref happens
+  // in lb_on_balancer_status_received_ instead of here.
 }
 
-void GlbLbCallData::StartQuery() {
+void BalancerCallState::StartQuery() {
   GPR_ASSERT(lb_call_ != nullptr);
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
@@ -442,7 +449,7 @@ void GlbLbCallData::StartQuery() {
   // TODO(roth): We currently deal with this ref manually.  Once the
   // new closure API is done, find a way to track this ref with the
   // callback as part of the type system.
-  grpc_core::RefCountedPtr<GlbLbCallData> self =
+  grpc_core::RefCountedPtr<BalancerCallState> self =
       Ref(DEBUG_LOCATION, "OnInitialRequestSentLocked");
   self.release();
   call_error = grpc_call_start_batch_and_execute(
@@ -488,10 +495,7 @@ void GlbLbCallData::StartQuery() {
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 };
 
-// Workaround for access from pick_from_internal_rr_locked().
-grpc_grpclb_client_stats* GlbLbCallData::ClientStats() { return client_stats_; }
-
-void GlbLbCallData::ScheduleNextClientLoadReportLocked() {
+void BalancerCallState::ScheduleNextClientLoadReportLocked() {
   const grpc_millis next_client_load_report_time =
       grpc_core::ExecCtx::Get()->Now() + client_stats_report_interval_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_,
@@ -502,9 +506,9 @@ void GlbLbCallData::ScheduleNextClientLoadReportLocked() {
   client_load_report_timer_callback_pending_ = true;
 }
 
-void GlbLbCallData::MaybeSendClientLoadReportLocked(void* arg,
-                                                    grpc_error* error) {
-  GlbLbCallData* lb_calld = (GlbLbCallData*)arg;
+void BalancerCallState::MaybeSendClientLoadReportLocked(void* arg,
+                                                        grpc_error* error) {
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   glb_lb_policy* glb_policy = lb_calld->glb_policy_;
   lb_calld->client_load_report_timer_callback_pending_ = false;
   if (error != GRPC_ERROR_NONE || lb_calld != glb_policy->lb_calld) {
@@ -521,10 +525,11 @@ void GlbLbCallData::MaybeSendClientLoadReportLocked(void* arg,
   }
 }
 
-bool GlbLbCallData::LoadReportCountersAreZero(grpc_grpclb_request* request) {
+bool BalancerCallState::LoadReportCountersAreZero(
+    grpc_grpclb_request* request) {
   grpc_grpclb_dropped_call_counts* drop_entries =
-      (grpc_grpclb_dropped_call_counts*)
-          request->client_stats.calls_finished_with_drop.arg;
+      static_cast<grpc_grpclb_dropped_call_counts*>(
+          request->client_stats.calls_finished_with_drop.arg);
   return request->client_stats.num_calls_started == 0 &&
          request->client_stats.num_calls_finished == 0 &&
          request->client_stats.num_calls_finished_with_client_failed_to_send ==
@@ -533,8 +538,7 @@ bool GlbLbCallData::LoadReportCountersAreZero(grpc_grpclb_request* request) {
          (drop_entries == nullptr || drop_entries->num_entries == 0);
 }
 
-void GlbLbCallData::SendClientLoadReportLocked() {
-  glb_lb_policy* glb_policy = glb_policy_;
+void BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
   grpc_grpclb_request* request =
@@ -562,17 +566,18 @@ void GlbLbCallData::SendClientLoadReportLocked() {
   op.op = GRPC_OP_SEND_MESSAGE;
   op.data.send_message.send_message = send_message_payload_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_, ClientLoadReportDoneLocked,
-                    this, grpc_combiner_scheduler(glb_policy->base.combiner));
+                    this, grpc_combiner_scheduler(glb_policy_->base.combiner));
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       lb_call_, &op, 1, &client_load_report_closure_);
   if (call_error != GRPC_CALL_OK) {
-    gpr_log(GPR_ERROR, "[grpclb %p] call_error=%d", glb_policy, call_error);
+    gpr_log(GPR_ERROR, "[grpclb %p] call_error=%d", glb_policy_, call_error);
     GPR_ASSERT(GRPC_CALL_OK == call_error);
   }
 }
 
-void GlbLbCallData::ClientLoadReportDoneLocked(void* arg, grpc_error* error) {
-  GlbLbCallData* lb_calld = (GlbLbCallData*)arg;
+void BalancerCallState::ClientLoadReportDoneLocked(void* arg,
+                                                   grpc_error* error) {
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   glb_lb_policy* glb_policy = lb_calld->glb_policy_;
   grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
   lb_calld->send_message_payload_ = nullptr;
@@ -583,8 +588,9 @@ void GlbLbCallData::ClientLoadReportDoneLocked(void* arg, grpc_error* error) {
   lb_calld->ScheduleNextClientLoadReportLocked();
 }
 
-void GlbLbCallData::OnInitialRequestSentLocked(void* arg, grpc_error* error) {
-  GlbLbCallData* lb_calld = (GlbLbCallData*)arg;
+void BalancerCallState::OnInitialRequestSentLocked(void* arg,
+                                                   grpc_error* error) {
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
   lb_calld->send_message_payload_ = nullptr;
   // If we attempted to send a client load report before the initial request was
@@ -597,9 +603,9 @@ void GlbLbCallData::OnInitialRequestSentLocked(void* arg, grpc_error* error) {
   lb_calld->Unref(DEBUG_LOCATION, "OnInitialRequestSentLocked");
 }
 
-void GlbLbCallData::OnBalancerMessageReceivedLocked(void* arg,
-                                                    grpc_error* error) {
-  GlbLbCallData* lb_calld = (GlbLbCallData*)arg;
+void BalancerCallState::OnBalancerMessageReceivedLocked(void* arg,
+                                                        grpc_error* error) {
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   glb_lb_policy* glb_policy = lb_calld->glb_policy_;
   // Empty payload means the LB call was cancelled.
   if (lb_calld != glb_policy->lb_calld ||
@@ -669,7 +675,7 @@ void GlbLbCallData::OnBalancerMessageReceivedLocked(void* arg,
         // TODO(roth): We currently deal with this ref manually.  Once the
         // new closure API is done, find a way to track this ref with the
         // callback as part of the type system.
-        grpc_core::RefCountedPtr<GlbLbCallData> self =
+        grpc_core::RefCountedPtr<BalancerCallState> self =
             lb_calld->Ref(DEBUG_LOCATION, "client_load_report");
         self.release();
         lb_calld->ScheduleNextClientLoadReportLocked();
@@ -735,9 +741,9 @@ void GlbLbCallData::OnBalancerMessageReceivedLocked(void* arg,
   }
 }
 
-void GlbLbCallData::OnBalancerStatusReceivedLocked(void* arg,
-                                                   grpc_error* error) {
-  GlbLbCallData* lb_calld = (GlbLbCallData*)arg;
+void BalancerCallState::OnBalancerStatusReceivedLocked(void* arg,
+                                                       grpc_error* error) {
+  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
   glb_lb_policy* glb_policy = lb_calld->glb_policy_;
   GPR_ASSERT(lb_calld->lb_call_ != nullptr);
   if (grpc_lb_glb_trace.enabled()) {
@@ -754,10 +760,8 @@ void GlbLbCallData::OnBalancerStatusReceivedLocked(void* arg,
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
   if (lb_calld == glb_policy->lb_calld) {
+    glb_policy->lb_calld->Orphan();
     glb_policy->lb_calld = nullptr;
-    if (lb_calld->client_load_report_timer_callback_pending_) {
-      grpc_timer_cancel(&lb_calld->client_load_report_timer_);
-    }
     GPR_ASSERT(!glb_policy->shutting_down);
     if (lb_calld->seen_initial_response_) {
       // If we lose connection to the LB server, reset the backoff and restart
@@ -1079,9 +1083,9 @@ static bool pick_from_internal_rr_locked(glb_lb_policy* glb_policy,
       // subchannel call (and therefore no client_load_reporting filter)
       // for dropped calls.
       if (glb_policy->lb_calld != nullptr &&
-          glb_policy->lb_calld->ClientStats() != nullptr) {
+          glb_policy->lb_calld->client_stats() != nullptr) {
         grpc_grpclb_client_stats_add_call_dropped_locked(
-            server->load_balance_token, glb_policy->lb_calld->ClientStats());
+            server->load_balance_token, glb_policy->lb_calld->client_stats());
       }
       if (force_async) {
         GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_NONE);
@@ -1094,9 +1098,9 @@ static bool pick_from_internal_rr_locked(glb_lb_policy* glb_policy,
   }
   // Set client_stats and user_data.
   if (glb_policy->lb_calld != nullptr &&
-      glb_policy->lb_calld->ClientStats() != nullptr) {
+      glb_policy->lb_calld->client_stats() != nullptr) {
     pp->client_stats =
-        grpc_grpclb_client_stats_ref(glb_policy->lb_calld->ClientStats());
+        grpc_grpclb_client_stats_ref(glb_policy->lb_calld->client_stats());
   }
   GPR_ASSERT(pp->pick->user_data == nullptr);
   pp->pick->user_data = (void**)&pp->lb_token;
@@ -1653,7 +1657,7 @@ static void query_for_backends_locked(glb_lb_policy* glb_policy) {
   if (glb_policy->shutting_down) return;
   // Init the LB call data.
   GPR_ASSERT(glb_policy->lb_calld == nullptr);
-  glb_policy->lb_calld = grpc_core::New<GlbLbCallData>(glb_policy);
+  glb_policy->lb_calld = grpc_core::New<BalancerCallState>(glb_policy);
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Query for backends (lb_channel: %p, lb_calld: %p)",
