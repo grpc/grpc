@@ -93,9 +93,9 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 /* "/grpc.lb.v1.LoadBalancer/BalanceLoad" */
 #define GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD \
   (grpc_static_slice_table[28])
-/* "message/deflate" */
+/* "deflate" */
 #define GRPC_MDSTR_MESSAGE_SLASH_DEFLATE (grpc_static_slice_table[29])
-/* "message/gzip" */
+/* "gzip" */
 #define GRPC_MDSTR_MESSAGE_SLASH_GZIP (grpc_static_slice_table[30])
 /* "stream/gzip" */
 #define GRPC_MDSTR_STREAM_SLASH_GZIP (grpc_static_slice_table[31])

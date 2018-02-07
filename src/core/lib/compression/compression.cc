@@ -67,10 +67,10 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
       *name = "identity";
       return 1;
     case GRPC_COMPRESS_DEFLATE:
-      *name = "message/deflate";
+      *name = "deflate";
       return 1;
     case GRPC_COMPRESS_GZIP:
-      *name = "message/gzip";
+      *name = "gzip";
       return 1;
     case GRPC_COMPRESS_STREAM_GZIP:
       *name = "stream/gzip";

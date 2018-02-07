@@ -88,7 +88,7 @@ static void test_compression_algorithm_states(void) {
     GPR_ASSERT(GPR_BITGET(states_bitset, i));
   }
 
-  /* disable message/gzip and message/deflate and stream/gzip */
+  /* disable gzip and deflate and stream/gzip */
   ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
       &ch_args, GRPC_COMPRESS_GZIP, 0);
   GPR_ASSERT(ch_args == ch_args_wo_gzip);
@@ -111,7 +111,7 @@ static void test_compression_algorithm_states(void) {
     }
   }
 
-  /* re-enabled message/gzip and stream/gzip only */
+  /* re-enabled gzip and stream/gzip only */
   ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
       &ch_args_wo_gzip_deflate_gzip, GRPC_COMPRESS_GZIP, 1);
   ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
