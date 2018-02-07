@@ -118,8 +118,7 @@ void grpc_lb_policy_update_locked(grpc_lb_policy* policy,
 
 void grpc_lb_policy_set_reresolve_closure_locked(
     grpc_lb_policy* policy, grpc_closure* request_reresolution) {
-  GPR_ASSERT(policy->request_reresolution == nullptr);
-  policy->request_reresolution = request_reresolution;
+  policy->vtable->set_reresolve_closure_locked(policy, request_reresolution);
 }
 
 void grpc_lb_policy_try_reresolve(grpc_lb_policy* policy,
@@ -134,8 +133,8 @@ void grpc_lb_policy_try_reresolve(grpc_lb_policy* policy,
               grpc_lb_trace->name(), policy, grpc_error_string(error));
     }
   } else {
-    if (grpc_lb_trace->enabled()) {
-      gpr_log(GPR_DEBUG, "%s %p: no available re-resolution closure.",
+    if (grpc_lb_trace->enabled() && error == GRPC_ERROR_NONE) {
+      gpr_log(GPR_DEBUG, "%s %p: re-resolution already in progress.",
               grpc_lb_trace->name(), policy);
     }
   }
