@@ -43,10 +43,10 @@ int grpc_compression_algorithm_parse(grpc_slice name,
   if (grpc_slice_eq(name, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_COMPRESS_NONE;
     return 1;
-  } else if (grpc_slice_eq(name, GRPC_MDSTR_MESSAGE_SLASH_DEFLATE)) {
+  } else if (grpc_slice_eq(name, GRPC_MDSTR_DEFLATE)) {
     *algorithm = GRPC_COMPRESS_DEFLATE;
     return 1;
-  } else if (grpc_slice_eq(name, GRPC_MDSTR_MESSAGE_SLASH_GZIP)) {
+  } else if (grpc_slice_eq(name, GRPC_MDSTR_GZIP)) {
     *algorithm = GRPC_COMPRESS_GZIP;
     return 1;
   } else if (grpc_slice_eq(name, GRPC_MDSTR_STREAM_SLASH_GZIP)) {
@@ -133,9 +133,9 @@ grpc_slice grpc_compression_algorithm_slice(
     case GRPC_COMPRESS_NONE:
       return GRPC_MDSTR_IDENTITY;
     case GRPC_COMPRESS_DEFLATE:
-      return GRPC_MDSTR_MESSAGE_SLASH_DEFLATE;
+      return GRPC_MDSTR_DEFLATE;
     case GRPC_COMPRESS_GZIP:
-      return GRPC_MDSTR_MESSAGE_SLASH_GZIP;
+      return GRPC_MDSTR_GZIP;
     case GRPC_COMPRESS_STREAM_GZIP:
       return GRPC_MDSTR_STREAM_SLASH_GZIP;
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
@@ -147,10 +147,8 @@ grpc_slice grpc_compression_algorithm_slice(
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     grpc_slice str) {
   if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) return GRPC_COMPRESS_NONE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_MESSAGE_SLASH_DEFLATE))
-    return GRPC_COMPRESS_DEFLATE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_MESSAGE_SLASH_GZIP))
-    return GRPC_COMPRESS_GZIP;
+  if (grpc_slice_eq(str, GRPC_MDSTR_DEFLATE)) return GRPC_COMPRESS_DEFLATE;
+  if (grpc_slice_eq(str, GRPC_MDSTR_GZIP)) return GRPC_COMPRESS_GZIP;
   if (grpc_slice_eq(str, GRPC_MDSTR_STREAM_SLASH_GZIP))
     return GRPC_COMPRESS_STREAM_GZIP;
   return GRPC_COMPRESS_ALGORITHMS_COUNT;

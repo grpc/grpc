@@ -596,8 +596,7 @@ static void test_invoke_request_with_compressed_payload_md_override(
   grpc_metadata identity_compression_override;
 
   gzip_compression_override.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
-  gzip_compression_override.value =
-      grpc_slice_from_static_string("gzip");
+  gzip_compression_override.value = grpc_slice_from_static_string("gzip");
   memset(&gzip_compression_override.internal_data, 0,
          sizeof(gzip_compression_override.internal_data));
 
