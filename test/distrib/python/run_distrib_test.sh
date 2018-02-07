@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,23 +15,25 @@
 
 set -ex
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
+
+shopt -s nullglob
 
 # Pick up the source dist archive whatever its version is
-SDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.tar.gz
-BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.whl
-TOOLS_SDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio_tools-*.tar.gz
-TOOLS_BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio_tools-*.whl
+SDIST_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-*.tar.gz)
+BDIST_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-*.whl)
+TOOLS_SDIST_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio_tools-*.tar.gz)
+TOOLS_BDIST_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio_tools-*.whl)
 
 function make_virtualenv() {
-  virtualenv $1
-  $1/bin/python -m pip install --upgrade six pip
-  $1/bin/python -m pip install cython
+  virtualenv "$1"
+  "$1/bin/python" -m pip install --upgrade six pip
+  "$1/bin/python" -m pip install cython
 }
 
 function at_least_one_installs() {
   for file in "$@"; do
-    if python -m pip install $file; then
+    if python -m pip install "$file"; then
       return 0
     fi
   done
@@ -45,11 +47,11 @@ make_virtualenv sdist_test
 # Install our distributions in order of dependencies
 #
 
-(source bdist_test/bin/activate && at_least_one_installs ${BDIST_ARCHIVES})
-(source bdist_test/bin/activate && at_least_one_installs ${TOOLS_BDIST_ARCHIVES})
+(source bdist_test/bin/activate && at_least_one_installs "${BDIST_ARCHIVES[@]}")
+(source bdist_test/bin/activate && at_least_one_installs "${TOOLS_BDIST_ARCHIVES[@]}")
 
-(source sdist_test/bin/activate && at_least_one_installs ${SDIST_ARCHIVES})
-(source sdist_test/bin/activate && at_least_one_installs ${TOOLS_SDIST_ARCHIVES})
+(source sdist_test/bin/activate && at_least_one_installs "${SDIST_ARCHIVES[@]}")
+(source sdist_test/bin/activate && at_least_one_installs "${TOOLS_SDIST_ARCHIVES[@]}")
 
 #
 # Test our distributions
