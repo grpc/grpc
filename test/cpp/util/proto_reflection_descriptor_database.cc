@@ -43,6 +43,11 @@ ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
     stream_->WritesDone();
     Status status = stream_->Finish();
     if (!status.ok()) {
+      if (status.error_code() == StatusCode::UNIMPLEMENTED) {
+        gpr_log(GPR_INFO,
+                "Reflection request not implemented; "
+                "is the ServerReflection service enabled?");
+      }
       gpr_log(GPR_INFO,
               "ServerReflectionInfo rpc failed. Error code: %d, details: %s",
               (int)status.error_code(), status.error_message().c_str());
@@ -64,7 +69,9 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
   request.set_file_by_filename(filename);
   ServerReflectionResponse response;
 
-  DoOneRequest(request, response);
+  if (!DoOneRequest(request, response)) {
+    return false;
+  }
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
@@ -109,7 +116,9 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
   request.set_file_containing_symbol(symbol_name);
   ServerReflectionResponse response;
 
-  DoOneRequest(request, response);
+  if (!DoOneRequest(request, response)) {
+    return false;
+  }
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
@@ -163,7 +172,9 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
       field_number);
   ServerReflectionResponse response;
 
-  DoOneRequest(request, response);
+  if (!DoOneRequest(request, response)) {
+    return false;
+  }
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
@@ -213,7 +224,9 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
   request.set_all_extension_numbers_of_type(extendee_type);
   ServerReflectionResponse response;
 
-  DoOneRequest(request, response);
+  if (!DoOneRequest(request, response)) {
+    return false;
+  }
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::
@@ -245,7 +258,9 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   request.set_list_services("");
   ServerReflectionResponse response;
 
-  DoOneRequest(request, response);
+  if (!DoOneRequest(request, response)) {
+    return false;
+  }
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kListServicesResponse) {

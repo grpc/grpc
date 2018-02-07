@@ -56,7 +56,7 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "glamorous"
 
-core_version = "5.0.0-dev"
+core_version = "6.0.0-dev"
 
 version = "1.10.0-dev"
 
@@ -117,6 +117,7 @@ GRPCXX_SRCS = [
     "src/cpp/client/create_channel_posix.cc",
     "src/cpp/client/credentials_cc.cc",
     "src/cpp/client/generic_stub.cc",
+    "src/cpp/common/alarm.cc",
     "src/cpp/common/channel_arguments.cc",
     "src/cpp/common/channel_filter.cc",
     "src/cpp/common/completion_queue_cc.cc",
@@ -597,6 +598,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
     deps = [
         "debug_location",
+        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
     ],
@@ -608,6 +610,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
         "debug_location",
+        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
     ],
@@ -726,7 +729,6 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.cc",
         "src/core/lib/slice/slice_intern.cc",
         "src/core/lib/slice/slice_string_helpers.cc",
-        "src/core/lib/surface/alarm.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/byte_buffer.cc",
         "src/core/lib/surface/byte_buffer_reader.cc",
@@ -850,7 +852,6 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
-        "src/core/lib/surface/alarm_internal.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",

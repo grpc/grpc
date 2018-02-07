@@ -22,7 +22,7 @@ RUN yum update -y
 #############################################################
 # Update Git to allow cloning submodules with --reference arg
 RUN yum remove -y git
-RUN yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel gcc
+RUN yum install -y curl-devel expat-devel gettext-devel linux-headers openssl-devel zlib-devel gcc
 RUN cd /usr/src && \
   curl -O -L https://kernel.org/pub/software/scm/git/git-2.0.5.tar.gz && \
   tar xzf git-2.0.5.tar.gz

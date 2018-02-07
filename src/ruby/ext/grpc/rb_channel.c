@@ -362,8 +362,8 @@ static void wait_for_watch_state_op_complete_unblocking_func(void* arg) {
 
 /* Wait until the channel's connectivity state becomes different from
  * "last_state", or "deadline" expires.
- * Returns true if the the channel's connectivity state becomes
- * different from "last_state" within "deadline".
+ * Returns true if the channel's connectivity state becomes different
+ * from "last_state" within "deadline".
  * Returns false if "deadline" expires before the channel's connectivity
  * state changes from "last_state".
  * */

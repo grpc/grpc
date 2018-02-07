@@ -96,6 +96,7 @@ void ClientContext::set_call(grpc_call* call,
 
 void ClientContext::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
+  compression_algorithm_ = algorithm;
   const char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",

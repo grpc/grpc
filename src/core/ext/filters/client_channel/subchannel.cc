@@ -653,14 +653,13 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
  */
 
 static void subchannel_call_destroy(void* call, grpc_error* error) {
+  GPR_TIMER_SCOPE("grpc_subchannel_call_unref.destroy", 0);
   grpc_subchannel_call* c = (grpc_subchannel_call*)call;
   GPR_ASSERT(c->schedule_closure_after_destroy != nullptr);
-  GPR_TIMER_BEGIN("grpc_subchannel_call_unref.destroy", 0);
   grpc_core::ConnectedSubchannel* connection = c->connection;
   grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(c), nullptr,
                           c->schedule_closure_after_destroy);
   connection->Unref(DEBUG_LOCATION, "subchannel_call");
-  GPR_TIMER_END("grpc_subchannel_call_unref.destroy", 0);
 }
 
 void grpc_subchannel_call_set_cleanup_closure(grpc_subchannel_call* call,
@@ -682,12 +681,11 @@ void grpc_subchannel_call_unref(
 
 void grpc_subchannel_call_process_op(grpc_subchannel_call* call,
                                      grpc_transport_stream_op_batch* batch) {
-  GPR_TIMER_BEGIN("grpc_subchannel_call_process_op", 0);
+  GPR_TIMER_SCOPE("grpc_subchannel_call_process_op", 0);
   grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
   GRPC_CALL_LOG_OP(GPR_INFO, top_elem, batch);
   top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
-  GPR_TIMER_END("grpc_subchannel_call_process_op", 0);
 }
 
 grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>
@@ -740,8 +738,9 @@ grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr) {
 }
 
 namespace grpc_core {
+
 ConnectedSubchannel::ConnectedSubchannel(grpc_channel_stack* channel_stack)
-    : grpc_core::RefCountedWithTracing(&grpc_trace_stream_refcount),
+    : RefCountedWithTracing<ConnectedSubchannel>(&grpc_trace_stream_refcount),
       channel_stack_(channel_stack) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
@@ -776,7 +775,9 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
       args.arena,
       sizeof(grpc_subchannel_call) + channel_stack_->call_stack_size);
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
-  Ref(DEBUG_LOCATION, "subchannel_call");
+  RefCountedPtr<ConnectedSubchannel> connection =
+      Ref(DEBUG_LOCATION, "subchannel_call");
+  connection.release();  // Ref is passed to the grpc_subchannel_call object.
   (*call)->connection = this;
   const grpc_call_element_args call_args = {
       callstk,           /* call_stack */
@@ -798,4 +799,5 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
   return GRPC_ERROR_NONE;
 }
+
 }  // namespace grpc_core

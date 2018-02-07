@@ -25,8 +25,8 @@
 
 namespace grpc_core {
 
-// A smart pointer class for objects that provide Ref() and Unref() methods,
-// such as those provided by the RefCounted base class.
+// A smart pointer class for objects that provide IncrementRefCount() and
+// Unref() methods, such as those provided by the RefCounted base class.
 template <typename T>
 class RefCountedPtr {
  public:
@@ -49,13 +49,13 @@ class RefCountedPtr {
 
   // Copy support.
   RefCountedPtr(const RefCountedPtr& other) {
-    if (other.value_ != nullptr) other.value_->Ref();
+    if (other.value_ != nullptr) other.value_->IncrementRefCount();
     value_ = other.value_;
   }
   RefCountedPtr& operator=(const RefCountedPtr& other) {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
-    if (other.value_ != nullptr) other.value_->Ref();
+    if (other.value_ != nullptr) other.value_->IncrementRefCount();
     if (value_ != nullptr) value_->Unref();
     value_ = other.value_;
     return *this;
@@ -69,6 +69,16 @@ class RefCountedPtr {
   void reset(T* value = nullptr) {
     if (value_ != nullptr) value_->Unref();
     value_ = value;
+  }
+
+  // TODO(roth): This method exists solely as a transition mechanism to allow
+  // us to pass a ref to idiomatic C code that does not use RefCountedPtr<>.
+  // Once all of our code has been converted to idiomatic C++, this
+  // method should go away.
+  T* release() {
+    T* value = value_;
+    value_ = nullptr;
+    return value;
   }
 
   T* get() const { return value_; }

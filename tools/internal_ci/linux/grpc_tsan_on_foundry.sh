@@ -36,7 +36,7 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
-  --host_jvm_args=-Dbazel.DigestFunction=SHA1 \
+  --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
   test --jobs="50" \
   --test_timeout="1500,1500,1500,3600" \
   --test_output=errors  \

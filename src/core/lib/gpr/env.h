@@ -29,7 +29,7 @@
    variable exists). */
 char* gpr_getenv(const char* name);
 
-/* Sets the the environment with the specified name to the specified value. */
+/* Sets the environment with the specified name to the specified value. */
 void gpr_setenv(const char* name, const char* value);
 
 /* This is a version of gpr_getenv that does not produce any output if it has to

@@ -166,12 +166,13 @@ static void ref_md_locked(mdtab_shard* shard,
 }
 
 static void gc_mdtab(mdtab_shard* shard) {
+  GPR_TIMER_SCOPE("gc_mdtab", 0);
+
   size_t i;
   interned_metadata** prev_next;
   interned_metadata *md, *next;
   gpr_atm num_freed = 0;
 
-  GPR_TIMER_BEGIN("gc_mdtab", 0);
   for (i = 0; i < shard->capacity; i++) {
     prev_next = &shard->elems[i];
     for (md = shard->elems[i]; md; md = next) {
@@ -194,17 +195,16 @@ static void gc_mdtab(mdtab_shard* shard) {
     }
   }
   gpr_atm_no_barrier_fetch_add(&shard->free_estimate, -num_freed);
-  GPR_TIMER_END("gc_mdtab", 0);
 }
 
 static void grow_mdtab(mdtab_shard* shard) {
+  GPR_TIMER_SCOPE("grow_mdtab", 0);
+
   size_t capacity = shard->capacity * 2;
   size_t i;
   interned_metadata** mdtab;
   interned_metadata *md, *next;
   uint32_t hash;
-
-  GPR_TIMER_BEGIN("grow_mdtab", 0);
 
   mdtab =
       (interned_metadata**)gpr_zalloc(sizeof(interned_metadata*) * capacity);
@@ -220,12 +220,9 @@ static void grow_mdtab(mdtab_shard* shard) {
       mdtab[idx] = md;
     }
   }
-
   gpr_free(shard->elems);
   shard->elems = mdtab;
   shard->capacity = capacity;
-
-  GPR_TIMER_END("grow_mdtab", 0);
 }
 
 static void rehash_mdtab(mdtab_shard* shard) {
@@ -280,7 +277,7 @@ grpc_mdelem grpc_mdelem_create(
   mdtab_shard* shard = &g_shards[SHARD_IDX(hash)];
   size_t idx;
 
-  GPR_TIMER_BEGIN("grpc_mdelem_from_metadata_strings", 0);
+  GPR_TIMER_SCOPE("grpc_mdelem_from_metadata_strings", 0);
 
   gpr_mu_lock(&shard->mu);
 
@@ -290,7 +287,6 @@ grpc_mdelem grpc_mdelem_create(
     if (grpc_slice_eq(key, md->key) && grpc_slice_eq(value, md->value)) {
       REF_MD_LOCKED(shard, md);
       gpr_mu_unlock(&shard->mu);
-      GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
       return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
     }
   }
@@ -322,8 +318,6 @@ grpc_mdelem grpc_mdelem_create(
   }
 
   gpr_mu_unlock(&shard->mu);
-
-  GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
 
   return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
 }

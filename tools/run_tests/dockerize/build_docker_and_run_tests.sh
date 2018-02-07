@@ -25,10 +25,6 @@ cd -
 # Ensure existence of ccache directory
 mkdir -p /tmp/ccache
 
-# Ensure existence of the home directory for XDG caches (e.g. what pip uses for
-# its cache location now that --download-cache is deprecated).
-mkdir -p /tmp/xdg-cache-home
-
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
@@ -61,7 +57,6 @@ docker run \
   -e "config=$config" \
   -e "arch=$arch" \
   -e CCACHE_DIR=/tmp/ccache \
-  -e XDG_CACHE_HOME=/tmp/xdg-cache-home \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e HOST_GIT_ROOT="$git_root" \
   -e LOCAL_GIT_ROOT=$docker_instance_git_root \
@@ -79,7 +74,6 @@ docker run \
   -v "$git_root:$docker_instance_git_root" \
   -v /tmp/ccache:/tmp/ccache \
   -v /tmp/npm-cache:/tmp/npm-cache \
-  -v /tmp/xdg-cache-home:/tmp/xdg-cache-home \
   -w /var/local/git/grpc \
   --name="$CONTAINER_NAME" \
   "$DOCKER_IMAGE_NAME" \
