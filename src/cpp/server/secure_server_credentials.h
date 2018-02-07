@@ -29,7 +29,7 @@
 
 namespace grpc {
 
-class AuthMetadataProcessorAyncWrapper final {
+class AuthMetadataProcessorAyncWrapper {
  public:
   static void Destroy(void* wrapper);
 
@@ -49,7 +49,7 @@ class AuthMetadataProcessorAyncWrapper final {
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };
 
-class SecureServerCredentials final : public ServerCredentials {
+class SecureServerCredentials : public ServerCredentials {
  public:
   explicit SecureServerCredentials(grpc_server_credentials* creds)
       : creds_(creds) {}

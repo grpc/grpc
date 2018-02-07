@@ -46,7 +46,7 @@
 
 namespace grpc {
 
-class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
+class DefaultGlobalCallbacks : public Server::GlobalCallbacks {
  public:
   ~DefaultGlobalCallbacks() override {}
   void PreSynchronousRequest(ServerContext* context) override {}
@@ -70,7 +70,7 @@ class Server::UnimplementedAsyncRequestContext {
   GenericServerAsyncReaderWriter generic_stream_;
 };
 
-class Server::UnimplementedAsyncRequest final
+class Server::UnimplementedAsyncRequest
     : public UnimplementedAsyncRequestContext,
       public GenericAsyncRequest {
  public:
@@ -93,7 +93,7 @@ class Server::UnimplementedAsyncRequest final
 typedef internal::SneakyCallOpSet<internal::CallOpSendInitialMetadata,
                                   internal::CallOpServerSendStatus>
     UnimplementedAsyncResponseOp;
-class Server::UnimplementedAsyncResponse final
+class Server::UnimplementedAsyncResponse
     : public UnimplementedAsyncResponseOp {
  public:
   UnimplementedAsyncResponse(UnimplementedAsyncRequest* request);
@@ -122,7 +122,7 @@ class DummyTag : public internal::CompletionQueueTag {
   }
 };
 
-class Server::SyncRequest final : public internal::CompletionQueueTag {
+class Server::SyncRequest : public internal::CompletionQueueTag {
  public:
   SyncRequest(internal::RpcServiceMethod* method, void* tag)
       : method_(method),
@@ -188,7 +188,7 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
     return true;
   }
 
-  class CallData final {
+  class CallData {
    public:
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),

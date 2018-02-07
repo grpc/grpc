@@ -270,7 +270,7 @@ namespace internal {
 // Members of this class correspond to the members of the C
 // grpc_channel_filter struct.
 template <typename ChannelDataType, typename CallDataType>
-class ChannelFilter final {
+class ChannelFilter {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 

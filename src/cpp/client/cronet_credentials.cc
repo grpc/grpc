@@ -25,7 +25,7 @@
 
 namespace grpc {
 
-class CronetChannelCredentialsImpl final : public ChannelCredentials {
+class CronetChannelCredentialsImpl : public ChannelCredentials {
  public:
   CronetChannelCredentialsImpl(void* engine) : engine_(engine) {}
 

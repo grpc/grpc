@@ -95,7 +95,7 @@ class ClientAsyncResponseReaderFactory {
 /// Async API for client-side unary RPCs, where the message response
 /// received from the server is of type \a R.
 template <class R>
-class ClientAsyncResponseReader final
+class ClientAsyncResponseReader
     : public ClientAsyncResponseReaderInterface<R> {
  public:
   // always allocated against a call arena, no memory free required
@@ -190,7 +190,7 @@ class ClientAsyncResponseReader final
 /// Async server-side API for handling unary calls, where the single
 /// response message sent to the client is of type \a W.
 template <class W>
-class ServerAsyncResponseWriter final
+class ServerAsyncResponseWriter
     : public internal::ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(ServerContext* ctx)

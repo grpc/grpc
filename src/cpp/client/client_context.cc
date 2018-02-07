@@ -31,7 +31,7 @@
 
 namespace grpc {
 
-class DefaultGlobalClientCallbacks final
+class DefaultGlobalClientCallbacks
     : public ClientContext::GlobalCallbacks {
  public:
   ~DefaultGlobalClientCallbacks() override {}

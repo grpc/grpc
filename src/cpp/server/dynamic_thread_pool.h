@@ -32,7 +32,7 @@
 
 namespace grpc {
 
-class DynamicThreadPool final : public ThreadPoolInterface {
+class DynamicThreadPool : public ThreadPoolInterface {
  public:
   explicit DynamicThreadPool(int reserve_threads);
   ~DynamicThreadPool();

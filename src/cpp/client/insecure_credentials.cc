@@ -28,7 +28,7 @@
 namespace grpc {
 
 namespace {
-class InsecureChannelCredentialsImpl final : public ChannelCredentials {
+class InsecureChannelCredentialsImpl : public ChannelCredentials {
  public:
   std::shared_ptr<grpc::Channel> CreateChannel(
       const string& target, const grpc::ChannelArguments& args) override {

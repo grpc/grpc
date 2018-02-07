@@ -45,7 +45,7 @@ template <class R>
 class DeserializeFuncType;
 }  // namespace internal
 /// A sequence of bytes.
-class ByteBuffer final {
+class ByteBuffer {
  public:
   /// Constuct an empty buffer.
   ByteBuffer() : buffer_(nullptr) {}

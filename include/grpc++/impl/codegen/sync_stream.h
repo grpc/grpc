@@ -173,7 +173,7 @@ class ClientReaderFactory {
 /// where the stream of messages coming from the server has messages
 /// of type \a R.
 template <class R>
-class ClientReader final : public ClientReaderInterface<R> {
+class ClientReader : public ClientReaderInterface<R> {
  public:
   /// See the \a ClientStreamingInterface.WaitForInitialMetadata method for
   /// semantics.
@@ -442,7 +442,7 @@ class ClientReaderWriterFactory {
 /// type \a W, and the incoming messages stream coming from the server has
 /// messages of type \a R.
 template <class W, class R>
-class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
+class ClientReaderWriter : public ClientReaderWriterInterface<W, R> {
  public:
   /// Block waiting to read initial metadata from the server.
   /// This call is optional, but if it is used, it cannot be used concurrently
@@ -574,7 +574,7 @@ class ServerReaderInterface : public internal::ServerStreamingInterface,
 /// where the incoming message stream coming from the client has messages of
 /// type \a R.
 template <class R>
-class ServerReader final : public ServerReaderInterface<R> {
+class ServerReader : public ServerReaderInterface<R> {
  public:
   /// See the \a ServerStreamingInterface.SendInitialMetadata method
   /// for semantics. Note that initial metadata will be affected by the
@@ -625,7 +625,7 @@ class ServerWriterInterface : public internal::ServerStreamingInterface,
 /// server-streaming RPCs, where the outgoing message stream coming from the
 /// server has messages of type \a W.
 template <class W>
-class ServerWriter final : public ServerWriterInterface<W> {
+class ServerWriter : public ServerWriterInterface<W> {
  public:
   /// See the \a ServerStreamingInterface.SendInitialMetadata method
   /// for semantics.
@@ -699,7 +699,7 @@ class ServerReaderWriterInterface : public internal::ServerStreamingInterface,
 /// Actual implementation of bi-directional streaming
 namespace internal {
 template <class W, class R>
-class ServerReaderWriterBody final {
+class ServerReaderWriterBody {
  public:
   ServerReaderWriterBody(Call* call, ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
@@ -769,7 +769,7 @@ class ServerReaderWriterBody final {
 /// messages of type \a R, and the outgoing message streaming coming from
 /// the server has messages of type \a W.
 template <class W, class R>
-class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
+class ServerReaderWriter : public ServerReaderWriterInterface<W, R> {
  public:
   /// See the \a ServerStreamingInterface.SendInitialMetadata method
   /// for semantics. Note that initial metadata will be affected by the
@@ -810,7 +810,7 @@ class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
 /// must have exactly 1 Read and exactly 1 Write, in that order, to function
 /// correctly. Otherwise, the RPC is in error.
 template <class RequestType, class ResponseType>
-class ServerUnaryStreamer final
+class ServerUnaryStreamer
     : public ServerReaderWriterInterface<ResponseType, RequestType> {
  public:
   /// Block to send initial metadata to client.
@@ -875,7 +875,7 @@ class ServerUnaryStreamer final
 /// but the server responds to it as though it were a bidi streaming call that
 /// must first have exactly 1 Read and then any number of Writes.
 template <class RequestType, class ResponseType>
-class ServerSplitStreamer final
+class ServerSplitStreamer
     : public ServerReaderWriterInterface<ResponseType, RequestType> {
  public:
   /// Block to send initial metadata to client.

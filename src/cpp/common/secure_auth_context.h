@@ -25,7 +25,7 @@ struct grpc_auth_context;
 
 namespace grpc {
 
-class SecureAuthContext final : public AuthContext {
+class SecureAuthContext : public AuthContext {
  public:
   SecureAuthContext(grpc_auth_context* ctx, bool take_ownership);
 
