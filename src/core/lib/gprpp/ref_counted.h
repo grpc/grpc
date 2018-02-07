@@ -41,7 +41,7 @@ class RefCounted {
  public:
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
-    return RefCountedPtr<Child>(reinterpret_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
   // TODO(roth): Once all of our code is converted to C++ and can use
@@ -89,7 +89,7 @@ class RefCountedWithTracing {
  public:
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
-    return RefCountedPtr<Child>(reinterpret_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
   RefCountedPtr<Child> Ref(const DebugLocation& location,
