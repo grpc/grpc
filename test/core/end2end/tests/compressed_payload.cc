@@ -383,9 +383,9 @@ static void request_with_payload_template(
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_NONE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_MESSAGE_DEFLATE) != 0);
+                        GRPC_COMPRESS_DEFLATE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_MESSAGE_GZIP) != 0);
+                        GRPC_COMPRESS_GZIP) != 0);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -550,9 +550,8 @@ static void test_invoke_request_with_exceptionally_uncompressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_exceptionally_uncompressed_payload",
-      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_MESSAGE_GZIP,
-      GRPC_COMPRESS_MESSAGE_GZIP, GRPC_COMPRESS_NONE,
-      GRPC_COMPRESS_MESSAGE_GZIP, nullptr, false,
+      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
+      GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, nullptr, false,
       /* ignored */ GRPC_COMPRESS_LEVEL_NONE, false);
 }
 
@@ -569,8 +568,8 @@ static void test_invoke_request_with_compressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
-      GRPC_COMPRESS_MESSAGE_GZIP, GRPC_COMPRESS_MESSAGE_GZIP,
-      GRPC_COMPRESS_MESSAGE_GZIP, GRPC_COMPRESS_MESSAGE_GZIP, nullptr, false,
+      GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
+      GRPC_COMPRESS_GZIP, nullptr, false,
       /* ignored */ GRPC_COMPRESS_LEVEL_NONE, false);
 }
 
@@ -578,8 +577,8 @@ static void test_invoke_request_with_send_message_before_initial_metadata(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
-      GRPC_COMPRESS_MESSAGE_GZIP, GRPC_COMPRESS_MESSAGE_GZIP,
-      GRPC_COMPRESS_MESSAGE_GZIP, GRPC_COMPRESS_MESSAGE_GZIP, nullptr, false,
+      GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
+      GRPC_COMPRESS_GZIP, nullptr, false,
       /* ignored */ GRPC_COMPRESS_LEVEL_NONE, true);
 }
 
@@ -611,32 +610,31 @@ static void test_invoke_request_with_compressed_payload_md_override(
   /* Channel default NONE (aka IDENTITY), call override to GZIP */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
-      GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_MESSAGE_GZIP,
+      GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
       GRPC_COMPRESS_NONE, &gzip_compression_override, false,
       /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 
   /* Channel default DEFLATE, call override to GZIP */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_2", 0,
-      GRPC_COMPRESS_MESSAGE_DEFLATE, GRPC_COMPRESS_NONE,
-      GRPC_COMPRESS_MESSAGE_GZIP, GRPC_COMPRESS_NONE,
-      &gzip_compression_override, false,
+      GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
+      GRPC_COMPRESS_NONE, &gzip_compression_override, false,
       /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 
   /* Channel default DEFLATE, call override to NONE (aka IDENTITY) */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
-      GRPC_COMPRESS_MESSAGE_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
+      GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, &identity_compression_override, false,
       /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false);
 }
 
 static void test_invoke_request_with_disabled_algorithm(
     grpc_end2end_test_config config) {
-  request_for_disabled_algorithm(
-      config, "test_invoke_request_with_disabled_algorithm", 0,
-      GRPC_COMPRESS_MESSAGE_GZIP, GRPC_COMPRESS_MESSAGE_GZIP,
-      GRPC_STATUS_UNIMPLEMENTED, nullptr);
+  request_for_disabled_algorithm(config,
+                                 "test_invoke_request_with_disabled_algorithm",
+                                 0, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
+                                 GRPC_STATUS_UNIMPLEMENTED, nullptr);
 }
 
 void compressed_payload(grpc_end2end_test_config config) {

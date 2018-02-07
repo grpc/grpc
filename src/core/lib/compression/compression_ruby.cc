@@ -28,10 +28,10 @@ int grpc_compression_algorithm_parse_ruby(
     *algorithm = GRPC_COMPRESS_NONE;
     return 1;
   } else if (grpc_slice_eq(name, GRPC_MDSTR_DEFLATE)) {
-    *algorithm = GRPC_COMPRESS_MESSAGE_DEFLATE;
+    *algorithm = GRPC_COMPRESS_DEFLATE;
     return 1;
   } else if (grpc_slice_eq(name, GRPC_MDSTR_GZIP)) {
-    *algorithm = GRPC_COMPRESS_MESSAGE_GZIP;
+    *algorithm = GRPC_COMPRESS_GZIP;
     return 1;
   } else if (grpc_slice_eq(name, GRPC_MDSTR_STREAM_SLASH_GZIP)) {
     *algorithm = GRPC_COMPRESS_STREAM_GZIP;
@@ -50,10 +50,10 @@ int grpc_compression_algorithm_name_ruby(grpc_compression_algorithm algorithm,
     case GRPC_COMPRESS_NONE:
       *name = "identity";
       return 1;
-    case GRPC_COMPRESS_MESSAGE_DEFLATE:
+    case GRPC_COMPRESS_DEFLATE:
       *name = "deflate";
       return 1;
-    case GRPC_COMPRESS_MESSAGE_GZIP:
+    case GRPC_COMPRESS_GZIP:
       *name = "gzip";
       return 1;
     case GRPC_COMPRESS_STREAM_GZIP:

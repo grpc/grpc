@@ -29,8 +29,7 @@
 
 int grpc_compression_algorithm_is_message(
     grpc_compression_algorithm algorithm) {
-  return (algorithm >= GRPC_COMPRESS_MESSAGE_DEFLATE &&
-          algorithm <= GRPC_COMPRESS_MESSAGE_GZIP)
+  return (algorithm >= GRPC_COMPRESS_DEFLATE && algorithm <= GRPC_COMPRESS_GZIP)
              ? 1
              : 0;
 }
@@ -45,10 +44,10 @@ int grpc_compression_algorithm_parse(grpc_slice name,
     *algorithm = GRPC_COMPRESS_NONE;
     return 1;
   } else if (grpc_slice_eq(name, GRPC_MDSTR_MESSAGE_SLASH_DEFLATE)) {
-    *algorithm = GRPC_COMPRESS_MESSAGE_DEFLATE;
+    *algorithm = GRPC_COMPRESS_DEFLATE;
     return 1;
   } else if (grpc_slice_eq(name, GRPC_MDSTR_MESSAGE_SLASH_GZIP)) {
-    *algorithm = GRPC_COMPRESS_MESSAGE_GZIP;
+    *algorithm = GRPC_COMPRESS_GZIP;
     return 1;
   } else if (grpc_slice_eq(name, GRPC_MDSTR_STREAM_SLASH_GZIP)) {
     *algorithm = GRPC_COMPRESS_STREAM_GZIP;
@@ -67,10 +66,10 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
     case GRPC_COMPRESS_NONE:
       *name = "identity";
       return 1;
-    case GRPC_COMPRESS_MESSAGE_DEFLATE:
+    case GRPC_COMPRESS_DEFLATE:
       *name = "message/deflate";
       return 1;
-    case GRPC_COMPRESS_MESSAGE_GZIP:
+    case GRPC_COMPRESS_GZIP:
       *name = "message/gzip";
       return 1;
     case GRPC_COMPRESS_STREAM_GZIP:
@@ -133,9 +132,9 @@ grpc_slice grpc_compression_algorithm_slice(
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
       return GRPC_MDSTR_IDENTITY;
-    case GRPC_COMPRESS_MESSAGE_DEFLATE:
+    case GRPC_COMPRESS_DEFLATE:
       return GRPC_MDSTR_MESSAGE_SLASH_DEFLATE;
-    case GRPC_COMPRESS_MESSAGE_GZIP:
+    case GRPC_COMPRESS_GZIP:
       return GRPC_MDSTR_MESSAGE_SLASH_GZIP;
     case GRPC_COMPRESS_STREAM_GZIP:
       return GRPC_MDSTR_STREAM_SLASH_GZIP;
@@ -149,9 +148,9 @@ grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     grpc_slice str) {
   if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) return GRPC_COMPRESS_NONE;
   if (grpc_slice_eq(str, GRPC_MDSTR_MESSAGE_SLASH_DEFLATE))
-    return GRPC_COMPRESS_MESSAGE_DEFLATE;
+    return GRPC_COMPRESS_DEFLATE;
   if (grpc_slice_eq(str, GRPC_MDSTR_MESSAGE_SLASH_GZIP))
-    return GRPC_COMPRESS_MESSAGE_GZIP;
+    return GRPC_COMPRESS_GZIP;
   if (grpc_slice_eq(str, GRPC_MDSTR_STREAM_SLASH_GZIP))
     return GRPC_COMPRESS_STREAM_GZIP;
   return GRPC_COMPRESS_ALGORITHMS_COUNT;
@@ -162,9 +161,9 @@ grpc_mdelem grpc_compression_encoding_mdelem(
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
       return GRPC_MDELEM_GRPC_ENCODING_IDENTITY;
-    case GRPC_COMPRESS_MESSAGE_DEFLATE:
+    case GRPC_COMPRESS_DEFLATE:
       return GRPC_MDELEM_GRPC_ENCODING_DEFLATE;
-    case GRPC_COMPRESS_MESSAGE_GZIP:
+    case GRPC_COMPRESS_GZIP:
       return GRPC_MDELEM_GRPC_ENCODING_GZIP;
     case GRPC_COMPRESS_STREAM_GZIP:
       return GRPC_MDELEM_GRPC_ENCODING_GZIP;
