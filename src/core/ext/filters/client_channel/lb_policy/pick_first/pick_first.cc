@@ -519,14 +519,6 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
   }
 }
 
-static void pf_set_reresolve_closure_locked(
-    grpc_lb_policy* policy, grpc_closure* request_reresolution) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)policy;
-  GPR_ASSERT(!p->shutdown);
-  GPR_ASSERT(policy->request_reresolution == nullptr);
-  policy->request_reresolution = request_reresolution;
-}
-
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_destroy,
     pf_shutdown_locked,
@@ -537,8 +529,7 @@ static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_exit_idle_locked,
     pf_check_connectivity_locked,
     pf_notify_on_state_change_locked,
-    pf_update_locked,
-    pf_set_reresolve_closure_locked};
+    pf_update_locked};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory* factory) {}
 
