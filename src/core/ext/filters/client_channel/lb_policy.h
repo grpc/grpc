@@ -130,7 +130,7 @@ class LoadBalancingPolicy
   void Orphan() override {
     // Invoke ShutdownLocked() inside of the combiner.
     GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(&LoadBalancingPolicy::ShutdownLocked, this,
+        GRPC_CLOSURE_CREATE(&LoadBalancingPolicy::ShutdownAndUnrefLocked, this,
                             grpc_combiner_scheduler(combiner_)),
         GRPC_ERROR_NONE);
   }
@@ -143,9 +143,6 @@ class LoadBalancingPolicy
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-// FIXME: make this protected!
-  grpc_combiner* combiner() const { return combiner_; }
-
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
@@ -157,6 +154,8 @@ class LoadBalancingPolicy
 
   virtual ~LoadBalancingPolicy();
 
+  grpc_combiner* combiner() const { return combiner_; }
+
   /// Shuts down the policy.  Any pending picks that have not been
   /// handed off to a new policy via HandOffPendingPicksLocked() will be
   /// failed.
@@ -166,7 +165,7 @@ class LoadBalancingPolicy
   void TryReresolution(grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error);
 
  private:
-  static void ShutdownLocked(void* arg, grpc_error* ignored) {
+  static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored) {
     LoadBalancingPolicy* policy = static_cast<LoadBalancingPolicy*>(arg);
     policy->ShutdownLocked();
     policy->Unref();

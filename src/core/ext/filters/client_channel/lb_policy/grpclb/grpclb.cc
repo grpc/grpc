@@ -540,13 +540,13 @@ GrpcLb::BalancerCallState::BalancerCallState(
   grpc_metadata_array_init(&lb_trailing_metadata_recv_);
   GRPC_CLOSURE_INIT(&lb_on_initial_request_sent_,
                     &OnInitialRequestSentLocked, this,
-                    grpc_combiner_scheduler(grpclb_policy_->combiner()));
+                    grpc_combiner_scheduler(grpclb_policy()->combiner()));
   GRPC_CLOSURE_INIT(&lb_on_balancer_message_received_,
                     &OnBalancerMessageReceivedLocked, this,
-                    grpc_combiner_scheduler(grpclb_policy_->combiner()));
+                    grpc_combiner_scheduler(grpclb_policy()->combiner()));
   GRPC_CLOSURE_INIT(&lb_on_balancer_status_received_,
                     &OnBalancerStatusReceivedLocked, this,
-                    grpc_combiner_scheduler(grpclb_policy_->combiner()));
+                    grpc_combiner_scheduler(grpclb_policy()->combiner()));
 }
 
 GrpcLb::BalancerCallState::~BalancerCallState() {
@@ -656,7 +656,7 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
       grpc_core::ExecCtx::Get()->Now() + client_stats_report_interval_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_,
                     MaybeSendClientLoadReportLocked, this,
-                    grpc_combiner_scheduler(grpclb_policy_->combiner()));
+                    grpc_combiner_scheduler(grpclb_policy()->combiner()));
   grpc_timer_init(&client_load_report_timer_, next_client_load_report_time,
                   &client_load_report_closure_);
   client_load_report_timer_callback_pending_ = true;
@@ -723,7 +723,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   op.op = GRPC_OP_SEND_MESSAGE;
   op.data.send_message.send_message = send_message_payload_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_, ClientLoadReportDoneLocked,
-                    this, grpc_combiner_scheduler(grpclb_policy_->combiner()));
+                    this, grpc_combiner_scheduler(grpclb_policy()->combiner()));
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       lb_call_, &op, 1, &client_load_report_closure_);
   if (call_error != GRPC_CALL_OK) {
