@@ -1484,23 +1484,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "lb_policies_test", 
-    "src": [
-      "test/core/client_channel/lb_policies_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "load_file_test", 
     "src": [
       "test/core/iomgr/load_file_test.cc"
@@ -5145,6 +5128,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "duplicate_header_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/duplicate_header.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "head_of_line_blocking_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/head_of_line_blocking.cc"
@@ -8228,7 +8229,6 @@
       "include/grpc/support/atm_windows.h", 
       "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
-      "include/grpc/support/host_port.h", 
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
@@ -8248,6 +8248,7 @@
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
       "src/core/lib/gpr/fork.h", 
+      "src/core/lib/gpr/host_port.h", 
       "src/core/lib/gpr/mpscq.h", 
       "src/core/lib/gpr/murmur_hash.h", 
       "src/core/lib/gpr/spinlock.h", 
@@ -8276,7 +8277,6 @@
       "include/grpc/support/atm_windows.h", 
       "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
-      "include/grpc/support/host_port.h", 
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
@@ -8296,6 +8296,7 @@
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
       "src/core/lib/gpr/fork.h", 
+      "src/core/lib/gpr/host_port.h", 
       "src/core/lib/gpr/mpscq.h", 
       "src/core/lib/gpr/murmur_hash.h", 
       "src/core/lib/gpr/spinlock.h", 
@@ -8407,7 +8408,6 @@
       "src/core/lib/channel/handshaker_registry.cc", 
       "src/core/lib/compression/compression.cc", 
       "src/core/lib/compression/compression_internal.cc", 
-      "src/core/lib/compression/compression_ruby.cc", 
       "src/core/lib/compression/message_compress.cc", 
       "src/core/lib/compression/stream_compression.cc", 
       "src/core/lib/compression/stream_compression_gzip.cc", 
@@ -8545,7 +8545,6 @@
       "include/grpc/byte_buffer.h", 
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
-      "include/grpc/compression_ruby.h", 
       "include/grpc/fork.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
@@ -8688,7 +8687,6 @@
       "include/grpc/byte_buffer.h", 
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
-      "include/grpc/compression_ruby.h", 
       "include/grpc/fork.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 

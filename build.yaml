@@ -13,7 +13,7 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: glossy
+  g_stands_for: glamorous
   version: 1.10.0-dev
 filegroups:
 - name: census
@@ -80,7 +80,6 @@ filegroups:
   - include/grpc/support/atm_windows.h
   - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
-  - include/grpc/support/host_port.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
@@ -101,6 +100,7 @@ filegroups:
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/fork.h
+  - src/core/lib/gpr/host_port.h
   - src/core/lib/gpr/mpscq.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
@@ -159,7 +159,6 @@ filegroups:
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
-  - src/core/lib/compression/compression_ruby.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/compression/stream_compression.cc
   - src/core/lib/compression/stream_compression_gzip.cc
@@ -295,7 +294,6 @@ filegroups:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
-  - include/grpc/compression_ruby.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -2724,19 +2722,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: lb_policies_test
-  cpu_cost: 0.1
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/client_channel/lb_policies_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: load_file_test
   build: test
   language: c

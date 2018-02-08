@@ -179,7 +179,7 @@ grpc_server_retry_throttle_data* grpc_retry_throttle_map_get_data_for_server(
   gpr_mu_lock(&g_mu);
   grpc_server_retry_throttle_data* throttle_data =
       (grpc_server_retry_throttle_data*)grpc_avl_get(g_avl, (char*)server_name,
-                                                    nullptr);
+                                                     nullptr);
   if (throttle_data == nullptr) {
     // Entry not found.  Create a new one.
     throttle_data = grpc_server_retry_throttle_data_create(

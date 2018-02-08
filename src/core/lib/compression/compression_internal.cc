@@ -80,9 +80,9 @@ grpc_message_compression_algorithm
 grpc_compression_algorithm_to_message_compression_algorithm(
     grpc_compression_algorithm algo) {
   switch (algo) {
-    case GRPC_COMPRESS_MESSAGE_DEFLATE:
+    case GRPC_COMPRESS_DEFLATE:
       return GRPC_MESSAGE_COMPRESS_DEFLATE;
-    case GRPC_COMPRESS_MESSAGE_GZIP:
+    case GRPC_COMPRESS_GZIP:
       return GRPC_MESSAGE_COMPRESS_GZIP;
     default:
       return GRPC_MESSAGE_COMPRESS_NONE;
@@ -147,10 +147,10 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
         *algorithm = GRPC_COMPRESS_NONE;
         return 1;
       case GRPC_MESSAGE_COMPRESS_DEFLATE:
-        *algorithm = GRPC_COMPRESS_MESSAGE_DEFLATE;
+        *algorithm = GRPC_COMPRESS_DEFLATE;
         return 1;
       case GRPC_MESSAGE_COMPRESS_GZIP:
-        *algorithm = GRPC_COMPRESS_MESSAGE_GZIP;
+        *algorithm = GRPC_COMPRESS_GZIP;
         return 1;
       default:
         *algorithm = GRPC_COMPRESS_NONE;

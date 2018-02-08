@@ -30,7 +30,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class Foo : public RefCounted {
+class Foo : public RefCounted<Foo> {
  public:
   Foo() : value_(0) {}
 
@@ -163,14 +163,15 @@ TEST(MakeRefCounted, Args) {
 
 TraceFlag foo_tracer(true, "foo");
 
-class FooWithTracing : public RefCountedWithTracing {
+class FooWithTracing : public RefCountedWithTracing<FooWithTracing> {
  public:
   FooWithTracing() : RefCountedWithTracing(&foo_tracer) {}
 };
 
 TEST(RefCountedPtr, RefCountedWithTracing) {
   RefCountedPtr<FooWithTracing> foo(New<FooWithTracing>());
-  foo->Ref(DEBUG_LOCATION, "foo");
+  RefCountedPtr<FooWithTracing> foo2 = foo->Ref(DEBUG_LOCATION, "foo");
+  foo2.release();
   foo->Unref(DEBUG_LOCATION, "foo");
 }
 

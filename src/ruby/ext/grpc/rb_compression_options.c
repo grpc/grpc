@@ -23,7 +23,6 @@
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/compression.h>
-#include <grpc/compression_ruby.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -175,7 +174,7 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
   /* Raise an error if the name isn't recognized as a compression algorithm by
    * the algorithm parse function
    * in GRPC core. */
-  if (!grpc_compression_algorithm_parse_ruby(name_slice, algorithm_value)) {
+  if (!grpc_compression_algorithm_parse(name_slice, algorithm_value)) {
     tmp_str = grpc_slice_to_c_string(name_slice);
     rb_raise(rb_eNameError, "Invalid compression algorithm name: %s", tmp_str);
   }
@@ -287,7 +286,7 @@ VALUE grpc_rb_compression_options_algorithm_value_to_name_internal(
     grpc_compression_algorithm internal_value) {
   char* algorithm_name = NULL;
 
-  if (!grpc_compression_algorithm_name_ruby(internal_value, &algorithm_name)) {
+  if (!grpc_compression_algorithm_name(internal_value, &algorithm_name)) {
     rb_raise(rb_eArgError, "Failed to convert algorithm value to name");
   }
 

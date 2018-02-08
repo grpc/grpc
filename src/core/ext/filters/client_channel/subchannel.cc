@@ -737,8 +737,9 @@ grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr) {
 }
 
 namespace grpc_core {
+
 ConnectedSubchannel::ConnectedSubchannel(grpc_channel_stack* channel_stack)
-    : grpc_core::RefCountedWithTracing(&grpc_trace_stream_refcount),
+    : RefCountedWithTracing<ConnectedSubchannel>(&grpc_trace_stream_refcount),
       channel_stack_(channel_stack) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
@@ -773,7 +774,9 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
       args.arena,
       sizeof(grpc_subchannel_call) + channel_stack_->call_stack_size);
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
-  Ref(DEBUG_LOCATION, "subchannel_call");
+  RefCountedPtr<ConnectedSubchannel> connection =
+      Ref(DEBUG_LOCATION, "subchannel_call");
+  connection.release();  // Ref is passed to the grpc_subchannel_call object.
   (*call)->connection = this;
   const grpc_call_element_args call_args = {
       callstk,           /* call_stack */
@@ -795,4 +798,5 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
   return GRPC_ERROR_NONE;
 }
+
 }  // namespace grpc_core

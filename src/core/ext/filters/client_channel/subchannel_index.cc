@@ -25,8 +25,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/tls.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/avl/avl.h"
+#include "src/core/lib/channel/channel_args.h"
 
 // a map of subchannel_key --> subchannel, used for detecting connections
 // to the same destination in order to share them
@@ -165,7 +165,8 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
     // Compare and swap loop:
     // - take a reference to the current index
     gpr_mu_lock(&g_mu);
-    grpc_avl index = grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
+    grpc_avl index =
+        grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
     gpr_mu_unlock(&g_mu);
 
     // - Check to see if a subchannel already exists
@@ -180,9 +181,9 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
       // no -> update the avl and compare/swap
       grpc_avl updated =
           grpc_avl_add(grpc_avl_ref(index, grpc_core::ExecCtx::Get()),
-                      subchannel_key_copy(key),
-                      GRPC_SUBCHANNEL_WEAK_REF(constructed, "index_register"),
-                      grpc_core::ExecCtx::Get());
+                       subchannel_key_copy(key),
+                       GRPC_SUBCHANNEL_WEAK_REF(constructed, "index_register"),
+                       grpc_core::ExecCtx::Get());
 
       // it may happen (but it's expected to be unlikely)
       // that some other thread has changed the index:
@@ -213,7 +214,8 @@ void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
     // Compare and swap loop:
     // - take a reference to the current index
     gpr_mu_lock(&g_mu);
-    grpc_avl index = grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
+    grpc_avl index =
+        grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
     gpr_mu_unlock(&g_mu);
 
     // Check to see if this key still refers to the previously
@@ -229,7 +231,7 @@ void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
     // mutated the index behind us)
     grpc_avl updated =
         grpc_avl_remove(grpc_avl_ref(index, grpc_core::ExecCtx::Get()), key,
-                       grpc_core::ExecCtx::Get());
+                        grpc_core::ExecCtx::Get());
 
     gpr_mu_lock(&g_mu);
     if (index.root == g_subchannel_index.root) {

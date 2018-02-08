@@ -21,15 +21,16 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/port.h"
@@ -69,7 +70,7 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture* f,
     grpc_channel_args_destroy(ffd->client_args_compression);
   }
   ffd->client_args_compression = grpc_channel_args_set_compression_algorithm(
-      client_args, GRPC_COMPRESS_MESSAGE_GZIP);
+      client_args, GRPC_COMPRESS_GZIP);
   f->client = grpc_insecure_channel_create(
       ffd->localaddr, ffd->client_args_compression, nullptr);
 }
@@ -83,7 +84,7 @@ void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture* f,
     grpc_channel_args_destroy(ffd->server_args_compression);
   }
   ffd->server_args_compression = grpc_channel_args_set_compression_algorithm(
-      server_args, GRPC_COMPRESS_MESSAGE_GZIP);
+      server_args, GRPC_COMPRESS_GZIP);
   if (f->server) {
     grpc_server_destroy(f->server);
   }

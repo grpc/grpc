@@ -78,7 +78,7 @@ static grpc_avl_node* assert_invariants(grpc_avl_node* n) { return n; }
 #endif
 
 grpc_avl_node* new_node(void* key, void* value, grpc_avl_node* left,
-                       grpc_avl_node* right) {
+                        grpc_avl_node* right) {
   grpc_avl_node* node = (grpc_avl_node*)gpr_malloc(sizeof(*node));
   gpr_ref_init(&node->refs, 1);
   node->key = key;
@@ -90,7 +90,7 @@ grpc_avl_node* new_node(void* key, void* value, grpc_avl_node* left,
 }
 
 static grpc_avl_node* get(const grpc_avl_vtable* vtable, grpc_avl_node* node,
-                         void* key, void* user_data) {
+                          void* key, void* user_data) {
   long cmp;
 
   if (node == nullptr) {
@@ -122,19 +122,19 @@ int grpc_avl_maybe_get(grpc_avl avl, void* key, void** value, void* user_data) {
 }
 
 static grpc_avl_node* rotate_left(const grpc_avl_vtable* vtable, void* key,
-                                 void* value, grpc_avl_node* left,
-                                 grpc_avl_node* right, void* user_data) {
+                                  void* value, grpc_avl_node* left,
+                                  grpc_avl_node* right, void* user_data) {
   grpc_avl_node* n = new_node(vtable->copy_key(right->key, user_data),
-                             vtable->copy_value(right->value, user_data),
-                             new_node(key, value, left, ref_node(right->left)),
-                             ref_node(right->right));
+                              vtable->copy_value(right->value, user_data),
+                              new_node(key, value, left, ref_node(right->left)),
+                              ref_node(right->right));
   unref_node(vtable, right, user_data);
   return n;
 }
 
 static grpc_avl_node* rotate_right(const grpc_avl_vtable* vtable, void* key,
-                                  void* value, grpc_avl_node* left,
-                                  grpc_avl_node* right, void* user_data) {
+                                   void* value, grpc_avl_node* left,
+                                   grpc_avl_node* right, void* user_data) {
   grpc_avl_node* n =
       new_node(vtable->copy_key(left->key, user_data),
                vtable->copy_value(left->value, user_data), ref_node(left->left),
@@ -143,9 +143,10 @@ static grpc_avl_node* rotate_right(const grpc_avl_vtable* vtable, void* key,
   return n;
 }
 
-static grpc_avl_node* rotate_left_right(const grpc_avl_vtable* vtable, void* key,
-                                       void* value, grpc_avl_node* left,
-                                       grpc_avl_node* right, void* user_data) {
+static grpc_avl_node* rotate_left_right(const grpc_avl_vtable* vtable,
+                                        void* key, void* value,
+                                        grpc_avl_node* left,
+                                        grpc_avl_node* right, void* user_data) {
   /* rotate_right(..., rotate_left(left), right) */
   grpc_avl_node* n =
       new_node(vtable->copy_key(left->right->key, user_data),
@@ -158,9 +159,10 @@ static grpc_avl_node* rotate_left_right(const grpc_avl_vtable* vtable, void* key
   return n;
 }
 
-static grpc_avl_node* rotate_right_left(const grpc_avl_vtable* vtable, void* key,
-                                       void* value, grpc_avl_node* left,
-                                       grpc_avl_node* right, void* user_data) {
+static grpc_avl_node* rotate_right_left(const grpc_avl_vtable* vtable,
+                                        void* key, void* value,
+                                        grpc_avl_node* left,
+                                        grpc_avl_node* right, void* user_data) {
   /* rotate_left(..., left, rotate_right(right)) */
   grpc_avl_node* n =
       new_node(vtable->copy_key(right->left->key, user_data),
@@ -174,8 +176,8 @@ static grpc_avl_node* rotate_right_left(const grpc_avl_vtable* vtable, void* key
 }
 
 static grpc_avl_node* rebalance(const grpc_avl_vtable* vtable, void* key,
-                               void* value, grpc_avl_node* left,
-                               grpc_avl_node* right, void* user_data) {
+                                void* value, grpc_avl_node* left,
+                                grpc_avl_node* right, void* user_data) {
   switch (node_height(left) - node_height(right)) {
     case 2:
       if (node_height(left->left) - node_height(left->right) == -1) {
@@ -198,8 +200,9 @@ static grpc_avl_node* rebalance(const grpc_avl_vtable* vtable, void* key,
   }
 }
 
-static grpc_avl_node* add_key(const grpc_avl_vtable* vtable, grpc_avl_node* node,
-                             void* key, void* value, void* user_data) {
+static grpc_avl_node* add_key(const grpc_avl_vtable* vtable,
+                              grpc_avl_node* node, void* key, void* value,
+                              void* user_data) {
   long cmp;
   if (node == nullptr) {
     return new_node(key, value, nullptr, nullptr);
@@ -243,8 +246,8 @@ static grpc_avl_node* in_order_tail(grpc_avl_node* node) {
 }
 
 static grpc_avl_node* remove_key(const grpc_avl_vtable* vtable,
-                                grpc_avl_node* node, void* key,
-                                void* user_data) {
+                                 grpc_avl_node* node, void* key,
+                                 void* user_data) {
   long cmp;
   if (node == nullptr) {
     return nullptr;

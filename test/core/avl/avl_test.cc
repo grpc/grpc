@@ -41,7 +41,7 @@ static void* int_copy(void* p, void* unused) { return box(*(int*)p); }
 static void destroy(void* p, void* unused) { gpr_free(p); }
 
 static const grpc_avl_vtable int_int_vtable = {destroy, int_copy, int_compare,
-                                              destroy, int_copy};
+                                               destroy, int_copy};
 
 static void check_get(grpc_avl avl, int key, int value) {
   int* k = box(key);

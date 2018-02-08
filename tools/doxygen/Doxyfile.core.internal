@@ -801,7 +801,6 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
-include/grpc/compression_ruby.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
@@ -852,7 +851,6 @@ include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_windows.h \
 include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
-include/grpc/support/host_port.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
@@ -1053,7 +1051,6 @@ src/core/lib/compression/algorithm_metadata.h \
 src/core/lib/compression/compression.cc \
 src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \
-src/core/lib/compression/compression_ruby.cc \
 src/core/lib/compression/message_compress.cc \
 src/core/lib/compression/message_compress.h \
 src/core/lib/compression/stream_compression.cc \
@@ -1085,6 +1082,7 @@ src/core/lib/gpr/env_windows.cc \
 src/core/lib/gpr/fork.cc \
 src/core/lib/gpr/fork.h \
 src/core/lib/gpr/host_port.cc \
+src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \

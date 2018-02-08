@@ -26,7 +26,6 @@
 #include <windows.h>
 
 #include <grpc/compression.h>
-#include <grpc/compression_ruby.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
@@ -36,7 +35,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
@@ -72,12 +70,6 @@ extern grpc_compression_options_disable_algorithm_type grpc_compression_options_
 typedef int(*grpc_compression_options_is_algorithm_enabled_type)(const grpc_compression_options* opts, grpc_compression_algorithm algorithm);
 extern grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 #define grpc_compression_options_is_algorithm_enabled grpc_compression_options_is_algorithm_enabled_import
-typedef int(*grpc_compression_algorithm_parse_ruby_type)(grpc_slice value, grpc_compression_algorithm* algorithm);
-extern grpc_compression_algorithm_parse_ruby_type grpc_compression_algorithm_parse_ruby_import;
-#define grpc_compression_algorithm_parse_ruby grpc_compression_algorithm_parse_ruby_import
-typedef int(*grpc_compression_algorithm_name_ruby_type)(grpc_compression_algorithm algorithm, const char** name);
-extern grpc_compression_algorithm_name_ruby_type grpc_compression_algorithm_name_ruby_import;
-#define grpc_compression_algorithm_name_ruby grpc_compression_algorithm_name_ruby_import
 typedef void(*grpc_metadata_array_init_type)(grpc_metadata_array* array);
 extern grpc_metadata_array_init_type grpc_metadata_array_init_import;
 #define grpc_metadata_array_init grpc_metadata_array_init_import
@@ -615,12 +607,6 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef int(*gpr_join_host_port_type)(char** out, const char* host, int port);
-extern gpr_join_host_port_type gpr_join_host_port_import;
-#define gpr_join_host_port gpr_join_host_port_import
-typedef int(*gpr_split_host_port_type)(const char* name, char** host, char** port);
-extern gpr_split_host_port_type gpr_split_host_port_import;
-#define gpr_split_host_port gpr_split_host_port_import
 typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
 extern gpr_log_severity_string_type gpr_log_severity_string_import;
 #define gpr_log_severity_string gpr_log_severity_string_import

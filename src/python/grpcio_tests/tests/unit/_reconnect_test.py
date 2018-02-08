@@ -14,6 +14,7 @@
 """Tests that a channel will reconnect if a connection is dropped"""
 
 import socket
+import time
 import unittest
 
 import grpc
@@ -88,6 +89,7 @@ class ReconnectTest(unittest.TestCase):
         multi_callable = channel.unary_unary(_UNARY_UNARY)
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
         server.stop(None)
+        time.sleep(1)
         server = grpc.server(server_pool, (handler,))
         server.add_insecure_port('[::]:{}'.format(port))
         server.start()
