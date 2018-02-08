@@ -138,7 +138,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  void SetNextResolution(const std::vector<int>& ports, bool notify = true) {
+  void SetNextResolution(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(ports.size(), nullptr);
@@ -157,13 +157,33 @@ class ClientLbEnd2endTest : public ::testing::Test {
         grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args* fake_result =
         grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    if (notify) {
-      grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                         fake_result);
-    } else {
-      grpc_fake_resolver_response_generator_set_response_upon_error(
-          response_generator_, fake_result);
+    grpc_fake_resolver_response_generator_set_response(response_generator_,
+                                                       fake_result);
+    grpc_channel_args_destroy(fake_result);
+    grpc_lb_addresses_destroy(addresses);
+  }
+
+  void SetNextResolutionUponError(const std::vector<int>& ports) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_lb_addresses* addresses =
+        grpc_lb_addresses_create(ports.size(), nullptr);
+    for (size_t i = 0; i < ports.size(); ++i) {
+      char* lb_uri_str;
+      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", ports[i]);
+      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
+      GPR_ASSERT(lb_uri != nullptr);
+      grpc_lb_addresses_set_address_from_uri(addresses, i, lb_uri,
+                                             false /* is balancer */,
+                                             "" /* balancer name */, nullptr);
+      grpc_uri_destroy(lb_uri);
+      gpr_free(lb_uri_str);
     }
+    const grpc_arg fake_addresses =
+        grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_channel_args* fake_result =
+        grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
+    grpc_fake_resolver_response_generator_set_response_upon_error(
+        response_generator_, fake_result);
     grpc_channel_args_destroy(fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
@@ -578,9 +598,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   ports.emplace_back(servers_[0]->port_);
   ports.emplace_back(servers_[1]->port_);
   ports.emplace_back(servers_[2]->port_);
-  gpr_log(GPR_INFO, "ABOUT TO SEND ALLLLL");
   SetNextResolution(ports);
-  gpr_log(GPR_INFO, "SENT ALLLLLLLLLLLLLLLLLL");
   WaitForServer(stub, 0, DEBUG_LOCATION);
   WaitForServer(stub, 1, DEBUG_LOCATION);
   WaitForServer(stub, 2, DEBUG_LOCATION);
@@ -708,7 +726,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   StartServers(kNumServers, second_ports);
   // Don't notify of the update. Wait for the LB policy's re-resolution to
   // "pull" the new ports.
-  SetNextResolution(second_ports, false);
+  SetNextResolutionUponError(second_ports);
   gpr_log(GPR_INFO, "****** SERVERS RESTARTED *******");
   gpr_log(GPR_INFO, "****** SENDING REQUEST TO SUCCEED *******");
   // Client request should eventually (but still fairly soon) succeed.

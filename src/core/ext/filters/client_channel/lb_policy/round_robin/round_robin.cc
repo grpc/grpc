@@ -329,8 +329,7 @@ static void update_lb_connectivity_status_locked(grpc_lb_subchannel_data* sd,
    *    CHECK: sd->curr_connectivity_state == CONNECTING.
    *
    * 3) RULE: ALL subchannels are TRANSIENT_FAILURE => policy is
-   *                                                   TRANSIENT_FAILURE (and
-   *                                                   requests re-resolution).
+   *                                                   TRANSIENT_FAILURE.
    *    CHECK: subchannel_list->num_transient_failures ==
    *           subchannel_list->num_subchannels.
    */
@@ -397,9 +396,6 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
   // state (which was set by the connectivity state watcher) to
   // curr_connectivity_state, which is what we use inside of the combiner.
   sd->curr_connectivity_state = sd->pending_connectivity_state_unsafe;
-  // Update state counters and new overall state.
-  update_state_counters_locked(sd);
-  update_lb_connectivity_status_locked(sd, GRPC_ERROR_REF(error));
   // If the sd's new state is TRANSIENT_FAILURE, unref the *connected*
   // subchannel, if any.
   switch (sd->curr_connectivity_state) {
@@ -481,6 +477,12 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
       GPR_UNREACHABLE_CODE(return );
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:;  // fallthrough
+  }
+  // Update state counters and new overall state.
+  update_state_counters_locked(sd);
+  // Only update connectivity based on the selected subchannel list.
+  if (sd->subchannel_list == p->subchannel_list) {
+    update_lb_connectivity_status_locked(sd, GRPC_ERROR_REF(error));
   }
   // Renew notification.
   grpc_lb_subchannel_data_start_connectivity_watch(sd);
@@ -564,9 +566,20 @@ static void rr_update_locked(grpc_lb_policy* policy,
       // purposes if the subchannel is already in transient failure. Otherwise
       // we'd be immediately notified of the IDLE-TRANSIENT_FAILURE
       // discrepancy, attempt to re-resolve and end up here again.
+      // TODO(roth): As part of C++-ifying the subchannel_list API, design a
+      // better API for notifying the LB policy of subchannel states, which can
+      // be used both for the subchannel's initial state and for subsequent
+      // state changes. This will allow us to handle this more generally instead
+      // of special-casing TRANSIENT_FAILURE (e.g., we can also distribute any
+      // pending picks across all READY subchannels rather than sending them all
+      // to the first one).
       if (subchannel_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         subchannel_list->subchannels[i].pending_connectivity_state_unsafe =
-            subchannel_state;
+            subchannel_list->subchannels[i].curr_connectivity_state =
+                subchannel_list->subchannels[i].prev_connectivity_state =
+                    subchannel_state;
+        --subchannel_list->num_idle;
+        ++subchannel_list->num_transient_failures;
       }
     }
     if (p->latest_pending_subchannel_list != nullptr) {
