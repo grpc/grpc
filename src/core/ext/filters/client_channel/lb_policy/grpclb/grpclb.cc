@@ -1331,7 +1331,11 @@ void GrpcLb::CreateRRLocked(const Args& args) {
                     &GrpcLb::OnRRConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(combiner()));
   /* Subscribe to changes to the connectivity of the new RR */
-  Ref(DEBUG_LOCATION, "glb_rr_connectivity_cb");
+  // TODO(roth): We currently track this ref manually.  Once the new
+  // ClosureRef API is ready, we should instead pass the RefCountedPtr<>
+  // as part of the closure.
+  self = Ref(DEBUG_LOCATION, "glb_rr_connectivity_cb");
+  self.release();
   rr_policy_->NotifyOnStateChangeLocked(&rr_connectivity_state_,
                                         &on_rr_connectivity_changed_);
   rr_policy_->ExitIdleLocked();
@@ -1839,7 +1843,12 @@ void GrpcLb::UpdateLocked(const Args& args) {
         grpc_channel_get_channel_stack(lb_channel_));
     GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
     watching_lb_channel_ = true;
-    Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity");
+    // TODO(roth): We currently track this ref manually.  Once the new
+    // ClosureRef API is ready, we should instead pass the RefCountedPtr<>
+    // as part of the closure.
+    RefCountedPtr<LoadBalancingPolicy> self =
+        Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity");
+    self.release();
     grpc_client_channel_watch_connectivity_state(
         client_channel_elem,
         grpc_polling_entity_create_from_pollset_set(interested_parties()),
