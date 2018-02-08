@@ -2932,10 +2932,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_windows.h \
     include/grpc/support/thd.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -3224,7 +3220,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_factory.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
@@ -3538,7 +3533,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_factory.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
@@ -3835,7 +3829,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_factory.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
@@ -3888,10 +3881,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_windows.h \
     include/grpc/support/thd.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -4120,7 +4109,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_factory.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
@@ -4173,10 +4161,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_windows.h \
     include/grpc/support/thd.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -4405,7 +4389,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_factory.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
@@ -4701,10 +4684,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/sync_windows.h \
     include/grpc/support/thd.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -5105,7 +5084,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_factory.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
@@ -5183,10 +5161,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/sync_windows.h \
     include/grpc/support/thd.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -5897,10 +5871,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/sync_windows.h \
     include/grpc/support/thd.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \

@@ -39,9 +39,10 @@ def grpc_bad_ssl_tests():
     native.cc_test(
         name = 'bad_ssl_%s_test' % t,
         srcs = ['bad_ssl_test.cc'],
-        data = [':bad_ssl_%s_server' % t],
+        data = [':bad_ssl_%s_server' % t,
+                '//src/core/tsi/test_creds:badserver.key',
+                '//src/core/tsi/test_creds:badserver.pem',],
         deps = ['//test/core/util:grpc_test_util',
                 '//:gpr',
                 '//test/core/end2end:cq_verifier'],
     )
-

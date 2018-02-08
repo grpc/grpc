@@ -921,10 +921,6 @@ include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
 include/grpc/support/thd.h \
 include/grpc/support/time.h \
-include/grpc/support/tls.h \
-include/grpc/support/tls_gcc.h \
-include/grpc/support/tls_msvc.h \
-include/grpc/support/tls_pthread.h \
 include/grpc/support/workaround_list.h
 
 # This tag can be used to specify the character encoding of the source files

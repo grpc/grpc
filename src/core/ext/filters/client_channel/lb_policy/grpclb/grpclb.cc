@@ -108,6 +108,7 @@
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -242,7 +243,8 @@ typedef struct glb_lb_policy {
   glb_lb_call_data* lb_calld;
 
   /** response generator to inject address updates into \a lb_channel */
-  grpc_fake_resolver_response_generator* response_generator;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+      response_generator;
 
   /** the RR policy to use of the backend servers returned by the LB server */
   grpc_lb_policy* rr_policy;
@@ -872,7 +874,7 @@ static int balancer_name_cmp_fn(void* a, void* b) {
  *   - \a args: other args inherited from the grpclb policy. */
 static grpc_channel_args* build_lb_channel_args(
     const grpc_lb_addresses* addresses,
-    grpc_fake_resolver_response_generator* response_generator,
+    grpc_core::FakeResolverResponseGenerator* response_generator,
     const grpc_channel_args* args) {
   size_t num_grpclb_addrs = 0;
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
@@ -941,7 +943,8 @@ static void glb_destroy(grpc_lb_policy* pol) {
   if (glb_policy->fallback_backend_addresses != nullptr) {
     grpc_lb_addresses_destroy(glb_policy->fallback_backend_addresses);
   }
-  grpc_fake_resolver_response_generator_unref(glb_policy->response_generator);
+  // TODO(roth): Remove this once the LB policy becomes a C++ object.
+  glb_policy->response_generator.reset();
   grpc_subchannel_index_unref();
   gpr_free(glb_policy);
 }
@@ -1701,9 +1704,8 @@ static void glb_update_locked(grpc_lb_policy* policy,
   // Propagate updates to the LB channel (pick_first) through the fake
   // resolver.
   grpc_channel_args* lb_channel_args = build_lb_channel_args(
-      addresses, glb_policy->response_generator, args->args);
-  grpc_fake_resolver_response_generator_set_response(
-      glb_policy->response_generator, lb_channel_args);
+      addresses, glb_policy->response_generator.get(), args->args);
+  glb_policy->response_generator->SetResponse(lb_channel_args);
   grpc_channel_args_destroy(lb_channel_args);
   // Start watching the LB channel connectivity for connection, if not
   // already doing so.
@@ -1858,17 +1860,16 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
 
   /* Create a client channel over them to communicate with a LB service */
   glb_policy->response_generator =
-      grpc_fake_resolver_response_generator_create();
+      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   grpc_channel_args* lb_channel_args = build_lb_channel_args(
-      addresses, glb_policy->response_generator, args->args);
+      addresses, glb_policy->response_generator.get(), args->args);
   char* uri_str;
   gpr_asprintf(&uri_str, "fake:///%s", glb_policy->server_name);
   glb_policy->lb_channel = grpc_lb_policy_grpclb_create_lb_channel(
       uri_str, args->client_channel_factory, lb_channel_args);
 
   /* Propagate initial resolution */
-  grpc_fake_resolver_response_generator_set_response(
-      glb_policy->response_generator, lb_channel_args);
+  glb_policy->response_generator->SetResponse(lb_channel_args);
   grpc_channel_args_destroy(lb_channel_args);
   gpr_free(uri_str);
   if (glb_policy->lb_channel == nullptr) {

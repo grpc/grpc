@@ -861,10 +861,6 @@ include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
 include/grpc/support/thd.h \
 include/grpc/support/time.h \
-include/grpc/support/tls.h \
-include/grpc/support/tls_gcc.h \
-include/grpc/support/tls_msvc.h \
-include/grpc/support/tls_pthread.h \
 include/grpc/support/workaround_list.h \
 src/core/README.md \
 src/core/ext/README.md \
@@ -927,7 +923,6 @@ src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h \
 src/core/ext/filters/client_channel/resolver/sockaddr/README.md \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
-src/core/ext/filters/client_channel/resolver_factory.cc \
 src/core/ext/filters/client_channel/resolver_factory.h \
 src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
@@ -1108,7 +1103,11 @@ src/core/lib/gpr/time_posix.cc \
 src/core/lib/gpr/time_precise.cc \
 src/core/lib/gpr/time_precise.h \
 src/core/lib/gpr/time_windows.cc \
+src/core/lib/gpr/tls.h \
+src/core/lib/gpr/tls_gcc.h \
+src/core/lib/gpr/tls_msvc.h \
 src/core/lib/gpr/tls_pthread.cc \
+src/core/lib/gpr/tls_pthread.h \
 src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/tmpfile_msys.cc \
 src/core/lib/gpr/tmpfile_posix.cc \

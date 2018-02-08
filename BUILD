@@ -78,10 +78,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/sync_windows.h",
     "include/grpc/support/thd.h",
     "include/grpc/support/time.h",
-    "include/grpc/support/tls.h",
-    "include/grpc/support/tls_gcc.h",
-    "include/grpc/support/tls_msvc.h",
-    "include/grpc/support/tls_pthread.h",
 ]
 
 GRPC_PUBLIC_HDRS = [
@@ -500,6 +496,10 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/thd_internal.h",
         "src/core/lib/gpr/time_precise.h",
+        "src/core/lib/gpr/tls.h",
+        "src/core/lib/gpr/tls_gcc.h",
+        "src/core/lib/gpr/tls_msvc.h",
+        "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/profiling/timers.h",
@@ -945,7 +945,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/proxy_mapper.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver.cc",
-        "src/core/ext/filters/client_channel/resolver_factory.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
@@ -975,8 +974,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "gpr_base",
         "grpc_base",
         "grpc_deadline_filter",
+        "inlined_vector",
+        "orphanable",
         "ref_counted",
         "ref_counted_ptr",
     ],

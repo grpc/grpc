@@ -164,7 +164,7 @@ struct external_connectivity_watcher;
 
 typedef struct client_channel_channel_data {
   /** resolver for this channel */
-  grpc_resolver* resolver;
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver;
   /** have we started resolving this channel */
   bool started_resolving;
   /** is deadline checking enabled? */
@@ -299,8 +299,8 @@ static void start_resolving_locked(channel_data* chand) {
   GPR_ASSERT(!chand->started_resolving);
   chand->started_resolving = true;
   GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-  grpc_resolver_next_locked(chand->resolver, &chand->resolver_result,
-                            &chand->on_resolver_result_changed);
+  chand->resolver->NextLocked(&chand->resolver_result,
+                              &chand->on_resolver_result_changed);
 }
 
 typedef struct {
@@ -377,7 +377,7 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p: started name re-resolving", chand);
   }
-  grpc_resolver_channel_saw_error_locked(chand->resolver);
+  chand->resolver->RequestReresolutionLocked();
   // Give back the closure to the LB policy.
   grpc_lb_policy_set_reresolve_closure_locked(chand->lb_policy, &args->closure);
 }
@@ -567,9 +567,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p: shutting down resolver", chand);
       }
-      grpc_resolver_shutdown_locked(chand->resolver);
-      GRPC_RESOLVER_UNREF(chand->resolver, "channel");
-      chand->resolver = nullptr;
+      chand->resolver.reset();
     }
     set_channel_connectivity_state_locked(
         chand, GRPC_CHANNEL_SHUTDOWN,
@@ -605,8 +603,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       set_channel_connectivity_state_locked(
           chand, state, GRPC_ERROR_REF(state_error), "new_lb+resolver");
     }
-    grpc_resolver_next_locked(chand->resolver, &chand->resolver_result,
-                              &chand->on_resolver_result_changed);
+    chand->resolver->NextLocked(&chand->resolver_result,
+                                &chand->on_resolver_result_changed);
     GRPC_ERROR_UNREF(state_error);
   }
 }
@@ -647,9 +645,7 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
       set_channel_connectivity_state_locked(
           chand, GRPC_CHANNEL_SHUTDOWN,
           GRPC_ERROR_REF(op->disconnect_with_error), "disconnect");
-      grpc_resolver_shutdown_locked(chand->resolver);
-      GRPC_RESOLVER_UNREF(chand->resolver, "channel");
-      chand->resolver = nullptr;
+      chand->resolver.reset();
       if (!chand->started_resolving) {
         grpc_closure_list_fail_all(&chand->waiting_for_resolver_result_closures,
                                    GRPC_ERROR_REF(op->disconnect_with_error));
@@ -758,7 +754,7 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   grpc_proxy_mappers_map_name(arg->value.string, args->channel_args,
                               &proxy_name, &new_args);
   // Instantiate resolver.
-  chand->resolver = grpc_resolver_create(
+  chand->resolver = grpc_core::ResolverRegistry::CreateResolver(
       proxy_name != nullptr ? proxy_name : arg->value.string,
       new_args != nullptr ? new_args : args->channel_args,
       chand->interested_parties, chand->combiner);
@@ -773,9 +769,8 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
 }
 
 static void shutdown_resolver_locked(void* arg, grpc_error* error) {
-  grpc_resolver* resolver = (grpc_resolver*)arg;
-  grpc_resolver_shutdown_locked(resolver);
-  GRPC_RESOLVER_UNREF(resolver, "channel");
+  grpc_core::Resolver* resolver = static_cast<grpc_core::Resolver*>(arg);
+  resolver->Orphan();
 }
 
 /* Destructor for channel_data */
@@ -783,7 +778,7 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = (channel_data*)elem->channel_data;
   if (chand->resolver != nullptr) {
     GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(shutdown_resolver_locked, chand->resolver,
+        GRPC_CLOSURE_CREATE(shutdown_resolver_locked, chand->resolver.release(),
                             grpc_combiner_scheduler(chand->combiner)),
         GRPC_ERROR_NONE);
   }

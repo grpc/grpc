@@ -39,9 +39,9 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/tls.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/block_annotate.h"

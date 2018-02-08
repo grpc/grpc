@@ -43,6 +43,7 @@
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/surface/channel.h"
@@ -558,8 +559,8 @@ static void setup_client(const server_fixture* lb_server,
   const char* backends_name = lb_server->servers_hostport;
   gpr_asprintf(&expected_target_names, "%s;%s", backends_name, BALANCERS_NAME);
 
-  grpc_fake_resolver_response_generator* response_generator =
-      grpc_fake_resolver_response_generator_create();
+  auto response_generator =
+      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
 
   grpc_lb_addresses* addresses = grpc_lb_addresses_create(1, nullptr);
   char* lb_uri_str;
@@ -578,25 +579,22 @@ static void setup_client(const server_fixture* lb_server,
       grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
   grpc_lb_addresses_destroy(addresses);
 
-  const grpc_arg new_args[] = {
+  grpc_arg new_args[] = {
       grpc_fake_transport_expected_targets_arg(expected_target_names),
-      grpc_fake_resolver_response_generator_arg(response_generator)};
+      grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
+          response_generator.get())};
 
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, new_args, GPR_ARRAY_SIZE(new_args));
-  gpr_free(expected_target_names);
+  grpc_channel_args args = {GPR_ARRAY_SIZE(new_args), new_args};
 
   cf->cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel_credentials* fake_creds =
       grpc_fake_transport_security_credentials_create();
   cf->client =
-      grpc_secure_channel_create(fake_creds, cf->server_uri, args, nullptr);
-  grpc_fake_resolver_response_generator_set_response(response_generator,
-                                                     fake_result);
+      grpc_secure_channel_create(fake_creds, cf->server_uri, &args, nullptr);
+  response_generator->SetResponse(fake_result);
   grpc_channel_args_destroy(fake_result);
   grpc_channel_credentials_unref(fake_creds);
-  grpc_channel_args_destroy(args);
-  grpc_fake_resolver_response_generator_unref(response_generator);
+  gpr_free(expected_target_names);
 }
 
 static void teardown_client(client_fixture* cf) {
