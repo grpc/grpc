@@ -15,9 +15,9 @@
 
 set -ex
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
-cp -r $EXTERNAL_GIT_ROOT/input_artifacts/grpc-*.tgz .
+cp -r "$EXTERNAL_GIT_ROOT"/input_artifacts/grpc-*.tgz .
 
 find . -regextype sed -regex ".*/grpc-[0-9].*.tgz" | cut -b3- | \
     xargs pecl install
