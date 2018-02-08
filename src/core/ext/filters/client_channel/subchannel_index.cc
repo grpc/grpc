@@ -24,9 +24,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/tls.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/tls.h"
 
 // a map of subchannel_key --> subchannel, used for detecting connections
 // to the same destination in order to share them

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_TLS_PTHREAD_H
-#define GRPC_SUPPORT_TLS_PTHREAD_H
+#ifndef GRPC_CORE_LIB_GPR_TLS_PTHREAD_H
+#define GRPC_CORE_LIB_GPR_TLS_PTHREAD_H
 
 #include <grpc/support/log.h> /* for GPR_ASSERT */
 #include <pthread.h>
@@ -51,4 +51,4 @@ intptr_t gpr_tls_set(struct gpr_pthread_thread_local* tls, intptr_t value);
 }
 #endif
 
-#endif /* GRPC_SUPPORT_TLS_PTHREAD_H */
+#endif /* GRPC_CORE_LIB_GPR_TLS_PTHREAD_H */

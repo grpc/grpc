@@ -69,10 +69,6 @@
     <file baseinstalldir="/" name="include/grpc/support/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/thd.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/tls.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/tls_gcc.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/tls_msvc.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/tls_pthread.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/useful.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
@@ -98,6 +94,10 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/string_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/thd_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/tls.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/tls_gcc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/tls_msvc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/tls_pthread.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/abstract.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
