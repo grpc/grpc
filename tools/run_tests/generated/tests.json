@@ -105337,6 +105337,29 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/api_fuzzer_corpus/poc-2d730ebd78b3052e4367ad0d485208dcb205482cbcd6289f17907989b8de1fba"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/api_fuzzer_corpus/poc-c726ee220e980ed6ad17809fd9efe2844ee61555ac08e4f88afd8901cc2dd53a"
     ], 
     "ci_platforms": [
