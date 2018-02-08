@@ -51,7 +51,7 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
   /// Requests a callback when a new result becomes available.
   /// When the new result is available, sets \a *result to the new result
   /// and schedules \a on_complete for execution.
-  /// If resolution is fatally broken, sets \a *result to NULL and
+  /// If resolution is fatally broken, sets \a *result to nullptr and
   /// schedules \a on_complete with an error.
   ///
   /// Note that the client channel will almost always have a request
