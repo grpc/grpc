@@ -588,3 +588,10 @@ cdef extern from "grpc/compression.h":
   int grpc_compression_options_is_algorithm_enabled(
       const grpc_compression_options *opts,
       grpc_compression_algorithm algorithm) nogil
+
+cdef extern from "grpc/grpc_posix.h":
+
+  grpc_channel *grpc_insecure_channel_create_from_fd(
+      const char *target, int fd, const grpc_channel_args *args) nogil
+  void grpc_server_add_insecure_channel_from_fd(
+      grpc_server *server, void *reserved, int fd) nogil

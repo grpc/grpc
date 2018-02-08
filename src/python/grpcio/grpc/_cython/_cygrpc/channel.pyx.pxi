@@ -15,29 +15,9 @@
 cimport cpython
 
 
-cdef class Channel:
-
-  def __cinit__(self, bytes target, object arguments,
-                ChannelCredentials channel_credentials=None):
-    grpc_init()
-    self._vtable.copy = &_copy_pointer
-    self._vtable.destroy = &_destroy_pointer
-    self._vtable.cmp = &_compare_pointer
-    cdef _ArgumentsProcessor arguments_processor = _ArgumentsProcessor(
-        arguments)
-    cdef grpc_channel_args *c_arguments = arguments_processor.c(&self._vtable)
-    self.references = []
-    c_target = target
-    if channel_credentials is None:
-      self.c_channel = grpc_insecure_channel_create(c_target, c_arguments, NULL)
-    else:
-      c_channel_credentials = channel_credentials.c()
-      self.c_channel = grpc_secure_channel_create(
-          c_channel_credentials, c_target, c_arguments, NULL)
-      grpc_channel_credentials_release(c_channel_credentials)
-    arguments_processor.un_c()
-    self.references.append(target)
-    self.references.append(arguments)
+# There's no way not to call the __cinit__ for a parent class. Therefore, the
+# __cinit__ function must be in a separate class.
+cdef class ChannelBase:
 
   def create_call(self, Call parent, int flags,
                   CompletionQueue queue not None,
@@ -93,3 +73,57 @@ cdef class Channel:
     if self.c_channel != NULL:
       grpc_channel_destroy(self.c_channel)
     grpc_shutdown()
+
+
+cdef class Channel(ChannelBase):
+
+  def __cinit__(self, bytes target, object arguments,
+                ChannelCredentials channel_credentials=None):
+    grpc_init()
+    self._vtable.copy = &_copy_pointer
+    self._vtable.destroy = &_destroy_pointer
+    self._vtable.cmp = &_compare_pointer
+    cdef _ArgumentsProcessor arguments_processor = _ArgumentsProcessor(
+        arguments)
+    cdef grpc_channel_args *c_arguments = arguments_processor.c(&self._vtable)
+    self.references = []
+    c_target = target
+    if channel_credentials is None:
+      self.c_channel = grpc_insecure_channel_create(c_target, c_arguments, NULL)
+    else:
+      c_channel_credentials = channel_credentials.c()
+      self.c_channel = grpc_secure_channel_create(
+          c_channel_credentials, c_target, c_arguments, NULL)
+      grpc_channel_credentials_release(c_channel_credentials)
+    arguments_processor.un_c()
+    self.references.append(target)
+    self.references.append(arguments)
+
+
+cdef class FDChannel(ChannelBase):
+
+  def __cinit__(self, bytes target, int fd, object arguments,
+                ChannelCredentials unused_credentials = None):
+    grpc_init()
+    self._vtable.copy = &_copy_pointer
+    self._vtable.destroy = &_destroy_pointer
+    self._vtable.cmp = &_compare_pointer
+    cdef _ArgumentsProcessor arguments_processor = _ArgumentsProcessor(
+        arguments)
+    cdef grpc_channel_args *c_arguments = arguments_processor.c(&self._vtable)
+    self.references = []
+    c_target = target
+    self.c_channel = grpc_insecure_channel_create_from_fd(c_target, fd,
+                                                          c_arguments)
+    arguments_processor.un_c()
+    self.references.append(target)
+    self.references.append(arguments)
+
+  def check_connectivity_state(self, bint try_to_connect):
+    # FD channels are always "connected".
+    return GRPC_CHANNEL_READY
+
+  def watch_connectivity_state(
+      self, grpc_connectivity_state last_observed_state,
+      object deadline, CompletionQueue queue not None, tag):
+    pass

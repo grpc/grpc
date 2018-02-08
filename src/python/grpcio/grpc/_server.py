@@ -677,6 +677,11 @@ def _add_secure_port(state, address, server_credentials):
                                            server_credentials._credentials)
 
 
+def _add_fd(state, fd):
+    with state.lock:
+        state.server.add_fd(fd)
+
+
 def _request_call(state):
     state.server.request_call(state.completion_queue, state.completion_queue,
                               _REQUEST_CALL_TAG)
@@ -812,6 +817,9 @@ class Server(grpc.Server):
     def add_secure_port(self, address, server_credentials):
         return _add_secure_port(self._state, _common.encode(address),
                                 server_credentials)
+
+    def add_fd(self, fd):
+        _add_fd(self._state, fd)
 
     def start(self):
         _start(self._state)

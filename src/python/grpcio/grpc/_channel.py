@@ -890,26 +890,13 @@ def _options(options):
     ]
 
 
-class Channel(grpc.Channel):
-    """A cygrpc.Channel-backed implementation of grpc.Channel."""
+class _ChannelBase(grpc.Channel):
+    """Common code used by both Channel and FDChannel."""
 
-    def __init__(self, target, options, credentials):
-        """Constructor.
-
-        Args:
-          target: The target to which to connect.
-          options: Configuration options for the channel.
-          credentials: A cygrpc.ChannelCredentials or None.
-        """
-        self._channel = cygrpc.Channel(
-            _common.encode(target), _options(options), credentials)
+    def __init__(self, *args):
+        self._channel = self._create_channel(*args)
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
-
-        # TODO(https://github.com/grpc/grpc/issues/9884)
-        # Temporary work around UNAVAILABLE issues
-        # Remove this once c-core has retry support
-        _subscribe(self._connectivity_state, lambda *args: None, None)
 
     def subscribe(self, callback, try_to_connect=None):
         _subscribe(self._connectivity_state, callback, try_to_connect)
@@ -951,3 +938,57 @@ class Channel(grpc.Channel):
 
     def __del__(self):
         _moot(self._connectivity_state)
+
+
+class Channel(_ChannelBase):
+    """A cygrpc.Channel-backed implementation of grpc.Channel."""
+
+    def __init__(self, target, options, credentials):
+        """Constructor.
+
+        Args:
+          target: The target to which to connect.
+          options: Configuration options for the channel.
+          credentials: A cygrpc.ChannelCredentials or None.
+        """
+        super(Channel, self).__init__(target, options, credentials)
+
+        # TODO(https://github.com/grpc/grpc/issues/9884)
+        # Temporary work around UNAVAILABLE issues
+        # Remove this once c-core has retry support
+        _subscribe(self._connectivity_state, lambda *args: None, None)
+
+    def _create_channel(self, target, options, credentials):
+        """Creates the Cython Channel object.
+
+        Args:
+          target: The target to which to connect.
+          options: Configuration options for the channel.
+          credentials: A cygrpc.ChannelCredentials or None.
+        """
+        return cygrpc.Channel(
+            _common.encode(target), _options(options), credentials)
+
+
+class FDChannel(_ChannelBase):
+    """A cygrpc.FDChannel-backed implementation of grpc.Channel."""
+
+    def __init__(self, target, fd, options):
+        """Constructor.
+
+        Args:
+          target: The target to which to connect.
+          fd: The file descriptor of the socket to use.
+          options: Configuration options for the channel.
+        """
+        super(FDChannel, self).__init__(target, fd, options)
+
+    def _create_channel(self, target, fd, options):
+        """Creates the Cython FDChannel object.
+
+        Args:
+          target: The target to which to connect.
+          fd: The file descriptor of the socket to use.
+          options: Configuration options for the channel.
+        """
+        return cygrpc.FDChannel(_common.encode(target), fd, _options(options))

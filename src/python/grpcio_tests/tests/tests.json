@@ -26,6 +26,7 @@
   "unit._auth_test.GoogleCallCredentialsTest",
   "unit._channel_args_test.ChannelArgsTest",
   "unit._channel_connectivity_test.ChannelConnectivityTest",
+  "unit._channel_fd_test.ChannelFDTest",
   "unit._channel_ready_future_test.ChannelReadyFutureTest",
   "unit._compression_test.CompressionTest",
   "unit._credentials_test.CredentialsTest",

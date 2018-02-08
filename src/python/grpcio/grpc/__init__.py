@@ -1222,6 +1222,17 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def add_fd(self, fd):
+        """Opens an insecure channel for accepting RPCs over a file descriptor.
+
+        This method may only be called before starting the server.
+
+        Args:
+          fd: The socket file descriptor to use to talk to clients.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def start(self):
         """Starts this Server.
 
@@ -1582,6 +1593,22 @@ def secure_channel(target, credentials, options=None):
     from grpc import _channel  # pylint: disable=cyclic-import
     return _channel.Channel(target, () if options is None else options,
                             credentials._credentials)
+
+
+def insecure_fd_channel(target, fd, options=None):
+    """Creates an insecure Channel over a file descriptor.
+
+    Args:
+      target: The server address
+      fd: The socket file descriptor to use to talk to the server.
+      options: An optional list of key-value pairs (channel args
+        in gRPC Core runtime) to configure the channel.
+
+    Returns:
+      An FDChannel object.
+    """
+    from grpc import _channel  # pylint: disable=cyclic-import
+    return _channel.FDChannel(target, fd, () if options is None else options)
 
 
 def intercept_channel(channel, *interceptors):

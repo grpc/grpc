@@ -128,6 +128,10 @@ cdef class Server:
                                                      address_c_string)
     return result
 
+  def add_fd(self, int fd):
+    with nogil:
+      grpc_server_add_insecure_channel_from_fd(self.c_server, NULL, fd)
+
   cdef _c_shutdown(self, CompletionQueue queue, tag):
     self.is_shutting_down = True
     cdef _ServerShutdownTag server_shutdown_tag = _ServerShutdownTag(tag, self)
