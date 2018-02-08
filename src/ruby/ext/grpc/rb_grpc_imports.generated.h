@@ -33,12 +33,10 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
@@ -574,33 +572,6 @@ extern gpr_set_allocation_functions_type gpr_set_allocation_functions_import;
 typedef gpr_allocation_functions(*gpr_get_allocation_functions_type)(void);
 extern gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
 #define gpr_get_allocation_functions gpr_get_allocation_functions_import
-typedef gpr_cmdline*(*gpr_cmdline_create_type)(const char* description);
-extern gpr_cmdline_create_type gpr_cmdline_create_import;
-#define gpr_cmdline_create gpr_cmdline_create_import
-typedef void(*gpr_cmdline_add_int_type)(gpr_cmdline* cl, const char* name, const char* help, int* value);
-extern gpr_cmdline_add_int_type gpr_cmdline_add_int_import;
-#define gpr_cmdline_add_int gpr_cmdline_add_int_import
-typedef void(*gpr_cmdline_add_flag_type)(gpr_cmdline* cl, const char* name, const char* help, int* value);
-extern gpr_cmdline_add_flag_type gpr_cmdline_add_flag_import;
-#define gpr_cmdline_add_flag gpr_cmdline_add_flag_import
-typedef void(*gpr_cmdline_add_string_type)(gpr_cmdline* cl, const char* name, const char* help, const char** value);
-extern gpr_cmdline_add_string_type gpr_cmdline_add_string_import;
-#define gpr_cmdline_add_string gpr_cmdline_add_string_import
-typedef void(*gpr_cmdline_on_extra_arg_type)(gpr_cmdline* cl, const char* name, const char* help, void (*on_extra_arg)(void* user_data, const char* arg), void* user_data);
-extern gpr_cmdline_on_extra_arg_type gpr_cmdline_on_extra_arg_import;
-#define gpr_cmdline_on_extra_arg gpr_cmdline_on_extra_arg_import
-typedef void(*gpr_cmdline_set_survive_failure_type)(gpr_cmdline* cl);
-extern gpr_cmdline_set_survive_failure_type gpr_cmdline_set_survive_failure_import;
-#define gpr_cmdline_set_survive_failure gpr_cmdline_set_survive_failure_import
-typedef int(*gpr_cmdline_parse_type)(gpr_cmdline* cl, int argc, char** argv);
-extern gpr_cmdline_parse_type gpr_cmdline_parse_import;
-#define gpr_cmdline_parse gpr_cmdline_parse_import
-typedef void(*gpr_cmdline_destroy_type)(gpr_cmdline* cl);
-extern gpr_cmdline_destroy_type gpr_cmdline_destroy_import;
-#define gpr_cmdline_destroy gpr_cmdline_destroy_import
-typedef char*(*gpr_cmdline_usage_string_type)(gpr_cmdline* cl, const char* argv0);
-extern gpr_cmdline_usage_string_type gpr_cmdline_usage_string_import;
-#define gpr_cmdline_usage_string gpr_cmdline_usage_string_import
 typedef unsigned(*gpr_cpu_num_cores_type)(void);
 extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 #define gpr_cpu_num_cores gpr_cpu_num_cores_import
@@ -634,21 +605,6 @@ extern gpr_strdup_type gpr_strdup_import;
 typedef int(*gpr_asprintf_type)(char** strp, const char* format, ...) GPR_PRINT_FORMAT_CHECK(2, 3);
 extern gpr_asprintf_type gpr_asprintf_import;
 #define gpr_asprintf gpr_asprintf_import
-typedef const char*(*gpr_subprocess_binary_extension_type)();
-extern gpr_subprocess_binary_extension_type gpr_subprocess_binary_extension_import;
-#define gpr_subprocess_binary_extension gpr_subprocess_binary_extension_import
-typedef gpr_subprocess*(*gpr_subprocess_create_type)(int argc, const char** argv);
-extern gpr_subprocess_create_type gpr_subprocess_create_import;
-#define gpr_subprocess_create gpr_subprocess_create_import
-typedef void(*gpr_subprocess_destroy_type)(gpr_subprocess* p);
-extern gpr_subprocess_destroy_type gpr_subprocess_destroy_import;
-#define gpr_subprocess_destroy gpr_subprocess_destroy_import
-typedef int(*gpr_subprocess_join_type)(gpr_subprocess* p);
-extern gpr_subprocess_join_type gpr_subprocess_join_import;
-#define gpr_subprocess_join gpr_subprocess_join_import
-typedef void(*gpr_subprocess_interrupt_type)(gpr_subprocess* p);
-extern gpr_subprocess_interrupt_type gpr_subprocess_interrupt_import;
-#define gpr_subprocess_interrupt gpr_subprocess_interrupt_import
 typedef void(*gpr_mu_init_type)(gpr_mu* mu);
 extern gpr_mu_init_type gpr_mu_init_import;
 #define gpr_mu_init gpr_mu_init_import

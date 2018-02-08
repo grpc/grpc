@@ -267,6 +267,22 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "cmdline_test", 
+    "src": [
+      "test/core/util/cmdline_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -611,21 +627,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "gpr_cmdline_test", 
-    "src": [
-      "test/core/gpr/cmdline_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "gpr_cpu_test", 
     "src": [
       "test/core/gpr/cpu_test.cc"
@@ -951,6 +952,7 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
       "grpc"
     ], 
@@ -1051,6 +1053,7 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
       "grpc"
     ], 
@@ -1100,6 +1103,7 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
       "grpc"
     ], 
@@ -1394,7 +1398,9 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -8165,6 +8171,23 @@
     "deps": [
       "gpr_base_headers"
     ], 
+    "headers": [
+      "test/core/util/cmdline.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "cmdline", 
+    "src": [
+      "test/core/util/cmdline.cc", 
+      "test/core/util/cmdline.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr_base_headers"
+    ], 
     "headers": [], 
     "is_filegroup": true, 
     "language": "c", 
@@ -8173,7 +8196,6 @@
       "src/core/lib/gpr/alloc.cc", 
       "src/core/lib/gpr/arena.cc", 
       "src/core/lib/gpr/atm.cc", 
-      "src/core/lib/gpr/cmdline.cc", 
       "src/core/lib/gpr/cpu_iphone.cc", 
       "src/core/lib/gpr/cpu_linux.cc", 
       "src/core/lib/gpr/cpu_posix.cc", 
@@ -8194,8 +8216,6 @@
       "src/core/lib/gpr/string_posix.cc", 
       "src/core/lib/gpr/string_util_windows.cc", 
       "src/core/lib/gpr/string_windows.cc", 
-      "src/core/lib/gpr/subprocess_posix.cc", 
-      "src/core/lib/gpr/subprocess_windows.cc", 
       "src/core/lib/gpr/sync.cc", 
       "src/core/lib/gpr/sync_posix.cc", 
       "src/core/lib/gpr/sync_windows.cc", 
@@ -8227,13 +8247,11 @@
       "include/grpc/support/atm_gcc_atomic.h", 
       "include/grpc/support/atm_gcc_sync.h", 
       "include/grpc/support/atm_windows.h", 
-      "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
       "include/grpc/support/string_util.h", 
-      "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
       "include/grpc/support/sync_custom.h", 
       "include/grpc/support/sync_generic.h", 
@@ -8275,13 +8293,11 @@
       "include/grpc/support/atm_gcc_atomic.h", 
       "include/grpc/support/atm_gcc_sync.h", 
       "include/grpc/support/atm_windows.h", 
-      "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
       "include/grpc/support/string_util.h", 
-      "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
       "include/grpc/support/sync_custom.h", 
       "include/grpc/support/sync_generic.h", 
@@ -9332,6 +9348,7 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
       "gpr_test_util", 
       "grpc_base", 
@@ -9354,6 +9371,7 @@
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/subprocess.h", 
       "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.h"
     ], 
@@ -9392,6 +9410,9 @@
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.cc", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/subprocess.h", 
+      "test/core/util/subprocess_posix.cc", 
+      "test/core/util/subprocess_windows.cc", 
       "test/core/util/tracer_util.cc", 
       "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.cc", 

@@ -46,12 +46,10 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/sync_custom.h>
 #include <grpc/support/sync_generic.h>
@@ -237,15 +235,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_free_aligned);
   printf("%lx", (unsigned long) gpr_set_allocation_functions);
   printf("%lx", (unsigned long) gpr_get_allocation_functions);
-  printf("%lx", (unsigned long) gpr_cmdline_create);
-  printf("%lx", (unsigned long) gpr_cmdline_add_int);
-  printf("%lx", (unsigned long) gpr_cmdline_add_flag);
-  printf("%lx", (unsigned long) gpr_cmdline_add_string);
-  printf("%lx", (unsigned long) gpr_cmdline_on_extra_arg);
-  printf("%lx", (unsigned long) gpr_cmdline_set_survive_failure);
-  printf("%lx", (unsigned long) gpr_cmdline_parse);
-  printf("%lx", (unsigned long) gpr_cmdline_destroy);
-  printf("%lx", (unsigned long) gpr_cmdline_usage_string);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
   printf("%lx", (unsigned long) gpr_log_severity_string);
@@ -256,11 +245,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_set_log_function);
   printf("%lx", (unsigned long) gpr_strdup);
   printf("%lx", (unsigned long) gpr_asprintf);
-  printf("%lx", (unsigned long) gpr_subprocess_binary_extension);
-  printf("%lx", (unsigned long) gpr_subprocess_create);
-  printf("%lx", (unsigned long) gpr_subprocess_destroy);
-  printf("%lx", (unsigned long) gpr_subprocess_join);
-  printf("%lx", (unsigned long) gpr_subprocess_interrupt);
   printf("%lx", (unsigned long) gpr_mu_init);
   printf("%lx", (unsigned long) gpr_mu_destroy);
   printf("%lx", (unsigned long) gpr_mu_lock);

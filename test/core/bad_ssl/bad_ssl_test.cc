@@ -24,13 +24,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/subprocess.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
+#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
