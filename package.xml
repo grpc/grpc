@@ -59,7 +59,6 @@
     <file baseinstalldir="/" name="include/grpc/support/avl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cmdline.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cpu.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/host_port.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/port_platform.h" role="src" />
@@ -89,6 +88,7 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/fork.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/spinlock.h" role="src" />
@@ -177,7 +177,6 @@
     <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/compression_ruby.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/fork.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
@@ -231,8 +230,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/gts_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
@@ -359,7 +358,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/alarm_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_test_only.h" role="src" />
@@ -419,7 +417,6 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/compression_ruby.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_gzip.cc" role="src" />
@@ -512,7 +509,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/alarm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer_reader.cc" role="src" />
@@ -597,8 +593,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init_secure.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/gts_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
@@ -661,31 +657,35 @@
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/asn1_locl.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/rsaz_exp.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bytestring/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/conf/conf_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/conf/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/curve25519/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/des/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/digest/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/digest/md32_common.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/p256-x86_64-table.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/p256-x86_64.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/err/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/aes/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/bn/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/bn/rsaz_exp.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/cipher/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/delocate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/des/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/digest/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/digest/md32_common.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/ec/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64-table.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/modes/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/rand/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/rsa/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/obj/obj_dat.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs7/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pool/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/charmap.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/vpm_int.h" role="src" />
@@ -728,6 +728,7 @@
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/ex_data.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/hkdf.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/hmac.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/is_boringssl.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/lhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/lhash_macros.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/md4.h" role="src" />
@@ -752,11 +753,11 @@
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/rsa.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/safestack.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/sha.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/span.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/srtp.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/ssl.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/ssl3.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/stack.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/stack_macros.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/thread.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/tls1.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/type_check.h" role="src" />
@@ -765,9 +766,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/x509v3.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/internal.h" role="src" />
     <file baseinstalldir="/" name="src/boringssl/err_data.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/aes.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/key_wrap.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/mode_wrappers.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_bitstr.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_bool.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_d2i_fp.c" role="src" />
@@ -791,7 +789,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/f_enum.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/f_int.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/f_string.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/t_bitst.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_dec.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_enc.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_fre.c" role="src" />
@@ -799,8 +796,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_typ.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_utl.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/time_support.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/x_bignum.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/x_long.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/base64/base64.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/bio.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/bio_mem.c" role="src" />
@@ -812,44 +807,25 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/printf.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/socket.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/socket_helper.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/add.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/asm/x86_64-gcc.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/bn.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/bn_asn1.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/cmp.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/convert.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/ctx.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/div.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/exponentiation.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/gcd.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/generic.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/kronecker.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/montgomery.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/montgomery_inv.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/mul.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/prime.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/random.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/rsaz_exp.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/shift.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/sqrt.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn_extra/bn_asn1.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn_extra/convert.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/buf/buf.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bytestring/asn1_compat.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bytestring/ber.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bytestring/cbb.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bytestring/cbs.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/chacha/chacha.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/aead.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/cipher.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/derive_key.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/e_aes.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/e_chacha20poly1305.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/e_des.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/e_null.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/e_rc2.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/e_rc4.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/e_ssl3.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/e_tls.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/tls_cbc.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/cipher_extra.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/derive_key.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/e_aesctrhmac.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/e_aesgcmsiv.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/e_chacha20poly1305.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/e_null.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/e_rc2.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/e_rc4.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/e_ssl3.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/e_tls.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher_extra/tls_cbc.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cmac/cmac.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/conf/conf.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cpu-aarch64-linux.c" role="src" />
@@ -861,29 +837,16 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/curve25519/curve25519.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/curve25519/spake25519.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/curve25519/x25519-x86_64.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/des/des.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dh/check.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dh/dh.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dh/dh_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dh/params.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/digest/digest.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/digest/digests.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/digest_extra/digest_extra.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dsa/dsa.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dsa/dsa_asn1.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/ec.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/ec_asn1.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/ec_key.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/ec_montgomery.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/oct.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/p224-64.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/p256-64.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/p256-x86_64.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/simple.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/util-64.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/wnaf.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec_extra/ec_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ecdh/ecdh.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ecdsa/ecdsa.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/ecdsa/ecdsa_asn1.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/ecdsa_extra/ecdsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/engine/engine.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/err/err.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/digestsign.c" role="src" />
@@ -893,24 +856,20 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/p_dsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/p_ec.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/p_ec_asn1.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/p_ed25519.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/p_ed25519_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/p_rsa.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/p_rsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/pbkdf.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/print.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/scrypt.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/sign.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ex_data.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/bcm.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/fipsmodule/is_fips.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/hkdf/hkdf.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/hmac/hmac.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/lhash/lhash.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/md4/md4.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/md5/md5.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/mem.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/cbc.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/cfb.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/ctr.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/gcm.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/ofb.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/polyval.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/obj/obj.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/obj/obj_xref.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_all.c" role="src" />
@@ -921,30 +880,24 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_pkey.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_xaux.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs7/pkcs7.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs7/pkcs7_x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/p5_pbev2.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/p8_pkey.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/pkcs8.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/pkcs8_x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/poly1305.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/poly1305_arm.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/poly1305_vec.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pool/pool.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/deterministic.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/fuchsia.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/rand.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/urandom.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/windows.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand_extra/deterministic.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand_extra/forkunsafe.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand_extra/fuchsia.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand_extra/rand_extra.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand_extra/windows.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/rc4/rc4.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/refcount_c11.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/refcount_lock.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/blinding.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/padding.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/rsa.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/rsa_asn1.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/rsa_impl.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/sha/sha1-altivec.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/sha/sha1.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/sha/sha256.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/sha/sha512.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa_extra/rsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/stack/stack.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/thread.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/thread_none.c" role="src" />
@@ -959,7 +912,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/by_dir.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/by_file.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/i2d_pr.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/pkcs7.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/rsa_pss.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/t_crl.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/t_req.c" role="src" />
@@ -985,7 +937,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/x509name.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/x509rset.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/x509spki.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/x509type.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/x_algor.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/x_all.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/x_attrib.c" role="src" />
@@ -1033,41 +984,42 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/v3_skey.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/v3_sxnet.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/v3_utl.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/bio_ssl.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/custom_extensions.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_both.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_lib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_pkt.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_srtp.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_method.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_record.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_client.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_server.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_both.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_lib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_pkt.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_aead_ctx.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_asn1.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_buffer.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cert.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cipher.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_ecdh.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_file.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_lib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_privkey.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_privkey_cc.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_session.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_stat.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_transcript.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_x509.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_enc.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_lib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_both.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_client.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_enc.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_server.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_method.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/bio_ssl.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/custom_extensions.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_both.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_lib.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_pkt.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_srtp.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_method.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_record.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_client.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_server.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_both.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_lib.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_pkt.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_aead_ctx.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_asn1.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_buffer.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cert.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cipher.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_file.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_key_share.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_lib.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_privkey.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_session.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_stat.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_transcript.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_versions.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_x509.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_enc.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_lib.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_both.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_client.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_enc.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_server.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_method.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.cc" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />

@@ -3,5 +3,8 @@
 # repository as the source of truth for module ownership.
 /**/OWNERS @markdroth @nicolasnoble @a11r
 /bazel/** @nicolasnoble @dgquintas @a11r @vjpai
+/cmake/** @jtattermusch @nicolasnoble @matt-kwong
 /src/core/ext/filters/client_channel/** @markdroth @dgquintas @a11r
-/tools/run_tests/performance/** @ncteisen @matt-kwong @ctiller
+/test/cpp/end2end/** @vjpai @yang-g @y-zeng
+/tools/dockerfile/** @jtattermusch @matt-kwong @nicolasnoble
+/tools/run_tests/performance/** @ncteisen @matt-kwong @jtattermusch

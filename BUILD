@@ -56,7 +56,7 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "glamorous"
 
-core_version = "5.0.0-dev"
+core_version = "6.0.0-dev"
 
 version = "1.10.0-dev"
 
@@ -69,7 +69,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/avl.h",
     "include/grpc/support/cmdline.h",
     "include/grpc/support/cpu.h",
-    "include/grpc/support/host_port.h",
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
     "include/grpc/support/port_platform.h",
@@ -89,7 +88,6 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
-    "include/grpc/compression_ruby.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
@@ -114,6 +112,7 @@ GRPCXX_SRCS = [
     "src/cpp/client/create_channel_posix.cc",
     "src/cpp/client/credentials_cc.cc",
     "src/cpp/client/generic_stub.cc",
+    "src/cpp/common/alarm.cc",
     "src/cpp/common/channel_arguments.cc",
     "src/cpp/common/channel_filter.cc",
     "src/cpp/common/completion_queue_cc.cc",
@@ -498,6 +497,7 @@ grpc_cc_library(
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/fork.h",
+        "src/core/lib/gpr/host_port.h",
         "src/core/lib/gpr/mpscq.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
@@ -598,6 +598,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
     deps = [
         "debug_location",
+        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
     ],
@@ -609,6 +610,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
         "debug_location",
+        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
     ],
@@ -636,7 +638,6 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/compression/compression.cc",
         "src/core/lib/compression/compression_internal.cc",
-        "src/core/lib/compression/compression_ruby.cc",
         "src/core/lib/compression/message_compress.cc",
         "src/core/lib/compression/stream_compression.cc",
         "src/core/lib/compression/stream_compression_gzip.cc",
@@ -729,7 +730,6 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.cc",
         "src/core/lib/slice/slice_intern.cc",
         "src/core/lib/slice/slice_string_helpers.cc",
-        "src/core/lib/surface/alarm.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/byte_buffer.cc",
         "src/core/lib/surface/byte_buffer_reader.cc",
@@ -854,7 +854,6 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
-        "src/core/lib/surface/alarm_internal.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
@@ -1533,14 +1532,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi",
     srcs = [
+        "src/core/tsi/alts_transport_security.cc",
         "src/core/tsi/fake_transport_security.cc",
-        "src/core/tsi/gts_transport_security.cc",
         "src/core/tsi/ssl_transport_security.cc",
         "src/core/tsi/transport_security_grpc.cc",
     ],
     hdrs = [
+        "src/core/tsi/alts_transport_security.h",
         "src/core/tsi/fake_transport_security.h",
-        "src/core/tsi/gts_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
         "src/core/tsi/transport_security_grpc.h",

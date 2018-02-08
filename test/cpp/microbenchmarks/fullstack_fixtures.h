@@ -61,6 +61,15 @@ class FixtureConfiguration {
 
 class BaseFixture : public TrackCounters {};
 
+// Special tag to be used in Server shutdown. This tag is *NEVER* returned when
+// Cq->Next() API is called (This is because FinalizeResult() function in this
+// class always returns 'false'). This is intentional and makes writing shutdown
+// code easier.
+class ShutdownTag : public internal::CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) { return false; }
+};
+
 class FullstackFixture : public BaseFixture {
  public:
   FullstackFixture(Service* service, const FixtureConfiguration& config,
@@ -84,7 +93,11 @@ class FullstackFixture : public BaseFixture {
   }
 
   virtual ~FullstackFixture() {
-    server_->Shutdown(gpr_inf_past(GPR_CLOCK_MONOTONIC));
+    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
+    // returned to the user) see ShutdownTag definition for more details
+    ShutdownTag shutdown_tag;
+    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
+                                    &shutdown_tag);
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -208,7 +221,11 @@ class EndpointPairFixture : public BaseFixture {
   }
 
   virtual ~EndpointPairFixture() {
-    server_->Shutdown(gpr_inf_past(GPR_CLOCK_MONOTONIC));
+    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
+    // returned to the user) see ShutdownTag definition for more details
+    ShutdownTag shutdown_tag;
+    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
+                                    &shutdown_tag);
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -245,29 +262,51 @@ class SockPair : public EndpointPairFixture {
                             fixture_configuration) {}
 };
 
-class InProcessCHTTP2 : public EndpointPairFixture {
+/* Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)
+   is here only to be able to initialize both the base class and stats_ with the
+   same stats instance without accessing the stats_ fields before the object is
+   properly initialized. */
+class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service,
-                  const FixtureConfiguration& fixture_configuration =
-                      FixtureConfiguration())
-      : EndpointPairFixture(service, MakeEndpoints(), fixture_configuration) {}
+  InProcessCHTTP2WithExplicitStats(
+      Service* service, grpc_passthru_endpoint_stats* stats,
+      const FixtureConfiguration& fixture_configuration)
+      : EndpointPairFixture(service, MakeEndpoints(stats),
+                            fixture_configuration),
+        stats_(stats) {}
+
+  virtual ~InProcessCHTTP2WithExplicitStats() {
+    if (stats_ != nullptr) {
+      grpc_passthru_endpoint_stats_destroy(stats_);
+    }
+  }
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << static_cast<double>(gpr_atm_no_barrier_load(&stats_.num_writes)) /
+        << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /
                static_cast<double>(state.iterations());
   }
 
  private:
-  grpc_passthru_endpoint_stats stats_;
+  grpc_passthru_endpoint_stats* stats_;
 
-  grpc_endpoint_pair MakeEndpoints() {
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  &stats_);
+                                  stats);
     return p;
   }
+};
+
+class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
+ public:
+  InProcessCHTTP2(Service* service,
+                  const FixtureConfiguration& fixture_configuration =
+                      FixtureConfiguration())
+      : InProcessCHTTP2WithExplicitStats(service,
+                                         grpc_passthru_endpoint_stats_create(),
+                                         fixture_configuration) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -20,7 +20,6 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/census.h>
 #include <grpc/compression.h>
-#include <grpc/compression_ruby.h>
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -50,7 +49,6 @@
 #include <grpc/support/avl.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
@@ -75,8 +73,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_compression_options_enable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_disable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_is_algorithm_enabled);
-  printf("%lx", (unsigned long) grpc_compression_algorithm_parse_ruby);
-  printf("%lx", (unsigned long) grpc_compression_algorithm_name_ruby);
   printf("%lx", (unsigned long) grpc_metadata_array_init);
   printf("%lx", (unsigned long) grpc_metadata_array_destroy);
   printf("%lx", (unsigned long) grpc_call_details_init);
@@ -96,10 +92,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_completion_queue_destroy);
   printf("%lx", (unsigned long) grpc_completion_queue_thread_local_cache_init);
   printf("%lx", (unsigned long) grpc_completion_queue_thread_local_cache_flush);
-  printf("%lx", (unsigned long) grpc_alarm_create);
-  printf("%lx", (unsigned long) grpc_alarm_set);
-  printf("%lx", (unsigned long) grpc_alarm_cancel);
-  printf("%lx", (unsigned long) grpc_alarm_destroy);
   printf("%lx", (unsigned long) grpc_channel_check_connectivity_state);
   printf("%lx", (unsigned long) grpc_channel_num_external_connectivity_watchers);
   printf("%lx", (unsigned long) grpc_channel_watch_connectivity_state);
@@ -265,8 +257,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_cmdline_usage_string);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
-  printf("%lx", (unsigned long) gpr_join_host_port);
-  printf("%lx", (unsigned long) gpr_split_host_port);
   printf("%lx", (unsigned long) gpr_log_severity_string);
   printf("%lx", (unsigned long) gpr_log);
   printf("%lx", (unsigned long) gpr_log_message);

@@ -876,7 +876,6 @@ include/grpc++/support/time.h \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/compression.h \
-include/grpc/compression_ruby.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
@@ -914,7 +913,6 @@ include/grpc/support/atm_windows.h \
 include/grpc/support/avl.h \
 include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
-include/grpc/support/host_port.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
@@ -951,6 +949,7 @@ src/core/lib/debug/trace.h \
 src/core/lib/gpr/arena.h \
 src/core/lib/gpr/env.h \
 src/core/lib/gpr/fork.h \
+src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/mpscq.h \
 src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
@@ -1050,7 +1049,6 @@ src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice_hash_table.h \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.h \
-src/core/lib/surface/alarm_internal.h \
 src/core/lib/surface/api_trace.h \
 src/core/lib/surface/call.h \
 src/core/lib/surface/call_test_only.h \
@@ -1091,6 +1089,7 @@ src/cpp/client/insecure_credentials.cc \
 src/cpp/client/secure_credentials.cc \
 src/cpp/client/secure_credentials.h \
 src/cpp/codegen/codegen_init.cc \
+src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \
 src/cpp/common/channel_arguments.cc \
 src/cpp/common/channel_filter.cc \

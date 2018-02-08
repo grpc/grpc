@@ -24,4 +24,4 @@
 
 
 #define GRPC_OBJC_VERSION_STRING @"1.10.0-dev"
-#define GRPC_C_VERSION_STRING @"5.0.0-dev"
+#define GRPC_C_VERSION_STRING @"6.0.0-dev"

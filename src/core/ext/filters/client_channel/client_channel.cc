@@ -1095,6 +1095,7 @@ static void pick_callback_done_locked(void* arg, grpc_error* error) {
             chand, calld);
   }
   async_pick_done_locked(elem, GRPC_ERROR_REF(error));
+  GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback");
 }
 
 // Takes a ref to chand->lb_policy and calls grpc_lb_policy_pick_locked().
@@ -1134,6 +1135,7 @@ static bool pick_callback_start_locked(grpc_call_element* elem) {
   GRPC_CLOSURE_INIT(&calld->lb_pick_closure, pick_callback_done_locked, elem,
                     grpc_combiner_scheduler(chand->combiner));
   calld->pick.on_complete = &calld->lb_pick_closure;
+  GRPC_CALL_STACK_REF(calld->owning_call, "pick_callback");
   const bool pick_done =
       grpc_lb_policy_pick_locked(chand->lb_policy, &calld->pick);
   if (pick_done) {
@@ -1142,6 +1144,7 @@ static bool pick_callback_start_locked(grpc_call_element* elem) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed synchronously",
               chand, calld);
     }
+    GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback");
   } else {
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_callback_cancel");
     grpc_call_combiner_set_notify_on_cancel(
@@ -1333,12 +1336,12 @@ static void on_complete(void* arg, grpc_error* error) {
 
 static void cc_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+  GPR_TIMER_SCOPE("cc_start_transport_stream_op_batch", 0);
   call_data* calld = (call_data*)elem->call_data;
   channel_data* chand = (channel_data*)elem->channel_data;
   if (chand->deadline_checking_enabled) {
     grpc_deadline_state_client_start_transport_stream_op_batch(elem, batch);
   }
-  GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
   // If we've previously been cancelled, immediately fail any new batches.
   if (calld->error != GRPC_ERROR_NONE) {
     if (grpc_client_channel_trace.enabled()) {
@@ -1347,7 +1350,7 @@ static void cc_start_transport_stream_op_batch(
     }
     grpc_transport_stream_op_batch_finish_with_failure(
         batch, GRPC_ERROR_REF(calld->error), calld->call_combiner);
-    goto done;
+    return;
   }
   if (batch->cancel_stream) {
     // Stash a copy of cancel_error in our call data, so that we can use
@@ -1369,7 +1372,7 @@ static void cc_start_transport_stream_op_batch(
       waiting_for_pick_batches_add(calld, batch);
       waiting_for_pick_batches_fail(elem, GRPC_ERROR_REF(calld->error));
     }
-    goto done;
+    return;
   }
   // Intercept on_complete for recv_trailing_metadata so that we can
   // check retry throttle status.
@@ -1391,7 +1394,7 @@ static void cc_start_transport_stream_op_batch(
               calld, calld->subchannel_call);
     }
     grpc_subchannel_call_process_op(calld->subchannel_call, batch);
-    goto done;
+    return;
   }
   // We do not yet have a subchannel call.
   // Add the batch to the waiting-for-pick list.
@@ -1417,8 +1420,6 @@ static void cc_start_transport_stream_op_batch(
     GRPC_CALL_COMBINER_STOP(calld->call_combiner,
                             "batch does not include send_initial_metadata");
   }
-done:
-  GPR_TIMER_END("cc_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */

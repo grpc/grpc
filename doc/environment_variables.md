@@ -80,6 +80,7 @@ some configuration as environment variables that can be set.
   - closure - tracks closure creation, scheduling, and completion
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
+  - polling_api - traces the api calls to polling engine
   - queue_refcount
   - error_refcount
   - stream_refcount

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 5.0.0-dev
+PROJECT_NUMBER         = 6.0.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -801,7 +801,6 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
-include/grpc/compression_ruby.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
@@ -853,7 +852,6 @@ include/grpc/support/atm_windows.h \
 include/grpc/support/avl.h \
 include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
-include/grpc/support/host_port.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
@@ -1049,7 +1047,6 @@ src/core/lib/compression/algorithm_metadata.h \
 src/core/lib/compression/compression.cc \
 src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \
-src/core/lib/compression/compression_ruby.cc \
 src/core/lib/compression/message_compress.cc \
 src/core/lib/compression/message_compress.h \
 src/core/lib/compression/stream_compression.cc \
@@ -1082,6 +1079,7 @@ src/core/lib/gpr/env_windows.cc \
 src/core/lib/gpr/fork.cc \
 src/core/lib/gpr/fork.h \
 src/core/lib/gpr/host_port.cc \
+src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
@@ -1342,8 +1340,6 @@ src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/README.md \
-src/core/lib/surface/alarm.cc \
-src/core/lib/surface/alarm_internal.h \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
 src/core/lib/surface/byte_buffer.cc \
@@ -1407,10 +1403,10 @@ src/core/lib/transport/transport_impl.h \
 src/core/lib/transport/transport_op_string.cc \
 src/core/plugin_registry/grpc_plugin_registry.cc \
 src/core/tsi/README.md \
+src/core/tsi/alts_transport_security.cc \
+src/core/tsi/alts_transport_security.h \
 src/core/tsi/fake_transport_security.cc \
 src/core/tsi/fake_transport_security.h \
-src/core/tsi/gts_transport_security.cc \
-src/core/tsi/gts_transport_security.h \
 src/core/tsi/ssl_transport_security.cc \
 src/core/tsi/ssl_transport_security.h \
 src/core/tsi/ssl_types.h \

@@ -30,10 +30,10 @@ set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 project(${PACKAGE_NAME} C CXX)
 
-set(gRPC_INSTALL_BINDIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
-set(gRPC_INSTALL_LIBDIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
-set(gRPC_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation directory for headers")
-set(gRPC_INSTALL_CMAKEDIR "${CMAKE_INSTALL_PREFIX}/lib/cmake/${PACKAGE_NAME}" CACHE PATH "Installation directory for cmake config files")
+set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
+set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
+set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
+set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation directory for cmake config files")
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -209,7 +209,6 @@ add_custom_target(tools
 
 if (gRPC_BUILD_TESTS)
 add_custom_target(buildtests_c)
-add_dependencies(buildtests_c alarm_test)
 add_dependencies(buildtests_c algorithm_test)
 add_dependencies(buildtests_c alloc_test)
 add_dependencies(buildtests_c alpn_test)
@@ -227,6 +226,7 @@ add_dependencies(buildtests_c compression_test)
 add_dependencies(buildtests_c concurrent_connectivity_test)
 add_dependencies(buildtests_c connection_refused_test)
 add_dependencies(buildtests_c dns_resolver_connectivity_test)
+add_dependencies(buildtests_c dns_resolver_cooldown_test)
 add_dependencies(buildtests_c dns_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c dualstack_socket_test)
@@ -316,7 +316,6 @@ add_dependencies(buildtests_c json_rewrite_test)
 add_dependencies(buildtests_c json_stream_error_test)
 add_dependencies(buildtests_c json_test)
 add_dependencies(buildtests_c lame_client_test)
-add_dependencies(buildtests_c lb_policies_test)
 add_dependencies(buildtests_c load_file_test)
 add_dependencies(buildtests_c memory_profile_client)
 add_dependencies(buildtests_c memory_profile_server)
@@ -389,9 +388,11 @@ endif()
 add_dependencies(buildtests_c public_headers_must_be_c89)
 add_dependencies(buildtests_c badreq_bad_client_test)
 add_dependencies(buildtests_c connection_prefix_bad_client_test)
+add_dependencies(buildtests_c duplicate_header_bad_client_test)
 add_dependencies(buildtests_c head_of_line_blocking_bad_client_test)
 add_dependencies(buildtests_c headers_bad_client_test)
 add_dependencies(buildtests_c initial_settings_frame_bad_client_test)
+add_dependencies(buildtests_c large_metadata_bad_client_test)
 add_dependencies(buildtests_c server_registered_method_bad_client_test)
 add_dependencies(buildtests_c simple_request_bad_client_test)
 add_dependencies(buildtests_c unknown_frame_bad_client_test)
@@ -463,7 +464,7 @@ add_dependencies(buildtests_c ssl_server_fuzzer_one_entry)
 add_dependencies(buildtests_c uri_fuzzer_test_one_entry)
 
 add_custom_target(buildtests_cxx)
-add_dependencies(buildtests_cxx alarm_cpp_test)
+add_dependencies(buildtests_cxx alarm_test)
 add_dependencies(buildtests_cxx async_end2end_test)
 add_dependencies(buildtests_cxx auth_property_iterator_test)
 add_dependencies(buildtests_cxx backoff_test)
@@ -706,7 +707,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
@@ -799,7 +799,6 @@ add_library(grpc
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -892,7 +891,6 @@ add_library(grpc
   src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/alarm.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
@@ -977,8 +975,8 @@ add_library(grpc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
+  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
-  src/core/tsi/gts_transport_security.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/tsi/transport_security.cc
@@ -1101,7 +1099,6 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
-  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -1142,7 +1139,6 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -1235,7 +1231,6 @@ add_library(grpc_cronet
   src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/alarm.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
@@ -1345,8 +1340,8 @@ add_library(grpc_cronet
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
+  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
-  src/core/tsi/gts_transport_security.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/tsi/transport_security.cc
@@ -1467,7 +1462,6 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -1560,7 +1554,6 @@ add_library(grpc_test_util
   src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/alarm.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
@@ -1736,7 +1729,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -1829,7 +1821,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/alarm.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
@@ -1988,7 +1979,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -2081,7 +2071,6 @@ add_library(grpc_unsecure
   src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/alarm.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
@@ -2256,7 +2245,6 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
-  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2380,6 +2368,7 @@ add_library(grpc++
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
+  src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
@@ -2496,7 +2485,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
@@ -2526,7 +2514,6 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
-  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2640,15 +2627,6 @@ target_link_libraries(grpc++_core_stats
   grpc++
 )
 
-foreach(_hdr
-  src/cpp/util/core_stats.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
 
 endif (gRPC_BUILD_TESTS)
 
@@ -2664,6 +2642,7 @@ add_library(grpc++_cronet
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
+  src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
@@ -2726,7 +2705,6 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/compression_ruby.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/compression/stream_compression.cc
   src/core/lib/compression/stream_compression_gzip.cc
@@ -2819,7 +2797,6 @@ add_library(grpc++_cronet
   src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/alarm.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
@@ -2976,7 +2953,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
@@ -3006,7 +2982,6 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
-  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -3587,6 +3562,7 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
+  src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
@@ -3702,7 +3678,6 @@ foreach(_hdr
   include/grpc/support/avl.h
   include/grpc/support/cmdline.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
@@ -3732,7 +3707,6 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
-  include/grpc/compression_ruby.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -4731,33 +4705,6 @@ endif (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_TESTS)
 
-add_executable(alarm_test
-  test/core/surface/alarm_test.cc
-)
-
-
-target_include_directories(alarm_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-)
-
-target_link_libraries(alarm_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(algorithm_test
   test/core/compression/algorithm_test.cc
 )
@@ -5232,6 +5179,33 @@ target_include_directories(dns_resolver_connectivity_test
 )
 
 target_link_libraries(dns_resolver_connectivity_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(dns_resolver_cooldown_test
+  test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+)
+
+
+target_include_directories(dns_resolver_cooldown_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(dns_resolver_cooldown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -6985,33 +6959,6 @@ target_link_libraries(lame_client_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(lb_policies_test
-  test/core/client_channel/lb_policies_test.cc
-)
-
-
-target_include_directories(lb_policies_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-)
-
-target_link_libraries(lb_policies_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(load_file_test
   test/core/iomgr/load_file_test.cc
 )
@@ -8301,14 +8248,14 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(alarm_cpp_test
-  test/cpp/common/alarm_cpp_test.cc
+add_executable(alarm_test
+  test/cpp/common/alarm_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
-target_include_directories(alarm_cpp_test
+target_include_directories(alarm_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8324,7 +8271,7 @@ target_include_directories(alarm_cpp_test
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(alarm_cpp_test
+target_link_libraries(alarm_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util_unsecure
@@ -12352,6 +12299,35 @@ target_link_libraries(connection_prefix_bad_client_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(duplicate_header_bad_client_test
+  test/core/bad_client/tests/duplicate_header.cc
+)
+
+
+target_include_directories(duplicate_header_bad_client_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(duplicate_header_bad_client_test
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(head_of_line_blocking_bad_client_test
   test/core/bad_client/tests/head_of_line_blocking.cc
 )
@@ -12427,6 +12403,35 @@ target_include_directories(initial_settings_frame_bad_client_test
 )
 
 target_link_libraries(initial_settings_frame_bad_client_test
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(large_metadata_bad_client_test
+  test/core/bad_client/tests/large_metadata.cc
+)
+
+
+target_include_directories(large_metadata_bad_client_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(large_metadata_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test

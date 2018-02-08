@@ -247,7 +247,7 @@ inline void grpc_closure_run(const char* file, int line, grpc_closure* c,
 #else
 inline void grpc_closure_run(grpc_closure* c, grpc_error* error) {
 #endif
-  GPR_TIMER_BEGIN("grpc_closure_run", 0);
+  GPR_TIMER_SCOPE("grpc_closure_run", 0);
   if (c != nullptr) {
 #ifndef NDEBUG
     c->file_initiated = file;
@@ -259,7 +259,6 @@ inline void grpc_closure_run(grpc_closure* c, grpc_error* error) {
   } else {
     GRPC_ERROR_UNREF(error);
   }
-  GPR_TIMER_END("grpc_closure_run", 0);
 }
 
 /** Run a closure directly. Caller ensures that no locks are being held above.
@@ -278,7 +277,7 @@ inline void grpc_closure_sched(const char* file, int line, grpc_closure* c,
 #else
 inline void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
 #endif
-  GPR_TIMER_BEGIN("grpc_closure_sched", 0);
+  GPR_TIMER_SCOPE("grpc_closure_sched", 0);
   if (c != nullptr) {
 #ifndef NDEBUG
     if (c->scheduled) {
@@ -299,7 +298,6 @@ inline void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
   } else {
     GRPC_ERROR_UNREF(error);
   }
-  GPR_TIMER_END("grpc_closure_sched", 0);
 }
 
 /** Schedule a closure to be run. Does not need to be run from a safe point. */

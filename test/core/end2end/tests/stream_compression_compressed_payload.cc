@@ -390,9 +390,9 @@ static void request_with_payload_template(
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_NONE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_MESSAGE_DEFLATE) != 0);
+                        GRPC_COMPRESS_DEFLATE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_MESSAGE_GZIP) != 0);
+                        GRPC_COMPRESS_GZIP) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_STREAM_GZIP) != 0);
   GPR_ASSERT(GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(

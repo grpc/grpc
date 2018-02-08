@@ -25,7 +25,9 @@ then
   docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
 
   # run clang-format against the checked out codebase
-  docker run -e TEST=$TEST -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_FORMAT_ROOT="/local-code" --rm=true -v "${REPO_ROOT}":/local-code -t grpc_clang_format /clang_format_all_the_things.sh
+  # when modifying the checked-out files, the current user will be impersonated
+  # so that the updated files don't end up being owned by "root".
+  docker run -e TEST="$TEST" -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_FORMAT_ROOT="/local-code" --rm=true -v "${REPO_ROOT}":/local-code --user "$(id -u):$(id -g)" -t grpc_clang_format /clang_format_all_the_things.sh
 else
   CLANG_FORMAT_ROOT="${REPO_ROOT}" tools/dockerfile/grpc_clang_format/clang_format_all_the_things.sh
 fi

@@ -125,7 +125,8 @@ class GenericEnd2endTest : public ::testing::Test {
       }
 
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
-          generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
+          generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
+      call->StartCall(tag(1));
       client_ok(1);
       std::unique_ptr<ByteBuffer> send_buffer =
           SerializeToByteBuffer(&send_request);
@@ -268,10 +269,11 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   GenericServerContext srv_ctx;
   GenericServerAsyncReaderWriter srv_stream(&srv_ctx);
 
-  cli_ctx.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
+  cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
   send_request.set_message("Hello");
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
-      generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
+      generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
+  cli_stream->StartCall(tag(1));
   client_ok(1);
 
   generic_service_.RequestCall(&srv_ctx, &srv_stream, srv_cq_.get(),

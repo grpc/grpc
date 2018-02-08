@@ -28,7 +28,6 @@
 
 #include <ares.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -36,6 +35,7 @@
 
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -505,7 +505,7 @@ static void on_dns_lookup_done_cb(void* arg, grpc_error* error) {
     }
   }
   GRPC_CLOSURE_SCHED(r->on_resolve_address_done, GRPC_ERROR_REF(error));
-  grpc_lb_addresses_destroy(r->lb_addrs);
+  if (r->lb_addrs != nullptr) grpc_lb_addresses_destroy(r->lb_addrs);
   gpr_free(r);
 }
 

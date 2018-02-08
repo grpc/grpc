@@ -122,12 +122,12 @@ static const grpc_slice_refcount_vtable interned_slice_sub_vtable = {
     grpc_slice_default_eq_impl, grpc_slice_default_hash_impl};
 
 static void grow_shard(slice_shard* shard) {
+  GPR_TIMER_SCOPE("grow_strtab", 0);
+
   size_t capacity = shard->capacity * 2;
   size_t i;
   interned_slice_refcount** strtab;
   interned_slice_refcount *s, *next;
-
-  GPR_TIMER_BEGIN("grow_strtab", 0);
 
   strtab = (interned_slice_refcount**)gpr_zalloc(
       sizeof(interned_slice_refcount*) * capacity);
@@ -140,12 +140,9 @@ static void grow_shard(slice_shard* shard) {
       strtab[idx] = s;
     }
   }
-
   gpr_free(shard->strs);
   shard->strs = strtab;
   shard->capacity = capacity;
-
-  GPR_TIMER_END("grow_strtab", 0);
 }
 
 static grpc_slice materialize(interned_slice_refcount* s) {
@@ -200,9 +197,8 @@ bool grpc_slice_is_interned(grpc_slice slice) {
 }
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {
-  GPR_TIMER_BEGIN("grpc_slice_intern", 0);
+  GPR_TIMER_SCOPE("grpc_slice_intern", 0);
   if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
-    GPR_TIMER_END("grpc_slice_intern", 0);
     return slice;
   }
 
@@ -212,7 +208,6 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
         grpc_slice_eq(grpc_static_slice_table[ent.idx], slice)) {
-      GPR_TIMER_END("grpc_slice_intern", 0);
       return grpc_static_slice_table[ent.idx];
     }
   }
@@ -235,7 +230,6 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
         /* and treat this as if we were never here... sshhh */
       } else {
         gpr_mu_unlock(&shard->mu);
-        GPR_TIMER_END("grpc_slice_intern", 0);
         return materialize(s);
       }
     }
@@ -264,7 +258,6 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
 
   gpr_mu_unlock(&shard->mu);
 
-  GPR_TIMER_END("grpc_slice_intern", 0);
   return materialize(s);
 }
 

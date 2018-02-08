@@ -1024,7 +1024,7 @@ static void push_front_worker(grpc_pollset* p, grpc_pollset_worker* worker) {
 /* p->mu must be held before calling this function */
 static grpc_error* pollset_kick(grpc_pollset* p,
                                 grpc_pollset_worker* specific_worker) {
-  GPR_TIMER_BEGIN("pollset_kick", 0);
+  GPR_TIMER_SCOPE("pollset_kick", 0);
   grpc_error* error = GRPC_ERROR_NONE;
   GRPC_STATS_INC_POLLSET_KICK();
   const char* err_desc = "Kick Failure";
@@ -1032,14 +1032,13 @@ static grpc_error* pollset_kick(grpc_pollset* p,
   if (worker != nullptr) {
     if (worker == GRPC_POLLSET_KICK_BROADCAST) {
       if (pollset_has_workers(p)) {
-        GPR_TIMER_BEGIN("pollset_kick.broadcast", 0);
+        GPR_TIMER_SCOPE("pollset_kick.broadcast", 0);
         for (worker = p->root_worker.next; worker != &p->root_worker;
              worker = worker->next) {
           if (gpr_tls_get(&g_current_thread_worker) != (intptr_t)worker) {
             append_error(&error, pollset_worker_kick(worker), err_desc);
           }
         }
-        GPR_TIMER_END("pollset_kick.broadcast", 0);
       } else {
         p->kicked_without_pollers = true;
       }
@@ -1069,7 +1068,6 @@ static grpc_error* pollset_kick(grpc_pollset* p,
     }
   }
 
-  GPR_TIMER_END("pollset_kick", 0);
   GRPC_LOG_IF_ERROR("pollset_kick", GRPC_ERROR_REF(error));
   return error;
 }
@@ -1136,7 +1134,7 @@ static void finish_shutdown_locked(grpc_pollset* pollset) {
 
 /* pollset->po.mu lock must be held by the caller before calling this */
 static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
-  GPR_TIMER_BEGIN("pollset_shutdown", 0);
+  GPR_TIMER_SCOPE("pollset_shutdown", 0);
   GPR_ASSERT(!pollset->shutting_down);
   pollset->shutting_down = true;
   pollset->shutdown_done = closure;
@@ -1150,7 +1148,6 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
     GPR_TIMER_MARK("pollset_shutdown.finish_shutdown_locked", 0);
     finish_shutdown_locked(pollset);
   }
-  GPR_TIMER_END("pollset_shutdown", 0);
 }
 
 /* pollset_shutdown is guaranteed to be called before pollset_destroy. So other
@@ -1166,13 +1163,13 @@ static void pollset_destroy(grpc_pollset* pollset) {
 static void pollset_work_and_unlock(grpc_pollset* pollset,
                                     grpc_pollset_worker* worker, int timeout_ms,
                                     sigset_t* sig_mask, grpc_error** error) {
+  GPR_TIMER_SCOPE("pollset_work_and_unlock", 0);
   struct epoll_event ep_ev[GRPC_EPOLL_MAX_EVENTS];
   int epoll_fd = -1;
   int ep_rv;
   polling_island* pi = nullptr;
   char* err_msg;
   const char* err_desc = "pollset_work_and_unlock";
-  GPR_TIMER_BEGIN("pollset_work_and_unlock", 0);
 
   /* We need to get the epoll_fd to wait on. The epoll_fd is in inside the
      latest polling island pointed by pollset->po.pi
@@ -1187,7 +1184,6 @@ static void pollset_work_and_unlock(grpc_pollset* pollset,
   if (pollset->po.pi == nullptr) {
     pollset->po.pi = polling_island_create(nullptr, error);
     if (pollset->po.pi == nullptr) {
-      GPR_TIMER_END("pollset_work_and_unlock", 0);
       return; /* Fatal error. We cannot continue */
     }
 
@@ -1279,8 +1275,6 @@ static void pollset_work_and_unlock(grpc_pollset* pollset,
      pollset->po.pi pointer might get udpated in other parts of the
      code when there is an island merge while we are doing epoll_wait() above */
   PI_UNREF(pi, "ps_work");
-
-  GPR_TIMER_END("pollset_work_and_unlock", 0);
 }
 
 /* pollset->po.mu lock must be held by the caller before calling this.
@@ -1290,7 +1284,7 @@ static void pollset_work_and_unlock(grpc_pollset* pollset,
 static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker_hdl,
                                 grpc_millis deadline) {
-  GPR_TIMER_BEGIN("pollset_work", 0);
+  GPR_TIMER_SCOPE("pollset_work", 0);
   grpc_error* error = GRPC_ERROR_NONE;
   int timeout_ms = poll_deadline_to_millis_timeout(deadline);
 
@@ -1384,15 +1378,13 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   gpr_tls_set(&g_current_thread_pollset, (intptr_t)0);
   gpr_tls_set(&g_current_thread_worker, (intptr_t)0);
 
-  GPR_TIMER_END("pollset_work", 0);
-
   GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
   return error;
 }
 
 static void add_poll_object(poll_obj* bag, poll_obj_type bag_type,
                             poll_obj* item, poll_obj_type item_type) {
-  GPR_TIMER_BEGIN("add_poll_object", 0);
+  GPR_TIMER_SCOPE("add_poll_object", 0);
 
 #ifndef NDEBUG
   GPR_ASSERT(item->obj_type == item_type);
@@ -1535,7 +1527,6 @@ retry:
   gpr_mu_unlock(&bag->mu);
 
   GRPC_LOG_IF_ERROR("add_poll_object", error);
-  GPR_TIMER_END("add_poll_object", 0);
 }
 
 static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {

@@ -16,8 +16,8 @@
 source ~/.rvm/scripts/rvm
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 # The proxy worker for PHP is implemented in Ruby
-ruby src/ruby/qps/proxy-worker.rb $@
+ruby src/ruby/qps/proxy-worker.rb "$@"
 
