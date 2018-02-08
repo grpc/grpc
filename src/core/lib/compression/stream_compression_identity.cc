@@ -16,6 +16,8 @@
  *
  */
 
+#include <algorithm>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -31,42 +33,44 @@ static grpc_stream_compression_context identity_ctx = {
 
 static void grpc_stream_compression_pass_through(grpc_slice_buffer* in,
                                                  grpc_slice_buffer* out,
+                                                 size_t max_input_size,
                                                  size_t* output_size,
                                                  size_t max_output_size) {
-  if (max_output_size >= in->length) {
+  size_t min_max_output_size = std::min(max_input_size, max_output_size);
+  if (min_max_output_size >= in->length) {
     if (output_size) {
       *output_size = in->length;
     }
     grpc_slice_buffer_move_into(in, out);
   } else {
     if (output_size) {
-      *output_size = max_output_size;
+      *output_size = min_max_output_size;
     }
-    grpc_slice_buffer_move_first(in, max_output_size, out);
+    grpc_slice_buffer_move_first(in, min_max_output_size, out);
   }
 }
 
-static bool grpc_stream_compress_identity(grpc_stream_compression_context* ctx,
-                                          grpc_slice_buffer* in,
-                                          grpc_slice_buffer* out,
-                                          size_t* output_size,
-                                          size_t max_output_size,
-                                          grpc_stream_compression_flush flush) {
+static bool grpc_stream_compress_identity(
+    grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
+    grpc_slice_buffer* out, size_t max_input_size, size_t* output_size,
+    size_t max_output_size, grpc_stream_compression_flush flush) {
   if (ctx == nullptr) {
     return false;
   }
-  grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
+  grpc_stream_compression_pass_through(in, out, max_input_size, output_size,
+                                       max_output_size);
   return true;
 }
 
 static bool grpc_stream_decompress_identity(
     grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
-    grpc_slice_buffer* out, size_t* output_size, size_t max_output_size,
-    bool* end_of_context) {
+    grpc_slice_buffer* out, size_t max_input_size, size_t* output_size,
+    size_t max_output_size, bool* end_of_context) {
   if (ctx == nullptr) {
     return false;
   }
-  grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
+  grpc_stream_compression_pass_through(in, out, max_input_size, output_size,
+                                       max_output_size);
   if (end_of_context) {
     *end_of_context = false;
   }

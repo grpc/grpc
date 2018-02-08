@@ -16,6 +16,8 @@
  *
  */
 
+#include <algorithm>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -34,7 +36,8 @@ typedef struct grpc_stream_compression_context_gzip {
 
 static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
                        grpc_slice_buffer* in, grpc_slice_buffer* out,
-                       size_t* output_size, size_t max_output_size, int flush,
+                       size_t max_input_size, size_t* output_size,
+                       size_t max_output_size, int flush,
                        bool* end_of_context) {
   GPR_ASSERT(flush == 0 || flush == Z_SYNC_FLUSH || flush == Z_FINISH);
   /* Full flush is not allowed when inflating. */
@@ -44,17 +47,25 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
   int r;
   bool eoc = false;
   size_t original_max_output_size = max_output_size;
-  while (max_output_size > 0 && (in->length > 0 || flush) && !eoc) {
+  while (max_output_size > 0 &&
+         ((in->length > 0 && max_input_size > 0) || flush) && !eoc) {
     size_t slice_size = max_output_size < OUTPUT_BLOCK_SIZE ? max_output_size
                                                             : OUTPUT_BLOCK_SIZE;
     grpc_slice slice_out = GRPC_SLICE_MALLOC(slice_size);
     ctx->zs.avail_out = static_cast<uInt>(slice_size);
     ctx->zs.next_out = GRPC_SLICE_START_PTR(slice_out);
-    while (ctx->zs.avail_out > 0 && in->length > 0 && !eoc) {
+    while (ctx->zs.avail_out > 0 && in->length > 0 && max_input_size > 0 &&
+           !eoc) {
       grpc_slice slice = grpc_slice_buffer_take_first(in);
-      ctx->zs.avail_in = static_cast<uInt> GRPC_SLICE_LENGTH(slice);
+      ctx->zs.avail_in =
+          static_cast<uInt>std::min(GRPC_SLICE_LENGTH(slice), max_input_size);
       ctx->zs.next_in = GRPC_SLICE_START_PTR(slice);
+      size_t slice_usage_offset = ctx->zs.avail_in;
+
       r = ctx->flate(&ctx->zs, Z_NO_FLUSH);
+
+      slice_usage_offset -= ctx->zs.avail_in;
+      max_input_size -= slice_usage_offset;
       if (r < 0 && r != Z_BUF_ERROR) {
         gpr_log(GPR_ERROR, "zlib error (%d)", r);
         grpc_slice_unref_internal(slice_out);
@@ -63,16 +74,16 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
       } else if (r == Z_STREAM_END && ctx->flate == inflate) {
         eoc = true;
       }
-      if (ctx->zs.avail_in > 0) {
+      if (slice_usage_offset < GRPC_SLICE_LENGTH(slice)) {
         grpc_slice_buffer_undo_take_first(
-            in,
-            grpc_slice_sub(slice, GRPC_SLICE_LENGTH(slice) - ctx->zs.avail_in,
-                           GRPC_SLICE_LENGTH(slice)));
+            in, grpc_slice_sub(slice, slice_usage_offset,
+                               GRPC_SLICE_LENGTH(slice)));
       }
       grpc_slice_unref_internal(slice);
     }
     if (flush != 0 && ctx->zs.avail_out > 0 && !eoc) {
-      GPR_ASSERT(in->length == 0);
+      GPR_ASSERT(in->length == 0 || max_input_size == 0);
+      GPR_ASSERT(ctx->zs.avail_in == 0);
       r = ctx->flate(&ctx->zs, flush);
       if (flush == Z_SYNC_FLUSH) {
         switch (r) {
@@ -132,12 +143,10 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
   return true;
 }
 
-static bool grpc_stream_compress_gzip(grpc_stream_compression_context* ctx,
-                                      grpc_slice_buffer* in,
-                                      grpc_slice_buffer* out,
-                                      size_t* output_size,
-                                      size_t max_output_size,
-                                      grpc_stream_compression_flush flush) {
+static bool grpc_stream_compress_gzip(
+    grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
+    grpc_slice_buffer* out, size_t max_input_size, size_t* output_size,
+    size_t max_output_size, grpc_stream_compression_flush flush) {
   if (ctx == nullptr) {
     return false;
   }
@@ -158,24 +167,22 @@ static bool grpc_stream_compress_gzip(grpc_stream_compression_context* ctx,
     default:
       gzip_flush = 0;
   }
-  return gzip_flate(gzip_ctx, in, out, output_size, max_output_size, gzip_flush,
-                    nullptr);
+  return gzip_flate(gzip_ctx, in, out, max_input_size, output_size,
+                    max_output_size, gzip_flush, nullptr);
 }
 
-static bool grpc_stream_decompress_gzip(grpc_stream_compression_context* ctx,
-                                        grpc_slice_buffer* in,
-                                        grpc_slice_buffer* out,
-                                        size_t* output_size,
-                                        size_t max_output_size,
-                                        bool* end_of_context) {
+static bool grpc_stream_decompress_gzip(
+    grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
+    grpc_slice_buffer* out, size_t max_input_size, size_t* output_size,
+    size_t max_output_size, bool* end_of_context) {
   if (ctx == nullptr) {
     return false;
   }
   grpc_stream_compression_context_gzip* gzip_ctx =
       reinterpret_cast<grpc_stream_compression_context_gzip*>(ctx);
   GPR_ASSERT(gzip_ctx->flate == inflate);
-  return gzip_flate(gzip_ctx, in, out, output_size, max_output_size,
-                    Z_SYNC_FLUSH, end_of_context);
+  return gzip_flate(gzip_ctx, in, out, max_input_size, output_size,
+                    max_output_size, Z_SYNC_FLUSH, end_of_context);
 }
 
 static grpc_stream_compression_context*

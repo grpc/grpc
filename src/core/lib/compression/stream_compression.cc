@@ -26,18 +26,19 @@ extern const grpc_stream_compression_vtable
 
 bool grpc_stream_compress(grpc_stream_compression_context* ctx,
                           grpc_slice_buffer* in, grpc_slice_buffer* out,
-                          size_t* output_size, size_t max_output_size,
+                          size_t max_input_size, size_t* output_size,
+                          size_t max_output_size,
                           grpc_stream_compression_flush flush) {
-  return ctx->vtable->compress(ctx, in, out, output_size, max_output_size,
-                               flush);
+  return ctx->vtable->compress(ctx, in, out, max_input_size, output_size,
+                               max_output_size, flush);
 }
 
 bool grpc_stream_decompress(grpc_stream_compression_context* ctx,
                             grpc_slice_buffer* in, grpc_slice_buffer* out,
-                            size_t* output_size, size_t max_output_size,
-                            bool* end_of_context) {
-  return ctx->vtable->decompress(ctx, in, out, output_size, max_output_size,
-                                 end_of_context);
+                            size_t max_input_size, size_t* output_size,
+                            size_t max_output_size, bool* end_of_context) {
+  return ctx->vtable->decompress(ctx, in, out, max_input_size, output_size,
+                                 max_output_size, end_of_context);
 }
 
 grpc_stream_compression_context* grpc_stream_compression_context_create(

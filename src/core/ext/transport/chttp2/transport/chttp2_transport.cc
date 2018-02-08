@@ -1831,7 +1831,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
           if (!grpc_stream_decompress(
                   s->stream_decompression_ctx,
                   &s->unprocessed_incoming_frames_buffer,
-                  &s->decompressed_data_buffer, nullptr,
+                  &s->decompressed_data_buffer, MAX_SIZE_T, nullptr,
                   GRPC_HEADER_SIZE_IN_BYTES - s->decompressed_header_bytes,
                   &end_of_context)) {
             grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
@@ -1904,7 +1904,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
       }
       if (!grpc_stream_decompress(
               s->stream_decompression_ctx, &s->frame_storage,
-              &s->unprocessed_incoming_frames_buffer, nullptr,
+              &s->unprocessed_incoming_frames_buffer, MAX_SIZE_T, nullptr,
               GRPC_HEADER_SIZE_IN_BYTES, &end_of_context)) {
         grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
         grpc_slice_buffer_reset_and_unref_internal(
@@ -2815,7 +2815,7 @@ static grpc_error* incoming_byte_stream_pull(grpc_byte_stream* byte_stream,
       }
       if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                   &s->unprocessed_incoming_frames_buffer,
-                                  &s->decompressed_data_buffer, nullptr,
+                                  &s->decompressed_data_buffer, MAX_SIZE_T, nullptr,
                                   MAX_SIZE_T, &end_of_context)) {
         error =
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");

@@ -50,12 +50,13 @@ typedef enum grpc_stream_compression_flush {
 
 struct grpc_stream_compression_vtable {
   bool (*compress)(grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
-                   grpc_slice_buffer* out, size_t* output_size,
-                   size_t max_output_size, grpc_stream_compression_flush flush);
+                   grpc_slice_buffer* out, size_t max_input_size,
+                   size_t* output_size, size_t max_output_size,
+                   grpc_stream_compression_flush flush);
   bool (*decompress)(grpc_stream_compression_context* ctx,
                      grpc_slice_buffer* in, grpc_slice_buffer* out,
-                     size_t* output_size, size_t max_output_size,
-                     bool* end_of_context);
+                     size_t max_input_size, size_t* output_size,
+                     size_t max_output_size, bool* end_of_context);
   grpc_stream_compression_context* (*context_create)(
       grpc_stream_compression_method method);
   void (*context_destroy)(grpc_stream_compression_context* ctx);
@@ -76,7 +77,8 @@ struct grpc_stream_compression_vtable {
  */
 bool grpc_stream_compress(grpc_stream_compression_context* ctx,
                           grpc_slice_buffer* in, grpc_slice_buffer* out,
-                          size_t* output_size, size_t max_output_size,
+                          size_t max_input_size, size_t* output_size,
+                          size_t max_output_size,
                           grpc_stream_compression_flush flush);
 
 /**
@@ -88,8 +90,8 @@ bool grpc_stream_compress(grpc_stream_compression_context* ctx,
  */
 bool grpc_stream_decompress(grpc_stream_compression_context* ctx,
                             grpc_slice_buffer* in, grpc_slice_buffer* out,
-                            size_t* output_size, size_t max_output_size,
-                            bool* end_of_context);
+                            size_t max_input_size, size_t* output_size,
+                            size_t max_output_size, bool* end_of_context);
 
 /**
  * Creates a stream compression context. \a pending_bytes_buffer is the input
