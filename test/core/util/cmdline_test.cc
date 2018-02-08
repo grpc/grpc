@@ -20,14 +20,9 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-<<<<<<< HEAD:test/core/gpr/cmdline_test.cc
 
 #include "src/core/lib/gpr/useful.h"
-=======
-#include <grpc/support/useful.h>
-
 #include "test/core/util/cmdline.h"
->>>>>>> master:test/core/util/cmdline_test.cc
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST() gpr_log(GPR_INFO, "test at %s:%d", __FILE__, __LINE__)
