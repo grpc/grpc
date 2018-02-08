@@ -19,50 +19,51 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
 
-#include "src/core/ext/filters/client_channel/client_channel_factory.h"
+#include <grpc/support/string_util.h>
+
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-typedef struct grpc_resolver_factory grpc_resolver_factory;
-typedef struct grpc_resolver_factory_vtable grpc_resolver_factory_vtable;
+namespace grpc_core {
 
-struct grpc_resolver_factory {
-  const grpc_resolver_factory_vtable* vtable;
+struct ResolverArgs {
+  /// The parsed URI to resolve.
+  grpc_uri* uri = nullptr;
+  /// Channel args to be included in resolver results.
+  const grpc_channel_args* args = nullptr;
+  /// Used to drive I/O in the name resolution process.
+  grpc_pollset_set* pollset_set = nullptr;
+  /// The combiner under which all resolver calls will be run.
+  grpc_combiner* combiner = nullptr;
 };
 
-typedef struct grpc_resolver_args {
-  grpc_uri* uri;
-  const grpc_channel_args* args;
-  grpc_pollset_set* pollset_set;
-  grpc_combiner* combiner;
-} grpc_resolver_args;
+class ResolverFactory {
+ public:
+  /// Returns a new resolver instance.
+  virtual OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args) const
+      GRPC_ABSTRACT;
 
-struct grpc_resolver_factory_vtable {
-  void (*ref)(grpc_resolver_factory* factory);
-  void (*unref)(grpc_resolver_factory* factory);
+  /// Returns a string representing the default authority to use for this
+  /// scheme.
+  virtual UniquePtr<char> GetDefaultAuthority(grpc_uri* uri) const {
+    const char* path = uri->path;
+    if (path[0] == '/') ++path;
+    return UniquePtr<char>(gpr_strdup(path));
+  }
 
-  /** Implementation of grpc_resolver_factory_create_resolver */
-  grpc_resolver* (*create_resolver)(grpc_resolver_factory* factory,
-                                    grpc_resolver_args* args);
+  /// Returns the URI scheme that this factory implements.
+  /// Caller does NOT take ownership of result.
+  virtual const char* scheme() const GRPC_ABSTRACT;
 
-  /** Implementation of grpc_resolver_factory_get_default_authority */
-  char* (*get_default_authority)(grpc_resolver_factory* factory, grpc_uri* uri);
+  virtual ~ResolverFactory() {}
 
-  /** URI scheme that this factory implements */
-  const char* scheme;
+  GRPC_ABSTRACT_BASE_CLASS
 };
 
-void grpc_resolver_factory_ref(grpc_resolver_factory* resolver);
-void grpc_resolver_factory_unref(grpc_resolver_factory* resolver);
-
-/** Create a resolver instance for a name */
-grpc_resolver* grpc_resolver_factory_create_resolver(
-    grpc_resolver_factory* factory, grpc_resolver_args* args);
-
-/** Return a (freshly allocated with gpr_malloc) string representing
-    the default authority to use for this scheme. */
-char* grpc_resolver_factory_get_default_authority(
-    grpc_resolver_factory* factory, grpc_uri* uri);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H */

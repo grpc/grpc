@@ -609,7 +609,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper.cc )
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper_registry.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver.cc )
-  s.files += %w( src/core/ext/filters/client_channel/resolver_factory.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver_registry.cc )
   s.files += %w( src/core/ext/filters/client_channel/retry_throttle.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.cc )
