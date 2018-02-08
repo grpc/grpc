@@ -192,7 +192,6 @@ Pod::Spec.new do |s|
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/gpr/arena.h',
-                      'src/core/lib/gpr/avl.h',
                       'src/core/lib/gpr/env.h',
                       'src/core/lib/gpr/fork.h',
                       'src/core/lib/gpr/mpscq.h',
@@ -214,7 +213,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/alloc.cc',
                       'src/core/lib/gpr/arena.cc',
                       'src/core/lib/gpr/atm.cc',
-                      'src/core/lib/gpr/avl.cc',
                       'src/core/lib/gpr/cmdline.cc',
                       'src/core/lib/gpr/cpu_iphone.cc',
                       'src/core/lib/gpr/cpu_linux.cc',
@@ -329,6 +327,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
+                      'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.h',
                       'src/core/lib/channel/channel_args.h',
                       'src/core/lib/channel/channel_stack.h',
@@ -471,6 +470,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                       'src/core/ext/filters/workarounds/workaround_utils.h',
                       'src/core/lib/surface/init.cc',
+                      'src/core/lib/avl/avl.cc',
                       'src/core/lib/backoff/backoff.cc',
                       'src/core/lib/channel/channel_args.cc',
                       'src/core/lib/channel/channel_stack.cc',
@@ -721,7 +721,6 @@ Pod::Spec.new do |s|
                       'src/core/plugin_registry/grpc_plugin_registry.cc'
 
     ss.private_header_files = 'src/core/lib/gpr/arena.h',
-                              'src/core/lib/gpr/avl.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/fork.h',
                               'src/core/lib/gpr/mpscq.h',
@@ -814,6 +813,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
+                              'src/core/lib/avl/avl.h',
                               'src/core/lib/backoff/backoff.h',
                               'src/core/lib/channel/channel_args.h',
                               'src/core/lib/channel/channel_stack.h',

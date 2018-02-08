@@ -89,7 +89,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/mpscq.h" role="src" />
@@ -111,7 +110,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/avl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cmdline.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_iphone.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_linux.cc" role="src" />
@@ -262,6 +260,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/avl/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
@@ -408,6 +407,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/avl/avl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.cc" role="src" />

@@ -213,6 +213,7 @@ add_dependencies(buildtests_c algorithm_test)
 add_dependencies(buildtests_c alloc_test)
 add_dependencies(buildtests_c alpn_test)
 add_dependencies(buildtests_c arena_test)
+add_dependencies(buildtests_c avl_test)
 add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
@@ -257,7 +258,6 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c goaway_server_test)
 endif()
-add_dependencies(buildtests_c gpr_avl_test)
 add_dependencies(buildtests_c gpr_cmdline_test)
 add_dependencies(buildtests_c gpr_cpu_test)
 add_dependencies(buildtests_c gpr_env_test)
@@ -628,7 +628,6 @@ add_library(gpr
   src/core/lib/gpr/alloc.cc
   src/core/lib/gpr/arena.cc
   src/core/lib/gpr/atm.cc
-  src/core/lib/gpr/avl.cc
   src/core/lib/gpr/cmdline.cc
   src/core/lib/gpr/cpu_iphone.cc
   src/core/lib/gpr/cpu_linux.cc
@@ -792,6 +791,7 @@ endif (gRPC_BUILD_TESTS)
 
 add_library(grpc
   src/core/lib/surface/init.cc
+  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1134,6 +1134,7 @@ endif()
 
 add_library(grpc_cronet
   src/core/lib/surface/init.cc
+  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1458,6 +1459,7 @@ add_library(grpc_test_util
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
+  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1726,6 +1728,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
+  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1977,6 +1980,7 @@ endif (gRPC_BUILD_TESTS)
 add_library(grpc_unsecure
   src/core/lib/surface/init.cc
   src/core/lib/surface/init_unsecure.cc
+  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -2709,6 +2713,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/stream_map.cc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/writing.cc
+  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -4832,6 +4837,32 @@ target_link_libraries(arena_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(avl_test
+  test/core/avl/avl_test.cc
+)
+
+
+target_include_directories(avl_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(avl_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+  grpc
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(bad_server_response_test
   test/core/end2end/bad_server_response_test.cc
 )
@@ -5630,31 +5661,6 @@ target_link_libraries(goaway_server_test
 )
 
 endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(gpr_avl_test
-  test/core/gpr/avl_test.cc
-)
-
-
-target_include_directories(gpr_avl_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-)
-
-target_link_libraries(gpr_avl_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr_test_util
-  gpr
-)
-
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

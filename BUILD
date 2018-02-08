@@ -456,7 +456,6 @@ grpc_cc_library(
         "src/core/lib/gpr/alloc.cc",
         "src/core/lib/gpr/arena.cc",
         "src/core/lib/gpr/atm.cc",
-        "src/core/lib/gpr/avl.cc",
         "src/core/lib/gpr/cmdline.cc",
         "src/core/lib/gpr/cpu_iphone.cc",
         "src/core/lib/gpr/cpu_linux.cc",
@@ -499,7 +498,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/profiling/timers.h",
         "src/core/lib/gpr/arena.h",
-        "src/core/lib/gpr/avl.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/fork.h",
 	"src/core/lib/gpr/useful.h",
@@ -627,6 +625,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
+        "src/core/lib/avl/avl.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
@@ -762,6 +761,7 @@ grpc_cc_library(
         "src/core/lib/transport/transport_op_string.cc",
     ],
     hdrs = [
+        "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",

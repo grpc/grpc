@@ -932,6 +932,7 @@ include/grpc/support/tls_msvc.h \
 include/grpc/support/tls_pthread.h \
 include/grpc/support/workaround_list.h \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.h \
@@ -951,7 +952,6 @@ src/core/lib/debug/stats.h \
 src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.h \
 src/core/lib/gpr/arena.h \
-src/core/lib/gpr/avl.h \
 src/core/lib/gpr/env.h \
 src/core/lib/gpr/fork.h \
 src/core/lib/gpr/mpscq.h \

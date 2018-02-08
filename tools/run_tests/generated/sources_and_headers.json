@@ -86,6 +86,22 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "avl_test", 
+    "src": [
+      "test/core/avl/avl_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
       "grpc", 
       "grpc_test_util", 
       "test_tcp_server"
@@ -583,21 +599,6 @@
     "name": "goaway_server_test", 
     "src": [
       "test/core/end2end/goaway_server_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_avl_test", 
-    "src": [
-      "test/core/gpr/avl_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -8171,7 +8172,6 @@
       "src/core/lib/gpr/alloc.cc", 
       "src/core/lib/gpr/arena.cc", 
       "src/core/lib/gpr/atm.cc", 
-      "src/core/lib/gpr/avl.cc", 
       "src/core/lib/gpr/cmdline.cc", 
       "src/core/lib/gpr/cpu_iphone.cc", 
       "src/core/lib/gpr/cpu_linux.cc", 
@@ -8246,7 +8246,6 @@
       "include/grpc/support/tls_msvc.h", 
       "include/grpc/support/tls_pthread.h", 
       "src/core/lib/gpr/arena.h", 
-      "src/core/lib/gpr/avl.h", 
       "src/core/lib/gpr/env.h", 
       "src/core/lib/gpr/fork.h", 
       "src/core/lib/gpr/mpscq.h", 
@@ -8295,7 +8294,6 @@
       "include/grpc/support/tls_msvc.h", 
       "include/grpc/support/tls_pthread.h", 
       "src/core/lib/gpr/arena.h", 
-      "src/core/lib/gpr/avl.h", 
       "src/core/lib/gpr/env.h", 
       "src/core/lib/gpr/fork.h", 
       "src/core/lib/gpr/mpscq.h", 
@@ -8398,6 +8396,7 @@
     "language": "c", 
     "name": "grpc_base", 
     "src": [
+      "src/core/lib/avl/avl.cc", 
       "src/core/lib/backoff/backoff.cc", 
       "src/core/lib/channel/channel_args.cc", 
       "src/core/lib/channel/channel_stack.cc", 
@@ -8556,6 +8555,7 @@
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "include/grpc/support/workaround_list.h", 
+      "src/core/lib/avl/avl.h", 
       "src/core/lib/backoff/backoff.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
@@ -8698,6 +8698,7 @@
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "include/grpc/support/workaround_list.h", 
+      "src/core/lib/avl/avl.h", 
       "src/core/lib/backoff/backoff.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 

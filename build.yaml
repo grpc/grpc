@@ -29,7 +29,6 @@ filegroups:
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/arena.cc
   - src/core/lib/gpr/atm.cc
-  - src/core/lib/gpr/avl.cc
   - src/core/lib/gpr/cmdline.cc
   - src/core/lib/gpr/cpu_iphone.cc
   - src/core/lib/gpr/cpu_linux.cc
@@ -100,7 +99,6 @@ filegroups:
   - include/grpc/support/tls_pthread.h
   headers:
   - src/core/lib/gpr/arena.h
-  - src/core/lib/gpr/avl.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/fork.h
   - src/core/lib/gpr/mpscq.h
@@ -150,6 +148,7 @@ filegroups:
   - grpc++_codegen_base
 - name: grpc_base
   src:
+  - src/core/lib/avl/avl.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_stack.cc
@@ -307,6 +306,7 @@ filegroups:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
@@ -1762,6 +1762,16 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: avl_test
+  build: test
+  language: c
+  src:
+  - test/core/avl/avl_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  - grpc
+  uses_polling: false
 - name: bad_server_response_test
   build: test
   language: c
@@ -2130,15 +2140,6 @@ targets:
   - mac
   - linux
   - posix
-- name: gpr_avl_test
-  build: test
-  language: c
-  src:
-  - test/core/gpr/avl_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: gpr_cmdline_test
   build: test
   language: c

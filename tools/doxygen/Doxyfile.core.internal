@@ -1029,6 +1029,8 @@ src/core/ext/transport/inproc/inproc_plugin.cc \
 src/core/ext/transport/inproc/inproc_transport.cc \
 src/core/ext/transport/inproc/inproc_transport.h \
 src/core/lib/README.md \
+src/core/lib/avl/avl.cc \
+src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/README.md \
@@ -1071,8 +1073,6 @@ src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/arena.cc \
 src/core/lib/gpr/arena.h \
 src/core/lib/gpr/atm.cc \
-src/core/lib/gpr/avl.cc \
-src/core/lib/gpr/avl.h \
 src/core/lib/gpr/cmdline.cc \
 src/core/lib/gpr/cpu_iphone.cc \
 src/core/lib/gpr/cpu_linux.cc \
