@@ -1295,6 +1295,10 @@ void GrpcLb::CreateRRLocked(const Args& args) {
             this);
     return;
   }
+  // TODO(roth): We currently track this ref manually.  Once the new
+  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
+  auto self = Ref(DEBUG_LOCATION, "rr_on_reresolution_requested");
+  self.release();
   rr_policy_->SetReresolutionClosureLocked(&rr_on_request_reresolution_);
   grpc_error* rr_state_error = nullptr;
   rr_connectivity_state_ = rr_policy_->CheckConnectivityLocked(&rr_state_error);
@@ -1308,7 +1312,7 @@ void GrpcLb::CreateRRLocked(const Args& args) {
   // Subscribe to changes to the connectivity of the new RR.
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "glb_rr_connectivity_cb");
+  self = Ref(DEBUG_LOCATION, "glb_rr_connectivity_cb");
   self.release();
   rr_policy_->NotifyOnStateChangeLocked(&rr_connectivity_state_,
                                         &on_rr_connectivity_changed_);
@@ -1392,7 +1396,7 @@ void GrpcLb::CreateOrUpdateRRPolicyLocked() {
 void GrpcLb::RROnRequestReresolutionLocked(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = reinterpret_cast<GrpcLb*>(arg);
   if (grpclb_policy->shutting_down_ || error != GRPC_ERROR_NONE) {
-    grpclb_policy->Unref(DEBUG_LOCATION, "rr_on_reresolution_requested_locked");
+    grpclb_policy->Unref(DEBUG_LOCATION, "rr_on_reresolution_requested");
     return;
   }
   if (grpc_lb_glb_trace.enabled()) {
