@@ -568,7 +568,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p: shutting down resolver", chand);
       }
-      chand->resolver.reset(nullptr);
+      chand->resolver.reset();
     }
     set_channel_connectivity_state_locked(
         chand, GRPC_CHANNEL_SHUTDOWN,
@@ -646,7 +646,7 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
       set_channel_connectivity_state_locked(
           chand, GRPC_CHANNEL_SHUTDOWN,
           GRPC_ERROR_REF(op->disconnect_with_error), "disconnect");
-      chand->resolver.reset(nullptr);
+      chand->resolver.reset();
       if (!chand->started_resolving) {
         grpc_closure_list_fail_all(&chand->waiting_for_resolver_result_closures,
                                    GRPC_ERROR_REF(op->disconnect_with_error));
