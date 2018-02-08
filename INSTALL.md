@@ -70,6 +70,15 @@ automatically try and compile the `protoc` in third_party if you cloned the
 repository recursively and it detects that you don't already have it
 installed.
 
+If it hasn't been installed, you can run the following commands to install it.
+
+```sh
+$ cd grpc/third_party/protobuf
+$ sudo make install   # 'make' should have been run by core grpc
+```
+
+Alternatively, you can download `protoc` binaries from
+[the protocol buffers Github repository](https://github.com/google/protobuf/releases).
 
 # Build from Source
 
