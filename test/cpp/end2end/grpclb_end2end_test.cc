@@ -1169,7 +1169,7 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
 }
-  
+
 // TODO(juanlishen): Add UpdatesTest.ReresolveDeadBackend when LB channel
 // connectiviity can be watched properly.
 
