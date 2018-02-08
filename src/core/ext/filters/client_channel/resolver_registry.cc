@@ -54,6 +54,12 @@ class RegistryState {
     return nullptr;
   }
 
+  // Returns the factory for the scheme of \a target.  If \a target does
+  // not parse as a URI, prepends \a default_prefix_ and tries again.
+  // If URI parsing is successful (in either attempt), sets \a uri to
+  // point to the parsed URI.
+  // If \a default_prefix_ needs to be prepended, sets \a canonical_target
+  // to the canonical target string.
   ResolverFactory* FindResolverFactory(const char* target, grpc_uri** uri,
                                        char** canonical_target) const {
     GPR_ASSERT(uri != nullptr);
@@ -77,6 +83,11 @@ class RegistryState {
   }
 
  private:
+  // We currently support 10 factories without doing additional
+  // allocation.  This number could be raised if there is a case where
+  // more factories are needed and the additional allocations are
+  // hurting performance (which is unlikely, since these allocations
+  // only occur at gRPC initialization time).
   InlinedVector<UniquePtr<ResolverFactory>, 10> factories_;
   UniquePtr<char> default_prefix_;
 };
