@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,20 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Builds Dart interop server and client in a base image.
+set -e
 
-# Config file for the internal CI (in protobuf text format)
+mkdir -p /var/local/git
+git clone /var/local/jenkins/grpc-dart /var/local/git/grpc-dart
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_run_interop_tests.sh"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
 
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-l dart --cloud_to_prod --cloud_to_prod_auth --prod_servers default gateway_v4 cloud_gateway cloud_gateway_v4 --use_docker --internal_ci -t -j 12 --bq_result_table interop_results"
-}
+cd /var/local/git/grpc-dart/interop
+/usr/lib/dart/bin/pub get

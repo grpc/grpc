@@ -48,6 +48,14 @@ else
   echo "WARNING: grpc-go not found, it won't be mounted to the docker container."
 fi
 
+echo "GRPC_DART_ROOT: ${GRPC_DART_ROOT:=$(cd ../grpc-dart && pwd)}"
+if [ -n "$GRPC_DART_ROOT" ]
+then
+  MOUNT_ARGS+=" -v $GRPC_DART_ROOT:/var/local/jenkins/grpc-dart:ro"
+else
+  echo "WARNING: grpc-dart not found, it won't be mounted to the docker container."
+fi
+
 echo "GRPC_NODE_ROOT: ${GRPC_NODE_ROOT:=$(cd ../grpc-node && pwd)}"
 if [ -n "$GRPC_NODE_ROOT" ]
 then
