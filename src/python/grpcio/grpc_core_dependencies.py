@@ -266,7 +266,6 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/client_channel/proxy_mapper.cc',
     'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
     'src/core/ext/filters/client_channel/resolver.cc',
-    'src/core/ext/filters/client_channel/resolver_factory.cc',
     'src/core/ext/filters/client_channel/resolver_registry.cc',
     'src/core/ext/filters/client_channel/retry_throttle.cc',
     'src/core/ext/filters/client_channel/subchannel.cc',
