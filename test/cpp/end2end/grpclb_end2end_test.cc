@@ -221,30 +221,31 @@ class BalancerServiceImpl : public BalancerService {
 
     if (client_load_reporting_interval_seconds_ > 0) {
       request.Clear();
-      stream->Read(&request);
-      gpr_log(GPR_INFO, "LB[%p]: recv client load report msg: '%s'", this,
-              request.DebugString().c_str());
-      GPR_ASSERT(request.has_client_stats());
-      // We need to acquire the lock here in order to prevent the notify_one
-      // below from firing before its corresponding wait is executed.
-      std::lock_guard<std::mutex> lock(mu_);
-      client_stats_.num_calls_started +=
-          request.client_stats().num_calls_started();
-      client_stats_.num_calls_finished +=
-          request.client_stats().num_calls_finished();
-      client_stats_.num_calls_finished_with_client_failed_to_send +=
-          request.client_stats()
-              .num_calls_finished_with_client_failed_to_send();
-      client_stats_.num_calls_finished_known_received +=
-          request.client_stats().num_calls_finished_known_received();
-      for (const auto& drop_token_count :
-           request.client_stats().calls_finished_with_drop()) {
-        client_stats_
-            .drop_token_counts[drop_token_count.load_balance_token()] +=
-            drop_token_count.num_calls();
+      if (stream->Read(&request)) {
+        gpr_log(GPR_INFO, "LB[%p]: recv client load report msg: '%s'", this,
+                request.DebugString().c_str());
+        GPR_ASSERT(request.has_client_stats());
+        // We need to acquire the lock here in order to prevent the notify_one
+        // below from firing before its corresponding wait is executed.
+        std::lock_guard<std::mutex> lock(mu_);
+        client_stats_.num_calls_started +=
+            request.client_stats().num_calls_started();
+        client_stats_.num_calls_finished +=
+            request.client_stats().num_calls_finished();
+        client_stats_.num_calls_finished_with_client_failed_to_send +=
+            request.client_stats()
+                .num_calls_finished_with_client_failed_to_send();
+        client_stats_.num_calls_finished_known_received +=
+            request.client_stats().num_calls_finished_known_received();
+        for (const auto& drop_token_count :
+             request.client_stats().calls_finished_with_drop()) {
+          client_stats_
+              .drop_token_counts[drop_token_count.load_balance_token()] +=
+              drop_token_count.num_calls();
+        }
+        load_report_ready_ = true;
+        load_report_cond_.notify_one();
       }
-      load_report_ready_ = true;
-      load_report_cond_.notify_one();
     }
   done:
     gpr_log(GPR_INFO, "LB[%p]: done", this);
@@ -454,8 +455,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc::string balancer_name;
   };
 
-  void SetNextResolution(const std::vector<AddressData>& address_data) {
-    grpc_core::ExecCtx exec_ctx;
+  grpc_lb_addresses* CreateLbAddressesFromAddressDataList(
+      const std::vector<AddressData>& address_data) {
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(address_data.size(), nullptr);
     for (size_t i = 0; i < address_data.size(); ++i) {
@@ -469,9 +470,27 @@ class GrpclbEnd2endTest : public ::testing::Test {
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
+    return addresses;
+  }
+
+  void SetNextResolution(const std::vector<AddressData>& address_data) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_lb_addresses* addresses =
+        CreateLbAddressesFromAddressDataList(address_data);
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
     response_generator_->SetResponse(&fake_result);
+    grpc_lb_addresses_destroy(addresses);
+  }
+
+  void SetNextReresolutionResponse(
+      const std::vector<AddressData>& address_data) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_lb_addresses* addresses =
+        CreateLbAddressesFromAddressDataList(address_data);
+    grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_channel_args fake_result = {1, &fake_addresses};
+    response_generator_->SetReresolutionResponse(&fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
 

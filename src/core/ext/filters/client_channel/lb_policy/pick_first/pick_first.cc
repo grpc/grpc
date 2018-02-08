@@ -55,8 +55,6 @@ class PickFirst : public LoadBalancingPolicy {
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
   void UpdateLocked(const Args& args) override;
-  void SetReresolutionClosureLocked(
-      grpc_closure* request_reresolution) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ShutdownLocked() override;
 
@@ -555,12 +553,6 @@ void PickFirst::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
     case GRPC_CHANNEL_SHUTDOWN:
       GPR_UNREACHABLE_CODE(break);
   }
-}
-
-void PickFirst::SetReresolutionClosureLocked(
-    grpc_closure* request_reresolution) {
-  GPR_ASSERT(!shutdown_);
-  set_request_reresolution(request_reresolution);
 }
 
 //

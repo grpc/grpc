@@ -15,5 +15,7 @@
 
 cdef class Channel:
 
+  cdef grpc_arg_pointer_vtable _vtable
   cdef grpc_channel *c_channel
   cdef list references
+  cdef readonly _ArgumentsProcessor _arguments_processor

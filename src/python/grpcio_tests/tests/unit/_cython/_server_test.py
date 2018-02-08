@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
     def test_lonely_server(self):
         server_call_completion_queue = cygrpc.CompletionQueue()
         server_shutdown_completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server(cygrpc.ChannelArgs([]))
+        server = cygrpc.Server(None)
         server.register_completion_queue(server_call_completion_queue)
         server.register_completion_queue(server_shutdown_completion_queue)
         port = server.add_http2_port(b'[::]:0')

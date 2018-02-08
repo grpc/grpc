@@ -27,7 +27,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class Foo : public RefCounted {
+class Foo : public RefCounted<Foo> {
  public:
   Foo() {}
 };
@@ -39,7 +39,8 @@ TEST(RefCounted, Basic) {
 
 TEST(RefCounted, ExtraRef) {
   Foo* foo = New<Foo>();
-  foo->Ref();
+  RefCountedPtr<Foo> foop = foo->Ref();
+  foop.release();
   foo->Unref();
   foo->Unref();
 }
@@ -48,17 +49,19 @@ TEST(RefCounted, ExtraRef) {
 // things build properly in both debug and non-debug cases.
 DebugOnlyTraceFlag foo_tracer(true, "foo");
 
-class FooWithTracing : public RefCountedWithTracing {
+class FooWithTracing : public RefCountedWithTracing<FooWithTracing> {
  public:
   FooWithTracing() : RefCountedWithTracing(&foo_tracer) {}
 };
 
 TEST(RefCountedWithTracing, Basic) {
   FooWithTracing* foo = New<FooWithTracing>();
-  foo->Ref(DEBUG_LOCATION, "extra_ref");
+  RefCountedPtr<FooWithTracing> foop = foo->Ref(DEBUG_LOCATION, "extra_ref");
+  foop.release();
   foo->Unref(DEBUG_LOCATION, "extra_ref");
   // Can use the no-argument methods, too.
-  foo->Ref();
+  foop = foo->Ref();
+  foop.release();
   foo->Unref();
   foo->Unref(DEBUG_LOCATION, "original_ref");
 }

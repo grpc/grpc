@@ -39,7 +39,8 @@ namespace grpc_core {
 ///
 /// Any I/O done by the LB policy should be done under the pollset_set
 /// returned by \a interested_parties().
-class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
+class LoadBalancingPolicy
+    : public InternallyRefCountedWithTracing<LoadBalancingPolicy> {
  public:
   struct Args {
     /// Used to create channels and subchannels.
@@ -122,10 +123,6 @@ class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
   /// Updates the policy with a new set of \a lb_policy_args.
   virtual void UpdateLocked(const Args& lb_policy_args) GRPC_ABSTRACT;
 
-  /// Sets the re-resolution closure to \a request_reresolution.
-  virtual void SetReresolutionClosureLocked(grpc_closure* request_reresolution)
-      GRPC_ABSTRACT;
-
   /// Hands off pending picks to \a new_policy.
   virtual void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy)
       GRPC_ABSTRACT;
@@ -138,7 +135,15 @@ class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
         GRPC_ERROR_NONE);
   }
 
+  /// Sets the re-resolution closure to \a request_reresolution.
+  void SetReresolutionClosureLocked(grpc_closure* request_reresolution) {
+    GPR_ASSERT(request_reresolution_ == nullptr);
+    request_reresolution_ = request_reresolution;
+  }
+
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
+
+// FIXME: make this protected!
   grpc_combiner* combiner() const { return combiner_; }
 
   GRPC_ABSTRACT_BASE_CLASS
@@ -157,25 +162,8 @@ class LoadBalancingPolicy : public InternallyRefCountedWithTracing {
   /// failed.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
-  // TODO(roth): Reconsider whether any of this request_reresolution code
-  // belongs in the base class.  It may be cleaner to move it to
-  // the individual subclasses, even if that means duplicating some code.
-
   /// Tries to request a re-resolution.
   void TryReresolution(grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error);
-
-  void set_request_reresolution(grpc_closure* request_reresolution) {
-    GPR_ASSERT(request_reresolution_ == nullptr);
-    request_reresolution_ = request_reresolution;
-  }
-
-  grpc_closure* request_reresolution() const { return request_reresolution_; }
-
-  grpc_closure* ReleaseRequestReresolution() {
-    grpc_closure* request_reresolution = request_reresolution_;
-    request_reresolution_ = nullptr;
-    return request_reresolution;
-  }
 
  private:
   static void ShutdownLocked(void* arg, grpc_error* ignored) {

@@ -350,7 +350,7 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
       char bytes[8] = {'\0', '\1', '\2', '\3', '\4', '\5', '\6', (char)i};
       context.AddMetadata("custom-bin", grpc::string(bytes, 8));
     }
-    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+    context.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());
@@ -706,7 +706,6 @@ TEST_P(End2endTest, ReconnectChannel) {
   if (GetParam().inproc) {
     return;
   }
-  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
@@ -1087,31 +1086,6 @@ TEST_P(End2endTest, RpcMaxMessageSize) {
   EXPECT_FALSE(s.ok());
 }
 
-// Client sends 20 requests and the server returns CANCELLED status after
-// reading 10 requests.
-TEST_P(End2endTest, RequestStreamServerEarlyCancelTest) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-
-  context.AddMetadata(kServerCancelAfterReads, "10");
-  auto stream = stub_->RequestStream(&context, &response);
-  request.set_message("hello");
-  int send_messages = 20;
-  while (send_messages > 10) {
-    EXPECT_TRUE(stream->Write(request));
-    send_messages--;
-  }
-  while (send_messages > 0) {
-    stream->Write(request);
-    send_messages--;
-  }
-  stream->WritesDone();
-  Status s = stream->Finish();
-  EXPECT_EQ(s.error_code(), StatusCode::CANCELLED);
-}
-
 void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
                       gpr_event* ev) {
   EchoResponse resp;
@@ -1359,8 +1333,11 @@ TEST_P(ProxyEnd2endTest, EchoDeadline) {
   EXPECT_TRUE(s.ok());
   gpr_timespec sent_deadline;
   Timepoint2Timespec(deadline, &sent_deadline);
-  // Allow 1 second error.
-  EXPECT_LE(response.param().request_deadline() - sent_deadline.tv_sec, 1);
+  // We want to allow some reasonable error given:
+  // - request_deadline() only has 1sec resolution so the best we can do is +-1
+  // - if sent_deadline.tv_nsec is very close to the next second's boundary we
+  // can end up being off by 2 in one direction.
+  EXPECT_LE(response.param().request_deadline() - sent_deadline.tv_sec, 2);
   EXPECT_GE(response.param().request_deadline() - sent_deadline.tv_sec, -1);
 }
 
@@ -1853,6 +1830,7 @@ INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

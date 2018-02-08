@@ -46,8 +46,8 @@ void LoadBalancingPolicy::TryReresolution(grpc_core::TraceFlag* grpc_lb_trace,
               grpc_lb_trace->name(), this, grpc_error_string(error));
     }
   } else {
-    if (grpc_lb_trace->enabled() && error == GRPC_ERROR_NONE) {
-      gpr_log(GPR_DEBUG, "%s %p: re-resolution already in progress.",
+    if (grpc_lb_trace->enabled()) {
+      gpr_log(GPR_DEBUG, "%s %p: no available re-resolution closure.",
               grpc_lb_trace->name(), this);
     }
   }

@@ -66,8 +66,6 @@ class RoundRobin : public LoadBalancingPolicy {
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
   void UpdateLocked(const Args& args) override;
-  void SetReresolutionClosureLocked(
-      grpc_closure* request_reresolution) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ShutdownLocked() override;
 
@@ -631,12 +629,6 @@ void RoundRobin::UpdateLocked(const Args& args) {
     }
     subchannel_list_ = subchannel_list;
   }
-}
-
-void RoundRobin::SetReresolutionClosureLocked(
-    grpc_closure* request_reresolution) {
-  GPR_ASSERT(!shutdown_);
-  set_request_reresolution(request_reresolution);
 }
 
 //

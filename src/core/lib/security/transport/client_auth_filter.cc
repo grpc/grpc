@@ -266,7 +266,7 @@ static void cancel_check_call_host(void* arg, grpc_error* error) {
 
 static void auth_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  GPR_TIMER_BEGIN("auth_start_transport_stream_op_batch", 0);
+  GPR_TIMER_SCOPE("auth_start_transport_stream_op_batch", 0);
 
   /* grab pointers to our data from the call element */
   call_data* calld = (call_data*)elem->call_data;
@@ -332,14 +332,12 @@ static void auth_start_transport_stream_op_batch(
                               grpc_schedule_on_exec_ctx));
       }
       gpr_free(call_host);
-      GPR_TIMER_END("auth_start_transport_stream_op_batch", 0);
       return; /* early exit */
     }
   }
 
   /* pass control down the stack */
   grpc_call_next_op(elem, batch);
-  GPR_TIMER_END("auth_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */

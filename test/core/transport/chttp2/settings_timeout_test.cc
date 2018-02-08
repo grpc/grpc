@@ -169,7 +169,7 @@ class Client {
 
     grpc_closure* closure() { return &closure_; }
 
-    bool done() const { return done_; }
+    bool done() const { return gpr_atm_acq_load(&done_atm_) != 0; }
 
     // Caller does NOT take ownership of the error.
     grpc_error* error() const { return error_; }
@@ -179,11 +179,11 @@ class Client {
       gpr_log(GPR_INFO, "OnEventDone(): %s", grpc_error_string(error));
       EventState* state = (EventState*)arg;
       state->error_ = GRPC_ERROR_REF(error);
-      state->done_ = true;
+      gpr_atm_rel_store(&state->done_atm_, 1);
     }
 
     grpc_closure closure_;
-    bool done_ = false;
+    gpr_atm done_atm_ = 0;
     grpc_error* error_ = GRPC_ERROR_NONE;
   };
 

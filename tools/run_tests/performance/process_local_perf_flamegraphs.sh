@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-mkdir -p $OUTPUT_DIR
+mkdir -p "$OUTPUT_DIR"
 
-PERF_DATA_FILE=${PERF_BASE_NAME}-perf.data
-PERF_SCRIPT_OUTPUT=${PERF_BASE_NAME}-out.perf
+PERF_DATA_FILE="${PERF_BASE_NAME}-perf.data"
+PERF_SCRIPT_OUTPUT="${PERF_BASE_NAME}-out.perf"
 
 # Generate Flame graphs
 echo "running perf script on $PERF_DATA_FILE"
-perf script -i $PERF_DATA_FILE > $PERF_SCRIPT_OUTPUT
+perf script -i "$PERF_DATA_FILE" > "$PERF_SCRIPT_OUTPUT"
 
-~/FlameGraph/stackcollapse-perf.pl $PERF_SCRIPT_OUTPUT | ~/FlameGraph/flamegraph.pl > ${OUTPUT_DIR}/${OUTPUT_FILENAME}.svg
+~/FlameGraph/stackcollapse-perf.pl "$PERF_SCRIPT_OUTPUT" | ~/FlameGraph/flamegraph.pl > "${OUTPUT_DIR}/${OUTPUT_FILENAME}.svg"

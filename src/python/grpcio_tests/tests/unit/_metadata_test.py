@@ -80,7 +80,7 @@ _TRAILING_METADATA = (
 _EXPECTED_TRAILING_METADATA = _TRAILING_METADATA
 
 
-def user_agent(metadata):
+def _user_agent(metadata):
     for key, val in metadata:
         if key == 'user-agent':
             return val
@@ -88,16 +88,14 @@ def user_agent(metadata):
 
 
 def validate_client_metadata(test, servicer_context):
+    invocation_metadata = servicer_context.invocation_metadata()
     test.assertTrue(
-        test_common.metadata_transmitted(
-            _EXPECTED_INVOCATION_METADATA,
-            servicer_context.invocation_metadata()))
+        test_common.metadata_transmitted(_EXPECTED_INVOCATION_METADATA,
+                                         invocation_metadata))
+    user_agent = _user_agent(invocation_metadata)
     test.assertTrue(
-        user_agent(servicer_context.invocation_metadata())
-        .startswith('primary-agent ' + _channel._USER_AGENT))
-    test.assertTrue(
-        user_agent(servicer_context.invocation_metadata())
-        .endswith('secondary-agent'))
+        user_agent.startswith('primary-agent ' + _channel._USER_AGENT))
+    test.assertTrue(user_agent.endswith('secondary-agent'))
 
 
 def handle_unary_unary(test, request, servicer_context):

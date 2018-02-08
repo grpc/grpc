@@ -457,16 +457,20 @@ static grpc_error* fd_shutdown_error(grpc_fd* fd) {
   if (!fd->shutdown) {
     return GRPC_ERROR_NONE;
   } else {
-    return GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "FD shutdown", &fd->shutdown_error, 1);
+    return grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                                  "FD shutdown", &fd->shutdown_error, 1),
+                              GRPC_ERROR_INT_GRPC_STATUS,
+                              GRPC_STATUS_UNAVAILABLE);
   }
 }
 
 static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
                              grpc_closure* closure) {
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
-    GRPC_CLOSURE_SCHED(closure,
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"));
+    GRPC_CLOSURE_SCHED(
+        closure, grpc_error_set_int(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
+                     GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
@@ -706,14 +710,14 @@ static void kick_append_error(grpc_error** composite, grpc_error* error) {
 static grpc_error* pollset_kick_ext(grpc_pollset* p,
                                     grpc_pollset_worker* specific_worker,
                                     uint32_t flags) {
-  GPR_TIMER_BEGIN("pollset_kick_ext", 0);
+  GPR_TIMER_SCOPE("pollset_kick_ext", 0);
   grpc_error* error = GRPC_ERROR_NONE;
   GRPC_STATS_INC_POLLSET_KICK();
 
   /* pollset->mu already held */
   if (specific_worker != nullptr) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
-      GPR_TIMER_BEGIN("pollset_kick_ext.broadcast", 0);
+      GPR_TIMER_SCOPE("pollset_kick_ext.broadcast", 0);
       GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
       for (specific_worker = p->root_worker.next;
            specific_worker != &p->root_worker;
@@ -722,7 +726,6 @@ static grpc_error* pollset_kick_ext(grpc_pollset* p,
             &error, grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
       }
       p->kicked_without_pollers = true;
-      GPR_TIMER_END("pollset_kick_ext.broadcast", 0);
     } else if (gpr_tls_get(&g_current_thread_worker) !=
                (intptr_t)specific_worker) {
       GPR_TIMER_MARK("different_thread_worker", 0);
@@ -769,7 +772,6 @@ static grpc_error* pollset_kick_ext(grpc_pollset* p,
     }
   }
 
-  GPR_TIMER_END("pollset_kick_ext", 0);
   GRPC_LOG_IF_ERROR("pollset_kick_ext", GRPC_ERROR_REF(error));
   return error;
 }
@@ -864,6 +866,8 @@ static void work_combine_error(grpc_error** composite, grpc_error* error) {
 static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker_hdl,
                                 grpc_millis deadline) {
+  GPR_TIMER_SCOPE("pollset_work", 0);
+
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
   grpc_error* error = GRPC_ERROR_NONE;
@@ -878,7 +882,6 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   int locked = 1;
   int queued_work = 0;
   int keep_polling = 0;
-  GPR_TIMER_BEGIN("pollset_work", 0);
   /* this must happen before we (potentially) drop pollset->mu */
   worker.next = worker.prev = nullptr;
   worker.reevaluate_polling_on_wakeup = 0;
@@ -921,7 +924,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
         added_worker = 1;
         gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
       }
-      GPR_TIMER_BEGIN("maybe_work_and_unlock", 0);
+      GPR_TIMER_SCOPE("maybe_work_and_unlock", 0);
 #define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
 #define POLLIN_CHECK (POLLIN | POLLHUP | POLLERR)
 
@@ -1037,7 +1040,6 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
         gpr_free(pfds);
       }
 
-      GPR_TIMER_END("maybe_work_and_unlock", 0);
       locked = 0;
     } else {
       GPR_TIMER_MARK("pollset_work.kicked_without_pollers", 0);
@@ -1097,7 +1099,6 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     }
   }
   if (worker_hdl) *worker_hdl = nullptr;
-  GPR_TIMER_END("pollset_work", 0);
   GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
   return error;
 }
