@@ -637,7 +637,7 @@ static void update_lb_connectivity_status_locked(
   }
   grpc_connectivity_state_set(&glb_policy->state_tracker, rr_state,
                               rr_state_error,
-                              "update_lb_connectivity_status_locked");
+                              "update_lb_connectivity_status_locked", false);
 }
 
 /* Perform a pick over \a glb_policy->rr_policy. Given that a pick can return
@@ -975,7 +975,7 @@ static void glb_shutdown_locked(grpc_lb_policy* pol,
     glb_policy->lb_channel = nullptr;
   }
   grpc_connectivity_state_set(&glb_policy->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-                              GRPC_ERROR_REF(error), "glb_shutdown");
+                              GRPC_ERROR_REF(error), "glb_shutdown", false);
   // Clear pending picks.
   pending_pick* pp = glb_policy->pending_picks;
   glb_policy->pending_picks = nullptr;
@@ -1680,7 +1680,7 @@ static void glb_update_locked(grpc_lb_policy* policy,
       grpc_connectivity_state_set(
           &glb_policy->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
-          "glb_update_missing");
+          "glb_update_missing", false);
     } else {
       // otherwise, keep using the current LB channel (ignore this update).
       gpr_log(

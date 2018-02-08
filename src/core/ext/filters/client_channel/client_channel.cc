@@ -257,7 +257,8 @@ static void set_channel_connectivity_state_locked(channel_data* chand,
     gpr_log(GPR_DEBUG, "chand=%p: setting connectivity state to %s", chand,
             grpc_connectivity_state_name(state));
   }
-  grpc_connectivity_state_set(&chand->state_tracker, state, error, reason);
+  grpc_connectivity_state_set(&chand->state_tracker, state, error, reason,
+                              false);
 }
 
 static void on_lb_policy_state_changed_locked(void* arg, grpc_error* error) {

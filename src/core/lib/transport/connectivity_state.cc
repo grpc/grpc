@@ -156,7 +156,8 @@ bool grpc_connectivity_state_notify_on_state_change(
 
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker* tracker,
                                  grpc_connectivity_state state,
-                                 grpc_error* error, const char* reason) {
+                                 grpc_error* error, const char* reason,
+                                 bool is_internal) {
   grpc_connectivity_state cur =
       (grpc_connectivity_state)gpr_atm_no_barrier_load(
           &tracker->current_state_atm);
@@ -183,7 +184,9 @@ void grpc_connectivity_state_set(grpc_connectivity_state_tracker* tracker,
   if (cur == state) {
     return;
   }
-  GPR_ASSERT(cur != GRPC_CHANNEL_SHUTDOWN);
+  if (!is_internal) {
+    GPR_ASSERT(cur != GRPC_CHANNEL_SHUTDOWN);
+  }
   gpr_atm_no_barrier_store(&tracker->current_state_atm, state);
   while ((w = tracker->watchers) != nullptr) {
     *w->current = state;

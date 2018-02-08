@@ -1031,7 +1031,7 @@ static void close_transport_locked(inproc_transport* t) {
   grpc_connectivity_state_set(
       &t->connectivity, GRPC_CHANNEL_SHUTDOWN,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Closing transport."),
-      "close transport");
+      "close transport", true);
   if (!t->is_closed) {
     t->is_closed = true;
     /* Also end all streams on this transport */
