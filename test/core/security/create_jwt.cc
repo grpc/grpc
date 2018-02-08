@@ -24,8 +24,9 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
+
+#include "test/core/util/cmdline.h"
 
 void create_jwt(const char* json_key_file_path, const char* service_url,
                 const char* scope) {

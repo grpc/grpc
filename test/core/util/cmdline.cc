@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/support/cmdline.h>
+#include "test/core/util/cmdline.h"
 
 #include <limits.h>
 #include <stdio.h>

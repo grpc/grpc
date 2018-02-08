@@ -184,15 +184,6 @@ EXPORTS
     gpr_avl_get
     gpr_avl_maybe_get
     gpr_avl_is_empty
-    gpr_cmdline_create
-    gpr_cmdline_add_int
-    gpr_cmdline_add_flag
-    gpr_cmdline_add_string
-    gpr_cmdline_on_extra_arg
-    gpr_cmdline_set_survive_failure
-    gpr_cmdline_parse
-    gpr_cmdline_destroy
-    gpr_cmdline_usage_string
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
     gpr_log_severity_string
@@ -204,11 +195,6 @@ EXPORTS
     gpr_format_message
     gpr_strdup
     gpr_asprintf
-    gpr_subprocess_binary_extension
-    gpr_subprocess_create
-    gpr_subprocess_destroy
-    gpr_subprocess_join
-    gpr_subprocess_interrupt
     gpr_mu_init
     gpr_mu_destroy
     gpr_mu_lock
