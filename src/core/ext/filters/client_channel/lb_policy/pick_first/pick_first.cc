@@ -257,7 +257,13 @@ void PickFirst::PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) {
 
 void PickFirst::SubchannelListRefForConnectivityWatch(
     grpc_lb_subchannel_list* subchannel_list, const char* reason) {
-  Ref(DEBUG_LOCATION, reason);
+  // TODO(roth): We currently track this ref manually.  Once the new
+  // ClosureRef API is ready and the subchannel_list code has been
+  // converted to a C++ API, find a way to hold the RefCountedPtr<>
+  // somewhere (maybe in the subchannel_data object) instead of doing
+  // this manually.
+  auto self = Ref(DEBUG_LOCATION, reason);
+  self.release();
   grpc_lb_subchannel_list_ref(subchannel_list, reason);
 }
 
