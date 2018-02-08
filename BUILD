@@ -91,7 +91,6 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
-    "include/grpc/compression_ruby.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
@@ -594,6 +593,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
     deps = [
         "debug_location",
+        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
     ],
@@ -605,6 +605,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
         "debug_location",
+        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
     ],
@@ -632,7 +633,6 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/compression/compression.cc",
         "src/core/lib/compression/compression_internal.cc",
-        "src/core/lib/compression/compression_ruby.cc",
         "src/core/lib/compression/message_compress.cc",
         "src/core/lib/compression/stream_compression.cc",
         "src/core/lib/compression/stream_compression_gzip.cc",

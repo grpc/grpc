@@ -207,9 +207,9 @@ static void request_with_payload_template(
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_NONE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_MESSAGE_DEFLATE) != 0);
+                        GRPC_COMPRESS_DEFLATE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_MESSAGE_GZIP) != 0);
+                        GRPC_COMPRESS_GZIP) != 0);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -365,16 +365,16 @@ typedef struct workaround_cronet_compression_config {
 } workaround_cronet_compression_config;
 
 static workaround_cronet_compression_config workaround_configs[] = {
-    {nullptr, GRPC_COMPRESS_MESSAGE_GZIP},
+    {nullptr, GRPC_COMPRESS_GZIP},
     {const_cast<char*>(
          "grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; cronet_http; gentle)"),
      GRPC_COMPRESS_NONE},
     {const_cast<char*>(
          "grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; chttp2; gentle)"),
-     GRPC_COMPRESS_MESSAGE_GZIP},
+     GRPC_COMPRESS_GZIP},
     {const_cast<char*>(
          "grpc-objc/1.4.0 grpc-c/3.0.0-dev (ios; cronet_http; gentle)"),
-     GRPC_COMPRESS_MESSAGE_GZIP}};
+     GRPC_COMPRESS_GZIP}};
 static const size_t workaround_configs_num =
     sizeof(workaround_configs) / sizeof(*workaround_configs);
 
@@ -383,8 +383,7 @@ static void test_workaround_cronet_compression(
   for (uint32_t i = 0; i < workaround_configs_num; i++) {
     request_with_payload_template(
         config, "test_invoke_request_with_compressed_payload", 0,
-        GRPC_COMPRESS_MESSAGE_GZIP, GRPC_COMPRESS_MESSAGE_GZIP,
-        GRPC_COMPRESS_MESSAGE_GZIP,
+        GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
         workaround_configs[i].expected_algorithm_from_server, nullptr, false,
         /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
         workaround_configs[i].user_agent_override);

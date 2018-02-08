@@ -46,10 +46,10 @@
       hostConfig.compressAlgorithm = GRPC_COMPRESS_NONE;
       break;
     case GRPCCompressDeflate:
-      hostConfig.compressAlgorithm = GRPC_COMPRESS_MESSAGE_DEFLATE;
+      hostConfig.compressAlgorithm = GRPC_COMPRESS_DEFLATE;
       break;
     case GRPCCompressGzip:
-      hostConfig.compressAlgorithm = GRPC_COMPRESS_MESSAGE_GZIP;
+      hostConfig.compressAlgorithm = GRPC_COMPRESS_GZIP;
       break;
     default:
       NSLog(@"Invalid compression algorithm");

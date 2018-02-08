@@ -39,7 +39,7 @@ namespace Grpc.Core.Internal
         {
             this.nativeMethods = new NativeMethods(Load());
             
-            // Redirect the the native logs as the very first thing after loading the native extension
+            // Redirect the native logs as the very first thing after loading the native extension
             // to make sure we don't lose any logs.
             NativeLogRedirector.Redirect(this.nativeMethods);
 

@@ -22,10 +22,6 @@ export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
 export PATH=$PATH:/usr/bin/llvm-symbolizer
 
-# Ensure that programs depending on current-user-ownership of cache directories
-# are satisfied (it's being mounted from outside the image).
-chown "$(whoami)" "$XDG_CACHE_HOME"
-
 mkdir -p /var/local/git
 git clone  /var/local/jenkins/grpc /var/local/git/grpc
 # clone gRPC submodules, use data from locally cloned submodules where possible
