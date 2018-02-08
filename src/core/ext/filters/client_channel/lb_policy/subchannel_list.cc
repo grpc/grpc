@@ -54,13 +54,15 @@ void grpc_lb_subchannel_data_unref_subchannel(grpc_lb_subchannel_data* sd,
 void grpc_lb_subchannel_data_start_connectivity_watch(
     grpc_lb_subchannel_data* sd) {
   if (sd->subchannel_list->tracer->enabled()) {
-    gpr_log(GPR_DEBUG,
-            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): requesting connectivity change notification",
-            sd->subchannel_list->tracer->name(), sd->subchannel_list->policy,
-            sd->subchannel_list,
-            (size_t)(sd - sd->subchannel_list->subchannels),
-            sd->subchannel_list->num_subchannels, sd->subchannel);
+    gpr_log(
+        GPR_DEBUG,
+        "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+        " (subchannel %p): requesting connectivity change "
+        "notification (from %s)",
+        sd->subchannel_list->tracer->name(), sd->subchannel_list->policy,
+        sd->subchannel_list, (size_t)(sd - sd->subchannel_list->subchannels),
+        sd->subchannel_list->num_subchannels, sd->subchannel,
+        grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe));
   }
   sd->connectivity_notification_pending = true;
   grpc_subchannel_notify_on_state_change(

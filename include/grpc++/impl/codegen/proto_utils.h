@@ -59,18 +59,22 @@ class GrpcBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
   bool Next(void** data, int* size) override {
     // Protobuf should not ask for more memory than total_size_.
     GPR_CODEGEN_ASSERT(byte_count_ < total_size_);
+    size_t remain = total_size_ - byte_count_;
     if (have_backup_) {
       slice_ = backup_slice_;
       have_backup_ = false;
+      if (GRPC_SLICE_LENGTH(slice_) > remain) {
+        GRPC_SLICE_SET_LENGTH(slice_, remain);
+      }
     } else {
       // When less than a whole block is needed, only allocate that much.
       // But make sure the allocated slice is not inlined.
-      size_t remain = total_size_ - byte_count_ > block_size_
-                          ? block_size_
-                          : total_size_ - byte_count_;
+      size_t allocate_length =
+          remain > static_cast<size_t>(block_size_) ? block_size_ : remain;
       slice_ = g_core_codegen_interface->grpc_slice_malloc(
-          remain > GRPC_SLICE_INLINED_SIZE ? remain
-                                           : GRPC_SLICE_INLINED_SIZE + 1);
+          allocate_length > GRPC_SLICE_INLINED_SIZE
+              ? allocate_length
+              : GRPC_SLICE_INLINED_SIZE + 1);
     }
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit

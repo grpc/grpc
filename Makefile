@@ -2927,7 +2927,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -4648,7 +4647,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -5134,7 +5132,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -5853,7 +5850,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
