@@ -703,7 +703,6 @@ foreach(_hdr
   include/grpc/support/atm_windows.h
   include/grpc/support/avl.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
@@ -1678,7 +1677,6 @@ foreach(_hdr
   include/grpc/support/atm_windows.h
   include/grpc/support/avl.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
@@ -1972,7 +1970,6 @@ foreach(_hdr
   include/grpc/support/atm_windows.h
   include/grpc/support/avl.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
@@ -2538,7 +2535,6 @@ foreach(_hdr
   include/grpc/support/atm_windows.h
   include/grpc/support/avl.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
@@ -3009,7 +3005,6 @@ foreach(_hdr
   include/grpc/support/atm_windows.h
   include/grpc/support/avl.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h
@@ -3737,7 +3732,6 @@ foreach(_hdr
   include/grpc/support/atm_windows.h
   include/grpc/support/avl.h
   include/grpc/support/cpu.h
-  include/grpc/support/host_port.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
   include/grpc/support/port_platform.h

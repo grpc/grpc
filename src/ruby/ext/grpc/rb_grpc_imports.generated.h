@@ -35,7 +35,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
@@ -604,12 +603,6 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef int(*gpr_join_host_port_type)(char** out, const char* host, int port);
-extern gpr_join_host_port_type gpr_join_host_port_import;
-#define gpr_join_host_port gpr_join_host_port_import
-typedef int(*gpr_split_host_port_type)(const char* name, char** host, char** port);
-extern gpr_split_host_port_type gpr_split_host_port_import;
-#define gpr_split_host_port gpr_split_host_port_import
 typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
 extern gpr_log_severity_string_type gpr_log_severity_string_import;
 #define gpr_log_severity_string gpr_log_severity_string_import

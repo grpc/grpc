@@ -209,8 +209,6 @@ gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
 gpr_avl_is_empty_type gpr_avl_is_empty_import;
 gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
-gpr_join_host_port_type gpr_join_host_port_import;
-gpr_split_host_port_type gpr_split_host_port_import;
 gpr_log_severity_string_type gpr_log_severity_string_import;
 gpr_log_type gpr_log_import;
 gpr_log_message_type gpr_log_message_import;
@@ -462,8 +460,6 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_avl_is_empty_import = (gpr_avl_is_empty_type) GetProcAddress(library, "gpr_avl_is_empty");
   gpr_cpu_num_cores_import = (gpr_cpu_num_cores_type) GetProcAddress(library, "gpr_cpu_num_cores");
   gpr_cpu_current_cpu_import = (gpr_cpu_current_cpu_type) GetProcAddress(library, "gpr_cpu_current_cpu");
-  gpr_join_host_port_import = (gpr_join_host_port_type) GetProcAddress(library, "gpr_join_host_port");
-  gpr_split_host_port_import = (gpr_split_host_port_type) GetProcAddress(library, "gpr_split_host_port");
   gpr_log_severity_string_import = (gpr_log_severity_string_type) GetProcAddress(library, "gpr_log_severity_string");
   gpr_log_import = (gpr_log_type) GetProcAddress(library, "gpr_log");
   gpr_log_message_import = (gpr_log_message_type) GetProcAddress(library, "gpr_log_message");

@@ -6,7 +6,6 @@ framework module grpc {
   header "support/atm.h"
   header "support/avl.h"
   header "support/cpu.h"
-  header "support/host_port.h"
   header "support/log.h"
   header "support/log_windows.h"
   header "support/port_platform.h"

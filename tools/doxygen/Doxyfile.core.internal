@@ -851,7 +851,6 @@ include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_windows.h \
 include/grpc/support/avl.h \
 include/grpc/support/cpu.h \
-include/grpc/support/host_port.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
@@ -1081,6 +1080,7 @@ src/core/lib/gpr/env_windows.cc \
 src/core/lib/gpr/fork.cc \
 src/core/lib/gpr/fork.h \
 src/core/lib/gpr/host_port.cc \
+src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
