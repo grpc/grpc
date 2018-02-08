@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GRPC_AVL_H
-#define GRPC_CORE_LIB_GRPC_AVL_H
+#ifndef GRPC_CORE_LIB_AVL_AVL_H
+#define GRPC_CORE_LIB_AVL_AVL_H
 
 #include <grpc/support/sync.h>
 
@@ -89,4 +89,4 @@ int grpc_avl_maybe_get(grpc_avl avl, void* key, void** value, void* user_data);
 /** Return 1 if avl is empty, 0 otherwise */
 int grpc_avl_is_empty(grpc_avl avl);
 
-#endif /* GRPC_CORE_LIB_GRPC_AVL_H */
+#endif /* GRPC_CORE_LIB_AVL_AVL_H */
