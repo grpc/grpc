@@ -309,7 +309,8 @@ static void test_connect(size_t num_connects,
   gpr_log(GPR_INFO,
           "clients=%lu, num chan args=%lu, remote IP=%s, test_dst_addrs=%d",
           static_cast<unsigned long>(num_connects),
-          (channel_args != nullptr ? channel_args->num_args : 0),
+          static_cast<unsigned long>(
+              channel_args != nullptr ? channel_args->num_args : 0),
           dst_addrs != nullptr ? "<specific>" : "::", test_dst_addrs);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   memset(&resolved_addr1, 0, sizeof(resolved_addr1));

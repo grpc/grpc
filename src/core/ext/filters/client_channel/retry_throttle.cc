@@ -116,7 +116,7 @@ static grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_create(
   // we will start out doing the same thing on the new one.
   if (old_throttle_data != nullptr) {
     double token_fraction =
-        static_cast<int> gpr_atm_acq_load(&old_throttle_data->milli_tokens) /
+        static_cast<int>(gpr_atm_acq_load(&old_throttle_data->milli_tokens)) /
         static_cast<double>(old_throttle_data->max_milli_tokens);
     initial_milli_tokens = static_cast<int>(token_fraction * max_milli_tokens);
   }

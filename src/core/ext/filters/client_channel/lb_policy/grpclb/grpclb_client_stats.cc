@@ -114,7 +114,7 @@ void grpc_grpclb_client_stats_add_call_dropped_locked(
 }
 
 static void atomic_get_and_reset_counter(int64_t* value, gpr_atm* counter) {
-  *value = static_cast<int64_t> gpr_atm_acq_load(counter);
+  *value = static_cast<int64_t>(gpr_atm_acq_load(counter));
   gpr_atm_full_fetch_add(counter, (gpr_atm)(-*value));
 }
 

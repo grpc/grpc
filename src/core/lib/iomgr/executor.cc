@@ -190,7 +190,7 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
   do {
     retry_push = false;
     size_t cur_thread_count =
-        static_cast<size_t> gpr_atm_no_barrier_load(&g_cur_threads);
+        static_cast<size_t>(gpr_atm_no_barrier_load(&g_cur_threads));
     if (cur_thread_count == 0) {
       if (executor_trace.enabled()) {
 #ifndef NDEBUG
@@ -258,7 +258,7 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
     }
     if (try_new_thread && gpr_spinlock_trylock(&g_adding_thread_lock)) {
       cur_thread_count =
-          static_cast<size_t> gpr_atm_no_barrier_load(&g_cur_threads);
+          static_cast<size_t>(gpr_atm_no_barrier_load(&g_cur_threads));
       if (cur_thread_count < g_max_threads) {
         gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
 

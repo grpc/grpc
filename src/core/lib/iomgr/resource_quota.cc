@@ -659,8 +659,8 @@ void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
 }
 
 size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {
-  return static_cast<size_t> gpr_atm_no_barrier_load(
-      &resource_quota->last_size);
+  return static_cast<size_t>(
+      gpr_atm_no_barrier_load(&resource_quota->last_size));
 }
 
 /*******************************************************************************

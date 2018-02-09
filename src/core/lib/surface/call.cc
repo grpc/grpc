@@ -1195,7 +1195,7 @@ static void finish_batch_completion(void* user_data,
 }
 
 static grpc_error* consolidate_batch_errors(batch_control* bctl) {
-  size_t n = static_cast<size_t> gpr_atm_acq_load(&bctl->num_errors);
+  size_t n = static_cast<size_t>(gpr_atm_acq_load(&bctl->num_errors));
   if (n == 0) {
     return GRPC_ERROR_NONE;
   } else if (n == 1) {

@@ -99,17 +99,13 @@ int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
     free(a);
     dec_thd_count();
   }
-  *t = static_cast<gpr_thd_id>(p);
+  *t = (gpr_thd_id)p;
   return thread_started;
 }
 
-gpr_thd_id gpr_thd_currentid(void) {
-  return static_cast<gpr_thd_id>(pthread_self());
-}
+gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)pthread_self(); }
 
-void gpr_thd_join(gpr_thd_id t) {
-  pthread_join(static_cast<pthread_t>(t), nullptr);
-}
+void gpr_thd_join(gpr_thd_id t) { pthread_join((pthread_t)t, nullptr); }
 
 /*****************************************
  * Only used when fork support is enabled

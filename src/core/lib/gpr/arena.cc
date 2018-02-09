@@ -78,7 +78,7 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
     zone* next_z = (zone*)gpr_atm_acq_load(&z->next_atm);
     if (next_z == nullptr) {
       size_t next_z_size =
-          static_cast<size_t> gpr_atm_no_barrier_load(&arena->size_so_far);
+          static_cast<size_t>(gpr_atm_no_barrier_load(&arena->size_so_far));
       next_z = static_cast<zone*>(zalloc_aligned(
           ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) + next_z_size));
       next_z->size_begin = z->size_end;
