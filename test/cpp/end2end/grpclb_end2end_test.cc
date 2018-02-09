@@ -1096,7 +1096,7 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   SetNextResolution(addresses);
   addresses.clear();
   addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
-  SetNextResolutionUponError(addresses);
+  SetNextReresolutionResponse(addresses);
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
 
@@ -1170,8 +1170,51 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
 }
 
-// TODO(juanlishen): Add UpdatesTest.ReresolveDeadBackend when LB channel
-// connectiviity can be watched properly.
+TEST_F(UpdatesTest, ReresolveDeadBackend) {
+  ResetStub(500);
+  // The first resolution contains the addresses of a balancer that never
+  // responds, and a fallback backend.
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
+  addresses.emplace_back(AddressData{backend_servers_[0].port_, false, ""});
+  SetNextResolution(addresses);
+  // The re-resolution result will contain a new fallback backend address.
+  addresses.clear();
+  addresses.emplace_back(AddressData{backend_servers_[1].port_, false, ""});
+  SetNextReresolutionResponse(addresses);
+
+  // Start servers and send 10 RPCs per server.
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  CheckRpcSendOk(10);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  // All 10 requests should have gone to the fallback backend.
+  EXPECT_EQ(10U, backend_servers_[0].service_->request_count());
+
+  // Kill backend 0.
+  gpr_log(GPR_INFO, "********** ABOUT TO KILL BACKEND 0 *************");
+  if (backends_[0]->Shutdown()) backend_servers_[0].Shutdown();
+  gpr_log(GPR_INFO, "********** KILLED BACKEND 0 *************");
+
+  // Wait until re-resolution has finished, as signaled by the second backend
+  // receiving a request.
+  WaitForBackend(1);
+
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  CheckRpcSendOk(10);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  // All 10 requests should have gone to the second backend.
+  EXPECT_EQ(10U, backend_servers_[1].service_->request_count());
+
+  balancers_[0]->NotifyDoneWithServerlists();
+  balancers_[1]->NotifyDoneWithServerlists();
+  balancers_[2]->NotifyDoneWithServerlists();
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
+}
 
 TEST_F(SingleBalancerTest, Drop) {
   SetNextResolutionAllBalancers();
