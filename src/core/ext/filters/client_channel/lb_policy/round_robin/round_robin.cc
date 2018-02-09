@@ -402,9 +402,9 @@ void RoundRobin::UpdateConnectivityStatusLocked(grpc_lb_subchannel_data* sd,
   } else if (subchannel_list->num_transient_failures ==
              subchannel_list->num_subchannels) {
     /* 3) TRANSIENT_FAILURE */
-    grpc_connectivity_state_set(
-        &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_REF(error), "rr_exhausted_subchannels");
+    grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                GRPC_ERROR_REF(error),
+                                "rr_exhausted_subchannels");
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -567,8 +567,7 @@ void RoundRobin::PingOneLocked(grpc_closure* on_initiate,
 }
 
 void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
+  const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "[RR %p] update provided no addresses; ignoring", this);
     // If we don't have a current subchannel list, go into TRANSIENT_FAILURE.

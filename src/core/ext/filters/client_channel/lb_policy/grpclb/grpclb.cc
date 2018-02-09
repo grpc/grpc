@@ -43,7 +43,7 @@
 /// however, we may enter fallback mode, in which case we will populate
 /// the RR policy's addresses from the backend addresses returned by the
 /// resolver.
-/// 
+///
 /// Once an RR policy instance is in place (and getting updated as described),
 /// calls to for a pick, a ping, or a cancellation will be serviced right
 /// away by forwarding them to the RR instance.  Any time there's no RR
@@ -916,8 +916,8 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 //
 
 // Helper function to construct a target info entry.
-grpc_slice_hash_table_entry BalancerEntryCreate(
-    const char* address, const char* balancer_name) {
+grpc_slice_hash_table_entry BalancerEntryCreate(const char* address,
+                                                const char* balancer_name) {
   grpc_slice_hash_table_entry entry;
   entry.key = grpc_slice_from_copied_string(address);
   entry.value = gpr_strdup(balancer_name);
@@ -965,8 +965,8 @@ grpc_channel_args* BuildBalancerChannelArgs(
     char* addr_str;
     GPR_ASSERT(grpc_sockaddr_to_string(
                    &addr_str, &addresses->addresses[i].address, true) > 0);
-    targets_info_entries[lb_addresses_idx] = BalancerEntryCreate(
-        addr_str, addresses->addresses[i].balancer_name);
+    targets_info_entries[lb_addresses_idx] =
+        BalancerEntryCreate(addr_str, addresses->addresses[i].balancer_name);
     gpr_free(addr_str);
     grpc_lb_addresses_set_address(
         lb_addresses, lb_addresses_idx++, addresses->addresses[i].address.addr,
@@ -974,9 +974,8 @@ grpc_channel_args* BuildBalancerChannelArgs(
         addresses->addresses[i].balancer_name, nullptr /* user data */);
   }
   GPR_ASSERT(num_grpclb_addrs == lb_addresses_idx);
-  grpc_slice_hash_table* targets_info =
-      grpc_slice_hash_table_create(num_grpclb_addrs, targets_info_entries,
-                                   gpr_free, BalancerNameCmp);
+  grpc_slice_hash_table* targets_info = grpc_slice_hash_table_create(
+      num_grpclb_addrs, targets_info_entries, gpr_free, BalancerNameCmp);
   gpr_free(targets_info_entries);
   grpc_channel_args* lb_channel_args =
       grpc_lb_policy_grpclb_build_lb_channel_args(targets_info,
@@ -1020,13 +1019,12 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
                     grpc_combiner_scheduler(args.combiner));
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "grpclb");
   // Record server name.
-  const grpc_arg *arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
+  const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != nullptr);
   GPR_ASSERT(arg->type == GRPC_ARG_STRING);
   grpc_uri* uri = grpc_uri_parse(arg->value.string, true);
   GPR_ASSERT(uri->path[0] != '\0');
-  server_name_ =
-      gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Will use '%s' as the server name for LB request.",
@@ -1285,8 +1283,8 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   args_ = grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   // Construct args for balancer channel.
-  grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(
-      addresses, response_generator_.get(), &args);
+  grpc_channel_args* lb_channel_args =
+      BuildBalancerChannelArgs(addresses, response_generator_.get(), &args);
   // Create balancer channel if needed.
   if (lb_channel_ == nullptr) {
     char* uri_str;
@@ -1373,8 +1371,7 @@ void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   grpclb_policy->fallback_timer_callback_pending_ = false;
   // If we receive a serverlist after the timer fires but before this callback
   // actually runs, don't fall back.
-  if (grpclb_policy->serverlist_ == nullptr &&
-      !grpclb_policy->shutting_down_ &&
+  if (grpclb_policy->serverlist_ == nullptr && !grpclb_policy->shutting_down_ &&
       error == GRPC_ERROR_NONE) {
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO,
@@ -1394,8 +1391,8 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > 0) {
       gpr_log(GPR_DEBUG,
-              "[grpclb %p] ... retry_timer_active in %" PRIuPTR "ms.",
-              this, timeout);
+              "[grpclb %p] ... retry_timer_active in %" PRIuPTR "ms.", this,
+              timeout);
     } else {
       gpr_log(GPR_DEBUG, "[grpclb %p] ... retry_timer_active immediately.",
               this);
@@ -1429,7 +1426,7 @@ void GrpcLb::OnRetryTimerLocked(void* arg, grpc_error* error) {
 // Invoked as part of the update process. It continues watching the LB channel
 // until it shuts down or becomes READY. It's invoked even if the LB channel
 // stayed READY throughout the update (for example if the update is identical).
-void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void *arg,
+void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                         grpc_error* error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   if (grpclb_policy->shutting_down_) goto done;
@@ -1657,8 +1654,8 @@ void GrpcLb::CreateRRLocked(const Args& args) {
     pending_picks_ = pp->next;
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "[grpclb %p] Pending pick about to (async) PICK from RR %p",
-              this, rr_policy_.get());
+              "[grpclb %p] Pending pick about to (async) PICK from RR %p", this,
+              rr_policy_.get());
     }
     PickFromInternalRRLocked(true /* force_async */, pp);
   }
@@ -1693,7 +1690,7 @@ grpc_channel_args* GrpcLb::CreateRRPolicyArgsLocked() {
   // the subchannel.
   static const char* keys_to_remove[] = {GRPC_ARG_LB_ADDRESSES};
   const grpc_arg arg = grpc_lb_addresses_create_channel_arg(addresses);
-  grpc_channel_args *args = grpc_channel_args_copy_and_add_and_remove(
+  grpc_channel_args* args = grpc_channel_args_copy_and_add_and_remove(
       args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &arg, 1);
   grpc_lb_addresses_destroy(addresses);
   return args;
@@ -1862,8 +1859,8 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 namespace {
 
 // Only add client_load_reporting filter if the grpclb LB policy is used.
-bool maybe_add_client_load_reporting_filter(
-    grpc_channel_stack_builder* builder, void* arg) {
+bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
+                                            void* arg) {
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const grpc_arg* channel_arg =

@@ -117,8 +117,7 @@ grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
     grpc_arg addr_arg =
         grpc_create_subchannel_address_arg(&addresses->addresses[i].address);
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-        &args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &addr_arg,
-        1);
+        &args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &addr_arg, 1);
     gpr_free(addr_arg.value.string);
     sc_args.args = new_args;
     grpc_subchannel* subchannel = grpc_client_channel_factory_create_subchannel(

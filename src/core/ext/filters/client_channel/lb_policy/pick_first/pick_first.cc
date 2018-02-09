@@ -275,8 +275,7 @@ void PickFirst::SubchannelListUnrefForConnectivityWatch(
 }
 
 void PickFirst::UpdateLocked(const grpc_channel_args& args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
+  const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     if (subchannel_list_ == nullptr) {
       // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
