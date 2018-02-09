@@ -24,7 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
+
 #include <grpc/support/workaround_list.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"

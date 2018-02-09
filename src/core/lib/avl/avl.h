@@ -16,31 +16,27 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_AVL_H
-#define GRPC_SUPPORT_AVL_H
+#ifndef GRPC_CORE_LIB_AVL_AVL_H
+#define GRPC_CORE_LIB_AVL_AVL_H
 
 #include <grpc/support/sync.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** internal node of an AVL tree */
-typedef struct gpr_avl_node {
+typedef struct grpc_avl_node {
   gpr_refcount refs;
   void* key;
   void* value;
-  struct gpr_avl_node* left;
-  struct gpr_avl_node* right;
+  struct grpc_avl_node* left;
+  struct grpc_avl_node* right;
   long height;
-} gpr_avl_node;
+} grpc_avl_node;
 
 /** vtable for the AVL tree
- * The optional user_data is propagated from the top level gpr_avl_XXX API.
+ * The optional user_data is propagated from the top level grpc_avl_XXX API.
  * From the same API call, multiple vtable functions may be called multiple
  * times.
  */
-typedef struct gpr_avl_vtable {
+typedef struct grpc_avl_vtable {
   /** destroy a key */
   void (*destroy_key)(void* key, void* user_data);
   /** copy a key, returning new value */
@@ -52,51 +48,45 @@ typedef struct gpr_avl_vtable {
   void (*destroy_value)(void* value, void* user_data);
   /** copy a value */
   void* (*copy_value)(void* value, void* user_data);
-} gpr_avl_vtable;
+} grpc_avl_vtable;
 
 /** "pointer" to an AVL tree - this is a reference
-    counted object - use gpr_avl_ref to add a reference,
-    gpr_avl_unref when done with a reference */
-typedef struct gpr_avl {
-  const gpr_avl_vtable* vtable;
-  gpr_avl_node* root;
-} gpr_avl;
+    counted object - use grpc_avl_ref to add a reference,
+    grpc_avl_unref when done with a reference */
+typedef struct grpc_avl {
+  const grpc_avl_vtable* vtable;
+  grpc_avl_node* root;
+} grpc_avl;
 
 /** Create an immutable AVL tree. */
-GPRAPI gpr_avl gpr_avl_create(const gpr_avl_vtable* vtable);
+grpc_avl grpc_avl_create(const grpc_avl_vtable* vtable);
 /** Add a reference to an existing tree - returns
     the tree as a convenience. The optional user_data will be passed to vtable
     functions. */
-GPRAPI gpr_avl gpr_avl_ref(gpr_avl avl, void* user_data);
+grpc_avl grpc_avl_ref(grpc_avl avl, void* user_data);
 /** Remove a reference to a tree - destroying it if there
     are no references left. The optional user_data will be passed to vtable
     functions. */
-GPRAPI void gpr_avl_unref(gpr_avl avl, void* user_data);
+void grpc_avl_unref(grpc_avl avl, void* user_data);
 /** Return a new tree with (key, value) added to avl.
     implicitly unrefs avl to allow easy chaining.
     if key exists in avl, the new tree's key entry updated
     (i.e. a duplicate is not created). The optional user_data will be passed to
     vtable functions. */
-GPRAPI gpr_avl gpr_avl_add(gpr_avl avl, void* key, void* value,
-                           void* user_data);
+grpc_avl grpc_avl_add(grpc_avl avl, void* key, void* value, void* user_data);
 /** Return a new tree with key deleted
     implicitly unrefs avl to allow easy chaining. The optional user_data will be
     passed to vtable functions. */
-GPRAPI gpr_avl gpr_avl_remove(gpr_avl avl, void* key, void* user_data);
+grpc_avl grpc_avl_remove(grpc_avl avl, void* key, void* user_data);
 /** Lookup key, and return the associated value.
     Does not mutate avl.
     Returns NULL if key is not found. The optional user_data will be passed to
     vtable functions.*/
-GPRAPI void* gpr_avl_get(gpr_avl avl, void* key, void* user_data);
+void* grpc_avl_get(grpc_avl avl, void* key, void* user_data);
 /** Return 1 if avl contains key, 0 otherwise; if it has the key, sets *value to
-    its value. THe optional user_data will be passed to vtable functions. */
-GPRAPI int gpr_avl_maybe_get(gpr_avl avl, void* key, void** value,
-                             void* user_data);
+    its value. The optional user_data will be passed to vtable functions. */
+int grpc_avl_maybe_get(grpc_avl avl, void* key, void** value, void* user_data);
 /** Return 1 if avl is empty, 0 otherwise */
-GPRAPI int gpr_avl_is_empty(gpr_avl avl);
+int grpc_avl_is_empty(grpc_avl avl);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* GRPC_SUPPORT_AVL_H */
+#endif /* GRPC_CORE_LIB_AVL_AVL_H */

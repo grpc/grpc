@@ -40,6 +40,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -119,11 +120,11 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   void SetUp() override {
-    response_generator_ = grpc_fake_resolver_response_generator_create();
+    response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   }
 
   void TearDown() override {
-    grpc_fake_resolver_response_generator_unref(response_generator_);
     for (size_t i = 0; i < servers_.size(); ++i) {
       servers_[i]->Shutdown();
     }
@@ -153,13 +154,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    const grpc_arg fake_addresses =
-        grpc_lb_addresses_create_channel_arg(addresses);
-    grpc_channel_args* fake_result =
-        grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                       fake_result);
-    grpc_channel_args_destroy(fake_result);
+    grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_channel_args fake_result = {1, &fake_addresses};
+    response_generator_->SetResponse(&fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
 
@@ -178,13 +175,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    const grpc_arg fake_addresses =
-        grpc_lb_addresses_create_channel_arg(addresses);
-    grpc_channel_args* fake_result =
-        grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    grpc_fake_resolver_response_generator_set_response_upon_error(
-        response_generator_, fake_result);
-    grpc_channel_args_destroy(fake_result);
+    grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_channel_args fake_result = {1, &fake_addresses};
+    response_generator_->SetReresolutionResponse(&fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
 
@@ -206,7 +199,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator_);
+                    response_generator_.get());
     return CreateCustomChannel("fake:///", InsecureChannelCredentials(), args);
   }
 
@@ -323,7 +316,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
   const grpc::string server_host_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
-  grpc_fake_resolver_response_generator* response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+      response_generator_;
   const grpc::string kRequestMessage_;
 };
 

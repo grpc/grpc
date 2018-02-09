@@ -63,11 +63,12 @@ grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
 
 grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
     grpc_slice_hash_table* targets_info,
-    grpc_fake_resolver_response_generator* response_generator,
+    grpc_core::FakeResolverResponseGenerator* response_generator,
     const grpc_channel_args* args) {
   const grpc_arg to_add[] = {
       grpc_lb_targets_info_create_channel_arg(targets_info),
-      grpc_fake_resolver_response_generator_arg(response_generator)};
+      grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
+          response_generator)};
   /* We remove:
    *
    * - The channel arg for the LB policy name, since we want to use the default

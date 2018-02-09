@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <grpc/support/useful.h>
+#include "src/core/lib/gpr/useful.h"
 
 grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
 

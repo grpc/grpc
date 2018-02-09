@@ -24,9 +24,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_proxy {

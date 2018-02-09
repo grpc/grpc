@@ -16,6 +16,8 @@
  *
  */
 
+#include "test/core/util/histogram.h"
+
 #include <math.h>
 #include <stddef.h>
 #include <string.h>
@@ -23,9 +25,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/useful.h>
 
-#include "test/core/util/histogram.h"
+#include "src/core/lib/gpr/useful.h"
 
 /* Histograms are stored with exponentially increasing bucket sizes.
    The first bucket is [0, m) where m = 1 + resolution

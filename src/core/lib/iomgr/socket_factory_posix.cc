@@ -21,11 +21,11 @@
 #ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/useful.h>
 
 void grpc_socket_factory_init(grpc_socket_factory* factory,
                               const grpc_socket_factory_vtable* vtable) {

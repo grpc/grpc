@@ -28,8 +28,8 @@
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {
-  grpc_resolver_registry_shutdown();
-  grpc_resolver_registry_init();
+  grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
+  grpc_core::ResolverRegistry::Builder::InitRegistry();
   grpc_channel_credentials* creds =
       grpc_fake_transport_security_credentials_create();
   grpc_channel* chan =

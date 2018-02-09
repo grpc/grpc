@@ -34,9 +34,9 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 
 const char* gpr_getenv_silent(const char* name, char** dst) {
   const char* insecure_func_used = nullptr;

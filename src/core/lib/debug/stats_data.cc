@@ -19,9 +19,10 @@
  */
 
 #include "src/core/lib/debug/stats_data.h"
-#include <grpc/support/useful.h>
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+
 const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "client_calls_created",
     "server_calls_created",

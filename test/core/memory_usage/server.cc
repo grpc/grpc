@@ -30,12 +30,12 @@
 #endif
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/host_port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/util/cmdline.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

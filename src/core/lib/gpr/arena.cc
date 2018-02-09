@@ -23,7 +23,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
 // TODO(roth): We currently assume that all callers need alignment of 16
 // bytes, which may be wrong in some cases.  As part of converting the
