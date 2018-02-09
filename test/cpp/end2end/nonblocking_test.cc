@@ -33,15 +33,15 @@
 
 #ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"
-#endif
+#endif  // GRPC_POSIX_SOCKET
 
 #include <gtest/gtest.h>
 
+#ifdef GRPC_POSIX_SOCKET
 // Thread-local variable to so that only polls from this test assert
 // non-blocking (not polls from resolver, timer thread, etc)
 GPR_TLS_DECL(g_is_nonblocking_test);
 
-#ifdef GRPC_POSIX_SOCKET
 namespace {
 
 int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
@@ -53,7 +53,6 @@ int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
 }
 
 }  // namespace
-#endif
 
 namespace grpc {
 namespace testing {
@@ -180,11 +179,13 @@ TEST_F(NonblockingTest, SimpleRpc) {
 }  // namespace testing
 }  // namespace grpc
 
+#endif  // GRPC_POSIX_SOCKET
+
 int main(int argc, char** argv) {
 #ifdef GRPC_POSIX_SOCKET
   // Override the poll function before anything else can happen
   grpc_poll_function = maybe_assert_non_blocking_poll;
-#endif
+#endif  // GRPC_POSIX_SOCKET
 
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
