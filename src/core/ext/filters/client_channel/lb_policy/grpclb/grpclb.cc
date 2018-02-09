@@ -244,10 +244,12 @@ class GrpcLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
+  // Helper function used in ctor and UpdateLocked().
+  void ProcessChannelArgsLocked(const grpc_channel_args& args);
+
   // Methods for dealing with the balancer channel and call.
   void StartPickingLocked();
   void StartBalancerCallLocked();
-  void UpdateFallbackAddressesLocked(const grpc_lb_addresses* addresses);
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
   void StartBalancerCallRetryTimerLocked();
   static void OnRetryTimerLocked(void* arg, grpc_error* error);
@@ -945,9 +947,8 @@ grpc_channel_args* BuildBalancerChannelArgs(
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
     if (addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
   }
-  /* All input addresses come from a resolver that claims they are LB services.
-   * It's the resolver's responsibility to make sure this policy is only
-   * instantiated and used in that case. Otherwise, something has gone wrong. */
+  // There must be at least one balancer address, or else the
+  // client_channel would not have chosen this LB policy.
   GPR_ASSERT(num_grpclb_addrs > 0);
   grpc_lb_addresses* lb_addresses =
       grpc_lb_addresses_create(num_grpclb_addrs, nullptr);
@@ -997,6 +998,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
 GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
                const LoadBalancingPolicy::Args& args)
     : LoadBalancingPolicy(args),
+      response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
       lb_call_backoff_(
           BackOff::Options()
               .set_initial_backoff(GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS *
@@ -1005,7 +1007,18 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
               .set_jitter(GRPC_GRPCLB_RECONNECT_JITTER)
               .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS *
                                1000)) {
-// FIXME: unify handling of channel args between this and UpdateLocked()
+  // Initialization.
+  grpc_subchannel_index_ref();
+  GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
+                    &GrpcLb::OnBalancerChannelConnectivityChangedLocked, this,
+                    grpc_combiner_scheduler(args.combiner));
+  GRPC_CLOSURE_INIT(&on_rr_connectivity_changed_,
+                    &GrpcLb::OnRRConnectivityChangedLocked, this,
+                    grpc_combiner_scheduler(args.combiner));
+  GRPC_CLOSURE_INIT(&on_rr_request_reresolution_,
+                    &GrpcLb::OnRRRequestReresolutionLocked, this,
+                    grpc_combiner_scheduler(args.combiner));
+  grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "grpclb");
   // Record server name.
   const grpc_arg *arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(arg != nullptr);
@@ -1027,40 +1040,8 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
   arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS);
   lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
       arg, {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
-  // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
-  // since we use this to trigger the client_load_reporting filter.
-  grpc_arg new_arg = grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_LB_POLICY_NAME, (char*)"grpclb");
-  static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
-  args_ = grpc_channel_args_copy_and_add_and_remove(
-      args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
-  // Extract the backend addresses (may be empty) from the resolver for
-  // fallback.
-  fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
-  // Create a client channel over them to communicate with a LB service.
-  response_generator_ = MakeRefCounted<FakeResolverResponseGenerator>();
-  grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(
-      addresses, response_generator_.get(), args.args);
-  char* uri_str;
-  gpr_asprintf(&uri_str, "fake:///%s", server_name_);
-  lb_channel_ = grpc_lb_policy_grpclb_create_lb_channel(
-      uri_str, client_channel_factory(), lb_channel_args);
-  GPR_ASSERT(lb_channel_ != nullptr);
-  // Propagate initial resolution.
-  response_generator_->SetResponse(lb_channel_args);
-  grpc_channel_args_destroy(lb_channel_args);
-  gpr_free(uri_str);
-  GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
-                    &GrpcLb::OnBalancerChannelConnectivityChangedLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_rr_connectivity_changed_,
-                    &GrpcLb::OnRRConnectivityChangedLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_rr_request_reresolution_,
-                    &GrpcLb::OnRRRequestReresolutionLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
-  grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "grpclb");
-  grpc_subchannel_index_ref();
+  // Process channel args.
+  ProcessChannelArgsLocked(*args.args);
 }
 
 GrpcLb::~GrpcLb() {
@@ -1278,41 +1259,56 @@ void GrpcLb::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
                                                  notify);
 }
 
-void GrpcLb::UpdateLocked(const grpc_channel_args& args) {
-// FIXME: unify handling of channel args between this and the ctor
-// (also, this should set args_)
+void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
-    if (lb_channel_ == nullptr) {
-      // If we don't have a current channel to the LB, go into TRANSIENT
-      // FAILURE.
-      grpc_connectivity_state_set(
-          &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
-          "glb_update_missing");
-    } else {
-      // otherwise, keep using the current LB channel (ignore this update).
-      gpr_log(
-          GPR_ERROR,
-          "[grpclb %p] No valid LB addresses channel arg in update, ignoring.",
-          this);
-    }
+    // Ignore this update.
+    gpr_log(
+        GPR_ERROR,
+        "[grpclb %p] No valid LB addresses channel arg in update, ignoring.",
+        this);
     return;
   }
   const grpc_lb_addresses* addresses =
       reinterpret_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
-  // If a non-empty serverlist hasn't been received from the balancer,
-  // propagate the update to fallback_backend_addresses.
-  if (serverlist_ == nullptr) {
-    UpdateFallbackAddressesLocked(addresses);
+  // Update fallback address list.
+  if (fallback_backend_addresses_ != nullptr) {
+    grpc_lb_addresses_destroy(fallback_backend_addresses_);
   }
-  GPR_ASSERT(lb_channel_ != nullptr);
-  // Propagate updates to the LB channel (pick_first) through the fake
-  // resolver.
+  fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
+  // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
+  // since we use this to trigger the client_load_reporting filter.
+  static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
+  grpc_arg new_arg = grpc_channel_arg_string_create(
+      (char*)GRPC_ARG_LB_POLICY_NAME, (char*)"grpclb");
+  grpc_channel_args_destroy(args_);
+  args_ = grpc_channel_args_copy_and_add_and_remove(
+      &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
+  // Construct args for balancer channel.
   grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(
       addresses, response_generator_.get(), &args);
+  // Create balancer channel if needed.
+  if (lb_channel_ == nullptr) {
+    char* uri_str;
+    gpr_asprintf(&uri_str, "fake:///%s", server_name_);
+    lb_channel_ = grpc_lb_policy_grpclb_create_lb_channel(
+        uri_str, client_channel_factory(), lb_channel_args);
+    GPR_ASSERT(lb_channel_ != nullptr);
+    gpr_free(uri_str);
+  }
+  // Propagate updates to the LB channel (pick_first) through the fake
+  // resolver.
   response_generator_->SetResponse(lb_channel_args);
   grpc_channel_args_destroy(lb_channel_args);
+}
+
+void GrpcLb::UpdateLocked(const grpc_channel_args& args) {
+  ProcessChannelArgsLocked(args);
+  // If fallback is configured and the RR policy already exists, update
+  // it with the new fallback addresses.
+  if (lb_fallback_timeout_ms_ > 0 && rr_policy_ != nullptr) {
+    CreateOrUpdateRRPolicyLocked();
+  }
   // Start watching the LB channel connectivity for connection, if not
   // already doing so.
   if (!watching_lb_channel_) {
@@ -1370,15 +1366,6 @@ void GrpcLb::StartBalancerCallLocked() {
             this, lb_channel_, lb_calld_.get());
   }
   lb_calld_->StartQuery();
-}
-
-void GrpcLb::UpdateFallbackAddressesLocked(const grpc_lb_addresses* addresses) {
-  GPR_ASSERT(fallback_backend_addresses_ != nullptr);
-  grpc_lb_addresses_destroy(fallback_backend_addresses_);
-  fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
-  if (lb_fallback_timeout_ms_ > 0 && rr_policy_ != nullptr) {
-    CreateOrUpdateRRPolicyLocked();
-  }
 }
 
 void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
