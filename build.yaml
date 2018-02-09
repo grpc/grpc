@@ -4412,6 +4412,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: nonblocking_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/nonblocking_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: noop-benchmark
   build: test
   language: c++
