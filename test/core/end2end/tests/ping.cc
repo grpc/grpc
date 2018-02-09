@@ -22,8 +22,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 
 #define PING_NUM 5

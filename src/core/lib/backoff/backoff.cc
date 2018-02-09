@@ -20,7 +20,7 @@
 
 #include <algorithm>
 
-#include <grpc/support/useful.h>
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 

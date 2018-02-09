@@ -20,7 +20,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 
-#include <grpc/support/useful.h>
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 const uint16_t grpc_setting_id_to_wire_id[] = {1, 2, 3, 4, 5, 6, 65027};

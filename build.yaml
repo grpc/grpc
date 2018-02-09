@@ -36,7 +36,6 @@ filegroups:
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/arena.cc
   - src/core/lib/gpr/atm.cc
-  - src/core/lib/gpr/avl.cc
   - src/core/lib/gpr/cpu_iphone.cc
   - src/core/lib/gpr/cpu_linux.cc
   - src/core/lib/gpr/cpu_posix.cc
@@ -83,7 +82,6 @@ filegroups:
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
-  - include/grpc/support/avl.h
   - include/grpc/support/cpu.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
@@ -96,7 +94,6 @@ filegroups:
   - include/grpc/support/sync_windows.h
   - include/grpc/support/thd.h
   - include/grpc/support/time.h
-  - include/grpc/support/useful.h
   headers:
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
@@ -114,6 +111,7 @@ filegroups:
   - src/core/lib/gpr/tls_msvc.h
   - src/core/lib/gpr/tls_pthread.h
   - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/abstract.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/atomic_with_atm.h
@@ -152,6 +150,7 @@ filegroups:
   - grpc++_codegen_base
 - name: grpc_base
   src:
+  - src/core/lib/avl/avl.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_stack.cc
@@ -307,6 +306,7 @@ filegroups:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
@@ -1765,6 +1765,16 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: avl_test
+  build: test
+  language: c
+  src:
+  - test/core/avl/avl_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  - grpc
+  uses_polling: false
 - name: bad_server_response_test
   build: test
   language: c
@@ -2143,15 +2153,6 @@ targets:
   - mac
   - linux
   - posix
-- name: gpr_avl_test
-  build: test
-  language: c
-  src:
-  - test/core/gpr/avl_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: gpr_cpu_test
   cpu_cost: 30
   build: test

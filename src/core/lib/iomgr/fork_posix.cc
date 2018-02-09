@@ -25,7 +25,6 @@
 #include <grpc/fork.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/fork.h"

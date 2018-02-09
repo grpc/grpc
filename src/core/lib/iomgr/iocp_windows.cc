@@ -27,7 +27,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/iocp_windows.h"

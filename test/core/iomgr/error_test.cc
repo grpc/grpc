@@ -22,7 +22,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
 
 #include <string.h>
 

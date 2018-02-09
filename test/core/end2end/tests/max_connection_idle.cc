@@ -25,8 +25,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 
 #define MAX_CONNECTION_IDLE_MS 500

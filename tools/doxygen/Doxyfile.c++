@@ -909,7 +909,6 @@ include/grpc/support/atm.h \
 include/grpc/support/atm_gcc_atomic.h \
 include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_windows.h \
-include/grpc/support/avl.h \
 include/grpc/support/cpu.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
@@ -922,7 +921,6 @@ include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
 include/grpc/support/thd.h \
 include/grpc/support/time.h \
-include/grpc/support/useful.h \
 include/grpc/support/workaround_list.h
 
 # This tag can be used to specify the character encoding of the source files

@@ -176,14 +176,6 @@ EXPORTS
     gpr_free_aligned
     gpr_set_allocation_functions
     gpr_get_allocation_functions
-    gpr_avl_create
-    gpr_avl_ref
-    gpr_avl_unref
-    gpr_avl_add
-    gpr_avl_remove
-    gpr_avl_get
-    gpr_avl_maybe_get
-    gpr_avl_is_empty
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
     gpr_log_severity_string
