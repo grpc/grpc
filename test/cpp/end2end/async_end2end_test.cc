@@ -46,16 +46,10 @@
 
 #include <gtest/gtest.h>
 
-#ifdef GRPC_POSIX_SOCKET
-#include "src/core/lib/iomgr/ev_posix.h"
-#endif
-
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
-
-GPR_TLS_DECL(g_is_async_end2end_test);
 
 namespace grpc {
 namespace testing {
@@ -64,40 +58,6 @@ namespace {
 
 void* tag(int i) { return (void*)(intptr_t)i; }
 int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
-
-#ifdef GRPC_POSIX_SOCKET
-static int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
-                                          int timeout) {
-  if (gpr_tls_get(&g_is_async_end2end_test)) {
-    GPR_ASSERT(timeout == 0);
-  }
-  return poll(pfds, nfds, timeout);
-}
-
-class PollOverride {
- public:
-  PollOverride(grpc_poll_function_type f) {
-    prev_ = grpc_poll_function;
-    grpc_poll_function = f;
-  }
-
-  ~PollOverride() { grpc_poll_function = prev_; }
-
- private:
-  grpc_poll_function_type prev_;
-};
-
-class PollingOverrider : public PollOverride {
- public:
-  explicit PollingOverrider(bool allow_blocking)
-      : PollOverride(allow_blocking ? poll : maybe_assert_non_blocking_poll) {}
-};
-#else
-class PollingOverrider {
- public:
-  explicit PollingOverrider(bool allow_blocking) {}
-};
-#endif
 
 class Verifier {
  public:
@@ -346,19 +306,14 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   AsyncEnd2endTest() { GetParam().Log(); }
 
   void SetUp() override {
-    poll_overrider_.reset(new PollingOverrider(!GetParam().disable_blocking));
-
     port_ = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port_;
 
     // Setup server
     BuildAndStartServer();
-
-    gpr_tls_set(&g_is_async_end2end_test, 1);
   }
 
   void TearDown() override {
-    gpr_tls_set(&g_is_async_end2end_test, 0);
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;
@@ -366,7 +321,6 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     while (cq_->Next(&ignored_tag, &ignored_ok))
       ;
     stub_.reset();
-    poll_overrider_.reset();
     grpc_recycle_unused_port(port_);
   }
 
@@ -443,8 +397,6 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   HealthCheck health_check_;
   std::ostringstream server_address_;
   int port_;
-
-  std::unique_ptr<PollingOverrider> poll_overrider_;
 };
 
 TEST_P(AsyncEnd2endTest, SimpleRpc) {
@@ -500,7 +452,6 @@ TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
   ResetStub();
   SendRpc(1);
   EXPECT_EQ(0, notify);
-  gpr_tls_set(&g_is_async_end2end_test, 0);
   server_->Shutdown();
   wait_thread.join();
   EXPECT_EQ(1, notify);
@@ -2017,9 +1968,7 @@ int main(int argc, char** argv) {
   // ReconnectChannel test
   gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "100");
   grpc_test_init(argc, argv);
-  gpr_tls_init(&g_is_async_end2end_test);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
-  gpr_tls_destroy(&g_is_async_end2end_test);
   return ret;
 }
