@@ -169,7 +169,74 @@ struct pending_ping {
   struct pending_ping* next;
 };
 
-class BalancerCallState;
+/// Contains a call to the LB server and all the data related to the call.
+class BalancerCallState : public grpc_core::InternallyRefCountedWithTracing {
+ public:
+  explicit BalancerCallState(glb_lb_policy* glb_policy);
+  // It's the caller's responsibility to ensure that Orphan() is called from
+  // inside the combiner.
+  void Orphan() override;
+
+  void StartQuery();
+  inline grpc_grpclb_client_stats* client_stats() { return client_stats_; }
+
+ private:
+  ~BalancerCallState();
+
+  void ScheduleNextClientLoadReportLocked();
+  void SendClientLoadReportLocked();
+
+  static bool LoadReportCountersAreZero(grpc_grpclb_request* request);
+
+  static void MaybeSendClientLoadReportLocked(void* arg, grpc_error* error);
+  static void ClientLoadReportDoneLocked(void* arg, grpc_error* error);
+  static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
+  static void OnBalancerMessageReceivedLocked(void* arg, grpc_error* error);
+  static void OnBalancerStatusReceivedLocked(void* arg, grpc_error* error);
+
+  /** The owning glb. */
+  struct glb_lb_policy* glb_policy_ = nullptr;
+  /** The streaming call to the LB server. Always non-NULL. */
+  grpc_call* lb_call_ = nullptr;
+
+  /** The initial metadata received from the LB server. */
+  grpc_metadata_array lb_initial_metadata_recv_;
+
+  /** The message sent to the LB server. It's used to query for backends (the
+   * value may vary if the LB server indicates a redirect) or send client load
+   * report. */
+  grpc_byte_buffer* send_message_payload_ = nullptr;
+  /** The callback after the initial request is sent. */
+  grpc_closure lb_on_initial_request_sent_;
+
+  /** The response received from the LB server, if any. */
+  grpc_byte_buffer* recv_message_payload_ = nullptr;
+  /** The callback to process the response received from the LB server. */
+  grpc_closure lb_on_balancer_message_received_;
+  bool seen_initial_response_ = false;
+
+  /** The callback to process the status received from the LB server, which
+   * signals the end of the LB call. */
+  grpc_closure lb_on_balancer_status_received_;
+  /** The trailing metadata from the LB server. */
+  grpc_metadata_array lb_trailing_metadata_recv_;
+  /** The call status code and details. */
+  grpc_status_code lb_call_status_;
+  grpc_slice lb_call_status_details_;
+
+  /** The stats for client-side load reporting associated with this LB call.
+   * Created after the first serverlist is received. */
+  grpc_grpclb_client_stats* client_stats_ = nullptr;
+  /** The interval and timer for next client load report. */
+  grpc_millis client_stats_report_interval_ = 0;
+  grpc_timer client_load_report_timer_;
+  bool client_load_report_timer_callback_pending_ = false;
+  bool last_client_load_report_counters_were_zero_ = false;
+  bool client_load_report_is_due_ = false;
+  /** The closure used for either the load report timer or the callback for
+   * completion of sending the load report. */
+  grpc_closure client_load_report_closure_;
+};
 
 }  // namespace
 
@@ -267,79 +334,6 @@ typedef struct glb_lb_policy {
   /** LB fallback timer callback */
   grpc_closure lb_on_fallback;
 } glb_lb_policy;
-
-namespace {
-
-/// Contains a call to the LB server and all the data related to the call.
-class BalancerCallState : public grpc_core::InternallyRefCountedWithTracing {
- public:
-  explicit BalancerCallState(glb_lb_policy* glb_policy);
-  // It's the caller's responsibility to ensure that Orphan() is called from
-  // inside the combiner.
-  void Orphan() override;
-
-  void StartQuery();
-  inline grpc_grpclb_client_stats* client_stats() { return client_stats_; }
-
- private:
-  ~BalancerCallState();
-
-  void ScheduleNextClientLoadReportLocked();
-  void SendClientLoadReportLocked();
-
-  static bool LoadReportCountersAreZero(grpc_grpclb_request* request);
-
-  static void MaybeSendClientLoadReportLocked(void* arg, grpc_error* error);
-  static void ClientLoadReportDoneLocked(void* arg, grpc_error* error);
-  static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
-  static void OnBalancerMessageReceivedLocked(void* arg, grpc_error* error);
-  static void OnBalancerStatusReceivedLocked(void* arg, grpc_error* error);
-
-  /** The owning glb. */
-  struct glb_lb_policy* glb_policy_ = nullptr;
-  /** The streaming call to the LB server. Always non-NULL. */
-  grpc_call* lb_call_ = nullptr;
-
-  /** The initial metadata received from the LB server. */
-  grpc_metadata_array lb_initial_metadata_recv_;
-
-  /** The message sent to the LB server. It's used to query for backends (the
-   * value may vary if the LB server indicates a redirect) or send client load
-   * report. */
-  grpc_byte_buffer* send_message_payload_ = nullptr;
-  /** The callback after the initial request is sent. */
-  grpc_closure lb_on_initial_request_sent_;
-
-  /** The response received from the LB server, if any. */
-  grpc_byte_buffer* recv_message_payload_ = nullptr;
-  /** The callback to process the response received from the LB server. */
-  grpc_closure lb_on_balancer_message_received_;
-  bool seen_initial_response_ = false;
-
-  /** The callback to process the status received from the LB server, which
-   * signals the end of the LB call. */
-  grpc_closure lb_on_balancer_status_received_;
-  /** The trailing metadata from the LB server. */
-  grpc_metadata_array lb_trailing_metadata_recv_;
-  /** The call status code and details. */
-  grpc_status_code lb_call_status_;
-  grpc_slice lb_call_status_details_;
-
-  /** The stats for client-side load reporting associated with this LB call.
-   * Created after the first serverlist is received. */
-  grpc_grpclb_client_stats* client_stats_ = nullptr;
-  /** The interval and timer for next client load report. */
-  grpc_millis client_stats_report_interval_ = 0;
-  grpc_timer client_load_report_timer_;
-  bool client_load_report_timer_callback_pending_ = false;
-  bool last_client_load_report_counters_were_zero_ = false;
-  bool client_load_report_is_due_ = false;
-  /** The closure used for either the load report timer or the callback for
-   * completion of sending the load report. */
-  grpc_closure client_load_report_closure_;
-};
-
-}  // namespace
 
 static void parse_server(const grpc_grpclb_server* server,
                          grpc_resolved_address* addr);
