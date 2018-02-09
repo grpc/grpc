@@ -225,7 +225,7 @@ void RoundRobin::ShutdownLocked() {
         latest_pending_subchannel_list_, "sl_shutdown_pending_rr_shutdown");
     latest_pending_subchannel_list_ = nullptr;
   }
-  TryReresolution(&grpc_lb_round_robin_trace, GRPC_ERROR_CANCELLED);
+  TryReresolutionLocked(&grpc_lb_round_robin_trace, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -460,7 +460,7 @@ void RoundRobin::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
                 "Requesting re-resolution",
                 p, sd->subchannel);
       }
-      p->TryReresolution(&grpc_lb_round_robin_trace, GRPC_ERROR_NONE);
+      p->TryReresolutionLocked(&grpc_lb_round_robin_trace, GRPC_ERROR_NONE);
       break;
     }
     case GRPC_CHANNEL_READY: {

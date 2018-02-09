@@ -1091,7 +1091,7 @@ void GrpcLb::ShutdownLocked() {
     grpc_timer_cancel(&lb_fallback_timer_);
   }
   rr_policy_.reset();
-  TryReresolution(&grpc_lb_glb_trace, GRPC_ERROR_CANCELLED);
+  TryReresolutionLocked(&grpc_lb_glb_trace, GRPC_ERROR_CANCELLED);
   // We destroy the LB channel here instead of in our destructor because
   // destroying the channel triggers a last callback to
   // OnBalancerChannelConnectivityChangedLocked(), and we need to be
@@ -1759,7 +1759,7 @@ void GrpcLb::OnRRRequestReresolutionLocked(void* arg, grpc_error* error) {
   // grpclb policy's original re-resolution closure.
   if (grpclb_policy->lb_calld_ == nullptr ||
       !grpclb_policy->lb_calld_->seen_initial_response()) {
-    grpclb_policy->TryReresolution(&grpc_lb_glb_trace, GRPC_ERROR_NONE);
+    grpclb_policy->TryReresolutionLocked(&grpc_lb_glb_trace, GRPC_ERROR_NONE);
   }
   // Give back the wrapper closure to the RR policy.
   grpclb_policy->rr_policy_->SetReresolutionClosureLocked(

@@ -35,8 +35,8 @@ LoadBalancingPolicy::~LoadBalancingPolicy() {
   GRPC_COMBINER_UNREF(combiner_, "lb_policy");
 }
 
-void LoadBalancingPolicy::TryReresolution(grpc_core::TraceFlag* grpc_lb_trace,
-                                          grpc_error* error) {
+void LoadBalancingPolicy::TryReresolutionLocked(
+    grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error) {
   if (request_reresolution_ != nullptr) {
     GRPC_CLOSURE_SCHED(request_reresolution_, error);
     request_reresolution_ = nullptr;

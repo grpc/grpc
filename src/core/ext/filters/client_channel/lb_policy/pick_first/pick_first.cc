@@ -143,7 +143,7 @@ void PickFirst::ShutdownLocked() {
                                                "pf_shutdown");
     latest_pending_subchannel_list_ = nullptr;
   }
-  TryReresolution(&grpc_lb_pick_first_trace, GRPC_ERROR_CANCELLED);
+  TryReresolutionLocked(&grpc_lb_pick_first_trace, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -457,7 +457,7 @@ void PickFirst::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
                                     GRPC_ERROR_NONE,
                                     "selected_changed+reresolve");
         p->started_picking_ = false;
-        p->TryReresolution(&grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+        p->TryReresolutionLocked(&grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
         // In transient failure. Rely on re-resolution to recover.
         p->selected_ = nullptr;
         grpc_lb_subchannel_data_stop_connectivity_watch(sd);

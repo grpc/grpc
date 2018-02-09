@@ -162,8 +162,8 @@ class LoadBalancingPolicy
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
   /// Tries to request a re-resolution.
-// FIXME: add Locked suffix
-  void TryReresolution(grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error);
+  void TryReresolutionLocked(grpc_core::TraceFlag* grpc_lb_trace,
+                             grpc_error* error);
 
  private:
   static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored) {
