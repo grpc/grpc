@@ -54,6 +54,7 @@ class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(const Args& args);
 
+  void UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick) override;
   void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
@@ -65,12 +66,12 @@ class RoundRobin : public LoadBalancingPolicy {
                                  grpc_closure* closure) override;
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
-  void UpdateLocked(const Args& args) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
-  void ShutdownLocked() override;
 
  private:
   ~RoundRobin();
+
+  void ShutdownLocked() override;
 
   void StartPickingLocked();
   size_t GetNextReadySubchannelIndexLocked();
@@ -105,11 +106,11 @@ class RoundRobin : public LoadBalancingPolicy {
   grpc_lb_subchannel_list* latest_pending_subchannel_list_ = nullptr;
 };
 
-RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args.combiner) {
+RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "round_robin");
-  UpdateLocked(args);
+  UpdateLocked(*args.args);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_DEBUG, "[RR %p] Created with %" PRIuPTR " subchannels", this,
             subchannel_list_->num_subchannels);
@@ -565,9 +566,9 @@ void RoundRobin::PingOneLocked(grpc_closure* on_initiate,
   }
 }
 
-void RoundRobin::UpdateLocked(const Args& args) {
+void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
   const grpc_arg* arg =
-      grpc_channel_args_find(args.args, GRPC_ARG_LB_ADDRESSES);
+      grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "[RR %p] update provided no addresses; ignoring", this);
     // If we don't have a current subchannel list, go into TRANSIENT_FAILURE.
@@ -586,8 +587,8 @@ void RoundRobin::UpdateLocked(const Args& args) {
             this, addresses->num_addresses);
   }
   grpc_lb_subchannel_list* subchannel_list = grpc_lb_subchannel_list_create(
-      this, &grpc_lb_round_robin_trace, addresses, args,
-      &RoundRobin::OnConnectivityChangedLocked);
+      this, &grpc_lb_round_robin_trace, addresses, combiner(),
+      client_channel_factory(), args, &RoundRobin::OnConnectivityChangedLocked);
   if (subchannel_list->num_subchannels == 0) {
     grpc_connectivity_state_set(
         &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,

@@ -43,12 +43,18 @@ class LoadBalancingPolicy
     : public InternallyRefCountedWithTracing<LoadBalancingPolicy> {
  public:
   struct Args {
+    /// The combiner under which all LB policy calls will be run.
+    /// Policy does NOT take ownership of the reference to the combiner.
+    // TODO(roth): Once we have a C++-like interface for combiners, this
+    // API should change to take a smart pointer that does pass ownership
+    // of a reference.
+    grpc_combiner* combiner = nullptr;
     /// Used to create channels and subchannels.
     grpc_client_channel_factory* client_channel_factory = nullptr;
     /// Channel args from the resolver.
+    /// Note that the LB policy gets the set of addresses from the
+    /// GRPC_ARG_LB_ADDRESSES channel arg.
     grpc_channel_args* args = nullptr;
-    /// The combiner under which all LB policy calls will be run.
-    grpc_combiner* combiner = nullptr;
   };
 
   /// State used for an LB pick.
@@ -79,6 +85,11 @@ class LoadBalancingPolicy
   // Not copyable nor movable.
   LoadBalancingPolicy(const LoadBalancingPolicy&) = delete;
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
+
+  /// Updates the policy with a new set of \a args from the resolver.
+  /// Note that the LB policy gets the set of addresses from the
+  /// GRPC_ARG_LB_ADDRESSES channel arg.
+  virtual void UpdateLocked(const grpc_channel_args& args) GRPC_ABSTRACT;
 
   /// Finds an appropriate subchannel for a call, based on data in \a pick.
   /// \a pick must remain alive until the pick is complete.
@@ -120,9 +131,6 @@ class LoadBalancingPolicy
   virtual grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) GRPC_ABSTRACT;
 
-  /// Updates the policy with a new set of \a lb_policy_args.
-  virtual void UpdateLocked(const Args& lb_policy_args) GRPC_ABSTRACT;
-
   /// Hands off pending picks to \a new_policy.
   virtual void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy)
       GRPC_ABSTRACT;
@@ -146,15 +154,13 @@ class LoadBalancingPolicy
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
-  /// Does NOT take ownership of the reference to \a combiner.
-  // TODO(roth): Once we have a C++-like interface for combiners, this
-  // API should change to take a smart pointer that does pass ownership
-  // of a reference.
-  explicit LoadBalancingPolicy(grpc_combiner* combiner);
-
+  explicit LoadBalancingPolicy(const Args& args);
   virtual ~LoadBalancingPolicy();
 
   grpc_combiner* combiner() const { return combiner_; }
+  grpc_client_channel_factory* client_channel_factory() const {
+    return client_channel_factory_;
+  }
 
   /// Shuts down the policy.  Any pending picks that have not been
   /// handed off to a new policy via HandOffPendingPicksLocked() will be
@@ -174,6 +180,8 @@ class LoadBalancingPolicy
 
   /// Combiner under which LB policy actions take place.
   grpc_combiner* combiner_;
+  /// Client channel factory, used to create channels and subchannels.
+  grpc_client_channel_factory* client_channel_factory_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Callback to force a re-resolution.

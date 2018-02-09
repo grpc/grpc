@@ -43,6 +43,7 @@ class PickFirst : public LoadBalancingPolicy {
  public:
   explicit PickFirst(const Args& args);
 
+  void UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick) override;
   void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
@@ -54,12 +55,12 @@ class PickFirst : public LoadBalancingPolicy {
                                  grpc_closure* closure) override;
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
-  void UpdateLocked(const Args& args) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
-  void ShutdownLocked() override;
 
  private:
   ~PickFirst();
+
+  void ShutdownLocked() override;
 
   void StartPickingLocked();
   void DestroyUnselectedSubchannelsLocked();
@@ -87,14 +88,14 @@ class PickFirst : public LoadBalancingPolicy {
   grpc_connectivity_state_tracker state_tracker_;
 };
 
-PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args.combiner) {
+PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "pick_first");
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Pick First %p created.", this);
   }
-  UpdateLocked(args);
+  UpdateLocked(*args.args);
   grpc_subchannel_index_ref();
 }
 
@@ -273,9 +274,9 @@ void PickFirst::SubchannelListUnrefForConnectivityWatch(
   grpc_lb_subchannel_list_unref(subchannel_list, reason);
 }
 
-void PickFirst::UpdateLocked(const Args& args) {
+void PickFirst::UpdateLocked(const grpc_channel_args& args) {
   const grpc_arg* arg =
-      grpc_channel_args_find(args.args, GRPC_ARG_LB_ADDRESSES);
+      grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     if (subchannel_list_ == nullptr) {
       // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
@@ -300,8 +301,8 @@ void PickFirst::UpdateLocked(const Args& args) {
             addresses->num_addresses);
   }
   grpc_lb_subchannel_list* subchannel_list = grpc_lb_subchannel_list_create(
-      this, &grpc_lb_pick_first_trace, addresses, args,
-      &PickFirst::OnConnectivityChangedLocked);
+      this, &grpc_lb_pick_first_trace, addresses, combiner(),
+      client_channel_factory(), args, &PickFirst::OnConnectivityChangedLocked);
   if (subchannel_list->num_subchannels == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
     // subchannels and put the channel in TRANSIENT_FAILURE.

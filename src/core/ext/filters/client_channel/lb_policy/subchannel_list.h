@@ -116,9 +116,9 @@ struct grpc_lb_subchannel_list {
 
 grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
     grpc_core::LoadBalancingPolicy* p, grpc_core::TraceFlag* tracer,
-    const grpc_lb_addresses* addresses,
-    const grpc_core::LoadBalancingPolicy::Args& args,
-    grpc_iomgr_cb_func connectivity_changed_cb);
+    const grpc_lb_addresses* addresses, grpc_combiner* combiner,
+    grpc_client_channel_factory* client_channel_factory,
+    const grpc_channel_args& args, grpc_iomgr_cb_func connectivity_changed_cb);
 
 void grpc_lb_subchannel_list_ref(grpc_lb_subchannel_list* subchannel_list,
                                  const char* reason);

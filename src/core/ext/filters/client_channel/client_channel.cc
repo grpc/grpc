@@ -432,10 +432,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       // Use pick_first if nothing was specified and we didn't select grpclb
       // above.
       if (lb_policy_name == nullptr) lb_policy_name = "pick_first";
-      grpc_core::LoadBalancingPolicy::Args lb_policy_args;
-      lb_policy_args.client_channel_factory = chand->client_channel_factory;
-      lb_policy_args.args = chand->resolver_result;
-      lb_policy_args.combiner = chand->combiner;
+
       // Check to see if we're already using the right LB policy.
       // Note: It's safe to use chand->info_lb_policy_name here without
       // taking a lock on chand->info_mu, because this function is the
@@ -447,10 +444,14 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       if (chand->lb_policy != nullptr && !lb_policy_name_changed) {
         // Continue using the same LB policy.  Update with new addresses.
         lb_policy_updated = true;
-        chand->lb_policy->UpdateLocked(lb_policy_args);
+        chand->lb_policy->UpdateLocked(*chand->resolver_result);
       } else {
         // Instantiate new LB policy.
         lb_policy_created = true;
+        grpc_core::LoadBalancingPolicy::Args lb_policy_args;
+        lb_policy_args.combiner = chand->combiner;
+        lb_policy_args.client_channel_factory = chand->client_channel_factory;
+        lb_policy_args.args = chand->resolver_result;
         new_lb_policy =
             grpc_core::LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
                 lb_policy_name, lb_policy_args);
