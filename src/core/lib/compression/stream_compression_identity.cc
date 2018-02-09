@@ -79,7 +79,7 @@ grpc_stream_compression_context_create_identity(
   GPR_ASSERT(method == GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS ||
              method == GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS);
   /* No context needed in this case. Use fake context instead. */
-  return (grpc_stream_compression_context*)&identity_ctx;
+  return &identity_ctx;
 }
 
 static void grpc_stream_compression_context_destroy_identity(

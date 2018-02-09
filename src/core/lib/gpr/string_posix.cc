@@ -43,8 +43,8 @@ int gpr_asprintf(char** strp, const char* format, ...) {
   }
 
   /* Allocate a new buffer, with space for the NUL terminator. */
-  strp_buflen = (size_t)ret + 1;
-  if ((*strp = (char*)gpr_malloc(strp_buflen)) == nullptr) {
+  strp_buflen = static_cast<size_t>(ret) + 1;
+  if ((*strp = static_cast<char*>(gpr_malloc(strp_buflen))) == nullptr) {
     /* This shouldn't happen, because gpr_malloc() calls abort(). */
     return -1;
   }
@@ -59,7 +59,7 @@ int gpr_asprintf(char** strp, const char* format, ...) {
   va_start(args, format);
   ret = vsnprintf(*strp, strp_buflen, format, args);
   va_end(args);
-  if ((size_t)ret == strp_buflen - 1) {
+  if (static_cast<size_t>(ret) == strp_buflen - 1) {
     return ret;
   }
 

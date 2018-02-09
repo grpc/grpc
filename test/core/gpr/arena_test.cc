@@ -86,7 +86,7 @@ static void concurrent_test_body(void* arg) {
   concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
   gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
   for (size_t i = 0; i < concurrent_test_iterations(); i++) {
-    *(char*)gpr_arena_alloc(a->arena, 1) = (char)i;
+    *static_cast<char*>(gpr_arena_alloc(a->arena, 1)) = static_cast<char>(i);
   }
 }
 

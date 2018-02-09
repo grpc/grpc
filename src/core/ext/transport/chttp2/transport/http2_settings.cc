@@ -35,7 +35,7 @@ bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id* out) {
       h += 4;
       break;
   }
-  *out = (grpc_chttp2_setting_id)h;
+  *out = static_cast<grpc_chttp2_setting_id>(h);
   return h < GPR_ARRAY_SIZE(grpc_setting_id_to_wire_id) &&
          grpc_setting_id_to_wire_id[h] == wire_id;
 }

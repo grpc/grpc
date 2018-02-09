@@ -49,7 +49,7 @@ static void dec_thd_count();
 
 /* Body of every thread started via gpr_thd_new. */
 static void* thread_body(void* v) {
-  struct thd_arg a = *(struct thd_arg*)v;
+  struct thd_arg a = *static_cast<struct thd_arg*>(v);
   free(v);
   if (a.name != nullptr) {
 #if GPR_APPLE_PTHREAD_NAME
@@ -77,7 +77,7 @@ int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
   pthread_t p;
   /* don't use gpr_malloc as we may cause an infinite recursion with
    * the profiling code */
-  struct thd_arg* a = (struct thd_arg*)malloc(sizeof(*a));
+  struct thd_arg* a = static_cast<struct thd_arg*>(malloc(sizeof(*a)));
   GPR_ASSERT(a != nullptr);
   a->body = thd_body;
   a->arg = arg;
@@ -99,13 +99,13 @@ int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
     free(a);
     dec_thd_count();
   }
-  *t = (gpr_thd_id)p;
+  *t = static_cast<gpr_thd_id>(p);
   return thread_started;
 }
 
-gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)pthread_self(); }
+gpr_thd_id gpr_thd_currentid(void) { return static_cast<gpr_thd_id>(pthread_self()); }
 
-void gpr_thd_join(gpr_thd_id t) { pthread_join((pthread_t)t, nullptr); }
+void gpr_thd_join(gpr_thd_id t) { pthread_join(static_cast<pthread_t>(t), nullptr); }
 
 /*****************************************
  * Only used when fork support is enabled

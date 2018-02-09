@@ -84,7 +84,7 @@ class Server {
     }
     payload->set_type(type);
     // Don't waste time creating a new payload of identical size.
-    if (payload->body().length() != (size_t)size) {
+    if (payload->body().length() != static_cast<size_t>(size)) {
       std::unique_ptr<char[]> body(new char[size]());
       payload->set_body(body.get(), size);
     }

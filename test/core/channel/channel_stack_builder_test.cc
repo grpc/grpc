@@ -116,7 +116,7 @@ static bool add_replacement_filter(grpc_channel_stack_builder* builder,
 static bool add_original_filter(grpc_channel_stack_builder* builder,
                                 void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, (const grpc_channel_filter*)arg, set_arg_once_fn,
+      builder, static_cast<const grpc_channel_filter*>(arg), set_arg_once_fn,
       &g_original_fn_called);
 }
 

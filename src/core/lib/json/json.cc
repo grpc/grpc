@@ -23,7 +23,7 @@
 #include "src/core/lib/json/json.h"
 
 grpc_json* grpc_json_create(grpc_json_type type) {
-  grpc_json* json = (grpc_json*)gpr_zalloc(sizeof(*json));
+  grpc_json* json = static_cast<grpc_json*>(gpr_zalloc(sizeof(*json)));
   json->type = type;
 
   return json;

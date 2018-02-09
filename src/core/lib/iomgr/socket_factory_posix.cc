@@ -69,16 +69,16 @@ void grpc_socket_factory_unref(grpc_socket_factory* factory) {
 }
 
 static void* socket_factory_arg_copy(void* p) {
-  return grpc_socket_factory_ref((grpc_socket_factory*)p);
+  return grpc_socket_factory_ref(static_cast<grpc_socket_factory*>(p));
 }
 
 static void socket_factory_arg_destroy(void* p) {
-  grpc_socket_factory_unref((grpc_socket_factory*)p);
+  grpc_socket_factory_unref(static_cast<grpc_socket_factory*>(p));
 }
 
 static int socket_factory_cmp(void* a, void* b) {
-  return grpc_socket_factory_compare((grpc_socket_factory*)a,
-                                     (grpc_socket_factory*)b);
+  return grpc_socket_factory_compare(static_cast<grpc_socket_factory*>(a),
+                                     static_cast<grpc_socket_factory*>(b));
 }
 
 static const grpc_arg_pointer_vtable socket_factory_arg_vtable = {

@@ -144,9 +144,9 @@ TEST(BackOffTest, JitterBackOff) {
   EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
 
   grpc_millis expected_next_lower_bound =
-      (grpc_millis)((double)current_backoff * (1 - jitter));
+      static_cast<grpc_millis>(static_cast<double>(current_backoff) * (1 - jitter));
   grpc_millis expected_next_upper_bound =
-      (grpc_millis)((double)current_backoff * (1 + jitter));
+      static_cast<grpc_millis>(static_cast<double>(current_backoff) * (1 + jitter));
 
   for (int i = 0; i < 10000; i++) {
     next = backoff.NextAttemptTime();
@@ -156,11 +156,11 @@ TEST(BackOffTest, JitterBackOff) {
     EXPECT_GE(timeout_millis, expected_next_lower_bound);
     EXPECT_LE(timeout_millis, expected_next_upper_bound);
     current_backoff = std::min(
-        (grpc_millis)((double)current_backoff * multiplier), max_backoff);
+        static_cast<grpc_millis>(static_cast<double>(current_backoff) * multiplier), max_backoff);
     expected_next_lower_bound =
-        (grpc_millis)((double)current_backoff * (1 - jitter));
+        static_cast<grpc_millis>(static_cast<double>(current_backoff) * (1 - jitter));
     expected_next_upper_bound =
-        (grpc_millis)((double)current_backoff * (1 + jitter));
+        static_cast<grpc_millis>(static_cast<double>(current_backoff) * (1 + jitter));
   }
 }
 

@@ -29,7 +29,7 @@
 #include "test/core/util/test_config.h"
 
 static void to_fp(void* arg, const char* buf, size_t len) {
-  fwrite(buf, 1, len, (FILE*)arg);
+  fwrite(buf, 1, len, static_cast<FILE*>(arg));
 }
 
 /* Convert gpr_intmax x to ascii base b (2..16), and write with

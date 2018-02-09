@@ -57,7 +57,7 @@ struct grpc_histogram {
 
 /* determine a bucket index given a value - does no bounds checking */
 static size_t bucket_for_unchecked(grpc_histogram* h, double x) {
-  return (size_t)(log(x) * h->one_on_log_multiplier);
+  return static_cast<size_t>(log(x) * h->one_on_log_multiplier);
 }
 
 /* bounds checked version of the above */
@@ -74,7 +74,7 @@ static double bucket_start(grpc_histogram* h, double x) {
 
 grpc_histogram* grpc_histogram_create(double resolution,
                                       double max_bucket_start) {
-  grpc_histogram* h = (grpc_histogram*)gpr_malloc(sizeof(grpc_histogram));
+  grpc_histogram* h = static_cast<grpc_histogram*>(gpr_malloc(sizeof(grpc_histogram)));
   GPR_ASSERT(resolution > 0.0);
   GPR_ASSERT(max_bucket_start > resolution);
   h->sum = 0.0;
@@ -88,7 +88,7 @@ grpc_histogram* grpc_histogram_create(double resolution,
   h->num_buckets = bucket_for_unchecked(h, max_bucket_start) + 1;
   GPR_ASSERT(h->num_buckets > 1);
   GPR_ASSERT(h->num_buckets < 100000000);
-  h->buckets = (uint32_t*)gpr_zalloc(sizeof(uint32_t) * h->num_buckets);
+  h->buckets = static_cast<uint32_t*>(gpr_zalloc(sizeof(uint32_t) * h->num_buckets));
   return h;
 }
 
@@ -176,14 +176,14 @@ static double threshold_for_count_below(grpc_histogram* h, double count_below) {
         break;
       }
     }
-    return (bucket_start(h, (double)lower_idx) +
-            bucket_start(h, (double)upper_idx)) /
+    return (bucket_start(h, static_cast<double>(lower_idx)) +
+            bucket_start(h, static_cast<double>(upper_idx))) /
            2.0;
   } else {
     /* treat values as uniform throughout the bucket, and find where this value
        should lie */
-    lower_bound = bucket_start(h, (double)lower_idx);
-    upper_bound = bucket_start(h, (double)(lower_idx + 1));
+    lower_bound = bucket_start(h, static_cast<double>(lower_idx));
+    upper_bound = bucket_start(h, static_cast<double>(lower_idx + 1));
     return GPR_CLAMP(upper_bound - (upper_bound - lower_bound) *
                                        (count_so_far - count_below) /
                                        h->buckets[lower_idx],

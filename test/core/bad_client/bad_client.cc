@@ -49,7 +49,7 @@ typedef struct {
 
 /* Run the server side validator and set done_thd once done */
 static void thd_func(void* arg) {
-  thd_args* a = (thd_args*)arg;
+  thd_args* a = static_cast<thd_args*>(arg);
   if (a->validator != nullptr) {
     a->validator(a->server, a->cq, a->registered_method);
   }
@@ -58,12 +58,12 @@ static void thd_func(void* arg) {
 
 /* Sets the done_write event */
 static void set_done_write(void* arg, grpc_error* error) {
-  gpr_event* done_write = (gpr_event*)arg;
+  gpr_event* done_write = static_cast<gpr_event*>(arg);
   gpr_event_set(done_write, (void*)1);
 }
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
-  thd_args* a = (thd_args*)ts;
+  thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
   grpc_server_setup_transport(a->server, transport, nullptr,
                               grpc_server_get_channel_args(a->server));
@@ -71,7 +71,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
 
 /* Sets the read_done event */
 static void set_read_done(void* arg, grpc_error* error) {
-  gpr_event* read_done = (gpr_event*)arg;
+  gpr_event* read_done = static_cast<gpr_event*>(arg);
   gpr_event_set(read_done, (void*)1);
 }
 

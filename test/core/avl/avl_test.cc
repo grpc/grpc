@@ -34,9 +34,9 @@ static int* box(int x) {
 }
 
 static long int_compare(void* int1, void* int2, void* unused) {
-  return (*(int*)int1) - (*(int*)int2);
+  return (*static_cast<int*>(int1)) - (*static_cast<int*>(int2));
 }
-static void* int_copy(void* p, void* unused) { return box(*(int*)p); }
+static void* int_copy(void* p, void* unused) { return box(*static_cast<int*>(p)); }
 
 static void destroy(void* p, void* unused) { gpr_free(p); }
 
@@ -3604,17 +3604,17 @@ static void test_stress(int amount_of_stress) {
   int deletions = 0;
   grpc_avl avl;
 
-  unsigned seed = (unsigned)time(nullptr);
+  unsigned seed = static_cast<unsigned>(time(nullptr));
 
   gpr_log(GPR_DEBUG, "test_stress amount=%d seed=%u", amount_of_stress, seed);
 
-  srand((unsigned)time(nullptr));
+  srand(static_cast<unsigned>(time(nullptr)));
   avl = grpc_avl_create(&int_int_vtable);
 
   memset(added, 0, sizeof(added));
 
   for (i = 1; deletions < amount_of_stress; i++) {
-    int idx = rand() % (int)GPR_ARRAY_SIZE(added);
+    int idx = rand() % static_cast<int>GPR_ARRAY_SIZE(added);
     GPR_ASSERT(i);
     if (rand() < RAND_MAX / 2) {
       added[idx] = i;
@@ -3627,7 +3627,7 @@ static void test_stress(int amount_of_stress) {
       printf("avl = remove_int(avl, %d); /* d=%d */\n", idx, deletions);
       avl = remove_int(avl, idx);
     }
-    for (j = 0; j < (int)GPR_ARRAY_SIZE(added); j++) {
+    for (j = 0; j < static_cast<int>GPR_ARRAY_SIZE(added); j++) {
       if (added[j] != 0) {
         check_get(avl, j, added[j]);
       } else {

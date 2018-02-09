@@ -29,7 +29,7 @@ gpr_cv g_cv;
 
 static void inc_int_cb(void* a, grpc_error* error) {
   gpr_mu_lock(&g_mu);
-  ++*(int*)a;
+  ++*static_cast<int*>(a);
   gpr_cv_signal(&g_cv);
   gpr_mu_unlock(&g_mu);
 }
@@ -44,7 +44,7 @@ static void assert_counter_becomes(int* ctr, int value) {
 }
 
 static void set_event_cb(void* a, grpc_error* error) {
-  gpr_event_set((gpr_event*)a, (void*)1);
+  gpr_event_set(static_cast<gpr_event*>(a), (void*)1);
 }
 grpc_closure* set_event(gpr_event* ev) {
   return GRPC_CLOSURE_CREATE(set_event_cb, ev, grpc_schedule_on_exec_ctx);

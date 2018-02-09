@@ -164,7 +164,7 @@ static void test_request(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -199,7 +199,7 @@ static void test_request(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -250,7 +250,7 @@ typedef struct final_status_data {
 
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  final_status_data* data = (final_status_data*)elem->call_data;
+  final_status_data* data = static_cast<final_status_data*>(elem->call_data);
   data->call = args->call_stack;
   return GRPC_ERROR_NONE;
 }
@@ -258,7 +258,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 static void client_destroy_call_elem(grpc_call_element* elem,
                                      const grpc_call_final_info* final_info,
                                      grpc_closure* ignored) {
-  final_status_data* data = (final_status_data*)elem->call_data;
+  final_status_data* data = static_cast<final_status_data*>(elem->call_data);
   gpr_mu_lock(&g_mu);
   // Some fixtures, like proxies, will spawn intermidiate calls
   // We only want the results from our explicit calls
@@ -273,7 +273,7 @@ static void client_destroy_call_elem(grpc_call_element* elem,
 static void server_destroy_call_elem(grpc_call_element* elem,
                                      const grpc_call_final_info* final_info,
                                      grpc_closure* ignored) {
-  final_status_data* data = (final_status_data*)elem->call_data;
+  final_status_data* data = static_cast<final_status_data*>(elem->call_data);
   gpr_mu_lock(&g_mu);
   // Some fixtures, like proxies, will spawn intermidiate calls
   // We only want the results from our explicit calls
@@ -323,7 +323,7 @@ static const grpc_channel_filter test_server_filter = {
  */
 
 static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
-  grpc_channel_filter* filter = (grpc_channel_filter*)arg;
+  grpc_channel_filter* filter = static_cast<grpc_channel_filter*>(arg);
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we

@@ -79,7 +79,7 @@ static grpc_avl_node* assert_invariants(grpc_avl_node* n) { return n; }
 
 grpc_avl_node* new_node(void* key, void* value, grpc_avl_node* left,
                         grpc_avl_node* right) {
-  grpc_avl_node* node = (grpc_avl_node*)gpr_malloc(sizeof(*node));
+  grpc_avl_node* node = static_cast<grpc_avl_node*>(gpr_malloc(sizeof(*node)));
   gpr_ref_init(&node->refs, 1);
   node->key = key;
   node->value = value;

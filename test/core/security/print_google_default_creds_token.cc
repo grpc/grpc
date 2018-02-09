@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   }
 
   memset(&sync, 0, sizeof(sync));
-  pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &sync.mu);
   sync.pops = grpc_polling_entity_create_from_pollset(pollset);
   sync.is_done = false;
@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
 
   error = GRPC_ERROR_NONE;
   if (grpc_call_credentials_get_request_metadata(
-          ((grpc_composite_channel_credentials*)creds)->call_creds, &sync.pops,
+          (reinterpret_cast<grpc_composite_channel_credentials*>(creds))->call_creds, &sync.pops,
           context, &sync.md_array, &sync.on_request_metadata, &error)) {
     // Synchronous response.  Invoke callback directly.
     on_metadata_response(&sync, error);

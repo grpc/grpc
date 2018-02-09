@@ -26,7 +26,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 char* grpc_dump_slice(grpc_slice s, uint32_t flags) {
-  return gpr_dump((const char*)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
+  return gpr_dump(reinterpret_cast<const char*>GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
                   flags);
 }
 
@@ -110,6 +110,6 @@ void grpc_slice_split_without_space(grpc_slice str, const char* sep,
 }
 
 bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t* result) {
-  return gpr_parse_bytes_to_uint32((const char*)GRPC_SLICE_START_PTR(str),
+  return gpr_parse_bytes_to_uint32(reinterpret_cast<const char*>GRPC_SLICE_START_PTR(str),
                                    GRPC_SLICE_LENGTH(str), result) != 0;
 }

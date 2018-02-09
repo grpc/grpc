@@ -26,8 +26,8 @@
 void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map,
                                  size_t initial_capacity) {
   GPR_ASSERT(initial_capacity > 1);
-  map->keys = (uint32_t*)gpr_malloc(sizeof(uint32_t) * initial_capacity);
-  map->values = (void**)gpr_malloc(sizeof(void*) * initial_capacity);
+  map->keys = static_cast<uint32_t*>(gpr_malloc(sizeof(uint32_t) * initial_capacity));
+  map->values = static_cast<void**>(gpr_malloc(sizeof(void*) * initial_capacity));
   map->count = 0;
   map->free = 0;
   map->capacity = initial_capacity;
@@ -72,9 +72,9 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
          won't help much */
       map->capacity = capacity = 3 * capacity / 2;
       map->keys = keys =
-          (uint32_t*)gpr_realloc(keys, capacity * sizeof(uint32_t));
+          static_cast<uint32_t*>(gpr_realloc(keys, capacity * sizeof(uint32_t)));
       map->values = values =
-          (void**)gpr_realloc(values, capacity * sizeof(void*));
+          static_cast<void**>(gpr_realloc(values, capacity * sizeof(void*)));
     }
   }
 
@@ -146,7 +146,7 @@ void* grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map* map) {
     map->free = 0;
     GPR_ASSERT(map->count > 0);
   }
-  return map->values[((size_t)rand()) % map->count];
+  return map->values[(static_cast<size_t>(rand())) % map->count];
 }
 
 void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map* map,

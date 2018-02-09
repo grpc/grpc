@@ -34,7 +34,7 @@ typedef struct {
 } child_events;
 
 static void child_thread(void* arg) {
-  child_events* ce = (child_events*)arg;
+  child_events* ce = static_cast<child_events*>(arg);
   grpc_event ev;
   gpr_event_set(&ce->started, (void*)1);
   gpr_log(GPR_DEBUG, "verifying");

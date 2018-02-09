@@ -54,12 +54,12 @@ void test_tcp_server_init(test_tcp_server* server,
 
 void test_tcp_server_start(test_tcp_server* server, int port) {
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
+  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   int port_added;
   grpc_core::ExecCtx exec_ctx;
 
   addr->sin_family = AF_INET;
-  addr->sin_port = htons((uint16_t)port);
+  addr->sin_port = htons(static_cast<uint16_t>(port));
   memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
 
   grpc_error* error = grpc_tcp_server_create(&server->shutdown_complete,

@@ -36,19 +36,19 @@ void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
                                          uint32_t tail_length) {
   switch (tail_length) {
     case 5:
-      target[4] = (uint8_t)((tail_value >> 28) | 0x80);
+      target[4] = static_cast<uint8_t>((tail_value >> 28) | 0x80);
     /* fallthrough */
     case 4:
-      target[3] = (uint8_t)((tail_value >> 21) | 0x80);
+      target[3] = static_cast<uint8_t>((tail_value >> 21) | 0x80);
     /* fallthrough */
     case 3:
-      target[2] = (uint8_t)((tail_value >> 14) | 0x80);
+      target[2] = static_cast<uint8_t>((tail_value >> 14) | 0x80);
     /* fallthrough */
     case 2:
-      target[1] = (uint8_t)((tail_value >> 7) | 0x80);
+      target[1] = static_cast<uint8_t>((tail_value >> 7) | 0x80);
     /* fallthrough */
     case 1:
-      target[0] = (uint8_t)((tail_value) | 0x80);
+      target[0] = static_cast<uint8_t>((tail_value) | 0x80);
   }
   target[tail_length - 1] &= 0x7f;
 }

@@ -57,12 +57,12 @@ typedef struct {
 } chttp2_connector;
 
 static void chttp2_connector_ref(grpc_connector* con) {
-  chttp2_connector* c = (chttp2_connector*)con;
+  chttp2_connector* c = reinterpret_cast<chttp2_connector*>(con);
   gpr_ref(&c->refs);
 }
 
 static void chttp2_connector_unref(grpc_connector* con) {
-  chttp2_connector* c = (chttp2_connector*)con;
+  chttp2_connector* c = reinterpret_cast<chttp2_connector*>(con);
   if (gpr_unref(&c->refs)) {
     gpr_mu_destroy(&c->mu);
     // If handshaking is not yet in progress, destroy the endpoint.
@@ -73,7 +73,7 @@ static void chttp2_connector_unref(grpc_connector* con) {
 }
 
 static void chttp2_connector_shutdown(grpc_connector* con, grpc_error* why) {
-  chttp2_connector* c = (chttp2_connector*)con;
+  chttp2_connector* c = reinterpret_cast<chttp2_connector*>(con);
   gpr_mu_lock(&c->mu);
   c->shutdown = true;
   if (c->handshake_mgr != nullptr) {
@@ -89,8 +89,8 @@ static void chttp2_connector_shutdown(grpc_connector* con, grpc_error* why) {
 }
 
 static void on_handshake_done(void* arg, grpc_error* error) {
-  grpc_handshaker_args* args = (grpc_handshaker_args*)arg;
-  chttp2_connector* c = (chttp2_connector*)args->user_data;
+  grpc_handshaker_args* args = static_cast<grpc_handshaker_args*>(arg);
+  chttp2_connector* c = static_cast<chttp2_connector*>(args->user_data);
   gpr_mu_lock(&c->mu);
   if (error != GRPC_ERROR_NONE || c->shutdown) {
     if (error == GRPC_ERROR_NONE) {
@@ -150,7 +150,7 @@ static void on_handshake_done(void* arg, grpc_error* error) {
   grpc_handshake_manager_destroy(c->handshake_mgr);
   c->handshake_mgr = nullptr;
   gpr_mu_unlock(&c->mu);
-  chttp2_connector_unref((grpc_connector*)c);
+  chttp2_connector_unref(reinterpret_cast<grpc_connector*>(c));
 }
 
 static void start_handshake_locked(chttp2_connector* c) {
@@ -166,7 +166,7 @@ static void start_handshake_locked(chttp2_connector* c) {
 }
 
 static void connected(void* arg, grpc_error* error) {
-  chttp2_connector* c = (chttp2_connector*)arg;
+  chttp2_connector* c = static_cast<chttp2_connector*>(arg);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(c->connecting);
   c->connecting = false;
@@ -184,7 +184,7 @@ static void connected(void* arg, grpc_error* error) {
       grpc_endpoint_shutdown(c->endpoint, GRPC_ERROR_REF(error));
     }
     gpr_mu_unlock(&c->mu);
-    chttp2_connector_unref((grpc_connector*)arg);
+    chttp2_connector_unref(static_cast<grpc_connector*>(arg));
   } else {
     GPR_ASSERT(c->endpoint != nullptr);
     start_handshake_locked(c);
@@ -196,7 +196,7 @@ static void chttp2_connector_connect(grpc_connector* con,
                                      const grpc_connect_in_args* args,
                                      grpc_connect_out_args* result,
                                      grpc_closure* notify) {
-  chttp2_connector* c = (chttp2_connector*)con;
+  chttp2_connector* c = reinterpret_cast<chttp2_connector*>(con);
   grpc_resolved_address addr;
   grpc_get_subchannel_address_arg(args->channel_args, &addr);
   gpr_mu_lock(&c->mu);
@@ -219,7 +219,7 @@ static const grpc_connector_vtable chttp2_connector_vtable = {
     chttp2_connector_connect};
 
 grpc_connector* grpc_chttp2_connector_create() {
-  chttp2_connector* c = (chttp2_connector*)gpr_zalloc(sizeof(*c));
+  chttp2_connector* c = static_cast<chttp2_connector*>(gpr_zalloc(sizeof(*c)));
   c->base.vtable = &chttp2_connector_vtable;
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);

@@ -67,7 +67,7 @@ void gpr_default_log(gpr_log_func_args* args) {
   static __thread long tid = 0;
   if (tid == 0) tid = gettid();
 
-  timer = (time_t)now.tv_sec;
+  timer = static_cast<time_t>(now.tv_sec);
   final_slash = strrchr(args->file, '/');
   if (final_slash == nullptr)
     display_file = args->file;

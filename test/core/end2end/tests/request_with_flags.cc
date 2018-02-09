@@ -151,7 +151,7 @@ static void test_invoke_request_with_flags(
   op->reserved = nullptr;
   op++;
   expectation = call_start_batch_expected_result;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(expectation == error);
 
   if (expectation == GRPC_CALL_OK) {

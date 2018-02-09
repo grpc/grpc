@@ -38,7 +38,7 @@ static grpc_call_credentials* create_refresh_token_creds(
       "load_file",
       grpc_load_file(json_refresh_token_file_path, 1, &refresh_token)));
   return grpc_google_refresh_token_credentials_create(
-      (const char*)GRPC_SLICE_START_PTR(refresh_token), nullptr);
+      reinterpret_cast<const char*>GRPC_SLICE_START_PTR(refresh_token), nullptr);
 }
 
 int main(int argc, char** argv) {

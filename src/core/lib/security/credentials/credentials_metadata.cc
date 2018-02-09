@@ -34,7 +34,7 @@ static void mdelem_list_ensure_capacity(grpc_credentials_mdelem_array* list,
     new_size *= 2;
   }
   list->md =
-      (grpc_mdelem*)gpr_realloc(list->md, sizeof(grpc_mdelem) * new_size);
+      static_cast<grpc_mdelem*>(gpr_realloc(list->md, sizeof(grpc_mdelem) * new_size));
 }
 
 void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array* list,
