@@ -18,7 +18,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -38,7 +37,9 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -61,11 +62,9 @@ using namespace gflags;
 
 DEFINE_string(target_name, "", "Target name to resolve.");
 DEFINE_string(expected_addrs, "",
-              "Comma-separated list of expected "
-              "'<ip0:port0>,<is_balancer0>;<ip1:port1>,<is_balancer1>;...' "
-              "addresses of "
-              "backend and/or balancers. 'is_balancer' should be bool, i.e. "
-              "true or false.");
+              "List of expected backend or balancer addresses in the form "
+              "'<ip0:port0>,<is_balancer0>;<ip1:port1>,<is_balancer1>;...'. "
+              "'is_balancer' should be bool, i.e. true or false.");
 DEFINE_string(expected_chosen_service_config, "",
               "Expected service config json string that gets chosen (no "
               "whitespace). Empty for none.");
@@ -102,12 +101,10 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
     // get the next <ip>,<port> (v4 or v6)
     size_t next_comma = expected_addrs.find(",");
     if (next_comma == std::string::npos) {
-      gpr_log(
-          GPR_ERROR,
-          "Missing ','. Expected_addrs arg should be a semi-colon-separated "
-          "list of "
-          "<ip-port>,<bool> pairs. Left-to-be-parsed arg is |%s|",
-          expected_addrs.c_str());
+      gpr_log(GPR_ERROR,
+              "Missing ','. Expected_addrs arg should be a semicolon-separated "
+              "list of <ip-port>,<bool> pairs. Left-to-be-parsed arg is |%s|",
+              expected_addrs.c_str());
       abort();
     }
     std::string next_addr = expected_addrs.substr(0, next_comma);
@@ -125,7 +122,7 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
   }
   if (out.size() == 0) {
     gpr_log(GPR_ERROR,
-            "expected_addrs arg should be a comma-separated list of "
+            "expected_addrs arg should be a semicolon-separated list of "
             "<ip-port>,<bool> pairs");
     abort();
   }
@@ -287,17 +284,16 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
                       FLAGS_local_dns_server_address.c_str(),
                       FLAGS_target_name.c_str()));
   // create resolver and resolve
-  grpc_resolver* resolver =
-      grpc_resolver_create(whole_uri, nullptr, args.pollset_set, args.lock);
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
+      grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
+                                                  args.pollset_set, args.lock);
   gpr_free(whole_uri);
   grpc_closure on_resolver_result_changed;
   GRPC_CLOSURE_INIT(&on_resolver_result_changed, CheckResolverResultLocked,
                     (void*)&args, grpc_combiner_scheduler(args.lock));
-  grpc_resolver_next_locked(resolver, &args.channel_args,
-                            &on_resolver_result_changed);
+  resolver->NextLocked(&args.channel_args, &on_resolver_result_changed);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
-  GRPC_RESOLVER_UNREF(resolver, nullptr);
   ArgsFinish(&args);
 }
 

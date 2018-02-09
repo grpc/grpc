@@ -251,6 +251,22 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "cmdline_test", 
+    "src": [
+      "test/core/util/cmdline_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -610,21 +626,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "gpr_cmdline_test", 
-    "src": [
-      "test/core/gpr/cmdline_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "gpr_cpu_test", 
     "src": [
       "test/core/gpr/cpu_test.cc"
@@ -950,6 +951,7 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
       "grpc"
     ], 
@@ -1050,6 +1052,7 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
       "grpc"
     ], 
@@ -1099,6 +1102,7 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
       "grpc"
     ], 
@@ -1393,7 +1397,9 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -5127,6 +5133,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "duplicate_header_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/duplicate_header.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "head_of_line_blocking_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/head_of_line_blocking.cc"
@@ -8199,6 +8223,23 @@
     "deps": [
       "gpr_base_headers"
     ], 
+    "headers": [
+      "test/core/util/cmdline.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "cmdline", 
+    "src": [
+      "test/core/util/cmdline.cc", 
+      "test/core/util/cmdline.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr_base_headers"
+    ], 
     "headers": [], 
     "is_filegroup": true, 
     "language": "c", 
@@ -8208,7 +8249,6 @@
       "src/core/lib/gpr/arena.cc", 
       "src/core/lib/gpr/atm.cc", 
       "src/core/lib/gpr/avl.cc", 
-      "src/core/lib/gpr/cmdline.cc", 
       "src/core/lib/gpr/cpu_iphone.cc", 
       "src/core/lib/gpr/cpu_linux.cc", 
       "src/core/lib/gpr/cpu_posix.cc", 
@@ -8229,8 +8269,6 @@
       "src/core/lib/gpr/string_posix.cc", 
       "src/core/lib/gpr/string_util_windows.cc", 
       "src/core/lib/gpr/string_windows.cc", 
-      "src/core/lib/gpr/subprocess_posix.cc", 
-      "src/core/lib/gpr/subprocess_windows.cc", 
       "src/core/lib/gpr/sync.cc", 
       "src/core/lib/gpr/sync_posix.cc", 
       "src/core/lib/gpr/sync_windows.cc", 
@@ -8263,14 +8301,11 @@
       "include/grpc/support/atm_gcc_sync.h", 
       "include/grpc/support/atm_windows.h", 
       "include/grpc/support/avl.h", 
-      "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
-      "include/grpc/support/host_port.h", 
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
       "include/grpc/support/string_util.h", 
-      "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
       "include/grpc/support/sync_custom.h", 
       "include/grpc/support/sync_generic.h", 
@@ -8278,14 +8313,11 @@
       "include/grpc/support/sync_windows.h", 
       "include/grpc/support/thd.h", 
       "include/grpc/support/time.h", 
-      "include/grpc/support/tls.h", 
-      "include/grpc/support/tls_gcc.h", 
-      "include/grpc/support/tls_msvc.h", 
-      "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
       "src/core/lib/gpr/fork.h", 
+      "src/core/lib/gpr/host_port.h", 
       "src/core/lib/gpr/mpscq.h", 
       "src/core/lib/gpr/murmur_hash.h", 
       "src/core/lib/gpr/spinlock.h", 
@@ -8293,6 +8325,10 @@
       "src/core/lib/gpr/string_windows.h", 
       "src/core/lib/gpr/thd_internal.h", 
       "src/core/lib/gpr/time_precise.h", 
+      "src/core/lib/gpr/tls.h", 
+      "src/core/lib/gpr/tls_gcc.h", 
+      "src/core/lib/gpr/tls_msvc.h", 
+      "src/core/lib/gpr/tls_pthread.h", 
       "src/core/lib/gpr/tmpfile.h", 
       "src/core/lib/gprpp/abstract.h", 
       "src/core/lib/gprpp/atomic.h", 
@@ -8312,14 +8348,11 @@
       "include/grpc/support/atm_gcc_sync.h", 
       "include/grpc/support/atm_windows.h", 
       "include/grpc/support/avl.h", 
-      "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
-      "include/grpc/support/host_port.h", 
       "include/grpc/support/log.h", 
       "include/grpc/support/log_windows.h", 
       "include/grpc/support/port_platform.h", 
       "include/grpc/support/string_util.h", 
-      "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
       "include/grpc/support/sync_custom.h", 
       "include/grpc/support/sync_generic.h", 
@@ -8327,14 +8360,11 @@
       "include/grpc/support/sync_windows.h", 
       "include/grpc/support/thd.h", 
       "include/grpc/support/time.h", 
-      "include/grpc/support/tls.h", 
-      "include/grpc/support/tls_gcc.h", 
-      "include/grpc/support/tls_msvc.h", 
-      "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
       "src/core/lib/gpr/fork.h", 
+      "src/core/lib/gpr/host_port.h", 
       "src/core/lib/gpr/mpscq.h", 
       "src/core/lib/gpr/murmur_hash.h", 
       "src/core/lib/gpr/spinlock.h", 
@@ -8342,6 +8372,10 @@
       "src/core/lib/gpr/string_windows.h", 
       "src/core/lib/gpr/thd_internal.h", 
       "src/core/lib/gpr/time_precise.h", 
+      "src/core/lib/gpr/tls.h", 
+      "src/core/lib/gpr/tls_gcc.h", 
+      "src/core/lib/gpr/tls_msvc.h", 
+      "src/core/lib/gpr/tls_pthread.h", 
       "src/core/lib/gpr/tmpfile.h", 
       "src/core/lib/gprpp/abstract.h", 
       "src/core/lib/gprpp/atomic.h", 
@@ -8444,7 +8478,6 @@
       "src/core/lib/channel/handshaker_registry.cc", 
       "src/core/lib/compression/compression.cc", 
       "src/core/lib/compression/compression_internal.cc", 
-      "src/core/lib/compression/compression_ruby.cc", 
       "src/core/lib/compression/message_compress.cc", 
       "src/core/lib/compression/stream_compression.cc", 
       "src/core/lib/compression/stream_compression_gzip.cc", 
@@ -8582,7 +8615,6 @@
       "include/grpc/byte_buffer.h", 
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
-      "include/grpc/compression_ruby.h", 
       "include/grpc/fork.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
@@ -8724,7 +8756,6 @@
       "include/grpc/byte_buffer.h", 
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
-      "include/grpc/compression_ruby.h", 
       "include/grpc/fork.h", 
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
@@ -8921,7 +8952,6 @@
       "src/core/ext/filters/client_channel/proxy_mapper_registry.h", 
       "src/core/ext/filters/client_channel/resolver.cc", 
       "src/core/ext/filters/client_channel/resolver.h", 
-      "src/core/ext/filters/client_channel/resolver_factory.cc", 
       "src/core/ext/filters/client_channel/resolver_factory.h", 
       "src/core/ext/filters/client_channel/resolver_registry.cc", 
       "src/core/ext/filters/client_channel/resolver_registry.h", 
@@ -9369,6 +9399,7 @@
   }, 
   {
     "deps": [
+      "cmdline", 
       "gpr", 
       "gpr_test_util", 
       "grpc_base", 
@@ -9391,6 +9422,7 @@
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/subprocess.h", 
       "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.h"
     ], 
@@ -9429,6 +9461,9 @@
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.cc", 
       "test/core/util/slice_splitter.h", 
+      "test/core/util/subprocess.h", 
+      "test/core/util/subprocess_posix.cc", 
+      "test/core/util/subprocess_windows.cc", 
       "test/core/util/tracer_util.cc", 
       "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.cc", 

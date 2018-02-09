@@ -40,18 +40,18 @@ void on_resolution_cb(void* arg, grpc_error* error) {
   grpc_channel_args_destroy(res->resolver_result);
 }
 
-static void test_succeeds(grpc_resolver_factory* factory, const char* string) {
+static void test_succeeds(grpc_core::ResolverFactory* factory,
+                          const char* string) {
+  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
+          factory->scheme());
   grpc_core::ExecCtx exec_ctx;
   grpc_uri* uri = grpc_uri_parse(string, 0);
-  grpc_resolver_args args;
-  grpc_resolver* resolver;
-  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-          factory->vtable->scheme);
   GPR_ASSERT(uri);
-  memset(&args, 0, sizeof(args));
+  grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  resolver = grpc_resolver_factory_create_resolver(factory, &args);
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
+      factory->CreateResolver(args);
   GPR_ASSERT(resolver != nullptr);
 
   on_resolution_arg on_res_arg;
@@ -60,40 +60,39 @@ static void test_succeeds(grpc_resolver_factory* factory, const char* string) {
   grpc_closure* on_resolution = GRPC_CLOSURE_CREATE(
       on_resolution_cb, &on_res_arg, grpc_schedule_on_exec_ctx);
 
-  grpc_resolver_next_locked(resolver, &on_res_arg.resolver_result,
-                            on_resolution);
-  GRPC_RESOLVER_UNREF(resolver, "test_succeeds");
+  resolver->NextLocked(&on_res_arg.resolver_result, on_resolution);
   grpc_uri_destroy(uri);
   /* Flush ExecCtx to avoid stack-use-after-scope on on_res_arg which is
    * accessed in the closure on_resolution_cb */
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-static void test_fails(grpc_resolver_factory* factory, const char* string) {
+static void test_fails(grpc_core::ResolverFactory* factory,
+                       const char* string) {
+  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
+          factory->scheme());
   grpc_core::ExecCtx exec_ctx;
   grpc_uri* uri = grpc_uri_parse(string, 0);
-  grpc_resolver_args args;
-  grpc_resolver* resolver;
-  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-          factory->vtable->scheme);
   GPR_ASSERT(uri);
-  memset(&args, 0, sizeof(args));
+  grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  resolver = grpc_resolver_factory_create_resolver(factory, &args);
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
+      factory->CreateResolver(args);
   GPR_ASSERT(resolver == nullptr);
   grpc_uri_destroy(uri);
 }
 
 int main(int argc, char** argv) {
-  grpc_resolver_factory *ipv4, *ipv6;
   grpc_test_init(argc, argv);
   grpc_init();
 
   g_combiner = grpc_combiner_create();
 
-  ipv4 = grpc_resolver_factory_lookup("ipv4");
-  ipv6 = grpc_resolver_factory_lookup("ipv6");
+  grpc_core::ResolverFactory* ipv4 =
+      grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
+  grpc_core::ResolverFactory* ipv6 =
+      grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
 
   test_fails(ipv4, "ipv4:10.2.1.1");
   test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
@@ -108,9 +107,6 @@ int main(int argc, char** argv) {
   test_succeeds(ipv6, "ipv6:[::]:1234");
   test_fails(ipv6, "ipv6:[::]:123456");
   test_fails(ipv6, "ipv6:www.google.com");
-
-  grpc_resolver_factory_unref(ipv4);
-  grpc_resolver_factory_unref(ipv6);
 
   {
     grpc_core::ExecCtx exec_ctx;

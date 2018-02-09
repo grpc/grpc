@@ -16,7 +16,7 @@
 
 set -ex
 
-cd $(dirname $0)/../..
+cd "$(dirname "$0")/../.."
 set root=`pwd`
 CC=${CC:-cc}
 

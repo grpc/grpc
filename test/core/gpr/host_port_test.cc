@@ -19,8 +19,9 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gpr/host_port.h"
 #include "test/core/util/test_config.h"
 
 static void join_host_port_expect(const char* host, int port,

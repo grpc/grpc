@@ -46,7 +46,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/arena.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/avl.cc \
-    src/core/lib/gpr/cmdline.cc \
     src/core/lib/gpr/cpu_iphone.cc \
     src/core/lib/gpr/cpu_linux.cc \
     src/core/lib/gpr/cpu_posix.cc \
@@ -67,8 +66,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
     src/core/lib/gpr/string_windows.cc \
-    src/core/lib/gpr/subprocess_posix.cc \
-    src/core/lib/gpr/subprocess_windows.cc \
     src/core/lib/gpr/sync.cc \
     src/core/lib/gpr/sync_posix.cc \
     src/core/lib/gpr/sync_windows.cc \
@@ -97,7 +94,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
-    src/core/lib/compression/compression_ruby.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
     src/core/lib/compression/stream_compression_gzip.cc \
@@ -297,7 +293,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/proxy_mapper.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
-    src/core/ext/filters/client_channel/resolver_factory.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \

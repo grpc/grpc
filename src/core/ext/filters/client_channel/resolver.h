@@ -19,67 +19,110 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 
-#include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include <grpc/impl/codegen/grpc_types.h>
 
-typedef struct grpc_resolver grpc_resolver;
-typedef struct grpc_resolver_vtable grpc_resolver_vtable;
+#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/iomgr.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
-/** \a grpc_resolver provides \a grpc_channel_args objects to its caller */
-struct grpc_resolver {
-  const grpc_resolver_vtable* vtable;
-  gpr_refcount refs;
-  grpc_combiner* combiner;
+namespace grpc_core {
+
+/// Interface for name resolution.
+///
+/// This interface is designed to support both push-based and pull-based
+/// mechanisms.  A push-based mechanism is one where the resolver will
+/// subscribe to updates for a given name, and the name service will
+/// proactively send new data to the resolver whenever the data associated
+/// with the name changes.  A pull-based mechanism is one where the resolver
+/// needs to query the name service again to get updated information (e.g.,
+/// DNS).
+///
+/// Note: All methods with a "Locked" suffix must be called from the
+/// combiner passed to the constructor.
+class Resolver : public InternallyRefCountedWithTracing<Resolver> {
+ public:
+  // Not copyable nor movable.
+  Resolver(const Resolver&) = delete;
+  Resolver& operator=(const Resolver&) = delete;
+
+  /// Requests a callback when a new result becomes available.
+  /// When the new result is available, sets \a *result to the new result
+  /// and schedules \a on_complete for execution.
+  /// If resolution is fatally broken, sets \a *result to nullptr and
+  /// schedules \a on_complete with an error.
+  ///
+  /// Note that the client channel will almost always have a request
+  /// to \a NextLocked() pending.  When it gets the callback, it will
+  /// process the new result and then immediately make another call to
+  /// \a NextLocked().  This allows push-based resolvers to provide new
+  /// data as soon as it becomes available.
+  virtual void NextLocked(grpc_channel_args** result,
+                          grpc_closure* on_complete) GRPC_ABSTRACT;
+
+  /// Asks the resolver to obtain an updated resolver result, if
+  /// applicable.
+  ///
+  /// This is useful for pull-based implementations to decide when to
+  /// re-resolve.  However, the implementation is not required to
+  /// re-resolve immediately upon receiving this call; it may instead
+  /// elect to delay based on some configured minimum time between
+  /// queries, to avoid hammering the name service with queries.
+  ///
+  /// For push-based implementations, this may be a no-op.
+  ///
+  /// If this causes new data to become available, then the currently
+  /// pending call to \a NextLocked() will return the new result.
+  ///
+  /// Note: Currently, all resolvers are required to return a new result
+  /// shortly after this method is called.  For pull-based mechanisms, if
+  /// the implementation decides to delay querying the name service, it
+  /// should immediately return a new copy of the previously returned
+  /// result (and it can then return the updated data later, when it
+  /// actually does query the name service).  For push-based mechanisms,
+  /// the implementation should immediately return a new copy of the
+  /// last-seen result.
+  /// TODO(roth): Remove this requirement once we fix pick_first to not
+  /// throw away unselected subchannels.
+  virtual void RequestReresolutionLocked() GRPC_ABSTRACT;
+
+  void Orphan() override {
+    // Invoke ShutdownAndUnrefLocked() inside of the combiner.
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_CREATE(&Resolver::ShutdownAndUnrefLocked, this,
+                            grpc_combiner_scheduler(combiner_)),
+        GRPC_ERROR_NONE);
+  }
+
+  GRPC_ABSTRACT_BASE_CLASS
+
+ protected:
+  /// Does NOT take ownership of the reference to \a combiner.
+  // TODO(roth): Once we have a C++-like interface for combiners, this
+  // API should change to take a RefCountedPtr<>, so that we always take
+  // ownership of a new ref.
+  explicit Resolver(grpc_combiner* combiner);
+
+  virtual ~Resolver();
+
+  /// Shuts down the resolver.  If there is a pending call to
+  /// NextLocked(), the callback will be scheduled with an error.
+  virtual void ShutdownLocked() GRPC_ABSTRACT;
+
+  grpc_combiner* combiner() const { return combiner_; }
+
+ private:
+  static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored) {
+    Resolver* resolver = static_cast<Resolver*>(arg);
+    resolver->ShutdownLocked();
+    resolver->Unref();
+  }
+
+  grpc_combiner* combiner_;
 };
 
-struct grpc_resolver_vtable {
-  void (*destroy)(grpc_resolver* resolver);
-  void (*shutdown_locked)(grpc_resolver* resolver);
-  void (*channel_saw_error_locked)(grpc_resolver* resolver);
-  void (*next_locked)(grpc_resolver* resolver, grpc_channel_args** result,
-                      grpc_closure* on_complete);
-};
-
-#ifndef NDEBUG
-#define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_RESOLVER_UNREF(p, r) \
-  grpc_resolver_unref((p), __FILE__, __LINE__, (r))
-void grpc_resolver_ref(grpc_resolver* policy, const char* file, int line,
-                       const char* reason);
-void grpc_resolver_unref(grpc_resolver* policy, const char* file, int line,
-                         const char* reason);
-#else
-#define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p))
-#define GRPC_RESOLVER_UNREF(p, r) grpc_resolver_unref((p))
-void grpc_resolver_ref(grpc_resolver* policy);
-void grpc_resolver_unref(grpc_resolver* policy);
-#endif
-
-void grpc_resolver_init(grpc_resolver* resolver,
-                        const grpc_resolver_vtable* vtable,
-                        grpc_combiner* combiner);
-
-void grpc_resolver_shutdown_locked(grpc_resolver* resolver);
-
-/** Notification that the channel has seen an error on some address.
-    Can be used as a hint that re-resolution is desirable soon.
-
-    Must be called from the combiner passed as a resolver_arg at construction
-    time.*/
-void grpc_resolver_channel_saw_error_locked(grpc_resolver* resolver);
-
-/** Get the next result from the resolver.  Expected to set \a *result with
-    new channel args and then schedule \a on_complete for execution.
-
-    If resolution is fatally broken, set \a *result to NULL and
-    schedule \a on_complete.
-
-    Must be called from the combiner passed as a resolver_arg at construction
-    time.*/
-void grpc_resolver_next_locked(grpc_resolver* resolver,
-                               grpc_channel_args** result,
-                               grpc_closure* on_complete);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H */

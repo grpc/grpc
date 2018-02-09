@@ -8,8 +8,6 @@ EXPORTS
     grpc_compression_options_enable_algorithm
     grpc_compression_options_disable_algorithm
     grpc_compression_options_is_algorithm_enabled
-    grpc_compression_algorithm_parse_ruby
-    grpc_compression_algorithm_name_ruby
     grpc_metadata_array_init
     grpc_metadata_array_destroy
     grpc_call_details_init
@@ -186,19 +184,8 @@ EXPORTS
     gpr_avl_get
     gpr_avl_maybe_get
     gpr_avl_is_empty
-    gpr_cmdline_create
-    gpr_cmdline_add_int
-    gpr_cmdline_add_flag
-    gpr_cmdline_add_string
-    gpr_cmdline_on_extra_arg
-    gpr_cmdline_set_survive_failure
-    gpr_cmdline_parse
-    gpr_cmdline_destroy
-    gpr_cmdline_usage_string
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_join_host_port
-    gpr_split_host_port
     gpr_log_severity_string
     gpr_log
     gpr_log_message
@@ -208,11 +195,6 @@ EXPORTS
     gpr_format_message
     gpr_strdup
     gpr_asprintf
-    gpr_subprocess_binary_extension
-    gpr_subprocess_create
-    gpr_subprocess_destroy
-    gpr_subprocess_join
-    gpr_subprocess_interrupt
     gpr_mu_init
     gpr_mu_destroy
     gpr_mu_lock
