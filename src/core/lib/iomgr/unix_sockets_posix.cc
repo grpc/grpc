@@ -74,7 +74,7 @@ void grpc_unlink_if_unix_domain_socket(
   if (addr->sa_family != AF_UNIX) {
     return;
   }
-  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
+  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(const_cast<char*>(resolved_addr->addr));
   struct stat st;
 
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {

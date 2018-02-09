@@ -279,7 +279,7 @@ static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
                        const grpc_resolved_address* addr) {
   return (socket_factory != nullptr)
              ? grpc_socket_factory_bind(socket_factory, sockfd, addr)
-             : bind(sockfd, reinterpret_cast<struct sockaddr*>(addr->addr), static_cast<socklen_t>(addr->len));
+             : bind(sockfd, reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)), static_cast<socklen_t>(addr->len));
 }
 
 /* Prepare a recently-created socket for listening. */
@@ -287,7 +287,7 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
                           const grpc_resolved_address* addr, int rcv_buf_size,
                           int snd_buf_size) {
   grpc_resolved_address sockname_temp;
-  struct sockaddr* addr_ptr = reinterpret_cast<struct sockaddr*>(addr->addr);
+  struct sockaddr* addr_ptr = reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr));
 
   if (fd < 0) {
     goto error;

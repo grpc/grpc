@@ -109,7 +109,7 @@ static int test_socket_factory_bind(grpc_socket_factory* factory, int sockfd,
                                     const grpc_resolved_address* addr) {
   test_socket_factory* f = reinterpret_cast<test_socket_factory*>(factory);
   f->number_of_bind_calls++;
-  return bind(sockfd, reinterpret_cast<struct sockaddr*>(addr->addr), static_cast<socklen_t>(addr->len));
+  return bind(sockfd, reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)), static_cast<socklen_t>(addr->len));
 }
 
 static int test_socket_factory_compare(grpc_socket_factory* a,
