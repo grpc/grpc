@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
@@ -68,6 +69,12 @@ class ExampleGenerator
     if (examples_.empty()) {
       if (!FLAGS_file.empty()) examples_.push_back(FLAGS_file);
       if (!FLAGS_directory.empty()) {
+        char* test_srcdir = gpr_getenv("TEST_SRCDIR");
+        if (test_srcdir != nullptr) {
+          FLAGS_directory = test_srcdir +
+                            std::string("/com_github_grpc_grpc/") +
+                            FLAGS_directory;
+        }
         DIR* dp;
         struct dirent* ep;
         dp = opendir(FLAGS_directory.c_str());
