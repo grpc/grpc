@@ -33,9 +33,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"

@@ -80,6 +80,9 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           }
         } else if (param[0] == "gmock_search_path") {
           generator_parameters.gmock_search_path = param[1];
+        } else if (param[0] == "additional_header_includes") {
+          generator_parameters.additional_header_includes =
+              grpc_generator::tokenize(param[1], ":");
         } else {
           *error = grpc::string("Unknown parameter: ") + *parameter_string;
           return false;

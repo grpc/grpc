@@ -28,7 +28,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"

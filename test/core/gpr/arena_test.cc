@@ -23,11 +23,11 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
 #include <inttypes.h>
 #include <string.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/util/test_config.h"
 
 static void test_noop(void) { gpr_arena_destroy(gpr_arena_create(1)); }

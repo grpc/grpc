@@ -29,7 +29,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
@@ -1085,6 +1084,7 @@ static void pick_callback_done_locked(void* arg, grpc_error* error) {
             chand, calld);
   }
   async_pick_done_locked(elem, GRPC_ERROR_REF(error));
+  GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback");
 }
 
 // Starts a pick on chand->lb_policy.
@@ -1123,6 +1123,7 @@ static bool pick_callback_start_locked(grpc_call_element* elem) {
   GRPC_CLOSURE_INIT(&calld->lb_pick_closure, pick_callback_done_locked, elem,
                     grpc_combiner_scheduler(chand->combiner));
   calld->pick.on_complete = &calld->lb_pick_closure;
+  GRPC_CALL_STACK_REF(calld->owning_call, "pick_callback");
   const bool pick_done = chand->lb_policy->PickLocked(&calld->pick);
   if (pick_done) {
     // Pick completed synchronously.
@@ -1130,6 +1131,7 @@ static bool pick_callback_start_locked(grpc_call_element* elem) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed synchronously",
               chand, calld);
     }
+    GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback");
   } else {
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_callback_cancel");
     grpc_call_combiner_set_notify_on_cancel(

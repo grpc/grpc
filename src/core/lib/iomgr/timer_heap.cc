@@ -25,7 +25,8 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 
 /* Adjusts a heap so as to move a hole at position i closer to the root,
    until a suitable position is found for element t. Then, copies t into that

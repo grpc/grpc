@@ -22,13 +22,13 @@
 
 #include <windows.h>
 
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/string_windows.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/string_windows.h"
 
 const char* gpr_getenv_silent(const char* name, char** dst) {
   *dst = gpr_getenv(name);

@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"

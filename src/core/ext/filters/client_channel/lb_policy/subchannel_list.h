@@ -101,8 +101,6 @@ struct grpc_lb_subchannel_list {
   size_t num_ready;
   /** how many subchannels are in state TRANSIENT_FAILURE */
   size_t num_transient_failures;
-  /** how many subchannels are in state SHUTDOWN */
-  size_t num_shutdown;
   /** how many subchannels are in state IDLE */
   size_t num_idle;
 

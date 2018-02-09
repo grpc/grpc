@@ -25,7 +25,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"

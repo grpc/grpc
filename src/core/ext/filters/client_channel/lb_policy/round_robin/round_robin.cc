@@ -383,18 +383,11 @@ void RoundRobin::UpdateConnectivityStatusLocked(grpc_lb_subchannel_data* sd,
    * 2) RULE: ANY subchannel is CONNECTING => policy is CONNECTING.
    *    CHECK: sd->curr_connectivity_state == CONNECTING.
    *
-   * 3) RULE: ALL subchannels are SHUTDOWN => policy is IDLE (and requests
-   *          re-resolution).
-   *    CHECK: subchannel_list->num_shutdown ==
-   *           subchannel_list->num_subchannels.
-   *
-   * 4) RULE: ALL subchannels are SHUTDOWN or TRANSIENT_FAILURE => policy is
-   *          TRANSIENT_FAILURE.
-   *    CHECK: subchannel_list->num_shutdown +
-   *             subchannel_list->num_transient_failures ==
+   * 3) RULE: ALL subchannels are TRANSIENT_FAILURE => policy is
+   *                                                   TRANSIENT_FAILURE.
+   *    CHECK: subchannel_list->num_transient_failures ==
    *           subchannel_list->num_subchannels.
    */
-  // TODO(juanlishen): For rule 4, we may want to re-resolve instead.
   grpc_lb_subchannel_list* subchannel_list = sd->subchannel_list;
   GPR_ASSERT(sd->curr_connectivity_state != GRPC_CHANNEL_IDLE);
   if (subchannel_list->num_ready > 0) {
@@ -405,20 +398,12 @@ void RoundRobin::UpdateConnectivityStatusLocked(grpc_lb_subchannel_data* sd,
     /* 2) CONNECTING */
     grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_CONNECTING,
                                 GRPC_ERROR_NONE, "rr_connecting");
-  } else if (subchannel_list->num_shutdown ==
+  } else if (subchannel_list->num_transient_failures ==
              subchannel_list->num_subchannels) {
-    /* 3) IDLE and re-resolve */
-    grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_IDLE,
-                                GRPC_ERROR_NONE,
-                                "rr_exhausted_subchannels+reresolve");
-    started_picking_ = false;
-    TryReresolution(&grpc_lb_round_robin_trace, GRPC_ERROR_NONE);
-  } else if (subchannel_list->num_shutdown +
-                 subchannel_list->num_transient_failures ==
-             subchannel_list->num_subchannels) {
-    /* 4) TRANSIENT_FAILURE */
-    grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                GRPC_ERROR_REF(error), "rr_transient_failure");
+    /* 3) TRANSIENT_FAILURE */
+    grpc_connectivity_state_set(
+        &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_ERROR_REF(error), "rr_exhausted_subchannels");
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -438,6 +423,7 @@ void RoundRobin::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
         p->shutdown_, sd->subchannel_list->shutting_down,
         grpc_error_string(error));
   }
+  GPR_ASSERT(sd->subchannel != nullptr);
   // If the policy is shutting down, unref and return.
   if (p->shutdown_) {
     grpc_lb_subchannel_data_stop_connectivity_watch(sd);
@@ -463,14 +449,18 @@ void RoundRobin::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
   // state (which was set by the connectivity state watcher) to
   // curr_connectivity_state, which is what we use inside of the combiner.
   sd->curr_connectivity_state = sd->pending_connectivity_state_unsafe;
-  // Update state counters and new overall state.
-  UpdateStateCountersLocked(sd);
-  p->UpdateConnectivityStatusLocked(sd, GRPC_ERROR_REF(error));
   // If the sd's new state is TRANSIENT_FAILURE, unref the *connected*
   // subchannel, if any.
   switch (sd->curr_connectivity_state) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
       sd->connected_subchannel.reset();
+      if (grpc_lb_round_robin_trace.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
+                "Requesting re-resolution",
+                p, sd->subchannel);
+      }
+      p->TryReresolution(&grpc_lb_round_robin_trace, GRPC_ERROR_NONE);
       break;
     }
     case GRPC_CHANNEL_READY: {
@@ -539,6 +529,12 @@ void RoundRobin::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:;  // fallthrough
   }
+  // Update state counters.
+  UpdateStateCountersLocked(sd);
+  // Only update connectivity based on the selected subchannel list.
+  if (sd->subchannel_list == p->subchannel_list_) {
+    p->UpdateConnectivityStatusLocked(sd, GRPC_ERROR_REF(error));
+  }
   // Renew notification.
   grpc_lb_subchannel_data_start_connectivity_watch(sd);
 }
@@ -605,6 +601,30 @@ void RoundRobin::UpdateLocked(const Args& args) {
     return;
   }
   if (started_picking_) {
+    for (size_t i = 0; i < subchannel_list->num_subchannels; ++i) {
+      const grpc_connectivity_state subchannel_state =
+          grpc_subchannel_check_connectivity(
+              subchannel_list->subchannels[i].subchannel, nullptr);
+      // Override the default setting of IDLE for connectivity notification
+      // purposes if the subchannel is already in transient failure. Otherwise
+      // we'd be immediately notified of the IDLE-TRANSIENT_FAILURE
+      // discrepancy, attempt to re-resolve and end up here again.
+      // TODO(roth): As part of C++-ifying the subchannel_list API, design a
+      // better API for notifying the LB policy of subchannel states, which can
+      // be used both for the subchannel's initial state and for subsequent
+      // state changes. This will allow us to handle this more generally instead
+      // of special-casing TRANSIENT_FAILURE (e.g., we can also distribute any
+      // pending picks across all READY subchannels rather than sending them all
+      // to the first one).
+      if (subchannel_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        subchannel_list->subchannels[i].pending_connectivity_state_unsafe =
+            subchannel_list->subchannels[i].curr_connectivity_state =
+                subchannel_list->subchannels[i].prev_connectivity_state =
+                    subchannel_state;
+        --subchannel_list->num_idle;
+        ++subchannel_list->num_transient_failures;
+      }
+    }
     if (latest_pending_subchannel_list_ != nullptr) {
       if (grpc_lb_round_robin_trace.enabled()) {
         gpr_log(GPR_DEBUG,

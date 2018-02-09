@@ -21,7 +21,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 

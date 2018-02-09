@@ -22,8 +22,8 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
-#include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/transport/bdp_estimator.h"

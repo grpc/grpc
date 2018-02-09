@@ -66,15 +66,11 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/atm_gcc_atomic.h",
     "include/grpc/support/atm_gcc_sync.h",
     "include/grpc/support/atm_windows.h",
-    "include/grpc/support/avl.h",
-    "include/grpc/support/cmdline.h",
     "include/grpc/support/cpu.h",
-    "include/grpc/support/host_port.h",
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
     "include/grpc/support/port_platform.h",
     "include/grpc/support/string_util.h",
-    "include/grpc/support/subprocess.h",
     "include/grpc/support/sync.h",
     "include/grpc/support/sync_custom.h",
     "include/grpc/support/sync_generic.h",
@@ -82,18 +78,12 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/sync_windows.h",
     "include/grpc/support/thd.h",
     "include/grpc/support/time.h",
-    "include/grpc/support/tls.h",
-    "include/grpc/support/tls_gcc.h",
-    "include/grpc/support/tls_msvc.h",
-    "include/grpc/support/tls_pthread.h",
-    "include/grpc/support/useful.h",
 ]
 
 GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
-    "include/grpc/compression_ruby.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
@@ -453,13 +443,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_base",
     srcs = [
-        "src/core/lib/profiling/basic_timers.cc",
-        "src/core/lib/profiling/stap_timers.cc",
         "src/core/lib/gpr/alloc.cc",
         "src/core/lib/gpr/arena.cc",
         "src/core/lib/gpr/atm.cc",
-        "src/core/lib/gpr/avl.cc",
-        "src/core/lib/gpr/cmdline.cc",
         "src/core/lib/gpr/cpu_iphone.cc",
         "src/core/lib/gpr/cpu_linux.cc",
         "src/core/lib/gpr/cpu_posix.cc",
@@ -480,8 +466,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_posix.cc",
         "src/core/lib/gpr/string_util_windows.cc",
         "src/core/lib/gpr/string_windows.cc",
-        "src/core/lib/gpr/subprocess_posix.cc",
-        "src/core/lib/gpr/subprocess_windows.cc",
         "src/core/lib/gpr/sync.cc",
         "src/core/lib/gpr/sync_posix.cc",
         "src/core/lib/gpr/sync_windows.cc",
@@ -497,12 +481,14 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
+        "src/core/lib/profiling/basic_timers.cc",
+        "src/core/lib/profiling/stap_timers.cc",
     ],
     hdrs = [
-        "src/core/lib/profiling/timers.h",
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/fork.h",
+        "src/core/lib/gpr/host_port.h",
         "src/core/lib/gpr/mpscq.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
@@ -510,7 +496,13 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/thd_internal.h",
         "src/core/lib/gpr/time_precise.h",
+        "src/core/lib/gpr/tls.h",
+        "src/core/lib/gpr/tls_gcc.h",
+        "src/core/lib/gpr/tls_msvc.h",
+        "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
+        "src/core/lib/gpr/useful.h",
+        "src/core/lib/profiling/timers.h",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -563,13 +555,13 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "atomic",
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/gprpp/atomic.h",
-    ],
     hdrs = [
         "src/core/lib/gprpp/atomic_with_atm.h",
         "src/core/lib/gprpp/atomic_with_std.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/gprpp/atomic.h",
     ],
     deps = [
         "gpr",
@@ -599,9 +591,9 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
     deps = [
         "debug_location",
-        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
+        "ref_counted_ptr",
     ],
 )
 
@@ -611,9 +603,9 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
         "debug_location",
-        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
+        "ref_counted_ptr",
     ],
 )
 
@@ -629,6 +621,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
+        "src/core/lib/avl/avl.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
@@ -639,7 +632,6 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/compression/compression.cc",
         "src/core/lib/compression/compression_internal.cc",
-        "src/core/lib/compression/compression_ruby.cc",
         "src/core/lib/compression/message_compress.cc",
         "src/core/lib/compression/stream_compression.cc",
         "src/core/lib/compression/stream_compression_gzip.cc",
@@ -764,6 +756,7 @@ grpc_cc_library(
         "src/core/lib/transport/transport_op_string.cc",
     ],
     hdrs = [
+        "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
@@ -890,8 +883,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
-        "gpr_base",
         "gpr++_base",
+        "gpr_base",
         "grpc_codegen",
         "grpc_trace",
     ],
@@ -981,6 +974,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_deadline_filter",
         "inlined_vector",
         "orphanable",
         "ref_counted",

@@ -92,7 +92,7 @@ class InternallyRefCounted : public Orphanable {
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
-    return RefCountedPtr<Child>(reinterpret_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
   void Unref() {
@@ -149,7 +149,7 @@ class InternallyRefCountedWithTracing : public Orphanable {
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
-    return RefCountedPtr<Child>(reinterpret_cast<Child*>(this));
+    return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
   RefCountedPtr<Child> Ref(const DebugLocation& location,

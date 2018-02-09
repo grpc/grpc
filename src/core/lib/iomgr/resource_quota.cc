@@ -27,8 +27,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/combiner.h"
 
 grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");

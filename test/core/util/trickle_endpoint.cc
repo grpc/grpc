@@ -26,7 +26,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 #define WRITE_BUFFER_SIZE (2 * 1024 * 1024)
